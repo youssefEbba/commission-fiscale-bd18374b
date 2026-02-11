@@ -22,22 +22,21 @@ interface AuthContextType {
 
 const ADMIN_ROLES: AppRole[] = ["PRESIDENT", "ADMIN_SI"];
 
+function getStoredUser(): AuthUser | null {
+  try {
+    const stored = localStorage.getItem("auth_user");
+    if (stored) return JSON.parse(stored);
+  } catch {
+    localStorage.removeItem("auth_user");
+    localStorage.removeItem("auth_token");
+  }
+  return null;
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("auth_user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem("auth_user");
-        localStorage.removeItem("auth_token");
-      }
-    }
-  }, []);
+  const [user, setUser] = useState<AuthUser | null>(getStoredUser);
 
   const login = (data: LoginResponse) => {
     const authUser: AuthUser = {
