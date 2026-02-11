@@ -1,18 +1,25 @@
 import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Shield, Users, LayoutDashboard, LogOut, FileText, Award } from "lucide-react";
+import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, AppRole } from "@/contexts/AuthContext";
 
-const NAV_ITEMS = [
-  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, adminOnly: false },
-  { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users, adminOnly: true },
-  { label: "Demandes", href: "/dashboard/demandes", icon: FileText, adminOnly: false },
-  { label: "Certificats", href: "/dashboard/certificats", icon: Award, adminOnly: false },
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  roles?: AppRole[]; // if undefined, visible to all authenticated users
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users, roles: ["PRESIDENT", "ADMIN_SI"] },
+  { label: "Demandes", href: "/dashboard/demandes", icon: FileText },
+  { label: "Certificats", href: "/dashboard/certificats", icon: Award },
 ];
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,6 +27,8 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     logout();
     navigate("/");
   };
+
+  const visibleItems = NAV_ITEMS.filter((item) => !item.roles || hasRole(item.roles));
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -36,7 +45,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+          {visibleItems.map((item) => {
             const active = location.pathname === item.href;
             return (
               <Link

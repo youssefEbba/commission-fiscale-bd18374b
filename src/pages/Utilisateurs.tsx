@@ -1,23 +1,16 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { utilisateurApi, UtilisateurDto } from "@/lib/api";
+import { utilisateurApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Search, CheckCircle, XCircle, RefreshCw, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, Search, CheckCircle, XCircle, RefreshCw, Clock, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const ROLE_LABELS: Record<string, string> = {
-  PRESIDENT: "Président",
-  DGD: "DGD",
-  DGTCP: "DGTCP",
-  DGI: "DGI",
-  DGB: "DGB",
-  AUTORITE_CONTRACTANTE: "Autorité Contractante",
-  ENTREPRISE: "Entreprise",
-};
 
 const Utilisateurs = () => {
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
@@ -25,6 +18,16 @@ const Utilisateurs = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [newUser, setNewUser] = useState({
+    username: "",
+    password: "",
+    nomComplet: "",
+    email: "",
+    role: "",
+  });
   const { toast } = useToast();
 
   const fetchAll = async () => {
@@ -57,6 +60,36 @@ const Utilisateurs = () => {
       toast({ title: "Erreur", description: "Impossible de modifier le statut", variant: "destructive" });
     } finally {
       setToggling(null);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser.role) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner un rôle", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    try {
+      await utilisateurApi.create({
+        username: newUser.username,
+        password: newUser.password,
+        role: newUser.role,
+        nomComplet: newUser.nomComplet,
+        email: newUser.email,
+      });
+      toast({ title: "Succès", description: "Compte utilisateur créé avec succès" });
+      setNewUser({ username: "", password: "", nomComplet: "", email: "", role: "" });
+      setDialogOpen(false);
+      fetchAll();
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: err instanceof Error ? err.message : "Impossible de créer le compte",
+        variant: "destructive",
+      });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -144,13 +177,98 @@ const Utilisateurs = () => {
               Gestion des utilisateurs
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Gérez les comptes et les accès à la plateforme
+              Créez, gérez les comptes et attribuez les rôles
             </p>
           </div>
-          <Button variant="outline" onClick={fetchAll} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Actualiser
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Créer un compte
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Créer un nouveau compte</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreateUser} className="space-y-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-nomComplet">Nom complet</Label>
+                    <Input
+                      id="new-nomComplet"
+                      value={newUser.nomComplet}
+                      onChange={(e) => setNewUser((p) => ({ ...p, nomComplet: e.target.value }))}
+                      placeholder="Prénom et nom"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-email">Email</Label>
+                    <Input
+                      id="new-email"
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="utilisateur@email.mr"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-username">Identifiant</Label>
+                    <Input
+                      id="new-username"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser((p) => ({ ...p, username: e.target.value }))}
+                      placeholder="Identifiant de connexion"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-role">Rôle</Label>
+                    <Select value={newUser.role} onValueChange={(v) => setNewUser((p) => ({ ...p, role: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un rôle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLE_OPTIONS.map((r) => (
+                          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">Mot de passe</Label>
+                    <div className="relative">
+                      <Input
+                        id="new-password"
+                        type={showPassword ? "text" : "password"}
+                        value={newUser.password}
+                        onChange={(e) => setNewUser((p) => ({ ...p, password: e.target.value }))}
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={creating || !newUser.role}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {creating ? "Création..." : "Créer le compte"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Button variant="outline" onClick={fetchAll} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              Actualiser
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="all">

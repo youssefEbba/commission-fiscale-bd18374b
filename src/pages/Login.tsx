@@ -96,11 +96,8 @@ const Login = () => {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            Pas encore de compte ?{" "}
-            <Link to="/register" className="text-primary font-medium hover:underline">
-              S'inscrire
-            </Link>
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Contactez l'administrateur SI pour obtenir un compte d'accès.
           </p>
         </div>
       </div>
