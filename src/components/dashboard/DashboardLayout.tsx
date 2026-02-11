@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
-  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
-  { label: "Demandes", href: "/dashboard/demandes", icon: FileText },
-  { label: "Certificats", href: "/dashboard/certificats", icon: Award },
+  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, adminOnly: false },
+  { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users, adminOnly: true },
+  { label: "Demandes", href: "/dashboard/demandes", icon: FileText, adminOnly: false },
+  { label: "Certificats", href: "/dashboard/certificats", icon: Award, adminOnly: false },
 ];
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,7 +36,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
             const active = location.pathname === item.href;
             return (
               <Link
