@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { LoginResponse } from "@/lib/api";
 
+export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE";
+
 interface AuthUser {
   token: string;
   userId: number;
   username: string;
-  role: string;
+  role: AppRole;
   nomComplet: string;
 }
 
@@ -15,7 +17,10 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  hasRole: (roles: AppRole[]) => boolean;
 }
+
+const ADMIN_ROLES: AppRole[] = ["PRESIDENT", "ADMIN_SI"];
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -39,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       token: data.token,
       userId: data.userId,
       username: data.username,
-      role: data.role,
+      role: data.role as AppRole,
       nomComplet: data.nomComplet,
     };
     localStorage.setItem("auth_token", data.token);
@@ -53,8 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
+  const isAdmin = !!user && ADMIN_ROLES.includes(user.role);
+  const hasRole = (roles: AppRole[]) => !!user && roles.includes(user.role);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isAdmin: user?.role === "PRESIDENT" }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isAdmin, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

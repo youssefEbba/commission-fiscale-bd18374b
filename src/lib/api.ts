@@ -66,6 +66,28 @@ export interface UtilisateurDto {
   actif: boolean;
 }
 
+export const ROLE_OPTIONS = [
+  { value: "ENTREPRISE", label: "Entreprise" },
+  { value: "AUTORITE_CONTRACTANTE", label: "Autorité Contractante" },
+  { value: "DGD", label: "DGD – Douanes" },
+  { value: "DGI", label: "DGI – Impôts" },
+  { value: "DGTCP", label: "DGTCP – Trésor Public" },
+  { value: "DGB", label: "DGB – Budget" },
+  { value: "PRESIDENT", label: "Président" },
+  { value: "ADMIN_SI", label: "Admin SI" },
+] as const;
+
+export const ROLE_LABELS: Record<string, string> = {
+  PRESIDENT: "Président",
+  DGD: "DGD",
+  DGTCP: "DGTCP",
+  DGI: "DGI",
+  DGB: "DGB",
+  ADMIN_SI: "Admin SI",
+  AUTORITE_CONTRACTANTE: "Autorité Contractante",
+  ENTREPRISE: "Entreprise",
+};
+
 export const authApi = {
   login: (data: LoginRequest) =>
     apiFetch<LoginResponse>("/auth/login", { method: "POST", body: data }),
@@ -79,4 +101,6 @@ export const utilisateurApi = {
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) =>
     apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
+  create: (data: RegisterRequest) =>
+    apiFetch<UtilisateurDto>("/auth/register", { method: "POST", body: data }),
 };
