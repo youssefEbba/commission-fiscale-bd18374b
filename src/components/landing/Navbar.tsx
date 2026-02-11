@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Menu, X, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const navLinks = [
   { label: "Fonctionnalités", href: "#fonctionnalites" },
@@ -36,11 +37,11 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" className="text-primary-foreground/80 hover:bg-primary/20 hover:text-primary-foreground">
-            Connexion
+          <Button variant="ghost" className="text-primary-foreground/80 hover:bg-primary/20 hover:text-primary-foreground" asChild>
+            <Link to="/login">Connexion</Link>
           </Button>
-          <Button className="bg-gold text-accent-foreground font-semibold hover:bg-gold-light">
-            S'inscrire
+          <Button className="bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
+            <Link to="/register">S'inscrire</Link>
           </Button>
         </div>
 
@@ -64,11 +65,11 @@ const Navbar = () => {
             </a>
           ))}
           <div className="mt-4 flex flex-col gap-2">
-            <Button variant="ghost" className="w-full justify-center text-primary-foreground/80 hover:bg-primary/20">
-              Connexion
+            <Button variant="ghost" className="w-full justify-center text-primary-foreground/80 hover:bg-primary/20" asChild>
+              <Link to="/login">Connexion</Link>
             </Button>
-            <Button className="w-full bg-gold text-accent-foreground font-semibold hover:bg-gold-light">
-              S'inscrire
+            <Button className="w-full bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
+              <Link to="/register">S'inscrire</Link>
             </Button>
           </div>
         </div>
