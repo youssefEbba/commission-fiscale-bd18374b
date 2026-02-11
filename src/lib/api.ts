@@ -96,6 +96,13 @@ export const authApi = {
   me: () => apiFetch<Record<string, unknown>>("/auth/me"),
 };
 
+export interface UpdateUtilisateurRequest {
+  username?: string;
+  nomComplet?: string;
+  email?: string;
+  role?: string;
+}
+
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
@@ -103,4 +110,10 @@ export const utilisateurApi = {
     apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) =>
     apiFetch<UtilisateurDto>("/auth/register", { method: "POST", body: data }),
+  update: (id: number, data: UpdateUtilisateurRequest) =>
+    apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
+  delete: (id: number) =>
+    apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
+  resetPassword: (id: number, newPassword: string) =>
+    apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
 };
