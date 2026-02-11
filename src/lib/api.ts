@@ -117,3 +117,21 @@ export const utilisateurApi = {
   resetPassword: (id: number, newPassword: string) =>
     apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
 };
+
+// Permissions
+export interface PermissionDto {
+  id: number;
+  code: string;
+  description: string;
+  processus?: string;
+}
+
+export const permissionApi = {
+  listAll: () => apiFetch<PermissionDto[]>("/admin/permissions"),
+  listRoles: () => apiFetch<string[]>("/admin/permissions/roles"),
+  getByRole: (role: string) => apiFetch<PermissionDto[]>(`/admin/permissions/roles/${role}`),
+  assign: (role: string, permissionCode: string) =>
+    apiFetch<void>(`/admin/permissions/roles/${role}?permissionCode=${encodeURIComponent(permissionCode)}`, { method: "POST" }),
+  revoke: (role: string, permissionCode: string) =>
+    apiFetch<void>(`/admin/permissions/roles/${role}?permissionCode=${encodeURIComponent(permissionCode)}`, { method: "DELETE" }),
+};
