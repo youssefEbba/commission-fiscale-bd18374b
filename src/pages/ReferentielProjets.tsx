@@ -80,7 +80,7 @@ const ReferentielProjets = () => {
 
   useEffect(() => {
     fetchProjets();
-    if (isAdmin || isAC) fetchAutorites();
+    if (isAdmin) fetchAutorites();
   }, []);
 
   const openDetail = async (p: ReferentielProjetDto) => {
@@ -102,12 +102,12 @@ const ReferentielProjets = () => {
       return;
     }
     if (isAC && user) {
-      // Find the AC entity matching the logged-in user (by name match)
-      const matchedAC = autorites.find(a => a.nom === user.nomComplet);
-      if (matchedAC?.id) {
-        form.autoriteContractanteId = matchedAC.id;
-      } else if (autorites.length === 1 && autorites[0].id) {
-        form.autoriteContractanteId = autorites[0].id;
+      // Backend resolves AC automatically, but send the stored ID if available
+      if (user.autoriteContractanteId) {
+        form.autoriteContractanteId = user.autoriteContractanteId;
+      } else {
+        // Let backend resolve from the connected user
+        form.autoriteContractanteId = 0;
       }
     }
     setCreating(true);
@@ -192,7 +192,7 @@ const ReferentielProjets = () => {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
             {(isAC || isAdmin) && (
-              <Button onClick={() => { if (isAdmin || isAC) fetchAutorites(); setCreateOpen(true); }}>
+              <Button onClick={() => { if (isAdmin) fetchAutorites(); setCreateOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" /> Nouveau projet
               </Button>
             )}
@@ -300,19 +300,6 @@ const ReferentielProjets = () => {
                 <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
                   <p className="text-sm font-medium">Projet créé en votre nom</p>
                   <p className="text-sm text-muted-foreground mt-1">{user?.nomComplet}</p>
-                  {autorites.length > 1 && (
-                    <div className="mt-2">
-                      <Label className="text-xs">Entité AC associée</Label>
-                      <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionner votre entité" /></SelectTrigger>
-                        <SelectContent>
-                          {autorites.map((a) => (
-                            <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                 </div>
               </div>
             ) : (
