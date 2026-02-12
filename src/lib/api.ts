@@ -119,12 +119,12 @@ export const autoriteContractanteApi = {
 };
 
 // Référentiel Projet (P1)
-export type ReferentielStatut = "BROUILLON" | "EN_CONTROLE_DGB" | "VALIDE" | "REJETE";
+export type ReferentielStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
 
 export interface ReferentielProjetDto {
   id: number;
   reference?: string;
-  intitule: string;
+  intitule?: string;
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
   bailleurFonds?: string;
@@ -142,35 +142,31 @@ export interface ReferentielProjetDto {
 }
 
 export interface CreateReferentielProjetRequest {
-  intitule: string;
   autoriteContractanteId: number;
-  bailleurFonds?: string;
-  dateSignature?: string;
-  dateDebut?: string;
-  dateFinPrevue?: string;
-  montantTotal?: number;
-  deviseOrigine?: string;
-  equivalentMRU?: number;
-  tauxChange?: number;
-  description?: string;
 }
 
 export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
-  BROUILLON: "Brouillon",
-  EN_CONTROLE_DGB: "En contrôle DGB",
+  EN_ATTENTE: "En attente",
   VALIDE: "Validé",
   REJETE: "Rejeté",
 };
 
-export const REFERENTIEL_DOCUMENT_TYPES = [
-  "CONVENTION_FINANCEMENT",
-  "CONTRAT",
-  "ACCORD_CADRE",
-  "INFO_BAILLEUR",
-  "LETTRE_ENGAGEMENT",
-  "PV_COMITE",
-  "AUTRE",
-] as const;
+export type TypeDocumentProjet =
+  | "CONVENTION_CONTRAT"
+  | "BAILLEUR_INFOS"
+  | "DATES_CLES"
+  | "AUTORITE_RESPONSABLE"
+  | "MONTANT_TOTAL_DEVISE"
+  | "MONTANT_MRU_TAUX_CHANGE";
+
+export const REFERENTIEL_DOCUMENT_TYPES: { value: TypeDocumentProjet; label: string }[] = [
+  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat de financement" },
+  { value: "BAILLEUR_INFOS", label: "Informations bailleur de fonds" },
+  { value: "DATES_CLES", label: "Dates clés (signature, début, fin)" },
+  { value: "AUTORITE_RESPONSABLE", label: "Autorité contractante responsable" },
+  { value: "MONTANT_TOTAL_DEVISE", label: "Montant total et devise d'origine" },
+  { value: "MONTANT_MRU_TAUX_CHANGE", label: "Équivalent MRU + taux de change" },
+];
 
 export const referentielProjetApi = {
   getAll: () => apiFetch<ReferentielProjetDto[]>("/referentiels-projet"),
@@ -178,18 +174,17 @@ export const referentielProjetApi = {
   getByStatut: (statut: ReferentielStatut) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-statut?statut=${statut}`),
   getByAutorite: (autoriteId: number) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-autorite/${autoriteId}`),
   create: (data: CreateReferentielProjetRequest) => apiFetch<ReferentielProjetDto>("/referentiels-projet", { method: "POST", body: data }),
-  update: (id: number, data: Partial<CreateReferentielProjetRequest>) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}`, { method: "PUT", body: data }),
-  updateStatut: (id: number, statut: ReferentielStatut) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  updateStatut: (id: number, statut: "VALIDE" | "REJETE") => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`),
-  uploadDocument: (id: number, type: string, file: File) => {
+  uploadDocument: (id: number, type: TypeDocumentProjet, file: File) => {
     const formData = new FormData();
+    formData.append("type", type);
     formData.append("file", file);
-    return apiFetch<DocumentDto>(`/referentiels-projet/${id}/documents?type=${encodeURIComponent(type)}`, {
+    return apiFetch<DocumentDto>(`/referentiels-projet/${id}/documents`, {
       method: "POST",
       rawBody: formData,
     });
   },
-  soumettre: (id: number) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/soumettre`, { method: "PATCH" }),
 };
 
 // Demandes de correction (P2)
