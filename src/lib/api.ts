@@ -118,6 +118,80 @@ export const autoriteContractanteApi = {
   delete: (id: number) => apiFetch<void>(`/autorites-contractantes/${id}`, { method: "DELETE" }),
 };
 
+// Référentiel Projet (P1)
+export type ReferentielStatut = "BROUILLON" | "EN_CONTROLE_DGB" | "VALIDE" | "REJETE";
+
+export interface ReferentielProjetDto {
+  id: number;
+  reference?: string;
+  intitule: string;
+  autoriteContractanteId?: number;
+  autoriteContractanteNom?: string;
+  bailleurFonds?: string;
+  dateSignature?: string;
+  dateDebut?: string;
+  dateFinPrevue?: string;
+  montantTotal?: number;
+  deviseOrigine?: string;
+  equivalentMRU?: number;
+  tauxChange?: number;
+  statut: ReferentielStatut;
+  dateCreation?: string;
+  dateMiseAJour?: string;
+  description?: string;
+}
+
+export interface CreateReferentielProjetRequest {
+  intitule: string;
+  autoriteContractanteId: number;
+  bailleurFonds?: string;
+  dateSignature?: string;
+  dateDebut?: string;
+  dateFinPrevue?: string;
+  montantTotal?: number;
+  deviseOrigine?: string;
+  equivalentMRU?: number;
+  tauxChange?: number;
+  description?: string;
+}
+
+export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
+  BROUILLON: "Brouillon",
+  EN_CONTROLE_DGB: "En contrôle DGB",
+  VALIDE: "Validé",
+  REJETE: "Rejeté",
+};
+
+export const REFERENTIEL_DOCUMENT_TYPES = [
+  "CONVENTION_FINANCEMENT",
+  "CONTRAT",
+  "ACCORD_CADRE",
+  "INFO_BAILLEUR",
+  "LETTRE_ENGAGEMENT",
+  "PV_COMITE",
+  "AUTRE",
+] as const;
+
+export const referentielProjetApi = {
+  getAll: () => apiFetch<ReferentielProjetDto[]>("/referentiels-projet"),
+  getById: (id: number) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}`),
+  getByStatut: (statut: ReferentielStatut) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-statut?statut=${statut}`),
+  getByAutorite: (autoriteId: number) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-autorite/${autoriteId}`),
+  create: (data: CreateReferentielProjetRequest) => apiFetch<ReferentielProjetDto>("/referentiels-projet", { method: "POST", body: data }),
+  update: (id: number, data: Partial<CreateReferentielProjetRequest>) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}`, { method: "PUT", body: data }),
+  updateStatut: (id: number, statut: ReferentielStatut) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`),
+  uploadDocument: (id: number, type: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/referentiels-projet/${id}/documents?type=${encodeURIComponent(type)}`, {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
+  soumettre: (id: number) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/soumettre`, { method: "PATCH" }),
+};
+
 // Demandes de correction (P2)
 export type DemandeStatut = "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE";
 
