@@ -41,7 +41,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 // Auth
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; }
-export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; }
+export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; }
 
 export interface UtilisateurDto { id: number; username: string; role: string; nomComplet: string; email: string; actif: boolean; }
 
