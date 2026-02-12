@@ -37,12 +37,14 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     label: "Opérations",
     icon: ArrowRightLeft,
-    roles: ["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"],
+    roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      // P7 (Transfert Douane→Intérieur) : ENT demande, DGTCP contrôle, PRESIDENT valide
-      { label: "Transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      // P8 (Clôture/Archivage/Reporting) : DGTCP prépare, PRESIDENT valide
-      { label: "Clôture & Reporting", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      // P6 (Modifications) : AC/ENT soumettent, DGTCP analyse, DGI consulté, PRESIDENT valide
+      { label: "Modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      // P7 (Transfert Douane→Intérieur) : ENT demande, DGTCP contrôle, DGD consulté, PRESIDENT valide
+      { label: "Transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      // P8 (Clôture/Archivage/Reporting) : DGTCP prépare, PRESIDENT valide, DGB consulte reporting
+      { label: "Clôture & Reporting", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
   {
