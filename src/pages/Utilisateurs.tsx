@@ -86,9 +86,11 @@ const Utilisateurs = () => {
       toast({ title: "Succès", description: "Compte créé avec succès" });
       setNewUser({ username: "", password: "", nomComplet: "", email: "", role: "" });
       setCreateOpen(false);
-      fetchAll();
-    } catch (err) {
-      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Impossible de créer le compte", variant: "destructive" });
+      await fetchAll();
+    } catch (err: any) {
+      const msg = err?.message || "Impossible de créer le compte";
+      console.error("Create user error:", err);
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
     } finally { setCreating(false); }
   };
 
