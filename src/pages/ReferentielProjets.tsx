@@ -102,13 +102,8 @@ const ReferentielProjets = () => {
       return;
     }
     if (isAC && user) {
-      // Backend resolves AC automatically, but send the stored ID if available
-      if (user.autoriteContractanteId) {
-        form.autoriteContractanteId = user.autoriteContractanteId;
-      } else {
-        // Let backend resolve from the connected user
-        form.autoriteContractanteId = 0;
-      }
+      // Send the stored AC ID if available, otherwise send null so backend resolves it
+      form.autoriteContractanteId = user.autoriteContractanteId || null;
     }
     setCreating(true);
     try {
