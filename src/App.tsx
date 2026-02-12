@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ReferentielProjets from "./pages/ReferentielProjets";
+import Conventions from "./pages/Conventions";
 import Demandes from "./pages/Demandes";
 import Certificats from "./pages/Certificats";
 import Utilisations from "./pages/Utilisations";
@@ -30,6 +31,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/conventions" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"]}>
+                <Conventions />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/referentiels" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"]}>
                 <ReferentielProjets />

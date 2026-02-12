@@ -6,6 +6,7 @@ import {
   REFERENTIEL_STATUT_LABELS, REFERENTIEL_DOCUMENT_TYPES,
   DocumentDto, autoriteContractanteApi, AutoriteContractanteDto,
   CreateReferentielProjetRequest, TypeDocumentProjet,
+  conventionApi, ConventionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,8 @@ const ReferentielProjets = () => {
   const [createFiles, setCreateFiles] = useState<Record<TypeDocumentProjet, File | null>>(
     () => Object.fromEntries(REFERENTIEL_DOCUMENT_TYPES.map(dt => [dt.value, null])) as Record<TypeDocumentProjet, File | null>
   );
+  const [validConventions, setValidConventions] = useState<ConventionDto[]>([]);
+  const [selectedConventionId, setSelectedConventionId] = useState<string>("");
 
   // Detail dialog
   const [selected, setSelected] = useState<ReferentielProjetDto | null>(null);
@@ -81,6 +84,13 @@ const ReferentielProjets = () => {
     } catch { /* ignore */ }
   };
 
+  const fetchValidConventions = async () => {
+    try {
+      const data = await conventionApi.getByStatut("VALIDE");
+      setValidConventions(data);
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     fetchProjets();
     if (isAdmin) fetchAutorites();
@@ -106,6 +116,10 @@ const ReferentielProjets = () => {
       toast({ title: "Erreur", description: "Sélectionnez une Autorité Contractante", variant: "destructive" });
       return;
     }
+    if (!selectedConventionId) {
+      toast({ title: "Erreur", description: "Sélectionnez une convention validée", variant: "destructive" });
+      return;
+    }
     if (!allFilesSelected) {
       toast({ title: "Erreur", description: "Tous les 6 documents sont obligatoires", variant: "destructive" });
       return;
@@ -115,7 +129,10 @@ const ReferentielProjets = () => {
     }
     setCreating(true);
     try {
-      const projet = await referentielProjetApi.create(form);
+      const projet = await referentielProjetApi.create({
+        ...form,
+        conventionId: Number(selectedConventionId),
+      });
       // Upload all 6 documents
       for (const dt of REFERENTIEL_DOCUMENT_TYPES) {
         const file = createFiles[dt.value];
@@ -126,6 +143,7 @@ const ReferentielProjets = () => {
       toast({ title: "Succès", description: "Projet créé avec les 6 documents" });
       setCreateOpen(false);
       setForm({ autoriteContractanteId: 0 });
+      setSelectedConventionId("");
       setCreateFiles(Object.fromEntries(REFERENTIEL_DOCUMENT_TYPES.map(dt => [dt.value, null])) as Record<TypeDocumentProjet, File | null>);
       fetchProjets();
     } catch (e: any) {
@@ -203,7 +221,7 @@ const ReferentielProjets = () => {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
             {(isAC || isAdmin) && (
-              <Button onClick={() => { if (isAdmin) fetchAutorites(); setCreateOpen(true); }}>
+              <Button onClick={() => { if (isAdmin) fetchAutorites(); fetchValidConventions(); setCreateOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" /> Nouveau projet
               </Button>
             )}
@@ -327,6 +345,28 @@ const ReferentielProjets = () => {
               </div>
             )}
 
+            {/* Convention selection */}
+            <div className="space-y-2">
+              <Label>Convention validée *</Label>
+              <Select value={selectedConventionId} onValueChange={setSelectedConventionId}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner une convention" /></SelectTrigger>
+                <SelectContent>
+                  {validConventions.length === 0 ? (
+                    <SelectItem value="_none" disabled>Aucune convention validée</SelectItem>
+                  ) : (
+                    validConventions.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.reference} — {c.intitule}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {validConventions.length === 0 && (
+                <p className="text-xs text-destructive">Aucune convention validée. Créez et faites valider une convention d'abord.</p>
+              )}
+            </div>
+
             {/* 6 mandatory documents */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold">Documents obligatoires (6)</Label>
@@ -354,7 +394,7 @@ const ReferentielProjets = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !allFilesSelected}>
+            <Button onClick={handleCreate} disabled={creating || !allFilesSelected || !selectedConventionId}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer le projet
             </Button>
@@ -375,6 +415,13 @@ const ReferentielProjets = () => {
                   <div className="col-span-2">
                     <span className="text-muted-foreground">Intitulé</span>
                     <p className="font-medium">{selected.intitule}</p>
+                  </div>
+                )}
+                {selected.conventionReference && (
+                  <div className="col-span-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                    <span className="text-muted-foreground text-xs">Convention</span>
+                    <p className="font-medium text-sm">{selected.conventionReference} — {selected.conventionIntitule}</p>
+                    {selected.conventionBailleur && <p className="text-xs text-muted-foreground">Bailleur: {selected.conventionBailleur}</p>}
                   </div>
                 )}
                 <div>
