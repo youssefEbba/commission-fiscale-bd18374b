@@ -80,7 +80,7 @@ const ReferentielProjets = () => {
 
   useEffect(() => {
     fetchProjets();
-    if (isAC || isAdmin) fetchAutorites();
+    if (isAdmin) fetchAutorites();
   }, []);
 
   const openDetail = async (p: ReferentielProjetDto) => {
@@ -97,9 +97,12 @@ const ReferentielProjets = () => {
   };
 
   const handleCreate = async () => {
-    if (!form.autoriteContractanteId) {
+    if (!form.autoriteContractanteId && !isAC) {
       toast({ title: "Erreur", description: "Sélectionnez une Autorité Contractante", variant: "destructive" });
       return;
+    }
+    if (isAC && user) {
+      form.autoriteContractanteId = user.userId;
     }
     setCreating(true);
     try {
@@ -183,7 +186,7 @@ const ReferentielProjets = () => {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
             {(isAC || isAdmin) && (
-              <Button onClick={() => { fetchAutorites(); setCreateOpen(true); }}>
+              <Button onClick={() => { if (isAdmin) fetchAutorites(); if (isAC && user) setForm({ autoriteContractanteId: user.userId }); setCreateOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" /> Nouveau projet
               </Button>
             )}
@@ -286,17 +289,26 @@ const ReferentielProjets = () => {
             <DialogTitle>Nouveau Référentiel Projet</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Autorité Contractante *</Label>
-              <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>
-                  {autorites.map((a) => (
-                    <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isAC ? (
+              <div className="space-y-2">
+                <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                  <p className="text-sm font-medium">Projet créé en votre nom</p>
+                  <p className="text-sm text-muted-foreground mt-1">{user?.nomComplet}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Autorité Contractante *</Label>
+                <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    {autorites.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Après la création, vous pourrez déposer les 6 documents obligatoires via le détail du projet.
             </p>
