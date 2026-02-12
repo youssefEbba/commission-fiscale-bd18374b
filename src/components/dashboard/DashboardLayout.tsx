@@ -26,16 +26,22 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 }
 
 const NAV_ENTRIES: NavEntry[] = [
+  // Tous les rôles voient le tableau de bord
   { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+  // P1 (Référentiel) + P2 (Correction) : AC initie, DGD/DGI/DGB/DGTCP évaluent, PRESIDENT valide
   { label: "Demandes", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  // P3 (Certificat) : AC soumet, DGI vérifie, DGTCP ouvre crédit, PRESIDENT signe
   { label: "Certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  // P4 (Douane) : ENT soumet, DGD contrôle, DGTCP impute | P5 (Intérieur) : ENT soumet, DGTCP valide, DGI consulte
   { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
   {
     label: "Opérations",
     icon: ArrowRightLeft,
     roles: ["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
+      // P7 (Transfert Douane→Intérieur) : ENT demande, DGTCP contrôle, PRESIDENT valide
       { label: "Transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      // P8 (Clôture/Archivage/Reporting) : DGTCP prépare, PRESIDENT valide
       { label: "Clôture & Reporting", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
