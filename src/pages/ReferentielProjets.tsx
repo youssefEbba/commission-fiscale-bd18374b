@@ -43,6 +43,9 @@ const ReferentielProjets = () => {
   const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
   const [form, setForm] = useState<CreateReferentielProjetRequest>({ autoriteContractanteId: 0 });
   const [creating, setCreating] = useState(false);
+  const [createFiles, setCreateFiles] = useState<Record<TypeDocumentProjet, File | null>>(
+    () => Object.fromEntries(REFERENTIEL_DOCUMENT_TYPES.map(dt => [dt.value, null])) as Record<TypeDocumentProjet, File | null>
+  );
 
   // Detail dialog
   const [selected, setSelected] = useState<ReferentielProjetDto | null>(null);
@@ -96,21 +99,34 @@ const ReferentielProjets = () => {
     }
   };
 
+  const allFilesSelected = REFERENTIEL_DOCUMENT_TYPES.every(dt => createFiles[dt.value] !== null);
+
   const handleCreate = async () => {
     if (!form.autoriteContractanteId && !isAC) {
       toast({ title: "Erreur", description: "Sélectionnez une Autorité Contractante", variant: "destructive" });
       return;
     }
+    if (!allFilesSelected) {
+      toast({ title: "Erreur", description: "Tous les 6 documents sont obligatoires", variant: "destructive" });
+      return;
+    }
     if (isAC && user) {
-      // Send the stored AC ID if available, otherwise send null so backend resolves it
       form.autoriteContractanteId = user.autoriteContractanteId || null;
     }
     setCreating(true);
     try {
-      await referentielProjetApi.create(form);
-      toast({ title: "Succès", description: "Projet créé avec succès" });
+      const projet = await referentielProjetApi.create(form);
+      // Upload all 6 documents
+      for (const dt of REFERENTIEL_DOCUMENT_TYPES) {
+        const file = createFiles[dt.value];
+        if (file) {
+          await referentielProjetApi.uploadDocument(projet.id, dt.value, file);
+        }
+      }
+      toast({ title: "Succès", description: "Projet créé avec les 6 documents" });
       setCreateOpen(false);
       setForm({ autoriteContractanteId: 0 });
+      setCreateFiles(Object.fromEntries(REFERENTIEL_DOCUMENT_TYPES.map(dt => [dt.value, null])) as Record<TypeDocumentProjet, File | null>);
       fetchProjets();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -285,11 +301,11 @@ const ReferentielProjets = () => {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Nouveau Référentiel Projet</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {isAC ? (
               <div className="space-y-2">
                 <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
@@ -310,13 +326,35 @@ const ReferentielProjets = () => {
                 </Select>
               </div>
             )}
-            <p className="text-sm text-muted-foreground">
-              Après la création, vous pourrez déposer les 6 documents obligatoires via le détail du projet.
-            </p>
+
+            {/* 6 mandatory documents */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Documents obligatoires (6)</Label>
+              {REFERENTIEL_DOCUMENT_TYPES.map((dt) => (
+                <div key={dt.value} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {createFiles[dt.value] ? (
+                      <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground shrink-0" />
+                    )}
+                    <Label className="text-xs">{dt.label} *</Label>
+                  </div>
+                  <Input
+                    type="file"
+                    className="text-xs h-9"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setCreateFiles(prev => ({ ...prev, [dt.value]: file }));
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating}>
+            <Button onClick={handleCreate} disabled={creating || !allFilesSelected}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer le projet
             </Button>
