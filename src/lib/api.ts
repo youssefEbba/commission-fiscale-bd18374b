@@ -142,7 +142,7 @@ export interface ReferentielProjetDto {
 }
 
 export interface CreateReferentielProjetRequest {
-  autoriteContractanteId: number;
+  autoriteContractanteId?: number | null;
 }
 
 export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
