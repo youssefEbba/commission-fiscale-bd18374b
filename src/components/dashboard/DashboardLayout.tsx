@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen } from "lucide-react";
+import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -28,6 +28,8 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 const NAV_ENTRIES: NavEntry[] = [
   // Tous les rôles voient le tableau de bord
   { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+  // Conventions : AC crée, DGB valide
+  { label: "Conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"] },
   // P1 (Référentiel Projet) : AC crée, DGB valide
   { label: "Référentiel Projet", href: "/dashboard/referentiels", icon: FolderOpen, roles: ["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"] },
   // P2 (Correction de l'offre) : AC initie, DGD/DGI/DGB/DGTCP évaluent, PRESIDENT valide

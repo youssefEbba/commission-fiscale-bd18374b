@@ -139,10 +139,15 @@ export interface ReferentielProjetDto {
   dateCreation?: string;
   dateMiseAJour?: string;
   description?: string;
+  conventionId?: number;
+  conventionReference?: string;
+  conventionIntitule?: string;
+  conventionBailleur?: string;
 }
 
 export interface CreateReferentielProjetRequest {
   autoriteContractanteId?: number | null;
+  conventionId?: number;
 }
 
 export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
@@ -185,6 +190,47 @@ export const referentielProjetApi = {
       rawBody: formData,
     });
   },
+};
+
+// Conventions
+export type ConventionStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
+
+export interface ConventionDto {
+  id: number;
+  reference?: string;
+  intitule?: string;
+  bailleur?: string;
+  dateSignature?: string;
+  dateDebut?: string;
+  dateFinPrevue?: string;
+  montantTotal?: number;
+  deviseOrigine?: string;
+  equivalentMRU?: number;
+  tauxChange?: number;
+  statut: ConventionStatut;
+  dateCreation?: string;
+  autoriteContractanteId?: number;
+  autoriteContractanteNom?: string;
+}
+
+export interface CreateConventionRequest {
+  reference?: string;
+  intitule?: string;
+  bailleur?: string;
+}
+
+export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
+  EN_ATTENTE: "En attente",
+  VALIDE: "Validée",
+  REJETE: "Rejetée",
+};
+
+export const conventionApi = {
+  getAll: () => apiFetch<ConventionDto[]>("/conventions"),
+  getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
+  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
+  create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
+  updateStatut: (id: number, statut: ConventionStatut) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}`, { method: "PATCH" }),
 };
 
 // Demandes de correction (P2)
