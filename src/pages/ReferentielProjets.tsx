@@ -5,26 +5,24 @@ import {
   referentielProjetApi, ReferentielProjetDto, ReferentielStatut,
   REFERENTIEL_STATUT_LABELS, REFERENTIEL_DOCUMENT_TYPES,
   DocumentDto, autoriteContractanteApi, AutoriteContractanteDto,
-  CreateReferentielProjetRequest,
+  CreateReferentielProjetRequest, TypeDocumentProjet,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FolderOpen, Search, RefreshCw, Plus, Eye, Upload, Loader2,
-  CheckCircle, XCircle, Send, Filter, FileText,
+  CheckCircle, XCircle, Filter, FileText,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ReferentielStatut, string> = {
-  BROUILLON: "bg-muted text-muted-foreground",
-  EN_CONTROLE_DGB: "bg-orange-100 text-orange-800",
+  EN_ATTENTE: "bg-orange-100 text-orange-800",
   VALIDE: "bg-green-100 text-green-800",
   REJETE: "bg-red-100 text-red-800",
 };
@@ -43,19 +41,7 @@ const ReferentielProjets = () => {
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
   const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
-  const [form, setForm] = useState<CreateReferentielProjetRequest>({
-    intitule: "",
-    autoriteContractanteId: 0,
-    bailleurFonds: "",
-    dateSignature: "",
-    dateDebut: "",
-    dateFinPrevue: "",
-    montantTotal: 0,
-    deviseOrigine: "",
-    equivalentMRU: 0,
-    tauxChange: 0,
-    description: "",
-  });
+  const [form, setForm] = useState<CreateReferentielProjetRequest>({ autoriteContractanteId: 0 });
   const [creating, setCreating] = useState(false);
 
   // Detail dialog
@@ -65,7 +51,7 @@ const ReferentielProjets = () => {
 
   // Upload dialog
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [uploadType, setUploadType] = useState("");
+  const [uploadType, setUploadType] = useState<TypeDocumentProjet | "">("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -111,8 +97,8 @@ const ReferentielProjets = () => {
   };
 
   const handleCreate = async () => {
-    if (!form.intitule || !form.autoriteContractanteId) {
-      toast({ title: "Erreur", description: "Intitulé et Autorité Contractante obligatoires", variant: "destructive" });
+    if (!form.autoriteContractanteId) {
+      toast({ title: "Erreur", description: "Sélectionnez une Autorité Contractante", variant: "destructive" });
       return;
     }
     setCreating(true);
@@ -120,7 +106,7 @@ const ReferentielProjets = () => {
       await referentielProjetApi.create(form);
       toast({ title: "Succès", description: "Projet créé avec succès" });
       setCreateOpen(false);
-      setForm({ intitule: "", autoriteContractanteId: 0, bailleurFonds: "", dateSignature: "", dateDebut: "", dateFinPrevue: "", montantTotal: 0, deviseOrigine: "", equivalentMRU: 0, tauxChange: 0, description: "" });
+      setForm({ autoriteContractanteId: 0 });
       fetchProjets();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -129,7 +115,7 @@ const ReferentielProjets = () => {
     }
   };
 
-  const handleStatutChange = async (id: number, statut: ReferentielStatut) => {
+  const handleStatutChange = async (id: number, statut: "VALIDE" | "REJETE") => {
     setActionLoading(id);
     try {
       await referentielProjetApi.updateStatut(id, statut);
@@ -143,25 +129,11 @@ const ReferentielProjets = () => {
     }
   };
 
-  const handleSoumettre = async (id: number) => {
-    setActionLoading(id);
-    try {
-      await referentielProjetApi.soumettre(id);
-      toast({ title: "Succès", description: "Projet soumis au contrôle DGB" });
-      fetchProjets();
-      if (selected?.id === id) setSelected((prev) => prev ? { ...prev, statut: "EN_CONTROLE_DGB" as ReferentielStatut } : null);
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleUpload = async () => {
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
     try {
-      await referentielProjetApi.uploadDocument(selected.id, uploadType, uploadFile);
+      await referentielProjetApi.uploadDocument(selected.id, uploadType as TypeDocumentProjet, uploadFile);
       toast({ title: "Succès", description: "Document déposé" });
       setUploadOpen(false);
       setUploadFile(null);
@@ -265,7 +237,7 @@ const ReferentielProjets = () => {
                     filtered.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">{p.reference || `#${p.id}`}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{p.intitule}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{p.intitule || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{p.autoriteContractanteNom || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {p.montantTotal ? `${p.montantTotal.toLocaleString("fr-FR")} ${p.deviseOrigine || ""}` : "—"}
@@ -283,15 +255,8 @@ const ReferentielProjets = () => {
                             <Button variant="ghost" size="sm" onClick={() => openDetail(p)}>
                               <Eye className="h-4 w-4 mr-1" /> Détail
                             </Button>
-                            {/* AC: Soumettre au DGB */}
-                            {isAC && p.statut === "BROUILLON" && (
-                              <Button size="sm" disabled={actionLoading === p.id} onClick={() => handleSoumettre(p.id)}>
-                                {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                                Soumettre
-                              </Button>
-                            )}
                             {/* DGB: Valider ou Rejeter */}
-                            {isDGB && p.statut === "EN_CONTROLE_DGB" && (
+                            {isDGB && p.statut === "EN_ATTENTE" && (
                               <>
                                 <Button size="sm" disabled={actionLoading === p.id} onClick={() => handleStatutChange(p.id, "VALIDE")}>
                                   {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
@@ -316,64 +281,25 @@ const ReferentielProjets = () => {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nouveau Référentiel Projet</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Intitulé du projet *</Label>
-                <Input value={form.intitule} onChange={(e) => setForm({ ...form, intitule: e.target.value })} placeholder="Nom du projet / convention" />
-              </div>
-              <div className="space-y-2">
-                <Label>Autorité Contractante *</Label>
-                <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ ...form, autoriteContractanteId: Number(v) })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {autorites.map((a) => (
-                      <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Bailleur de fonds</Label>
-                <Input value={form.bailleurFonds} onChange={(e) => setForm({ ...form, bailleurFonds: e.target.value })} placeholder="Nom du bailleur" />
-              </div>
-              <div className="space-y-2">
-                <Label>Date de signature</Label>
-                <Input type="date" value={form.dateSignature} onChange={(e) => setForm({ ...form, dateSignature: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Date de début</Label>
-                <Input type="date" value={form.dateDebut} onChange={(e) => setForm({ ...form, dateDebut: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Date de fin prévue</Label>
-                <Input type="date" value={form.dateFinPrevue} onChange={(e) => setForm({ ...form, dateFinPrevue: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Devise d'origine</Label>
-                <Input value={form.deviseOrigine} onChange={(e) => setForm({ ...form, deviseOrigine: e.target.value })} placeholder="EUR, USD..." />
-              </div>
-              <div className="space-y-2">
-                <Label>Montant total</Label>
-                <Input type="number" value={form.montantTotal || ""} onChange={(e) => setForm({ ...form, montantTotal: Number(e.target.value) })} placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <Label>Taux de change</Label>
-                <Input type="number" step="0.0001" value={form.tauxChange || ""} onChange={(e) => setForm({ ...form, tauxChange: Number(e.target.value) })} placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <Label>Équivalent en MRU</Label>
-                <Input type="number" value={form.equivalentMRU || ""} onChange={(e) => setForm({ ...form, equivalentMRU: Number(e.target.value) })} placeholder="0" />
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description du projet..." rows={3} />
+              <Label>Autorité Contractante *</Label>
+              <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent>
+                  {autorites.map((a) => (
+                    <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Après la création, vous pourrez déposer les 6 documents obligatoires via le détail du projet.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
@@ -394,10 +320,12 @@ const ReferentielProjets = () => {
           {selected && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Intitulé</span>
-                  <p className="font-medium">{selected.intitule}</p>
-                </div>
+                {selected.intitule && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Intitulé</span>
+                    <p className="font-medium">{selected.intitule}</p>
+                  </div>
+                )}
                 <div>
                   <span className="text-muted-foreground">Autorité Contractante</span>
                   <p className="font-medium">{selected.autoriteContractanteNom || "—"}</p>
@@ -406,34 +334,46 @@ const ReferentielProjets = () => {
                   <span className="text-muted-foreground">Statut</span>
                   <p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{REFERENTIEL_STATUT_LABELS[selected.statut]}</Badge></p>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Bailleur de fonds</span>
-                  <p className="font-medium">{selected.bailleurFonds || "—"}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Devise</span>
-                  <p className="font-medium">{selected.deviseOrigine || "—"}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Montant total</span>
-                  <p className="font-medium">{selected.montantTotal?.toLocaleString("fr-FR") || "—"} {selected.deviseOrigine || ""}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Équivalent MRU</span>
-                  <p className="font-medium">{selected.equivalentMRU?.toLocaleString("fr-FR") || "—"} MRU</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Taux de change</span>
-                  <p className="font-medium">{selected.tauxChange || "—"}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Dates</span>
-                  <p className="text-xs">
-                    Signature: {selected.dateSignature || "—"}<br />
-                    Début: {selected.dateDebut || "—"}<br />
-                    Fin: {selected.dateFinPrevue || "—"}
-                  </p>
-                </div>
+                {selected.bailleurFonds && (
+                  <div>
+                    <span className="text-muted-foreground">Bailleur de fonds</span>
+                    <p className="font-medium">{selected.bailleurFonds}</p>
+                  </div>
+                )}
+                {selected.deviseOrigine && (
+                  <div>
+                    <span className="text-muted-foreground">Devise</span>
+                    <p className="font-medium">{selected.deviseOrigine}</p>
+                  </div>
+                )}
+                {selected.montantTotal != null && (
+                  <div>
+                    <span className="text-muted-foreground">Montant total</span>
+                    <p className="font-medium">{selected.montantTotal.toLocaleString("fr-FR")} {selected.deviseOrigine || ""}</p>
+                  </div>
+                )}
+                {selected.equivalentMRU != null && (
+                  <div>
+                    <span className="text-muted-foreground">Équivalent MRU</span>
+                    <p className="font-medium">{selected.equivalentMRU.toLocaleString("fr-FR")} MRU</p>
+                  </div>
+                )}
+                {selected.tauxChange != null && (
+                  <div>
+                    <span className="text-muted-foreground">Taux de change</span>
+                    <p className="font-medium">{selected.tauxChange}</p>
+                  </div>
+                )}
+                {(selected.dateSignature || selected.dateDebut || selected.dateFinPrevue) && (
+                  <div>
+                    <span className="text-muted-foreground">Dates</span>
+                    <p className="text-xs">
+                      {selected.dateSignature && <>Signature: {selected.dateSignature}<br /></>}
+                      {selected.dateDebut && <>Début: {selected.dateDebut}<br /></>}
+                      {selected.dateFinPrevue && <>Fin: {selected.dateFinPrevue}</>}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {selected.description && (
@@ -446,13 +386,27 @@ const ReferentielProjets = () => {
               {/* Documents */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold">Documents du projet</h3>
+                  <h3 className="text-sm font-semibold">Documents du projet (6 obligatoires)</h3>
                   {(isAC || isAdmin) && (
                     <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
                       <Upload className="h-4 w-4 mr-1" /> Déposer un document
                     </Button>
                   )}
                 </div>
+
+                {/* Checklist of required documents */}
+                <div className="grid grid-cols-1 gap-1 mb-3">
+                  {REFERENTIEL_DOCUMENT_TYPES.map((dt) => {
+                    const uploaded = docs.some((d) => d.type === dt.value);
+                    return (
+                      <div key={dt.value} className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${uploaded ? "bg-green-50 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                        {uploaded ? <CheckCircle className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-muted-foreground" />}
+                        {dt.label}
+                      </div>
+                    );
+                  })}
+                </div>
+
                 {docsLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 ) : docs.length === 0 ? (
@@ -471,25 +425,17 @@ const ReferentielProjets = () => {
               </div>
 
               {/* Workflow Actions in detail */}
-              <div className="flex gap-2 pt-2 border-t border-border flex-wrap">
-                {isAC && selected.statut === "BROUILLON" && (
-                  <Button disabled={actionLoading === selected.id} onClick={() => handleSoumettre(selected.id)}>
-                    {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                    Soumettre au DGB
+              {isDGB && selected.statut === "EN_ATTENTE" && (
+                <div className="flex gap-2 pt-2 border-t border-border flex-wrap">
+                  <Button disabled={actionLoading === selected.id} onClick={() => handleStatutChange(selected.id, "VALIDE")}>
+                    {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                    Valider le référentiel
                   </Button>
-                )}
-                {isDGB && selected.statut === "EN_CONTROLE_DGB" && (
-                  <>
-                    <Button disabled={actionLoading === selected.id} onClick={() => handleStatutChange(selected.id, "VALIDE")}>
-                      {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                      Valider le référentiel
-                    </Button>
-                    <Button variant="destructive" disabled={actionLoading === selected.id} onClick={() => handleStatutChange(selected.id, "REJETE")}>
-                      <XCircle className="h-4 w-4 mr-1" /> Rejeter
-                    </Button>
-                  </>
-                )}
-              </div>
+                  <Button variant="destructive" disabled={actionLoading === selected.id} onClick={() => handleStatutChange(selected.id, "REJETE")}>
+                    <XCircle className="h-4 w-4 mr-1" /> Rejeter
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -502,11 +448,11 @@ const ReferentielProjets = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Type de document</Label>
-              <Select value={uploadType} onValueChange={setUploadType}>
+              <Select value={uploadType} onValueChange={(v) => setUploadType(v as TypeDocumentProjet)}>
                 <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
                 <SelectContent>
-                  {REFERENTIEL_DOCUMENT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
+                  {REFERENTIEL_DOCUMENT_TYPES.map((dt) => (
+                    <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
