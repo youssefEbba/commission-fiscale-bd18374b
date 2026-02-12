@@ -4,16 +4,20 @@ interface RequestOptions {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
+  rawBody?: FormData;
 }
 
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const token = localStorage.getItem("auth_token");
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
     ...options.headers,
   };
+
+  if (!options.rawBody) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -22,7 +26,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || "GET",
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.rawBody ? options.rawBody : options.body ? JSON.stringify(options.body) : undefined,
   });
 
   if (!res.ok) {
@@ -35,36 +39,11 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 }
 
 // Auth
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
+export interface LoginRequest { username: string; password: string; }
+export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; }
+export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; }
 
-export interface RegisterRequest {
-  username: string;
-  password: string;
-  role: string;
-  nomComplet?: string;
-  email?: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  type: string;
-  userId: number;
-  username: string;
-  role: string;
-  nomComplet: string;
-}
-
-export interface UtilisateurDto {
-  id: number;
-  username: string;
-  role: string;
-  nomComplet: string;
-  email: string;
-  actif: boolean;
-}
+export interface UtilisateurDto { id: number; username: string; role: string; nomComplet: string; email: string; actif: boolean; }
 
 export const ROLE_OPTIONS = [
   { value: "ENTREPRISE", label: "Entreprise" },
@@ -79,59 +58,240 @@ export const ROLE_OPTIONS = [
 
 export const ROLE_LABELS: Record<string, string> = {
   PRESIDENT: "Président",
-  DGD: "DGD",
-  DGTCP: "DGTCP",
-  DGI: "DGI",
-  DGB: "DGB",
+  DGD: "DGD – Douanes",
+  DGTCP: "DGTCP – Trésor Public",
+  DGI: "DGI – Impôts",
+  DGB: "DGB – Budget",
   ADMIN_SI: "Admin SI",
   AUTORITE_CONTRACTANTE: "Autorité Contractante",
   ENTREPRISE: "Entreprise",
 };
 
 export const authApi = {
-  login: (data: LoginRequest) =>
-    apiFetch<LoginResponse>("/auth/login", { method: "POST", body: data }),
-  register: (data: RegisterRequest) =>
-    apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
+  login: (data: LoginRequest) => apiFetch<LoginResponse>("/auth/login", { method: "POST", body: data }),
+  register: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
   me: () => apiFetch<Record<string, unknown>>("/auth/me"),
 };
 
-export interface UpdateUtilisateurRequest {
-  username?: string;
-  nomComplet?: string;
-  email?: string;
-  role?: string;
-}
+export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
 
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
-  setActif: (id: number, actif: boolean) =>
-    apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
-  create: (data: RegisterRequest) =>
-    apiFetch<UtilisateurDto>("/auth/register", { method: "POST", body: data }),
-  update: (id: number, data: UpdateUtilisateurRequest) =>
-    apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
-  delete: (id: number) =>
-    apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
-  resetPassword: (id: number, newPassword: string) =>
-    apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
+  setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
+  create: (data: RegisterRequest) => apiFetch<UtilisateurDto>("/auth/register", { method: "POST", body: data }),
+  update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
+  delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
+  resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
 };
 
 // Permissions
-export interface PermissionDto {
-  id: number;
-  code: string;
-  description: string;
-  processus?: string;
-}
+export interface PermissionDto { id: number; code: string; description: string; processus?: string; }
 
 export const permissionApi = {
   listAll: () => apiFetch<PermissionDto[]>("/admin/permissions"),
   listRoles: () => apiFetch<string[]>("/admin/permissions/roles"),
   getByRole: (role: string) => apiFetch<PermissionDto[]>(`/admin/permissions/roles/${role}`),
-  assign: (role: string, permissionCode: string) =>
-    apiFetch<void>(`/admin/permissions/roles/${role}?permissionCode=${encodeURIComponent(permissionCode)}`, { method: "POST" }),
-  revoke: (role: string, permissionCode: string) =>
-    apiFetch<void>(`/admin/permissions/roles/${role}?permissionCode=${encodeURIComponent(permissionCode)}`, { method: "DELETE" }),
+  assign: (role: string, permissionCode: string) => apiFetch<void>(`/admin/permissions/roles/${role}?permissionCode=${encodeURIComponent(permissionCode)}`, { method: "POST" }),
+  revoke: (role: string, permissionCode: string) => apiFetch<void>(`/admin/permissions/roles/${role}?permissionCode=${encodeURIComponent(permissionCode)}`, { method: "DELETE" }),
+};
+
+// Entreprises
+export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; }
+
+export const entrepriseApi = {
+  getAll: () => apiFetch<EntrepriseDto[]>("/entreprises"),
+  getById: (id: number) => apiFetch<EntrepriseDto>(`/entreprises/${id}`),
+  create: (data: EntrepriseDto) => apiFetch<EntrepriseDto>("/entreprises", { method: "POST", body: data }),
+  update: (id: number, data: EntrepriseDto) => apiFetch<EntrepriseDto>(`/entreprises/${id}`, { method: "PUT", body: data }),
+  delete: (id: number) => apiFetch<void>(`/entreprises/${id}`, { method: "DELETE" }),
+};
+
+// Autorités Contractantes
+export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; }
+
+export const autoriteContractanteApi = {
+  getAll: () => apiFetch<AutoriteContractanteDto[]>("/autorites-contractantes"),
+  getById: (id: number) => apiFetch<AutoriteContractanteDto>(`/autorites-contractantes/${id}`),
+  create: (data: AutoriteContractanteDto) => apiFetch<AutoriteContractanteDto>("/autorites-contractantes", { method: "POST", body: data }),
+  update: (id: number, data: AutoriteContractanteDto) => apiFetch<AutoriteContractanteDto>(`/autorites-contractantes/${id}`, { method: "PUT", body: data }),
+  delete: (id: number) => apiFetch<void>(`/autorites-contractantes/${id}`, { method: "DELETE" }),
+};
+
+// Demandes de correction (P2)
+export type DemandeStatut = "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE";
+
+export interface DemandeCorrectionDto {
+  id: number;
+  reference?: string;
+  autoriteContractanteId?: number;
+  autoriteContractanteNom?: string;
+  statut: DemandeStatut;
+  dateCreation?: string;
+  dateMiseAJour?: string;
+  montant?: number;
+  devise?: string;
+  description?: string;
+}
+
+export interface CreateDemandeCorrectionRequest {
+  autoriteContractanteId: number;
+  description?: string;
+  montant?: number;
+  devise?: string;
+}
+
+export interface DocumentDto {
+  id: number;
+  type: string;
+  nomFichier: string;
+  dateUpload?: string;
+  taille?: number;
+}
+
+export const DOCUMENT_TYPES = [
+  "LETTRE_SAISINE", "PV_OUVERTURE", "ATTESTATION_FISCALE", "OFFRE_FINANCIERE",
+  "TABLEAU_MODELE", "DAO_DQE", "LISTE_ITEMS", "CONTRAT", "CERTIFICAT_NIF",
+  "LETTRE_CORRECTION", "BULLETIN_LIQUIDATION", "DECLARATION_DOUANE", "FACTURE",
+  "CONNAISSEMENT", "DECOMPTE",
+] as const;
+
+export const demandeCorrectionApi = {
+  getAll: () => apiFetch<DemandeCorrectionDto[]>("/demandes-correction"),
+  getById: (id: number) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`),
+  getByStatut: (statut: DemandeStatut) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-statut?statut=${statut}`),
+  getByAutorite: (autoriteId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-autorite/${autoriteId}`),
+  create: (data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>("/demandes-correction", { method: "POST", body: data }),
+  updateStatut: (id: number, statut: DemandeStatut) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`),
+  uploadDocument: (id: number, type: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/demandes-correction/${id}/documents?type=${encodeURIComponent(type)}`, {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
+};
+
+// Certificats de crédit (P3)
+export type CertificatStatut = "DEMANDE" | "EMIS" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+
+export interface CertificatCreditDto {
+  id: number;
+  reference?: string;
+  entrepriseId?: number;
+  entrepriseNom?: string;
+  statut: CertificatStatut;
+  montantDouane?: number;
+  montantInterieur?: number;
+  montantTotal?: number;
+  dateCreation?: string;
+  dateMiseAJour?: string;
+}
+
+export interface CreateCertificatCreditRequest {
+  entrepriseId: number;
+  demandeCorrectionId?: number;
+  montantDouane?: number;
+  montantInterieur?: number;
+}
+
+export const certificatCreditApi = {
+  getAll: () => apiFetch<CertificatCreditDto[]>("/certificats-credit"),
+  getById: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`),
+  getByStatut: (statut: CertificatStatut) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-statut?statut=${statut}`),
+  getByEntreprise: (entrepriseId: number) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-entreprise/${entrepriseId}`),
+  create: (data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>("/certificats-credit", { method: "POST", body: data }),
+  updateStatut: (id: number, statut: CertificatStatut) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+};
+
+// Utilisations de crédit (P4/P5)
+export type UtilisationStatut = "DEMANDEE" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
+export type UtilisationType = "DOUANE" | "INTERIEUR";
+
+export interface UtilisationCreditDto {
+  id: number;
+  certificatCreditId: number;
+  type?: UtilisationType;
+  montant?: number;
+  statut: UtilisationStatut;
+  dateCreation?: string;
+  dateMiseAJour?: string;
+  description?: string;
+  entrepriseNom?: string;
+  certificatReference?: string;
+}
+
+export interface CreateUtilisationCreditRequest {
+  certificatCreditId: number;
+  type?: UtilisationType;
+  montant?: number;
+  description?: string;
+}
+
+export const utilisationCreditApi = {
+  getAll: () => apiFetch<UtilisationCreditDto[]>("/utilisations-credit"),
+  getById: (id: number) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`),
+  getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
+  create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
+  updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+};
+
+// Audit Logs (P8 / Admin)
+export interface AuditLogDto {
+  id: number;
+  username: string;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  entityType: string;
+  entityId?: number;
+  details?: string;
+  dateAction: string;
+}
+
+export interface PageAuditLogDto {
+  content: AuditLogDto[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export const auditLogApi = {
+  getAll: (params?: {
+    username?: string;
+    entityType?: string;
+    action?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    size?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.username) searchParams.set("username", params.username);
+    if (params?.entityType) searchParams.set("entityType", params.entityType);
+    if (params?.action) searchParams.set("action", params.action);
+    if (params?.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+    if (params?.dateTo) searchParams.set("dateTo", params.dateTo);
+    searchParams.set("page", String(params?.page ?? 0));
+    searchParams.set("size", String(params?.size ?? 20));
+    return apiFetch<PageAuditLogDto>(`/audit-logs?${searchParams.toString()}`);
+  },
+};
+
+// Statut labels
+export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
+  RECUE: "Reçue", INCOMPLETE: "Incomplète", RECEVABLE: "Recevable",
+  EN_EVALUATION: "En évaluation", EN_VALIDATION: "En validation",
+  ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée",
+};
+
+export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
+  DEMANDE: "Demandé", EMIS: "Émis", OUVERT: "Ouvert",
+  MODIFIE: "Modifié", CLOTURE: "Clôturé", ANNULE: "Annulé",
+};
+
+export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
+  DEMANDEE: "Demandée", EN_VERIFICATION: "En vérification", VISE: "Visé",
+  VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
 };
