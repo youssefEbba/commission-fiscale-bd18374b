@@ -37,7 +37,11 @@ const Conventions = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState<CreateConventionRequest>({ reference: "", intitule: "", bailleur: "" });
+  const [form, setForm] = useState<CreateConventionRequest>({
+    reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+    dateSignature: "", dateDebut: "", dateFin: "",
+    montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
+  });
   const [creating, setCreating] = useState(false);
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
@@ -68,7 +72,11 @@ const Conventions = () => {
       await conventionApi.create(form);
       toast({ title: "Succès", description: "Convention créée" });
       setCreateOpen(false);
-      setForm({ reference: "", intitule: "", bailleur: "" });
+      setForm({
+        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+        dateSignature: "", dateDebut: "", dateFin: "",
+        montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
+      });
       fetchConventions();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -149,11 +157,13 @@ const Conventions = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <Table>
-                <TableHeader>
+                 <TableHeader>
                   <TableRow>
                     <TableHead>Référence</TableHead>
                     <TableHead>Intitulé</TableHead>
                     <TableHead>Bailleur</TableHead>
+                    <TableHead>Montant Devise</TableHead>
+                    <TableHead>Montant MRU</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -162,7 +172,6 @@ const Conventions = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune convention</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((c) => (
@@ -170,6 +179,12 @@ const Conventions = () => {
                         <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{c.intitule || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{c.bailleur || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {c.montantDevise ? `${c.montantDevise.toLocaleString("fr-FR")} ${c.deviseOrigine || ""}` : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {c.montantMru ? `${c.montantMru.toLocaleString("fr-FR")} MRU` : "—"}
+                        </TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
                             {CONVENTION_STATUT_LABELS[c.statut]}
@@ -205,11 +220,11 @@ const Conventions = () => {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Nouvelle Convention</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
             <div className="space-y-2">
               <Label>Référence *</Label>
               <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="CONV-2026-001" />
@@ -219,8 +234,46 @@ const Conventions = () => {
               <Input value={form.intitule} onChange={(e) => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Convention de financement..." />
             </div>
             <div className="space-y-2">
-              <Label>Bailleur de fonds</Label>
+              <Label>Bailleur de fonds *</Label>
               <Input value={form.bailleur} onChange={(e) => setForm(f => ({ ...f, bailleur: e.target.value }))} placeholder="Banque mondiale..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Détails bailleur</Label>
+              <Input value={form.bailleurDetails} onChange={(e) => setForm(f => ({ ...f, bailleurDetails: e.target.value }))} placeholder="Siège, type de prêt..." />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Date signature</Label>
+                <Input type="date" value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Date début</Label>
+                <Input type="date" value={form.dateDebut} onChange={(e) => setForm(f => ({ ...f, dateDebut: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Date fin</Label>
+                <Input type="date" value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Montant devise</Label>
+                <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => setForm(f => ({ ...f, montantDevise: e.target.value ? Number(e.target.value) : undefined }))} placeholder="1200000" />
+              </div>
+              <div className="space-y-2">
+                <Label>Devise d'origine</Label>
+                <Input value={form.deviseOrigine} onChange={(e) => setForm(f => ({ ...f, deviseOrigine: e.target.value }))} placeholder="EUR" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Montant MRU</Label>
+                <Input type="number" value={form.montantMru ?? ""} onChange={(e) => setForm(f => ({ ...f, montantMru: e.target.value ? Number(e.target.value) : undefined }))} placeholder="52000000" />
+              </div>
+              <div className="space-y-2">
+                <Label>Taux de change</Label>
+                <Input type="number" step="0.01" value={form.tauxChange ?? ""} onChange={(e) => setForm(f => ({ ...f, tauxChange: e.target.value ? Number(e.target.value) : undefined }))} placeholder="43.33" />
+              </div>
             </div>
           </div>
           <DialogFooter>
