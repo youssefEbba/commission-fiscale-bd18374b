@@ -290,12 +290,17 @@ export interface DocumentDto {
   taille?: number;
 }
 
-export const DOCUMENT_TYPES = [
-  "LETTRE_SAISINE", "PV_OUVERTURE", "ATTESTATION_FISCALE", "OFFRE_FINANCIERE",
-  "TABLEAU_MODELE", "DAO_DQE", "LISTE_ITEMS", "CONTRAT", "CERTIFICAT_NIF",
-  "LETTRE_CORRECTION", "BULLETIN_LIQUIDATION", "DECLARATION_DOUANE", "FACTURE",
-  "CONNAISSEMENT", "DECOMPTE",
-] as const;
+export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
+  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
+  { value: "PV_OUVERTURE", label: "PV d'ouverture" },
+  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale" },
+  { value: "OFFRE_FINANCIERE", label: "Offre financière" },
+  { value: "TABLEAU_MODELE", label: "Tableau modèle" },
+  { value: "DAO_DQE", label: "DAO + DQE" },
+  { value: "LISTE_ITEMS", label: "Liste items Excel" },
+];
+
+export const DOCUMENT_TYPES = DOCUMENT_TYPES_REQUIS.map((t) => t.value);
 
 export const demandeCorrectionApi = {
   getAll: () => apiFetch<DemandeCorrectionDto[]>("/demandes-correction"),

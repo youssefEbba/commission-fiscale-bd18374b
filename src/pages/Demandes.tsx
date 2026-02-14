@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
-  DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES,
+  DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS,
   entrepriseApi, EntrepriseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -332,10 +332,10 @@ const Demandes = () => {
                 </div>
               </div>
 
-              {/* Documents */}
+              {/* Documents requis (checklist) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold">Documents</h3>
+                  <h3 className="text-sm font-semibold">Pièces requises</h3>
                   {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
                     <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
                       <Upload className="h-4 w-4 mr-1" /> Ajouter
@@ -344,17 +344,36 @@ const Demandes = () => {
                 </div>
                 {docsLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                ) : docs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucun document</p>
                 ) : (
                   <div className="space-y-1">
-                    {docs.map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
-                        <FileText className="h-4 w-4 text-primary shrink-0" />
-                        <span className="flex-1 truncate">{doc.nomFichier}</span>
-                        <Badge variant="secondary" className="text-[10px]">{doc.type}</Badge>
-                      </div>
-                    ))}
+                    {DOCUMENT_TYPES_REQUIS.map((dt) => {
+                      const uploaded = docs.find((d) => d.type === dt.value);
+                      return (
+                        <div key={dt.value} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                          {uploaded ? (
+                            <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                          ) : (
+                            <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
+                          )}
+                          <span className={`flex-1 ${uploaded ? "font-medium" : "text-muted-foreground"}`}>
+                            {dt.label}
+                          </span>
+                          {uploaded && (
+                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{uploaded.nomFichier}</span>
+                          )}
+                          {!uploaded && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => { setUploadType(dt.value); setUploadOpen(true); }}
+                            >
+                              Uploader
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -392,8 +411,8 @@ const Demandes = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
+                  {DOCUMENT_TYPES_REQUIS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
