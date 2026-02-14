@@ -27,6 +27,7 @@ const Register = () => {
     nomComplet: "",
     email: "",
     role: "",
+    entrepriseId: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,7 @@ const Register = () => {
         role: form.role,
         nomComplet: form.nomComplet,
         email: form.email,
+        ...(form.role === "ENTREPRISE" && form.entrepriseId ? { entrepriseId: Number(form.entrepriseId) } : {}),
       });
       login(res);
       toast({ title: "Inscription réussie", description: "Votre compte a été créé avec succès" });
@@ -113,6 +115,13 @@ const Register = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {form.role === "ENTREPRISE" && (
+              <div className="space-y-2">
+                <Label htmlFor="entrepriseId">ID Entreprise</Label>
+                <Input id="entrepriseId" type="number" value={form.entrepriseId} onChange={(e) => update("entrepriseId", e.target.value)} placeholder="Identifiant de l'entreprise" required />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="reg-password">Mot de passe</Label>
