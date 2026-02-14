@@ -267,22 +267,19 @@ export type DemandeStatut = "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATIO
 
 export interface DemandeCorrectionDto {
   id: number;
-  reference?: string;
+  numero?: string;
+  statut: DemandeStatut;
+  dateDepot?: string;
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
-  statut: DemandeStatut;
-  dateCreation?: string;
-  dateMiseAJour?: string;
-  montant?: number;
-  devise?: string;
-  description?: string;
+  entrepriseId?: number;
+  entrepriseRaisonSociale?: string;
+  documents?: DocumentDto[];
 }
 
 export interface CreateDemandeCorrectionRequest {
-  autoriteContractanteId: number;
-  description?: string;
-  montant?: number;
-  devise?: string;
+  autoriteContractanteId?: number;
+  entrepriseId: number;
 }
 
 export interface DocumentDto {
@@ -305,6 +302,7 @@ export const demandeCorrectionApi = {
   getById: (id: number) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`),
   getByStatut: (statut: DemandeStatut) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-statut?statut=${statut}`),
   getByAutorite: (autoriteId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-autorite/${autoriteId}`),
+  getByEntreprise: (entrepriseId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-entreprise/${entrepriseId}`),
   create: (data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>("/demandes-correction", { method: "POST", body: data }),
   updateStatut: (id: number, statut: DemandeStatut) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/statut?statut=${statut}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`),

@@ -4,14 +4,14 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES,
+  entrepriseApi, EntrepriseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +19,6 @@ import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   RECUE: "bg-blue-100 text-blue-800",
@@ -32,7 +31,6 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   NOTIFIEE: "bg-gray-100 text-gray-800",
 };
 
-// Role-based workflow transitions
 const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType }[]> = {
   DGD: [
     { from: ["RECUE", "RECEVABLE"], to: "EN_EVALUATION", label: "Commencer l'évaluation", icon: ArrowRight },
@@ -76,6 +74,12 @@ const Demandes = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Create dialog
+  const [createOpen, setCreateOpen] = useState(false);
+  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
+  const [createEntrepriseId, setCreateEntrepriseId] = useState("");
+  const [creating, setCreating] = useState(false);
+
   const fetchDemandes = async () => {
     setLoading(true);
     try {
@@ -90,6 +94,35 @@ const Demandes = () => {
 
   useEffect(() => { fetchDemandes(); }, []);
 
+  const openCreateDialog = async () => {
+    setCreateOpen(true);
+    try {
+      const data = await entrepriseApi.getAll();
+      setEntreprises(data);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les entreprises", variant: "destructive" });
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!createEntrepriseId) return;
+    setCreating(true);
+    try {
+      await demandeCorrectionApi.create({
+        autoriteContractanteId: user?.autoriteContractanteId,
+        entrepriseId: Number(createEntrepriseId),
+      });
+      toast({ title: "Succès", description: "Demande créée avec succès" });
+      setCreateOpen(false);
+      setCreateEntrepriseId("");
+      fetchDemandes();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const openDetail = async (d: DemandeCorrectionDto) => {
     setSelected(d);
     setDocsLoading(true);
@@ -97,7 +130,7 @@ const Demandes = () => {
       const documents = await demandeCorrectionApi.getDocuments(d.id);
       setDocs(documents);
     } catch {
-      setDocs([]);
+      setDocs(d.documents || []);
     } finally {
       setDocsLoading(false);
     }
@@ -139,8 +172,9 @@ const Demandes = () => {
 
   const filtered = demandes.filter((d) => {
     const matchSearch =
-      (d.reference || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.autoriteContractanteNom || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.entrepriseRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       String(d.id).includes(search);
     const matchStatut = filterStatut === "ALL" || d.statut === filterStatut;
     return matchSearch && matchStatut;
@@ -148,7 +182,6 @@ const Demandes = () => {
 
   const transitions = ROLE_TRANSITIONS[role] || [];
 
-  // What this role sees as title
   const pageTitle: Record<string, string> = {
     AUTORITE_CONTRACTANTE: "Mes demandes de correction",
     DGD: "Dossiers à évaluer (Douanes)",
@@ -174,6 +207,11 @@ const Demandes = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
+              </Button>
+            )}
             <Button variant="outline" onClick={fetchDemandes} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
@@ -209,30 +247,32 @@ const Demandes = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Réf.</TableHead>
+                    <TableHead>N° Demande</TableHead>
                     <TableHead>Autorité Contractante</TableHead>
+                    <TableHead>Entreprise</TableHead>
                     <TableHead>Statut</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Date dépôt</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((d) => (
                       <TableRow key={d.id}>
-                        <TableCell className="font-medium">{d.reference || `#${d.id}`}</TableCell>
+                        <TableCell className="font-medium">{d.numero || `#${d.id}`}</TableCell>
                         <TableCell className="text-muted-foreground">{d.autoriteContractanteNom || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{d.entrepriseRaisonSociale || "—"}</TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${STATUT_COLORS[d.statut] || ""}`}>
                             {DEMANDE_STATUT_LABELS[d.statut]}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {d.dateCreation ? new Date(d.dateCreation).toLocaleDateString("fr-FR") : "—"}
+                          {d.dateDepot ? new Date(d.dateDepot).toLocaleDateString("fr-FR") : "—"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
@@ -269,7 +309,7 @@ const Demandes = () => {
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Demande {selected?.reference || `#${selected?.id}`}</DialogTitle>
+            <DialogTitle>Demande {selected?.numero || `#${selected?.id}`}</DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="space-y-4">
@@ -279,24 +319,18 @@ const Demandes = () => {
                   <p className="font-medium">{selected.autoriteContractanteNom || "—"}</p>
                 </div>
                 <div>
+                  <span className="text-muted-foreground">Entreprise</span>
+                  <p className="font-medium">{selected.entrepriseRaisonSociale || "—"}</p>
+                </div>
+                <div>
                   <span className="text-muted-foreground">Statut</span>
                   <p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{DEMANDE_STATUT_LABELS[selected.statut]}</Badge></p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Montant</span>
-                  <p className="font-medium">{selected.montant?.toLocaleString("fr-FR") || "—"} {selected.devise || ""}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Date</span>
-                  <p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p>
+                  <span className="text-muted-foreground">Date de dépôt</span>
+                  <p>{selected.dateDepot ? new Date(selected.dateDepot).toLocaleDateString("fr-FR") : "—"}</p>
                 </div>
               </div>
-              {selected.description && (
-                <div>
-                  <span className="text-sm text-muted-foreground">Description</span>
-                  <p className="text-sm mt-1">{selected.description}</p>
-                </div>
-              )}
 
               {/* Documents */}
               <div>
@@ -374,6 +408,33 @@ const Demandes = () => {
             <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadType}>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Uploader
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Nouvelle demande de correction</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Entreprise *</Label>
+              <Select value={createEntrepriseId} onValueChange={setCreateEntrepriseId}>
+                <SelectTrigger><SelectValue placeholder="Sélectionnez l'entreprise" /></SelectTrigger>
+                <SelectContent>
+                  {entreprises.map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)}>{e.raisonSociale}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
+            <Button onClick={handleCreate} disabled={creating || !createEntrepriseId}>
+              {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+              Créer
             </Button>
           </DialogFooter>
         </DialogContent>
