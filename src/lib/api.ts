@@ -143,6 +143,8 @@ export interface ReferentielProjetDto {
   conventionReference?: string;
   conventionIntitule?: string;
   conventionBailleur?: string;
+  valideParUserId?: number;
+  dateValidation?: string;
 }
 
 export interface CreateReferentielProjetRequest {
@@ -211,6 +213,8 @@ export interface ConventionDto {
   dateCreation?: string;
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
+  valideParUserId?: number;
+  dateValidation?: string;
 }
 
 export interface CreateConventionRequest {
