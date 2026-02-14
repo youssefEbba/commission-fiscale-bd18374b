@@ -418,10 +418,19 @@ const ReferentielProjets = () => {
                   </div>
                 )}
                 {selected.conventionReference && (
-                  <div className="col-span-2 rounded-md border border-primary/20 bg-primary/5 p-3">
+                  <div className="col-span-2 rounded-md border border-primary/20 bg-primary/5 p-3 space-y-1">
                     <span className="text-muted-foreground text-xs">Convention</span>
                     <p className="font-medium text-sm">{selected.conventionReference} — {selected.conventionIntitule}</p>
                     {selected.conventionBailleur && <p className="text-xs text-muted-foreground">Bailleur: {selected.conventionBailleur}</p>}
+                    {selected.conventionBailleurDetails && <p className="text-xs text-muted-foreground">Détails: {selected.conventionBailleurDetails}</p>}
+                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                      {selected.conventionDateSignature && <p><span className="text-muted-foreground">Signature:</span> {selected.conventionDateSignature}</p>}
+                      {selected.conventionDateDebut && <p><span className="text-muted-foreground">Début:</span> {selected.conventionDateDebut}</p>}
+                      {selected.conventionDateFin && <p><span className="text-muted-foreground">Fin:</span> {selected.conventionDateFin}</p>}
+                      {selected.conventionMontantDevise != null && <p><span className="text-muted-foreground">Montant:</span> {selected.conventionMontantDevise.toLocaleString("fr-FR")} {selected.conventionDeviseOrigine || ""}</p>}
+                      {selected.conventionMontantMru != null && <p><span className="text-muted-foreground">MRU:</span> {selected.conventionMontantMru.toLocaleString("fr-FR")} MRU</p>}
+                      {selected.conventionTauxChange != null && <p><span className="text-muted-foreground">Taux:</span> {selected.conventionTauxChange}</p>}
+                    </div>
                   </div>
                 )}
                 <div>

@@ -123,6 +123,7 @@ export type ReferentielStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
 
 export interface ReferentielProjetDto {
   id: number;
+  numero?: string;
   reference?: string;
   intitule?: string;
   autoriteContractanteId?: number;
@@ -137,12 +138,21 @@ export interface ReferentielProjetDto {
   tauxChange?: number;
   statut: ReferentielStatut;
   dateCreation?: string;
+  dateDepot?: string;
   dateMiseAJour?: string;
   description?: string;
   conventionId?: number;
   conventionReference?: string;
   conventionIntitule?: string;
   conventionBailleur?: string;
+  conventionBailleurDetails?: string;
+  conventionDateSignature?: string;
+  conventionDateDebut?: string;
+  conventionDateFin?: string;
+  conventionMontantDevise?: number;
+  conventionMontantMru?: number;
+  conventionDeviseOrigine?: string;
+  conventionTauxChange?: number;
   valideParUserId?: number;
   dateValidation?: string;
 }
@@ -202,12 +212,13 @@ export interface ConventionDto {
   reference?: string;
   intitule?: string;
   bailleur?: string;
+  bailleurDetails?: string;
   dateSignature?: string;
   dateDebut?: string;
-  dateFinPrevue?: string;
-  montantTotal?: number;
+  dateFin?: string;
+  montantDevise?: number;
   deviseOrigine?: string;
-  equivalentMRU?: number;
+  montantMru?: number;
   tauxChange?: number;
   statut: ConventionStatut;
   dateCreation?: string;
@@ -221,6 +232,14 @@ export interface CreateConventionRequest {
   reference?: string;
   intitule?: string;
   bailleur?: string;
+  bailleurDetails?: string;
+  dateSignature?: string;
+  dateDebut?: string;
+  dateFin?: string;
+  montantDevise?: number;
+  deviseOrigine?: string;
+  montantMru?: number;
+  tauxChange?: number;
 }
 
 export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
