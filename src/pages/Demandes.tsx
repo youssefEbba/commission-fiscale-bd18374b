@@ -424,7 +424,9 @@ const Demandes = () => {
                 <SelectTrigger><SelectValue placeholder="Sélectionnez l'entreprise" /></SelectTrigger>
                 <SelectContent>
                   {entreprises.map((e) => (
-                    <SelectItem key={e.id} value={String(e.id)}>{e.raisonSociale}</SelectItem>
+                    <SelectItem key={e.id} value={String(e.id)}>
+                      {e.raisonSociale} — NIF: {e.nif}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

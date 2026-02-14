@@ -97,7 +97,7 @@ export const permissionApi = {
 };
 
 // Entreprises
-export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; }
+export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; situationFiscale?: string; }
 
 export const entrepriseApi = {
   getAll: () => apiFetch<EntrepriseDto[]>("/entreprises"),
