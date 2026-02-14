@@ -154,7 +154,7 @@ const Dashboard = () => {
                   {pendingDemandes.slice(0, 5).map((d) => (
                     <div key={d.id} className="flex items-center justify-between rounded-lg border border-border p-3">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{d.reference || `Demande #${d.id}`}</p>
+                        <p className="text-sm font-medium text-foreground">{d.numero || `Demande #${d.id}`}</p>
                         <p className="text-xs text-muted-foreground">{d.autoriteContractanteNom || "—"}</p>
                       </div>
                       <Badge variant="outline" className="text-xs">{DEMANDE_STATUT_LABELS[d.statut]}</Badge>
