@@ -44,9 +44,6 @@ const ReferentielProjets = () => {
   const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
   const [form, setForm] = useState<CreateReferentielProjetRequest>({ autoriteContractanteId: 0 });
   const [creating, setCreating] = useState(false);
-  const [createFiles, setCreateFiles] = useState<Record<TypeDocumentProjet, File | null>>(
-    () => Object.fromEntries(REFERENTIEL_DOCUMENT_TYPES.map(dt => [dt.value, null])) as Record<TypeDocumentProjet, File | null>
-  );
   const [validConventions, setValidConventions] = useState<ConventionDto[]>([]);
   const [selectedConventionId, setSelectedConventionId] = useState<string>("");
 
@@ -109,7 +106,7 @@ const ReferentielProjets = () => {
     }
   };
 
-  const allFilesSelected = REFERENTIEL_DOCUMENT_TYPES.every(dt => createFiles[dt.value] !== null);
+  
 
   const handleCreate = async () => {
     if (!form.autoriteContractanteId && !isAC) {
@@ -120,31 +117,19 @@ const ReferentielProjets = () => {
       toast({ title: "Erreur", description: "Sélectionnez une convention validée", variant: "destructive" });
       return;
     }
-    if (!allFilesSelected) {
-      toast({ title: "Erreur", description: "Tous les 6 documents sont obligatoires", variant: "destructive" });
-      return;
-    }
     if (isAC && user) {
       form.autoriteContractanteId = user.autoriteContractanteId || null;
     }
     setCreating(true);
     try {
-      const projet = await referentielProjetApi.create({
+      await referentielProjetApi.create({
         ...form,
         conventionId: Number(selectedConventionId),
       });
-      // Upload all 6 documents
-      for (const dt of REFERENTIEL_DOCUMENT_TYPES) {
-        const file = createFiles[dt.value];
-        if (file) {
-          await referentielProjetApi.uploadDocument(projet.id, dt.value, file);
-        }
-      }
-      toast({ title: "Succès", description: "Projet créé avec les 6 documents" });
+      toast({ title: "Succès", description: "Projet créé avec succès" });
       setCreateOpen(false);
       setForm({ autoriteContractanteId: 0 });
       setSelectedConventionId("");
-      setCreateFiles(Object.fromEntries(REFERENTIEL_DOCUMENT_TYPES.map(dt => [dt.value, null])) as Record<TypeDocumentProjet, File | null>);
       fetchProjets();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -325,7 +310,7 @@ const ReferentielProjets = () => {
               <FolderOpen className="h-5 w-5 text-primary" />
               Nouveau Référentiel Projet
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">Processus P1 — Associez une convention validée et déposez les documents requis</p>
+            <p className="text-sm text-muted-foreground">Processus P1 — Associez une convention validée</p>
           </DialogHeader>
           <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
 
@@ -406,58 +391,10 @@ const ReferentielProjets = () => {
               })()}
             </div>
 
-            {/* Section 3: Documents */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">
-                3. Documents obligatoires
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  ({REFERENTIEL_DOCUMENT_TYPES.filter(dt => createFiles[dt.value] !== null).length}/{REFERENTIEL_DOCUMENT_TYPES.length})
-                </span>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {REFERENTIEL_DOCUMENT_TYPES.map((dt) => {
-                  const file = createFiles[dt.value];
-                  return (
-                    <div key={dt.value} className={`rounded-lg border p-3 space-y-2 transition-colors ${file ? "border-green-300 bg-green-50/50" : "border-border bg-background"}`}>
-                      <div className="flex items-center gap-2">
-                        {file ? (
-                          <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                        ) : (
-                          <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
-                        )}
-                        <Label className="text-xs font-medium leading-tight">{dt.label}</Label>
-                      </div>
-                      {file ? (
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-muted-foreground truncate">{file.name}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] text-destructive hover:text-destructive"
-                            onClick={() => setCreateFiles(prev => ({ ...prev, [dt.value]: null }))}
-                          >
-                            Retirer
-                          </Button>
-                        </div>
-                      ) : (
-                        <Input
-                          type="file"
-                          className="text-xs h-8"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0] || null;
-                            setCreateFiles(prev => ({ ...prev, [dt.value]: f }));
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
           <DialogFooter className="border-t border-border pt-4">
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !allFilesSelected || !selectedConventionId}>
+            <Button onClick={handleCreate} disabled={creating || !selectedConventionId}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer le projet
             </Button>
