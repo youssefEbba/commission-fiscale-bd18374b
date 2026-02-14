@@ -137,6 +137,9 @@ export interface ReferentielProjetDto {
   equivalentMRU?: number;
   tauxChange?: number;
   statut: ReferentielStatut;
+  nomProjet?: string;
+  administrateurProjet?: string;
+  referenceBciSecteur?: string;
   dateCreation?: string;
   dateDepot?: string;
   dateMiseAJour?: string;
@@ -160,6 +163,9 @@ export interface ReferentielProjetDto {
 export interface CreateReferentielProjetRequest {
   autoriteContractanteId?: number | null;
   conventionId?: number;
+  nomProjet?: string;
+  administrateurProjet?: string;
+  referenceBciSecteur?: string;
 }
 
 export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {

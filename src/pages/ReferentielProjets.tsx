@@ -42,7 +42,7 @@ const ReferentielProjets = () => {
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
   const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
-  const [form, setForm] = useState<CreateReferentielProjetRequest>({ autoriteContractanteId: 0 });
+  const [form, setForm] = useState<CreateReferentielProjetRequest>({ autoriteContractanteId: 0, nomProjet: "", administrateurProjet: "", referenceBciSecteur: "" });
   const [creating, setCreating] = useState(false);
   const [validConventions, setValidConventions] = useState<ConventionDto[]>([]);
   const [selectedConventionId, setSelectedConventionId] = useState<string>("");
@@ -128,7 +128,7 @@ const ReferentielProjets = () => {
       });
       toast({ title: "Succès", description: "Projet créé avec succès" });
       setCreateOpen(false);
-      setForm({ autoriteContractanteId: 0 });
+      setForm({ autoriteContractanteId: 0, nomProjet: "", administrateurProjet: "", referenceBciSecteur: "" });
       setSelectedConventionId("");
       fetchProjets();
     } catch (e: any) {
@@ -243,7 +243,7 @@ const ReferentielProjets = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Réf.</TableHead>
-                    <TableHead>Intitulé</TableHead>
+                    <TableHead>Nom du projet</TableHead>
                     <TableHead>Autorité Contractante</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Statut</TableHead>
@@ -260,7 +260,7 @@ const ReferentielProjets = () => {
                     filtered.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">{p.reference || `#${p.id}`}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{p.intitule || "—"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{p.nomProjet || p.intitule || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{p.autoriteContractanteNom || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {p.montantTotal ? `${p.montantTotal.toLocaleString("fr-FR")} ${p.deviseOrigine || ""}` : "—"}
@@ -342,9 +342,26 @@ const ReferentielProjets = () => {
               )}
             </div>
 
-            {/* Section 2: Convention */}
+            {/* Section 2: Informations du projet */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">2. Convention associée</h3>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">2. Informations du projet</h3>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nom du projet *</Label>
+                <Input placeholder="Ex: Projet X" value={form.nomProjet || ""} onChange={(e) => setForm({ ...form, nomProjet: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Administrateur du projet</Label>
+                <Input placeholder="Ex: DG Budget" value={form.administrateurProjet || ""} onChange={(e) => setForm({ ...form, administrateurProjet: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Référence BCI secteur</Label>
+                <Input placeholder="Ex: BCI-SEC-2026-001" value={form.referenceBciSecteur || ""} onChange={(e) => setForm({ ...form, referenceBciSecteur: e.target.value })} />
+              </div>
+            </div>
+
+            {/* Section 3: Convention */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">3. Convention associée</h3>
               <div className="space-y-1.5">
                 <Label className="text-xs">Convention validée *</Label>
                 <Select value={selectedConventionId} onValueChange={setSelectedConventionId}>
@@ -394,7 +411,7 @@ const ReferentielProjets = () => {
           </div>
           <DialogFooter className="border-t border-border pt-4">
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !selectedConventionId}>
+            <Button onClick={handleCreate} disabled={creating || !selectedConventionId || !form.nomProjet?.trim()}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer le projet
             </Button>
@@ -411,6 +428,24 @@ const ReferentielProjets = () => {
           {selected && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
+                {selected.nomProjet && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Nom du projet</span>
+                    <p className="font-medium">{selected.nomProjet}</p>
+                  </div>
+                )}
+                {selected.administrateurProjet && (
+                  <div>
+                    <span className="text-muted-foreground">Administrateur</span>
+                    <p className="font-medium">{selected.administrateurProjet}</p>
+                  </div>
+                )}
+                {selected.referenceBciSecteur && (
+                  <div>
+                    <span className="text-muted-foreground">Réf. BCI Secteur</span>
+                    <p className="font-medium">{selected.referenceBciSecteur}</p>
+                  </div>
+                )}
                 {selected.intitule && (
                   <div className="col-span-2">
                     <span className="text-muted-foreground">Intitulé</span>
