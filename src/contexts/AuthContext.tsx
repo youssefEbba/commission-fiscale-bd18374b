@@ -10,6 +10,7 @@ interface AuthUser {
   role: AppRole;
   nomComplet: string;
   autoriteContractanteId?: number;
+  entrepriseId?: number;
 }
 
 interface AuthContextType {
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       role: data.role as AppRole,
       nomComplet: data.nomComplet,
       autoriteContractanteId: data.autoriteContractanteId,
+      entrepriseId: data.entrepriseId,
     };
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("auth_user", JSON.stringify(authUser));
