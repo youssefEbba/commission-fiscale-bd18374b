@@ -319,80 +319,143 @@ const ReferentielProjets = () => {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nouveau Référentiel Projet</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <FolderOpen className="h-5 w-5 text-primary" />
+              Nouveau Référentiel Projet
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">Processus P1 — Associez une convention validée et déposez les documents requis</p>
           </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {isAC ? (
-              <div className="space-y-2">
-                <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
-                  <p className="text-sm font-medium">Projet créé en votre nom</p>
-                  <p className="text-sm text-muted-foreground mt-1">{user?.nomComplet}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>Autorité Contractante *</Label>
-                <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {autorites.map((a) => (
-                      <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
 
-            {/* Convention selection */}
-            <div className="space-y-2">
-              <Label>Convention validée *</Label>
-              <Select value={selectedConventionId} onValueChange={setSelectedConventionId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner une convention" /></SelectTrigger>
-                <SelectContent>
-                  {validConventions.length === 0 ? (
-                    <SelectItem value="_none" disabled>Aucune convention validée</SelectItem>
-                  ) : (
-                    validConventions.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.reference} — {c.intitule}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              {validConventions.length === 0 && (
-                <p className="text-xs text-destructive">Aucune convention validée. Créez et faites valider une convention d'abord.</p>
+            {/* Section 1: Autorité Contractante */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">1. Autorité Contractante</h3>
+              {isAC ? (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FolderOpen className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{user?.nomComplet}</p>
+                    <p className="text-xs text-muted-foreground">Projet créé en votre nom</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Autorité Contractante *</Label>
+                  <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une autorité" /></SelectTrigger>
+                    <SelectContent>
+                      {autorites.map((a) => (
+                        <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
 
-            {/* 6 mandatory documents */}
+            {/* Section 2: Convention */}
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">Documents obligatoires (6)</Label>
-              {REFERENTIEL_DOCUMENT_TYPES.map((dt) => (
-                <div key={dt.value} className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    {createFiles[dt.value] ? (
-                      <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">2. Convention associée</h3>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Convention validée *</Label>
+                <Select value={selectedConventionId} onValueChange={setSelectedConventionId}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner une convention validée" /></SelectTrigger>
+                  <SelectContent>
+                    {validConventions.length === 0 ? (
+                      <SelectItem value="_none" disabled>Aucune convention validée disponible</SelectItem>
                     ) : (
-                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground shrink-0" />
+                      validConventions.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.reference} — {c.intitule}
+                        </SelectItem>
+                      ))
                     )}
-                    <Label className="text-xs">{dt.label} *</Label>
+                  </SelectContent>
+                </Select>
+                {validConventions.length === 0 && (
+                  <p className="text-xs text-destructive">Aucune convention validée. Créez et faites valider une convention d'abord.</p>
+                )}
+              </div>
+
+              {/* Convention preview */}
+              {selectedConventionId && (() => {
+                const conv = validConventions.find(c => String(c.id) === selectedConventionId);
+                if (!conv) return null;
+                return (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm text-foreground">{conv.reference}</span>
+                      <Badge className="bg-green-100 text-green-800 text-[10px]">Validée</Badge>
+                    </div>
+                    <p className="text-muted-foreground">{conv.intitule}</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/50">
+                      <p><span className="text-muted-foreground">Bailleur:</span> {conv.bailleur || "—"}</p>
+                      <p><span className="text-muted-foreground">Devise:</span> {conv.deviseOrigine || "—"}</p>
+                      {conv.montantDevise != null && <p><span className="text-muted-foreground">Montant:</span> {conv.montantDevise.toLocaleString("fr-FR")} {conv.deviseOrigine}</p>}
+                      {conv.montantMru != null && <p><span className="text-muted-foreground">MRU:</span> {conv.montantMru.toLocaleString("fr-FR")}</p>}
+                      {conv.dateDebut && <p><span className="text-muted-foreground">Début:</span> {conv.dateDebut}</p>}
+                      {conv.dateFin && <p><span className="text-muted-foreground">Fin:</span> {conv.dateFin}</p>}
+                      {conv.tauxChange != null && <p><span className="text-muted-foreground">Taux:</span> {conv.tauxChange}</p>}
+                    </div>
                   </div>
-                  <Input
-                    type="file"
-                    className="text-xs h-9"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setCreateFiles(prev => ({ ...prev, [dt.value]: file }));
-                    }}
-                  />
-                </div>
-              ))}
+                );
+              })()}
+            </div>
+
+            {/* Section 3: Documents */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">
+                3. Documents obligatoires
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  ({REFERENTIEL_DOCUMENT_TYPES.filter(dt => createFiles[dt.value] !== null).length}/{REFERENTIEL_DOCUMENT_TYPES.length})
+                </span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {REFERENTIEL_DOCUMENT_TYPES.map((dt) => {
+                  const file = createFiles[dt.value];
+                  return (
+                    <div key={dt.value} className={`rounded-lg border p-3 space-y-2 transition-colors ${file ? "border-green-300 bg-green-50/50" : "border-border bg-background"}`}>
+                      <div className="flex items-center gap-2">
+                        {file ? (
+                          <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                        ) : (
+                          <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
+                        )}
+                        <Label className="text-xs font-medium leading-tight">{dt.label}</Label>
+                      </div>
+                      {file ? (
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-muted-foreground truncate">{file.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] text-destructive hover:text-destructive"
+                            onClick={() => setCreateFiles(prev => ({ ...prev, [dt.value]: null }))}
+                          >
+                            Retirer
+                          </Button>
+                        </div>
+                      ) : (
+                        <Input
+                          type="file"
+                          className="text-xs h-8"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] || null;
+                            setCreateFiles(prev => ({ ...prev, [dt.value]: f }));
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t border-border pt-4">
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
             <Button onClick={handleCreate} disabled={creating || !allFilesSelected || !selectedConventionId}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
