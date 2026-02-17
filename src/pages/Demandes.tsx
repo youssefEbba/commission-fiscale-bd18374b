@@ -4,7 +4,6 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS,
-  entrepriseApi, EntrepriseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter,
 } from "lucide-react";
+import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   RECUE: "bg-blue-100 text-blue-800",
@@ -74,11 +74,8 @@ const Demandes = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Create dialog
+  // Create wizard
   const [createOpen, setCreateOpen] = useState(false);
-  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
-  const [createEntrepriseId, setCreateEntrepriseId] = useState("");
-  const [creating, setCreating] = useState(false);
 
   const fetchDemandes = async () => {
     setLoading(true);
@@ -94,34 +91,7 @@ const Demandes = () => {
 
   useEffect(() => { fetchDemandes(); }, []);
 
-  const openCreateDialog = async () => {
-    setCreateOpen(true);
-    try {
-      const data = await entrepriseApi.getAll();
-      setEntreprises(data);
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les entreprises", variant: "destructive" });
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!createEntrepriseId) return;
-    setCreating(true);
-    try {
-      await demandeCorrectionApi.create({
-        autoriteContractanteId: user?.autoriteContractanteId,
-        entrepriseId: Number(createEntrepriseId),
-      });
-      toast({ title: "Succès", description: "Demande créée avec succès" });
-      setCreateOpen(false);
-      setCreateEntrepriseId("");
-      fetchDemandes();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setCreating(false);
-    }
-  };
+  // Wizard handles creation now
 
   const openDetail = async (d: DemandeCorrectionDto) => {
     setSelected(d);
@@ -208,7 +178,7 @@ const Demandes = () => {
           </div>
           <div className="flex gap-2">
             {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-              <Button onClick={openCreateDialog}>
+              <Button onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
               </Button>
             )}
@@ -432,34 +402,8 @@ const Demandes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Nouvelle demande de correction</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Entreprise *</Label>
-              <Select value={createEntrepriseId} onValueChange={setCreateEntrepriseId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionnez l'entreprise" /></SelectTrigger>
-                <SelectContent>
-                  {entreprises.map((e) => (
-                    <SelectItem key={e.id} value={String(e.id)}>
-                      {e.raisonSociale} — NIF: {e.nif}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !createEntrepriseId}>
-              {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-              Créer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create Wizard */}
+      <CreateDemandeWizard open={createOpen} onOpenChange={setCreateOpen} onCreated={fetchDemandes} />
     </DashboardLayout>
   );
 };
