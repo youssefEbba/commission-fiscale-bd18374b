@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto, referentielProjetApi, ReferentielProjetDto,
@@ -96,8 +96,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   }, [toast]);
 
-  const handleOpen = (v: boolean) => {
-    if (v) {
+  // Load data when dialog opens
+  useEffect(() => {
+    if (open) {
       setStep(0);
       setEntrepriseId("");
       setProjetId("");
@@ -107,8 +108,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setReferenceDossier("");
       loadInitialData();
     }
-    onOpenChange(v);
-  };
+  }, [open, loadInitialData]);
 
   // ── Importation helpers ──
   const updateImportation = (idx: number, field: keyof ImportationLigne, value: string | number) => {
@@ -209,7 +209,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   ];
 
   return (
-    <Dialog open={open} onOpenChange={handleOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nouvelle demande de correction</DialogTitle>
@@ -543,7 +543,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => handleOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < 2 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
