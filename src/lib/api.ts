@@ -277,9 +277,75 @@ export interface DemandeCorrectionDto {
   documents?: DocumentDto[];
 }
 
+export interface ImportationLigne {
+  designation: string;
+  unite: string;
+  quantite: number;
+  prixUnitaire: number;
+  nomenclature?: string;
+  tauxDD: number;
+  tauxRS: number;
+  tauxPSC: number;
+  tauxTVA: number;
+  valeurDouane: number;
+  dd: number;
+  rs: number;
+  psc: number;
+  baseTVA: number;
+  tvaDouane: number;
+  totalTaxes: number;
+}
+
+export interface FiscaliteInterieure {
+  montantHT: number;
+  tauxTVA: number;
+  autresTaxes: number;
+  tvaCollectee: number;
+  tvaDeductible: number;
+  tvaNette: number;
+  creditInterieur: number;
+}
+
+export interface RecapitulatifFiscal {
+  creditExterieur: number;
+  creditInterieur: number;
+  creditTotal: number;
+}
+
+export interface ModeleFiscal {
+  referenceDossier?: string;
+  typeProjet?: string;
+  afficherNomenclature?: boolean;
+  importations: ImportationLigne[];
+  fiscaliteInterieure: FiscaliteInterieure;
+  recapitulatif: RecapitulatifFiscal;
+}
+
+export interface DqeLigne {
+  designation: string;
+  unite: string;
+  quantite: number;
+  prixUnitaireHT: number;
+  montantHT: number;
+}
+
+export interface Dqe {
+  numeroAAOI?: string;
+  projet?: string;
+  lot?: string;
+  tauxTVA: number;
+  totalHT: number;
+  montantTVA: number;
+  totalTTC: number;
+  lignes: DqeLigne[];
+}
+
 export interface CreateDemandeCorrectionRequest {
   autoriteContractanteId?: number;
   entrepriseId: number;
+  referentielProjetId?: number;
+  modeleFiscal?: ModeleFiscal;
+  dqe?: Dqe;
 }
 
 export interface DocumentDto {
