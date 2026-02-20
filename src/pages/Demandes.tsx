@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
-  CheckCircle, XCircle, ArrowRight, Filter,
+  CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
 } from "lucide-react";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 
@@ -52,6 +52,26 @@ const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatu
     { from: ["EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
 };
+
+const API_BASE = "https://3eb3-41-188-117-68.ngrok-free.app/api";
+
+async function downloadDocAuthenticated(url: string, filename: string) {
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+  });
+  if (!res.ok) throw new Error("Téléchargement échoué");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(objectUrl);
+}
 
 const Demandes = () => {
   const { user, hasRole } = useAuth();
@@ -277,12 +297,12 @@ const Demandes = () => {
 
       {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Demande {selected?.numero || `#${selected?.id}`}</DialogTitle>
           </DialogHeader>
           {selected && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Autorité Contractante</span>
@@ -304,43 +324,84 @@ const Demandes = () => {
 
               {/* Documents requis (checklist) */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold">Pièces requises</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold">Pièces du dossier</h3>
                   {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
                     <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
-                      <Upload className="h-4 w-4 mr-1" /> Ajouter
+                      <Upload className="h-4 w-4 mr-1" /> Ajouter un document
                     </Button>
                   )}
                 </div>
                 {docsLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {DOCUMENT_TYPES_REQUIS.map((dt) => {
                       const uploaded = docs.find((d) => d.type === dt.value);
+                      const fileUrl = uploaded
+                        ? `https://3eb3-41-188-117-68.ngrok-free.app/api/demandes-correction/${selected.id}/documents/${uploaded.id}`
+                        : null;
                       return (
-                        <div key={dt.value} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                        <div key={dt.value} className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
                           {uploaded ? (
                             <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
                           ) : (
-                            <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
-                          <span className={`flex-1 ${uploaded ? "font-medium" : "text-muted-foreground"}`}>
-                            {dt.label}
-                          </span>
-                          {uploaded && (
-                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{uploaded.nomFichier}</span>
-                          )}
-                          {!uploaded && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => { setUploadType(dt.value); setUploadOpen(true); }}
-                            >
-                              Uploader
-                            </Button>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium truncate ${!uploaded ? "text-muted-foreground" : ""}`}>{dt.label}</p>
+                            {uploaded && (
+                              <p className="text-xs text-muted-foreground truncate">{uploaded.nomFichier}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {uploaded && fileUrl ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={async () => {
+                                    try {
+                                      const token = localStorage.getItem("auth_token");
+                                      const res = await fetch(fileUrl, {
+                                        headers: {
+                                          Authorization: token ? `Bearer ${token}` : "",
+                                          "ngrok-skip-browser-warning": "true",
+                                        },
+                                      });
+                                      if (!res.ok) throw new Error();
+                                      const blob = await res.blob();
+                                      window.open(URL.createObjectURL(blob), "_blank");
+                                    } catch {
+                                      window.open(fileUrl, "_blank");
+                                    }
+                                  }}
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => downloadDocAuthenticated(fileUrl, uploaded.nomFichier || dt.label)}
+                                >
+                                  <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                                </Button>
+                              </>
+                            ) : hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => { setUploadType(dt.value); setUploadOpen(true); }}
+                              >
+                                <Upload className="h-3.5 w-3.5 mr-1" /> Uploader
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">Non fourni</span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

@@ -210,7 +210,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nouvelle demande de correction</DialogTitle>
         </DialogHeader>
