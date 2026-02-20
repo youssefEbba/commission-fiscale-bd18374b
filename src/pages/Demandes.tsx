@@ -57,8 +57,12 @@ const API_BASE = "https://3eb3-41-188-117-68.ngrok-free.app/api";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
-    const filename = doc.chemin.replace(/\\/g, "/").split("/").pop() || "";
-    return `${API_BASE}/files/${filename}`;
+    // Convert Windows backslash path to a file:/// URL
+    const normalized = doc.chemin.replace(/\\/g, "/");
+    if (normalized.match(/^[A-Za-z]:\//)) {
+      return "file:///" + normalized;
+    }
+    return normalized;
   }
   return "";
 }
@@ -367,33 +371,22 @@ const Demandes = () => {
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 px-2 text-xs"
-                                  onClick={async () => {
-                                    try {
-                                      const token = localStorage.getItem("auth_token");
-                                      const res = await fetch(fileUrl, {
-                                        headers: {
-                                          Authorization: token ? `Bearer ${token}` : "",
-                                          "ngrok-skip-browser-warning": "true",
-                                        },
-                                      });
-                                      if (!res.ok) throw new Error();
-                                      const blob = await res.blob();
-                                      window.open(URL.createObjectURL(blob), "_blank");
-                                    } catch {
-                                      window.open(fileUrl, "_blank");
-                                    }
-                                  }}
+                                  onClick={() => window.open(fileUrl, "_blank")}
                                 >
                                   <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => downloadDocAuthenticated(fileUrl, uploaded.nomFichier || dt.label)}
+                                <a
+                                  href={fileUrl}
+                                  download={uploaded.nomFichier || dt.label}
                                 >
-                                  <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
-                                </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                                  </Button>
+                                </a>
                               </>
                             ) : hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) ? (
                               <Button
