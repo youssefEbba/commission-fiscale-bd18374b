@@ -55,6 +55,14 @@ const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatu
 
 const API_BASE = "https://3eb3-41-188-117-68.ngrok-free.app/api";
 
+function getDocFileUrl(doc: DocumentDto): string {
+  if (doc.chemin) {
+    const filename = doc.chemin.replace(/\\/g, "/").split("/").pop() || "";
+    return `${API_BASE}/files/${filename}`;
+  }
+  return "";
+}
+
 async function downloadDocAuthenticated(url: string, filename: string) {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(url, {
@@ -338,9 +346,7 @@ const Demandes = () => {
                   <div className="space-y-2">
                     {DOCUMENT_TYPES_REQUIS.map((dt) => {
                       const uploaded = docs.find((d) => d.type === dt.value);
-                      const fileUrl = uploaded
-                        ? `https://3eb3-41-188-117-68.ngrok-free.app/api/demandes-correction/${selected.id}/documents/${uploaded.id}`
-                        : null;
+                      const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
                       return (
                         <div key={dt.value} className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
                           {uploaded ? (

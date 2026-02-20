@@ -352,6 +352,7 @@ export interface DocumentDto {
   id: number;
   type: string;
   nomFichier: string;
+  chemin?: string;
   dateUpload?: string;
   taille?: number;
 }
