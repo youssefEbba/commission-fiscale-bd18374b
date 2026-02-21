@@ -67,9 +67,17 @@ interface CorrectionResult {
   };
 }
 
-function formatNumber(n: number | undefined): string {
-  if (n === undefined || n === null) return "-";
-  return n.toLocaleString("fr-FR");
+function formatNumber(n: number | undefined | null): string {
+  if (n === undefined || n === null || isNaN(n)) return "-";
+  // Treat very small floating point errors as 0
+  if (Math.abs(n) < 0.001) return "0";
+  return n.toLocaleString("fr-FR", { maximumFractionDigits: 3 });
+}
+
+// Helper to get nested value safely from douane objects (handles both old and new API formats)
+function getDouaneVal(obj: any, key: string): number | undefined {
+  if (!obj) return undefined;
+  return obj[key] ?? obj[key.toLowerCase()] ?? undefined;
 }
 
 function niveauBadge(niveau: string) {
@@ -575,10 +583,10 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
                           <TableCell className="text-xs font-medium max-w-[250px] truncate" title={c.produit}>{c.produit}</TableCell>
                           <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.VD)}</TableCell>
                           <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.VD)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.TotalD_T)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.TotalD_T)}</TableCell>
-                          <TableCell className={`text-xs text-right font-medium ${c.ecart?.TotalD_T !== 0 ? "text-destructive" : ""}`}>
-                            {formatNumber(c.ecart?.TotalD_T)}
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.TotalD_T ?? (c.valeurDeclaree as any)?.totalDroitsEtTaxes)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.TotalD_T ?? (c.valeurCorrigee as any)?.totalDroitsEtTaxes)}</TableCell>
+                          <TableCell className={`text-xs text-right font-medium ${(c.ecart?.TotalD_T ?? 0) !== 0 ? "text-destructive" : ""}`}>
+                            {formatNumber(c.ecart?.TotalD_T ?? (c.ecart as any)?.totalDroitsEtTaxes)}
                           </TableCell>
                           <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
                         </TableRow>
