@@ -20,13 +20,13 @@ interface ExcelData {
 
 // Result types
 interface ValeurDouane {
-  valeurEnDouane: number;
-  montantDD: number;
-  montantRS: number;
-  montantPSC: number;
-  baseTVA: number;
-  tva: number;
-  totalDroitsEtTaxes: number;
+  VD: number;
+  DD: number;
+  RS: number;
+  PSC: number;
+  BaseTVA: number;
+  TVA: number;
+  TotalD_T: number;
 }
 
 interface CorrectionDouane {
@@ -38,9 +38,8 @@ interface CorrectionDouane {
 }
 
 interface ValeurInterieure {
-  montantHT: number;
-  tva: number;
-  totalDGI: number;
+  HT: number;
+  TVA: number;
 }
 
 interface CorrectionInterieure {
@@ -574,12 +573,12 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
                       {correctionsDouane.map((c, i) => (
                         <TableRow key={i} className={c.niveauErreur !== "Aucune" ? "bg-yellow-50/50" : ""}>
                           <TableCell className="text-xs font-medium max-w-[250px] truncate" title={c.produit}>{c.produit}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.valeurEnDouane)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.valeurEnDouane)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className={`text-xs text-right font-medium ${c.ecart?.totalDroitsEtTaxes !== 0 ? "text-destructive" : ""}`}>
-                            {formatNumber(c.ecart?.totalDroitsEtTaxes)}
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.VD)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.VD)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.TotalD_T)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.TotalD_T)}</TableCell>
+                          <TableCell className={`text-xs text-right font-medium ${c.ecart?.TotalD_T !== 0 ? "text-destructive" : ""}`}>
+                            {formatNumber(c.ecart?.TotalD_T)}
                           </TableCell>
                           <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
                         </TableRow>
@@ -624,12 +623,12 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
                     {correctionsInterieure.map((c, i) => (
                       <TableRow key={i}>
                         <TableCell className="text-xs font-medium">{c.prestation}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.montantHT)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.montantHT)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.tva)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.tva)}</TableCell>
-                        <TableCell className={`text-xs text-right font-medium ${c.ecart?.totalDGI !== 0 ? "text-destructive" : ""}`}>
-                          {formatNumber(c.ecart?.totalDGI)}
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.HT)}</TableCell>
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.HT)}</TableCell>
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.TVA)}</TableCell>
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.TVA)}</TableCell>
+                        <TableCell className={`text-xs text-right font-medium ${(c.ecart?.HT !== 0 || c.ecart?.TVA !== 0) ? "text-destructive" : ""}`}>
+                          {formatNumber((c.ecart?.HT || 0) + (c.ecart?.TVA || 0))}
                         </TableCell>
                         <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
                       </TableRow>
