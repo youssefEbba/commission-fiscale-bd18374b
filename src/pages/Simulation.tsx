@@ -472,13 +472,19 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
 
 /* ======== Correction Results ======== */
 function CorrectionResults({ result }: { result: CorrectionResult }) {
+  const resumeAudit = result.resumeAudit || { nombreErreursDetectees: 0, graviteGlobale: "Aucune", risqueFiscal: "Inconnu", explications: [] };
+  const ecartGlobal = result.ecartGlobal || { creditDeclare: 0, creditCorrige: 0, difference: 0 };
+  const correctionsDouane = result.correctionsDouane || [];
+  const correctionsInterieure = result.correctionsInterieure || [];
+  const creditImpot = result.creditImpôtCorrige || { creditDouanier: { DD: 0, RS: 0, PSC: 0, TVA: 0, totalA: 0 }, creditInterieur: { TVAInterieure: 0, TVADouane: 0, TVANette: 0, totalB: 0 }, creditTotalCorrige: 0 };
+
   return (
     <div className="space-y-6">
       {/* Audit Summary */}
-      <Card className={result.resumeAudit.graviteGlobale === "Majeure" ? "border-destructive/50" : "border-yellow-300"}>
+      <Card className={resumeAudit.graviteGlobale === "Majeure" ? "border-destructive/50" : "border-yellow-300"}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className={`h-5 w-5 ${result.resumeAudit.graviteGlobale === "Majeure" ? "text-destructive" : "text-yellow-500"}`} />
+            <AlertTriangle className={`h-5 w-5 ${resumeAudit.graviteGlobale === "Majeure" ? "text-destructive" : "text-yellow-500"}`} />
             Résumé de l'audit
           </CardTitle>
         </CardHeader>
@@ -486,21 +492,21 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-3 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground">Erreurs détectées</p>
-              <p className="text-2xl font-bold">{result.resumeAudit.nombreErreursDetectees}</p>
+              <p className="text-2xl font-bold">{resumeAudit.nombreErreursDetectees}</p>
             </div>
             <div className="p-3 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground">Gravité globale</p>
-              <p className="text-lg font-bold">{niveauBadge(result.resumeAudit.graviteGlobale)}</p>
+              <p className="text-lg font-bold">{niveauBadge(resumeAudit.graviteGlobale)}</p>
             </div>
             <div className="p-3 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground">Risque fiscal</p>
-              <p className="text-lg font-semibold">{result.resumeAudit.risqueFiscal}</p>
+              <p className="text-lg font-semibold">{resumeAudit.risqueFiscal}</p>
             </div>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium">Explications :</p>
             <ul className="space-y-1">
-              {result.resumeAudit.explications.map((exp, i) => (
+              {(resumeAudit.explications || []).map((exp, i) => (
                 <li key={i} className="text-xs text-muted-foreground flex gap-2">
                   <span className="shrink-0 mt-0.5">•</span>
                   <span>{exp}</span>
@@ -520,16 +526,16 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-3 rounded-lg bg-muted text-center">
               <p className="text-xs text-muted-foreground">Crédit déclaré</p>
-              <p className="text-lg font-bold">{formatNumber(result.ecartGlobal.creditDeclare)} MRU</p>
+              <p className="text-lg font-bold">{formatNumber(ecartGlobal.creditDeclare)} MRU</p>
             </div>
             <div className="p-3 rounded-lg bg-muted text-center">
               <p className="text-xs text-muted-foreground">Crédit corrigé</p>
-              <p className="text-lg font-bold">{formatNumber(result.ecartGlobal.creditCorrige)} MRU</p>
+              <p className="text-lg font-bold">{formatNumber(ecartGlobal.creditCorrige)} MRU</p>
             </div>
-            <div className={`p-3 rounded-lg text-center ${result.ecartGlobal.difference !== 0 ? "bg-destructive/10" : "bg-green-50"}`}>
+            <div className={`p-3 rounded-lg text-center ${ecartGlobal.difference !== 0 ? "bg-destructive/10" : "bg-green-50"}`}>
               <p className="text-xs text-muted-foreground">Différence</p>
-              <p className={`text-lg font-bold ${result.ecartGlobal.difference !== 0 ? "text-destructive" : "text-green-700"}`}>
-                {formatNumber(result.ecartGlobal.difference)} MRU
+              <p className={`text-lg font-bold ${ecartGlobal.difference !== 0 ? "text-destructive" : "text-green-700"}`}>
+                {formatNumber(ecartGlobal.difference)} MRU
               </p>
             </div>
           </div>
@@ -537,13 +543,14 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
       </Card>
 
       {/* Corrections Douane */}
+      {correctionsDouane.length > 0 && (
       <Collapsible defaultOpen>
         <Card>
           <CollapsibleTrigger className="w-full">
             <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
               <CardTitle className="text-base flex items-center gap-2">
                 <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:rotate-[-90deg]" />
-                Corrections Douane ({result.correctionsDouane.length} produits)
+                Corrections Douane ({correctionsDouane.length} produits)
               </CardTitle>
             </CardHeader>
           </CollapsibleTrigger>
@@ -564,15 +571,15 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {result.correctionsDouane.map((c, i) => (
+                      {correctionsDouane.map((c, i) => (
                         <TableRow key={i} className={c.niveauErreur !== "Aucune" ? "bg-yellow-50/50" : ""}>
                           <TableCell className="text-xs font-medium max-w-[250px] truncate" title={c.produit}>{c.produit}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree.valeurEnDouane)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee.valeurEnDouane)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className={`text-xs text-right font-medium ${c.ecart.totalDroitsEtTaxes !== 0 ? "text-destructive" : ""}`}>
-                            {formatNumber(c.ecart.totalDroitsEtTaxes)}
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.valeurEnDouane)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.valeurEnDouane)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.totalDroitsEtTaxes)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.totalDroitsEtTaxes)}</TableCell>
+                          <TableCell className={`text-xs text-right font-medium ${c.ecart?.totalDroitsEtTaxes !== 0 ? "text-destructive" : ""}`}>
+                            {formatNumber(c.ecart?.totalDroitsEtTaxes)}
                           </TableCell>
                           <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
                         </TableRow>
@@ -585,16 +592,17 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+      )}
 
       {/* Corrections Intérieure */}
-      {result.correctionsInterieure.length > 0 && (
+      {correctionsInterieure.length > 0 && (
         <Collapsible defaultOpen>
           <Card>
             <CollapsibleTrigger className="w-full">
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <CardTitle className="text-base flex items-center gap-2">
                   <ChevronDown className="h-4 w-4" />
-                  Corrections Fiscalité Intérieure ({result.correctionsInterieure.length})
+                  Corrections Fiscalité Intérieure ({correctionsInterieure.length})
                 </CardTitle>
               </CardHeader>
             </CollapsibleTrigger>
@@ -613,15 +621,15 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {result.correctionsInterieure.map((c, i) => (
+                    {correctionsInterieure.map((c, i) => (
                       <TableRow key={i}>
                         <TableCell className="text-xs font-medium">{c.prestation}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree.montantHT)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee.montantHT)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree.tva)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee.tva)}</TableCell>
-                        <TableCell className={`text-xs text-right font-medium ${c.ecart.totalDGI !== 0 ? "text-destructive" : ""}`}>
-                          {formatNumber(c.ecart.totalDGI)}
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.montantHT)}</TableCell>
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.montantHT)}</TableCell>
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.tva)}</TableCell>
+                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.tva)}</TableCell>
+                        <TableCell className={`text-xs text-right font-medium ${c.ecart?.totalDGI !== 0 ? "text-destructive" : ""}`}>
+                          {formatNumber(c.ecart?.totalDGI)}
                         </TableCell>
                         <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
                       </TableRow>
@@ -644,26 +652,26 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
             <div className="space-y-2">
               <p className="text-sm font-medium">Crédit Douanier</p>
               <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span>DD</span><span>{formatNumber(result.creditImpôtCorrige.creditDouanier.DD)}</span></div>
-                <div className="flex justify-between"><span>RS</span><span>{formatNumber(result.creditImpôtCorrige.creditDouanier.RS)}</span></div>
-                <div className="flex justify-between"><span>PSC</span><span>{formatNumber(result.creditImpôtCorrige.creditDouanier.PSC)}</span></div>
-                <div className="flex justify-between"><span>TVA</span><span>{formatNumber(result.creditImpôtCorrige.creditDouanier.TVA)}</span></div>
-                <div className="flex justify-between font-bold border-t pt-1"><span>Total A</span><span>{formatNumber(result.creditImpôtCorrige.creditDouanier.totalA)}</span></div>
+                <div className="flex justify-between"><span>DD</span><span>{formatNumber(creditImpot.creditDouanier?.DD)}</span></div>
+                <div className="flex justify-between"><span>RS</span><span>{formatNumber(creditImpot.creditDouanier?.RS)}</span></div>
+                <div className="flex justify-between"><span>PSC</span><span>{formatNumber(creditImpot.creditDouanier?.PSC)}</span></div>
+                <div className="flex justify-between"><span>TVA</span><span>{formatNumber(creditImpot.creditDouanier?.TVA)}</span></div>
+                <div className="flex justify-between font-bold border-t pt-1"><span>Total A</span><span>{formatNumber(creditImpot.creditDouanier?.totalA)}</span></div>
               </div>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium">Crédit Intérieur</p>
               <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span>TVA Intérieure</span><span>{formatNumber(result.creditImpôtCorrige.creditInterieur.TVAInterieure)}</span></div>
-                <div className="flex justify-between"><span>TVA Douane</span><span>{formatNumber(result.creditImpôtCorrige.creditInterieur.TVADouane)}</span></div>
-                <div className="flex justify-between"><span>TVA Nette</span><span>{formatNumber(result.creditImpôtCorrige.creditInterieur.TVANette)}</span></div>
-                <div className="flex justify-between font-bold border-t pt-1"><span>Total B</span><span>{formatNumber(result.creditImpôtCorrige.creditInterieur.totalB)}</span></div>
+                <div className="flex justify-between"><span>TVA Intérieure</span><span>{formatNumber(creditImpot.creditInterieur?.TVAInterieure)}</span></div>
+                <div className="flex justify-between"><span>TVA Douane</span><span>{formatNumber(creditImpot.creditInterieur?.TVADouane)}</span></div>
+                <div className="flex justify-between"><span>TVA Nette</span><span>{formatNumber(creditImpot.creditInterieur?.TVANette)}</span></div>
+                <div className="flex justify-between font-bold border-t pt-1"><span>Total B</span><span>{formatNumber(creditImpot.creditInterieur?.totalB)}</span></div>
               </div>
             </div>
           </div>
           <div className="mt-4 p-3 rounded-lg bg-primary/10 text-center">
             <p className="text-xs text-muted-foreground">Crédit Total Corrigé</p>
-            <p className="text-xl font-bold text-primary">{formatNumber(result.creditImpôtCorrige.creditTotalCorrige)} MRU</p>
+            <p className="text-xl font-bold text-primary">{formatNumber(creditImpot.creditTotalCorrige)} MRU</p>
           </div>
         </CardContent>
       </Card>
