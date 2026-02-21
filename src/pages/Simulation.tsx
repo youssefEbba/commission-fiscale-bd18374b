@@ -135,7 +135,7 @@ const Simulation = () => {
   };
 
   const startCorrection = async () => {
-    if (!offreFile || !dqeFile) return;
+    if (!offreFile) return;
     setLoading(true);
     setResult(null);
     try {
@@ -147,7 +147,7 @@ const Simulation = () => {
         },
         body: JSON.stringify({
           offreText: offreFile.rawText,
-          dqeText: dqeFile.rawText,
+          dqeText: dqeFile?.rawText || "",
           provider: "openai",
           model: "gpt-4o-mini",
         }),
@@ -176,7 +176,7 @@ const Simulation = () => {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Simulation de correction</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Uploadez vos fichiers Excel (Offre Fiscale et DQE) pour simuler la correction automatique.
+              Uploadez votre fichier Excel Offre Fiscale (obligatoire) et optionnellement le DQE pour simuler la correction.
             </p>
           </div>
           {(offreFile || dqeFile || result) && (
@@ -198,7 +198,7 @@ const Simulation = () => {
               onRemove={() => setOffreFile(null)}
             />
             <UploadZone
-              label="DQE"
+              label="DQE (optionnel)"
               description="Fichier Excel du Devis Quantitatif et Estimatif"
               file={dqeFile}
               onUpload={(f) => handleFileUpload(f, "dqe")}
@@ -217,7 +217,7 @@ const Simulation = () => {
         )}
 
         {/* Action Button */}
-        {!result && offreFile && dqeFile && (
+        {!result && offreFile && (
           <div className="flex justify-center">
             <Button size="lg" onClick={startCorrection} disabled={loading} className="px-8">
               {loading ? (
@@ -307,14 +307,30 @@ function UploadZone({
 // Excel Preview Component
 function ExcelPreview({ data }: { data: ExcelData }) {
   const [openSheet, setOpenSheet] = useState(0);
+  const sheet = data.sheets[openSheet];
+  if (!sheet || sheet.data.length === 0) return null;
+
+  // Determine max columns across all rows for consistent rendering
+  const maxCols = Math.max(...sheet.data.map(r => r.length));
+
+  // Pad rows to maxCols
+  const padRow = (row: string[]) => {
+    const padded = [...row];
+    while (padded.length < maxCols) padded.push("");
+    return padded;
+  };
+
+  const headerRow = padRow(sheet.data[0]);
+  const bodyRows = sheet.data.slice(1);
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Aperçu : {data.fileName}</CardTitle>
+        <CardTitle className="text-sm">Aperçu : {data.fileName} ({bodyRows.length} lignes)</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {data.sheets.length > 1 && (
-          <div className="flex gap-1 mb-2 flex-wrap">
+          <div className="flex gap-1 px-4 pt-2 pb-1 flex-wrap">
             {data.sheets.map((s, i) => (
               <Button key={i} variant={openSheet === i ? "default" : "outline"} size="sm" className="text-xs h-7" onClick={() => setOpenSheet(i)}>
                 {s.name}
@@ -322,35 +338,33 @@ function ExcelPreview({ data }: { data: ExcelData }) {
             ))}
           </div>
         )}
-        <ScrollArea className="h-[250px] border rounded-md">
-          <div className="overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {data.sheets[openSheet]?.data[0]?.map((cell, i) => (
-                    <TableHead key={i} className="text-xs whitespace-nowrap">{String(cell)}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.sheets[openSheet]?.data.slice(1, 20).map((row, ri) => (
-                  <TableRow key={ri}>
-                    {row.map((cell, ci) => (
-                      <TableCell key={ci} className="text-xs py-1 whitespace-nowrap">{String(cell)}</TableCell>
-                    ))}
-                  </TableRow>
+        <div className="overflow-auto max-h-[400px] border-t">
+          <table className="w-full text-xs border-collapse">
+            <thead className="sticky top-0 z-10 bg-muted">
+              <tr>
+                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground border-b w-8">#</th>
+                {headerRow.map((cell, i) => (
+                  <th key={i} className="px-2 py-1.5 text-left font-medium text-muted-foreground border-b whitespace-nowrap">
+                    {String(cell) || `Col ${i + 1}`}
+                  </th>
                 ))}
-                {(data.sheets[openSheet]?.data.length || 0) > 20 && (
-                  <TableRow>
-                    <TableCell colSpan={data.sheets[openSheet]?.data[0]?.length || 1} className="text-xs text-center text-muted-foreground py-2">
-                      ... {data.sheets[openSheet].data.length - 20} lignes supplémentaires
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </ScrollArea>
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => {
+                const paddedRow = padRow(row);
+                return (
+                  <tr key={ri} className="border-b border-border/50 hover:bg-muted/30">
+                    <td className="px-2 py-1 text-muted-foreground/50">{ri + 1}</td>
+                    {paddedRow.map((cell, ci) => (
+                      <td key={ci} className="px-2 py-1 whitespace-nowrap">{String(cell)}</td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );
