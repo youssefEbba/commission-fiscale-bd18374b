@@ -16,6 +16,7 @@ import Utilisations from "./pages/Utilisations";
 import Utilisateurs from "./pages/Utilisateurs";
 import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
+import Simulation from "./pages/Simulation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,11 @@ const App = () => (
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
+            <Route path="/dashboard/simulation" element={
+              <ProtectedRoute allowedRoles={["ENTREPRISE", "ADMIN_SI"]}>
+                <Simulation />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
