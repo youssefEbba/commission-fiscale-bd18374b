@@ -583,10 +583,10 @@ function CorrectionResults({ result }: { result: CorrectionResult }) {
                           <TableCell className="text-xs font-medium max-w-[250px] truncate" title={c.produit}>{c.produit}</TableCell>
                           <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.VD)}</TableCell>
                           <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.VD)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.TotalD_T ?? (c.valeurDeclaree as any)?.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.TotalD_T ?? (c.valeurCorrigee as any)?.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className={`text-xs text-right font-medium ${(c.ecart?.TotalD_T ?? 0) !== 0 ? "text-destructive" : ""}`}>
-                            {formatNumber(c.ecart?.TotalD_T ?? (c.ecart as any)?.totalDroitsEtTaxes)}
+                          <TableCell className="text-xs text-right">{formatNumber((c.valeurDeclaree as any)?.TotalD_T ?? (c.valeurDeclaree as any)?.TotalDT ?? (c.valeurDeclaree as any)?.totalDroitsEtTaxes)}</TableCell>
+                          <TableCell className="text-xs text-right">{formatNumber((c.valeurCorrigee as any)?.TotalD_T ?? (c.valeurCorrigee as any)?.TotalDT ?? (c.valeurCorrigee as any)?.totalDroitsEtTaxes)}</TableCell>
+                          <TableCell className={`text-xs text-right font-medium ${((c.ecart as any)?.TotalD_T ?? (c.ecart as any)?.TotalDT ?? 0) !== 0 ? "text-destructive" : ""}`}>
+                            {formatNumber((c.ecart as any)?.TotalD_T ?? (c.ecart as any)?.TotalDT ?? (c.ecart as any)?.totalDroitsEtTaxes)}
                           </TableCell>
                           <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
                         </TableRow>
