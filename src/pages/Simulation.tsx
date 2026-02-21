@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, Play, Loader2, AlertTriangle, CheckCircle, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Upload, FileSpreadsheet, Play, Loader2, AlertTriangle, CheckCircle, X, ChevronDown, Eye, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -110,12 +110,15 @@ function readExcelFile(file: File): Promise<ExcelData> {
   });
 }
 
+type Step = "upload" | "preview" | "results";
+
 const Simulation = () => {
   const { toast } = useToast();
   const [offreFile, setOffreFile] = useState<ExcelData | null>(null);
   const [dqeFile, setDqeFile] = useState<ExcelData | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CorrectionResult | null>(null);
+  const [step, setStep] = useState<Step>("upload");
 
   const handleFileUpload = async (file: File, type: "offre" | "dqe") => {
     try {
@@ -136,6 +139,7 @@ const Simulation = () => {
 
   const startCorrection = async () => {
     if (!offreFile) return;
+    setStep("results");
     setLoading(true);
     setResult(null);
     try {
@@ -148,8 +152,8 @@ const Simulation = () => {
         body: JSON.stringify({
           offreText: offreFile.rawText,
           dqeText: dqeFile?.rawText || "",
-          provider: "openai",
-          model: "gpt-4o-mini",
+          provider: "gemini",
+          model: "gemini-2.5-flash",
         }),
       });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
@@ -158,6 +162,7 @@ const Simulation = () => {
       toast({ title: "Correction terminée avec succès" });
     } catch (err: any) {
       toast({ title: "Erreur lors de la correction", description: err.message, variant: "destructive" });
+      setStep("preview");
     } finally {
       setLoading(false);
     }
@@ -167,95 +172,187 @@ const Simulation = () => {
     setOffreFile(null);
     setDqeFile(null);
     setResult(null);
+    setStep("upload");
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Simulation de correction</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Uploadez votre fichier Excel Offre Fiscale (obligatoire) et optionnellement le DQE pour simuler la correction.
-            </p>
-          </div>
-          {(offreFile || dqeFile || result) && (
-            <Button variant="outline" size="sm" onClick={reset}>
-              <X className="h-4 w-4 mr-1" /> Réinitialiser
-            </Button>
-          )}
-        </div>
-
-        {/* Upload Section */}
-        {!result && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <UploadZone
-              label="Offre Fiscale"
-              description="Fichier Excel de l'offre fiscale (modèle fiscal)"
-              file={offreFile}
-              onUpload={(f) => handleFileUpload(f, "offre")}
-              onDrop={(e) => handleDrop(e, "offre")}
-              onRemove={() => setOffreFile(null)}
-            />
-            <UploadZone
-              label="DQE (optionnel)"
-              description="Fichier Excel du Devis Quantitatif et Estimatif"
-              file={dqeFile}
-              onUpload={(f) => handleFileUpload(f, "dqe")}
-              onDrop={(e) => handleDrop(e, "dqe")}
-              onRemove={() => setDqeFile(null)}
-            />
-          </div>
-        )}
-
-        {/* Preview Section */}
-        {!result && (offreFile || dqeFile) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {offreFile && <ExcelPreview data={offreFile} />}
-            {dqeFile && <ExcelPreview data={dqeFile} />}
-          </div>
-        )}
-
-        {/* Action Button */}
-        {!result && offreFile && (
-          <div className="flex justify-center">
-            <Button size="lg" onClick={startCorrection} disabled={loading} className="px-8">
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Correction en cours...
-                </>
-              ) : (
-                <>
-                  <Play className="h-5 w-5 mr-2" />
-                  Démarrer la correction
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <Card>
-            <CardContent className="py-12 flex flex-col items-center gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium text-muted-foreground">Analyse en cours par l'IA...</p>
-              <p className="text-sm text-muted-foreground">
-                Veuillez patienter, la correction de l'offre fiscale et du DQE est en cours de traitement.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Results */}
-        {result && <CorrectionResults result={result} />}
-      </div>
+      {step === "upload" && (
+        <UploadStep
+          offreFile={offreFile}
+          dqeFile={dqeFile}
+          onUpload={handleFileUpload}
+          onDrop={handleDrop}
+          onRemoveOffre={() => setOffreFile(null)}
+          onRemoveDqe={() => setDqeFile(null)}
+          onPreview={() => setStep("preview")}
+        />
+      )}
+      {step === "preview" && (
+        <PreviewStep
+          offreFile={offreFile}
+          dqeFile={dqeFile}
+          onBack={() => setStep("upload")}
+          onStartCorrection={startCorrection}
+          loading={loading}
+        />
+      )}
+      {step === "results" && (
+        <ResultsStep
+          loading={loading}
+          result={result}
+          onReset={reset}
+          onBack={() => setStep("preview")}
+        />
+      )}
     </DashboardLayout>
   );
 };
 
-// Upload Zone Component
+/* ======== STEP 1: Upload ======== */
+function UploadStep({
+  offreFile, dqeFile, onUpload, onDrop, onRemoveOffre, onRemoveDqe, onPreview,
+}: {
+  offreFile: ExcelData | null; dqeFile: ExcelData | null;
+  onUpload: (f: File, type: "offre" | "dqe") => void;
+  onDrop: (e: React.DragEvent, type: "offre" | "dqe") => void;
+  onRemoveOffre: () => void; onRemoveDqe: () => void;
+  onPreview: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Simulation de correction</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Uploadez vos fichiers Excel pour simuler la correction fiscale par l'IA.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <UploadZone
+          label="Offre Fiscale"
+          description="Fichier Excel de l'offre fiscale (modèle fiscal)"
+          file={offreFile}
+          onUpload={(f) => onUpload(f, "offre")}
+          onDrop={(e) => onDrop(e, "offre")}
+          onRemove={onRemoveOffre}
+        />
+        <UploadZone
+          label="DQE (optionnel)"
+          description="Fichier Excel du Devis Quantitatif et Estimatif"
+          file={dqeFile}
+          onUpload={(f) => onUpload(f, "dqe")}
+          onDrop={(e) => onDrop(e, "dqe")}
+          onRemove={onRemoveDqe}
+        />
+      </div>
+
+      {offreFile && (
+        <div className="flex justify-center">
+          <Button size="lg" onClick={onPreview} className="px-8">
+            <Eye className="h-5 w-5 mr-2" />
+            Aperçu des fichiers
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ======== STEP 2: Preview ======== */
+function PreviewStep({
+  offreFile, dqeFile, onBack, onStartCorrection, loading,
+}: {
+  offreFile: ExcelData | null; dqeFile: ExcelData | null;
+  onBack: () => void; onStartCorrection: () => void; loading: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Aperçu des fichiers</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Vérifiez le contenu extrait de vos fichiers avant de lancer la correction.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {offreFile && <FullExcelPreview data={offreFile} />}
+      {dqeFile && <FullExcelPreview data={dqeFile} />}
+
+      <div className="flex justify-center gap-4 pb-6">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Retour
+        </Button>
+        <Button size="lg" onClick={onStartCorrection} disabled={loading} className="px-8">
+          <Play className="h-5 w-5 mr-2" />
+          Démarrer la correction
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ======== STEP 3: Results ======== */
+function ResultsStep({
+  loading, result, onReset, onBack,
+}: {
+  loading: boolean; result: CorrectionResult | null;
+  onReset: () => void; onBack: () => void;
+}) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="relative">
+          <div className="h-24 w-24 rounded-full border-4 border-muted animate-pulse" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold">Analyse en cours par l'IA...</h2>
+          <p className="text-muted-foreground text-sm max-w-md">
+            Veuillez patienter, la correction de l'offre fiscale est en cours de traitement. Cela peut prendre quelques instants.
+          </p>
+        </div>
+        <div className="flex gap-2 mt-4">
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!result) return null;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Résultats de la correction</h1>
+          <p className="text-muted-foreground text-sm mt-1">Analyse complète de votre offre fiscale.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Aperçu
+          </Button>
+          <Button variant="outline" size="sm" onClick={onReset}>
+            <X className="h-4 w-4 mr-1" /> Nouvelle simulation
+          </Button>
+        </div>
+      </div>
+
+      <CorrectionResults result={result} />
+    </div>
+  );
+}
+
+/* ======== Upload Zone ======== */
 function UploadZone({
   label, description, file, onUpload, onDrop, onRemove,
 }: {
@@ -304,16 +401,13 @@ function UploadZone({
   );
 }
 
-// Excel Preview Component
-function ExcelPreview({ data }: { data: ExcelData }) {
+/* ======== Full Excel Preview (dedicated view) ======== */
+function FullExcelPreview({ data }: { data: ExcelData }) {
   const [openSheet, setOpenSheet] = useState(0);
   const sheet = data.sheets[openSheet];
   if (!sheet || sheet.data.length === 0) return null;
 
-  // Determine max columns across all rows for consistent rendering
   const maxCols = Math.max(...sheet.data.map(r => r.length));
-
-  // Pad rows to maxCols
   const padRow = (row: string[]) => {
     const padded = [...row];
     while (padded.length < maxCols) padded.push("");
@@ -326,7 +420,13 @@ function ExcelPreview({ data }: { data: ExcelData }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Aperçu : {data.fileName} ({bodyRows.length} lignes)</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5 text-green-600" />
+          {data.fileName}
+          <span className="text-xs text-muted-foreground font-normal ml-2">
+            {bodyRows.length} lignes · {maxCols} colonnes · {data.sheets.length} feuille{data.sheets.length > 1 ? "s" : ""}
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {data.sheets.length > 1 && (
@@ -338,13 +438,13 @@ function ExcelPreview({ data }: { data: ExcelData }) {
             ))}
           </div>
         )}
-        <div className="overflow-auto max-h-[400px] border-t">
+        <div className="overflow-auto max-h-[70vh] border-t">
           <table className="w-full text-xs border-collapse">
             <thead className="sticky top-0 z-10 bg-muted">
               <tr>
-                <th className="px-2 py-1.5 text-left font-medium text-muted-foreground border-b w-8">#</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground border-b w-10">#</th>
                 {headerRow.map((cell, i) => (
-                  <th key={i} className="px-2 py-1.5 text-left font-medium text-muted-foreground border-b whitespace-nowrap">
+                  <th key={i} className="px-3 py-2 text-left font-medium text-muted-foreground border-b whitespace-nowrap">
                     {String(cell) || `Col ${i + 1}`}
                   </th>
                 ))}
@@ -355,9 +455,9 @@ function ExcelPreview({ data }: { data: ExcelData }) {
                 const paddedRow = padRow(row);
                 return (
                   <tr key={ri} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="px-2 py-1 text-muted-foreground/50">{ri + 1}</td>
+                    <td className="px-3 py-1.5 text-muted-foreground/50 font-mono text-[10px]">{ri + 1}</td>
                     {paddedRow.map((cell, ci) => (
-                      <td key={ci} className="px-2 py-1 whitespace-nowrap">{String(cell)}</td>
+                      <td key={ci} className="px-3 py-1.5 whitespace-nowrap">{String(cell)}</td>
                     ))}
                   </tr>
                 );
@@ -370,7 +470,7 @@ function ExcelPreview({ data }: { data: ExcelData }) {
   );
 }
 
-// Correction Results Component
+/* ======== Correction Results ======== */
 function CorrectionResults({ result }: { result: CorrectionResult }) {
   return (
     <div className="space-y-6">
