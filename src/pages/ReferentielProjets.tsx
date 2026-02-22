@@ -58,10 +58,6 @@ const ReferentielProjets = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Pre-creation document uploads
-  const [preUploadDocs, setPreUploadDocs] = useState<{ type: TypeDocumentProjet; file: File }[]>([]);
-  const [preUploadType, setPreUploadType] = useState<TypeDocumentProjet | "">("");
-  const [preUploadFile, setPreUploadFile] = useState<File | null>(null);
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDGB = hasRole(["DGB"]);
@@ -127,26 +123,14 @@ const ReferentielProjets = () => {
     }
     setCreating(true);
     try {
-      const created = await referentielProjetApi.create({
+      await referentielProjetApi.create({
         ...form,
         conventionId: Number(selectedConventionId),
       });
-      // Upload pre-attached documents
-      const projectId = created?.id;
-      if (projectId && preUploadDocs.length > 0) {
-        for (const doc of preUploadDocs) {
-          try {
-            await referentielProjetApi.uploadDocument(projectId, doc.type, doc.file);
-          } catch {
-            // Continue uploading remaining docs
-          }
-        }
-      }
-      toast({ title: "Succès", description: `Projet créé avec succès${preUploadDocs.length > 0 ? ` (${preUploadDocs.length} document(s) déposé(s))` : ""}` });
+      toast({ title: "Succès", description: "Projet créé avec succès" });
       setCreateOpen(false);
       setForm({ autoriteContractanteId: 0, nomProjet: "", administrateurProjet: "", referenceBciSecteur: "" });
       setSelectedConventionId("");
-      setPreUploadDocs([]);
       fetchProjets();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -425,73 +409,6 @@ const ReferentielProjets = () => {
               })()}
             </div>
 
-            {/* Section 4: Documents */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">4. Documents du projet</h3>
-              <p className="text-xs text-muted-foreground">Ajoutez les documents obligatoires avant de soumettre le projet.</p>
-
-              {/* Checklist */}
-              <div className="grid grid-cols-1 gap-1">
-                {REFERENTIEL_DOCUMENT_TYPES.map((dt) => {
-                  const attached = preUploadDocs.some((d) => d.type === dt.value);
-                  return (
-                    <div key={dt.value} className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${attached ? "bg-green-50 text-green-700" : "bg-muted text-muted-foreground"}`}>
-                      {attached ? <CheckCircle className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-muted-foreground" />}
-                      <span className="flex-1">{dt.label}</span>
-                      {attached && (
-                        <button
-                          type="button"
-                          className="text-destructive hover:underline text-[10px]"
-                          onClick={() => setPreUploadDocs(prev => prev.filter(d => d.type !== dt.value))}
-                        >
-                          Retirer
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Add document */}
-              <div className="flex gap-2 items-end">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Type</Label>
-                  <Select value={preUploadType} onValueChange={(v) => setPreUploadType(v as TypeDocumentProjet)}>
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue placeholder="Type de document" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REFERENTIEL_DOCUMENT_TYPES.filter(dt => !preUploadDocs.some(d => d.type === dt.value)).map((dt) => (
-                        <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Fichier</Label>
-                  <Input type="file" className="h-9 text-xs" onChange={(e) => setPreUploadFile(e.target.files?.[0] || null)} />
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={!preUploadType || !preUploadFile}
-                  onClick={() => {
-                    if (preUploadType && preUploadFile) {
-                      setPreUploadDocs(prev => [...prev.filter(d => d.type !== preUploadType), { type: preUploadType as TypeDocumentProjet, file: preUploadFile }]);
-                      setPreUploadType("");
-                      setPreUploadFile(null);
-                    }
-                  }}
-                >
-                  <Upload className="h-3.5 w-3.5 mr-1" /> Ajouter
-                </Button>
-              </div>
-
-              {preUploadDocs.length > 0 && (
-                <p className="text-xs text-green-600 font-medium">{preUploadDocs.length} / {REFERENTIEL_DOCUMENT_TYPES.length} document(s) prêt(s)</p>
-              )}
-            </div>
 
           </div>
           <DialogFooter className="border-t border-border pt-4">
