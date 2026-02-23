@@ -158,6 +158,7 @@ export interface ReferentielProjetDto {
   conventionTauxChange?: number;
   valideParUserId?: number;
   dateValidation?: string;
+  motifRejet?: string;
 }
 
 export interface CreateReferentielProjetRequest {
@@ -197,7 +198,7 @@ export const referentielProjetApi = {
   getByStatut: (statut: ReferentielStatut) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-statut?statut=${statut}`),
   getByAutorite: (autoriteId: number) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-autorite/${autoriteId}`),
   create: (data: CreateReferentielProjetRequest) => apiFetch<ReferentielProjetDto>("/referentiels-projet", { method: "POST", body: data }),
-  updateStatut: (id: number, statut: "VALIDE" | "REJETE") => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  updateStatut: (id: number, statut: "VALIDE" | "REJETE", motifRejet?: string) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentProjet, file: File) => {
     const formData = new FormData();
@@ -232,6 +233,7 @@ export interface ConventionDto {
   autoriteContractanteNom?: string;
   valideParUserId?: number;
   dateValidation?: string;
+  motifRejet?: string;
 }
 
 export interface CreateConventionRequest {
@@ -272,7 +274,7 @@ export const conventionApi = {
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
-  updateStatut: (id: number, statut: ConventionStatut) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  updateStatut: (id: number, statut: ConventionStatut, motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentConvention, file: File) => {
     const formData = new FormData();
