@@ -109,6 +109,47 @@ const Demandes = () => {
   // Create wizard
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Entreprise detail dialog
+  const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
+  const [entrepriseLoading, setEntrepriseLoading] = useState(false);
+  const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
+
+  const openEntrepriseDetail = async (entrepriseId: number) => {
+    setEntrepriseDialogOpen(true);
+    setEntrepriseLoading(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_BASE}/entreprises/${entrepriseId}`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (!res.ok) throw new Error("Erreur");
+      setEntrepriseDetail(await res.json());
+    } catch {
+      // Fallback: try list and filter
+      try {
+        const token = localStorage.getItem("auth_token");
+        const res = await fetch(`${API_BASE}/entreprises`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+        const list = await res.json();
+        const found = list.find((e: any) => e.id === entrepriseId);
+        setEntrepriseDetail(found || null);
+      } catch {
+        toast({ title: "Erreur", description: "Impossible de charger les informations de l'entreprise", variant: "destructive" });
+      }
+    } finally {
+      setEntrepriseLoading(false);
+    }
+  };
+
   const fetchDemandes = async () => {
     setLoading(true);
     try {
@@ -322,7 +363,16 @@ const Demandes = () => {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Entreprise</span>
-                  <p className="font-medium">{selected.entrepriseRaisonSociale || "—"}</p>
+                  {selected.entrepriseId ? (
+                    <button
+                      className="font-medium text-primary hover:underline cursor-pointer text-left"
+                      onClick={() => openEntrepriseDetail(selected.entrepriseId)}
+                    >
+                      {selected.entrepriseRaisonSociale || "—"}
+                    </button>
+                  ) : (
+                    <p className="font-medium">{selected.entrepriseRaisonSociale || "—"}</p>
+                  )}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Statut</span>
@@ -464,6 +514,45 @@ const Demandes = () => {
 
       {/* Create Wizard */}
       <CreateDemandeWizard open={createOpen} onOpenChange={setCreateOpen} onCreated={fetchDemandes} />
+
+      {/* Entreprise Detail Dialog */}
+      <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Informations de l'entreprise</DialogTitle>
+          </DialogHeader>
+          {entrepriseLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : entrepriseDetail ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 text-sm">
+                <div className="rounded-lg border border-border p-3">
+                  <span className="text-muted-foreground text-xs">Raison sociale</span>
+                  <p className="font-medium">{entrepriseDetail.raisonSociale || "—"}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <span className="text-muted-foreground text-xs">NIF</span>
+                  <p className="font-medium">{entrepriseDetail.nif || "—"}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <span className="text-muted-foreground text-xs">Adresse</span>
+                  <p className="font-medium">{entrepriseDetail.adresse || "—"}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <span className="text-muted-foreground text-xs">Situation fiscale</span>
+                  <p>
+                    <Badge className={entrepriseDetail.situationFiscale === "REGULIERE" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
+                      {entrepriseDetail.situationFiscale || "—"}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">Aucune information disponible</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
