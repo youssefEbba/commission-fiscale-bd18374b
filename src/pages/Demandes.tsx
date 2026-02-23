@@ -34,21 +34,23 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
 const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType }[]> = {
   DGD: [
     { from: ["RECUE", "RECEVABLE"], to: "EN_EVALUATION", label: "Commencer l'évaluation", icon: ArrowRight },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Douanes", icon: CheckCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGTCP: [
-    { from: ["EN_EVALUATION"], to: "EN_VALIDATION", label: "Apposer visa Trésor", icon: CheckCircle },
-    { from: ["EN_EVALUATION", "RECUE"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGI: [
-    { from: ["EN_EVALUATION"], to: "EN_VALIDATION", label: "Apposer visa Impôts", icon: CheckCircle },
-    { from: ["EN_EVALUATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGB: [
-    { from: ["EN_EVALUATION"], to: "EN_VALIDATION", label: "Apposer visa Budget", icon: CheckCircle },
-    { from: ["EN_EVALUATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Budget", icon: CheckCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   PRESIDENT: [
-    { from: ["EN_VALIDATION"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
+    { from: ["EN_VALIDATION", "ADOPTEE"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
     { from: ["EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
 };
@@ -182,11 +184,11 @@ const Demandes = () => {
   const handleStatutChange = async (id: number, statut: DemandeStatut) => {
     setActionLoading(id);
     try {
-      await demandeCorrectionApi.updateStatut(id, statut);
-      toast({ title: "Succès", description: `Statut mis à jour: ${DEMANDE_STATUT_LABELS[statut]}` });
+      const updated = await demandeCorrectionApi.updateStatut(id, statut);
+      toast({ title: "Succès", description: `Statut mis à jour: ${DEMANDE_STATUT_LABELS[updated.statut || statut]}` });
       fetchDemandes();
       if (selected?.id === id) {
-        setSelected((prev) => prev ? { ...prev, statut } : null);
+        setSelected(updated);
       }
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -384,7 +386,35 @@ const Demandes = () => {
                 </div>
               </div>
 
-              {/* Documents requis (checklist) */}
+              {/* Validation parallèle tracker */}
+              {(selected.statut === "EN_EVALUATION" || selected.statut === "EN_VALIDATION" || selected.statut === "ADOPTEE") && (
+                <div className="rounded-lg border border-border p-4">
+                  <h3 className="text-sm font-semibold mb-3">Validation parallèle</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "DGD – Douanes", done: selected.validationDgd, date: selected.validationDgdDate },
+                      { label: "DGTCP – Trésor", done: selected.validationDgtcp, date: selected.validationDgtcpDate },
+                      { label: "DGI – Impôts", done: selected.validationDgi, date: selected.validationDgiDate },
+                    ].map((v) => (
+                      <div key={v.label} className={`rounded-lg border p-3 text-center text-xs ${v.done ? "border-green-300 bg-green-50" : "border-border bg-muted/30"}`}>
+                        {v.done ? (
+                          <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
+                        )}
+                        <p className="font-medium">{v.label}</p>
+                        {v.done && v.date && (
+                          <p className="text-muted-foreground mt-0.5">{new Date(v.date).toLocaleDateString("fr-FR")}</p>
+                        )}
+                        {!v.done && <p className="text-muted-foreground mt-0.5">En attente</p>}
+                      </div>
+                    ))}
+                  </div>
+                  {selected.validationDgd && selected.validationDgtcp && selected.validationDgi && (
+                    <p className="text-xs text-green-700 font-medium mt-2 text-center">✓ Toutes les validations sont complètes</p>
+                  )}
+                </div>
+              )}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Pièces du dossier</h3>

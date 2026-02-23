@@ -299,6 +299,16 @@ export interface DemandeCorrectionDto {
   entrepriseId?: number;
   entrepriseRaisonSociale?: string;
   documents?: DocumentDto[];
+  // Validation parallèle
+  validationDgd?: boolean;
+  validationDgtcp?: boolean;
+  validationDgi?: boolean;
+  validationDgdUserId?: number;
+  validationDgdDate?: string;
+  validationDgtcpUserId?: number;
+  validationDgtcpDate?: string;
+  validationDgiUserId?: number;
+  validationDgiDate?: string;
 }
 
 export interface ImportationLigne {
