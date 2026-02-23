@@ -17,9 +17,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   FolderOpen, Search, RefreshCw, Plus, Eye, Upload, Loader2,
-  CheckCircle, XCircle, Filter, FileText,
+  CheckCircle, XCircle, Filter, FileText, AlertTriangle,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ReferentielStatut, string> = {
@@ -57,6 +58,15 @@ const ReferentielProjets = () => {
   const [uploadType, setUploadType] = useState<TypeDocumentProjet | "">("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Reject dialog
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectId, setRejectId] = useState<number | null>(null);
+  const [rejectMotif, setRejectMotif] = useState("");
+
+  // Convention documents in detail
+  const [convDocs, setConvDocs] = useState<DocumentDto[]>([]);
+  const [convDocsLoading, setConvDocsLoading] = useState(false);
 
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
@@ -97,6 +107,7 @@ const ReferentielProjets = () => {
   const openDetail = async (p: ReferentielProjetDto) => {
     setSelected(p);
     setDocsLoading(true);
+    setConvDocsLoading(true);
     try {
       const documents = await referentielProjetApi.getDocuments(p.id);
       setDocs(documents);
@@ -105,9 +116,21 @@ const ReferentielProjets = () => {
     } finally {
       setDocsLoading(false);
     }
+    // Fetch convention documents
+    if (p.conventionId) {
+      try {
+        const cDocs = await conventionApi.getDocuments(p.conventionId);
+        setConvDocs(cDocs);
+      } catch {
+        setConvDocs([]);
+      } finally {
+        setConvDocsLoading(false);
+      }
+    } else {
+      setConvDocs([]);
+      setConvDocsLoading(false);
+    }
   };
-
-  
 
   const handleCreate = async () => {
     if (!form.autoriteContractanteId && !isAC) {
@@ -139,18 +162,35 @@ const ReferentielProjets = () => {
     }
   };
 
-  const handleStatutChange = async (id: number, statut: "VALIDE" | "REJETE") => {
+  const handleStatutChange = async (id: number, statut: "VALIDE" | "REJETE", motifRejet?: string) => {
     setActionLoading(id);
     try {
-      await referentielProjetApi.updateStatut(id, statut);
+      await referentielProjetApi.updateStatut(id, statut, motifRejet);
       toast({ title: "Succès", description: `Statut mis à jour: ${REFERENTIEL_STATUT_LABELS[statut]}` });
       fetchProjets();
-      if (selected?.id === id) setSelected((prev) => prev ? { ...prev, statut } : null);
+      if (selected?.id === id) setSelected((prev) => prev ? { ...prev, statut, motifRejet: motifRejet || prev.motifRejet } : null);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const openRejectDialog = (id: number) => {
+    setRejectId(id);
+    setRejectMotif("");
+    setRejectOpen(true);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectId || !rejectMotif.trim()) {
+      toast({ title: "Erreur", description: "Le motif de rejet est obligatoire", variant: "destructive" });
+      return;
+    }
+    await handleStatutChange(rejectId, "REJETE", rejectMotif.trim());
+    setRejectOpen(false);
+    setRejectId(null);
+    setRejectMotif("");
   };
 
   const handleUpload = async () => {
@@ -275,23 +315,9 @@ const ReferentielProjets = () => {
                           {p.dateCreation ? new Date(p.dateCreation).toLocaleDateString("fr-FR") : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end flex-wrap">
-                            <Button variant="ghost" size="sm" onClick={() => openDetail(p)}>
-                              <Eye className="h-4 w-4 mr-1" /> Détail
-                            </Button>
-                            {/* DGB: Valider ou Rejeter */}
-                            {isDGB && p.statut === "EN_ATTENTE" && (
-                              <>
-                                <Button size="sm" disabled={actionLoading === p.id} onClick={() => handleStatutChange(p.id, "VALIDE")}>
-                                  {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                                  Valider
-                                </Button>
-                                <Button variant="destructive" size="sm" disabled={actionLoading === p.id} onClick={() => handleStatutChange(p.id, "REJETE")}>
-                                  <XCircle className="h-4 w-4 mr-1" /> Rejeter
-                                </Button>
-                              </>
-                            )}
-                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => openDetail(p)}>
+                            <Eye className="h-4 w-4 mr-1" /> Voir
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -527,55 +553,74 @@ const ReferentielProjets = () => {
                 </div>
               )}
 
-              {/* Documents */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold">Documents du projet (6 obligatoires)</h3>
-                  {(isAC || isAdmin) && (
+              {/* Motif de rejet */}
+              {selected.statut === "REJETE" && selected.motifRejet && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+                  <div className="flex items-center gap-2 text-destructive text-sm font-semibold">
+                    <AlertTriangle className="h-4 w-4" />
+                    Motif de rejet
+                  </div>
+                  <p className="text-sm text-foreground">{selected.motifRejet}</p>
+                </div>
+              )}
+
+              {/* Convention Documents */}
+              {selected.conventionId && (
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Documents de la convention</h3>
+                  {convDocsLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : convDocs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucun document associé à la convention</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {convDocs.map((doc) => (
+                        <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <span className="flex-1 truncate">{doc.nomFichier}</span>
+                          <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Documents du projet (upload pour AC uniquement) */}
+              {(isAC || isAdmin) && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold">Documents du projet</h3>
                     <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
                       <Upload className="h-4 w-4 mr-1" /> Déposer un document
                     </Button>
+                  </div>
+                  {docsLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : docs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucun document déposé</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {docs.map((doc) => (
+                        <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <span className="flex-1 truncate">{doc.nomFichier}</span>
+                          <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
+              )}
 
-                {/* Checklist of required documents */}
-                <div className="grid grid-cols-1 gap-1 mb-3">
-                  {REFERENTIEL_DOCUMENT_TYPES.map((dt) => {
-                    const uploaded = docs.some((d) => d.type === dt.value);
-                    return (
-                      <div key={dt.value} className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${uploaded ? "bg-green-50 text-green-700" : "bg-muted text-muted-foreground"}`}>
-                        {uploaded ? <CheckCircle className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-muted-foreground" />}
-                        {dt.label}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {docsLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                ) : docs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucun document déposé</p>
-                ) : (
-                  <div className="space-y-1">
-                    {docs.map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
-                        <FileText className="h-4 w-4 text-primary shrink-0" />
-                        <span className="flex-1 truncate">{doc.nomFichier}</span>
-                        <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Workflow Actions in detail */}
+              {/* Workflow Actions in detail (DGB only) */}
               {isDGB && selected.statut === "EN_ATTENTE" && (
                 <div className="flex gap-2 pt-2 border-t border-border flex-wrap">
                   <Button disabled={actionLoading === selected.id} onClick={() => handleStatutChange(selected.id, "VALIDE")}>
                     {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
                     Valider le référentiel
                   </Button>
-                  <Button variant="destructive" disabled={actionLoading === selected.id} onClick={() => handleStatutChange(selected.id, "REJETE")}>
+                  <Button variant="destructive" disabled={actionLoading === selected.id} onClick={() => openRejectDialog(selected.id)}>
                     <XCircle className="h-4 w-4 mr-1" /> Rejeter
                   </Button>
                 </div>
@@ -611,6 +656,33 @@ const ReferentielProjets = () => {
             <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadType}>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Déposer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" /> Rejeter le référentiel
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label>Motif de rejet *</Label>
+            <Textarea
+              placeholder="Indiquez la raison du rejet..."
+              value={rejectMotif}
+              onChange={(e) => setRejectMotif(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={confirmReject} disabled={!rejectMotif.trim() || actionLoading !== null}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              Confirmer le rejet
             </Button>
           </DialogFooter>
         </DialogContent>
