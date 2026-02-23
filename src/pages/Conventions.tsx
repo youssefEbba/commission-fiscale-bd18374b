@@ -4,6 +4,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   conventionApi, ConventionDto, ConventionStatut,
   CONVENTION_STATUT_LABELS, CreateConventionRequest,
+  DocumentDto, TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileText, Search, RefreshCw, Plus, Loader2,
-  CheckCircle, XCircle, Filter,
+  CheckCircle, XCircle, Filter, Upload, File, Paperclip,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ConventionStatut, string> = {
@@ -43,6 +44,15 @@ const Conventions = () => {
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
   const [creating, setCreating] = useState(false);
+
+  // Documents state
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [docsConvention, setDocsConvention] = useState<ConventionDto | null>(null);
+  const [documents, setDocuments] = useState<DocumentDto[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [uploadType, setUploadType] = useState<TypeDocumentConvention>("CONVENTION_CONTRAT");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDGB = hasRole(["DGB"]);
@@ -95,6 +105,36 @@ const Conventions = () => {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const openDocuments = async (conv: ConventionDto) => {
+    setDocsConvention(conv);
+    setDocsOpen(true);
+    setDocsLoading(true);
+    try {
+      const docs = await conventionApi.getDocuments(conv.id);
+      setDocuments(docs);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les documents", variant: "destructive" });
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!docsConvention || !uploadFile) return;
+    setUploading(true);
+    try {
+      await conventionApi.uploadDocument(docsConvention.id, uploadType, uploadFile);
+      toast({ title: "Succès", description: "Document uploadé" });
+      setUploadFile(null);
+      const docs = await conventionApi.getDocuments(docsConvention.id);
+      setDocuments(docs);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -172,6 +212,9 @@ const Conventions = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        Aucune convention trouvée
+                      </TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((c) => (
@@ -195,6 +238,9 @@ const Conventions = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end flex-wrap">
+                            <Button variant="outline" size="sm" onClick={() => openDocuments(c)}>
+                              <Paperclip className="h-4 w-4 mr-1" /> Documents
+                            </Button>
                             {isDGB && c.statut === "EN_ATTENTE" && (
                               <>
                                 <Button size="sm" disabled={actionLoading === c.id} onClick={() => handleStatutChange(c.id, "VALIDE")}>
@@ -283,6 +329,96 @@ const Conventions = () => {
               Créer
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Documents Dialog */}
+      <Dialog open={docsOpen} onOpenChange={setDocsOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Paperclip className="h-5 w-5" />
+              Documents — {docsConvention?.reference || docsConvention?.intitule}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto">
+            {/* Upload section */}
+            {(isAC || isAdmin) && (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <Label className="text-sm font-semibold">Ajouter un document</Label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Select value={uploadType} onValueChange={(v) => setUploadType(v as TypeDocumentConvention)}>
+                      <SelectTrigger className="w-full sm:w-56">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONVENTION_DOCUMENT_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="file"
+                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleUpload} disabled={uploading || !uploadFile}>
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                      Envoyer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Documents list */}
+            {docsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <File className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                <p>Aucun document associé</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Nom du fichier</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {documents.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {CONVENTION_DOCUMENT_TYPES.find(t => t.value === doc.type)?.label || doc.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{doc.nomFichier}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {doc.dateUpload ? new Date(doc.dateUpload).toLocaleDateString("fr-FR") : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {doc.chemin && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
+                              <FileText className="h-4 w-4 mr-1" /> Ouvrir
+                            </a>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

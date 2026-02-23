@@ -254,12 +254,34 @@ export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
   REJETE: "Rejetée",
 };
 
+export type TypeDocumentConvention =
+  | "CONVENTION_CONTRAT"
+  | "AVENANT"
+  | "ACCORD_FINANCEMENT"
+  | "AUTRE";
+
+export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: string }[] = [
+  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
+  { value: "AVENANT", label: "Avenant" },
+  { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
+  { value: "AUTRE", label: "Autre document" },
+];
+
 export const conventionApi = {
   getAll: () => apiFetch<ConventionDto[]>("/conventions"),
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
   updateStatut: (id: number, statut: ConventionStatut) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
+  uploadDocument: (id: number, type: TypeDocumentConvention, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/conventions/${id}/documents?type=${encodeURIComponent(type)}`, {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
 };
 
 // Demandes de correction (P2)
