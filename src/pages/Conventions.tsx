@@ -45,6 +45,10 @@ const Conventions = () => {
   });
   const [creating, setCreating] = useState(false);
 
+  // Documents in creation form
+  const [createDocs, setCreateDocs] = useState<{ type: TypeDocumentConvention; file: File }[]>([]);
+  const [createDocType, setCreateDocType] = useState<TypeDocumentConvention>("CONVENTION_CONTRAT");
+
   // Documents state
   const [docsOpen, setDocsOpen] = useState(false);
   const [docsConvention, setDocsConvention] = useState<ConventionDto | null>(null);
@@ -72,6 +76,14 @@ const Conventions = () => {
 
   useEffect(() => { fetchConventions(); }, []);
 
+  const addCreateDoc = (file: File) => {
+    setCreateDocs(prev => [...prev, { type: createDocType, file }]);
+  };
+
+  const removeCreateDoc = (index: number) => {
+    setCreateDocs(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleCreate = async () => {
     if (!form.reference || !form.intitule) {
       toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
@@ -79,14 +91,23 @@ const Conventions = () => {
     }
     setCreating(true);
     try {
-      await conventionApi.create(form);
-      toast({ title: "Succès", description: "Convention créée" });
+      const created = await conventionApi.create(form);
+      // Upload attached documents
+      for (const doc of createDocs) {
+        try {
+          await conventionApi.uploadDocument(created.id, doc.type, doc.file);
+        } catch {
+          toast({ title: "Attention", description: `Échec upload: ${doc.file.name}`, variant: "destructive" });
+        }
+      }
+      toast({ title: "Succès", description: `Convention créée${createDocs.length ? ` avec ${createDocs.length} document(s)` : ""}` });
       setCreateOpen(false);
       setForm({
         reference: "", intitule: "", bailleur: "", bailleurDetails: "",
         dateSignature: "", dateDebut: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
+      setCreateDocs([]);
       fetchConventions();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -266,7 +287,7 @@ const Conventions = () => {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Nouvelle Convention</DialogTitle>
           </DialogHeader>
@@ -320,6 +341,52 @@ const Conventions = () => {
                 <Label>Taux de change</Label>
                 <Input type="number" step="0.01" value={form.tauxChange ?? ""} onChange={(e) => setForm(f => ({ ...f, tauxChange: e.target.value ? Number(e.target.value) : undefined }))} placeholder="43.33" />
               </div>
+            </div>
+
+            {/* Documents section */}
+            <div className="border-t pt-4 space-y-3">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <Paperclip className="h-4 w-4" /> Documents joints
+              </Label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={createDocType} onValueChange={(v) => setCreateDocType(v as TypeDocumentConvention)}>
+                  <SelectTrigger className="w-full sm:w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONVENTION_DOCUMENT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="file"
+                  className="flex-1"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      addCreateDoc(file);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </div>
+              {createDocs.length > 0 && (
+                <div className="space-y-1">
+                  {createDocs.map((d, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm bg-muted/50 rounded px-3 py-1.5">
+                      <File className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {CONVENTION_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type}
+                      </Badge>
+                      <span className="truncate flex-1">{d.file.name}</span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCreateDoc(i)}>
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
