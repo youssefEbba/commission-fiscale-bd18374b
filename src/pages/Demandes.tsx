@@ -12,13 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
 } from "lucide-react";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
+import { Textarea } from "@/components/ui/textarea";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   RECUE: "bg-blue-100 text-blue-800",
@@ -111,6 +112,11 @@ const Demandes = () => {
   // Create wizard
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Rejection modal
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectMotif, setRejectMotif] = useState("");
+  const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
+
   // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -181,10 +187,10 @@ const Demandes = () => {
     }
   };
 
-  const handleStatutChange = async (id: number, statut: DemandeStatut) => {
+  const handleStatutChange = async (id: number, statut: DemandeStatut, motifRejet?: string) => {
     setActionLoading(id);
     try {
-      const updated = await demandeCorrectionApi.updateStatut(id, statut);
+      const updated = await demandeCorrectionApi.updateStatut(id, statut, motifRejet);
       toast({ title: "Succès", description: `Statut mis à jour: ${DEMANDE_STATUT_LABELS[updated.statut || statut]}` });
       fetchDemandes();
       if (selected?.id === id) {
@@ -195,6 +201,20 @@ const Demandes = () => {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const openRejectDialog = (id: number) => {
+    setRejectTargetId(id);
+    setRejectMotif("");
+    setRejectOpen(true);
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectTargetId || !rejectMotif.trim()) return;
+    setRejectOpen(false);
+    await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim());
+    setRejectTargetId(null);
+    setRejectMotif("");
   };
 
   const handleUpload = async () => {
@@ -331,7 +351,7 @@ const Demandes = () => {
                                   variant={t.to === "REJETEE" ? "destructive" : "default"}
                                   size="sm"
                                   disabled={actionLoading === d.id}
-                                  onClick={() => handleStatutChange(d.id, t.to)}
+                                  onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : handleStatutChange(d.id, t.to)}
                                 >
                                   {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                                   {t.label}
@@ -385,6 +405,14 @@ const Demandes = () => {
                   <p>{selected.dateDepot ? new Date(selected.dateDepot).toLocaleDateString("fr-FR") : "—"}</p>
                 </div>
               </div>
+
+              {/* Motif de rejet */}
+              {selected.statut === "REJETEE" && selected.motifRejet && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                  <h3 className="text-sm font-semibold text-destructive mb-1">Motif du rejet</h3>
+                  <p className="text-sm">{selected.motifRejet}</p>
+                </div>
+              )}
 
               {/* Validation parallèle tracker */}
               {(selected.statut === "EN_EVALUATION" || selected.statut === "EN_VALIDATION" || selected.statut === "ADOPTEE") && (
@@ -488,7 +516,7 @@ const Demandes = () => {
                 )}
               </div>
 
-              {/* Workflow Actions */}
+              {/* Workflow Actions — buttons under documents */}
               {transitions.length > 0 && (
                 <div className="flex gap-2 pt-2 border-t border-border">
                   {transitions.map((t) =>
@@ -497,7 +525,7 @@ const Demandes = () => {
                         key={t.to}
                         variant={t.to === "REJETEE" ? "destructive" : "default"}
                         disabled={actionLoading === selected.id}
-                        onClick={() => handleStatutChange(selected.id, t.to)}
+                        onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleStatutChange(selected.id, t.to)}
                       >
                         {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                         {t.label}
@@ -581,6 +609,30 @@ const Demandes = () => {
           ) : (
             <p className="text-center text-muted-foreground py-4">Aucune information disponible</p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Motif Dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Motif du rejet</DialogTitle>
+            <DialogDescription>Veuillez indiquer le motif du rejet de cette demande.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              placeholder="Saisissez le motif du rejet..."
+              value={rejectMotif}
+              onChange={(e) => setRejectMotif(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button variant="destructive" disabled={!rejectMotif.trim()} onClick={handleRejectConfirm}>
+              <XCircle className="h-4 w-4 mr-1" /> Confirmer le rejet
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
