@@ -15,10 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
   FileText, ArrowLeft, Loader2, CheckCircle, XCircle,
-  Download, ExternalLink, Bot, AlertTriangle,
+  Download, ExternalLink, Bot,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 
 const STATUT_COLORS: Record<string, string> = {
   RECUE: "bg-blue-100 text-blue-800",
@@ -60,10 +58,6 @@ const CorrectionDouaniere = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
 
-  // AI assistance
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<any | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
 
   // Entreprise detail
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
@@ -166,54 +160,6 @@ const CorrectionDouaniere = () => {
     }
   };
 
-  const handleAiAssistance = async () => {
-    setAiLoading(true);
-    setAiError(null);
-    setAiResult(null);
-    try {
-      // Find DQE and Offre URLs from documents
-      const dqeDoc = docs.find(d => d.type === "DAO_DQE");
-      const offreDoc = docs.find(d => d.type === "OFFRE_FINANCIERE");
-
-      if (!offreDoc?.chemin) {
-        throw new Error("L'offre financière est requise pour l'assistance IA");
-      }
-
-      const offreUrl = offreDoc.chemin.replace(/\\/g, "/");
-      const dqeUrl = dqeDoc?.chemin ? dqeDoc.chemin.replace(/\\/g, "/") : undefined;
-
-      const token = localStorage.getItem("auth_token");
-      const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
-      const res = await fetch(`${AI_SERVICE_BASE}/api/audit-fiscale/correct-by-url`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          offreUrl,
-          dqeUrl,
-          provider: "gemini",
-          model: "gemini-2.5-flash",
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `Erreur ${res.status}`);
-      }
-
-      const data = await res.json();
-      setAiResult(data);
-      toast({ title: "Analyse IA terminée", description: "Les corrections ont été générées avec succès" });
-    } catch (e: any) {
-      setAiError(e.message);
-      toast({ title: "Erreur IA", description: e.message, variant: "destructive" });
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   const hasRejet = demande && ((demande.rejets && demande.rejets.length > 0) || demande.statut === "REJETEE");
   const alreadyValidated = demande?.validationDgd;
@@ -445,7 +391,7 @@ const CorrectionDouaniere = () => {
                 </CardContent>
               </Card>
 
-              {/* AI Assistance Card */}
+              {/* AI Assistance Link */}
               <Card className="border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -459,155 +405,11 @@ const CorrectionDouaniere = () => {
                   </p>
                   <Button
                     className="w-full"
-                    variant="outline"
-                    onClick={handleAiAssistance}
-                    disabled={aiLoading || docsLoading}
+                    onClick={() => navigate(`/dashboard/assistance-ia/${id}`)}
                   >
-                    {aiLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Bot className="h-4 w-4 mr-2" />
-                    )}
-                    {aiLoading ? "Analyse en cours..." : "Lancer l'assistance IA"}
+                    <Bot className="h-4 w-4 mr-2" />
+                    Ouvrir l'assistance IA
                   </Button>
-
-                  {aiError && (
-                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-                      <div className="flex items-center gap-2 text-destructive font-medium mb-1">
-                        <AlertTriangle className="h-4 w-4" /> Erreur
-                      </div>
-                      <p className="text-muted-foreground">{aiError}</p>
-                    </div>
-                  )}
-
-                  {aiResult && (
-                    <div className="space-y-3">
-                      <Separator />
-                      {/* Résumé Audit */}
-                      {aiResult.resumeAudit && (
-                        <div className="rounded-lg border border-border p-3 space-y-2">
-                          <p className="font-semibold text-sm">Résumé de l'audit</p>
-                          <div className="grid grid-cols-1 gap-1 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Erreurs détectées</span>
-                              <Badge variant="secondary">{aiResult.resumeAudit.nombreErreursDetectees}</Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Gravité</span>
-                              <Badge className={
-                                aiResult.resumeAudit.graviteGlobale === "élevée" || aiResult.resumeAudit.graviteGlobale === "elevee"
-                                  ? "bg-destructive/10 text-destructive"
-                                  : aiResult.resumeAudit.graviteGlobale === "moyenne"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-emerald-100 text-emerald-800"
-                              }>{aiResult.resumeAudit.graviteGlobale}</Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Risque fiscal</span>
-                              <span className="font-medium">{aiResult.resumeAudit.risqueFiscal}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Écart Global */}
-                      {aiResult.ecartGlobal && (
-                        <div className="rounded-lg border border-border p-3 space-y-2">
-                          <p className="font-semibold text-sm">Écart global</p>
-                          <div className="grid grid-cols-1 gap-1 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Crédit déclaré</span>
-                              <span className="font-medium">{Number(aiResult.ecartGlobal.creditDeclare).toLocaleString("fr-FR")}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Crédit corrigé</span>
-                              <span className="font-medium">{Number(aiResult.ecartGlobal.creditCorrige).toLocaleString("fr-FR")}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Différence</span>
-                              <span className="font-bold text-destructive">{Number(aiResult.ecartGlobal.difference).toLocaleString("fr-FR")}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Crédit Impôt Corrigé */}
-                      {aiResult.creditImpôtCorrige && (
-                        <div className="rounded-lg border border-border p-3 space-y-2">
-                          <p className="font-semibold text-sm">Crédit d'impôt corrigé</p>
-                          {aiResult.creditImpôtCorrige.creditDouanier && (
-                            <div className="text-xs space-y-1">
-                              <p className="font-medium text-muted-foreground">Douanier</p>
-                              {Object.entries(aiResult.creditImpôtCorrige.creditDouanier).map(([k, v]) => (
-                                <div key={k} className="flex justify-between pl-2">
-                                  <span>{k}</span>
-                                  <span className="font-medium">{Number(v).toLocaleString("fr-FR")}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {aiResult.creditImpôtCorrige.creditInterieur && (
-                            <div className="text-xs space-y-1">
-                              <p className="font-medium text-muted-foreground">Intérieur</p>
-                              {Object.entries(aiResult.creditImpôtCorrige.creditInterieur).map(([k, v]) => (
-                                <div key={k} className="flex justify-between pl-2">
-                                  <span>{k}</span>
-                                  <span className="font-medium">{Number(v).toLocaleString("fr-FR")}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex justify-between text-xs font-bold pt-1 border-t border-border">
-                            <span>Crédit total corrigé</span>
-                            <span>{Number(aiResult.creditImpôtCorrige.creditTotalCorrige).toLocaleString("fr-FR")}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Corrections Douane */}
-                      {aiResult.correctionsDouane && aiResult.correctionsDouane.length > 0 && (
-                        <div className="rounded-lg border border-border p-3 space-y-2">
-                          <p className="font-semibold text-sm">Corrections douanières ({aiResult.correctionsDouane.length})</p>
-                          <ScrollArea className="max-h-60">
-                            <div className="space-y-2">
-                              {aiResult.correctionsDouane.map((c: any, i: number) => (
-                                <div key={i} className="rounded border border-border p-2 text-xs space-y-1">
-                                  <p className="font-medium">{c.produit}</p>
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Niveau erreur</span>
-                                    <Badge variant="secondary" className="text-[10px]">{c.niveauErreur}</Badge>
-                                  </div>
-                                  {c.ecart && typeof c.ecart === "object" && Object.entries(c.ecart).map(([k, v]) => (
-                                    <div key={k} className="flex justify-between pl-2">
-                                      <span className="text-muted-foreground">{k}</span>
-                                      <span>{String(v)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                      )}
-
-                      {/* Corrections Intérieure */}
-                      {aiResult.correctionsInterieure && aiResult.correctionsInterieure.length > 0 && (
-                        <div className="rounded-lg border border-border p-3 space-y-2">
-                          <p className="font-semibold text-sm">Corrections intérieures ({aiResult.correctionsInterieure.length})</p>
-                          <ScrollArea className="max-h-60">
-                            <div className="space-y-2">
-                              {aiResult.correctionsInterieure.map((c: any, i: number) => (
-                                <div key={i} className="rounded border border-border p-2 text-xs space-y-1">
-                                  <p className="font-medium">{c.produit}</p>
-                                  <Badge variant="secondary" className="text-[10px]">{c.niveauErreur}</Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </div>
