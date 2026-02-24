@@ -194,8 +194,8 @@ const CorrectionDouaniere = () => {
         body: JSON.stringify({
           offreUrl,
           dqeUrl,
-          provider: "openai",
-          model: "gpt-4o-mini",
+          provider: "gemini",
+          model: "gemini-2.5-flash",
         }),
       });
 
