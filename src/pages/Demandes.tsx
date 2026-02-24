@@ -32,27 +32,32 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   NOTIFIEE: "bg-gray-100 text-gray-800",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean }[]> = {
+// Visa/rejet actions: no status change on backend (decisionFinale=false)
+// Decision finale: only DGTCP & PRESIDENT can adopt/reject with decisionFinale=true
+const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
+
+const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean }[]> = {
   DGD: [
-    { from: ["RECUE", "RECEVABLE"], to: "EN_EVALUATION", label: "Commencer l'évaluation", icon: ArrowRight },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Douanes", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Douanes", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGTCP: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", label: "Décision finale : Adopter", icon: CheckCircle, isDecisionFinale: true },
+    { from: ALL_STATUTS, to: "REJETEE", label: "Décision finale : Rejeter", icon: XCircle, isDecisionFinale: true },
   ],
   DGI: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGB: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Budget", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Budget", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   PRESIDENT: [
-    { from: ["EN_VALIDATION"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
-    { from: ["EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", label: "Décision finale : Adopter", icon: CheckCircle, isDecisionFinale: true },
+    { from: ALL_STATUTS, to: "REJETEE", label: "Décision finale : Rejeter", icon: XCircle, isDecisionFinale: true },
   ],
 };
 
@@ -116,7 +121,7 @@ const Demandes = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
-
+  const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
   // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -193,11 +198,11 @@ const Demandes = () => {
     }
   };
 
-  const handleStatutChange = async (id: number, statut: DemandeStatut, motifRejet?: string) => {
+  const handleStatutChange = async (id: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => {
     setActionLoading(id);
     try {
-      const updated = await demandeCorrectionApi.updateStatut(id, statut, motifRejet);
-      toast({ title: "Succès", description: `Statut mis à jour: ${DEMANDE_STATUT_LABELS[updated.statut || statut]}` });
+      const updated = await demandeCorrectionApi.updateStatut(id, statut, motifRejet, decisionFinale);
+      toast({ title: "Succès", description: decisionFinale ? `Décision finale appliquée: ${DEMANDE_STATUT_LABELS[updated.statut || statut]}` : statut === "REJETEE" ? "Rejet enregistré" : "Visa apposé avec succès" });
       fetchDemandes();
       if (selected?.id === id) {
         setSelected(updated);
@@ -209,18 +214,20 @@ const Demandes = () => {
     }
   };
 
-  const openRejectDialog = (id: number) => {
+  const openRejectDialog = (id: number, decisionFinale?: boolean) => {
     setRejectTargetId(id);
     setRejectMotif("");
+    setRejectDecisionFinale(!!decisionFinale);
     setRejectOpen(true);
   };
 
   const handleRejectConfirm = async () => {
     if (!rejectTargetId || !rejectMotif.trim()) return;
     setRejectOpen(false);
-    await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim());
+    await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim(), rejectDecisionFinale);
     setRejectTargetId(null);
     setRejectMotif("");
+    setRejectDecisionFinale(false);
   };
 
   const handleUpload = async () => {
@@ -350,21 +357,23 @@ const Demandes = () => {
                             <Button variant="ghost" size="sm" onClick={() => openDetail(d)}>
                               <Eye className="h-4 w-4 mr-1" /> Détail
                             </Button>
-                            {transitions.map((t) => {
+                            {transitions.map((t, idx) => {
                               if (!t.from.includes(d.statut)) return null;
+                              // Don't show final decisions in compact table view
+                              if (t.isDecisionFinale) return null;
                               // Disable visa if already validated by this actor
                               const alreadyValidated = t.isVisa && (
                                 (role === "DGD" && d.validationDgd) ||
                                 (role === "DGTCP" && d.validationDgtcp) ||
                                 (role === "DGI" && d.validationDgi) ||
-                                (role === "DGB" && d.validationDgi) // DGB uses same flag if needed
+                                (role === "DGB" && d.validationDgi)
                               );
                               if (alreadyValidated) return (
-                                <Badge key={t.to + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                                <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
                               );
                               return (
                                 <Button
-                                  key={t.to + t.label}
+                                  key={idx}
                                   variant={t.to === "REJETEE" ? "destructive" : "default"}
                                   size="sm"
                                   disabled={actionLoading === d.id}
@@ -584,19 +593,48 @@ const Demandes = () => {
 
               {/* Workflow Actions — buttons under documents */}
               {transitions.length > 0 && (
-                <div className="flex gap-2 pt-2 border-t border-border">
-                  {transitions.map((t) =>
-                    t.from.includes(selected.statut) ? (
-                      <Button
-                        key={t.to}
-                        variant={t.to === "REJETEE" ? "destructive" : "default"}
-                        disabled={actionLoading === selected.id}
-                        onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleStatutChange(selected.id, t.to)}
-                      >
-                        {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                        {t.label}
-                      </Button>
-                    ) : null
+                <div className="space-y-3 pt-2 border-t border-border">
+                  {/* Visa / Simple reject */}
+                  <div className="flex flex-wrap gap-2">
+                    {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
+                      const alreadyValidated = t.isVisa && (
+                        (role === "DGD" && selected.validationDgd) ||
+                        (role === "DGTCP" && selected.validationDgtcp) ||
+                        (role === "DGI" && selected.validationDgi) ||
+                        (role === "DGB" && selected.validationDgi)
+                      );
+                      if (alreadyValidated) return (
+                        <Badge key={idx} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                      );
+                      return (
+                        <Button
+                          key={idx}
+                          variant={t.to === "REJETEE" ? "destructive" : "default"}
+                          disabled={actionLoading === selected.id}
+                          onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleStatutChange(selected.id, t.to)}
+                        >
+                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                          {t.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  {/* Decision finale (DGTCP / PRESIDENT only) */}
+                  {transitions.some(t => t.isDecisionFinale && t.from.includes(selected.statut)) && (
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-border">
+                      <span className="text-xs font-semibold text-muted-foreground self-center mr-2">Décision finale :</span>
+                      {transitions.filter(t => t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
+                        <Button
+                          key={`final-${idx}`}
+                          variant={t.to === "REJETEE" ? "destructive" : "default"}
+                          disabled={actionLoading === selected.id}
+                          onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : handleStatutChange(selected.id, t.to, undefined, true)}
+                        >
+                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                          {t.label}
+                        </Button>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
