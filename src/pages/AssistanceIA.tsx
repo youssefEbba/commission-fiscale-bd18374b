@@ -1,17 +1,42 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { useAuth } from "@/contexts/AuthContext";
 import { demandeCorrectionApi, DocumentDto } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ArrowLeft, Loader2, Bot, AlertTriangle,
+  ArrowLeft, Loader2, Bot, AlertTriangle, CheckCircle, XCircle, Info,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+
+const statusIcon = (statut: string) => {
+  const s = statut?.toLowerCase() || "";
+  if (s.includes("conforme") || s.includes("ok") || s.includes("valide")) return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+  if (s.includes("non") || s.includes("erreur") || s.includes("anomal") || s.includes("incoh")) return <XCircle className="h-4 w-4 text-destructive" />;
+  return <Info className="h-4 w-4 text-muted-foreground" />;
+};
+
+const riskBadge = (risk: string) => {
+  const r = risk?.toLowerCase() || "";
+  if (r.includes("élev") || r.includes("critique") || r.includes("fort")) return "bg-destructive/10 text-destructive";
+  if (r.includes("moyen") || r.includes("modér")) return "bg-orange-100 text-orange-800";
+  return "bg-emerald-100 text-emerald-800";
+};
+
+const DETAIL_LABELS: Record<string, string> = {
+  correspondanceDesignation: "Correspondance désignation",
+  correspondanceQuantite: "Correspondance quantité",
+  correspondancePrixUnitaire: "Correspondance prix unitaire",
+  coherenceMontantHT: "Cohérence montant HT",
+  coherenceTaux: "Cohérence taux",
+  baseTVA: "Base TVA",
+  tvaNette: "TVA nette",
+  doubleDeclaration: "Double déclaration",
+  coherenceEconomique: "Cohérence économique",
+};
 
 const AssistanceIA = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +73,7 @@ const AssistanceIA = () => {
       const offreDoc = docs.find(d => d.type === "OFFRE_FINANCIERE");
 
       if (!offreDoc?.chemin) {
-        throw new Error("L'offre financière est requise pour l'assistance IA");
+        throw new Error("L'offre financière est requise pour l'évaluation IA");
       }
 
       const offreUrl = offreDoc.chemin.replace(/\\/g, "/");
@@ -56,7 +81,7 @@ const AssistanceIA = () => {
 
       const token = localStorage.getItem("auth_token");
       const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
-      const res = await fetch(`${AI_SERVICE_BASE}/api/audit-fiscale/correct-by-url`, {
+      const res = await fetch(`${AI_SERVICE_BASE}/api/audit-fiscale/evaluate-by-url`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +103,7 @@ const AssistanceIA = () => {
 
       const data = await res.json();
       setAiResult(data);
-      toast({ title: "Analyse IA terminée", description: "Les corrections ont été générées avec succès" });
+      toast({ title: "Évaluation IA terminée", description: "L'analyse a été générée avec succès" });
     } catch (e: any) {
       setAiError(e.message);
       toast({ title: "Erreur IA", description: e.message, variant: "destructive" });
@@ -87,9 +112,122 @@ const AssistanceIA = () => {
     }
   };
 
+  const renderDetailCard = (key: string, detail: any) => {
+    if (!detail) return null;
+    const label = DETAIL_LABELS[key] || key;
+
+    return (
+      <Card key={key}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            {statusIcon(detail.statut || detail.analyse || "")}
+            {label}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {detail.statut && (
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Statut</span>
+              <Badge variant="outline" className="text-xs">{detail.statut}</Badge>
+            </div>
+          )}
+
+          {/* Anomalies / ecarts / doublons arrays */}
+          {detail.anomalies && detail.anomalies.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-muted-foreground text-xs">Anomalies :</span>
+              {detail.anomalies.map((a: string, i: number) => (
+                <p key={i} className="text-xs pl-2 text-destructive">• {a}</p>
+              ))}
+            </div>
+          )}
+
+          {detail.ecarts && detail.ecarts.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-muted-foreground text-xs">Écarts :</span>
+              {detail.ecarts.map((e: any, i: number) => (
+                <p key={i} className="text-xs pl-2 text-destructive">• {typeof e === "string" ? e : JSON.stringify(e)}</p>
+              ))}
+            </div>
+          )}
+
+          {detail.doublonsDetectes && detail.doublonsDetectes.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-muted-foreground text-xs">Doublons :</span>
+              {detail.doublonsDetectes.map((d: any, i: number) => (
+                <p key={i} className="text-xs pl-2 text-destructive">• {typeof d === "string" ? d : JSON.stringify(d)}</p>
+              ))}
+            </div>
+          )}
+
+          {detail.articlesDepassement && detail.articlesDepassement.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-muted-foreground text-xs">Articles en dépassement :</span>
+              {detail.articlesDepassement.map((a: any, i: number) => (
+                <p key={i} className="text-xs pl-2 text-destructive">• {typeof a === "string" ? a : JSON.stringify(a)}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Numeric fields */}
+          {detail.montantDQERecalcule != null && (
+            <>
+              <Separator />
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Montant DQE recalculé</span><span>{Number(detail.montantDQERecalcule).toLocaleString("fr-FR")}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Montant fiscal recalculé</span><span>{Number(detail.montantFiscalRecalcule).toLocaleString("fr-FR")}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Montant DQE déclaré</span><span>{Number(detail.montantDQEDeclare).toLocaleString("fr-FR")}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Montant fiscal déclaré</span><span>{Number(detail.montantFiscalDeclare).toLocaleString("fr-FR")}</span></div>
+              <div className="flex justify-between text-xs font-medium"><span className="text-muted-foreground">Différence</span><span className="text-destructive">{Number(detail.difference).toLocaleString("fr-FR")}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Écart %</span><span>{detail.ecartPourcentage}%</span></div>
+            </>
+          )}
+
+          {detail.baseAttendue != null && (
+            <>
+              <Separator />
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Base attendue</span><span>{detail.baseAttendue != null ? Number(detail.baseAttendue).toLocaleString("fr-FR") : "N/A"}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Base déclarée</span><span>{detail.baseDeclaree != null ? Number(detail.baseDeclaree).toLocaleString("fr-FR") : "N/A"}</span></div>
+              {detail.difference != null && <div className="flex justify-between text-xs font-medium"><span className="text-muted-foreground">Différence</span><span className="text-destructive">{Number(detail.difference).toLocaleString("fr-FR")}</span></div>}
+            </>
+          )}
+
+          {detail.valeurAttendue != null && (
+            <>
+              <Separator />
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Valeur attendue</span><span>{detail.valeurAttendue != null ? Number(detail.valeurAttendue).toLocaleString("fr-FR") : "N/A"}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Valeur déclarée</span><span>{detail.valeurDeclaree != null ? Number(detail.valeurDeclaree).toLocaleString("fr-FR") : "N/A"}</span></div>
+              {detail.ecart != null && <div className="flex justify-between text-xs font-medium"><span className="text-muted-foreground">Écart</span><span className="text-destructive">{Number(detail.ecart).toLocaleString("fr-FR")}</span></div>}
+            </>
+          )}
+
+          {/* Text fields */}
+          {detail.decision && <p className="text-xs text-muted-foreground">Décision : {detail.decision}</p>}
+          {detail.impactEstime && <p className="text-xs text-muted-foreground">Impact estimé : {detail.impactEstime}</p>}
+          {detail.impactBaseTaxable && <p className="text-xs text-muted-foreground">Impact base taxable : {detail.impactBaseTaxable}</p>}
+          {detail.impactFinancier && <p className="text-xs text-muted-foreground">Impact financier : {detail.impactFinancier}</p>}
+          {detail.incoherenceInterne && <p className="text-xs text-muted-foreground">Incohérence : {detail.incoherenceInterne}</p>}
+          {detail.note && <p className="text-xs text-muted-foreground">Note : {detail.note}</p>}
+          {detail.niveauRisque && (
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-xs">Risque</span>
+              <Badge className={`text-xs ${riskBadge(detail.niveauRisque)}`}>{detail.niveauRisque}</Badge>
+            </div>
+          )}
+          {detail.analyse && <p className="text-xs text-muted-foreground">{detail.analyse}</p>}
+          {detail.niveauCohérence && (
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-xs">Cohérence</span>
+              <Badge variant="outline" className="text-xs">{detail.niveauCohérence}</Badge>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
@@ -98,10 +236,10 @@ const AssistanceIA = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Bot className="h-6 w-6 text-primary" />
-              Assistance IA — Demande #{id}
+              Évaluation IA — Demande #{id}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Analyse automatique des corrections douanières via l'offre financière et le DQE
+              Analyse automatique de conformité entre l'offre financière et le DQE
             </p>
           </div>
         </div>
@@ -111,12 +249,12 @@ const AssistanceIA = () => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
-              Lancer l'analyse
+              Lancer l'évaluation
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              L'IA va analyser l'offre financière et le DQE pour détecter les erreurs de calcul dans les droits et taxes douaniers.
+              L'IA va comparer l'offre financière et le DQE pour détecter les incohérences de désignation, quantité, prix, taux et montants.
             </p>
             <Button
               onClick={handleAiAssistance}
@@ -128,7 +266,7 @@ const AssistanceIA = () => {
               ) : (
                 <Bot className="h-4 w-4 mr-2" />
               )}
-              {aiLoading ? "Analyse en cours..." : "Lancer l'assistance IA"}
+              {aiLoading ? "Évaluation en cours..." : "Lancer l'évaluation IA"}
             </Button>
 
             {aiError && (
@@ -144,148 +282,60 @@ const AssistanceIA = () => {
 
         {/* Results */}
         {aiResult && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Résumé Audit */}
-            {aiResult.resumeAudit && (
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Résumé de l'audit</CardTitle></CardHeader>
+          <div className="space-y-6">
+            {/* Évaluation Globale */}
+            {aiResult.evaluationGlobale && (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg">Évaluation globale</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Erreurs détectées</span>
-                      <Badge variant="secondary">{aiResult.resumeAudit.nombreErreursDetectees}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Gravité</span>
-                      <Badge className={
-                        aiResult.resumeAudit.graviteGlobale === "élevée" || aiResult.resumeAudit.graviteGlobale === "elevee" || aiResult.resumeAudit.graviteGlobale === "Critique"
-                          ? "bg-destructive/10 text-destructive"
-                          : aiResult.resumeAudit.graviteGlobale === "moyenne"
-                          ? "bg-orange-100 text-orange-800"
-                          : "bg-emerald-100 text-emerald-800"
-                      }>{aiResult.resumeAudit.graviteGlobale}</Badge>
+                      <span className="text-muted-foreground">Statut global</span>
+                      <Badge variant="outline">{aiResult.evaluationGlobale.statutGlobal}</Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Risque fiscal</span>
-                      <span className="font-medium">{aiResult.resumeAudit.risqueFiscal}</span>
+                      <span className="text-muted-foreground">Risque global</span>
+                      <Badge className={riskBadge(aiResult.evaluationGlobale.niveauRisqueGlobal)}>
+                        {aiResult.evaluationGlobale.niveauRisqueGlobal}
+                      </Badge>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Écart Global */}
-            {aiResult.ecartGlobal && (
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Écart global</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Crédit déclaré</span>
-                      <span className="font-medium">{Number(aiResult.ecartGlobal.creditDeclare).toLocaleString("fr-FR")}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Score conformité</span>
+                      <span className="font-bold text-lg">{aiResult.evaluationGlobale.scoreConformite}%</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Crédit corrigé</span>
-                      <span className="font-medium">{Number(aiResult.ecartGlobal.creditCorrige).toLocaleString("fr-FR")}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Différence</span>
-                      <span className="font-bold text-destructive">{Number(aiResult.ecartGlobal.difference).toLocaleString("fr-FR")}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Crédit Impôt Corrigé */}
-            {aiResult.creditImpôtCorrige && (
-              <Card className="md:col-span-2">
-                <CardHeader><CardTitle className="text-lg">Crédit d'impôt corrigé</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {aiResult.creditImpôtCorrige.creditDouanier && (
-                      <div className="space-y-2">
-                        <p className="font-medium text-sm text-muted-foreground">Douanier</p>
-                        {Object.entries(aiResult.creditImpôtCorrige.creditDouanier).map(([k, v]) => (
-                          <div key={k} className="flex justify-between text-sm pl-2">
-                            <span>{k}</span>
-                            <span className="font-medium">{Number(v).toLocaleString("fr-FR")}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {aiResult.creditImpôtCorrige.creditInterieur && (
-                      <div className="space-y-2">
-                        <p className="font-medium text-sm text-muted-foreground">Intérieur</p>
-                        {Object.entries(aiResult.creditImpôtCorrige.creditInterieur).map(([k, v]) => (
-                          <div key={k} className="flex justify-between text-sm pl-2">
-                            <span>{k}</span>
-                            <span className="font-medium">{Number(v).toLocaleString("fr-FR")}</span>
-                          </div>
-                        ))}
+                    {aiResult.evaluationGlobale.incoherenceLogiqueGlobale && (
+                      <div className="sm:col-span-2">
+                        <span className="text-muted-foreground text-xs">Incohérence logique :</span>
+                        <p className="text-sm mt-1">{aiResult.evaluationGlobale.incoherenceLogiqueGlobale}</p>
                       </div>
                     )}
                   </div>
-                  <Separator className="my-3" />
-                  <div className="flex justify-between text-sm font-bold">
-                    <span>Crédit total corrigé</span>
-                    <span>{Number(aiResult.creditImpôtCorrige.creditTotalCorrige).toLocaleString("fr-FR")}</span>
-                  </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Corrections Douane */}
-            {aiResult.correctionsDouane && aiResult.correctionsDouane.length > 0 && (
-              <Card className="md:col-span-2">
-                <CardHeader><CardTitle className="text-lg">Corrections douanières ({aiResult.correctionsDouane.length})</CardTitle></CardHeader>
-                <CardContent>
-                  <ScrollArea className="max-h-96">
-                    <div className="space-y-3">
-                      {aiResult.correctionsDouane.map((c: any, i: number) => (
-                        <div key={i} className="rounded-lg border border-border p-4 text-sm space-y-2">
-                          <div className="flex justify-between items-center">
-                            <p className="font-medium">{c.produit}</p>
-                            <Badge variant="secondary">{c.niveauErreur}</Badge>
-                          </div>
-                          {c.ecart && typeof c.ecart === "object" && Object.entries(c.ecart).map(([k, v]) => (
-                            <div key={k} className="flex justify-between pl-2 text-xs">
-                              <span className="text-muted-foreground">{k}</span>
-                              <span>{Number(v).toLocaleString("fr-FR")}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+            {/* Details Grid */}
+            {aiResult.details && (
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Détails de l'analyse</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(aiResult.details).map(([key, detail]) =>
+                    renderDetailCard(key, detail)
+                  )}
+                </div>
+              </div>
             )}
 
-            {/* Corrections Intérieure */}
-            {aiResult.correctionsInterieure && aiResult.correctionsInterieure.length > 0 && (
-              <Card className="md:col-span-2">
-                <CardHeader><CardTitle className="text-lg">Corrections intérieures ({aiResult.correctionsInterieure.length})</CardTitle></CardHeader>
+            {/* Recommandation */}
+            {aiResult.recommandationFinale && (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg">Recommandation finale</CardTitle>
+                </CardHeader>
                 <CardContent>
-                  <ScrollArea className="max-h-96">
-                    <div className="space-y-3">
-                      {aiResult.correctionsInterieure.map((c: any, i: number) => (
-                        <div key={i} className="rounded-lg border border-border p-4 text-sm space-y-2">
-                          <div className="flex justify-between items-center">
-                            <p className="font-medium">{c.prestation || c.produit}</p>
-                            <Badge variant="secondary">{c.niveauErreur}</Badge>
-                          </div>
-                          {c.ecart && typeof c.ecart === "object" && Object.entries(c.ecart).map(([k, v]) => (
-                            <div key={k} className="flex justify-between pl-2 text-xs">
-                              <span className="text-muted-foreground">{k}</span>
-                              <span>{Number(v).toLocaleString("fr-FR")}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                  <p className="text-sm whitespace-pre-line">{aiResult.recommandationFinale}</p>
                 </CardContent>
               </Card>
             )}
