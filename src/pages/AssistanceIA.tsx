@@ -252,7 +252,7 @@ const AssistanceIA = () => {
                           {c.ecart && typeof c.ecart === "object" && Object.entries(c.ecart).map(([k, v]) => (
                             <div key={k} className="flex justify-between pl-2 text-xs">
                               <span className="text-muted-foreground">{k}</span>
-                              <span>{String(v)}</span>
+                              <span>{Number(v).toLocaleString("fr-FR")}</span>
                             </div>
                           ))}
                         </div>
@@ -273,9 +273,15 @@ const AssistanceIA = () => {
                       {aiResult.correctionsInterieure.map((c: any, i: number) => (
                         <div key={i} className="rounded-lg border border-border p-4 text-sm space-y-2">
                           <div className="flex justify-between items-center">
-                            <p className="font-medium">{c.produit}</p>
+                            <p className="font-medium">{c.prestation || c.produit}</p>
                             <Badge variant="secondary">{c.niveauErreur}</Badge>
                           </div>
+                          {c.ecart && typeof c.ecart === "object" && Object.entries(c.ecart).map(([k, v]) => (
+                            <div key={k} className="flex justify-between pl-2 text-xs">
+                              <span className="text-muted-foreground">{k}</span>
+                              <span>{Number(v).toLocaleString("fr-FR")}</span>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
