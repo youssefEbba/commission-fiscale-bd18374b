@@ -361,6 +361,11 @@ const Demandes = () => {
                               if (!t.from.includes(d.statut)) return null;
                               // Don't show final decisions in compact table view
                               if (t.isDecisionFinale) return null;
+                              // If any rejection exists, block visa
+                              const hasRejet = (d.rejets && d.rejets.length > 0) || d.statut === "REJETEE";
+                              if (t.isVisa && hasRejet) return (
+                                <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">✗ Rejet en cours</Badge>
+                              );
                               // Disable visa if already validated by this actor
                               const alreadyValidated = t.isVisa && (
                                 (role === "DGD" && d.validationDgd) ||
@@ -371,6 +376,8 @@ const Demandes = () => {
                               if (alreadyValidated) return (
                                 <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
                               );
+                              // If any rejection exists, also block simple reject (already rejected)
+                              if (t.to === "REJETEE" && hasRejet) return null;
                               return (
                                 <Button
                                   key={idx}
@@ -595,30 +602,41 @@ const Demandes = () => {
               {transitions.length > 0 && (
                 <div className="space-y-3 pt-2 border-t border-border">
                   {/* Visa / Simple reject */}
-                  <div className="flex flex-wrap gap-2">
-                    {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
-                      const alreadyValidated = t.isVisa && (
-                        (role === "DGD" && selected.validationDgd) ||
-                        (role === "DGTCP" && selected.validationDgtcp) ||
-                        (role === "DGI" && selected.validationDgi) ||
-                        (role === "DGB" && selected.validationDgi)
-                      );
-                      if (alreadyValidated) return (
-                        <Badge key={idx} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
-                      );
-                      return (
-                        <Button
-                          key={idx}
-                          variant={t.to === "REJETEE" ? "destructive" : "default"}
-                          disabled={actionLoading === selected.id}
-                          onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleStatutChange(selected.id, t.to)}
-                        >
-                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                          {t.label}
-                        </Button>
-                      );
-                    })}
-                  </div>
+                  {(() => {
+                    const hasRejet = (selected.rejets && selected.rejets.length > 0) || selected.statut === "REJETEE";
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
+                          // If any rejection exists, block visa
+                          if (t.isVisa && hasRejet) return (
+                            <Badge key={idx} className="bg-red-100 text-red-800 text-xs">✗ Rejet en cours</Badge>
+                          );
+                          const alreadyValidated = t.isVisa && (
+                            (role === "DGD" && selected.validationDgd) ||
+                            (role === "DGTCP" && selected.validationDgtcp) ||
+                            (role === "DGI" && selected.validationDgi) ||
+                            (role === "DGB" && selected.validationDgi)
+                          );
+                          if (alreadyValidated) return (
+                            <Badge key={idx} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                          );
+                          // Hide simple reject if already rejected
+                          if (t.to === "REJETEE" && hasRejet) return null;
+                          return (
+                            <Button
+                              key={idx}
+                              variant={t.to === "REJETEE" ? "destructive" : "default"}
+                              disabled={actionLoading === selected.id}
+                              onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleStatutChange(selected.id, t.to)}
+                            >
+                              {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                              {t.label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                   {/* Decision finale (DGTCP / PRESIDENT only) */}
                   {transitions.some(t => t.isDecisionFinale && t.from.includes(selected.statut)) && (
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-border">
