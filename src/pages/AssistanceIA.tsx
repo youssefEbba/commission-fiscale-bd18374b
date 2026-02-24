@@ -72,12 +72,12 @@ const AssistanceIA = () => {
       const dqeDoc = docs.find(d => d.type === "DAO_DQE");
       const offreDoc = docs.find(d => d.type === "OFFRE_FINANCIERE");
 
-      if (!offreDoc?.chemin) {
-        throw new Error("L'offre financière est requise pour l'évaluation IA");
+      if (!offreDoc?.chemin || !dqeDoc?.chemin) {
+        throw new Error("Les deux documents (DQE et Offre financière) sont requis pour l'évaluation IA. Veuillez les uploader depuis la page de correction.");
       }
 
       const offreUrl = offreDoc.chemin.replace(/\\/g, "/");
-      const dqeUrl = dqeDoc?.chemin ? dqeDoc.chemin.replace(/\\/g, "/") : undefined;
+      const dqeUrl = dqeDoc.chemin.replace(/\\/g, "/");
 
       const token = localStorage.getItem("auth_token");
       const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
@@ -89,8 +89,8 @@ const AssistanceIA = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          offreUrl,
           dqeUrl,
+          offreUrl,
           provider: "gemini",
           model: "gemini-2.5-flash",
         }),
