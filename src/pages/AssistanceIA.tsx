@@ -143,28 +143,73 @@ const AssistanceIA = () => {
           )}
 
           {detail.ecarts && detail.ecarts.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span className="text-muted-foreground text-xs">Écarts :</span>
               {detail.ecarts.map((e: any, i: number) => (
-                <p key={i} className="text-xs pl-2 text-destructive">• {typeof e === "string" ? e : JSON.stringify(e)}</p>
+                typeof e === "string" ? (
+                  <p key={i} className="text-xs pl-2 text-destructive">• {e}</p>
+                ) : (
+                  <div key={i} className="rounded border border-destructive/20 bg-destructive/5 p-2 text-xs space-y-1">
+                    {e.produit && <p className="font-medium text-destructive">{e.produit}</p>}
+                    {e.designation && <p className="font-medium text-destructive">{e.designation}</p>}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-muted-foreground">
+                      {e.puDQE != null && <><span>PU DQE</span><span className="text-right">{Number(e.puDQE).toLocaleString("fr-FR")}</span></>}
+                      {e.puFiscal != null && <><span>PU Fiscal</span><span className="text-right">{Number(e.puFiscal).toLocaleString("fr-FR")}</span></>}
+                      {e.ecartAbsolu != null && <><span>Écart absolu</span><span className="text-right text-destructive">{Number(e.ecartAbsolu).toLocaleString("fr-FR")}</span></>}
+                      {e.ecartPourcentage != null && <><span>Écart %</span><span className="text-right text-destructive">{e.ecartPourcentage}%</span></>}
+                      {e.quantiteDQE != null && <><span>Qté DQE</span><span className="text-right">{Number(e.quantiteDQE).toLocaleString("fr-FR")}</span></>}
+                      {e.quantiteFiscale != null && <><span>Qté Fiscale</span><span className="text-right">{Number(e.quantiteFiscale).toLocaleString("fr-FR")}</span></>}
+                    </div>
+                    {Object.entries(e).filter(([k]) => !["produit","designation","puDQE","puFiscal","ecartAbsolu","ecartPourcentage","quantiteDQE","quantiteFiscale"].includes(k)).map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-muted-foreground">
+                        <span>{k}</span>
+                        <span className="text-right">{typeof v === "number" ? Number(v).toLocaleString("fr-FR") : String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               ))}
             </div>
           )}
 
           {detail.doublonsDetectes && detail.doublonsDetectes.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span className="text-muted-foreground text-xs">Doublons :</span>
               {detail.doublonsDetectes.map((d: any, i: number) => (
-                <p key={i} className="text-xs pl-2 text-destructive">• {typeof d === "string" ? d : JSON.stringify(d)}</p>
+                typeof d === "string" ? (
+                  <p key={i} className="text-xs pl-2 text-destructive">• {d}</p>
+                ) : (
+                  <div key={i} className="rounded border border-orange-200 bg-orange-50 p-2 text-xs space-y-0.5">
+                    {Object.entries(d).map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-muted-foreground">
+                        <span>{k}</span>
+                        <span>{typeof v === "number" ? Number(v).toLocaleString("fr-FR") : String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               ))}
             </div>
           )}
 
           {detail.articlesDepassement && detail.articlesDepassement.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span className="text-muted-foreground text-xs">Articles en dépassement :</span>
               {detail.articlesDepassement.map((a: any, i: number) => (
-                <p key={i} className="text-xs pl-2 text-destructive">• {typeof a === "string" ? a : JSON.stringify(a)}</p>
+                typeof a === "string" ? (
+                  <p key={i} className="text-xs pl-2 text-destructive">• {a}</p>
+                ) : (
+                  <div key={i} className="rounded border border-orange-200 bg-orange-50 p-2 text-xs space-y-0.5">
+                    {a.produit && <p className="font-medium">{a.produit}</p>}
+                    {a.designation && <p className="font-medium">{a.designation}</p>}
+                    {Object.entries(a).filter(([k]) => !["produit","designation"].includes(k)).map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-muted-foreground">
+                        <span>{k}</span>
+                        <span>{typeof v === "number" ? Number(v).toLocaleString("fr-FR") : String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               ))}
             </div>
           )}
