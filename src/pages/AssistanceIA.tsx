@@ -136,8 +136,19 @@ const AssistanceIA = () => {
           {detail.anomalies && detail.anomalies.length > 0 && (
             <div className="space-y-1">
               <span className="text-muted-foreground text-xs">Anomalies :</span>
-              {detail.anomalies.map((a: string, i: number) => (
-                <p key={i} className="text-xs pl-2 text-destructive">• {a}</p>
+              {detail.anomalies.map((a: any, i: number) => (
+                typeof a === "string" ? (
+                  <p key={i} className="text-xs pl-2 text-destructive">• {a}</p>
+                ) : (
+                  <div key={i} className="rounded border border-destructive/20 bg-destructive/5 p-2 text-xs space-y-0.5">
+                    {Object.entries(a).map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-muted-foreground">
+                        <span className="capitalize">{k}</span>
+                        <span className="text-right max-w-[60%]">{typeof v === "object" && v !== null ? JSON.stringify(v) : String(v ?? "")}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               ))}
             </div>
           )}
