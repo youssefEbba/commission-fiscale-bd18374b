@@ -18,6 +18,7 @@ import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -96,6 +97,7 @@ async function downloadDocAuthenticated(url: string, filename: string) {
 const Demandes = () => {
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -354,43 +356,46 @@ const Demandes = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="sm" onClick={() => openDetail(d)}>
-                              <Eye className="h-4 w-4 mr-1" /> Détail
-                            </Button>
-                            {transitions.map((t, idx) => {
-                              if (!t.from.includes(d.statut)) return null;
-                              // Don't show final decisions in compact table view
-                              if (t.isDecisionFinale) return null;
-                              // If any rejection exists, block visa
-                              const hasRejet = (d.rejets && d.rejets.length > 0) || d.statut === "REJETEE";
-                              if (t.isVisa && hasRejet) return (
-                                <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">✗ Rejet en cours</Badge>
-                              );
-                              // Disable visa if already validated by this actor
-                              const alreadyValidated = t.isVisa && (
-                                (role === "DGD" && d.validationDgd) ||
-                                (role === "DGTCP" && d.validationDgtcp) ||
-                                (role === "DGI" && d.validationDgi) ||
-                                (role === "DGB" && d.validationDgi)
-                              );
-                              if (alreadyValidated) return (
-                                <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
-                              );
-                              // If any rejection exists, also block simple reject (already rejected)
-                              if (t.to === "REJETEE" && hasRejet) return null;
-                              return (
-                                <Button
-                                  key={idx}
-                                  variant={t.to === "REJETEE" ? "destructive" : "default"}
-                                  size="sm"
-                                  disabled={actionLoading === d.id}
-                                  onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : handleStatutChange(d.id, t.to)}
-                                >
-                                  {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                                  {t.label}
+                            {role === "DGD" ? (
+                              <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
+                                <ArrowRight className="h-4 w-4 mr-1" /> Commencer la correction douanière
+                              </Button>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="sm" onClick={() => openDetail(d)}>
+                                  <Eye className="h-4 w-4 mr-1" /> Détail
                                 </Button>
-                              );
-                            })}
+                                {transitions.map((t, idx) => {
+                                  if (!t.from.includes(d.statut)) return null;
+                                  if (t.isDecisionFinale) return null;
+                                  const hasRejet = (d.rejets && d.rejets.length > 0) || d.statut === "REJETEE";
+                                  if (t.isVisa && hasRejet) return (
+                                    <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">✗ Rejet en cours</Badge>
+                                  );
+                                  const alreadyValidated = t.isVisa && (
+                                    (role === "DGTCP" && d.validationDgtcp) ||
+                                    (role === "DGI" && d.validationDgi) ||
+                                    (role === "DGB" && d.validationDgi)
+                                  );
+                                  if (alreadyValidated) return (
+                                    <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                                  );
+                                  if (t.to === "REJETEE" && hasRejet) return null;
+                                  return (
+                                    <Button
+                                      key={idx}
+                                      variant={t.to === "REJETEE" ? "destructive" : "default"}
+                                      size="sm"
+                                      disabled={actionLoading === d.id}
+                                      onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : handleStatutChange(d.id, t.to)}
+                                    >
+                                      {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                                      {t.label}
+                                    </Button>
+                                  );
+                                })}
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
