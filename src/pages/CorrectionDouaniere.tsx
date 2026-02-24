@@ -183,7 +183,8 @@ const CorrectionDouaniere = () => {
       const dqeUrl = dqeDoc?.chemin ? dqeDoc.chemin.replace(/\\/g, "/") : undefined;
 
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/audit-fiscale/correct-by-url`, {
+      const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
+      const res = await fetch(`${AI_SERVICE_BASE}/api/audit-fiscale/correct-by-url`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
