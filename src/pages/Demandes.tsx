@@ -175,8 +175,14 @@ const Demandes = () => {
   // Wizard handles creation now
 
   const openDetail = async (d: DemandeCorrectionDto) => {
-    setSelected(d);
     setDocsLoading(true);
+    try {
+      // Fetch full detail (includes rejets)
+      const full = await demandeCorrectionApi.getById(d.id);
+      setSelected(full);
+    } catch {
+      setSelected(d);
+    }
     try {
       const documents = await demandeCorrectionApi.getDocuments(d.id);
       setDocs(documents);
@@ -429,35 +435,69 @@ const Demandes = () => {
                 </div>
               )}
 
-              {/* Validation parallèle tracker */}
-              {(selected.statut === "EN_EVALUATION" || selected.statut === "EN_VALIDATION" || selected.statut === "ADOPTEE") && (
-                <div className="rounded-lg border border-border p-4">
-                  <h3 className="text-sm font-semibold mb-3">Validation parallèle</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: "DGD – Douanes", done: selected.validationDgd, date: selected.validationDgdDate },
-                      { label: "DGTCP – Trésor", done: selected.validationDgtcp, date: selected.validationDgtcpDate },
-                      { label: "DGI – Impôts", done: selected.validationDgi, date: selected.validationDgiDate },
-                    ].map((v) => (
-                      <div key={v.label} className={`rounded-lg border p-3 text-center text-xs ${v.done ? "border-green-300 bg-green-50" : "border-border bg-muted/30"}`}>
-                        {v.done ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                        ) : (
-                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
-                        )}
-                        <p className="font-medium">{v.label}</p>
-                        {v.done && v.date && (
-                          <p className="text-muted-foreground mt-0.5">{new Date(v.date).toLocaleDateString("fr-FR")}</p>
-                        )}
-                        {!v.done && <p className="text-muted-foreground mt-0.5">En attente</p>}
-                      </div>
-                    ))}
+              {/* Validation parallèle tracker — always visible */}
+              {(() => {
+                const rejets = selected.rejets || [];
+                const actors = [
+                  { key: "DGD", label: "DGD – Douanes", done: selected.validationDgd, date: selected.validationDgdDate, userId: selected.validationDgdUserId },
+                  { key: "DGTCP", label: "DGTCP – Trésor", done: selected.validationDgtcp, date: selected.validationDgtcpDate, userId: selected.validationDgtcpUserId },
+                  { key: "DGI", label: "DGI – Impôts", done: selected.validationDgi, date: selected.validationDgiDate, userId: selected.validationDgiUserId },
+                ];
+                // Find rejection per actor by matching utilisateurNom containing keyword
+                const getActorRejets = (key: string) => {
+                  const keywords: Record<string, string[]> = {
+                    DGD: ["DGD", "Douane"],
+                    DGTCP: ["DGTCP", "Trésor", "Tresor"],
+                    DGI: ["DGI", "Impôt", "Impot"],
+                  };
+                  return rejets.filter(r =>
+                    r.utilisateurNom && keywords[key]?.some(kw => r.utilisateurNom!.toUpperCase().includes(kw.toUpperCase()))
+                  );
+                };
+                return (
+                  <div className="rounded-lg border border-border p-4">
+                    <h3 className="text-sm font-semibold mb-3">Statut par organisme</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {actors.map((v) => {
+                        const actorRejets = getActorRejets(v.key);
+                        const rejected = actorRejets.length > 0 && !v.done;
+                        const lastRejet = actorRejets[actorRejets.length - 1];
+                        return (
+                          <div key={v.key} className={`rounded-lg border p-3 text-center text-xs ${
+                            v.done ? "border-green-300 bg-green-50" :
+                            rejected ? "border-red-300 bg-red-50" :
+                            "border-border bg-muted/30"
+                          }`}>
+                            {v.done ? (
+                              <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                            ) : rejected ? (
+                              <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
+                            ) : (
+                              <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
+                            )}
+                            <p className="font-medium">{v.label}</p>
+                            {v.done && v.date && (
+                              <p className="text-muted-foreground mt-0.5">{new Date(v.date).toLocaleDateString("fr-FR")}</p>
+                            )}
+                            {v.done && <p className="text-green-700 font-medium mt-0.5">✓ Validé</p>}
+                            {rejected && lastRejet && (
+                              <>
+                                <p className="text-red-700 font-medium mt-0.5">✗ Rejeté</p>
+                                <p className="text-muted-foreground mt-1 italic truncate" title={lastRejet.motifRejet}>{lastRejet.motifRejet}</p>
+                                {lastRejet.dateRejet && <p className="text-muted-foreground">{new Date(lastRejet.dateRejet).toLocaleDateString("fr-FR")}</p>}
+                              </>
+                            )}
+                            {!v.done && !rejected && <p className="text-muted-foreground mt-0.5">En attente</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {selected.validationDgd && selected.validationDgtcp && selected.validationDgi && (
+                      <p className="text-xs text-green-700 font-medium mt-2 text-center">✓ Toutes les validations sont complètes</p>
+                    )}
                   </div>
-                  {selected.validationDgd && selected.validationDgtcp && selected.validationDgi && (
-                    <p className="text-xs text-green-700 font-medium mt-2 text-center">✓ Toutes les validations sont complètes</p>
-                  )}
-                </div>
-              )}
+                );
+              })()}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Pièces du dossier</h3>
