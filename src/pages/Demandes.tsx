@@ -35,20 +35,20 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
 const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean }[]> = {
   DGD: [
     { from: ["RECUE", "RECEVABLE"], to: "EN_EVALUATION", label: "Commencer l'évaluation", icon: ArrowRight },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Douanes", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Douanes", icon: CheckCircle, isVisa: true },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGTCP: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGI: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGB: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Budget", icon: CheckCircle, isVisa: true },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Budget", icon: CheckCircle, isVisa: true },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   PRESIDENT: [
     { from: ["EN_VALIDATION"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
