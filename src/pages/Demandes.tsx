@@ -32,26 +32,26 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   NOTIFIEE: "bg-gray-100 text-gray-800",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType }[]> = {
+const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean }[]> = {
   DGD: [
     { from: ["RECUE", "RECEVABLE"], to: "EN_EVALUATION", label: "Commencer l'évaluation", icon: ArrowRight },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Douanes", icon: CheckCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Douanes", icon: CheckCircle, isVisa: true },
     { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGTCP: [
-    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle },
-    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGI: [
-    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle },
-    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGB: [
-    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Budget", icon: CheckCircle },
-    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "EN_VALIDATION", label: "Apposer visa Budget", icon: CheckCircle, isVisa: true },
+    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   PRESIDENT: [
-    { from: ["EN_VALIDATION", "ADOPTEE"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
+    { from: ["EN_VALIDATION"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
     { from: ["EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
 };
@@ -350,10 +350,21 @@ const Demandes = () => {
                             <Button variant="ghost" size="sm" onClick={() => openDetail(d)}>
                               <Eye className="h-4 w-4 mr-1" /> Détail
                             </Button>
-                            {transitions.map((t) =>
-                              t.from.includes(d.statut) ? (
+                            {transitions.map((t) => {
+                              if (!t.from.includes(d.statut)) return null;
+                              // Disable visa if already validated by this actor
+                              const alreadyValidated = t.isVisa && (
+                                (role === "DGD" && d.validationDgd) ||
+                                (role === "DGTCP" && d.validationDgtcp) ||
+                                (role === "DGI" && d.validationDgi) ||
+                                (role === "DGB" && d.validationDgi) // DGB uses same flag if needed
+                              );
+                              if (alreadyValidated) return (
+                                <Badge key={t.to + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                              );
+                              return (
                                 <Button
-                                  key={t.to}
+                                  key={t.to + t.label}
                                   variant={t.to === "REJETEE" ? "destructive" : "default"}
                                   size="sm"
                                   disabled={actionLoading === d.id}
@@ -362,8 +373,8 @@ const Demandes = () => {
                                   {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                                   {t.label}
                                 </Button>
-                              ) : null
-                            )}
+                              );
+                            })}
                           </div>
                         </TableCell>
                       </TableRow>
