@@ -310,6 +310,15 @@ export interface DemandeCorrectionDto {
   validationDgiUserId?: number;
   validationDgiDate?: string;
   motifRejet?: string;
+  rejets?: RejetDto[];
+}
+
+export interface RejetDto {
+  id: number;
+  motifRejet: string;
+  dateRejet?: string;
+  utilisateurId?: number;
+  utilisateurNom?: string;
 }
 
 export interface ImportationLigne {

@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
-  DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS,
+  DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -39,16 +39,16 @@ const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatu
     { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGTCP: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGI: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   DGB: [
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Budget", icon: CheckCircle },
-    { from: ["EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "ADOPTEE", label: "Apposer visa Budget", icon: CheckCircle },
+    { from: ["RECUE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"], to: "REJETEE", label: "Rejeter", icon: XCircle },
   ],
   PRESIDENT: [
     { from: ["EN_VALIDATION", "ADOPTEE"], to: "ADOPTEE", label: "Valider la correction", icon: CheckCircle },
@@ -406,8 +406,23 @@ const Demandes = () => {
                 </div>
               </div>
 
-              {/* Motif de rejet */}
-              {selected.statut === "REJETEE" && selected.motifRejet && (
+              {/* Historique des rejets */}
+              {selected.rejets && selected.rejets.length > 0 && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-destructive">Historique des rejets</h3>
+                  {selected.rejets.map((r: RejetDto) => (
+                    <div key={r.id} className="rounded border border-destructive/20 bg-background p-3 text-sm space-y-1">
+                      <p className="font-medium">{r.motifRejet}</p>
+                      <div className="flex gap-3 text-xs text-muted-foreground">
+                        {r.utilisateurNom && <span>Par : {r.utilisateurNom}</span>}
+                        {r.dateRejet && <span>Le : {new Date(r.dateRejet).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Motif de rejet (legacy) */}
+              {selected.statut === "REJETEE" && selected.motifRejet && (!selected.rejets || selected.rejets.length === 0) && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                   <h3 className="text-sm font-semibold text-destructive mb-1">Motif du rejet</h3>
                   <p className="text-sm">{selected.motifRejet}</p>
