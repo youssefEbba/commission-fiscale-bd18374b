@@ -18,6 +18,7 @@ import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
 import Simulation from "./pages/Simulation";
 import Register from "./pages/Register";
+import CorrectionDouaniere from "./pages/CorrectionDouaniere";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,11 @@ const App = () => (
             <Route path="/dashboard/simulation" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "ADMIN_SI"]}>
                 <Simulation />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/correction-douaniere/:id" element={
+              <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
+                <CorrectionDouaniere />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
