@@ -73,7 +73,7 @@ const AssistanceIA = () => {
       const offreDoc = docs.find(d => d.type === "OFFRE_FINANCIERE");
 
       if (!offreDoc?.chemin || !dqeDoc?.chemin) {
-        throw new Error("Les deux documents (DQE et Offre financière) sont requis pour l'évaluation IA. Veuillez les uploader depuis la page de correction.");
+        throw new Error("Les deux documents (DQE et Offre financière) sont requis pour l'évaluation. Veuillez les uploader depuis la page de correction.");
       }
 
       const offreUrl = offreDoc.chemin.replace(/\\/g, "/");
@@ -103,10 +103,10 @@ const AssistanceIA = () => {
 
       const data = await res.json();
       setAiResult(data);
-      toast({ title: "Évaluation IA terminée", description: "L'analyse a été générée avec succès" });
+      toast({ title: "Évaluation terminée", description: "L'analyse a été générée avec succès" });
     } catch (e: any) {
       setAiError(e.message);
-      toast({ title: "Erreur IA", description: e.message, variant: "destructive" });
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setAiLoading(false);
     }
@@ -292,7 +292,7 @@ const AssistanceIA = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Bot className="h-6 w-6 text-primary" />
-              Évaluation IA — Demande #{id}
+              Assistance intelligente — Demande #{id}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               Analyse automatique de conformité entre l'offre financière et le DQE
@@ -310,7 +310,7 @@ const AssistanceIA = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              L'IA va comparer l'offre financière et le DQE pour détecter les incohérences de désignation, quantité, prix, taux et montants.
+              L'assistance intelligente va comparer l'offre financière et le DQE pour détecter les incohérences de désignation, quantité, prix, taux et montants.
             </p>
             <Button
               onClick={handleAiAssistance}
@@ -322,7 +322,7 @@ const AssistanceIA = () => {
               ) : (
                 <Bot className="h-4 w-4 mr-2" />
               )}
-              {aiLoading ? "Évaluation en cours..." : "Lancer l'évaluation IA"}
+              {aiLoading ? "Évaluation en cours..." : "Lancer l'évaluation"}
             </Button>
 
             {aiError && (
