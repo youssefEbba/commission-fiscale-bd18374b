@@ -272,6 +272,86 @@ const Demandes = () => {
     setRejectDecisionFinale(false);
   };
 
+  // Adopter avec génération de lettre d'adoption
+  const handleAdoptWithLetter = async (id: number) => {
+    setActionLoading(id);
+    try {
+      // 1. Appliquer la décision finale
+      const updated = await demandeCorrectionApi.updateStatut(id, "ADOPTEE", undefined, true);
+
+      // 2. Générer la lettre d'adoption en PDF côté client
+      const demande = selected || updated;
+      const letterContent = generateAdoptionLetter(demande);
+      const blob = new Blob([letterContent], { type: "text/html" });
+      const file = new File([blob], `Lettre_Adoption_${demande.numero || id}.html`, { type: "text/html" });
+
+      // 3. Uploader comme document de type spécial
+      try {
+        await demandeCorrectionApi.uploadDocument(id, "LETTRE_ADOPTION", file);
+        toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption générée avec succès" });
+      } catch {
+        toast({ title: "Adoptée", description: "Décision finale appliquée. La lettre n'a pas pu être uploadée automatiquement.", variant: "default" });
+      }
+
+      fetchDemandes();
+      if (selected?.id === id) {
+        const full = await demandeCorrectionApi.getById(id);
+        setSelected(full);
+        const documents = await demandeCorrectionApi.getDocuments(id);
+        setDocs(documents);
+      }
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const generateAdoptionLetter = (demande: DemandeCorrectionDto): string => {
+    const date = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    const decisions = (demande.decisions || []).filter(d => d.decision === "VISA");
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Lettre d'adoption</title>
+<style>
+  body { font-family: 'Times New Roman', serif; margin: 40px 60px; line-height: 1.6; color: #333; }
+  h1 { text-align: center; font-size: 18px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+  .header { text-align: center; margin-bottom: 30px; }
+  .ref { margin: 20px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  td, th { border: 1px solid #999; padding: 8px; text-align: left; }
+  th { background: #f0f0f0; }
+  .signature { margin-top: 60px; text-align: right; }
+</style></head>
+<body>
+  <div class="header">
+    <h1>LETTRE D'ADOPTION</h1>
+    <p>Commission Nationale des Exonérations Fiscales</p>
+  </div>
+  <div class="ref">
+    <p><strong>Référence :</strong> ${demande.numero || `DC-${demande.id}`}</p>
+    <p><strong>Date :</strong> ${date}</p>
+    <p><strong>Autorité Contractante :</strong> ${demande.autoriteContractanteNom || "—"}</p>
+    <p><strong>Entreprise :</strong> ${demande.entrepriseRaisonSociale || "—"}</p>
+  </div>
+  <p>Par la présente, la Commission Nationale des Exonérations Fiscales certifie que la demande de correction de l'offre fiscale référencée ci-dessus a été examinée et <strong>ADOPTÉE</strong> à l'unanimité par l'ensemble des organismes compétents.</p>
+
+  <h3>Visas obtenus :</h3>
+  <table>
+    <tr><th>Organisme</th><th>Agent</th><th>Date du visa</th></tr>
+    ${decisions.map(d => `<tr><td>${d.role}</td><td>${d.utilisateurNom || "—"}</td><td>${d.dateDecision ? new Date(d.dateDecision).toLocaleDateString("fr-FR") : "—"}</td></tr>`).join("")}
+  </table>
+
+  <p>Cette décision est définitive et prend effet à compter de la date de signature de la présente lettre.</p>
+
+  <div class="signature">
+    <p>Fait à Nouakchott, le ${date}</p>
+    <br/><br/>
+    <p><strong>Le Président de la Commission</strong></p>
+  </div>
+</body></html>`;
+  };
+
   const handleUpload = async () => {
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
@@ -726,23 +806,40 @@ const Demandes = () => {
                       </div>
                     );
                   })()}
-                  {/* Decision finale (DGTCP / PRESIDENT only) */}
-                  {transitions.some(t => t.isDecisionFinale && t.from.includes(selected.statut)) && (
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-border">
-                      <span className="text-xs font-semibold text-muted-foreground self-center mr-2">Décision finale :</span>
-                      {transitions.filter(t => t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
-                        <Button
-                          key={`final-${idx}`}
-                          variant={t.to === "REJETEE" ? "destructive" : "default"}
-                          disabled={actionLoading === selected.id}
-                          onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : handleStatutChange(selected.id, t.to, undefined, true)}
-                        >
-                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                          {t.label}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
+                  {/* Decision finale (DGTCP / PRESIDENT only) — visible uniquement si les 4 organismes ont validé */}
+                  {(() => {
+                    const hasFinalTransitions = transitions.some(t => t.isDecisionFinale && t.from.includes(selected.statut));
+                    if (!hasFinalTransitions) return null;
+                    const decs = selected.decisions || [];
+                    const REQUIRED_ROLES = ["DGD", "DGTCP", "DGI", "DGB"];
+                    const allValidated = REQUIRED_ROLES.every(r => decs.find(d => d.role === r)?.decision === "VISA");
+                    const missingRoles = REQUIRED_ROLES.filter(r => decs.find(d => d.role === r)?.decision !== "VISA");
+                    return (
+                      <div className="pt-2 border-t border-dashed border-border space-y-2">
+                        <span className="text-xs font-semibold text-muted-foreground mr-2">Décision finale :</span>
+                        {!allValidated ? (
+                          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                            ⚠️ Tous les organismes doivent apposer leur visa avant de pouvoir prendre la décision finale.
+                            <br />Manquant : {missingRoles.join(", ")}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {transitions.filter(t => t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
+                              <Button
+                                key={`final-${idx}`}
+                                variant={t.to === "REJETEE" ? "destructive" : "default"}
+                                disabled={actionLoading === selected.id}
+                                onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : handleAdoptWithLetter(selected.id)}
+                              >
+                                {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                                {t.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>

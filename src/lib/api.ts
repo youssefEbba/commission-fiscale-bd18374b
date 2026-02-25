@@ -431,6 +431,7 @@ export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
   { value: "TABLEAU_MODELE", label: "Tableau modèle" },
   { value: "DAO_DQE", label: "DAO + DQE" },
   { value: "LISTE_ITEMS", label: "Liste items Excel" },
+  { value: "LETTRE_ADOPTION", label: "Lettre d'adoption" },
 ];
 
 export const DOCUMENT_TYPES = DOCUMENT_TYPES_REQUIS.map((t) => t.value);
