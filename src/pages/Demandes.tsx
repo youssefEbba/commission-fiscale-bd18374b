@@ -279,14 +279,26 @@ const Demandes = () => {
       // 1. Appliquer la décision finale
       const updated = await demandeCorrectionApi.updateStatut(id, "ADOPTEE", undefined, true);
 
-      // 2. Générer la lettre d'adoption et l'uploader sur le serveur
+      // 2. Générer la lettre d'adoption — tenter l'upload, sinon télécharger localement
       const demande = selected || updated;
       const letterContent = generateAdoptionLetter(demande);
       const blob = new Blob([letterContent], { type: "text/html" });
-      const file = new File([blob], `Lettre_Adoption_${demande.numero || id}.html`, { type: "text/html" });
+      const filename = `Lettre_Adoption_${demande.numero || id}.html`;
 
-      await demandeCorrectionApi.uploadDocument(id, "LETTRE_ADOPTION", file);
-      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption générée" });
+      try {
+        const file = new File([blob], filename, { type: "text/html" });
+        await demandeCorrectionApi.uploadDocument(id, "LETTRE_ADOPTION", file);
+        toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption enregistrée" });
+      } catch {
+        // Fallback: téléchargement local si l'upload est refusé (permissions)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: "Adoptée", description: "Demande adoptée. La lettre a été téléchargée sur votre ordinateur." });
+      }
 
       fetchDemandes();
       if (selected?.id === id) {
