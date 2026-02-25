@@ -279,18 +279,14 @@ const Demandes = () => {
       // 1. Appliquer la décision finale
       const updated = await demandeCorrectionApi.updateStatut(id, "ADOPTEE", undefined, true);
 
-      // 2. Générer la lettre d'adoption et la télécharger
+      // 2. Générer la lettre d'adoption et l'uploader sur le serveur
       const demande = selected || updated;
       const letterContent = generateAdoptionLetter(demande);
       const blob = new Blob([letterContent], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Lettre_Adoption_${demande.numero || id}.html`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const file = new File([blob], `Lettre_Adoption_${demande.numero || id}.html`, { type: "text/html" });
 
-      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption téléchargée" });
+      await demandeCorrectionApi.uploadDocument(id, "LETTRE_ADOPTION", file);
+      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption générée" });
 
       fetchDemandes();
       if (selected?.id === id) {
