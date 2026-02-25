@@ -405,6 +405,21 @@ export interface DocumentDto {
   chemin?: string;
   dateUpload?: string;
   taille?: number;
+  version?: number;
+  actif?: boolean;
+}
+
+// Décisions temporaires par acteur
+export type DecisionType = "VISA" | "REJET_TEMP";
+
+export interface DecisionCorrectionDto {
+  id: number;
+  role: string;
+  decision: DecisionType;
+  motifRejet?: string;
+  dateDecision?: string;
+  utilisateurId?: number;
+  utilisateurNom?: string;
 }
 
 export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
@@ -436,6 +451,13 @@ export const demandeCorrectionApi = {
       rawBody: formData,
     });
   },
+  // Décisions temporaires
+  getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/demandes-correction/${id}/decisions`),
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string) =>
+    apiFetch<DecisionCorrectionDto>(`/demandes-correction/${id}/decisions`, {
+      method: "POST",
+      body: motifRejet ? { decision, motifRejet } : { decision },
+    }),
 };
 
 // Certificats de crédit (P3)
