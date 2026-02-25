@@ -73,11 +73,10 @@ const Register = () => {
         registerData.entrepriseSituationFiscale = "";
       }
 
-      const res = await authApi.register(registerData);
+      await authApi.register(registerData);
 
-      login(res);
-      toast({ title: "Inscription réussie", description: "Votre compte a été créé avec succès" });
-      navigate("/dashboard");
+      toast({ title: "Inscription réussie", description: "Votre compte a été créé. Veuillez attendre la validation par un administrateur avant de vous connecter." });
+      navigate("/login");
     } catch (err: unknown) {
       toast({
         title: "Erreur d'inscription",
