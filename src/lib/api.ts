@@ -30,6 +30,12 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   });
 
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      window.location.href = "/login";
+      throw new Error("Session expirée");
+    }
     const text = await res.text().catch(() => "");
     throw new Error(text || `Erreur ${res.status}`);
   }
