@@ -292,10 +292,10 @@ const CorrectionDouaniere = () => {
                               )}
                               <p className="font-medium">{v.label}</p>
                               {v.done && v.date && <p className="text-muted-foreground mt-0.5">{new Date(v.date).toLocaleDateString("fr-FR")}</p>}
-                              {v.done && <p className="text-green-700 font-medium mt-0.5">✓ Validé</p>}
+                              {v.done && <p className="text-green-700 font-medium mt-0.5">Validé</p>}
                               {rejected && lastRejet && (
                                 <>
-                                  <p className="text-red-700 font-medium mt-0.5">✗ Rejeté</p>
+                                  <p className="text-red-700 font-medium mt-0.5">Rejeté</p>
                                   <p className="text-muted-foreground mt-1 italic truncate" title={lastRejet.motifRejet}>{lastRejet.motifRejet}</p>
                                 </>
                               )}

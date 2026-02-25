@@ -301,7 +301,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">📋 Modèle fiscal — Paramètres</CardTitle>
+                <CardTitle className="text-base">Modèle fiscal — Paramètres</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -331,7 +331,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">🔵 1 — Importations & Douane</CardTitle>
+                  <CardTitle className="text-base">1 — Importations & Douane</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => setImportations(prev => [...prev, emptyImportation()])}>
                     <Plus className="h-3 w-3 mr-1" /> Ligne
                   </Button>
@@ -398,7 +398,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
             {/* Section 2: Fiscalité intérieure */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">🟠 2 — Fiscalité intérieure (DGI)</CardTitle>
+                <CardTitle className="text-base">2 — Fiscalité intérieure (DGI)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
