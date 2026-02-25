@@ -261,7 +261,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre</h3>
+                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre <span className="text-destructive">*</span></h3>
                   <div className="space-y-2">
                     {DOCUMENT_TYPES_REQUIS.map(dt => (
                       <div key={dt.value} className="flex items-center gap-2 rounded-lg border border-border p-2">
@@ -290,6 +290,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                       </div>
                     ))}
                   </div>
+                  {DOCUMENT_TYPES_REQUIS.some(dt => !docFiles[dt.value]) && (
+                    <p className="text-xs text-destructive mt-2">Toutes les pièces sont obligatoires pour soumettre la demande.</p>
+                  )}
                 </div>
               </>
             )}
@@ -437,7 +440,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
             {/* Section 3: Récapitulatif */}
             <Card className="border-primary/30">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">🔴 3 — Récapitulatif</CardTitle>
+                <CardTitle className="text-base">3 — Récapitulatif</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 text-center">
@@ -450,7 +453,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                     <p className="text-lg font-bold">{fmt(fiscalite.creditInterieur)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">💰 Crédit total</p>
+                    <p className="text-xs text-muted-foreground">Crédit total</p>
                     <p className="text-xl font-bold text-primary">{fmt(creditTotal)}</p>
                   </div>
                 </div>
@@ -464,7 +467,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">📄 Formulaire DQE</CardTitle>
+                <CardTitle className="text-base">Formulaire DQE</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -545,11 +548,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < 2 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && (!entrepriseId || DOCUMENT_TYPES_REQUIS.some(dt => !docFiles[dt.value]))}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId}>
+              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId || DOCUMENT_TYPES_REQUIS.some(dt => !docFiles[dt.value])}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                 Soumettre la demande
               </Button>
