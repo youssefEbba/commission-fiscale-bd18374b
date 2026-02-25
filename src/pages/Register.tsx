@@ -44,6 +44,15 @@ const Register = () => {
     email: "",
   });
 
+  // New AC fields
+  const [newAC, setNewAC] = useState({
+    nom: "",
+    sigle: "",
+    adresse: "",
+    telephone: "",
+    email: "",
+  });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +82,19 @@ const Register = () => {
         registerData.entrepriseSituationFiscale = "";
       }
 
+      if (form.role === "AUTORITE_CONTRACTANTE") {
+        if (!newAC.nom) {
+          toast({ title: "Erreur", description: "Le nom de l'Autorité Contractante est obligatoire", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        registerData.acNom = newAC.nom;
+        registerData.acSigle = newAC.sigle;
+        registerData.acAdresse = newAC.adresse;
+        registerData.acTelephone = newAC.telephone;
+        registerData.acEmail = newAC.email;
+      }
+
       await authApi.register(registerData);
 
       toast({ title: "Inscription réussie", description: "Votre compte a été créé. Veuillez attendre la validation par un administrateur avant de vous connecter." });
@@ -90,6 +112,7 @@ const Register = () => {
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
   const updateEntreprise = (field: string, value: string) => setNewEntreprise((prev) => ({ ...prev, [field]: value }));
+  const updateAC = (field: string, value: string) => setNewAC((prev) => ({ ...prev, [field]: value }));
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
@@ -167,6 +190,39 @@ const Register = () => {
                     <div className="space-y-1">
                       <Label className="text-xs">Email entreprise</Label>
                       <Input type="email" value={newEntreprise.email} onChange={(e) => updateEntreprise("email", e.target.value)} placeholder="contact@..." />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {form.role === "AUTORITE_CONTRACTANTE" && (
+              <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-semibold">Informations de l'Autorité Contractante</Label>
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Nom de l'AC *</Label>
+                    <Input value={newAC.nom} onChange={(e) => updateAC("nom", e.target.value)} placeholder="Nom de l'autorité contractante" required />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Sigle</Label>
+                    <Input value={newAC.sigle} onChange={(e) => updateAC("sigle", e.target.value)} placeholder="Ex: MAEP, MEN..." />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Adresse</Label>
+                    <Input value={newAC.adresse} onChange={(e) => updateAC("adresse", e.target.value)} placeholder="Adresse" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Téléphone</Label>
+                      <Input value={newAC.telephone} onChange={(e) => updateAC("telephone", e.target.value)} placeholder="+222..." />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Email AC</Label>
+                      <Input type="email" value={newAC.email} onChange={(e) => updateAC("email", e.target.value)} placeholder="contact@..." />
                     </div>
                   </div>
                 </div>
