@@ -53,26 +53,32 @@ const Register = () => {
     }
     setLoading(true);
     try {
-      let entrepriseId: number | undefined;
 
-      if (form.role === "ENTREPRISE") {
-        if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
-          toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-        const created = await entrepriseApi.create(newEntreprise as EntrepriseDto);
-        entrepriseId = created.id;
-      }
-
+      // Step 1: Register user first (without entrepriseId)
       const res = await authApi.register({
         username: form.username,
         password: form.password,
         role: form.role,
         nomComplet: form.nomComplet,
         email: form.email,
-        ...(entrepriseId ? { entrepriseId } : {}),
       });
+
+      // Step 2: If ENTREPRISE role, create the enterprise using the new auth token
+      if (form.role === "ENTREPRISE") {
+        if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
+          toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        try {
+          // Store token temporarily so API calls are authenticated
+          localStorage.setItem("auth_token", res.token);
+          await entrepriseApi.create(newEntreprise as EntrepriseDto);
+        } catch {
+          toast({ title: "Attention", description: "Compte créé mais l'entreprise n'a pas pu être enregistrée. Contactez l'administrateur.", variant: "destructive" });
+        }
+      }
+
       login(res);
       toast({ title: "Inscription réussie", description: "Votre compte a été créé avec succès" });
       navigate("/dashboard");
