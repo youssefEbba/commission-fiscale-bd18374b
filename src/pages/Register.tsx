@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Shield, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Shield, UserPlus, Eye, EyeOff, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
-import { authApi } from "@/lib/api";
+import { authApi, entrepriseApi, EntrepriseDto } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const ROLES = [
@@ -35,6 +36,28 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Entreprise mode: "existing" or "new"
+  const [entrepriseMode, setEntrepriseMode] = useState<"existing" | "new">("existing");
+  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
+  const [entreprisesLoading, setEntreprisesLoading] = useState(false);
+  const [newEntreprise, setNewEntreprise] = useState({
+    raisonSociale: "",
+    nif: "",
+    adresse: "",
+    telephone: "",
+    email: "",
+  });
+
+  useEffect(() => {
+    if (form.role === "ENTREPRISE" && entrepriseMode === "existing") {
+      setEntreprisesLoading(true);
+      entrepriseApi.getAll()
+        .then(setEntreprises)
+        .catch(() => {})
+        .finally(() => setEntreprisesLoading(false));
+    }
+  }, [form.role, entrepriseMode]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
@@ -43,13 +66,34 @@ const Register = () => {
     }
     setLoading(true);
     try {
+      let entrepriseId: number | undefined;
+
+      if (form.role === "ENTREPRISE") {
+        if (entrepriseMode === "new") {
+          if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
+            toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
+            setLoading(false);
+            return;
+          }
+          const created = await entrepriseApi.create(newEntreprise as EntrepriseDto);
+          entrepriseId = created.id;
+        } else {
+          entrepriseId = form.entrepriseId ? Number(form.entrepriseId) : undefined;
+          if (!entrepriseId) {
+            toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       const res = await authApi.register({
         username: form.username,
         password: form.password,
         role: form.role,
         nomComplet: form.nomComplet,
         email: form.email,
-        ...(form.role === "ENTREPRISE" && form.entrepriseId ? { entrepriseId: Number(form.entrepriseId) } : {}),
+        ...(entrepriseId ? { entrepriseId } : {}),
       });
       login(res);
       toast({ title: "Inscription réussie", description: "Votre compte a été créé avec succès" });
@@ -66,6 +110,7 @@ const Register = () => {
   };
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+  const updateEntreprise = (field: string, value: string) => setNewEntreprise((prev) => ({ ...prev, [field]: value }));
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
@@ -117,9 +162,63 @@ const Register = () => {
             </div>
 
             {form.role === "ENTREPRISE" && (
-              <div className="space-y-2">
-                <Label htmlFor="entrepriseId">ID Entreprise</Label>
-                <Input id="entrepriseId" type="number" value={form.entrepriseId} onChange={(e) => update("entrepriseId", e.target.value)} placeholder="Identifiant de l'entreprise" required />
+              <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-semibold">Entreprise</Label>
+                </div>
+                <RadioGroup value={entrepriseMode} onValueChange={(v) => setEntrepriseMode(v as "existing" | "new")} className="flex gap-4">
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="existing" id="ent-existing" />
+                    <Label htmlFor="ent-existing" className="text-sm cursor-pointer">Existante</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="new" id="ent-new" />
+                    <Label htmlFor="ent-new" className="text-sm cursor-pointer">Nouvelle</Label>
+                  </div>
+                </RadioGroup>
+
+                {entrepriseMode === "existing" ? (
+                  <div className="space-y-2">
+                    <Select value={form.entrepriseId} onValueChange={(v) => update("entrepriseId", v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={entreprisesLoading ? "Chargement..." : "Sélectionnez une entreprise"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {entreprises.map((e) => (
+                          <SelectItem key={e.id} value={String(e.id)}>
+                            {e.raisonSociale} — {e.nif}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Raison sociale *</Label>
+                      <Input value={newEntreprise.raisonSociale} onChange={(e) => updateEntreprise("raisonSociale", e.target.value)} placeholder="Nom de l'entreprise" required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">NIF *</Label>
+                      <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder="Numéro d'identification fiscale" required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Adresse</Label>
+                      <Input value={newEntreprise.adresse} onChange={(e) => updateEntreprise("adresse", e.target.value)} placeholder="Adresse" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Téléphone</Label>
+                        <Input value={newEntreprise.telephone} onChange={(e) => updateEntreprise("telephone", e.target.value)} placeholder="+222..." />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Email entreprise</Label>
+                        <Input type="email" value={newEntreprise.email} onChange={(e) => updateEntreprise("email", e.target.value)} placeholder="contact@..." />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
