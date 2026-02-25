@@ -488,14 +488,38 @@ const Demandes = () => {
                 </div>
               </div>
 
-              {/* Historique des rejets */}
-              {selected.rejets && selected.rejets.length > 0 && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
-                  <h3 className="text-sm font-semibold text-destructive">Historique des rejets</h3>
-                  {selected.rejets.map((r: RejetDto) => (
-                    <div key={r.id} className="rounded border border-destructive/20 bg-background p-3 text-sm space-y-1">
-                      <p className="font-medium">{r.motifRejet}</p>
-                      <div className="flex gap-3 text-xs text-muted-foreground">
+              {/* Historique des décisions (rejets + visas) */}
+              {((selected.rejets && selected.rejets.length > 0) || (selected.decisions && selected.decisions.length > 0)) && (
+                <div className="rounded-lg border border-border p-4 space-y-3">
+                  <h3 className="text-sm font-semibold">Historique des décisions</h3>
+                  {/* Decisions from /decisions endpoint */}
+                  {selected.decisions && selected.decisions.length > 0 && selected.decisions.map((dec: any, i: number) => (
+                    <div key={`dec-${i}`} className={`rounded border p-3 text-sm space-y-1 ${dec.decision === "REJET_TEMP" ? "border-destructive/20 bg-destructive/5" : "border-green-200 bg-green-50"}`}>
+                      <div className="flex items-center gap-2">
+                        {dec.decision === "VISA" ? (
+                          <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-600 shrink-0" />
+                        )}
+                        <span className="font-medium">{dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}</span>
+                        <Badge variant="outline" className="text-xs">{dec.role}</Badge>
+                      </div>
+                      {dec.motifRejet && <p className="text-sm ml-6">{dec.motifRejet}</p>}
+                      <div className="flex gap-3 text-xs text-muted-foreground ml-6">
+                        {dec.utilisateurNom && <span>Par : {dec.utilisateurNom}</span>}
+                        {dec.dateDecision && <span>Le : {new Date(dec.dateDecision).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Legacy rejets */}
+                  {selected.rejets && selected.rejets.length > 0 && (!selected.decisions || selected.decisions.length === 0) && selected.rejets.map((r: RejetDto) => (
+                    <div key={r.id} className="rounded border border-destructive/20 bg-destructive/5 p-3 text-sm space-y-1">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-600 shrink-0" />
+                        <span className="font-medium">Rejet</span>
+                      </div>
+                      <p className="ml-6">{r.motifRejet}</p>
+                      <div className="flex gap-3 text-xs text-muted-foreground ml-6">
                         {r.utilisateurNom && <span>Par : {r.utilisateurNom}</span>}
                         {r.dateRejet && <span>Le : {new Date(r.dateRejet).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
                       </div>
@@ -678,29 +702,27 @@ const Demandes = () => {
                   {(() => {
                     const decs = selected.decisions || [];
                     const myDec = decs.find(d => d.role === role);
-                    const hasRejet = decs.some(d => d.decision === "REJET_TEMP") || (selected.rejets && selected.rejets.length > 0);
                     return (
-                      <div className="flex flex-wrap gap-2">
-                        {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
-                          if (t.isVisa && hasRejet) return (
-                            <Badge key={idx} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
-                          );
-                          if (t.isVisa && myDec?.decision === "VISA") return (
-                            <Badge key={idx} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
-                          );
-                          if (t.to === "REJETEE" && myDec?.decision === "REJET_TEMP") return null;
-                          return (
+                      <div className="space-y-2">
+                        {/* Current decision status */}
+                        {myDec && (
+                          <div className={`text-xs rounded px-2 py-1 inline-block ${myDec.decision === "VISA" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                            Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"} — Vous pouvez la modifier ci-dessous
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
                             <Button
                               key={idx}
-                              variant={t.to === "REJETEE" ? "destructive" : "default"}
+                              variant={t.to === "REJETEE" ? "destructive" : (t.isVisa && myDec?.decision === "VISA") ? "secondary" : "default"}
                               disabled={actionLoading === selected.id}
                               onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleTempVisa(selected.id)}
                             >
                               {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                              {t.label}
+                              {myDec ? (t.isVisa ? "Re-valider" : "Rejeter à nouveau") : t.label}
                             </Button>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     );
                   })()}
