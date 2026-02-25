@@ -370,7 +370,7 @@ const Demandes = () => {
                                   if (t.isDecisionFinale) return null;
                                   const hasRejet = (d.rejets && d.rejets.length > 0) || d.statut === "REJETEE";
                                   if (t.isVisa && hasRejet) return (
-                                    <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">✗ Rejet en cours</Badge>
+                                    <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
                                   );
                                   const alreadyValidated = t.isVisa && (
                                     (role === "DGTCP" && d.validationDgtcp) ||
@@ -378,7 +378,7 @@ const Demandes = () => {
                                     (role === "DGB" && d.validationDgi)
                                   );
                                   if (alreadyValidated) return (
-                                    <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                                    <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
                                   );
                                   if (t.to === "REJETEE" && hasRejet) return null;
                                   return (
@@ -511,10 +511,10 @@ const Demandes = () => {
                             {v.done && v.date && (
                               <p className="text-muted-foreground mt-0.5">{new Date(v.date).toLocaleDateString("fr-FR")}</p>
                             )}
-                            {v.done && <p className="text-green-700 font-medium mt-0.5">✓ Validé</p>}
+                            {v.done && <p className="text-green-700 font-medium mt-0.5">Validé</p>}
                             {rejected && lastRejet && (
                               <>
-                                <p className="text-red-700 font-medium mt-0.5">✗ Rejeté</p>
+                                <p className="text-red-700 font-medium mt-0.5">Rejeté</p>
                                 <p className="text-muted-foreground mt-1 italic truncate" title={lastRejet.motifRejet}>{lastRejet.motifRejet}</p>
                                 {lastRejet.dateRejet && <p className="text-muted-foreground">{new Date(lastRejet.dateRejet).toLocaleDateString("fr-FR")}</p>}
                               </>
@@ -525,7 +525,7 @@ const Demandes = () => {
                       })}
                     </div>
                     {selected.validationDgd && selected.validationDgtcp && selected.validationDgi && (
-                      <p className="text-xs text-green-700 font-medium mt-2 text-center">✓ Toutes les validations sont complètes</p>
+                      <p className="text-xs text-green-700 font-medium mt-2 text-center">Toutes les validations sont complètes</p>
                     )}
                   </div>
                 );
@@ -614,7 +614,7 @@ const Demandes = () => {
                         {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
                           // If any rejection exists, block visa
                           if (t.isVisa && hasRejet) return (
-                            <Badge key={idx} className="bg-red-100 text-red-800 text-xs">✗ Rejet en cours</Badge>
+                            <Badge key={idx} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
                           );
                           const alreadyValidated = t.isVisa && (
                             (role === "DGD" && selected.validationDgd) ||
@@ -623,7 +623,7 @@ const Demandes = () => {
                             (role === "DGB" && selected.validationDgi)
                           );
                           if (alreadyValidated) return (
-                            <Badge key={idx} className="bg-green-100 text-green-800 text-xs">✓ Visa apposé</Badge>
+                            <Badge key={idx} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
                           );
                           // Hide simple reject if already rejected
                           if (t.to === "REJETEE" && hasRejet) return null;
