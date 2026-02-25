@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { authApi, entrepriseApi, EntrepriseDto } from "@/lib/api";
+import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const ROLES = [
@@ -53,31 +53,27 @@ const Register = () => {
     }
     setLoading(true);
     try {
-
-      // Step 1: Register user first (without entrepriseId)
-      const res = await authApi.register({
+      const registerData: any = {
         username: form.username,
         password: form.password,
         role: form.role,
         nomComplet: form.nomComplet,
         email: form.email,
-      });
+      };
 
-      // Step 2: If ENTREPRISE role, create the enterprise using the new auth token
       if (form.role === "ENTREPRISE") {
         if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
           toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
           setLoading(false);
           return;
         }
-        try {
-          // Store token temporarily so API calls are authenticated
-          localStorage.setItem("auth_token", res.token);
-          await entrepriseApi.create(newEntreprise as EntrepriseDto);
-        } catch {
-          toast({ title: "Attention", description: "Compte créé mais l'entreprise n'a pas pu être enregistrée. Contactez l'administrateur.", variant: "destructive" });
-        }
+        registerData.entrepriseRaisonSociale = newEntreprise.raisonSociale;
+        registerData.entrepriseNif = newEntreprise.nif;
+        registerData.entrepriseAdresse = newEntreprise.adresse;
+        registerData.entrepriseSituationFiscale = "";
       }
+
+      const res = await authApi.register(registerData);
 
       login(res);
       toast({ title: "Inscription réussie", description: "Votre compte a été créé avec succès" });
