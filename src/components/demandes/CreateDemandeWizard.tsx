@@ -156,10 +156,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   // ── Submit ──
   const handleSubmit = async () => {
+    if (user?.role === "AUTORITE_CONTRACTANTE" && !user?.autoriteContractanteId) {
+      toast({ title: "Erreur", description: "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       const demande = await demandeCorrectionApi.create({
-        autoriteContractanteId: user?.autoriteContractanteId,
+        autoriteContractanteId: user?.autoriteContractanteId || undefined,
         entrepriseId: Number(entrepriseId),
         referentielProjetId: projetId ? Number(projetId) : undefined,
         modeleFiscal: {
