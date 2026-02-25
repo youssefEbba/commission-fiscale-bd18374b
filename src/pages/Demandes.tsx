@@ -575,10 +575,16 @@ const Demandes = () => {
                 ) : (
                   <div className="space-y-2">
                     {DOCUMENT_TYPES_REQUIS.map((dt) => {
-                      const uploaded = docs.find((d) => d.type === dt.value);
+                      // Find the active version, or the latest by version/id
+                      const allOfType = docs.filter((d) => d.type === dt.value);
+                      const uploaded = allOfType.find(d => d.actif === true)
+                        || allOfType.sort((a, b) => (b.version || b.id) - (a.version || a.id))[0]
+                        || null;
                       const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
+                      const olderVersions = allOfType.filter(d => d.id !== uploaded?.id).sort((a, b) => (b.version || b.id) - (a.version || a.id));
                       return (
-                        <div key={dt.value} className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
+                        <div key={dt.value} className="space-y-1">
+                        <div className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
                           {uploaded ? (
                             <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
                           ) : (
@@ -587,7 +593,10 @@ const Demandes = () => {
                           <div className="flex-1 min-w-0">
                             <p className={`font-medium truncate ${!uploaded ? "text-muted-foreground" : ""}`}>{dt.label}</p>
                             {uploaded && (
-                              <p className="text-xs text-muted-foreground truncate">{uploaded.nomFichier}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {uploaded.nomFichier}
+                                {uploaded.version && <span className="ml-1 font-medium">(v{uploaded.version})</span>}
+                              </p>
                             )}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
@@ -638,8 +647,26 @@ const Demandes = () => {
                             )}
                           </div>
                         </div>
-                      );
-                    })}
+                        {/* Version history */}
+                        {olderVersions.length > 0 && (
+                          <div className="ml-8 mt-1 space-y-1">
+                            <p className="text-xs text-muted-foreground font-medium">Versions précédentes :</p>
+                            {olderVersions.map(v => (
+                              <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>v{v.version || '?'} — {v.nomFichier}</span>
+                                <span>{new Date(v.dateUpload).toLocaleDateString("fr-FR")}</span>
+                                {v.chemin && (
+                                  <a href={getDocFileUrl(v)} target="_blank" rel="noopener noreferrer" className="underline">
+                                    Télécharger
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   </div>
                 )}
               </div>
