@@ -4,6 +4,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
+  DecisionCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -216,6 +217,41 @@ const Demandes = () => {
     }
   };
 
+  // Temporary decision (VISA / REJET_TEMP) via POST /decisions
+  const handleTempVisa = async (id: number) => {
+    setActionLoading(id);
+    try {
+      await demandeCorrectionApi.postDecision(id, "VISA");
+      toast({ title: "Succès", description: "Visa temporaire apposé" });
+      fetchDemandes();
+      if (selected) {
+        const full = await demandeCorrectionApi.getById(id);
+        setSelected(full);
+      }
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleTempReject = async (id: number, motif: string) => {
+    setActionLoading(id);
+    try {
+      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif);
+      toast({ title: "Succès", description: "Rejet temporaire enregistré" });
+      fetchDemandes();
+      if (selected) {
+        const full = await demandeCorrectionApi.getById(id);
+        setSelected(full);
+      }
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const openRejectDialog = (id: number, decisionFinale?: boolean) => {
     setRejectTargetId(id);
     setRejectMotif("");
@@ -226,7 +262,11 @@ const Demandes = () => {
   const handleRejectConfirm = async () => {
     if (!rejectTargetId || !rejectMotif.trim()) return;
     setRejectOpen(false);
-    await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim(), rejectDecisionFinale);
+    if (rejectDecisionFinale) {
+      await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim(), true);
+    } else {
+      await handleTempReject(rejectTargetId, rejectMotif.trim());
+    }
     setRejectTargetId(null);
     setRejectMotif("");
     setRejectDecisionFinale(false);
@@ -376,26 +416,22 @@ const Demandes = () => {
                                 {transitions.map((t, idx) => {
                                   if (!t.from.includes(d.statut)) return null;
                                   if (t.isDecisionFinale) return null;
-                                  const hasRejet = (d.rejets && d.rejets.length > 0) || d.statut === "REJETEE";
+                                  const myDecision = (d.decisions || []).find(dec => dec.role === role);
+                                  const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
                                   if (t.isVisa && hasRejet) return (
                                     <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
                                   );
-                                  const alreadyValidated = t.isVisa && (
-                                    (role === "DGTCP" && d.validationDgtcp) ||
-                                    (role === "DGI" && d.validationDgi) ||
-                                    (role === "DGB" && d.validationDgi)
-                                  );
-                                  if (alreadyValidated) return (
+                                  if (t.isVisa && myDecision?.decision === "VISA") return (
                                     <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
                                   );
-                                  if (t.to === "REJETEE" && hasRejet) return null;
+                                  if (t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP") return null;
                                   return (
                                     <Button
                                       key={idx}
                                       variant={t.to === "REJETEE" ? "destructive" : "default"}
                                       size="sm"
                                       disabled={actionLoading === d.id}
-                                      onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : handleStatutChange(d.id, t.to)}
+                                      onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : handleTempVisa(d.id)}
                                     >
                                       {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                                       {t.label}
@@ -477,64 +513,51 @@ const Demandes = () => {
 
               {/* Validation parallèle tracker — always visible */}
               {(() => {
-                const rejets = selected.rejets || [];
-                const actors = [
-                  { key: "DGD", label: "DGD – Douanes", done: selected.validationDgd, date: selected.validationDgdDate, userId: selected.validationDgdUserId },
-                  { key: "DGTCP", label: "DGTCP – Trésor", done: selected.validationDgtcp, date: selected.validationDgtcpDate, userId: selected.validationDgtcpUserId },
-                  { key: "DGI", label: "DGI – Impôts", done: selected.validationDgi, date: selected.validationDgiDate, userId: selected.validationDgiUserId },
-                ];
-                // Find rejection per actor by matching utilisateurNom containing keyword
-                const getActorRejets = (key: string) => {
-                  const keywords: Record<string, string[]> = {
-                    DGD: ["DGD", "Douane"],
-                    DGTCP: ["DGTCP", "Trésor", "Tresor"],
-                    DGI: ["DGI", "Impôt", "Impot"],
-                  };
-                  return rejets.filter(r =>
-                    r.utilisateurNom && keywords[key]?.some(kw => r.utilisateurNom!.toUpperCase().includes(kw.toUpperCase()))
-                  );
+                const decs = selected.decisions || [];
+                const DECISION_ROLES_LIST = ["DGD", "DGTCP", "DGI", "DGB"];
+                const DECISION_ROLE_LABELS: Record<string, string> = {
+                  DGD: "DGD – Douanes",
+                  DGTCP: "DGTCP – Trésor",
+                  DGI: "DGI – Impôts",
+                  DGB: "DGB – Budget",
                 };
                 return (
                   <div className="rounded-lg border border-border p-4">
                     <h3 className="text-sm font-semibold mb-3">Statut par organisme</h3>
-                    <div className="grid grid-cols-3 gap-3">
-                      {actors.map((v) => {
-                        const actorRejets = getActorRejets(v.key);
-                        const rejected = actorRejets.length > 0 && !v.done;
-                        const lastRejet = actorRejets[actorRejets.length - 1];
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {DECISION_ROLES_LIST.map((r) => {
+                        const dec = decs.find(d => d.role === r);
+                        const isVisa = dec?.decision === "VISA";
+                        const isRejet = dec?.decision === "REJET_TEMP";
                         return (
-                          <div key={v.key} className={`rounded-lg border p-3 text-center text-xs ${
-                            v.done ? "border-green-300 bg-green-50" :
-                            rejected ? "border-red-300 bg-red-50" :
+                          <div key={r} className={`rounded-lg border p-3 text-center text-xs ${
+                            isVisa ? "border-green-300 bg-green-50" :
+                            isRejet ? "border-red-300 bg-red-50" :
                             "border-border bg-muted/30"
                           }`}>
-                            {v.done ? (
+                            {isVisa ? (
                               <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                            ) : rejected ? (
+                            ) : isRejet ? (
                               <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
                             ) : (
                               <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
                             )}
-                            <p className="font-medium">{v.label}</p>
-                            {v.done && v.date && (
-                              <p className="text-muted-foreground mt-0.5">{new Date(v.date).toLocaleDateString("fr-FR")}</p>
-                            )}
-                            {v.done && <p className="text-green-700 font-medium mt-0.5">Validé</p>}
-                            {rejected && lastRejet && (
+                            <p className="font-medium">{DECISION_ROLE_LABELS[r] || r}</p>
+                            {isVisa && <p className="text-green-700 font-medium mt-0.5">Visa</p>}
+                            {isRejet && (
                               <>
                                 <p className="text-red-700 font-medium mt-0.5">Rejeté</p>
-                                <p className="text-muted-foreground mt-1 italic truncate" title={lastRejet.motifRejet}>{lastRejet.motifRejet}</p>
-                                {lastRejet.dateRejet && <p className="text-muted-foreground">{new Date(lastRejet.dateRejet).toLocaleDateString("fr-FR")}</p>}
+                                {dec.motifRejet && <p className="text-muted-foreground mt-1 italic truncate" title={dec.motifRejet}>{dec.motifRejet}</p>}
                               </>
                             )}
-                            {!v.done && !rejected && <p className="text-muted-foreground mt-0.5">En attente</p>}
+                            {!dec && <p className="text-muted-foreground mt-0.5">En attente</p>}
+                            {dec?.dateDecision && (
+                              <p className="text-muted-foreground mt-0.5 text-[10px]">{new Date(dec.dateDecision).toLocaleDateString("fr-FR")}</p>
+                            )}
                           </div>
                         );
                       })}
                     </div>
-                    {selected.validationDgd && selected.validationDgtcp && selected.validationDgi && (
-                      <p className="text-xs text-green-700 font-medium mt-2 text-center">Toutes les validations sont complètes</p>
-                    )}
                   </div>
                 );
               })()}
@@ -616,31 +639,25 @@ const Demandes = () => {
                 <div className="space-y-3 pt-2 border-t border-border">
                   {/* Visa / Simple reject */}
                   {(() => {
-                    const hasRejet = (selected.rejets && selected.rejets.length > 0) || selected.statut === "REJETEE";
+                    const decs = selected.decisions || [];
+                    const myDec = decs.find(d => d.role === role);
+                    const hasRejet = decs.some(d => d.decision === "REJET_TEMP") || (selected.rejets && selected.rejets.length > 0);
                     return (
                       <div className="flex flex-wrap gap-2">
                         {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
-                          // If any rejection exists, block visa
                           if (t.isVisa && hasRejet) return (
                             <Badge key={idx} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
                           );
-                          const alreadyValidated = t.isVisa && (
-                            (role === "DGD" && selected.validationDgd) ||
-                            (role === "DGTCP" && selected.validationDgtcp) ||
-                            (role === "DGI" && selected.validationDgi) ||
-                            (role === "DGB" && selected.validationDgi)
-                          );
-                          if (alreadyValidated) return (
+                          if (t.isVisa && myDec?.decision === "VISA") return (
                             <Badge key={idx} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
                           );
-                          // Hide simple reject if already rejected
-                          if (t.to === "REJETEE" && hasRejet) return null;
+                          if (t.to === "REJETEE" && myDec?.decision === "REJET_TEMP") return null;
                           return (
                             <Button
                               key={idx}
                               variant={t.to === "REJETEE" ? "destructive" : "default"}
                               disabled={actionLoading === selected.id}
-                              onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleStatutChange(selected.id, t.to)}
+                              onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleTempVisa(selected.id)}
                             >
                               {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                               {t.label}

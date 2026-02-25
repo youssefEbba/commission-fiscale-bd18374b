@@ -317,6 +317,7 @@ export interface DemandeCorrectionDto {
   validationDgiDate?: string;
   motifRejet?: string;
   rejets?: RejetDto[];
+  decisions?: DecisionCorrectionDto[];
 }
 
 export interface RejetDto {
