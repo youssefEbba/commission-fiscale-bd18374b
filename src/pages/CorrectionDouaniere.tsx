@@ -396,7 +396,7 @@ const CorrectionDouaniere = () => {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
-                    Assistance IA
+                    Assistance intelligente
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -408,7 +408,7 @@ const CorrectionDouaniere = () => {
                     onClick={() => navigate(`/dashboard/assistance-ia/${id}`)}
                   >
                     <Bot className="h-4 w-4 mr-2" />
-                    Ouvrir l'assistance IA
+                    Ouvrir l'assistance intelligente
                   </Button>
                 </CardContent>
               </Card>
