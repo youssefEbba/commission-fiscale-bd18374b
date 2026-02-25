@@ -613,6 +613,16 @@ const Demandes = () => {
                                     <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
                                   </Button>
                                 </a>
+                                {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => { setUploadType(dt.value); setUploadOpen(true); }}
+                                  >
+                                    <Upload className="h-3.5 w-3.5 mr-1" /> Nouvelle version
+                                  </Button>
+                                )}
                               </>
                             ) : hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) ? (
                               <Button
