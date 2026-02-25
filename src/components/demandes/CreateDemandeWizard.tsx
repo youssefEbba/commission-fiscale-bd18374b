@@ -261,7 +261,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre <span className="text-destructive">*</span></h3>
+                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre <span className="text-muted-foreground text-xs">(optionnel)</span></h3>
                   <div className="space-y-2">
                     {DOCUMENT_TYPES_REQUIS.map(dt => (
                       <div key={dt.value} className="flex items-center gap-2 rounded-lg border border-border p-2">
@@ -290,9 +290,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                       </div>
                     ))}
                   </div>
-                  {DOCUMENT_TYPES_REQUIS.some(dt => !docFiles[dt.value]) && (
-                    <p className="text-xs text-destructive mt-2">Toutes les pièces sont obligatoires pour soumettre la demande.</p>
-                  )}
                 </div>
               </>
             )}
@@ -548,11 +545,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < 2 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && (!entrepriseId || DOCUMENT_TYPES_REQUIS.some(dt => !docFiles[dt.value]))}>
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId || DOCUMENT_TYPES_REQUIS.some(dt => !docFiles[dt.value])}>
+              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                 Soumettre la demande
               </Button>
