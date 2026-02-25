@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { utilisateurApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest } from "@/lib/api";
+import { utilisateurApi, autoriteContractanteApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ const Utilisateurs = () => {
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", password: "", nomComplet: "", email: "", role: "" });
+  const [acForm, setAcForm] = useState({ nom: "", sigle: "", adresse: "", telephone: "", email: "" });
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -80,11 +81,20 @@ const Utilisateurs = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.role) { toast({ title: "Erreur", description: "Veuillez sélectionner un rôle", variant: "destructive" }); return; }
+    if (newUser.role === "AUTORITE_CONTRACTANTE" && !acForm.nom.trim()) {
+      toast({ title: "Erreur", description: "Veuillez saisir le nom de l'Autorité Contractante", variant: "destructive" }); return;
+    }
     setCreating(true);
     try {
-      await utilisateurApi.create({ username: newUser.username, password: newUser.password, role: newUser.role, nomComplet: newUser.nomComplet, email: newUser.email });
+      let autoriteContractanteId: number | undefined;
+      if (newUser.role === "AUTORITE_CONTRACTANTE") {
+        const ac = await autoriteContractanteApi.create({ nom: acForm.nom, sigle: acForm.sigle || undefined, adresse: acForm.adresse || undefined, telephone: acForm.telephone || undefined, email: acForm.email || undefined });
+        autoriteContractanteId = ac.id;
+      }
+      await utilisateurApi.create({ username: newUser.username, password: newUser.password, role: newUser.role, nomComplet: newUser.nomComplet, email: newUser.email, autoriteContractanteId });
       toast({ title: "Succès", description: "Compte créé avec succès" });
       setNewUser({ username: "", password: "", nomComplet: "", email: "", role: "" });
+      setAcForm({ nom: "", sigle: "", adresse: "", telephone: "", email: "" });
       setCreateOpen(false);
       await fetchAll();
     } catch (err: any) {
@@ -259,6 +269,31 @@ const Utilisateurs = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {newUser.role === "AUTORITE_CONTRACTANTE" && (
+                    <div className="space-y-3 rounded-lg border border-border p-3 bg-muted/30">
+                      <p className="text-sm font-medium text-foreground">Informations de l'Autorité Contractante</p>
+                      <div className="space-y-2">
+                        <Label>Nom de l'AC *</Label>
+                        <Input value={acForm.nom} onChange={(e) => setAcForm((p) => ({ ...p, nom: e.target.value }))} placeholder="Ex: Ministère de l'Économie" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sigle</Label>
+                        <Input value={acForm.sigle} onChange={(e) => setAcForm((p) => ({ ...p, sigle: e.target.value }))} placeholder="Ex: ME" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Adresse</Label>
+                        <Input value={acForm.adresse} onChange={(e) => setAcForm((p) => ({ ...p, adresse: e.target.value }))} placeholder="Adresse" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Téléphone</Label>
+                        <Input value={acForm.telephone} onChange={(e) => setAcForm((p) => ({ ...p, telephone: e.target.value }))} placeholder="Téléphone" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email AC</Label>
+                        <Input type="email" value={acForm.email} onChange={(e) => setAcForm((p) => ({ ...p, email: e.target.value }))} placeholder="contact@ac.mr" />
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Mot de passe</Label>
                     <div className="relative">
