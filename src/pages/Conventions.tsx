@@ -345,9 +345,12 @@ const Conventions = () => {
 
             {/* Documents section */}
             <div className="border-t pt-4 space-y-3">
-              <Label className="text-sm font-semibold flex items-center gap-2">
+            <Label className="text-sm font-semibold flex items-center gap-2">
                 <Paperclip className="h-4 w-4" /> Documents joints
               </Label>
+              {!createDocs.some(d => d.type === "CONVENTION_CONTRAT") && (
+                <p className="text-xs text-destructive">Le document Convention/contrat est obligatoire.</p>
+              )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={createDocType} onValueChange={(v) => setCreateDocType(v as TypeDocumentConvention)}>
                   <SelectTrigger className="w-full sm:w-56">
@@ -391,7 +394,7 @@ const Conventions = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !form.reference || !form.intitule}>
+            <Button onClick={handleCreate} disabled={creating || !form.reference || !form.intitule || !createDocs.some(d => d.type === "CONVENTION_CONTRAT")}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer
             </Button>
