@@ -251,6 +251,14 @@ const Demandes = () => {
   };
 
   const filtered = demandes.filter((d) => {
+    // AC ne voit que ses propres demandes
+    if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) {
+      return false;
+    }
+    // Entreprise ne voit que ses propres demandes
+    if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) {
+      return false;
+    }
     const matchSearch =
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.autoriteContractanteNom || "").toLowerCase().includes(search.toLowerCase()) ||
