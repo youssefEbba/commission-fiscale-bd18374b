@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const stats = [
   { value: "2 500+", label: "Demandes traitées" },
@@ -51,11 +52,11 @@ const HeroSection = () => (
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-col gap-4 sm:flex-row"
         >
-          <Button size="lg" className="bg-gold text-accent-foreground font-semibold text-base px-8 hover:bg-gold-light gap-2">
-            Soumettre une demande <ArrowRight className="h-4 w-4" />
+          <Button size="lg" className="bg-gold text-accent-foreground font-semibold text-base px-8 hover:bg-gold-light gap-2" asChild>
+            <Link to="/register">Soumettre une demande <ArrowRight className="h-4 w-4" /></Link>
           </Button>
-          <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 font-semibold text-base px-8">
-            Suivre mon dossier
+          <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 font-semibold text-base px-8" asChild>
+            <Link to="/login">Suivre mon dossier</Link>
           </Button>
         </motion.div>
 
