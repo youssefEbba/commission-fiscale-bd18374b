@@ -583,3 +583,27 @@ export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
   DEMANDEE: "Demandée", EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
 };
+
+// Notifications
+export type NotificationType = "CORRECTION_STATUT_CHANGE" | "CORRECTION_DECISION" | "REFERENTIEL_STATUT_CHANGE" | "CONVENTION_STATUT_CHANGE" | "CERTIFICAT_STATUT_CHANGE" | "UTILISATION_STATUT_CHANGE";
+
+export interface NotificationDto {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  entityType?: string;
+  entityId?: number;
+  message: string;
+  payload?: string;
+  read: boolean;
+  createdAt?: string;
+}
+
+export const notificationApi = {
+  getAll: () => apiFetch<NotificationDto[]>("/notifications"),
+  getUnreadCount: () => apiFetch<number>("/notifications/unread-count"),
+  markRead: (id: number) => apiFetch<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllRead: () => apiFetch<void>("/notifications/read-all", { method: "PATCH" }),
+};
+
+export const WS_BASE = "https://591e-2605-59c0-4902-2b08-4419-bb8a-b814-dffc.ngrok-free.app/ws";
