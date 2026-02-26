@@ -37,7 +37,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="outline" className="border-gold/50 text-primary-foreground hover:bg-primary/20" asChild>
+          <Button variant="outline" className="border-gold text-gold hover:bg-gold/10" asChild>
             <Link to="/register">S'inscrire</Link>
           </Button>
           <Button className="bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
@@ -65,7 +65,7 @@ const Navbar = () => {
             </a>
           ))}
           <div className="mt-4 flex flex-col gap-2">
-            <Button variant="outline" className="w-full border-gold/50 text-primary-foreground hover:bg-primary/20" asChild>
+            <Button variant="outline" className="w-full border-gold text-gold hover:bg-gold/10" asChild>
               <Link to="/register">S'inscrire</Link>
             </Button>
             <Button className="w-full bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
