@@ -95,3 +95,32 @@
     background-clip: text;
   }
 }
+
+/* Native Excel preview styles */
+.excel-native-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+}
+
+.excel-native-preview td,
+.excel-native-preview th {
+  border: 1px solid hsl(var(--border));
+  padding: 4px 8px;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.excel-native-preview tr:first-child td,
+.excel-native-preview tr:first-child th,
+.excel-native-preview thead td,
+.excel-native-preview thead th {
+  background: hsl(var(--muted));
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.excel-native-preview tr:hover td {
+  background: hsl(var(--primary) / 0.04);
+}
