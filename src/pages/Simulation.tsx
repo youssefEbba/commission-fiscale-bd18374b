@@ -424,34 +424,54 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
   const headerRow = padRow(sheet.data[0]);
   const bodyRows = sheet.data.slice(1);
 
+  // Detect if a cell looks like a number
+  const isNumeric = (val: string) => val !== "" && !isNaN(Number(val.replace(/\s/g, "").replace(",", ".")));
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5 text-green-600" />
-          {data.fileName}
-          <span className="text-xs text-muted-foreground font-normal ml-2">
-            {bodyRows.length} lignes · {maxCols} colonnes · {data.sheets.length} feuille{data.sheets.length > 1 ? "s" : ""}
-          </span>
+    <Card className="overflow-hidden shadow-sm border-border/60">
+      <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-transparent border-b">
+        <CardTitle className="text-sm flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <FileSpreadsheet className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-semibold text-foreground">{data.fileName}</span>
+            <span className="text-xs text-muted-foreground font-normal">
+              {bodyRows.length} lignes · {maxCols} colonnes · {data.sheets.length} feuille{data.sheets.length > 1 ? "s" : ""}
+            </span>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {data.sheets.length > 1 && (
-          <div className="flex gap-1 px-4 pt-2 pb-1 flex-wrap">
+          <div className="flex gap-1.5 px-4 py-3 bg-muted/30 border-b flex-wrap">
             {data.sheets.map((s, i) => (
-              <Button key={i} variant={openSheet === i ? "default" : "outline"} size="sm" className="text-xs h-7" onClick={() => setOpenSheet(i)}>
+              <Button
+                key={i}
+                variant={openSheet === i ? "default" : "ghost"}
+                size="sm"
+                className={`text-xs h-8 rounded-full px-4 transition-all ${
+                  openSheet === i
+                    ? "shadow-sm"
+                    : "hover:bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setOpenSheet(i)}
+              >
                 {s.name}
               </Button>
             ))}
           </div>
         )}
-        <div className="overflow-auto max-h-[70vh] border-t">
-          <table className="w-full text-xs border-collapse">
-            <thead className="sticky top-0 z-10 bg-muted">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground border-b w-10">#</th>
+        <div className="overflow-auto max-h-[70vh]">
+          <table className="w-full text-[13px] border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-primary/8 border-b-2 border-primary/15">
+                <th className="px-3 py-2.5 text-center font-semibold text-primary/60 w-12 text-xs">#</th>
                 {headerRow.map((cell, i) => (
-                  <th key={i} className="px-3 py-2 text-left font-medium text-muted-foreground border-b whitespace-nowrap">
+                  <th
+                    key={i}
+                    className="px-4 py-2.5 text-left font-semibold text-foreground/80 whitespace-nowrap text-xs uppercase tracking-wider"
+                  >
                     {String(cell) || `Col ${i + 1}`}
                   </th>
                 ))}
@@ -460,12 +480,37 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
             <tbody>
               {bodyRows.map((row, ri) => {
                 const paddedRow = padRow(row);
+                const isEmpty = paddedRow.every(c => String(c).trim() === "");
                 return (
-                  <tr key={ri} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="px-3 py-1.5 text-muted-foreground/50 font-mono text-[10px]">{ri + 1}</td>
-                    {paddedRow.map((cell, ci) => (
-                      <td key={ci} className="px-3 py-1.5 whitespace-nowrap">{String(cell)}</td>
-                    ))}
+                  <tr
+                    key={ri}
+                    className={`
+                      border-b border-border/30 transition-colors
+                      ${isEmpty ? "h-6" : "hover:bg-primary/[0.03]"}
+                      ${ri % 2 === 0 ? "bg-background" : "bg-muted/20"}
+                    `}
+                  >
+                    <td className="px-3 py-2 text-center text-muted-foreground/40 font-mono text-[11px] select-none">
+                      {ri + 1}
+                    </td>
+                    {paddedRow.map((cell, ci) => {
+                      const val = String(cell);
+                      const numeric = isNumeric(val);
+                      return (
+                        <td
+                          key={ci}
+                          className={`
+                            px-4 py-2 whitespace-nowrap
+                            ${numeric ? "text-right font-mono tabular-nums text-foreground/90" : "text-foreground/80"}
+                            ${val.trim() === "" ? "" : ""}
+                          `}
+                        >
+                          {numeric
+                            ? Number(val.replace(/\s/g, "").replace(",", ".")).toLocaleString("fr-FR", { maximumFractionDigits: 6 })
+                            : val}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
