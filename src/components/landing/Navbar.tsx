@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -16,7 +17,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-primary/10 bg-dark-green/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <a href="#" className="flex items-center gap-2">
-          <Shield className="h-7 w-7 text-gold" />
+          <img src={logo} alt="Commission Fiscale" className="h-8 w-8" />
           <div className="leading-tight">
             <span className="block text-sm font-bold text-primary-foreground">Commission Fiscale</span>
             <span className="block text-[10px] font-medium text-gold-light tracking-wider uppercase">Mauritanie</span>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Shield, LogIn, Eye, EyeOff } from "lucide-react";
+import { LogIn, Eye, EyeOff } from "lucide-react";
+import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +43,7 @@ const Login = () => {
         {/* Logo */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <Shield className="h-10 w-10 text-primary" />
+            <img src={logo} alt="Commission Fiscale" className="h-12 w-12" />
             <div className="text-left leading-tight">
               <span className="block text-lg font-bold text-foreground">Commission Fiscale</span>
               <span className="block text-xs font-medium text-accent tracking-wider uppercase">Mauritanie</span>

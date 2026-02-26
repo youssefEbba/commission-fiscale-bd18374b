@@ -1,4 +1,5 @@
-import { Shield, MapPin, Mail, Phone } from "lucide-react";
+import { MapPin, Mail, Phone } from "lucide-react";
+import logo from "@/assets/logo.svg";
 
 const Footer = () => (
   <footer id="contact" className="border-t border-border bg-dark-green text-primary-foreground">
@@ -7,7 +8,7 @@ const Footer = () => (
         {/* Brand */}
         <div className="md:col-span-1">
           <div className="mb-4 flex items-center gap-2">
-            <Shield className="h-6 w-6 text-gold" />
+            <img src={logo} alt="Commission Fiscale" className="h-7 w-7" />
             <span className="text-sm font-bold">Commission Fiscale</span>
           </div>
           <p className="text-xs leading-relaxed text-primary-foreground/60">
