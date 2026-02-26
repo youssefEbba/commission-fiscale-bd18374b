@@ -134,13 +134,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       </div>
       {renderNav(closeMobile)}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="text-xs text-sidebar-foreground/60 mb-2">
-          <p className="font-medium text-sidebar-foreground">{user?.nomComplet || user?.username}</p>
-          <p className="capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
-        </div>
-        <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
-          <LogOut className="h-4 w-4 mr-2" /> Déconnexion
-        </Button>
+        <div className="text-[10px] text-sidebar-foreground/40 text-center">© Commission Fiscale</div>
       </div>
     </>
   );
@@ -164,8 +158,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
       <main className="flex-1 overflow-auto">
         {/* Desktop top bar */}
-        <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card">
+        <header className="hidden md:flex items-center justify-end gap-3 px-6 py-3 border-b border-border bg-card">
           <NotificationBell />
+          <div className="flex items-center gap-2 text-sm">
+            <div className="text-right leading-tight">
+              <p className="font-medium text-foreground">{user?.nomComplet || user?.username}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
+            </div>
+          </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" /> Déconnexion
           </Button>
@@ -181,8 +181,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               <span className="text-sm font-bold text-foreground">Commission Fiscale</span>
             </Link>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <NotificationBell />
+            <span className="text-xs font-medium text-foreground">{user?.nomComplet || user?.username}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="h-4 w-4" /></Button>
           </div>
         </header>
