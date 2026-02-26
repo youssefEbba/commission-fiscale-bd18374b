@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser } from "lucide-react";
+import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser } from "lucide-react";
+import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -126,7 +127,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     <>
       <div className="p-4 border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2">
-          <Shield className="h-7 w-7 text-sidebar-primary" />
+          <img src={logo} alt="Commission Fiscale" className="h-8 w-8" />
           <div className="leading-tight">
             <span className="block text-sm font-bold">Commission Fiscale</span>
             <span className="block text-[10px] font-medium text-sidebar-primary tracking-wider uppercase">Mauritanie</span>
@@ -188,7 +189,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               <Menu className="h-5 w-5" />
             </Button>
             <Link to="/" className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
+              <img src={logo} alt="Commission Fiscale" className="h-7 w-7" />
               <span className="text-sm font-bold text-foreground">Commission Fiscale</span>
             </Link>
           </div>
