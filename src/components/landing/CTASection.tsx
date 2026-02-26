@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const CTASection = () => (
   <section className="py-20 md:py-28">
@@ -25,11 +26,11 @@ const CTASection = () => (
             Inscrivez-vous et suivez vos demandes de crédit d'impôt sur une plateforme sécurisée.
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Button size="lg" className="bg-gold text-accent-foreground font-semibold text-base px-8 hover:bg-gold-light gap-2">
-              Commencer maintenant <ArrowRight className="h-4 w-4" />
+            <Button size="lg" className="bg-gold text-accent-foreground font-semibold text-base px-8 hover:bg-gold-light gap-2" asChild>
+              <Link to="/register">Commencer maintenant <ArrowRight className="h-4 w-4" /></Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 font-semibold text-base px-8 gap-2">
-              <Phone className="h-4 w-4" /> Nous contacter
+            <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 font-semibold text-base px-8 gap-2" asChild>
+              <Link to="/login"><Phone className="h-4 w-4" /> Se connecter</Link>
             </Button>
           </div>
         </div>
