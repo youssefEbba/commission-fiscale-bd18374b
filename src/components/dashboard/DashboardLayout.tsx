@@ -4,6 +4,7 @@ import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings, Chev
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import NotificationBell from "@/components/dashboard/NotificationBell";
 
 interface NavItem {
   label: string;
@@ -162,6 +163,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       )}
 
       <main className="flex-1 overflow-auto">
+        {/* Desktop top bar */}
+        <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card">
+          <NotificationBell />
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+          </Button>
+        </header>
+        {/* Mobile top bar */}
         <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMobileOpen(true)}>
@@ -172,7 +181,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               <span className="text-sm font-bold text-foreground">Commission Fiscale</span>
             </Link>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="h-4 w-4" /></Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="h-4 w-4" /></Button>
+          </div>
         </header>
         <div className="p-6 md:p-8">{children}</div>
       </main>
