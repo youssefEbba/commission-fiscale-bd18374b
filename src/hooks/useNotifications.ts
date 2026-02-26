@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 import { notificationApi, NotificationDto, WS_BASE } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -32,7 +33,7 @@ export function useNotifications() {
     if (!user) return;
 
     const client = new Client({
-      brokerURL: WS_BASE.replace(/^http/, "ws") + "?token=" + encodeURIComponent(user.token),
+      webSocketFactory: () => new SockJS(WS_BASE + "?token=" + encodeURIComponent(user.token)),
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
