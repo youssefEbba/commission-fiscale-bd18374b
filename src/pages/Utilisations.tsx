@@ -97,7 +97,7 @@ const Utilisations = () => {
               <Landmark className="h-6 w-6 text-primary" />
               {pageTitle[role] || "Utilisations de crédit"}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Processus P4 (Douane) & P5 (Intérieur)</p>
+            <p className="text-muted-foreground text-sm mt-1">Douane & Intérieur</p>
           </div>
           <Button variant="outline" onClick={fetch} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser

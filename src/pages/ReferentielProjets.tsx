@@ -239,7 +239,7 @@ const ReferentielProjets = () => {
               {pageTitle[role] || "Référentiel Projet"}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Processus P1 – Création du référentiel projet / convention / don
+              Création du référentiel projet / convention / don
             </p>
           </div>
           <div className="flex gap-2">
@@ -337,7 +337,7 @@ const ReferentielProjets = () => {
               <FolderOpen className="h-5 w-5 text-primary" />
               Nouveau Référentiel Projet
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">Processus P1 — Associez une convention validée</p>
+            <p className="text-sm text-muted-foreground">Associez une convention validée</p>
           </DialogHeader>
           <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
 

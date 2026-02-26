@@ -418,7 +418,7 @@ const Demandes = () => {
               {pageTitle[role] || "Demandes de correction"}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Processus P2 – Correction de l'offre fiscale
+              Correction de l'offre fiscale
             </p>
           </div>
           <div className="flex gap-2">

@@ -95,7 +95,7 @@ const Certificats = () => {
               <Award className="h-6 w-6 text-primary" />
               {pageTitle[role] || "Certificats de crédit"}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Processus P3 – Mise en place du crédit</p>
+            <p className="text-muted-foreground text-sm mt-1">Mise en place du crédit</p>
           </div>
           <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
