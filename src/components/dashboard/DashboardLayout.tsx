@@ -1,10 +1,11 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical } from "lucide-react";
+import { Shield, Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import NotificationBell from "@/components/dashboard/NotificationBell";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface NavItem {
   label: string;
@@ -158,17 +159,27 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
       <main className="flex-1 overflow-auto">
         {/* Desktop top bar */}
-        <header className="hidden md:flex items-center justify-end gap-3 px-6 py-3 border-b border-border bg-card">
+        <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card">
           <NotificationBell />
-          <div className="flex items-center gap-2 text-sm">
-            <div className="text-right leading-tight">
-              <p className="font-medium text-foreground">{user?.nomComplet || user?.username}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" /> Déconnexion
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2 px-2">
+                <CircleUser className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium text-sm">{user?.nomComplet || user?.username}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="font-normal">
+                <p className="text-sm font-medium">{user?.nomComplet || user?.username}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
+                <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         {/* Mobile top bar */}
         <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
@@ -183,8 +194,23 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
-            <span className="text-xs font-medium text-foreground">{user?.nomComplet || user?.username}</span>
-            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="h-4 w-4" /></Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <CircleUser className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="font-normal">
+                  <p className="text-sm font-medium">{user?.nomComplet || user?.username}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <div className="p-6 md:p-8">{children}</div>
