@@ -16,6 +16,7 @@ interface ExcelData {
   fileName: string;
   sheets: { name: string; data: string[][] }[];
   rawText: string;
+  workbook: XLSX.WorkBook;
 }
 
 // Result types
@@ -107,7 +108,7 @@ function readExcelFile(file: File): Promise<ExcelData> {
           return { name, data: json };
         });
         const rawText = sheetsToText(sheets);
-        resolve({ fileName: file.name, sheets, rawText });
+        resolve({ fileName: file.name, sheets, rawText, workbook: wb });
       } catch (err) {
         reject(err);
       }
@@ -408,24 +409,14 @@ function UploadZone({
   );
 }
 
-/* ======== Full Excel Preview (dedicated view) ======== */
+/* ======== Full Excel Preview (native rendering) ======== */
 function FullExcelPreview({ data }: { data: ExcelData }) {
   const [openSheet, setOpenSheet] = useState(0);
-  const sheet = data.sheets[openSheet];
-  if (!sheet || sheet.data.length === 0) return null;
+  const sheetName = data.sheets[openSheet]?.name;
+  if (!sheetName) return null;
 
-  const maxCols = Math.max(...sheet.data.map(r => r.length));
-  const padRow = (row: string[]) => {
-    const padded = [...row];
-    while (padded.length < maxCols) padded.push("");
-    return padded;
-  };
-
-  const headerRow = padRow(sheet.data[0]);
-  const bodyRows = sheet.data.slice(1);
-
-  // Detect if a cell looks like a number
-  const isNumeric = (val: string) => val !== "" && !isNaN(Number(val.replace(/\s/g, "").replace(",", ".")));
+  const ws = data.workbook.Sheets[sheetName];
+  const htmlString = XLSX.utils.sheet_to_html(ws, { id: `excel-preview-${openSheet}`, editable: false });
 
   return (
     <Card className="overflow-hidden shadow-sm border-border/60">
@@ -437,7 +428,7 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
           <div className="flex flex-col">
             <span className="font-semibold text-foreground">{data.fileName}</span>
             <span className="text-xs text-muted-foreground font-normal">
-              {bodyRows.length} lignes · {maxCols} colonnes · {data.sheets.length} feuille{data.sheets.length > 1 ? "s" : ""}
+              {data.sheets[openSheet]?.data.length || 0} lignes · {data.sheets.length} feuille{data.sheets.length > 1 ? "s" : ""}
             </span>
           </div>
         </CardTitle>
@@ -462,61 +453,10 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
             ))}
           </div>
         )}
-        <div className="overflow-auto max-h-[70vh]">
-          <table className="w-full text-[13px] border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-primary/8 border-b-2 border-primary/15">
-                <th className="px-3 py-2.5 text-center font-semibold text-primary/60 w-12 text-xs">#</th>
-                {headerRow.map((cell, i) => (
-                  <th
-                    key={i}
-                    className="px-4 py-2.5 text-left font-semibold text-foreground/80 whitespace-nowrap text-xs uppercase tracking-wider"
-                  >
-                    {String(cell) || `Col ${i + 1}`}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {bodyRows.map((row, ri) => {
-                const paddedRow = padRow(row);
-                const isEmpty = paddedRow.every(c => String(c).trim() === "");
-                return (
-                  <tr
-                    key={ri}
-                    className={`
-                      border-b border-border/30 transition-colors
-                      ${isEmpty ? "h-6" : "hover:bg-primary/[0.03]"}
-                      ${ri % 2 === 0 ? "bg-background" : "bg-muted/20"}
-                    `}
-                  >
-                    <td className="px-3 py-2 text-center text-muted-foreground/40 font-mono text-[11px] select-none">
-                      {ri + 1}
-                    </td>
-                    {paddedRow.map((cell, ci) => {
-                      const val = String(cell);
-                      const numeric = isNumeric(val);
-                      return (
-                        <td
-                          key={ci}
-                          className={`
-                            px-4 py-2 whitespace-nowrap
-                            ${numeric ? "text-right font-mono tabular-nums text-foreground/90" : "text-foreground/80"}
-                            ${val.trim() === "" ? "" : ""}
-                          `}
-                        >
-                          {numeric
-                            ? Number(val.replace(/\s/g, "").replace(",", ".")).toLocaleString("fr-FR", { maximumFractionDigits: 6 })
-                            : val}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <div
+          className="overflow-auto max-h-[70vh] excel-native-preview"
+          dangerouslySetInnerHTML={{ __html: htmlString }}
+        />
       </CardContent>
     </Card>
   );
