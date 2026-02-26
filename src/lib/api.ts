@@ -1,4 +1,4 @@
-const API_BASE = "https://591e-2605-59c0-4902-2b08-4419-bb8a-b814-dffc.ngrok-free.app/api";
+const API_BASE = "https://63eb-2605-59c0-49ed-9e08-f1d5-e0ac-3fc6-77f5.ngrok-free.app/api";
 
 interface RequestOptions {
   method?: string;
@@ -606,4 +606,4 @@ export const notificationApi = {
   markAllRead: () => apiFetch<void>("/notifications/read-all", { method: "PATCH" }),
 };
 
-export const WS_BASE = "https://591e-2605-59c0-4902-2b08-4419-bb8a-b814-dffc.ngrok-free.app/ws";
+export const WS_BASE = "https://63eb-2605-59c0-49ed-9e08-f1d5-e0ac-3fc6-77f5.ngrok-free.app/ws";
