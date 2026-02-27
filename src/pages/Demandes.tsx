@@ -117,6 +117,12 @@ const Demandes = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Upload offre corrigée dialog (DGTCP/DGB before visa)
+  const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
+  const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
+  const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
+  const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
+
   // Create wizard
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -214,6 +220,53 @@ const Demandes = () => {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // Check if DGTCP/DGB needs to upload offre corrigée before visa
+  const requiresOffreCorrigee = (role === "DGTCP" || role === "DGB");
+
+  const checkAndHandleVisa = async (id: number) => {
+    if (requiresOffreCorrigee) {
+      // Check if OFFRE_CORRIGEE already uploaded
+      try {
+        const documents = await demandeCorrectionApi.getDocuments(id);
+        const hasOffre = documents.some(d => d.type === "OFFRE_CORRIGEE" && d.actif !== false);
+        if (!hasOffre) {
+          setOffreCorrigeePendingId(id);
+          setOffreCorrigeeOpen(true);
+          return;
+        }
+      } catch {
+        // If can't check, still require upload
+        setOffreCorrigeePendingId(id);
+        setOffreCorrigeeOpen(true);
+        return;
+      }
+    }
+    await handleTempVisa(id);
+  };
+
+  const handleOffreCorrigeeUploadAndVisa = async () => {
+    if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
+    setOffreCorrigeeUploading(true);
+    try {
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, "OFFRE_CORRIGEE", offreCorrigeeFile);
+      toast({ title: "Succès", description: "Offre corrigée uploadée" });
+      setOffreCorrigeeOpen(false);
+      setOffreCorrigeeFile(null);
+      // Now proceed with visa
+      await handleTempVisa(offreCorrigeePendingId);
+      // Refresh docs if detail is open
+      if (selected?.id === offreCorrigeePendingId) {
+        const documents = await demandeCorrectionApi.getDocuments(offreCorrigeePendingId);
+        setDocs(documents);
+      }
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setOffreCorrigeeUploading(false);
+      setOffreCorrigeePendingId(null);
     }
   };
 
@@ -518,7 +571,7 @@ const Demandes = () => {
                                       variant={t.to === "REJETEE" ? "destructive" : "default"}
                                       size="sm"
                                       disabled={actionLoading === d.id}
-                                      onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : handleTempVisa(d.id)}
+                                      onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
                                     >
                                       {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                                       {t.label}
@@ -803,7 +856,7 @@ const Demandes = () => {
                               key={idx}
                               variant={t.to === "REJETEE" ? "destructive" : (t.isVisa && myDec?.decision === "VISA") ? "secondary" : "default"}
                               disabled={actionLoading === selected.id}
-                              onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : handleTempVisa(selected.id)}
+                              onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}
                             >
                               {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                               {myDec ? (t.isVisa ? "Re-valider" : "Rejeter à nouveau") : t.label}
@@ -946,6 +999,30 @@ const Demandes = () => {
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
             <Button variant="destructive" disabled={!rejectMotif.trim()} onClick={handleRejectConfirm}>
               <XCircle className="h-4 w-4 mr-1" /> Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Offre Corrigée Upload Dialog (DGTCP/DGB) */}
+      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload de l'offre corrigée</DialogTitle>
+            <DialogDescription>
+              Vous devez uploader le document « Offre corrigée » avant de pouvoir apposer votre visa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Fichier de l'offre corrigée</Label>
+              <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>Annuler</Button>
+            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
+              {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+              Uploader et valider
             </Button>
           </DialogFooter>
         </DialogContent>
