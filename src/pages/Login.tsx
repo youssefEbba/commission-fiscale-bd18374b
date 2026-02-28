@@ -1,37 +1,62 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { LogIn, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { LogIn, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const API_BASE = "https://63eb-2605-59c0-49ed-9e08-f1d5-e0ac-3fc6-77f5.ngrok-free.app/api";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
     try {
-      const res = await authApi.login({ username, password });
-      login(res);
-      toast({ title: "Connexion réussie", description: `Bienvenue, ${res.nomComplet || res.username}` });
-      navigate("/dashboard");
-    } catch (err: unknown) {
-      toast({
-        title: "Erreur de connexion",
-        description: err instanceof Error ? err.message : "Identifiants incorrects",
-        variant: "destructive",
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({ username, password }),
       });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        let msg = "Identifiants incorrects";
+        try {
+          const json = JSON.parse(body);
+          if (json.error) msg = json.error;
+          if (json.message) msg = json.message;
+        } catch { /* use default */ }
+
+        // Detect "not validated" case
+        const lower = msg.toLowerCase();
+        if (lower.includes("valid") || lower.includes("activ") || lower.includes("approuv") || lower.includes("disabled")) {
+          setError("Votre compte n'est pas encore validé par un administrateur. Veuillez patienter.");
+        } else {
+          setError("Nom d'utilisateur ou mot de passe incorrect.");
+        }
+        return;
+      }
+
+      const data = await res.json();
+      login(data);
+      toast({ title: "Connexion réussie", description: `Bienvenue, ${data.nomComplet || data.username}` });
+      navigate("/dashboard");
+    } catch {
+      setError("Impossible de contacter le serveur. Vérifiez votre connexion.");
     } finally {
       setLoading(false);
     }
@@ -63,6 +88,13 @@ const Login = () => {
           <p className="text-muted-foreground text-center text-sm mb-6">
             Accédez à votre espace de gestion des crédits d'impôt
           </p>
+
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
