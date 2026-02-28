@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import {
   FileText, ArrowLeft, Loader2, CheckCircle, XCircle,
   Download, ExternalLink, Bot, Upload, History, RefreshCw,
+  FileDown, ShieldCheck,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<string, string> = {
@@ -50,6 +51,20 @@ const DECISION_ROLE_LABELS: Record<string, string> = {
   DGB: "DGB – Budget",
 };
 
+// Documents spéciaux qui s'affichent en bas des visas (pas dans la liste normale)
+const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION"];
+const SPECIAL_DOC_LABELS: Record<string, string> = {
+  CREDIT_EXTERIEUR: "Crédit Extérieur",
+  CREDIT_INTERIEUR: "Crédit Intérieur",
+  LETTRE_ADOPTION: "Lettre de Correction",
+};
+
+// Roles that must upload before visa
+const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string; label: string }> = {
+  DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
+  DGTCP: { docType: "CREDIT_INTERIEUR", label: "Crédit Intérieur" },
+};
+
 const CorrectionDouaniere = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -77,6 +92,11 @@ const CorrectionDouaniere = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
+
+  // Upload required doc before visa
+  const [preVisaUploadOpen, setPreVisaUploadOpen] = useState(false);
+  const [preVisaFile, setPreVisaFile] = useState<File | null>(null);
+  const [preVisaLoading, setPreVisaLoading] = useState(false);
 
   // Entreprise detail
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
@@ -156,9 +176,38 @@ const CorrectionDouaniere = () => {
     }
   };
 
+  // Check if current role has uploaded their required doc
+  const userRole = user?.role;
+  const uploadReq = userRole ? UPLOAD_REQUIRED_ROLES[userRole] : null;
+  const hasUploadedRequiredDoc = uploadReq
+    ? docs.some(d => d.type === uploadReq.docType)
+    : true;
+
+  // ---- Pre-visa upload for DGD/DGTCP ----
+  const handlePreVisaUpload = async () => {
+    if (!demande || !uploadReq || !preVisaFile) return;
+    setPreVisaLoading(true);
+    try {
+      await demandeCorrectionApi.uploadDocument(demande.id, uploadReq.docType, preVisaFile);
+      toast({ title: "Succès", description: `${uploadReq.label} uploadé avec succès` });
+      await fetchDocs();
+      setPreVisaUploadOpen(false);
+      setPreVisaFile(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setPreVisaLoading(false);
+    }
+  };
+
   // ---- Décision temporaire (VISA / REJET_TEMP) ----
   const handleTempVisa = async () => {
     if (!demande) return;
+    // Check upload requirement
+    if (uploadReq && !hasUploadedRequiredDoc) {
+      setPreVisaUploadOpen(true);
+      return;
+    }
     setActionLoading(true);
     try {
       await demandeCorrectionApi.postDecision(demande.id, "VISA");
@@ -189,7 +238,7 @@ const CorrectionDouaniere = () => {
     }
   };
 
-  // ---- Décision finale (DGTCP / PRESIDENT) ----
+  // ---- Décision finale (PRESIDENT only) ----
   const handleFinalDecision = async () => {
     if (!demande) return;
     setFinalOpen(false);
@@ -230,15 +279,18 @@ const CorrectionDouaniere = () => {
     }
   };
 
-  const userRole = user?.role;
   const isDirection = userRole && DECISION_ROLES.includes(userRole);
-  const canFinalDecision = userRole === "DGTCP" || userRole === "PRESIDENT";
+  const canFinalDecision = userRole === "PRESIDENT";
   const isAC = userRole === "AUTORITE_CONTRACTANTE";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE";
 
   // Current user's decision
   const myDecision = decisions.find(d => d.role === userRole);
   const hasAnyRejet = decisions.some(d => d.decision === "REJET_TEMP");
+
+  // Separate special docs from regular docs
+  const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
+  const regularDocTypes = DOCUMENT_TYPES_REQUIS.filter(dt => !SPECIAL_DOC_TYPES.includes(dt.value));
 
   return (
     <DashboardLayout>
@@ -346,10 +398,53 @@ const CorrectionDouaniere = () => {
                       );
                     })}
                   </div>
+
+                  {/* Special documents displayed below visas with large icons */}
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" /> Documents de décision
+                    </p>
+                    <div className="grid grid-cols-3 gap-4">
+                      {SPECIAL_DOC_TYPES.map((docType) => {
+                        const doc = specialDocs.find(d => d.type === docType);
+                        const fileUrl = doc ? getDocFileUrl(doc) : null;
+                        return (
+                          <div
+                            key={docType}
+                            className={`rounded-xl border-2 p-4 text-center transition-colors ${
+                              doc
+                                ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+                                : "border-dashed border-muted-foreground/20 bg-muted/20"
+                            }`}
+                          >
+                            {doc ? (
+                              <FileDown className="h-10 w-10 text-primary mx-auto mb-2" />
+                            ) : (
+                              <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                            )}
+                            <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>
+                              {SPECIAL_DOC_LABELS[docType]}
+                            </p>
+                            {doc ? (
+                              <div className="flex items-center justify-center gap-1 mt-2">
+                                {fileUrl && (
+                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => window.open(fileUrl, "_blank")}>
+                                    <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                                  </Button>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground mt-1">Non disponible</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Pièces du dossier (avec versioning) */}
+              {/* Pièces du dossier (sans les documents spéciaux) */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -366,8 +461,7 @@ const CorrectionDouaniere = () => {
                     <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                   ) : (
                     <div className="space-y-2">
-                      {DOCUMENT_TYPES_REQUIS.map((dt) => {
-                        // Get all versions for this type, sorted by version desc
+                      {regularDocTypes.map((dt) => {
                         const allVersions = docs
                           .filter(d => d.type === dt.value)
                           .sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
@@ -409,7 +503,6 @@ const CorrectionDouaniere = () => {
                                 )}
                               </div>
                             </div>
-                            {/* Historique versions */}
                             {hasVersions && (
                               <div className="mt-2 ml-7 space-y-1">
                                 <p className="text-xs text-muted-foreground flex items-center gap-1"><History className="h-3 w-3" /> Historique des versions</p>
@@ -456,6 +549,29 @@ const CorrectionDouaniere = () => {
                       </div>
                     ) : null}
 
+                    {/* Upload requirement warning for DGD/DGTCP */}
+                    {uploadReq && !hasUploadedRequiredDoc && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                        <p className="font-medium">⚠️ Upload requis avant visa</p>
+                        <p className="mt-1">Vous devez uploader le document « {uploadReq.label} » avant de pouvoir apposer votre visa.</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 w-full border-amber-300 text-amber-800 hover:bg-amber-100"
+                          onClick={() => { setPreVisaFile(null); setPreVisaUploadOpen(true); }}
+                        >
+                          <Upload className="h-3.5 w-3.5 mr-1" /> Uploader {uploadReq.label}
+                        </Button>
+                      </div>
+                    )}
+
+                    {uploadReq && hasUploadedRequiredDoc && (
+                      <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>{uploadReq.label} uploadé ✓</span>
+                      </div>
+                    )}
+
                     <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                       {myDecision?.decision === "VISA" ? "Confirmer visa" : myDecision ? "Changer en Visa" : "Apposer visa"}
@@ -468,7 +584,7 @@ const CorrectionDouaniere = () => {
                 </Card>
               )}
 
-              {/* Décision finale (DGTCP / PRESIDENT) */}
+              {/* Décision finale (PRESIDENT only) */}
               {canFinalDecision && !isFinal && (
                 <Card className="border-primary/30">
                   <CardHeader><CardTitle className="text-lg">Décision finale</CardTitle></CardHeader>
@@ -565,6 +681,31 @@ const CorrectionDouaniere = () => {
             >
               {finalType === "ADOPTEE" ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
               Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-Visa Upload Dialog (DGD/DGTCP) */}
+      <Dialog open={preVisaUploadOpen} onOpenChange={setPreVisaUploadOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload requis — {uploadReq?.label}</DialogTitle>
+            <DialogDescription>
+              Vous devez uploader le document « {uploadReq?.label} » avant de pouvoir apposer votre visa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Fichier</Label>
+              <Input type="file" onChange={(e) => setPreVisaFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreVisaUploadOpen(false)}>Annuler</Button>
+            <Button disabled={!preVisaFile || preVisaLoading} onClick={handlePreVisaUpload}>
+              {preVisaLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+              Uploader
             </Button>
           </DialogFooter>
         </DialogContent>
