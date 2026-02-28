@@ -36,7 +36,7 @@ const NAV_ENTRIES: NavEntry[] = [
   // P1 (Référentiel Projet) : AC crée, DGB valide
   { label: "Référentiel Projet", href: "/dashboard/referentiels", icon: FolderOpen, roles: ["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"] },
   // P2 (Correction de l'offre) : AC initie, DGD/DGI/DGB/DGTCP évaluent, PRESIDENT valide
-  { label: "Demandes", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  { label: "Demandes", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   // Marchés : AC crée, admin consulte
   { label: "Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "ADMIN_SI", "PRESIDENT"] },
   // P3 (Certificat) : AC soumet, DGI vérifie, DGTCP ouvre crédit, PRESIDENT signe
