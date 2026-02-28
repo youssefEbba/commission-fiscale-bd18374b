@@ -20,6 +20,7 @@ import Simulation from "./pages/Simulation";
 import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
 import AssistanceIA from "./pages/AssistanceIA";
+import Marches from "./pages/Marches";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,11 @@ const App = () => (
             <Route path="/dashboard/demandes" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Demandes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/marches" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ADMIN_SI", "PRESIDENT"]}>
+                <Marches />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={

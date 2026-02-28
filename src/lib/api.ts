@@ -463,6 +463,40 @@ export const demandeCorrectionApi = {
     }),
 };
 
+// Marchés
+export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE";
+
+export interface MarcheDto {
+  id: number;
+  demandeCorrectionId?: number;
+  numeroMarche?: string;
+  dateSignature?: string;
+  montantContratTtc?: number;
+  statut: StatutMarche;
+}
+
+export interface CreateMarcheRequest {
+  demandeCorrectionId?: number;
+  numeroMarche?: string;
+  dateSignature?: string;
+  montantContratTtc?: number;
+  statut?: StatutMarche;
+}
+
+export const MARCHE_STATUT_LABELS: Record<StatutMarche, string> = {
+  EN_COURS: "En cours",
+  AVENANT: "Avenant",
+  CLOTURE: "Clôturé",
+};
+
+export const marcheApi = {
+  getAll: () => apiFetch<MarcheDto[]>("/marches"),
+  getById: (id: number) => apiFetch<MarcheDto>(`/marches/${id}`),
+  getByCorrection: (demandeCorrectionId: number) => apiFetch<MarcheDto>(`/marches/by-correction/${demandeCorrectionId}`),
+  create: (data: CreateMarcheRequest) => apiFetch<MarcheDto>("/marches", { method: "POST", body: data }),
+  update: (id: number, data: Partial<CreateMarcheRequest>) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: data }),
+};
+
 // Certificats de crédit (P3)
 export type CertificatStatut = "DEMANDE" | "EMIS" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
