@@ -244,22 +244,24 @@ const Demandes = () => {
     }
   };
 
-  // Check if DGTCP/DGB needs to upload offre corrigée before visa
-  const requiresOffreCorrigee = (role === "DGTCP" || role === "DGB");
+  // DGTCP must upload CREDIT_INTERIEUR, DGD must upload CREDIT_EXTERIEUR before visa
+  const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
+    DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
+    DGTCP: { docType: "CREDIT_INTERIEUR", label: "Crédit Intérieur" },
+  };
+  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
-    if (requiresOffreCorrigee) {
-      // Check if OFFRE_CORRIGEE already uploaded
+    if (uploadBeforeVisa) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasOffre = documents.some(d => d.type === "OFFRE_CORRIGEE" && d.actif !== false);
-        if (!hasOffre) {
+        const hasDoc = documents.some(d => d.type === uploadBeforeVisa.docType && d.actif !== false);
+        if (!hasDoc) {
           setOffreCorrigeePendingId(id);
           setOffreCorrigeeOpen(true);
           return;
         }
       } catch {
-        // If can't check, still require upload
         setOffreCorrigeePendingId(id);
         setOffreCorrigeeOpen(true);
         return;
@@ -272,8 +274,8 @@ const Demandes = () => {
     if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
     setOffreCorrigeeUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: "Succès", description: "Offre corrigée uploadée" });
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
+      toast({ title: "Succès", description: `${uploadBeforeVisa?.label || "Document"} uploadé` });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
       // Now proceed with visa
@@ -1080,14 +1082,14 @@ const Demandes = () => {
       <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload de l'offre corrigée</DialogTitle>
+            <DialogTitle>Upload du {uploadBeforeVisa?.label || "document"}</DialogTitle>
             <DialogDescription>
-              Vous devez uploader le document « Offre corrigée » avant de pouvoir apposer votre visa.
+              Vous devez uploader le document « {uploadBeforeVisa?.label || "requis"} » avant de pouvoir apposer votre visa.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Fichier de l'offre corrigée</Label>
+              <Label>Fichier du {uploadBeforeVisa?.label || "document"}</Label>
               <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
             </div>
           </div>
