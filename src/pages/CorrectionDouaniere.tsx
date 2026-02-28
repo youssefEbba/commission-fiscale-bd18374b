@@ -399,6 +399,43 @@ const CorrectionDouaniere = () => {
                     })}
                   </div>
 
+                  {/* Historique complet des décisions */}
+                  {decisions.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-border">
+                      <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                        <History className="h-4 w-4" /> Historique des visa / rejets
+                      </p>
+                      <div className="space-y-2">
+                        {[...decisions]
+                          .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())
+                          .map((dec, idx) => (
+                          <div key={idx} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
+                            dec.decision === "VISA" ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"
+                          }`}>
+                            {dec.decision === "VISA" ? (
+                              <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-600 shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium">
+                                {DECISION_ROLE_LABELS[dec.role] || dec.role}
+                                <span className={`ml-2 text-xs ${dec.decision === "VISA" ? "text-green-700" : "text-red-700"}`}>
+                                  {dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}
+                                </span>
+                              </p>
+                              {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-0.5">{dec.motifRejet}</p>}
+                            </div>
+                            <div className="text-right shrink-0 text-xs text-muted-foreground">
+                              {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")} {new Date(dec.dateDecision).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>}
+                              {dec.utilisateurNom && <p>Par: {dec.utilisateurNom}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Special documents displayed below visas with large icons */}
                   <div className="mt-6 pt-4 border-t border-border">
                     <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
