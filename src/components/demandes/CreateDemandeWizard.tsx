@@ -173,6 +173,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
         entrepriseId: Number(entrepriseId),
         referentielProjetId: projetId ? Number(projetId) : undefined,
+        marcheId: marcheId ? Number(marcheId) : undefined,
         modeleFiscal: {
           referenceDossier,
           typeProjet,
@@ -192,15 +193,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           lignes: dqeLignes,
         },
       });
-
-      // Link marché to demande if selected
-      if (marcheId) {
-        try {
-          await marcheApi.update(Number(marcheId), { demandeCorrectionId: demande.id });
-        } catch {
-          // Non-blocking: marché link failed
-        }
-      }
 
       // Upload documents
       const docEntries = Object.entries(docFiles);
