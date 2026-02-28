@@ -173,6 +173,7 @@ const Demandes = () => {
   };
 
   const fetchDemandes = async () => {
+    if (!role) return;
     setLoading(true);
     try {
       let data: DemandeCorrectionDto[];
@@ -184,14 +185,27 @@ const Demandes = () => {
         data = await demandeCorrectionApi.getAll();
       }
       setDemandes(data);
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
+    } catch (e: any) {
+      const message = String(e?.message || "");
+      const accessDenied = message.includes("Accès refusé") || message.includes("Access Denied");
+      toast({
+        title: "Erreur",
+        description: accessDenied
+          ? "Votre compte n'a pas encore la permission de consulter les demandes de correction."
+          : "Impossible de charger les demandes",
+        variant: "destructive",
+      });
+      setDemandes([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchDemandes(); }, []);
+  useEffect(() => {
+    if (!role) return;
+    fetchDemandes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, user?.entrepriseId, user?.autoriteContractanteId]);
 
   // Wizard handles creation now
 
