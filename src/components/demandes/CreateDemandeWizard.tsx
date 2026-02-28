@@ -4,6 +4,7 @@ import {
   entrepriseApi, EntrepriseDto, referentielProjetApi, ReferentielProjetDto,
   DOCUMENT_TYPES_REQUIS, demandeCorrectionApi,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
+  marcheApi, MarcheDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   // Step 0: Entreprise + Projet + Documents
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [projets, setProjets] = useState<ReferentielProjetDto[]>([]);
+  const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [entrepriseId, setEntrepriseId] = useState("");
   const [projetId, setProjetId] = useState("");
+  const [marcheId, setMarcheId] = useState("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [loadingData, setLoadingData] = useState(false);
 
@@ -83,12 +86,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [ent, proj] = await Promise.all([
+      const [ent, proj, marc] = await Promise.all([
         entrepriseApi.getAll(),
         referentielProjetApi.getAll(),
+        marcheApi.getAll().catch(() => [] as MarcheDto[]),
       ]);
       setEntreprises(ent);
       setProjets(proj.filter(p => p.statut === "VALIDE"));
+      // Only show marchés not yet linked to a demande
+      setMarches(marc.filter(m => !m.demandeCorrectionId));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
     } finally {
@@ -102,6 +108,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setStep(0);
       setEntrepriseId("");
       setProjetId("");
+      setMarcheId("");
       setDocFiles({});
       setImportations([emptyImportation()]);
       setDqeLignes([emptyDqeLigne()]);
@@ -186,6 +193,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         },
       });
 
+      // Link marché to demande if selected
+      if (marcheId) {
+        try {
+          await marcheApi.update(Number(marcheId), { demandeCorrectionId: demande.id });
+        } catch {
+          // Non-blocking: marché link failed
+        }
+      }
+
       // Upload documents
       const docEntries = Object.entries(docFiles);
       for (const [type, file] of docEntries) {
@@ -239,7 +255,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
               <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Entreprise *</Label>
                     <Select value={entrepriseId} onValueChange={setEntrepriseId}>
@@ -247,6 +263,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                       <SelectContent>
                         {entreprises.map(e => (
                           <SelectItem key={e.id} value={String(e.id)}>{e.raisonSociale} — NIF: {e.nif}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Marché ciblé *</Label>
+                    <Select value={marcheId} onValueChange={setMarcheId}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionnez un marché" /></SelectTrigger>
+                      <SelectContent>
+                        {marches.map(m => (
+                          <SelectItem key={m.id} value={String(m.id)}>
+                            {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -549,11 +578,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < 2 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && (!entrepriseId || !marcheId)}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId}>
+              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId || !marcheId}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                 Soumettre la demande
               </Button>
