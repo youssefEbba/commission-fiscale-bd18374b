@@ -398,6 +398,7 @@ export interface CreateDemandeCorrectionRequest {
   autoriteContractanteId?: number;
   entrepriseId: number;
   referentielProjetId?: number;
+  marcheId?: number;
   modeleFiscal?: ModeleFiscal;
   dqe?: Dqe;
 }
