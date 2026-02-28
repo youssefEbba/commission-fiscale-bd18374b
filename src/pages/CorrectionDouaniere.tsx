@@ -56,7 +56,7 @@ const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPT
 const SPECIAL_DOC_LABELS: Record<string, string> = {
   CREDIT_EXTERIEUR: "Crédit Extérieur",
   CREDIT_INTERIEUR: "Crédit Intérieur",
-  LETTRE_ADOPTION: "Lettre de Correction",
+  LETTRE_ADOPTION: "Lettre d'Adoption",
 };
 
 // Roles that must upload before visa
