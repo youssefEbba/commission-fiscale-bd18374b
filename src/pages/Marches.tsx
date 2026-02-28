@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, Plus, RefreshCw, Loader2, Search, Edit, Eye } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, Eye } from "lucide-react";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -101,7 +101,7 @@ const Marches = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ShoppingCart className="h-6 w-6 text-primary" />
+              <Gavel className="h-6 w-6 text-primary" />
               Marchés
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Gestion des marchés publics</p>

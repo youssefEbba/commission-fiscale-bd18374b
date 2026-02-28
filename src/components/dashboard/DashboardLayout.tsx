@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, ShoppingCart } from "lucide-react";
+import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -38,7 +38,7 @@ const NAV_ENTRIES: NavEntry[] = [
   // P2 (Correction de l'offre) : AC initie, DGD/DGI/DGB/DGTCP évaluent, PRESIDENT valide
   { label: "Demandes", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   // Marchés : AC crée, admin consulte
-  { label: "Marchés", href: "/dashboard/marches", icon: ShoppingCart, roles: ["AUTORITE_CONTRACTANTE", "ADMIN_SI", "PRESIDENT"] },
+  { label: "Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "ADMIN_SI", "PRESIDENT"] },
   // P3 (Certificat) : AC soumet, DGI vérifie, DGTCP ouvre crédit, PRESIDENT signe
   { label: "Certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   // P4 (Douane) : ENT soumet, DGD contrôle, DGTCP impute | P5 (Intérieur) : ENT soumet, DGTCP valide, DGI consulte
