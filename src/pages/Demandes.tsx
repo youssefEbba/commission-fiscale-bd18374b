@@ -746,6 +746,58 @@ const Demandes = () => {
                   </div>
                 );
               })()}
+              {/* Documents de décision */}
+              {(() => {
+                const SPECIAL_DOC_TYPES_LIST = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION"];
+                const SPECIAL_DOC_LABELS_MAP: Record<string, string> = {
+                  CREDIT_EXTERIEUR: "Crédit Extérieur",
+                  CREDIT_INTERIEUR: "Crédit Intérieur",
+                  LETTRE_ADOPTION: "Lettre d'Adoption",
+                };
+                const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES_LIST.includes(d.type));
+                return (
+                  <div className="rounded-lg border border-border p-4">
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary" /> Documents de décision
+                    </h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {SPECIAL_DOC_TYPES_LIST.map((docType) => {
+                        const doc = specialDocs.find(d => d.type === docType);
+                        const fileUrl = doc ? getDocFileUrl(doc) : null;
+                        return (
+                          <div
+                            key={docType}
+                            className={`rounded-xl border-2 p-4 text-center transition-colors ${
+                              doc
+                                ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+                                : "border-dashed border-muted-foreground/20 bg-muted/20"
+                            }`}
+                          >
+                            {doc ? (
+                              <Download className="h-8 w-8 text-primary mx-auto mb-2" />
+                            ) : (
+                              <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                            )}
+                            <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>
+                              {SPECIAL_DOC_LABELS_MAP[docType]}
+                            </p>
+                            {doc && fileUrl ? (
+                              <div className="flex items-center justify-center gap-1 mt-2">
+                                <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => window.open(fileUrl, "_blank")}>
+                                  <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground mt-1">Non disponible</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Pièces du dossier</h3>
@@ -759,7 +811,7 @@ const Demandes = () => {
                   <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : (
                   <div className="space-y-2">
-                    {DOCUMENT_TYPES_REQUIS.map((dt) => {
+                    {DOCUMENT_TYPES_REQUIS.filter(dt => !["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION"].includes(dt.value)).map((dt) => {
                       // Find the active version, or the latest by version/id
                       const allOfType = docs.filter((d) => d.type === dt.value);
                       const uploaded = allOfType.find(d => d.actif === true)
