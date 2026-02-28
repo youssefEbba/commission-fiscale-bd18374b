@@ -175,7 +175,14 @@ const Demandes = () => {
   const fetchDemandes = async () => {
     setLoading(true);
     try {
-      const data = await demandeCorrectionApi.getAll();
+      let data: DemandeCorrectionDto[];
+      if (role === "ENTREPRISE" && user?.entrepriseId) {
+        data = await demandeCorrectionApi.getByEntreprise(user.entrepriseId);
+      } else if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId) {
+        data = await demandeCorrectionApi.getByAutorite(user.autoriteContractanteId);
+      } else {
+        data = await demandeCorrectionApi.getAll();
+      }
       setDemandes(data);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
