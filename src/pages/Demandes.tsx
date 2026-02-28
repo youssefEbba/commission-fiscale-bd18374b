@@ -299,15 +299,17 @@ const Demandes = () => {
   const updateDemandeStatusAfterDecision = async (id: number) => {
     try {
       const decisions = await demandeCorrectionApi.getDecisions(id);
+      console.log("Decisions after action:", JSON.stringify(decisions));
       const visaRoles = decisions
-        .filter(d => d.decision === "VISA")
-        .map(d => d.role);
+        .filter((d: any) => d.decision === "VISA")
+        .map((d: any) => d.role);
       const allVisas = REQUIRED_VISA_ROLES.every(r => visaRoles.includes(r));
       const newStatut = allVisas ? "EN_VALIDATION" : "EN_EVALUATION";
+      console.log("Updating demande status to:", newStatut);
       await demandeCorrectionApi.updateStatut(id, newStatut);
-    } catch (e) {
-      // Status update is best-effort, don't block the flow
-      console.warn("Could not update demande status after decision", e);
+    } catch (e: any) {
+      console.error("Could not update demande status after decision", e);
+      toast({ title: "Erreur statut", description: e?.message || "Impossible de mettre à jour le statut", variant: "destructive" });
     }
   };
 
