@@ -293,11 +293,30 @@ const Demandes = () => {
     }
   };
 
+  const REQUIRED_VISA_ROLES = ["DGD", "DGI", "DGTCP", "DGB"];
+
+  // After a visa/reject, update demande status accordingly
+  const updateDemandeStatusAfterDecision = async (id: number) => {
+    try {
+      const decisions = await demandeCorrectionApi.getDecisions(id);
+      const visaRoles = decisions
+        .filter(d => d.decision === "VISA")
+        .map(d => d.role);
+      const allVisas = REQUIRED_VISA_ROLES.every(r => visaRoles.includes(r));
+      const newStatut = allVisas ? "EN_VALIDATION" : "EN_EVALUATION";
+      await demandeCorrectionApi.updateStatut(id, newStatut);
+    } catch (e) {
+      // Status update is best-effort, don't block the flow
+      console.warn("Could not update demande status after decision", e);
+    }
+  };
+
   // Temporary decision (VISA / REJET_TEMP) via POST /decisions
   const handleTempVisa = async (id: number) => {
     setActionLoading(id);
     try {
       await demandeCorrectionApi.postDecision(id, "VISA");
+      await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Visa temporaire apposé" });
       fetchDemandes();
       if (selected) {
@@ -315,6 +334,7 @@ const Demandes = () => {
     setActionLoading(id);
     try {
       await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif);
+      await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDemandes();
       if (selected) {
