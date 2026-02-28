@@ -298,14 +298,14 @@ const Demandes = () => {
   // After a visa/reject, update demande status accordingly
   const updateDemandeStatusAfterDecision = async (id: number) => {
     try {
-      const decisions = await demandeCorrectionApi.getDecisions(id);
-      console.log("Decisions after action:", JSON.stringify(decisions));
+      // Use getById instead of getDecisions (which may be access-restricted)
+      const demande = await demandeCorrectionApi.getById(id);
+      const decisions = demande.decisions || [];
       const visaRoles = decisions
         .filter((d: any) => d.decision === "VISA")
         .map((d: any) => d.role);
       const allVisas = REQUIRED_VISA_ROLES.every(r => visaRoles.includes(r));
       const newStatut = allVisas ? "EN_VALIDATION" : "EN_EVALUATION";
-      console.log("Updating demande status to:", newStatut);
       await demandeCorrectionApi.updateStatut(id, newStatut);
     } catch (e: any) {
       console.error("Could not update demande status after decision", e);
