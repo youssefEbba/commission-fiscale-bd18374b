@@ -11,13 +11,8 @@ import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const ROLES = [
-  { value: "ENTREPRISE", label: "Entreprise" },
   { value: "AUTORITE_CONTRACTANTE", label: "Autorité Contractante" },
-  { value: "DGD", label: "DGD - Direction Générale des Douanes" },
-  { value: "DGI", label: "DGI - Direction Générale des Impôts" },
-  { value: "DGTCP", label: "DGTCP - Trésor Public" },
-  { value: "DGB", label: "DGB - Direction Générale du Budget" },
-  { value: "PRESIDENT", label: "Président de la Commission" },
+  { value: "ENTREPRISE", label: "Entreprise" },
 ];
 
 const Register = () => {
