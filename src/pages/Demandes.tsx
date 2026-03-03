@@ -522,7 +522,7 @@ const Demandes = () => {
           <div className="flex gap-2">
             {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
               <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
+                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande de correction
               </Button>
             )}
             <Button variant="outline" onClick={fetchDemandes} disabled={loading}>

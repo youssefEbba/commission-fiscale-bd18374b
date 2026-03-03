@@ -25,7 +25,7 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "Nouvelle demande", href: "/dashboard/demandes", icon: FileText, description: "Soumettre une correction d'offre fiscale", roles: ["AUTORITE_CONTRACTANTE"] },
+  { label: "Nouvelle demande de correction", href: "/dashboard/demandes", icon: FileText, description: "Soumettre une correction d'offre fiscale", roles: ["AUTORITE_CONTRACTANTE"] },
   { label: "Mes certificats", href: "/dashboard/certificats", icon: Award, description: "Consulter vos certificats de crédit", roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE"] },
   { label: "Utilisation Douane", href: "/dashboard/utilisations", icon: Landmark, description: "Soumettre une utilisation douanière", roles: ["ENTREPRISE"] },
   { label: "Utilisation Intérieur", href: "/dashboard/utilisations", icon: Building2, description: "Soumettre une utilisation intérieure", roles: ["ENTREPRISE"] },
