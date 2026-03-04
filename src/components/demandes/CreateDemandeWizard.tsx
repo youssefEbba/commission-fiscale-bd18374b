@@ -71,6 +71,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [newEntreprise, setNewEntreprise] = useState<EntrepriseDto>({ raisonSociale: "", nif: "" });
   const [creatingEntreprise, setCreatingEntreprise] = useState(false);
 
+  // Create convention inline
+  const [showCreateConvention, setShowCreateConvention] = useState(false);
+  const [newConvention, setNewConvention] = useState<{ reference: string; intitule: string; bailleur?: string }>({ reference: "", intitule: "" });
+  const [creatingConvention, setCreatingConvention] = useState(false);
+
+  // Create marché inline
+  const [showCreateMarche, setShowCreateMarche] = useState(false);
+  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number }>({ numeroMarche: "" });
+  const [creatingMarche, setCreatingMarche] = useState(false);
+
   // Step 1: Modèle fiscal
   const [typeProjet, setTypeProjet] = useState("BTP");
   const [referenceDossier, setReferenceDossier] = useState("");
@@ -119,6 +129,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setReferenceDossier("");
       setShowCreateEntreprise(false);
       setNewEntreprise({ raisonSociale: "", nif: "" });
+      setShowCreateConvention(false);
+      setNewConvention({ reference: "", intitule: "" });
+      setShowCreateMarche(false);
+      setNewMarche({ numeroMarche: "" });
       loadInitialData();
     }
   }, [open, loadInitialData]);
@@ -141,6 +155,56 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setCreatingEntreprise(false);
+    }
+  };
+
+  // Create convention inline
+  const handleCreateConvention = async () => {
+    if (!newConvention.reference || !newConvention.intitule) {
+      toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
+      return;
+    }
+    setCreatingConvention(true);
+    try {
+      const created = await conventionApi.create({
+        reference: newConvention.reference,
+        intitule: newConvention.intitule,
+        bailleur: newConvention.bailleur,
+        autoriteContractanteId: user?.autoriteContractanteId || undefined,
+      });
+      setConventions(prev => [...prev, created]);
+      setConventionId(String(created.id));
+      setShowCreateConvention(false);
+      setNewConvention({ reference: "", intitule: "" });
+      toast({ title: "Succès", description: "Convention créée" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingConvention(false);
+    }
+  };
+
+  // Create marché inline
+  const handleCreateMarche = async () => {
+    if (!newMarche.numeroMarche) {
+      toast({ title: "Erreur", description: "Le numéro de marché est obligatoire", variant: "destructive" });
+      return;
+    }
+    setCreatingMarche(true);
+    try {
+      const created = await marcheApi.create({
+        numeroMarche: newMarche.numeroMarche,
+        montantContratTtc: newMarche.montantContratTtc,
+      });
+      setMarches(prev => [...prev, created]);
+      setMarcheId(String(created.id));
+      setShowCreateMarche(false);
+      setNewMarche({ numeroMarche: "" });
+      toast({ title: "Succès", description: "Marché créé" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingMarche(false);
     }
   };
 
@@ -341,32 +405,122 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
                   {/* Convention (remplace Projet) */}
                   <div className="space-y-2">
-                    <Label>Convention *</Label>
-                    <Select value={conventionId} onValueChange={setConventionId}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
-                      <SelectContent>
-                        {conventions.map(c => (
-                          <SelectItem key={c.id} value={String(c.id)}>
-                            {c.reference || `#${c.id}`} — {c.intitule || c.bailleur || ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="flex items-center justify-between">
+                      <span>Convention *</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-primary"
+                        onClick={() => setShowCreateConvention(!showCreateConvention)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {showCreateConvention ? "Annuler" : "Créer"}
+                      </Button>
+                    </Label>
+                    {!showCreateConvention ? (
+                      <Select value={conventionId} onValueChange={setConventionId}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
+                        <SelectContent>
+                          {conventions.map(c => (
+                            <SelectItem key={c.id} value={String(c.id)}>
+                              {c.reference || `#${c.id}`} — {c.intitule || c.bailleur || ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Card className="border-primary/30">
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <FileText className="h-4 w-4" />
+                            Nouvelle convention
+                          </div>
+                          <Input
+                            placeholder="Référence *"
+                            value={newConvention.reference}
+                            onChange={e => setNewConvention(prev => ({ ...prev, reference: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="Intitulé *"
+                            value={newConvention.intitule}
+                            onChange={e => setNewConvention(prev => ({ ...prev, intitule: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="Bailleur (optionnel)"
+                            value={newConvention.bailleur || ""}
+                            onChange={e => setNewConvention(prev => ({ ...prev, bailleur: e.target.value }))}
+                          />
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={handleCreateConvention}
+                            disabled={creatingConvention}
+                          >
+                            {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                            Créer la convention
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
 
                   {/* Marché */}
                   <div className="space-y-2">
-                    <Label>Attribution / Adjudication</Label>
-                    <Select value={marcheId} onValueChange={setMarcheId}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
-                      <SelectContent>
-                        {marches.map(m => (
-                          <SelectItem key={m.id} value={String(m.id)}>
-                            {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="flex items-center justify-between">
+                      <span>Attribution / Adjudication</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-primary"
+                        onClick={() => setShowCreateMarche(!showCreateMarche)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {showCreateMarche ? "Annuler" : "Créer"}
+                      </Button>
+                    </Label>
+                    {!showCreateMarche ? (
+                      <Select value={marcheId} onValueChange={setMarcheId}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
+                        <SelectContent>
+                          {marches.map(m => (
+                            <SelectItem key={m.id} value={String(m.id)}>
+                              {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Card className="border-primary/30">
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <FileText className="h-4 w-4" />
+                            Nouveau marché
+                          </div>
+                          <Input
+                            placeholder="Numéro de marché *"
+                            value={newMarche.numeroMarche}
+                            onChange={e => setNewMarche(prev => ({ ...prev, numeroMarche: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="Montant TTC (optionnel)"
+                            type="number"
+                            value={newMarche.montantContratTtc || ""}
+                            onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                          />
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={handleCreateMarche}
+                            disabled={creatingMarche}
+                          >
+                            {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                            Créer le marché
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 </div>
 
