@@ -73,7 +73,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   // Create convention inline
   const [showCreateConvention, setShowCreateConvention] = useState(false);
-  const [newConvention, setNewConvention] = useState<{ reference: string; intitule: string; bailleur?: string }>({ reference: "", intitule: "" });
+  const [newConvention, setNewConvention] = useState<{ reference: string; intitule: string; bailleur?: string; dateSignature?: string }>({ reference: "", intitule: "" });
   const [creatingConvention, setCreatingConvention] = useState(false);
 
   // Create marché inline
@@ -104,7 +104,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     try {
       const [ent, conv, marc] = await Promise.all([
         entrepriseApi.getAll(),
-        conventionApi.getByStatut("VALIDE"),
+        conventionApi.getAll(),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
       ]);
       setEntreprises(ent);
@@ -130,7 +130,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setShowCreateEntreprise(false);
       setNewEntreprise({ raisonSociale: "", nif: "" });
       setShowCreateConvention(false);
-      setNewConvention({ reference: "", intitule: "" });
+      setNewConvention({ reference: "", intitule: "", dateSignature: "" });
       setShowCreateMarche(false);
       setNewMarche({ numeroMarche: "" });
       loadInitialData();
@@ -170,12 +170,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         reference: newConvention.reference,
         intitule: newConvention.intitule,
         bailleur: newConvention.bailleur,
+        dateSignature: newConvention.dateSignature || new Date().toISOString().split("T")[0],
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
       });
       setConventions(prev => [...prev, created]);
       setConventionId(String(created.id));
       setShowCreateConvention(false);
-      setNewConvention({ reference: "", intitule: "" });
+      setNewConvention({ reference: "", intitule: "", dateSignature: "" });
       toast({ title: "Succès", description: "Convention créée" });
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -451,6 +452,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                             value={newConvention.bailleur || ""}
                             onChange={e => setNewConvention(prev => ({ ...prev, bailleur: e.target.value }))}
                           />
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Date de signature *</Label>
+                            <Input
+                              type="date"
+                              value={newConvention.dateSignature || ""}
+                              onChange={e => setNewConvention(prev => ({ ...prev, dateSignature: e.target.value }))}
+                            />
+                          </div>
                           <Button
                             size="sm"
                             className="w-full"
