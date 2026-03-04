@@ -645,4 +645,29 @@ export const notificationApi = {
   markAllRead: () => apiFetch<void>("/notifications/read-all", { method: "PATCH" }),
 };
 
+// Bailleurs (référentiel)
+export interface BailleurDto { id: number; nom: string; details?: string; }
+export interface CreateBailleurRequest { nom: string; details?: string; }
+
+export const bailleurApi = {
+  getAll: () => apiFetch<BailleurDto[]>("/bailleurs"),
+  create: (data: CreateBailleurRequest) => apiFetch<BailleurDto>("/bailleurs", { method: "POST", body: data }),
+};
+
+// Devises (référentiel)
+export interface DeviseDto { id: number; code: string; libelle: string; symbole?: string; }
+export interface CreateDeviseRequest { code: string; libelle: string; symbole?: string; }
+
+export const deviseApi = {
+  getAll: () => apiFetch<DeviseDto[]>("/devises"),
+  create: (data: CreateDeviseRequest) => apiFetch<DeviseDto>("/devises", { method: "POST", body: data }),
+};
+
+// Taux de change
+export interface TauxChangeResponse { devise: string; base: string; taux: number; source: string; }
+
+export const tauxChangeApi = {
+  get: (devise: string) => apiFetch<TauxChangeResponse>(`/taux-change?devise=${encodeURIComponent(devise)}`),
+};
+
 export const WS_BASE = "https://63eb-2605-59c0-49ed-9e08-f1d5-e0ac-3fc6-77f5.ngrok-free.app/ws";
