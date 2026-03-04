@@ -543,13 +543,25 @@ export interface CertificatCreditDto {
   montantDouane?: number;
   montantInterieur?: number;
   montantTotal?: number;
+  montantCordon?: number;
+  montantTVAInterieure?: number;
+  soldeCordon?: number;
+  soldeTVA?: number;
   dateCreation?: string;
   dateMiseAJour?: string;
+  dateValidite?: string;
+  lettreCorrectionId?: number;
 }
 
 export interface CreateCertificatCreditRequest {
   entrepriseId: number;
+  lettreCorrectionId?: number;
   demandeCorrectionId?: number;
+  dateValidite?: string;
+  montantCordon?: number;
+  montantTVAInterieure?: number;
+  soldeCordon?: number;
+  soldeTVA?: number;
   montantDouane?: number;
   montantInterieur?: number;
 }
@@ -565,7 +577,7 @@ export const certificatCreditApi = {
 
 // Utilisations de crédit (P4/P5)
 export type UtilisationStatut = "DEMANDEE" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
-export type UtilisationType = "DOUANE" | "INTERIEUR";
+export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface UtilisationCreditDto {
   id: number;
@@ -575,17 +587,63 @@ export interface UtilisationCreditDto {
   statut: UtilisationStatut;
   dateCreation?: string;
   dateMiseAJour?: string;
+  dateLiquidation?: string;
   description?: string;
   entrepriseNom?: string;
+  entrepriseId?: number;
   certificatReference?: string;
+  // Douane fields
+  numeroDeclaration?: string;
+  numeroBulletin?: string;
+  dateDeclaration?: string;
+  montantDroits?: number;
+  montantTVADouane?: number;
+  enregistreeSYDONIA?: boolean;
+  // TVA intérieure fields
+  typeAchat?: string;
+  numeroFacture?: string;
+  dateFacture?: string;
+  montantTVAInterieure?: number;
+  numeroDecompte?: string;
 }
 
 export interface CreateUtilisationCreditRequest {
   certificatCreditId: number;
-  type?: UtilisationType;
-  montant?: number;
+  entrepriseId: number;
+  type: UtilisationType;
+  montant: number;
   description?: string;
+  // Douane
+  numeroDeclaration?: string;
+  numeroBulletin?: string;
+  dateDeclaration?: string;
+  montantDroits?: number;
+  montantTVA?: number;
+  enregistreeSYDONIA?: boolean;
+  // TVA intérieure
+  typeAchat?: string;
+  numeroFacture?: string;
+  dateFacture?: string;
+  montantTVAInterieure?: number;
+  numeroDecompte?: string;
 }
+
+export type TypeDocumentUtilisation =
+  | "DECLARATION_DOUANE"
+  | "BULLETIN_LIQUIDATION"
+  | "FACTURE"
+  | "CONNAISSEMENT"
+  | "DECOMPTE"
+  | "AUTRE";
+
+export const UTILISATION_DOCUMENT_TYPES: { value: TypeDocumentUtilisation; label: string }[] = [
+  { value: "DECLARATION_DOUANE", label: "Déclaration en douane" },
+  { value: "BULLETIN_LIQUIDATION", label: "Bulletin de liquidation" },
+  { value: "FACTURE", label: "Facture" },
+  { value: "CONNAISSEMENT", label: "Connaissement" },
+  { value: "DECOMPTE", label: "Décompte" },
+  { value: "AUTRE", label: "Autre" },
+];
 
 export const utilisationCreditApi = {
   getAll: () => apiFetch<UtilisationCreditDto[]>("/utilisations-credit"),
@@ -593,6 +651,15 @@ export const utilisationCreditApi = {
   getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
   create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`),
+  uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/utilisations-credit/${id}/documents?type=${encodeURIComponent(type)}`, {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
 };
 
 // Audit Logs (P8 / Admin)
