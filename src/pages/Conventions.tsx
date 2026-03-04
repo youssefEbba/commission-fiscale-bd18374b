@@ -40,7 +40,7 @@ const Conventions = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
     reference: "", intitule: "", bailleur: "", bailleurDetails: "",
-    dateSignature: "", dateDebut: "", dateFin: "",
+    dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
   const [creating, setCreating] = useState(false);
@@ -104,7 +104,7 @@ const Conventions = () => {
       setCreateOpen(false);
       setForm({
         reference: "", intitule: "", bailleur: "", bailleurDetails: "",
-        dateSignature: "", dateDebut: "", dateFin: "",
+        dateSignature: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
       setCreateDocs([]);
@@ -305,17 +305,13 @@ const Conventions = () => {
               <Input value={form.bailleur} onChange={(e) => setForm(f => ({ ...f, bailleur: e.target.value }))} placeholder="Banque mondiale..." />
             </div>
             <div className="space-y-2">
-              <Label>Détails bailleur</Label>
-              <Input value={form.bailleurDetails} onChange={(e) => setForm(f => ({ ...f, bailleurDetails: e.target.value }))} placeholder="Siège, type de prêt..." />
+              <Label>Descriptif de projets</Label>
+              <Input value={form.bailleurDetails} onChange={(e) => setForm(f => ({ ...f, bailleurDetails: e.target.value }))} placeholder="Description du projet financé..." />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Date signature</Label>
                 <Input type="date" value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Date début</Label>
-                <Input type="date" value={form.dateDebut} onChange={(e) => setForm(f => ({ ...f, dateDebut: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Date fin</Label>
@@ -325,7 +321,14 @@ const Conventions = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Montant devise</Label>
-                <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => setForm(f => ({ ...f, montantDevise: e.target.value ? Number(e.target.value) : undefined }))} placeholder="1200000" />
+                <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setForm(f => ({
+                    ...f,
+                    montantDevise: val,
+                    montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : f.montantMru,
+                  }));
+                }} placeholder="1200000" />
               </div>
               <div className="space-y-2">
                 <Label>Devise d'origine</Label>
@@ -334,12 +337,19 @@ const Conventions = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Montant MRU</Label>
-                <Input type="number" value={form.montantMru ?? ""} onChange={(e) => setForm(f => ({ ...f, montantMru: e.target.value ? Number(e.target.value) : undefined }))} placeholder="52000000" />
+                <Label>Taux de change</Label>
+                <Input type="number" step="0.01" value={form.tauxChange ?? ""} onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setForm(f => ({
+                    ...f,
+                    tauxChange: val,
+                    montantMru: val && f.montantDevise ? Math.round(f.montantDevise * val * 100) / 100 : f.montantMru,
+                  }));
+                }} placeholder="43.33" />
               </div>
               <div className="space-y-2">
-                <Label>Taux de change</Label>
-                <Input type="number" step="0.01" value={form.tauxChange ?? ""} onChange={(e) => setForm(f => ({ ...f, tauxChange: e.target.value ? Number(e.target.value) : undefined }))} placeholder="43.33" />
+                <Label>Montant MRU (calculé)</Label>
+                <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
               </div>
             </div>
 

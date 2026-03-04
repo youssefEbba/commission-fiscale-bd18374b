@@ -102,14 +102,14 @@ const Marches = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Gavel className="h-6 w-6 text-primary" />
-              Marchés
+              Attributions / Marchés
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Gestion des marchés publics</p>
+            <p className="text-muted-foreground text-sm mt-1">Gestion des attributions et marchés publics</p>
           </div>
           <div className="flex gap-2">
             {isAC && (
               <Button onClick={openCreate}>
-                <Plus className="h-4 w-4 mr-2" /> Nouveau marché
+                <Plus className="h-4 w-4 mr-2" /> Nouvelle attribution
               </Button>
             )}
             <Button variant="outline" onClick={fetchMarches} disabled={loading}>
@@ -132,11 +132,11 @@ const Marches = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>N° Marché</TableHead>
+                    <TableHead>N° Attribution / Marché</TableHead>
                     <TableHead>Date signature</TableHead>
                     <TableHead>Montant TTC</TableHead>
                     <TableHead>Statut</TableHead>
-                    <TableHead>Demande liée</TableHead>
+                    <TableHead>Type</TableHead>
                     {isAC && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -159,8 +159,12 @@ const Marches = () => {
                             {MARCHE_STATUT_LABELS[m.statut]}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {m.demandeCorrectionId ? `DC #${m.demandeCorrectionId}` : "—"}
+                         <TableCell className="text-muted-foreground">
+                          {m.demandeCorrectionId ? (
+                            <Badge className="text-xs bg-green-100 text-green-800">Marché / Contrat — DC #{m.demandeCorrectionId}</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">Attribution / Adjudication</Badge>
+                          )}
                         </TableCell>
                         {isAC && (
                           <TableCell className="text-right">
@@ -183,14 +187,14 @@ const Marches = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? "Modifier le marché" : "Nouveau marché"}</DialogTitle>
+            <DialogTitle>{editing ? "Modifier" : "Nouvelle attribution / adjudication"}</DialogTitle>
             <DialogDescription>
               {editing ? "Modifiez les informations du marché." : "Renseignez les informations du nouveau marché."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Numéro de marché *</Label>
+             <div className="space-y-2">
+              <Label>Numéro d'attribution *</Label>
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
             </div>
             <div className="space-y-2">
