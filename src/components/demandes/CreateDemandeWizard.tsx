@@ -78,7 +78,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   // Create marché inline
   const [showCreateMarche, setShowCreateMarche] = useState(false);
-  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number }>({ numeroMarche: "" });
+  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number; dateSignature?: string }>({ numeroMarche: "" });
   const [creatingMarche, setCreatingMarche] = useState(false);
 
   // Step 1: Modèle fiscal
@@ -171,6 +171,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         intitule: newConvention.intitule,
         bailleur: newConvention.bailleur,
         dateSignature: newConvention.dateSignature || new Date().toISOString().split("T")[0],
+        statut: "EN_ATTENTE",
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
       });
       setConventions(prev => [...prev, created]);
@@ -196,6 +197,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       const created = await marcheApi.create({
         numeroMarche: newMarche.numeroMarche,
         montantContratTtc: newMarche.montantContratTtc,
+        dateSignature: newMarche.dateSignature || new Date().toISOString().split("T")[0],
+        statut: "EN_COURS" as any,
       });
       setMarches(prev => [...prev, created]);
       setMarcheId(String(created.id));
@@ -518,6 +521,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                             value={newMarche.montantContratTtc || ""}
                             onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
                           />
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Date de signature</Label>
+                            <Input
+                              type="date"
+                              value={newMarche.dateSignature || ""}
+                              onChange={e => setNewMarche(prev => ({ ...prev, dateSignature: e.target.value }))}
+                            />
+                          </div>
                           <Button
                             size="sm"
                             className="w-full"
