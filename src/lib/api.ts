@@ -260,6 +260,7 @@ export interface CreateConventionRequest {
   deviseOrigine?: string;
   montantMru?: number;
   tauxChange?: number;
+  statut?: ConventionStatut;
   autoriteContractanteId?: number;
 }
 
