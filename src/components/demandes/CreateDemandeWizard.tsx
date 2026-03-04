@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  entrepriseApi, EntrepriseDto, referentielProjetApi, ReferentielProjetDto,
+  entrepriseApi, EntrepriseDto,
+  conventionApi, ConventionDto,
   DOCUMENT_TYPES_REQUIS, demandeCorrectionApi,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
   marcheApi, MarcheDto,
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, CheckCircle, Send, FileText,
+  Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, CheckCircle, Send, FileText, Building2,
 } from "lucide-react";
 
 // ── helpers ──
@@ -55,15 +56,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  // Step 0: Entreprise + Projet + Documents
+  // Step 0: Entreprise + Convention + Documents
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
-  const [projets, setProjets] = useState<ReferentielProjetDto[]>([]);
+  const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [entrepriseId, setEntrepriseId] = useState("");
-  const [projetId, setProjetId] = useState("");
+  const [conventionId, setConventionId] = useState("");
   const [marcheId, setMarcheId] = useState("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [loadingData, setLoadingData] = useState(false);
+
+  // Create enterprise inline
+  const [showCreateEntreprise, setShowCreateEntreprise] = useState(false);
+  const [newEntreprise, setNewEntreprise] = useState<EntrepriseDto>({ raisonSociale: "", nif: "" });
+  const [creatingEntreprise, setCreatingEntreprise] = useState(false);
 
   // Step 1: Modèle fiscal
   const [typeProjet, setTypeProjet] = useState("BTP");
@@ -86,14 +92,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [ent, proj, marc] = await Promise.all([
+      const [ent, conv, marc] = await Promise.all([
         entrepriseApi.getAll(),
-        referentielProjetApi.getAll(),
+        conventionApi.getByStatut("VALIDE"),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
       ]);
       setEntreprises(ent);
-      setProjets(proj.filter(p => p.statut === "VALIDE"));
-      // Only show marchés not yet linked to a demande
+      setConventions(conv);
       setMarches(marc.filter(m => !m.demandeCorrectionId));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
@@ -102,20 +107,42 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   }, [toast]);
 
-  // Load data when dialog opens
   useEffect(() => {
     if (open) {
       setStep(0);
       setEntrepriseId("");
-      setProjetId("");
+      setConventionId("");
       setMarcheId("");
       setDocFiles({});
       setImportations([emptyImportation()]);
       setDqeLignes([emptyDqeLigne()]);
       setReferenceDossier("");
+      setShowCreateEntreprise(false);
+      setNewEntreprise({ raisonSociale: "", nif: "" });
       loadInitialData();
     }
   }, [open, loadInitialData]);
+
+  // Create enterprise inline
+  const handleCreateEntreprise = async () => {
+    if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
+      toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
+      return;
+    }
+    setCreatingEntreprise(true);
+    try {
+      const created = await entrepriseApi.create(newEntreprise);
+      setEntreprises(prev => [...prev, created]);
+      setEntrepriseId(String(created.id));
+      setShowCreateEntreprise(false);
+      setNewEntreprise({ raisonSociale: "", nif: "" });
+      toast({ title: "Succès", description: "Entreprise créée" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingEntreprise(false);
+    }
+  };
 
   // ── Importation helpers ──
   const updateImportation = (idx: number, field: keyof ImportationLigne, value: string | number) => {
@@ -132,7 +159,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const totalTaxes = importations.reduce((s, l) => s + l.totalTaxes, 0);
   const creditExterieur = totalTaxes;
 
-  // Recalc fiscalite
   const updateFiscalite = (field: keyof FiscaliteInterieure, value: number) => {
     setFiscalite(prev => {
       const next = { ...prev, [field]: value };
@@ -172,7 +198,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       const demande = await demandeCorrectionApi.create({
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
         entrepriseId: Number(entrepriseId),
-        referentielProjetId: projetId ? Number(projetId) : undefined,
+        conventionId: conventionId ? Number(conventionId) : undefined,
         marcheId: marcheId ? Number(marcheId) : undefined,
         modeleFiscal: {
           referenceDossier,
@@ -240,7 +266,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           ))}
         </div>
 
-        {/* ═══ STEP 0: Entreprise + Documents ═══ */}
+        {/* ═══ STEP 0: Entreprise + Convention + Documents ═══ */}
         {step === 0 && (
           <div className="space-y-4">
             {loadingData ? (
@@ -248,37 +274,96 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Entreprise with create option */}
                   <div className="space-y-2">
-                    <Label>Entreprise *</Label>
-                    <Select value={entrepriseId} onValueChange={setEntrepriseId}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger>
-                      <SelectContent>
-                        {entreprises.map(e => (
-                          <SelectItem key={e.id} value={String(e.id)}>{e.raisonSociale} — NIF: {e.nif}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="flex items-center justify-between">
+                      <span>Entreprise *</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-primary"
+                        onClick={() => setShowCreateEntreprise(!showCreateEntreprise)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {showCreateEntreprise ? "Annuler" : "Créer"}
+                      </Button>
+                    </Label>
+                    {!showCreateEntreprise ? (
+                      <Select value={entrepriseId} onValueChange={setEntrepriseId}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger>
+                        <SelectContent>
+                          {entreprises.map(e => (
+                            <SelectItem key={e.id} value={String(e.id)}>{e.raisonSociale} — NIF: {e.nif}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Card className="border-primary/30">
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <Building2 className="h-4 w-4" />
+                            Nouvelle entreprise
+                          </div>
+                          <Input
+                            placeholder="Raison sociale *"
+                            value={newEntreprise.raisonSociale}
+                            onChange={e => setNewEntreprise(prev => ({ ...prev, raisonSociale: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="NIF *"
+                            value={newEntreprise.nif}
+                            onChange={e => setNewEntreprise(prev => ({ ...prev, nif: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="Adresse (optionnel)"
+                            value={newEntreprise.adresse || ""}
+                            onChange={e => setNewEntreprise(prev => ({ ...prev, adresse: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="Email (optionnel)"
+                            value={newEntreprise.email || ""}
+                            onChange={e => setNewEntreprise(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={handleCreateEntreprise}
+                            disabled={creatingEntreprise}
+                          >
+                            {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                            Créer l'entreprise
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
+
+                  {/* Convention (remplace Projet) */}
                   <div className="space-y-2">
-                    <Label>Marché ciblé *</Label>
-                    <Select value={marcheId} onValueChange={setMarcheId}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionnez un marché" /></SelectTrigger>
+                    <Label>Convention *</Label>
+                    <Select value={conventionId} onValueChange={setConventionId}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
                       <SelectContent>
-                        {marches.map(m => (
-                          <SelectItem key={m.id} value={String(m.id)}>
-                            {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
+                        {conventions.map(c => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.reference || `#${c.id}`} — {c.intitule || c.bailleur || ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Marché */}
                   <div className="space-y-2">
-                    <Label>Projet référentiel</Label>
-                    <Select value={projetId} onValueChange={setProjetId}>
-                      <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+                    <Label>Attribution / Adjudication</Label>
+                    <Select value={marcheId} onValueChange={setMarcheId}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
                       <SelectContent>
-                        {projets.map(p => (
-                          <SelectItem key={p.id} value={String(p.id)}>{p.nomProjet || p.intitule || `#${p.id}`}</SelectItem>
+                        {marches.map(m => (
+                          <SelectItem key={m.id} value={String(m.id)}>
+                            {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -570,11 +655,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < 2 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && (!entrepriseId || !marcheId)}>
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId || !marcheId}>
+              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                 Soumettre la demande
               </Button>

@@ -8,7 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import ReferentielProjets from "./pages/ReferentielProjets";
+// ReferentielProjets supprimé: convention = projet
 import Conventions from "./pages/Conventions";
 import Demandes from "./pages/Demandes";
 import Certificats from "./pages/Certificats";
@@ -42,11 +42,7 @@ const App = () => (
                 <Conventions />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/referentiels" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"]}>
-                <ReferentielProjets />
-              </ProtectedRoute>
-            } />
+            {/* Référentiel Projet supprimé: convention = projet */}
             <Route path="/dashboard/demandes" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Demandes />

@@ -251,12 +251,12 @@ export interface CreateConventionRequest {
   bailleur?: string;
   bailleurDetails?: string;
   dateSignature?: string;
-  dateDebut?: string;
   dateFin?: string;
   montantDevise?: number;
   deviseOrigine?: string;
   montantMru?: number;
   tauxChange?: number;
+  autoriteContractanteId?: number;
 }
 
 export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
@@ -397,7 +397,7 @@ export interface Dqe {
 export interface CreateDemandeCorrectionRequest {
   autoriteContractanteId?: number;
   entrepriseId: number;
-  referentielProjetId?: number;
+  conventionId?: number;
   marcheId?: number;
   modeleFiscal?: ModeleFiscal;
   dqe?: Dqe;
