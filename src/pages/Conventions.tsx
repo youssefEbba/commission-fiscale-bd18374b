@@ -5,6 +5,9 @@ import {
   conventionApi, ConventionDto, ConventionStatut,
   CONVENTION_STATUT_LABELS, CreateConventionRequest,
   DocumentDto, TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
+  bailleurApi, BailleurDto, CreateBailleurRequest,
+  deviseApi, DeviseDto, CreateDeviseRequest,
+  tauxChangeApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,23 @@ const Conventions = () => {
   });
   const [creating, setCreating] = useState(false);
 
+  // Bailleurs reference
+  const [bailleurs, setBailleurs] = useState<BailleurDto[]>([]);
+  const [bailleursLoading, setBailleursLoading] = useState(false);
+  const [addBailleurOpen, setAddBailleurOpen] = useState(false);
+  const [newBailleur, setNewBailleur] = useState<CreateBailleurRequest>({ nom: "", details: "" });
+  const [addingBailleur, setAddingBailleur] = useState(false);
+
+  // Devises reference
+  const [devises, setDevises] = useState<DeviseDto[]>([]);
+  const [devisesLoading, setDevisesLoading] = useState(false);
+  const [addDeviseOpen, setAddDeviseOpen] = useState(false);
+  const [newDevise, setNewDevise] = useState<CreateDeviseRequest>({ code: "", libelle: "", symbole: "" });
+  const [addingDevise, setAddingDevise] = useState(false);
+
+  // Taux de change auto
+  const [tauxLoading, setTauxLoading] = useState(false);
+
   // Documents in creation form
   const [createDocs, setCreateDocs] = useState<{ type: TypeDocumentConvention; file: File }[]>([]);
   const [createDocType, setCreateDocType] = useState<TypeDocumentConvention>("CONVENTION_CONTRAT");
@@ -74,7 +94,82 @@ const Conventions = () => {
     }
   };
 
+  const fetchBailleurs = async () => {
+    setBailleursLoading(true);
+    try { setBailleurs(await bailleurApi.getAll()); } catch { /* ignore */ } finally { setBailleursLoading(false); }
+  };
+
+  const fetchDevises = async () => {
+    setDevisesLoading(true);
+    try { setDevises(await deviseApi.getAll()); } catch { /* ignore */ } finally { setDevisesLoading(false); }
+  };
+
   useEffect(() => { fetchConventions(); }, []);
+
+  // Load references when create dialog opens
+  useEffect(() => {
+    if (createOpen) {
+      fetchBailleurs();
+      fetchDevises();
+    }
+  }, [createOpen]);
+
+  // Auto-fetch taux de change when devise changes
+  const fetchTauxChange = async (deviseCode: string) => {
+    if (!deviseCode) return;
+    setTauxLoading(true);
+    try {
+      const res = await tauxChangeApi.get(deviseCode);
+      setForm(f => ({
+        ...f,
+        tauxChange: res.taux,
+        montantMru: f.montantDevise ? Math.round(f.montantDevise * res.taux * 100) / 100 : undefined,
+      }));
+    } catch {
+      toast({ title: "Taux de change", description: `Impossible de récupérer le taux pour ${deviseCode}`, variant: "destructive" });
+    } finally {
+      setTauxLoading(false);
+    }
+  };
+
+  const handleDeviseChange = (code: string) => {
+    setForm(f => ({ ...f, deviseOrigine: code }));
+    fetchTauxChange(code);
+  };
+
+  const handleAddBailleur = async () => {
+    if (!newBailleur.nom.trim()) return;
+    setAddingBailleur(true);
+    try {
+      const created = await bailleurApi.create(newBailleur);
+      setBailleurs(prev => [...prev, created]);
+      setForm(f => ({ ...f, bailleur: created.nom }));
+      setAddBailleurOpen(false);
+      setNewBailleur({ nom: "", details: "" });
+      toast({ title: "Succès", description: "Bailleur ajouté" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setAddingBailleur(false);
+    }
+  };
+
+  const handleAddDevise = async () => {
+    if (!newDevise.code.trim() || !newDevise.libelle.trim()) return;
+    setAddingDevise(true);
+    try {
+      const created = await deviseApi.create(newDevise);
+      setDevises(prev => [...prev, created]);
+      handleDeviseChange(created.code);
+      setAddDeviseOpen(false);
+      setNewDevise({ code: "", libelle: "", symbole: "" });
+      toast({ title: "Succès", description: "Devise ajoutée" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setAddingDevise(false);
+    }
+  };
 
   const addCreateDoc = (file: File) => {
     setCreateDocs(prev => [...prev, { type: createDocType, file }]);
@@ -92,7 +187,6 @@ const Conventions = () => {
     setCreating(true);
     try {
       const created = await conventionApi.create(form);
-      // Upload attached documents
       for (const doc of createDocs) {
         try {
           await conventionApi.uploadDocument(created.id, doc.type, doc.file);
@@ -300,10 +394,27 @@ const Conventions = () => {
               <Label>Intitulé *</Label>
               <Input value={form.intitule} onChange={(e) => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Convention de financement..." />
             </div>
+
+            {/* Bailleur - dropdown + add */}
             <div className="space-y-2">
               <Label>Bailleur de fonds *</Label>
-              <Input value={form.bailleur} onChange={(e) => setForm(f => ({ ...f, bailleur: e.target.value }))} placeholder="Banque mondiale..." />
+              <div className="flex gap-2">
+                <Select value={form.bailleur || ""} onValueChange={(v) => setForm(f => ({ ...f, bailleur: v }))}>
+                  <SelectTrigger className="flex-1">
+                    {bailleursLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner un bailleur" />}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bailleurs.map((b) => (
+                      <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="icon" onClick={() => setAddBailleurOpen(true)} title="Ajouter un bailleur">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
+
             <div className="space-y-2">
               <Label>Descriptif de projets</Label>
               <Input value={form.bailleurDetails} onChange={(e) => setForm(f => ({ ...f, bailleurDetails: e.target.value }))} placeholder="Description du projet financé..." />
@@ -318,7 +429,28 @@ const Conventions = () => {
                 <Input type="date" value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Devise - dropdown + add */}
+            <div className="space-y-2">
+              <Label>Devise d'origine</Label>
+              <div className="flex gap-2">
+                <Select value={form.deviseOrigine || ""} onValueChange={handleDeviseChange}>
+                  <SelectTrigger className="flex-1">
+                    {devisesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner une devise" />}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {devises.map((d) => (
+                      <SelectItem key={d.id} value={d.code}>{d.code} — {d.libelle} {d.symbole ? `(${d.symbole})` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="icon" onClick={() => setAddDeviseOpen(true)} title="Ajouter une devise">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>Montant devise</Label>
                 <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
@@ -326,29 +458,16 @@ const Conventions = () => {
                   setForm(f => ({
                     ...f,
                     montantDevise: val,
-                    montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : f.montantMru,
+                    montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined,
                   }));
                 }} placeholder="1200000" />
               </div>
               <div className="space-y-2">
-                <Label>Devise d'origine</Label>
-                <Input value={form.deviseOrigine} onChange={(e) => setForm(f => ({ ...f, deviseOrigine: e.target.value }))} placeholder="EUR" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Taux de change</Label>
-                <Input type="number" step="0.01" value={form.tauxChange ?? ""} onChange={(e) => {
-                  const val = e.target.value ? Number(e.target.value) : undefined;
-                  setForm(f => ({
-                    ...f,
-                    tauxChange: val,
-                    montantMru: val && f.montantDevise ? Math.round(f.montantDevise * val * 100) / 100 : f.montantMru,
-                  }));
-                }} placeholder="43.33" />
+                <Label>Taux de change {tauxLoading && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</Label>
+                <Input readOnly value={form.tauxChange ?? "—"} className="bg-muted" />
               </div>
               <div className="space-y-2">
-                <Label>Montant MRU (calculé)</Label>
+                <Label>Montant MRU (auto)</Label>
                 <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
               </div>
             </div>
@@ -412,6 +531,62 @@ const Conventions = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Add Bailleur Dialog */}
+      <Dialog open={addBailleurOpen} onOpenChange={setAddBailleurOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nouveau bailleur</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Nom *</Label>
+              <Input value={newBailleur.nom} onChange={(e) => setNewBailleur(b => ({ ...b, nom: e.target.value }))} placeholder="Banque Mondiale" />
+            </div>
+            <div className="space-y-2">
+              <Label>Détails</Label>
+              <Input value={newBailleur.details} onChange={(e) => setNewBailleur(b => ({ ...b, details: e.target.value }))} placeholder="Description..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddBailleurOpen(false)}>Annuler</Button>
+            <Button onClick={handleAddBailleur} disabled={addingBailleur || !newBailleur.nom.trim()}>
+              {addingBailleur ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Devise Dialog */}
+      <Dialog open={addDeviseOpen} onOpenChange={setAddDeviseOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nouvelle devise</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Code *</Label>
+              <Input value={newDevise.code} onChange={(e) => setNewDevise(d => ({ ...d, code: e.target.value.toUpperCase() }))} placeholder="EUR" maxLength={5} />
+            </div>
+            <div className="space-y-2">
+              <Label>Libellé *</Label>
+              <Input value={newDevise.libelle} onChange={(e) => setNewDevise(d => ({ ...d, libelle: e.target.value }))} placeholder="Euro" />
+            </div>
+            <div className="space-y-2">
+              <Label>Symbole</Label>
+              <Input value={newDevise.symbole} onChange={(e) => setNewDevise(d => ({ ...d, symbole: e.target.value }))} placeholder="€" maxLength={3} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDeviseOpen(false)}>Annuler</Button>
+            <Button onClick={handleAddDevise} disabled={addingDevise || !newDevise.code.trim() || !newDevise.libelle.trim()}>
+              {addingDevise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Documents Dialog */}
       <Dialog open={docsOpen} onOpenChange={setDocsOpen}>
         <DialogContent className="sm:max-w-2xl">
@@ -422,7 +597,6 @@ const Conventions = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[65vh] overflow-y-auto">
-            {/* Upload section */}
             {(isAC || isAdmin) && (
               <Card>
                 <CardContent className="p-4 space-y-3">
@@ -452,7 +626,6 @@ const Conventions = () => {
               </Card>
             )}
 
-            {/* Documents list */}
             {docsLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
