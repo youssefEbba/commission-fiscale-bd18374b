@@ -57,6 +57,8 @@ export interface UtilisateurDto { id: number; username: string; role: string; no
 export const ROLE_OPTIONS = [
   { value: "ENTREPRISE", label: "Entreprise" },
   { value: "AUTORITE_CONTRACTANTE", label: "Autorité Contractante" },
+  { value: "AUTORITE_UPM", label: "Autorité UPM (Délégué)" },
+  { value: "AUTORITE_UEP", label: "Autorité UEP (Délégué)" },
   { value: "DGD", label: "DGD – Douanes" },
   { value: "DGI", label: "DGI – Impôts" },
   { value: "DGTCP", label: "DGTCP – Trésor Public" },
@@ -73,6 +75,8 @@ export const ROLE_LABELS: Record<string, string> = {
   DGB: "DGB – Budget",
   ADMIN_SI: "Admin SI",
   AUTORITE_CONTRACTANTE: "Autorité Contractante",
+  AUTORITE_UPM: "Autorité UPM",
+  AUTORITE_UEP: "Autorité UEP",
   ENTREPRISE: "Entreprise",
 };
 
@@ -281,7 +285,7 @@ export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: 
 export const conventionApi = {
   getAll: () => apiFetch<ConventionDto[]>("/conventions"),
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
-  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
+  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/statut/${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
   updateStatut: (id: number, statut: ConventionStatut, motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
@@ -477,6 +481,7 @@ export interface MarcheDto {
   dateSignature?: string;
   montantContratTtc?: number;
   statut: StatutMarche;
+  delegueId?: number;
 }
 
 export interface CreateMarcheRequest {
@@ -499,6 +504,31 @@ export const marcheApi = {
   getByCorrection: (demandeCorrectionId: number) => apiFetch<MarcheDto>(`/marches/by-correction/${demandeCorrectionId}`),
   create: (data: CreateMarcheRequest) => apiFetch<MarcheDto>("/marches", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateMarcheRequest>) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: data }),
+  assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign?delegueId=${delegueId}`, { method: "PATCH" }),
+};
+
+// Délégués (AC -> UPM/UEP)
+export interface DelegueDto {
+  id: number;
+  username: string;
+  role: string;
+  nomComplet: string;
+  email?: string;
+  actif: boolean;
+}
+
+export interface CreateDelegueRequest {
+  username: string;
+  password: string;
+  role: "AUTORITE_UPM" | "AUTORITE_UEP";
+  nomComplet: string;
+  email?: string;
+}
+
+export const delegueApi = {
+  getAll: () => apiFetch<DelegueDto[]>("/delegues"),
+  create: (data: CreateDelegueRequest) => apiFetch<DelegueDto>("/delegues", { method: "POST", body: data }),
+  setActif: (id: number, actif: boolean) => apiFetch<DelegueDto>(`/delegues/${id}/actif?actif=${actif}`, { method: "PATCH" }),
 };
 
 // Certificats de crédit (P3)

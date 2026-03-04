@@ -21,6 +21,7 @@ import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
 import AssistanceIA from "./pages/AssistanceIA";
 import Marches from "./pages/Marches";
+import Delegues from "./pages/Delegues";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,8 +50,13 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/marches" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ADMIN_SI", "PRESIDENT"]}>
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI", "PRESIDENT"]}>
                 <Marches />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/delegues" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE"]}>
+                <Delegues />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={
