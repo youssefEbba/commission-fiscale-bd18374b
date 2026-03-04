@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_LABELS,
+  delegueApi, DelegueDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, Eye } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus } from "lucide-react";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -33,6 +34,13 @@ const Marches = () => {
   const [editing, setEditing] = useState<MarcheDto | null>(null);
   const [form, setForm] = useState<CreateMarcheRequest>({ numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
+
+  // Assign delegate dialog
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignMarche, setAssignMarche] = useState<MarcheDto | null>(null);
+  const [delegues, setDelegues] = useState<DelegueDto[]>([]);
+  const [selectedDelegue, setSelectedDelegue] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
 
   const fetchMarches = async () => {
     setLoading(true);
@@ -65,6 +73,33 @@ const Marches = () => {
     setDialogOpen(true);
   };
 
+  const openAssign = async (m: MarcheDto) => {
+    setAssignMarche(m);
+    setSelectedDelegue(m.delegueId ? String(m.delegueId) : "");
+    setAssignOpen(true);
+    try {
+      const d = await delegueApi.getAll();
+      setDelegues(d.filter(x => x.actif));
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les délégués", variant: "destructive" });
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!assignMarche || !selectedDelegue) return;
+    setAssigning(true);
+    try {
+      await marcheApi.assign(assignMarche.id, parseInt(selectedDelegue));
+      toast({ title: "Succès", description: "Marché affecté au délégué" });
+      setAssignOpen(false);
+      fetchMarches();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.numeroMarche?.trim()) {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
@@ -94,6 +129,7 @@ const Marches = () => {
   );
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
+  const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
 
   return (
     <DashboardLayout>
@@ -137,13 +173,14 @@ const Marches = () => {
                     <TableHead>Montant TTC</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Type</TableHead>
-                    {isAC && <TableHead className="text-right">Actions</TableHead>}
+                    <TableHead>Délégué</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={isAC ? 7 : 6} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map(m => (
@@ -159,20 +196,30 @@ const Marches = () => {
                             {MARCHE_STATUT_LABELS[m.statut]}
                           </Badge>
                         </TableCell>
-                         <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground">
                           {m.demandeCorrectionId ? (
-                            <Badge className="text-xs bg-green-100 text-green-800">Marché / Contrat — DC #{m.demandeCorrectionId}</Badge>
+                            <Badge className="text-xs bg-green-100 text-green-800">Marché / Contrat</Badge>
                           ) : (
                             <Badge variant="outline" className="text-xs">Attribution / Adjudication</Badge>
                           )}
                         </TableCell>
-                        {isAC && (
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
-                              <Edit className="h-4 w-4 mr-1" /> Modifier
-                            </Button>
-                          </TableCell>
-                        )}
+                        <TableCell className="text-muted-foreground text-sm">
+                          {m.delegueId ? `#${m.delegueId}` : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end">
+                            {isAC && (
+                              <>
+                                <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
+                                  <Edit className="h-4 w-4 mr-1" /> Modifier
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => openAssign(m)}>
+                                  <UserPlus className="h-4 w-4 mr-1" /> Affecter
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -193,7 +240,7 @@ const Marches = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-             <div className="space-y-2">
+            <div className="space-y-2">
               <Label>Numéro d'attribution *</Label>
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
             </div>
@@ -222,6 +269,40 @@ const Marches = () => {
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
               {editing ? "Enregistrer" : "Créer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Delegate Dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Affecter un délégué</DialogTitle>
+            <DialogDescription>
+              Attribuez le marché #{assignMarche?.id} à un délégué UPM ou UEP.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Délégué</Label>
+              <Select value={selectedDelegue} onValueChange={setSelectedDelegue}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner un délégué" /></SelectTrigger>
+                <SelectContent>
+                  {delegues.map(d => (
+                    <SelectItem key={d.id} value={String(d.id)}>
+                      {d.nomComplet} ({d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>Annuler</Button>
+            <Button onClick={handleAssign} disabled={assigning || !selectedDelegue}>
+              {assigning && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Affecter
             </Button>
           </DialogFooter>
         </DialogContent>
