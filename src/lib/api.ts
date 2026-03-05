@@ -434,14 +434,8 @@ export interface DecisionCorrectionDto {
 
 export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
   { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
-  { value: "PV_OUVERTURE", label: "PV d'ouverture" },
-  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale" },
-  { value: "OFFRE_FINANCIERE", label: "Offre financière" },
+  { value: "OFFRE_FINANCIERE", label: "Offre financière (table de calcul)" },
   { value: "TABLEAU_MODELE", label: "Tableau modèle" },
-  { value: "DAO_DQE", label: "DAO + DQE" },
-  { value: "LISTE_ITEMS", label: "Liste items Excel" },
-  { value: "OFFRE_CORRIGEE", label: "Offre corrigée" },
-  { value: "LETTRE_ADOPTION", label: "Lettre d'adoption" },
 ];
 
 export const DOCUMENT_TYPES = DOCUMENT_TYPES_REQUIS.map((t) => t.value);
