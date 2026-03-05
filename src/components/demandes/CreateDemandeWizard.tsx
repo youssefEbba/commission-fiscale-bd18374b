@@ -287,16 +287,21 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
       return;
     }
-    if (!conventionId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner une convention", variant: "destructive" });
+    if (!conventionId && !marcheId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner une convention ou un marché", variant: "destructive" });
       return;
     }
+
+    // If a marché is selected, get its conventionId from the marché data
+    const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
+    const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
+
     setSubmitting(true);
     try {
       const demande = await demandeCorrectionApi.create({
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
         entrepriseId: Number(entrepriseId),
-        conventionId: conventionId ? Number(conventionId) : undefined,
+        conventionId: finalConventionId,
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
         modeleFiscal: {
           referenceDossier,
