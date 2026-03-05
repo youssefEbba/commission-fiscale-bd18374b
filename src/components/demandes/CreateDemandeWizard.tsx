@@ -310,8 +310,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   const steps = [
     { label: "Entreprise & Documents", icon: FileText },
-    { label: "Modèle Fiscal", icon: FileText },
-    { label: "DQE", icon: FileText },
+    // { label: "Modèle Fiscal", icon: FileText },
+    // { label: "DQE", icon: FileText },
   ];
 
   return (
@@ -828,7 +828,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-            {step < 2 ? (
+            {step < steps.length - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
