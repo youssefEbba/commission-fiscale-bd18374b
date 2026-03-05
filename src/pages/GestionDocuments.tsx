@@ -100,7 +100,12 @@ const GestionDocuments = () => {
       toast({ title: "Document ajouté" });
       closeDialog();
     },
-    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => {
+      const msg = e.message?.includes("Unique") || e.message?.includes("unique") || e.message?.includes("UK_DOC_REQ")
+        ? "Ce type de document est déjà configuré pour ce processus."
+        : e.message;
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
+    },
   });
 
   const updateMutation = useMutation({
@@ -156,6 +161,21 @@ const GestionDocuments = () => {
     if (!typeDocument.trim()) {
       toast({ title: "Veuillez saisir le type de document", variant: "destructive" });
       return;
+    }
+    // Vérifier doublon côté frontend (sauf en mode édition du même type)
+    if (!editItem || editItem.typeDocument !== typeDocument.trim()) {
+      const existing = queriesByProcessus[dialogProcessus].data;
+      const duplicate = existing.find(
+        (r) => r.typeDocument === typeDocument.trim()
+      );
+      if (duplicate) {
+        toast({
+          title: "Doublon détecté",
+          description: `Le type "${typeDocument.trim()}" est déjà configuré pour ce processus.`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
