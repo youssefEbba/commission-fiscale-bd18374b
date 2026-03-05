@@ -80,7 +80,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   // Create marché inline
   const [showCreateMarche, setShowCreateMarche] = useState(false);
   const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number; dateSignature?: string }>({ numeroMarche: "" });
-  const [creatingMarche] = useState(false); // kept for compat, not used actively
+  const [creatingMarche, setCreatingMarche] = useState(false);
 
   // Bailleurs référentiel
   const [bailleurs, setBailleurs] = useState<BailleurDto[]>([]);
@@ -117,7 +117,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       ]);
       setEntreprises(ent);
       setConventions(conv);
-      setMarches(marc.filter(m => !m.demandeCorrectionId));
+      setMarches(marc);
       setBailleurs(bail);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
@@ -142,7 +142,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setNewConvention({ reference: "", intitule: "", dateSignature: "" });
       setShowCreateMarche(false);
       setNewMarche({ numeroMarche: "" });
-      setPendingMarche(null);
+      // pendingMarche removed — marchés are now created directly via API
       loadInitialData();
     }
   }, [open, loadInitialData]);
@@ -196,24 +196,35 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   };
 
-  // Pending marché to create after demande (backend requires demandeCorrectionId)
-  const [pendingMarche, setPendingMarche] = useState<{ numeroMarche: string; montantContratTtc?: number; dateSignature?: string } | null>(null);
-
-  // Create marché inline — store locally, will be created after demande
-  const handleCreateMarche = () => {
+  // Create marché inline — now calls API directly with conventionId
+  const handleCreateMarche = async () => {
     if (!newMarche.numeroMarche) {
       toast({ title: "Erreur", description: "Le numéro de marché est obligatoire", variant: "destructive" });
       return;
     }
-    setPendingMarche({
-      numeroMarche: newMarche.numeroMarche,
-      montantContratTtc: newMarche.montantContratTtc,
-      dateSignature: newMarche.dateSignature || new Date().toISOString().split("T")[0],
-    });
-    setMarcheId("pending");
-    setShowCreateMarche(false);
-    setNewMarche({ numeroMarche: "" });
-    toast({ title: "Info", description: "Le marché sera créé avec la demande" });
+    if (!conventionId) {
+      toast({ title: "Erreur", description: "Veuillez d'abord sélectionner une convention", variant: "destructive" });
+      return;
+    }
+    setCreatingMarche(true);
+    try {
+      const created = await marcheApi.create({
+        conventionId: Number(conventionId),
+        numeroMarche: newMarche.numeroMarche,
+        montantContratTtc: newMarche.montantContratTtc,
+        dateSignature: newMarche.dateSignature || new Date().toISOString().split("T")[0],
+        statut: "EN_COURS",
+      });
+      setMarches(prev => [...prev, created]);
+      setMarcheId(String(created.id));
+      setShowCreateMarche(false);
+      setNewMarche({ numeroMarche: "" });
+      toast({ title: "Succès", description: "Marché créé" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingMarche(false);
+    }
   };
 
   // ── Importation helpers ──
@@ -292,20 +303,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         },
       });
 
-      // Create pending marché now that we have the demandeCorrectionId
-      if (pendingMarche) {
-        try {
-          await marcheApi.create({
-            demandeCorrectionId: demande.id,
-            numeroMarche: pendingMarche.numeroMarche,
-            montantContratTtc: pendingMarche.montantContratTtc,
-            dateSignature: pendingMarche.dateSignature,
-            statut: "EN_COURS" as any,
-          });
-        } catch {
-          toast({ title: "Attention", description: "Le marché n'a pas pu être créé, vous pouvez l'ajouter depuis la page Marchés", variant: "destructive" });
-        }
-      }
+      // Marché is now created directly via API (no longer deferred)
 
       // Upload documents
       const docEntries = Object.entries(docFiles);
@@ -562,28 +560,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                       </Button>
                     </Label>
                     {!showCreateMarche ? (
-                      <>
-                        {pendingMarche ? (
-                          <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm">{pendingMarche.numeroMarche} — {pendingMarche.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU</span>
-                            <Button type="button" variant="ghost" size="sm" className="ml-auto h-6" onClick={() => { setPendingMarche(null); setMarcheId(""); }}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Select value={marcheId} onValueChange={setMarcheId}>
-                            <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
-                            <SelectContent>
-                              {marches.map(m => (
-                                <SelectItem key={m.id} value={String(m.id)}>
-                                  {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </>
+                      <Select value={marcheId} onValueChange={setMarcheId}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
+                        <SelectContent>
+                          {marches.filter(m => !conventionId || m.conventionId === Number(conventionId)).map(m => (
+                            <SelectItem key={m.id} value={String(m.id)}>
+                              {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-2">

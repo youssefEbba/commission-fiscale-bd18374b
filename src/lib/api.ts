@@ -471,6 +471,7 @@ export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE";
 
 export interface MarcheDto {
   id: number;
+  conventionId?: number;
   demandeCorrectionId?: number;
   numeroMarche?: string;
   dateSignature?: string;
@@ -480,6 +481,7 @@ export interface MarcheDto {
 }
 
 export interface CreateMarcheRequest {
+  conventionId: number;
   demandeCorrectionId?: number;
   numeroMarche?: string;
   dateSignature?: string;
