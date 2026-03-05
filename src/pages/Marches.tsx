@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_LABELS,
   delegueApi, DelegueDto,
+  conventionApi, ConventionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -26,13 +27,14 @@ const Marches = () => {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
   const [marches, setMarches] = useState<MarcheDto[]>([]);
+  const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
-  const [form, setForm] = useState<CreateMarcheRequest>({ numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
+  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
   // Assign delegate dialog
@@ -45,8 +47,12 @@ const Marches = () => {
   const fetchMarches = async () => {
     setLoading(true);
     try {
-      const data = await marcheApi.getAll();
+      const [data, conv] = await Promise.all([
+        marcheApi.getAll(),
+        conventionApi.getAll().catch(() => [] as ConventionDto[]),
+      ]);
       setMarches(data);
+      setConventions(conv);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les marchés", variant: "destructive" });
     } finally {
@@ -58,13 +64,14 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
+    setForm({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
   const openEdit = (m: MarcheDto) => {
     setEditing(m);
     setForm({
+      conventionId: m.conventionId || 0,
       numeroMarche: m.numeroMarche || "",
       dateSignature: m.dateSignature || "",
       montantContratTtc: m.montantContratTtc || 0,
@@ -103,6 +110,10 @@ const Marches = () => {
   const handleSubmit = async () => {
     if (!form.numeroMarche?.trim()) {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
+      return;
+    }
+    if (!editing && !form.conventionId) {
+      toast({ title: "Erreur", description: "La convention est obligatoire", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -240,6 +251,21 @@ const Marches = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {!editing && (
+              <div className="space-y-2">
+                <Label>Convention *</Label>
+                <Select value={form.conventionId ? String(form.conventionId) : ""} onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
+                  <SelectContent>
+                    {conventions.map(c => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.reference || `#${c.id}`} — {c.intitule || ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Numéro d'attribution *</Label>
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
