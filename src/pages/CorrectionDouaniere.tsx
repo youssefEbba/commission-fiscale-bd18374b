@@ -43,25 +43,27 @@ function getDocFileUrl(doc: DocumentDto): string {
   return "";
 }
 
-const DECISION_ROLES = ["DGD", "DGTCP", "DGI", "DGB"];
+const DECISION_ROLES = ["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"];
 const DECISION_ROLE_LABELS: Record<string, string> = {
   DGD: "DGD – Douanes",
   DGTCP: "DGTCP – Trésor",
   DGI: "DGI – Impôts",
   DGB: "DGB – Budget",
+  PRESIDENT: "Président",
 };
 
 // Documents spéciaux qui s'affichent en bas des visas (pas dans la liste normale)
-const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION"];
+const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION", "OFFRE_FISCALE_CORRIGEE"];
 const SPECIAL_DOC_LABELS: Record<string, string> = {
   CREDIT_EXTERIEUR: "Crédit Extérieur",
   CREDIT_INTERIEUR: "Crédit Intérieur",
   LETTRE_ADOPTION: "Lettre d'Adoption",
+  OFFRE_FISCALE_CORRIGEE: "Offre Fiscale Corrigée",
 };
 
 // Roles that must upload before visa
 const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string; label: string }> = {
-  DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
+  DGD: { docType: "OFFRE_FISCALE_CORRIGEE", label: "Offre Fiscale Corrigée" },
   DGTCP: { docType: "CREDIT_INTERIEUR", label: "Crédit Intérieur" },
 };
 
@@ -288,6 +290,12 @@ const CorrectionDouaniere = () => {
   const myDecision = decisions.find(d => d.role === userRole);
   const hasAnyRejet = decisions.some(d => d.decision === "REJET_TEMP");
 
+  // DGD must validate first — block others if DGD hasn't visa'd
+  const dgdHasVisa = decisions.some(d => d.role === "DGD" && d.decision === "VISA");
+  const isDGD = userRole === "DGD";
+  const isPresident = userRole === "PRESIDENT";
+  const blockedByDgd = !isDGD && !isPresident && !dgdHasVisa;
+
   // Separate special docs from regular docs
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
   const regularDocTypes = DOCUMENT_TYPES_REQUIS.filter(dt => !SPECIAL_DOC_TYPES.includes(dt.value));
@@ -361,7 +369,7 @@ const CorrectionDouaniere = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     {DECISION_ROLES.map((role) => {
                       const dec = decisions.find(d => d.role === role);
                       const isVisa = dec?.decision === "VISA";
@@ -586,8 +594,16 @@ const CorrectionDouaniere = () => {
                       </div>
                     ) : null}
 
+                    {/* Blocked by DGD warning */}
+                    {blockedByDgd && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                        <p className="font-medium">⏳ En attente du visa DGD</p>
+                        <p className="mt-1">Le DGD doit valider cette demande en premier avant que vous puissiez apposer votre visa.</p>
+                      </div>
+                    )}
+
                     {/* Upload requirement warning for DGD/DGTCP */}
-                    {uploadReq && !hasUploadedRequiredDoc && (
+                    {!blockedByDgd && uploadReq && !hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
                         <p className="font-medium">⚠️ Upload requis avant visa</p>
                         <p className="mt-1">Vous devez uploader le document « {uploadReq.label} » avant de pouvoir apposer votre visa.</p>
@@ -602,18 +618,18 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    {uploadReq && hasUploadedRequiredDoc && (
+                    {!blockedByDgd && uploadReq && hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
                         <span>{uploadReq.label} uploadé ✓</span>
                       </div>
                     )}
 
-                    <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading}>
+                    <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading || blockedByDgd}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                       {myDecision?.decision === "VISA" ? "Confirmer visa" : myDecision ? "Changer en Visa" : "Apposer visa"}
                     </Button>
-                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectOpen(true); }} disabled={actionLoading}>
+                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd}>
                       <XCircle className="h-4 w-4 mr-2" />
                       {myDecision?.decision === "REJET_TEMP" ? "Modifier rejet" : myDecision ? "Changer en Rejet" : "Rejeter temporairement"}
                     </Button>
@@ -621,11 +637,32 @@ const CorrectionDouaniere = () => {
                 </Card>
               )}
 
-              {/* Décision finale (PRESIDENT only) */}
+              {/* Décision finale + Lettre d'Adoption (PRESIDENT only) */}
               {canFinalDecision && !isFinal && (
                 <Card className="border-primary/30">
                   <CardHeader><CardTitle className="text-lg">Décision finale</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
+                    {/* Lettre d'Adoption upload */}
+                    {!docs.some(d => d.type === "LETTRE_ADOPTION") ? (
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
+                        <p className="font-medium">📄 Lettre d'Adoption</p>
+                        <p className="mt-1">Uploadez la lettre d'adoption avant de finaliser la décision.</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 w-full border-blue-300 text-blue-800 hover:bg-blue-100"
+                          onClick={() => { setUploadType("LETTRE_ADOPTION"); setUploadFile(null); setUploadOpen(true); }}
+                        >
+                          <Upload className="h-3.5 w-3.5 mr-1" /> Uploader Lettre d'Adoption
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Lettre d'Adoption uploadée ✓</span>
+                      </div>
+                    )}
+
                     {hasAnyRejet && (
                       <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-2 text-xs text-destructive">
                         ⚠️ Un rejet temporaire est en cours. Vérifiez les décisions avant de trancher.
