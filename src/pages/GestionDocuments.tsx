@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,39 @@ const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
   { value: "EXCEL", label: "Excel" },
   { value: "IMAGE", label: "Images" },
   { value: "PDF", label: "PDF" },
+];
+
+const TYPE_DOCUMENT_OPTIONS = [
+  { value: "OFFRE_CORRIGEE", label: "Offre corrigée" },
+  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
+  { value: "PV_OUVERTURE", label: "PV d'ouverture" },
+  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale" },
+  { value: "OFFRE_FINANCIERE", label: "Offre financière" },
+  { value: "TABLEAU_MODELE", label: "Tableau modèle" },
+  { value: "DAO_DQE", label: "DAO DQE" },
+  { value: "LISTE_ITEMS", label: "Liste des items" },
+  { value: "DAO_ANNOTE", label: "DAO annoté" },
+  { value: "CERTIFICAT_VISITE_DOUANE", label: "Certificat visite douane" },
+  { value: "CERTIFICAT_CREDIT_IMPOTS_SYDONIA", label: "Certificat CI Sydonia" },
+  { value: "LETTRE_DEMANDE_CREDIT_IMPOTS", label: "Lettre demande CI" },
+  { value: "DECLARATION_TVA", label: "Déclaration TVA" },
+  { value: "ORDRE_TRANSIT", label: "Ordre de transit" },
+  { value: "IMAGE_DECLARATION_DOUANE", label: "Image déclaration douane" },
+  { value: "DEVIS", label: "Devis" },
+  { value: "LETTRE_DEMANDE_MISE_EN_PLACE_CI", label: "Lettre demande mise en place CI" },
+  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre notification contrat" },
+  { value: "CONTRAT", label: "Contrat" },
+  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
+  { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
+  { value: "LETTRE_ADOPTION", label: "Lettre d'adoption" },
+  { value: "BULLETIN_LIQUIDATION", label: "Bulletin de liquidation" },
+  { value: "DECLARATION_DOUANE", label: "Déclaration douane" },
+  { value: "FACTURE", label: "Facture" },
+  { value: "CONNAISSEMENT", label: "Connaissement" },
+  { value: "DECOMPTE", label: "Décompte" },
+  { value: "AUTRE_DOCUMENT", label: "Autre document" },
+  { value: "CREDIT_EXTERIEUR", label: "Crédit extérieur" },
+  { value: "CREDIT_INTERIEUR", label: "Crédit intérieur" },
 ];
 
 const GestionDocuments = () => {
@@ -236,7 +270,16 @@ const GestionDocuments = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Type de document *</Label>
-              <Input value={typeDocument} onChange={(e) => setTypeDocument(e.target.value)} placeholder="Ex: LETTRE_SAISINE" />
+              <Select value={typeDocument} onValueChange={setTypeDocument}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type de document" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TYPE_DOCUMENT_OPTIONS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-3">
               <Label>Obligatoire</Label>
