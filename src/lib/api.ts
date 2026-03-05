@@ -764,4 +764,38 @@ export const tauxChangeApi = {
   get: (devise: string) => apiFetch<TauxChangeResponse>(`/taux-change?devise=${encodeURIComponent(devise)}`),
 };
 
+// Document Requirements (GED)
+export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI";
+export type FormatFichier = "PDF" | "WORD" | "EXCEL" | "IMAGE";
+
+export interface DocumentRequirementDto {
+  id: number;
+  processus: ProcessusType;
+  typeDocument: string;
+  obligatoire: boolean;
+  typesAutorises: FormatFichier[];
+  description?: string;
+  ordreAffichage?: number;
+}
+
+export interface CreateDocumentRequirementRequest {
+  processus: ProcessusType;
+  typeDocument: string;
+  obligatoire: boolean;
+  typesAutorises: FormatFichier[];
+  description?: string;
+  ordreAffichage?: number;
+}
+
+export const documentRequirementApi = {
+  getByProcessus: (processus: ProcessusType) =>
+    apiFetch<DocumentRequirementDto[]>(`/document-requirements?processus=${processus}`),
+  create: (data: CreateDocumentRequirementRequest) =>
+    apiFetch<DocumentRequirementDto>("/document-requirements", { method: "POST", body: data }),
+  update: (id: number, data: Partial<CreateDocumentRequirementRequest>) =>
+    apiFetch<DocumentRequirementDto>(`/document-requirements/${id}`, { method: "PUT", body: data }),
+  delete: (id: number) =>
+    apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
+};
+
 export const WS_BASE = "https://63eb-2605-59c0-49ed-9e08-f1d5-e0ac-3fc6-77f5.ngrok-free.app/ws";
