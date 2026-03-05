@@ -358,7 +358,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
               <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Entreprise with create option */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
@@ -424,127 +424,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                     )}
                   </div>
 
-                  {/* Convention (remplace Projet) */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center justify-between">
-                      <span>Convention *</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs text-primary"
-                        onClick={() => setShowCreateConvention(!showCreateConvention)}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        {showCreateConvention ? "Annuler" : "Créer"}
-                      </Button>
-                    </Label>
-                    {!showCreateConvention ? (
-                      <Select value={conventionId} onValueChange={v => { setConventionId(v); setMarcheId(""); setShowCreateMarche(false); }}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
-                        <SelectContent>
-                          {conventions.map(c => (
-                            <SelectItem key={c.id} value={String(c.id)}>
-                              {c.reference || `#${c.id}`} — {c.intitule || c.bailleur || ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Card className="border-primary/30">
-                        <CardContent className="p-3 space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                            <FileText className="h-4 w-4" />
-                            Nouvelle convention
-                          </div>
-                          <Input
-                            placeholder="Référence *"
-                            value={newConvention.reference}
-                            onChange={e => setNewConvention(prev => ({ ...prev, reference: e.target.value }))}
-                          />
-                          <Input
-                            placeholder="Intitulé *"
-                            value={newConvention.intitule}
-                            onChange={e => setNewConvention(prev => ({ ...prev, intitule: e.target.value }))}
-                          />
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                              <span>Bailleur (optionnel)</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 text-xs text-primary p-0"
-                                onClick={() => setShowCreateBailleur(!showCreateBailleur)}
-                              >
-                                <Plus className="h-3 w-3 mr-0.5" />
-                                {showCreateBailleur ? "Annuler" : "Ajouter"}
-                              </Button>
-                            </Label>
-                            {!showCreateBailleur ? (
-                              <Select value={newConvention.bailleur || ""} onValueChange={v => setNewConvention(prev => ({ ...prev, bailleur: v }))}>
-                                <SelectTrigger><SelectValue placeholder="Sélectionnez un bailleur" /></SelectTrigger>
-                                <SelectContent>
-                                  {bailleurs.map(b => (
-                                    <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <div className="flex gap-1">
-                                <Input
-                                  placeholder="Nom du bailleur"
-                                  value={newBailleurNom}
-                                  onChange={e => setNewBailleurNom(e.target.value)}
-                                  className="text-sm"
-                                />
-                                <Button
-                                  size="sm"
-                                  disabled={creatingBailleur || !newBailleurNom}
-                                  onClick={async () => {
-                                    setCreatingBailleur(true);
-                                    try {
-                                      const created = await bailleurApi.create({ nom: newBailleurNom });
-                                      setBailleurs(prev => [...prev, created]);
-                                      setNewConvention(prev => ({ ...prev, bailleur: created.nom }));
-                                      setNewBailleurNom("");
-                                      setShowCreateBailleur(false);
-                                      toast({ title: "Succès", description: "Bailleur ajouté" });
-                                    } catch (e: any) {
-                                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                                    } finally {
-                                      setCreatingBailleur(false);
-                                    }
-                                  }}
-                                >
-                                  {creatingBailleur ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Date de signature *</Label>
-                            <Input
-                              type="date"
-                              value={newConvention.dateSignature || ""}
-                              onChange={e => setNewConvention(prev => ({ ...prev, dateSignature: e.target.value }))}
-                            />
-                          </div>
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            onClick={handleCreateConvention}
-                            disabled={creatingConvention}
-                          >
-                            {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-                            Créer la convention
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-
-                  {/* Marché — requires convention */}
+                  {/* Attribution / Adjudication — convention intégrée */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
                       <span>Attribution / Adjudication</span>
@@ -560,6 +440,128 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                         {showCreateMarche ? "Annuler" : "Créer"}
                       </Button>
                     </Label>
+
+                    {/* Convention selector inside marché section */}
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center justify-between">
+                        <span>Convention *</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 text-xs text-primary p-0"
+                          onClick={() => setShowCreateConvention(!showCreateConvention)}
+                        >
+                          <Plus className="h-3 w-3 mr-0.5" />
+                          {showCreateConvention ? "Annuler" : "Créer"}
+                        </Button>
+                      </Label>
+                      {!showCreateConvention ? (
+                        <Select value={conventionId} onValueChange={v => { setConventionId(v); setMarcheId(""); setShowCreateMarche(false); }}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
+                          <SelectContent>
+                            {conventions.map(c => (
+                              <SelectItem key={c.id} value={String(c.id)}>
+                                {c.reference || `#${c.id}`} — {c.intitule || c.bailleur || ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Card className="border-primary/30">
+                          <CardContent className="p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                              <FileText className="h-4 w-4" />
+                              Nouvelle convention
+                            </div>
+                            <Input
+                              placeholder="Référence *"
+                              value={newConvention.reference}
+                              onChange={e => setNewConvention(prev => ({ ...prev, reference: e.target.value }))}
+                            />
+                            <Input
+                              placeholder="Intitulé *"
+                              value={newConvention.intitule}
+                              onChange={e => setNewConvention(prev => ({ ...prev, intitule: e.target.value }))}
+                            />
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground flex items-center justify-between">
+                                <span>Bailleur (optionnel)</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 text-xs text-primary p-0"
+                                  onClick={() => setShowCreateBailleur(!showCreateBailleur)}
+                                >
+                                  <Plus className="h-3 w-3 mr-0.5" />
+                                  {showCreateBailleur ? "Annuler" : "Ajouter"}
+                                </Button>
+                              </Label>
+                              {!showCreateBailleur ? (
+                                <Select value={newConvention.bailleur || ""} onValueChange={v => setNewConvention(prev => ({ ...prev, bailleur: v }))}>
+                                  <SelectTrigger><SelectValue placeholder="Sélectionnez un bailleur" /></SelectTrigger>
+                                  <SelectContent>
+                                    {bailleurs.map(b => (
+                                      <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <div className="flex gap-1">
+                                  <Input
+                                    placeholder="Nom du bailleur"
+                                    value={newBailleurNom}
+                                    onChange={e => setNewBailleurNom(e.target.value)}
+                                    className="text-sm"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    disabled={creatingBailleur || !newBailleurNom}
+                                    onClick={async () => {
+                                      setCreatingBailleur(true);
+                                      try {
+                                        const created = await bailleurApi.create({ nom: newBailleurNom });
+                                        setBailleurs(prev => [...prev, created]);
+                                        setNewConvention(prev => ({ ...prev, bailleur: created.nom }));
+                                        setNewBailleurNom("");
+                                        setShowCreateBailleur(false);
+                                        toast({ title: "Succès", description: "Bailleur ajouté" });
+                                      } catch (e: any) {
+                                        toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                      } finally {
+                                        setCreatingBailleur(false);
+                                      }
+                                    }}
+                                  >
+                                    {creatingBailleur ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Date de signature *</Label>
+                              <Input
+                                type="date"
+                                value={newConvention.dateSignature || ""}
+                                onChange={e => setNewConvention(prev => ({ ...prev, dateSignature: e.target.value }))}
+                              />
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              onClick={handleCreateConvention}
+                              disabled={creatingConvention}
+                            >
+                              {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                              Créer la convention
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+
+                    {/* Marché selector / creator */}
                     {!conventionId ? (
                       <p className="text-xs text-muted-foreground italic border border-dashed border-border rounded-md p-3 text-center">
                         Veuillez d'abord sélectionner une convention
