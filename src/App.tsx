@@ -22,6 +22,7 @@ import CorrectionDouaniere from "./pages/CorrectionDouaniere";
 import AssistanceIA from "./pages/AssistanceIA";
 import Marches from "./pages/Marches";
 import Delegues from "./pages/Delegues";
+import GestionDocuments from "./pages/GestionDocuments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,11 @@ const App = () => (
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/ged" element={
+              <ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}>
+                <GestionDocuments />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
