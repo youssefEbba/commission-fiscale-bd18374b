@@ -3,10 +3,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
   conventionApi, ConventionDto,
-  DOCUMENT_TYPES_REQUIS, demandeCorrectionApi,
+  demandeCorrectionApi,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
   marcheApi, MarcheDto,
   bailleurApi, BailleurDto,
+  documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -88,6 +89,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [newBailleurNom, setNewBailleurNom] = useState("");
   const [creatingBailleur, setCreatingBailleur] = useState(false);
 
+  // GED document requirements
+  const [gedDocTypes, setGedDocTypes] = useState<DocumentRequirementDto[]>([]);
+
   // Step 1: Modèle fiscal
   const [typeProjet, setTypeProjet] = useState("BTP");
   const [referenceDossier, setReferenceDossier] = useState("");
@@ -109,16 +113,18 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [ent, conv, marc, bail] = await Promise.all([
+      const [ent, conv, marc, bail, gedReqs] = await Promise.all([
         entrepriseApi.getAll(),
         conventionApi.getAll(),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
         bailleurApi.getAll().catch(() => [] as BailleurDto[]),
+        documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE").catch(() => [] as DocumentRequirementDto[]),
       ]);
       setEntreprises(ent);
       setConventions(conv);
       setMarches(marc);
       setBailleurs(bail);
+      setGedDocTypes(gedReqs.sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0)));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
     } finally {
@@ -616,35 +622,41 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre <span className="text-muted-foreground text-xs">(optionnel)</span></h3>
-                  <div className="space-y-2">
-                    {DOCUMENT_TYPES_REQUIS.map(dt => (
-                      <div key={dt.value} className="flex items-center gap-2 rounded-lg border border-border p-2">
-                        {docFiles[dt.value] ? (
-                          <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                        ) : (
-                          <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
-                        )}
-                        <span className={`flex-1 text-sm ${docFiles[dt.value] ? "font-medium" : "text-muted-foreground"}`}>
-                          {dt.label}
-                        </span>
-                        {docFiles[dt.value] && (
-                          <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.value].name}</span>
-                        )}
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) setDocFiles(prev => ({ ...prev, [dt.value]: f }));
-                            }}
-                          />
-                          <span className="text-xs text-primary hover:underline">{docFiles[dt.value] ? "Changer" : "Choisir"}</span>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre <span className="text-muted-foreground text-xs">(selon configuration GED)</span></h3>
+                  {gedDocTypes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic py-4 text-center">Aucun document configuré pour ce processus dans la GED.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {gedDocTypes.map(dt => (
+                        <div key={dt.id} className="flex items-center gap-2 rounded-lg border border-border p-2">
+                          {docFiles[dt.typeDocument] ? (
+                            <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                          ) : (
+                            <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
+                          )}
+                          <span className={`flex-1 text-sm ${docFiles[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
+                            {dt.description || dt.typeDocument.replace(/_/g, " ")}
+                            {dt.obligatoire && <span className="text-destructive ml-1">*</span>}
+                          </span>
+                          {docFiles[dt.typeDocument] && (
+                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.typeDocument].name}</span>
+                          )}
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept={dt.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : "image/*").join(",")}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) setDocFiles(prev => ({ ...prev, [dt.typeDocument]: f }));
+                              }}
+                            />
+                            <span className="text-xs text-primary hover:underline">{docFiles[dt.typeDocument] ? "Changer" : "Choisir"}</span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
