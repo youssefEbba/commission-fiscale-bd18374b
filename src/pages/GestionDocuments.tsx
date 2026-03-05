@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
-import { Plus, Pencil, Trash2, FileText, X } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 
 const PROCESSUS_OPTIONS: { value: ProcessusType; label: string }[] = [
   { value: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
@@ -22,36 +20,49 @@ const PROCESSUS_OPTIONS: { value: ProcessusType; label: string }[] = [
   { value: "UTILISATION_CI", label: "Utilisation CI" },
 ];
 
-const FORMAT_OPTIONS: { value: FormatFichier; label: string; color: string }[] = [
-  { value: "WORD", label: "Word", color: "bg-emerald-500" },
-  { value: "EXCEL", label: "Excel", color: "bg-emerald-500" },
-  { value: "IMAGE", label: "Images", color: "bg-emerald-500" },
-  { value: "PDF", label: "PDF", color: "bg-emerald-500" },
+const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
+  { value: "WORD", label: "Word" },
+  { value: "EXCEL", label: "Excel" },
+  { value: "IMAGE", label: "Images" },
+  { value: "PDF", label: "PDF" },
 ];
 
 const GestionDocuments = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<ProcessusType>("CORRECTION_OFFRE_FISCALE");
+  const [dialogProcessus, setDialogProcessus] = useState<ProcessusType>("CORRECTION_OFFRE_FISCALE");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
 
-  // Form state
   const [typeDocument, setTypeDocument] = useState("");
   const [obligatoire, setObligatoire] = useState(true);
   const [typesAutorises, setTypesAutorises] = useState<FormatFichier[]>(["PDF", "WORD", "EXCEL", "IMAGE"]);
   const [description, setDescription] = useState("");
   const [ordreAffichage, setOrdreAffichage] = useState(1);
 
-  const { data: requirements = [], isLoading } = useQuery({
-    queryKey: ["document-requirements", activeTab],
-    queryFn: () => documentRequirementApi.getByProcessus(activeTab),
+  const correctionQuery = useQuery({
+    queryKey: ["document-requirements", "CORRECTION_OFFRE_FISCALE"],
+    queryFn: () => documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE"),
   });
+  const miseEnPlaceQuery = useQuery({
+    queryKey: ["document-requirements", "MISE_EN_PLACE_CI"],
+    queryFn: () => documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+  });
+  const utilisationQuery = useQuery({
+    queryKey: ["document-requirements", "UTILISATION_CI"],
+    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI"),
+  });
+
+  const queriesByProcessus: Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }> = {
+    CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
+    MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
+    UTILISATION_CI: { data: utilisationQuery.data || [], isLoading: utilisationQuery.isLoading },
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: CreateDocumentRequirementRequest) => documentRequirementApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["document-requirements", activeTab] });
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
       toast({ title: "Document ajouté" });
       closeDialog();
     },
@@ -62,7 +73,7 @@ const GestionDocuments = () => {
     mutationFn: ({ id, data }: { id: number; data: Partial<CreateDocumentRequirementRequest> }) =>
       documentRequirementApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["document-requirements", activeTab] });
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
       toast({ title: "Document modifié" });
       closeDialog();
     },
@@ -72,7 +83,7 @@ const GestionDocuments = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => documentRequirementApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["document-requirements", activeTab] });
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
       toast({ title: "Document supprimé" });
     },
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
@@ -88,14 +99,17 @@ const GestionDocuments = () => {
     setOrdreAffichage(1);
   };
 
-  const openCreate = () => {
+  const openCreate = (processus: ProcessusType) => {
     closeDialog();
-    setOrdreAffichage((requirements.length || 0) + 1);
+    setDialogProcessus(processus);
+    const reqs = queriesByProcessus[processus].data;
+    setOrdreAffichage((reqs.length || 0) + 1);
     setDialogOpen(true);
   };
 
   const openEdit = (item: DocumentRequirementDto) => {
     setEditItem(item);
+    setDialogProcessus(item.processus as ProcessusType);
     setTypeDocument(item.typeDocument);
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
@@ -110,7 +124,7 @@ const GestionDocuments = () => {
       return;
     }
     const payload: CreateDocumentRequirementRequest = {
-      processus: activeTab,
+      processus: dialogProcessus,
       typeDocument: typeDocument.trim(),
       obligatoire,
       typesAutorises,
@@ -130,102 +144,90 @@ const GestionDocuments = () => {
     );
   };
 
-  const sorted = [...requirements].sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
+  const sortReqs = (reqs: DocumentRequirementDto[]) =>
+    [...reqs].sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">GED – Gestion des Documents</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Configurez les documents requis par processus
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">GED – Gestion des Documents</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Configurez les documents requis par processus
+          </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ProcessusType)}>
-          <TabsList className="grid grid-cols-3 w-full max-w-2xl">
-            {PROCESSUS_OPTIONS.map((p) => (
-              <TabsTrigger key={p.value} value={p.value} className="text-xs sm:text-sm">
-                {p.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {PROCESSUS_OPTIONS.map((p) => (
-            <TabsContent key={p.value} value={p.value}>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-4">
-                  <CardTitle className="text-lg text-primary">
-                    {p.label}
-                  </CardTitle>
-                  <Button size="sm" onClick={openCreate}>
-                    <Plus className="h-4 w-4 mr-1" /> Ajouter un document
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
-                  ) : sorted.length === 0 ? (
-                    <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré pour ce processus.</p>
-                  ) : (
-                    <div className="overflow-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="min-w-[200px]">DOCUMENT</TableHead>
-                            <TableHead className="min-w-[120px]">OBLIGATOIRE ?</TableHead>
-                            <TableHead className="min-w-[250px]">TYPE</TableHead>
-                            <TableHead className="min-w-[250px]">DESCRIPTION</TableHead>
-                            <TableHead className="w-[100px]">ACTIONS</TableHead>
+        {PROCESSUS_OPTIONS.map((p) => {
+          const q = queriesByProcessus[p.value];
+          const sorted = sortReqs(q.data);
+          return (
+            <Card key={p.value}>
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <CardTitle className="text-lg text-primary">{p.label}</CardTitle>
+                <Button size="sm" onClick={() => openCreate(p.value)}>
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter un document
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {q.isLoading ? (
+                  <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
+                ) : sorted.length === 0 ? (
+                  <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré pour ce processus.</p>
+                ) : (
+                  <div className="overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[200px]">DOCUMENT</TableHead>
+                          <TableHead className="min-w-[120px]">OBLIGATOIRE ?</TableHead>
+                          <TableHead className="min-w-[250px]">TYPE</TableHead>
+                          <TableHead className="min-w-[250px]">DESCRIPTION</TableHead>
+                          <TableHead className="w-[100px]">ACTIONS</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sorted.map((req) => (
+                          <TableRow key={req.id}>
+                            <TableCell className="font-medium">{formatDocLabel(req.typeDocument)}</TableCell>
+                            <TableCell>
+                              <Badge variant={req.obligatoire ? "default" : "secondary"}>
+                                {req.obligatoire ? "Oui" : "Non"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {(req.typesAutorises || []).map((f) => (
+                                  <Badge key={f} className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs">
+                                    {f.toLowerCase()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
+                              {req.description || "—"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => openEdit(req)}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {sorted.map((req) => (
-                            <TableRow key={req.id}>
-                              <TableCell className="font-medium">{formatDocLabel(req.typeDocument)}</TableCell>
-                              <TableCell>
-                                <Badge variant={req.obligatoire ? "default" : "secondary"}>
-                                  {req.obligatoire ? "Oui" : "Non"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {(req.typesAutorises || []).map((f) => (
-                                    <Badge key={f} className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs">
-                                      {f.toLowerCase()}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                                {req.description || "—"}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-1">
-                                  <Button variant="ghost" size="icon" onClick={() => openEdit(req)}>
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Dialog create/edit */}
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -234,19 +236,13 @@ const GestionDocuments = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Type de document *</Label>
-              <Input
-                value={typeDocument}
-                onChange={(e) => setTypeDocument(e.target.value)}
-                placeholder="Ex: LETTRE_SAISINE"
-              />
+              <Input value={typeDocument} onChange={(e) => setTypeDocument(e.target.value)} placeholder="Ex: LETTRE_SAISINE" />
             </div>
-
             <div className="flex items-center gap-3">
               <Label>Obligatoire</Label>
               <Switch checked={obligatoire} onCheckedChange={setObligatoire} />
               <span className="text-sm text-muted-foreground">{obligatoire ? "Oui" : "Non"}</span>
             </div>
-
             <div className="space-y-2">
               <Label>Formats autorisés</Label>
               <div className="flex flex-wrap gap-2">
@@ -258,9 +254,7 @@ const GestionDocuments = () => {
                       type="button"
                       onClick={() => toggleFormat(f.value)}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        selected
-                          ? "bg-emerald-500 text-white"
-                          : "bg-muted text-muted-foreground"
+                        selected ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {f.label}
@@ -270,25 +264,13 @@ const GestionDocuments = () => {
                 })}
               </div>
             </div>
-
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description du document..."
-                rows={3}
-              />
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description du document..." rows={3} />
             </div>
-
             <div className="space-y-2">
               <Label>Ordre d'affichage</Label>
-              <Input
-                type="number"
-                min={1}
-                value={ordreAffichage}
-                onChange={(e) => setOrdreAffichage(Number(e.target.value))}
-              />
+              <Input type="number" min={1} value={ordreAffichage} onChange={(e) => setOrdreAffichage(Number(e.target.value))} />
             </div>
           </div>
           <DialogFooter>
