@@ -15,7 +15,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus } from "lucide-react";
+import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -43,6 +44,11 @@ const Marches = () => {
   const [delegues, setDelegues] = useState<DelegueDto[]>([]);
   const [selectedDelegue, setSelectedDelegue] = useState<string>("");
   const [assigning, setAssigning] = useState(false);
+
+  // Inline create delegate
+  const [showCreateDelegue, setShowCreateDelegue] = useState(false);
+  const [delegueForm, setDelegueForm] = useState<CreateDelegueRequest>({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
+  const [creatingDelegue, setCreatingDelegue] = useState(false);
 
   const fetchMarches = async () => {
     setLoading(true);
@@ -83,12 +89,35 @@ const Marches = () => {
   const openAssign = async (m: MarcheDto) => {
     setAssignMarche(m);
     setSelectedDelegue(m.delegueId ? String(m.delegueId) : "");
+    setShowCreateDelegue(false);
     setAssignOpen(true);
     try {
       const d = await delegueApi.getAll();
       setDelegues(d.filter(x => x.actif));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les délégués", variant: "destructive" });
+    }
+  };
+
+  const handleCreateDelegueInline = async () => {
+    if (!delegueForm.username.trim() || !delegueForm.password.trim() || !delegueForm.nomComplet.trim()) {
+      toast({ title: "Erreur", description: "Nom complet, identifiant et mot de passe sont requis", variant: "destructive" });
+      return;
+    }
+    setCreatingDelegue(true);
+    try {
+      const created = await delegueApi.create(delegueForm);
+      toast({ title: "Succès", description: "Délégué créé" });
+      setDelegueForm({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
+      setShowCreateDelegue(false);
+      // Refresh list and auto-select
+      const d = await delegueApi.getAll();
+      setDelegues(d.filter(x => x.actif));
+      setSelectedDelegue(String(created.id));
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingDelegue(false);
     }
   };
 
@@ -310,27 +339,76 @@ const Marches = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Délégué</Label>
-              <Select value={selectedDelegue} onValueChange={setSelectedDelegue}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un délégué" /></SelectTrigger>
-                <SelectContent>
-                  {delegues.map(d => (
-                    <SelectItem key={d.id} value={String(d.id)}>
-                      {d.nomComplet} ({d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!showCreateDelegue ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Délégué</Label>
+                  <Select value={selectedDelegue} onValueChange={setSelectedDelegue}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner un délégué" /></SelectTrigger>
+                    <SelectContent>
+                      {delegues.map(d => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.nomComplet} ({d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {delegues.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Aucun délégué actif trouvé.</p>
+                )}
+                <Button variant="outline" size="sm" className="w-full" onClick={() => setShowCreateDelegue(true)}>
+                  <UserRoundPlus className="h-4 w-4 mr-2" /> Créer un nouveau délégué
+                </Button>
+              </>
+            ) : (
+              <div className="space-y-3 border rounded-lg p-4">
+                <p className="text-sm font-medium">Nouveau délégué</p>
+                <div className="space-y-2">
+                  <Label>Nom complet *</Label>
+                  <Input value={delegueForm.nomComplet} onChange={e => setDelegueForm(f => ({ ...f, nomComplet: e.target.value }))} placeholder="Nom Prénom" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Identifiant *</Label>
+                  <Input value={delegueForm.username} onChange={e => setDelegueForm(f => ({ ...f, username: e.target.value }))} placeholder="upm1" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mot de passe *</Label>
+                  <Input type="password" value={delegueForm.password} onChange={e => setDelegueForm(f => ({ ...f, password: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={delegueForm.email} onChange={e => setDelegueForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Rôle *</Label>
+                  <Select value={delegueForm.role} onValueChange={v => setDelegueForm(f => ({ ...f, role: v as "AUTORITE_UPM" | "AUTORITE_UEP" }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AUTORITE_UPM">Autorité UPM</SelectItem>
+                      <SelectItem value="AUTORITE_UEP">Autorité UEP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowCreateDelegue(false)} className="flex-1">Retour</Button>
+                  <Button size="sm" onClick={handleCreateDelegueInline} disabled={creatingDelegue} className="flex-1">
+                    {creatingDelegue && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                    Créer
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignOpen(false)}>Annuler</Button>
-            <Button onClick={handleAssign} disabled={assigning || !selectedDelegue}>
-              {assigning && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-              Affecter
-            </Button>
-          </DialogFooter>
+          {!showCreateDelegue && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAssignOpen(false)}>Annuler</Button>
+              <Button onClick={handleAssign} disabled={assigning || !selectedDelegue}>
+                {assigning && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                Affecter
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>
