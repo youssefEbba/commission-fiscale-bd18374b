@@ -6,6 +6,7 @@ import {
   DOCUMENT_TYPES_REQUIS, demandeCorrectionApi,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
   marcheApi, MarcheDto,
+  bailleurApi, BailleurDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number; dateSignature?: string }>({ numeroMarche: "" });
   const [creatingMarche, setCreatingMarche] = useState(false);
 
+  // Bailleurs référentiel
+  const [bailleurs, setBailleurs] = useState<BailleurDto[]>([]);
+  const [showCreateBailleur, setShowCreateBailleur] = useState(false);
+  const [newBailleurNom, setNewBailleurNom] = useState("");
+  const [creatingBailleur, setCreatingBailleur] = useState(false);
+
   // Step 1: Modèle fiscal
   const [typeProjet, setTypeProjet] = useState("BTP");
   const [referenceDossier, setReferenceDossier] = useState("");
@@ -102,14 +109,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [ent, conv, marc] = await Promise.all([
+      const [ent, conv, marc, bail] = await Promise.all([
         entrepriseApi.getAll(),
         conventionApi.getAll(),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
+        bailleurApi.getAll().catch(() => [] as BailleurDto[]),
       ]);
       setEntreprises(ent);
       setConventions(conv);
       setMarches(marc.filter(m => !m.demandeCorrectionId));
+      setBailleurs(bail);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
     } finally {
@@ -450,11 +459,61 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                             value={newConvention.intitule}
                             onChange={e => setNewConvention(prev => ({ ...prev, intitule: e.target.value }))}
                           />
-                          <Input
-                            placeholder="Bailleur (optionnel)"
-                            value={newConvention.bailleur || ""}
-                            onChange={e => setNewConvention(prev => ({ ...prev, bailleur: e.target.value }))}
-                          />
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground flex items-center justify-between">
+                              <span>Bailleur (optionnel)</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 text-xs text-primary p-0"
+                                onClick={() => setShowCreateBailleur(!showCreateBailleur)}
+                              >
+                                <Plus className="h-3 w-3 mr-0.5" />
+                                {showCreateBailleur ? "Annuler" : "Ajouter"}
+                              </Button>
+                            </Label>
+                            {!showCreateBailleur ? (
+                              <Select value={newConvention.bailleur || ""} onValueChange={v => setNewConvention(prev => ({ ...prev, bailleur: v }))}>
+                                <SelectTrigger><SelectValue placeholder="Sélectionnez un bailleur" /></SelectTrigger>
+                                <SelectContent>
+                                  {bailleurs.map(b => (
+                                    <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <div className="flex gap-1">
+                                <Input
+                                  placeholder="Nom du bailleur"
+                                  value={newBailleurNom}
+                                  onChange={e => setNewBailleurNom(e.target.value)}
+                                  className="text-sm"
+                                />
+                                <Button
+                                  size="sm"
+                                  disabled={creatingBailleur || !newBailleurNom}
+                                  onClick={async () => {
+                                    setCreatingBailleur(true);
+                                    try {
+                                      const created = await bailleurApi.create({ nom: newBailleurNom });
+                                      setBailleurs(prev => [...prev, created]);
+                                      setNewConvention(prev => ({ ...prev, bailleur: created.nom }));
+                                      setNewBailleurNom("");
+                                      setShowCreateBailleur(false);
+                                      toast({ title: "Succès", description: "Bailleur ajouté" });
+                                    } catch (e: any) {
+                                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                    } finally {
+                                      setCreatingBailleur(false);
+                                    }
+                                  }}
+                                >
+                                  {creatingBailleur ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                           <div>
                             <Label className="text-xs text-muted-foreground">Date de signature *</Label>
                             <Input
