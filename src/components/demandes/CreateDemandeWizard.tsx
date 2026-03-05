@@ -283,6 +283,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       toast({ title: "Erreur", description: "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.", variant: "destructive" });
       return;
     }
+    if (!entrepriseId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
+      return;
+    }
+    if (!conventionId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner une convention", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       const demande = await demandeCorrectionApi.create({
