@@ -18,8 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, CheckCircle, Send, FileText, Building2,
+  Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, CheckCircle, Send, FileText, Building2, Info,
 } from "lucide-react";
 
 // ── helpers ──
@@ -634,9 +635,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                           ) : (
                             <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
-                          <span className={`flex-1 text-sm ${docFiles[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
-                            {dt.description || dt.typeDocument.replace(/_/g, " ")}
+                          <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
+                            {dt.typeDocument.replace(/_/g, " ")}
                             {dt.obligatoire && <span className="text-destructive ml-1">*</span>}
+                            {dt.description && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                  {dt.description}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </span>
                           {docFiles[dt.typeDocument] && (
                             <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.typeDocument].name}</span>
