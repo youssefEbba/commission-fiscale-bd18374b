@@ -440,7 +440,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                       </Button>
                     </Label>
                     {!showCreateConvention ? (
-                      <Select value={conventionId} onValueChange={setConventionId}>
+                      <Select value={conventionId} onValueChange={v => { setConventionId(v); setMarcheId(""); setShowCreateMarche(false); }}>
                         <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
                         <SelectContent>
                           {conventions.map(c => (
@@ -544,7 +544,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                     )}
                   </div>
 
-                  {/* Marché */}
+                  {/* Marché — requires convention */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
                       <span>Attribution / Adjudication</span>
@@ -554,16 +554,21 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                         size="sm"
                         className="h-6 text-xs text-primary"
                         onClick={() => setShowCreateMarche(!showCreateMarche)}
+                        disabled={!conventionId}
                       >
                         <Plus className="h-3 w-3 mr-1" />
                         {showCreateMarche ? "Annuler" : "Créer"}
                       </Button>
                     </Label>
-                    {!showCreateMarche ? (
+                    {!conventionId ? (
+                      <p className="text-xs text-muted-foreground italic border border-dashed border-border rounded-md p-3 text-center">
+                        Veuillez d'abord sélectionner une convention
+                      </p>
+                    ) : !showCreateMarche ? (
                       <Select value={marcheId} onValueChange={setMarcheId}>
                         <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
                         <SelectContent>
-                          {marches.filter(m => !conventionId || m.conventionId === Number(conventionId)).map(m => (
+                          {marches.filter(m => m.conventionId === Number(conventionId)).map(m => (
                             <SelectItem key={m.id} value={String(m.id)}>
                               {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
                             </SelectItem>
