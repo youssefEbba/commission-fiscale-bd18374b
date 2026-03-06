@@ -808,4 +808,4 @@ export const documentRequirementApi = {
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
 };
 
-export const WS_BASE = "https://1112-41-188-119-239.ngrok-free.app/ws";
+export const WS_BASE = "https://a488-102-214-208-11.ngrok-free.app/ws";
