@@ -111,6 +111,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [dqeLignes, setDqeLignes] = useState<DqeLigne[]>([emptyDqeLigne()]);
 
   // Load data on open
+  const isDelegate = user?.role === "AUTORITE_UPM" || user?.role === "AUTORITE_UEP";
+
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
     try {
@@ -123,7 +125,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       ]);
       setEntreprises(ent);
       setConventions(conv);
-      setMarches(marc);
+      // Delegates only see marchés assigned to them
+      if (isDelegate && user?.userId) {
+        setMarches(marc.filter(m => m.delegueIds?.includes(user.userId)));
+      } else {
+        setMarches(marc);
+      }
       setBailleurs(bail);
       setGedDocTypes(gedReqs.sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0)));
     } catch {
@@ -131,7 +138,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     } finally {
       setLoadingData(false);
     }
-  }, [toast]);
+  }, [toast, isDelegate, user?.userId]);
 
   useEffect(() => {
     if (open) {
@@ -279,7 +286,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   // ── Submit ──
   const handleSubmit = async () => {
-    if (user?.role === "AUTORITE_CONTRACTANTE" && !user?.autoriteContractanteId) {
+    if ((user?.role === "AUTORITE_CONTRACTANTE" || isDelegate) && !user?.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.", variant: "destructive" });
       return;
     }

@@ -181,6 +181,9 @@ const Demandes = () => {
         data = await demandeCorrectionApi.getByEntreprise(user.entrepriseId);
       } else if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId) {
         data = await demandeCorrectionApi.getByAutorite(user.autoriteContractanteId);
+      } else if ((role === "AUTORITE_UPM" || role === "AUTORITE_UEP") && user?.autoriteContractanteId) {
+        // Delegates: fetch by their AC, then filter client-side to marchés assigned to them
+        data = await demandeCorrectionApi.getByAutorite(user.autoriteContractanteId);
       } else {
         data = await demandeCorrectionApi.getAll();
       }
@@ -504,6 +507,8 @@ const Demandes = () => {
     PRESIDENT: "Dossiers en attente de validation finale",
     ADMIN_SI: "Toutes les demandes (Audit)",
     ENTREPRISE: "Demandes associées",
+    AUTORITE_UPM: "Mes demandes (Délégué UPM)",
+    AUTORITE_UEP: "Mes demandes (Délégué UEP)",
   };
 
   return (
@@ -520,7 +525,7 @@ const Demandes = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+            {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI"]) && (
               <Button onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" /> Nouvelle demande de correction
               </Button>
