@@ -181,9 +181,9 @@ const Demandes = () => {
         data = await demandeCorrectionApi.getByEntreprise(user.entrepriseId);
       } else if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId) {
         data = await demandeCorrectionApi.getByAutorite(user.autoriteContractanteId);
-      } else if ((role === "AUTORITE_UPM" || role === "AUTORITE_UEP") && user?.autoriteContractanteId) {
-        // Delegates: fetch by their AC, then filter client-side to marchés assigned to them
-        data = await demandeCorrectionApi.getByAutorite(user.autoriteContractanteId);
+      } else if ((role === "AUTORITE_UPM" || role === "AUTORITE_UEP") && user?.userId) {
+        // Delegates: strict server-side filtering via marche_delegue
+        data = await demandeCorrectionApi.getByDelegue(user.userId);
       } else {
         data = await demandeCorrectionApi.getAll();
       }
