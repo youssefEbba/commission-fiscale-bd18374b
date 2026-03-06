@@ -532,7 +532,7 @@ export const delegueApi = {
 };
 
 // Certificats de crédit (P3)
-export type CertificatStatut = "DEMANDE" | "EMIS" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+export type CertificatStatut = "DEMANDE" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
 export interface CertificatCreditDto {
   id: number;
@@ -551,6 +551,8 @@ export interface CertificatCreditDto {
   dateMiseAJour?: string;
   dateValidite?: string;
   lettreCorrectionId?: number;
+  demandeCorrectionId?: number;
+  marcheId?: number;
 }
 
 export interface CreateCertificatCreditRequest {
@@ -711,7 +713,12 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 };
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
-  DEMANDE: "Demandé", EMIS: "Émis", OUVERT: "Ouvert",
+  DEMANDE: "Demandé",
+  EN_VERIFICATION_DGI: "En vérification DGI",
+  EN_VALIDATION_PRESIDENT: "En validation Président",
+  VALIDE_PRESIDENT: "Validé Président",
+  EN_OUVERTURE_DGTCP: "En ouverture DGTCP",
+  OUVERT: "Ouvert",
   MODIFIE: "Modifié", CLOTURE: "Clôturé", ANNULE: "Annulé",
 };
 
