@@ -7,7 +7,6 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto,
-  DocumentDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
