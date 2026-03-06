@@ -129,16 +129,16 @@ const Certificats = () => {
       toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
       return;
     }
-    if (!selectedEntrepriseId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner l'entreprise", variant: "destructive" });
+    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+    if (!correction?.entrepriseId) {
+      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
       return;
     }
 
     setCreating(true);
     try {
-      const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
       const request: CreateCertificatCreditRequest = {
-        entrepriseId: Number(selectedEntrepriseId),
+        entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
       };
       const created = await certificatCreditApi.create(request);
