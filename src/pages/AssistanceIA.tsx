@@ -36,13 +36,13 @@ const AssistanceIA = () => {
     (async () => {
       setHistoryLoading(true);
       try {
-        const res = await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/history/${id}`, {
+        const res = await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/${id}/history`, {
           headers: { "ngrok-skip-browser-warning": "true" },
         });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) {
-            const mapped: ChatMessage[] = data.map((m: any) => ({
+          if (data.success && Array.isArray(data.history)) {
+            const mapped: ChatMessage[] = data.history.map((m: any) => ({
               role: m.role === "user" ? "user" : "assistant",
               content: m.content || m.answer || m.question || "",
             }));
@@ -115,7 +115,7 @@ const AssistanceIA = () => {
 
   const handleClearHistory = async () => {
     try {
-      await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/history/${id}`, {
+      await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/${id}/history`, {
         method: "DELETE",
         headers: { "ngrok-skip-browser-warning": "true" },
       });
