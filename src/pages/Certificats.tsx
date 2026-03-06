@@ -84,7 +84,7 @@ const Certificats = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
-  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
+  const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<string>("");
