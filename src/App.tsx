@@ -46,7 +46,7 @@ const App = () => (
             } />
             {/* Référentiel Projet supprimé: convention = projet */}
             <Route path="/dashboard/demandes" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Demandes />
               </ProtectedRoute>
             } />
