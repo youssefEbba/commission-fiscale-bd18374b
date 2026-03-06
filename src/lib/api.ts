@@ -713,7 +713,12 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 };
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
-  DEMANDE: "Demandé", EMIS: "Émis", OUVERT: "Ouvert",
+  DEMANDE: "Demandé",
+  EN_VERIFICATION_DGI: "En vérification DGI",
+  EN_VALIDATION_PRESIDENT: "En validation Président",
+  VALIDE_PRESIDENT: "Validé Président",
+  EN_OUVERTURE_DGTCP: "En ouverture DGTCP",
+  OUVERT: "Ouvert",
   MODIFIE: "Modifié", CLOTURE: "Clôturé", ANNULE: "Annulé",
 };
 
