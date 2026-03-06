@@ -64,7 +64,6 @@ const SPECIAL_DOC_LABELS: Record<string, string> = {
 // Roles that must upload before visa
 const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string; label: string }> = {
   DGD: { docType: "OFFRE_FISCALE_CORRIGEE", label: "Offre Fiscale Corrigée" },
-  DGTCP: { docType: "CREDIT_INTERIEUR", label: "Crédit Intérieur" },
 };
 
 const CorrectionDouaniere = () => {
