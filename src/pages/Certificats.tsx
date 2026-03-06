@@ -109,7 +109,6 @@ const Certificats = () => {
   const openCreateDialog = async () => {
     setShowCreate(true);
     setSelectedCorrectionId("");
-    setSelectedEntrepriseId("");
     setDocFiles({});
     try {
       const [corrs, ents, reqs] = await Promise.all([
