@@ -342,6 +342,27 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         }
       }
 
+      // Send document URLs to AI service for context extraction
+      try {
+        const uploadedDocs = await demandeCorrectionApi.getDocuments(demande.id);
+        const sourceUrls = uploadedDocs
+          .filter((d: any) => d.chemin)
+          .map((d: any) => d.chemin.replace(/\\/g, "/"));
+        if (sourceUrls.length > 0) {
+          const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
+          await fetch(`${AI_SERVICE_BASE}/api/fiscal-context/${demande.id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+            body: JSON.stringify({ sourceUrls }),
+          });
+        }
+      } catch (e) {
+        console.warn("AI context upload failed (non-blocking):", e);
+      }
+
       toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
       onOpenChange(false);
       onCreated();
