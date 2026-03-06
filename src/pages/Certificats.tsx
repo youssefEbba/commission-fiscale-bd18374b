@@ -158,7 +158,6 @@ const Certificats = () => {
                        <TableCell className="font-semibold">{c.soldeCordon?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell className="font-semibold">{c.soldeTVA?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
                           <Button variant="ghost" size="sm" onClick={() => setSelected(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
