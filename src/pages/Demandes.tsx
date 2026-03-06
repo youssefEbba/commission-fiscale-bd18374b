@@ -783,10 +783,9 @@ const Demandes = () => {
               })()}
               {/* Documents de décision */}
               {(() => {
-                const SPECIAL_DOC_TYPES_LIST = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION"];
+                const SPECIAL_DOC_TYPES_LIST = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
                 const SPECIAL_DOC_LABELS_MAP: Record<string, string> = {
-                  CREDIT_EXTERIEUR: "Crédit Extérieur",
-                  CREDIT_INTERIEUR: "Crédit Intérieur",
+                  OFFRE_FISCALE_CORRIGEE: "Offre Fiscale Corrigée",
                   LETTRE_ADOPTION: "Lettre d'Adoption",
                 };
                 const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES_LIST.includes(d.type));
@@ -795,7 +794,7 @@ const Demandes = () => {
                     <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-primary" /> Documents de décision
                     </h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {SPECIAL_DOC_TYPES_LIST.map((docType) => {
                         const doc = specialDocs.find(d => d.type === docType);
                         const fileUrl = doc ? getDocFileUrl(doc) : null;
@@ -846,99 +845,80 @@ const Demandes = () => {
                   <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : (
                   <div className="space-y-2">
-                    {DOCUMENT_TYPES_REQUIS.filter(dt => !["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION"].includes(dt.value)).map((dt) => {
-                      // Find the active version, or the latest by version/id
-                      const allOfType = docs.filter((d) => d.type === dt.value);
-                      const uploaded = allOfType.find(d => d.actif === true)
-                        || allOfType.sort((a, b) => (b.version || b.id) - (a.version || a.id))[0]
-                        || null;
-                      const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
-                      const olderVersions = allOfType.filter(d => d.id !== uploaded?.id).sort((a, b) => (b.version || b.id) - (a.version || a.id));
-                      return (
-                        <div key={dt.value} className="space-y-1">
-                        <div className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
-                          {uploaded ? (
-                            <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                          ) : (
-                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium truncate ${!uploaded ? "text-muted-foreground" : ""}`}>{dt.label}</p>
-                            {uploaded && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {uploaded.nomFichier}
-                                {uploaded.version && <span className="ml-1 font-medium">(v{uploaded.version})</span>}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {uploaded && fileUrl ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => window.open(fileUrl, "_blank")}
-                                >
-                                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
-                                </Button>
-                                <a
-                                  href={fileUrl}
-                                  download={uploaded.nomFichier || dt.label}
-                                >
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                  >
-                                    <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
-                                  </Button>
-                                </a>
+                    {(() => {
+                      const SPECIAL_TYPES = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+                      const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type));
+                      const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
+                        if (!acc[d.type]) acc[d.type] = [];
+                        acc[d.type].push(d);
+                        return acc;
+                      }, {});
+
+                      if (Object.keys(groupedByType).length === 0) {
+                        return <p className="text-sm text-muted-foreground italic py-2">Aucun document associé</p>;
+                      }
+
+                      const DOC_LABEL_MAP: Record<string, string> = {};
+                      DOCUMENT_TYPES_REQUIS.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
+
+                      return Object.entries(groupedByType).map(([type, typeDocs]) => {
+                        const sorted = [...typeDocs].sort((a, b) => (b.version || b.id) - (a.version || a.id));
+                        const uploaded = sorted.find(d => d.actif === true) || sorted[0];
+                        const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
+                        const olderVersions = sorted.filter(d => d.id !== uploaded?.id);
+                        const label = DOC_LABEL_MAP[type] || type;
+
+                        return (
+                          <div key={type} className="space-y-1">
+                            <div className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
+                              <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{label}</p>
+                                {uploaded && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {uploaded.nomFichier}
+                                    {uploaded.version && <span className="ml-1 font-medium">(v{uploaded.version})</span>}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {fileUrl && (
+                                  <>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
+                                      <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
+                                    </Button>
+                                    <a href={fileUrl} download={uploaded?.nomFichier || label}>
+                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                        <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                                      </Button>
+                                    </a>
+                                  </>
+                                )}
                                 {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                    onClick={() => { setUploadType(dt.value); setUploadOpen(true); }}
-                                  >
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadType(type); setUploadOpen(true); }}>
                                     <Upload className="h-3.5 w-3.5 mr-1" /> Nouvelle version
                                   </Button>
                                 )}
-                              </>
-                            ) : hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 px-2 text-xs"
-                                onClick={() => { setUploadType(dt.value); setUploadOpen(true); }}
-                              >
-                                <Upload className="h-3.5 w-3.5 mr-1" /> Uploader
-                              </Button>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">Non fourni</span>
+                              </div>
+                            </div>
+                            {olderVersions.length > 0 && (
+                              <div className="ml-8 mt-1 space-y-1">
+                                <p className="text-xs text-muted-foreground font-medium">Versions précédentes :</p>
+                                {olderVersions.map(v => (
+                                  <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>v{v.version || '?'} — {v.nomFichier}</span>
+                                    <span>{new Date(v.dateUpload).toLocaleDateString("fr-FR")}</span>
+                                    {v.chemin && (
+                                      <a href={getDocFileUrl(v)} target="_blank" rel="noopener noreferrer" className="underline">Télécharger</a>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
-                        </div>
-                        {/* Version history */}
-                        {olderVersions.length > 0 && (
-                          <div className="ml-8 mt-1 space-y-1">
-                            <p className="text-xs text-muted-foreground font-medium">Versions précédentes :</p>
-                            {olderVersions.map(v => (
-                              <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>v{v.version || '?'} — {v.nomFichier}</span>
-                                <span>{new Date(v.dateUpload).toLocaleDateString("fr-FR")}</span>
-                                {v.chemin && (
-                                  <a href={getDocFileUrl(v)} target="_blank" rel="noopener noreferrer" className="underline">
-                                    Télécharger
-                                  </a>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>
