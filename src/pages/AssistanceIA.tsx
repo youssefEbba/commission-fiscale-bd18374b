@@ -36,7 +36,7 @@ const AssistanceIA = () => {
     (async () => {
       setHistoryLoading(true);
       try {
-        const res = await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/history/${id}`, {
+        const res = await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/${id}/history`, {
           headers: { "ngrok-skip-browser-warning": "true" },
         });
         if (res.ok) {
