@@ -3,17 +3,24 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
-  CERTIFICAT_STATUT_LABELS,
+  CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
+  demandeCorrectionApi, DemandeCorrectionDto,
+  entrepriseApi, EntrepriseDto,
+  documentRequirementApi, DocumentRequirementDto,
+  DocumentDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, Search, RefreshCw, Eye, Loader2, CheckCircle, XCircle, Filter } from "lucide-react";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle } from "lucide-react";
+
+const API_BASE = "https://a488-102-214-208-11.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
@@ -47,6 +54,21 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
   ],
 };
 
+// Document types for mise en place
+const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
+  { value: "LETTRE_DEMANDE_MISE_EN_PLACE_CI", label: "Lettre de saisine" },
+  { value: "CONTRAT", label: "Contrat enregistré" },
+  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification du contrat" },
+  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
+  { value: "LETTRE_CORRECTION", label: "Lettre de correction (adoption)" },
+];
+
+function getDocFileUrl(doc: DocumentDto): string {
+  if (!doc.chemin) return "#";
+  if (doc.chemin.startsWith("http")) return doc.chemin;
+  return `${API_BASE}/documents/download/${doc.id}`;
+}
+
 const Certificats = () => {
   const { user } = useAuth();
   const role = user?.role as AppRole;
@@ -57,6 +79,21 @@ const Certificats = () => {
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
+
+  // Creation dialog state
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
+  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
+  const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
+  const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
+  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<string>("");
+  const [docFiles, setDocFiles] = useState<Record<string, File>>({});
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+
+  // Detail documents
+  const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   const fetchCertificats = async () => {
     setLoading(true);
@@ -69,6 +106,79 @@ const Certificats = () => {
 
   useEffect(() => { fetchCertificats(); }, []);
 
+  const openCreateDialog = async () => {
+    setShowCreate(true);
+    setSelectedCorrectionId("");
+    setSelectedEntrepriseId("");
+    setDocFiles({});
+    try {
+      const [corrs, ents, reqs] = await Promise.all([
+        // Only fetch NOTIFIEE corrections (adopted + notified = ready for mise en place)
+        user?.autoriteContractanteId
+          ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
+          : demandeCorrectionApi.getAll(),
+        entrepriseApi.getAll(),
+        documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+      ]);
+      // Filter only NOTIFIEE (adopted) corrections
+      setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
+      setEntreprises(ents);
+      setDocRequirements(reqs);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!selectedCorrectionId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
+      return;
+    }
+    if (!selectedEntrepriseId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner l'entreprise", variant: "destructive" });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+      const request: CreateCertificatCreditRequest = {
+        entrepriseId: Number(selectedEntrepriseId),
+        demandeCorrectionId: Number(selectedCorrectionId),
+      };
+      const created = await certificatCreditApi.create(request);
+
+      // Upload documents if any
+      if (Object.keys(docFiles).length > 0) {
+        setUploadingDocs(true);
+        for (const [type, file] of Object.entries(docFiles)) {
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const token = localStorage.getItem("auth_token");
+            await fetch(`${API_BASE}/certificats-credit/${created.id}/documents?type=${encodeURIComponent(type)}`, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "ngrok-skip-browser-warning": "true",
+              },
+              body: formData,
+            });
+          } catch {
+            toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
+          }
+        }
+        setUploadingDocs(false);
+      }
+
+      toast({ title: "Succès", description: "Demande de mise en place créée avec succès" });
+      setShowCreate(false);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message || "Impossible de créer la demande", variant: "destructive" });
+    } finally { setCreating(false); }
+  };
+
   const handleStatut = async (id: number, statut: CertificatStatut) => {
     setActionLoading(id);
     try {
@@ -80,6 +190,25 @@ const Certificats = () => {
     } finally { setActionLoading(null); }
   };
 
+  const openDetail = async (c: CertificatCreditDto) => {
+    setSelected(c);
+    setDetailDocs([]);
+    setLoadingDocs(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_BASE}/certificats-credit/${c.id}/documents`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (res.ok) {
+        setDetailDocs(await res.json());
+      }
+    } catch { /* ignore */ }
+    setLoadingDocs(false);
+  };
+
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const filtered = certificats.filter((c) => {
@@ -88,6 +217,8 @@ const Certificats = () => {
       String(c.id).includes(search);
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
+
+  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
 
   const pageTitle: Record<string, string> = {
     AUTORITE_CONTRACTANTE: "Mes certificats",
@@ -98,6 +229,8 @@ const Certificats = () => {
     ADMIN_SI: "Tous les certificats (Audit)",
   };
 
+  const canCreate = role === "AUTORITE_CONTRACTANTE";
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -107,11 +240,18 @@ const Certificats = () => {
               <Award className="h-6 w-6 text-primary" />
               {pageTitle[role] || "Certificats de crédit"}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Mise en place du crédit</p>
+            <p className="text-muted-foreground text-sm mt-1">Mise en place du crédit d'impôt</p>
           </div>
-          <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
-          </Button>
+          <div className="flex gap-2">
+            {canCreate && (
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
+              </Button>
+            )}
+            <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -159,8 +299,8 @@ const Certificats = () => {
                        <TableCell className="font-semibold">{c.soldeTVA?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end">
-                          <Button variant="ghost" size="sm" onClick={() => setSelected(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
+                        <div className="flex gap-1 justify-end flex-wrap">
+                          <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
                               <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
@@ -180,11 +320,12 @@ const Certificats = () => {
         </Card>
       </div>
 
+      {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Certificat {selected?.reference || `#${selected?.id}`}</DialogTitle></DialogHeader>
           {selected && (
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseNom || "—"}</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
@@ -195,9 +336,156 @@ const Certificats = () => {
                 <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal?.toLocaleString("fr-FR") || "0"} MRU</p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
                 {selected.dateValidite && <div><span className="text-muted-foreground">Validité</span><p>{new Date(selected.dateValidite).toLocaleDateString("fr-FR")}</p></div>}
+                {selected.demandeCorrectionId && <div><span className="text-muted-foreground">Demande correction</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
+                {selected.marcheId && <div><span className="text-muted-foreground">Marché</span><p className="font-medium">#{selected.marcheId}</p></div>}
+              </div>
+
+              {/* Documents */}
+              <div className="border-t pt-3">
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Documents du dossier</h4>
+                {loadingDocs ? (
+                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                ) : detailDocs.length === 0 ? (
+                  <p className="text-muted-foreground text-xs">Aucun document associé</p>
+                ) : (
+                  <div className="space-y-2">
+                    {detailDocs.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{doc.nomFichier}</p>
+                            <p className="text-xs text-muted-foreground">{doc.type?.replace(/_/g, " ")}</p>
+                          </div>
+                        </div>
+                        <a
+                          href={getDocFileUrl(doc)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Télécharger
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              Demande de mise en place du crédit d'impôt
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Select correction */}
+            <div className="space-y-2">
+              <Label>Demande de correction (adoptée/notifiée) *</Label>
+              <Select value={selectedCorrectionId} onValueChange={(v) => {
+                setSelectedCorrectionId(v);
+                const corr = corrections.find(c => c.id === Number(v));
+                if (corr?.entrepriseId) setSelectedEntrepriseId(String(corr.entrepriseId));
+              }}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner une correction..." /></SelectTrigger>
+                <SelectContent>
+                  {corrections.length === 0 ? (
+                    <SelectItem value="__none" disabled>Aucune correction adoptée disponible</SelectItem>
+                  ) : corrections.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Entreprise (auto-filled) */}
+            <div className="space-y-2">
+              <Label>Entreprise *</Label>
+              <Select value={selectedEntrepriseId} onValueChange={setSelectedEntrepriseId}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner l'entreprise..." /></SelectTrigger>
+                <SelectContent>
+                  {entreprises.map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)}>
+                      {e.raisonSociale} ({e.nif})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Info from selected correction */}
+            {selectedCorrection && (
+              <Card className="bg-muted/30">
+                <CardContent className="p-3 text-sm">
+                  <p className="font-semibold mb-1">Correction sélectionnée</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="text-muted-foreground">N°</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">Entreprise</span> {selectedCorrection.entrepriseRaisonSociale}</div>
+                    <div><span className="text-muted-foreground">Statut</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">AC</span> {selectedCorrection.autoriteContractanteNom}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Documents upload */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Pièces du dossier</Label>
+              <div className="space-y-2">
+                {MISE_EN_PLACE_DOC_TYPES.map((dt) => {
+                  const req = docRequirements.find(r => r.typeDocument === dt.value);
+                  const isRequired = req?.obligatoire ?? false;
+                  const hasFile = !!docFiles[dt.value];
+                  return (
+                    <div key={dt.value} className="flex items-center gap-3 p-2 rounded border bg-background">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          {dt.label}
+                          {isRequired && <span className="text-destructive ml-1">*</span>}
+                        </p>
+                        {hasFile && (
+                          <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
+                            <CheckCircle className="h-3 w-3" /> {docFiles[dt.value].name}
+                          </p>
+                        )}
+                      </div>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) setDocFiles(prev => ({ ...prev, [dt.value]: file }));
+                          }}
+                        />
+                        <div className="flex items-center gap-1 text-xs text-primary hover:underline">
+                          <Upload className="h-3 w-3" />
+                          {hasFile ? "Remplacer" : "Choisir"}
+                        </div>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
+            <Button onClick={handleCreate} disabled={creating || uploadingDocs}>
+              {(creating || uploadingDocs) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Soumettre la demande
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
