@@ -250,7 +250,6 @@ const Demandes = () => {
   // DGTCP must upload CREDIT_INTERIEUR, DGD must upload CREDIT_EXTERIEUR before visa
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
     DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
-    DGTCP: { docType: "CREDIT_INTERIEUR", label: "Crédit Intérieur" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
 
