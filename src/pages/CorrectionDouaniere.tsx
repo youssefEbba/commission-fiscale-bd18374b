@@ -298,7 +298,6 @@ const CorrectionDouaniere = () => {
 
   // Separate special docs from regular docs
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
-  const regularDocTypes = DOCUMENT_TYPES_REQUIS.filter(dt => !SPECIAL_DOC_TYPES.includes(dt.value));
 
   return (
     <DashboardLayout>
@@ -504,67 +503,75 @@ const CorrectionDouaniere = () => {
                 <CardContent>
                   {docsLoading ? (
                     <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-                  ) : (
-                    <div className="space-y-2">
-                      {regularDocTypes.map((dt) => {
-                        const allVersions = docs
-                          .filter(d => d.type === dt.value)
-                          .sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
-                        const activeDoc = allVersions.find(d => d.actif !== false) || allVersions[0];
-                        const hasVersions = allVersions.length > 1;
-                        const fileUrl = activeDoc ? getDocFileUrl(activeDoc) : null;
+                  ) : (() => {
+                    // Group actual docs by type, excluding special doc types
+                    const regularDocs = docs.filter(d => !SPECIAL_DOC_TYPES.includes(d.type));
+                    const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
+                      if (!acc[d.type]) acc[d.type] = [];
+                      acc[d.type].push(d);
+                      return acc;
+                    }, {});
 
-                        return (
-                          <div key={dt.value} className="rounded-lg border border-border p-3 text-sm">
-                            <div className="flex items-center gap-3">
-                              {activeDoc ? (
+                    if (Object.keys(groupedByType).length === 0) {
+                      return <p className="text-sm text-muted-foreground italic text-center py-4">Aucun document associé</p>;
+                    }
+
+                    return (
+                      <div className="space-y-2">
+                        {Object.entries(groupedByType).map(([type, versions]) => {
+                          const dt = DOCUMENT_TYPES_REQUIS.find(t => t.value === type);
+                          const label = dt?.label || type;
+                          const sorted = [...versions].sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
+                          const activeDoc = sorted.find(d => d.actif !== false) || sorted[0];
+                          const hasVersions = sorted.length > 1;
+                          const fileUrl = activeDoc ? getDocFileUrl(activeDoc) : null;
+
+                          return (
+                            <div key={type} className="rounded-lg border border-border p-3 text-sm">
+                              <div className="flex items-center gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                              ) : (
-                                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className={`font-medium truncate ${!activeDoc ? "text-muted-foreground" : ""}`}>
-                                  {dt.label}
-                                  {activeDoc?.version && activeDoc.version > 1 && (
-                                    <Badge variant="outline" className="ml-2 text-[10px]">v{activeDoc.version}</Badge>
-                                  )}
-                                </p>
-                                {activeDoc && <p className="text-xs text-muted-foreground truncate">{activeDoc.nomFichier}</p>}
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                {activeDoc && fileUrl ? (
-                                  <>
-                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
-                                      <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
-                                    </Button>
-                                    <a href={fileUrl} download={activeDoc.nomFichier || dt.label}>
-                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                        <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">
+                                    {label}
+                                    {activeDoc?.version && activeDoc.version > 1 && (
+                                      <Badge variant="outline" className="ml-2 text-[10px]">v{activeDoc.version}</Badge>
+                                    )}
+                                  </p>
+                                  {activeDoc && <p className="text-xs text-muted-foreground truncate">{activeDoc.nomFichier}</p>}
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {activeDoc && fileUrl && (
+                                    <>
+                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
+                                        <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
                                       </Button>
-                                    </a>
-                                  </>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground italic">Non fourni</span>
-                                )}
+                                      <a href={fileUrl} download={activeDoc.nomFichier || label}>
+                                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                          <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                                        </Button>
+                                      </a>
+                                    </>
+                                  )}
+                                </div>
                               </div>
+                              {hasVersions && (
+                                <div className="mt-2 ml-7 space-y-1">
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1"><History className="h-3 w-3" /> Historique des versions</p>
+                                  {sorted.filter(d => d.id !== activeDoc?.id).map(v => (
+                                    <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground pl-2 border-l border-border">
+                                      <Badge variant="outline" className="text-[10px]">v{v.version ?? 1}</Badge>
+                                      <span className="truncate">{v.nomFichier}</span>
+                                      {v.dateUpload && <span>{new Date(v.dateUpload).toLocaleDateString("fr-FR")}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            {hasVersions && (
-                              <div className="mt-2 ml-7 space-y-1">
-                                <p className="text-xs text-muted-foreground flex items-center gap-1"><History className="h-3 w-3" /> Historique des versions</p>
-                                {allVersions.filter(d => d.id !== activeDoc?.id).map(v => (
-                                  <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground pl-2 border-l border-border">
-                                    <Badge variant="outline" className="text-[10px]">v{v.version ?? 1}</Badge>
-                                    <span className="truncate">{v.nomFichier}</span>
-                                    {v.dateUpload && <span>{new Date(v.dateUpload).toLocaleDateString("fr-FR")}</span>}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
