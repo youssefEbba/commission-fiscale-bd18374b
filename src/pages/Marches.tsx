@@ -15,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
@@ -88,7 +88,7 @@ const Marches = () => {
 
   const openAssign = async (m: MarcheDto) => {
     setAssignMarche(m);
-    setSelectedDelegue(m.delegueId ? String(m.delegueId) : "");
+    setSelectedDelegue("");
     setShowCreateDelegue(false);
     setAssignOpen(true);
     try {
@@ -125,14 +125,30 @@ const Marches = () => {
     if (!assignMarche || !selectedDelegue) return;
     setAssigning(true);
     try {
-      await marcheApi.assign(assignMarche.id, parseInt(selectedDelegue));
-      toast({ title: "Succès", description: "Marché affecté au délégué" });
-      setAssignOpen(false);
+      await marcheApi.addDelegue(assignMarche.id, parseInt(selectedDelegue));
+      toast({ title: "Succès", description: "Délégué ajouté au marché" });
+      setSelectedDelegue("");
       fetchMarches();
+      // Refresh assignMarche
+      const updated = await marcheApi.getById(assignMarche.id);
+      setAssignMarche(updated);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setAssigning(false);
+    }
+  };
+
+  const handleRemoveDelegue = async (delegueId: number) => {
+    if (!assignMarche) return;
+    try {
+      await marcheApi.removeDelegue(assignMarche.id, delegueId);
+      toast({ title: "Succès", description: "Délégué retiré du marché" });
+      fetchMarches();
+      const updated = await marcheApi.getById(assignMarche.id);
+      setAssignMarche(updated);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
     }
   };
 
@@ -244,7 +260,9 @@ const Marches = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {m.delegueId ? `#${m.delegueId}` : "—"}
+                          {m.delegueIds && m.delegueIds.length > 0
+                            ? m.delegueIds.map(id => `#${id}`).join(", ")
+                            : "—"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
@@ -333,29 +351,51 @@ const Marches = () => {
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Affecter un délégué</DialogTitle>
+            <DialogTitle>Gérer les délégués</DialogTitle>
             <DialogDescription>
-              Attribuez le marché #{assignMarche?.id} à un délégué UPM ou UEP.
+              Ajoutez ou retirez des délégués du marché #{assignMarche?.id}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Current delegates */}
+            {assignMarche?.delegueIds && assignMarche.delegueIds.length > 0 && (
+              <div className="space-y-2">
+                <Label>Délégués affectés</Label>
+                <div className="flex flex-wrap gap-2">
+                  {assignMarche.delegueIds.map(dId => {
+                    const d = delegues.find(x => x.id === dId);
+                    return (
+                      <Badge key={dId} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                        {d ? `${d.nomComplet} (${d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})` : `#${dId}`}
+                        <button onClick={() => handleRemoveDelegue(dId)} className="ml-1 rounded-full hover:bg-muted p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {!showCreateDelegue ? (
               <>
                 <div className="space-y-2">
-                  <Label>Délégué</Label>
+                  <Label>Ajouter un délégué</Label>
                   <Select value={selectedDelegue} onValueChange={setSelectedDelegue}>
                     <SelectTrigger><SelectValue placeholder="Sélectionner un délégué" /></SelectTrigger>
                     <SelectContent>
-                      {delegues.map(d => (
-                        <SelectItem key={d.id} value={String(d.id)}>
-                          {d.nomComplet} ({d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})
-                        </SelectItem>
-                      ))}
+                      {delegues
+                        .filter(d => !(assignMarche?.delegueIds || []).includes(d.id))
+                        .map(d => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {d.nomComplet} ({d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {delegues.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Aucun délégué actif trouvé.</p>
+                {delegues.filter(d => !(assignMarche?.delegueIds || []).includes(d.id)).length === 0 && (
+                  <p className="text-sm text-muted-foreground">Tous les délégués sont déjà affectés.</p>
                 )}
                 <Button variant="outline" size="sm" className="w-full" onClick={() => setShowCreateDelegue(true)}>
                   <UserRoundPlus className="h-4 w-4 mr-2" /> Créer un nouveau délégué
@@ -402,10 +442,10 @@ const Marches = () => {
           </div>
           {!showCreateDelegue && (
             <DialogFooter>
-              <Button variant="outline" onClick={() => setAssignOpen(false)}>Annuler</Button>
+              <Button variant="outline" onClick={() => setAssignOpen(false)}>Fermer</Button>
               <Button onClick={handleAssign} disabled={assigning || !selectedDelegue}>
                 {assigning && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                Affecter
+                Ajouter
               </Button>
             </DialogFooter>
           )}

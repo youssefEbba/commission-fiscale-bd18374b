@@ -477,7 +477,7 @@ export interface MarcheDto {
   dateSignature?: string;
   montantContratTtc?: number;
   statut: StatutMarche;
-  delegueId?: number;
+  delegueIds?: number[];
 }
 
 export interface CreateMarcheRequest {
@@ -502,6 +502,8 @@ export const marcheApi = {
   create: (data: CreateMarcheRequest) => apiFetch<MarcheDto>("/marches", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateMarcheRequest>) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: data }),
   assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign?delegueId=${delegueId}`, { method: "PATCH" }),
+  addDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues`, { method: "POST", body: { delegueId } }),
+  removeDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues/${delegueId}`, { method: "DELETE" }),
 };
 
 // Délégués (AC -> UPM/UEP)
