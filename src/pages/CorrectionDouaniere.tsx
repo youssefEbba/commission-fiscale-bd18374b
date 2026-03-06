@@ -447,8 +447,14 @@ const CorrectionDouaniere = () => {
                     <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4" /> Documents de décision
                     </p>
-                    <div className="grid grid-cols-3 gap-4">
-                      {SPECIAL_DOC_TYPES.map((docType) => {
+                    {(() => {
+                      // DGD only sees Offre Fiscale Corrigée and Lettre d'Adoption
+                      const visibleDocTypes = isDGD
+                        ? SPECIAL_DOC_TYPES.filter(t => ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"].includes(t))
+                        : SPECIAL_DOC_TYPES;
+                      return (
+                    <div className={`grid ${visibleDocTypes.length <= 2 ? "grid-cols-2" : "grid-cols-3"} gap-4`}>
+                      {visibleDocTypes.map((docType) => {
                         const doc = specialDocs.find(d => d.type === docType);
                         const fileUrl = doc ? getDocFileUrl(doc) : null;
                         return (
@@ -483,7 +489,9 @@ const CorrectionDouaniere = () => {
                         );
                       })}
                     </div>
-                  </div>
+                      );
+                    })()}
+                   </div>
                 </CardContent>
               </Card>
 
