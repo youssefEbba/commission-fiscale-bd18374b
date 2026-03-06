@@ -5,7 +5,6 @@ import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
-  entrepriseApi, EntrepriseDto,
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto,
 } from "@/lib/api";
@@ -84,10 +83,8 @@ const Certificats = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
-  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
-  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<string>("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
 
@@ -109,20 +106,15 @@ const Certificats = () => {
   const openCreateDialog = async () => {
     setShowCreate(true);
     setSelectedCorrectionId("");
-    setSelectedEntrepriseId("");
     setDocFiles({});
     try {
-      const [corrs, ents, reqs] = await Promise.all([
-        // Only fetch NOTIFIEE corrections (adopted + notified = ready for mise en place)
+      const [corrs, reqs] = await Promise.all([
         user?.autoriteContractanteId
           ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
           : demandeCorrectionApi.getAll(),
-        entrepriseApi.getAll(),
         documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
       ]);
-      // Filter only NOTIFIEE (adopted) corrections
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
-      setEntreprises(ents);
       setDocRequirements(reqs);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
@@ -134,16 +126,16 @@ const Certificats = () => {
       toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
       return;
     }
-    if (!selectedEntrepriseId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner l'entreprise", variant: "destructive" });
+    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+    if (!correction?.entrepriseId) {
+      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
       return;
     }
 
     setCreating(true);
     try {
-      const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
       const request: CreateCertificatCreditRequest = {
-        entrepriseId: Number(selectedEntrepriseId),
+        entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
       };
       const created = await certificatCreditApi.create(request);
@@ -389,11 +381,7 @@ const Certificats = () => {
             {/* Select correction */}
             <div className="space-y-2">
               <Label>Demande de correction (adoptée/notifiée) *</Label>
-              <Select value={selectedCorrectionId} onValueChange={(v) => {
-                setSelectedCorrectionId(v);
-                const corr = corrections.find(c => c.id === Number(v));
-                if (corr?.entrepriseId) setSelectedEntrepriseId(String(corr.entrepriseId));
-              }}>
+              <Select value={selectedCorrectionId} onValueChange={setSelectedCorrectionId}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner une correction..." /></SelectTrigger>
                 <SelectContent>
                   {corrections.length === 0 ? (
@@ -401,21 +389,6 @@ const Certificats = () => {
                   ) : corrections.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
                       {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Entreprise (auto-filled) */}
-            <div className="space-y-2">
-              <Label>Entreprise *</Label>
-              <Select value={selectedEntrepriseId} onValueChange={setSelectedEntrepriseId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner l'entreprise..." /></SelectTrigger>
-                <SelectContent>
-                  {entreprises.map((e) => (
-                    <SelectItem key={e.id} value={String(e.id)}>
-                      {e.raisonSociale} ({e.nif})
                     </SelectItem>
                   ))}
                 </SelectContent>
