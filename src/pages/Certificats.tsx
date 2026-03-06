@@ -111,17 +111,13 @@ const Certificats = () => {
     setSelectedCorrectionId("");
     setDocFiles({});
     try {
-      const [corrs, ents, reqs] = await Promise.all([
-        // Only fetch NOTIFIEE corrections (adopted + notified = ready for mise en place)
+      const [corrs, reqs] = await Promise.all([
         user?.autoriteContractanteId
           ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
           : demandeCorrectionApi.getAll(),
-        entrepriseApi.getAll(),
         documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
       ]);
-      // Filter only NOTIFIEE (adopted) corrections
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
-      setEntreprises(ents);
       setDocRequirements(reqs);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
