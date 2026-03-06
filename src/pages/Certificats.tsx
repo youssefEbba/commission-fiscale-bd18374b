@@ -85,9 +85,7 @@ const Certificats = () => {
   const [creating, setCreating] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
-  const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
-  const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
 
