@@ -41,8 +41,8 @@ const AssistanceIA = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) {
-            const mapped: ChatMessage[] = data.map((m: any) => ({
+          if (data.success && Array.isArray(data.history)) {
+            const mapped: ChatMessage[] = data.history.map((m: any) => ({
               role: m.role === "user" ? "user" : "assistant",
               content: m.content || m.answer || m.question || "",
             }));
