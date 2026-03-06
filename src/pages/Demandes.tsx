@@ -603,31 +603,38 @@ const Demandes = () => {
                                 <Button variant="ghost" size="sm" onClick={() => openDetail(d)}>
                                   <Eye className="h-4 w-4 mr-1" /> Détail
                                 </Button>
-                                {transitions.map((t, idx) => {
-                                  if (!t.from.includes(d.statut)) return null;
-                                  if (t.isDecisionFinale) return null;
-                                  const myDecision = (d.decisions || []).find(dec => dec.role === role);
-                                  const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
-                                  if (t.isVisa && hasRejet) return (
-                                    <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
-                                  );
-                                  if (t.isVisa && myDecision?.decision === "VISA") return (
-                                    <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
-                                  );
-                                  if (t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP") return null;
-                                  return (
-                                    <Button
-                                      key={idx}
-                                      variant={t.to === "REJETEE" ? "destructive" : "default"}
-                                      size="sm"
-                                      disabled={actionLoading === d.id}
-                                      onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
-                                    >
-                                      {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                                      {t.label}
-                                    </Button>
-                                  );
-                                })}
+                                {(() => {
+                                   const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
+                                   const isCurrentDGD = (role as string) === "DGD";
+                                   const isPres = (role as string) === "PRESIDENT";
+                                   const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                                   if (blocked) return <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ En attente visa DGD</Badge>;
+                                   return transitions.map((t, idx) => {
+                                     if (!t.from.includes(d.statut)) return null;
+                                     if (t.isDecisionFinale) return null;
+                                     const myDecision = (d.decisions || []).find(dec => dec.role === role);
+                                     const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
+                                     if (t.isVisa && hasRejet) return (
+                                       <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
+                                     );
+                                     if (t.isVisa && myDecision?.decision === "VISA") return (
+                                       <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
+                                     );
+                                     if (t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP") return null;
+                                     return (
+                                       <Button
+                                         key={idx}
+                                         variant={t.to === "REJETEE" ? "destructive" : "default"}
+                                         size="sm"
+                                         disabled={actionLoading === d.id}
+                                         onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
+                                       >
+                                         {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                                         {t.label}
+                                       </Button>
+                                     );
+                                   });
+                                 })()}
                               </>
                             )}
                           </div>
@@ -944,27 +951,37 @@ const Demandes = () => {
                   {(() => {
                     const decs = selected.decisions || [];
                     const myDec = decs.find(d => d.role === role);
+                    const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
+                    const isCurrentDGD = (role as string) === "DGD";
+                    const isPres = (role as string) === "PRESIDENT";
+                    const blocked = !isCurrentDGD && !isPres && !dgdVisa;
                     return (
                       <div className="space-y-2">
-                        {/* Current decision status */}
                         {myDec && (
                           <div className={`text-xs rounded px-2 py-1 inline-block ${myDec.decision === "VISA" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                             Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"} — Vous pouvez la modifier ci-dessous
                           </div>
                         )}
-                        <div className="flex flex-wrap gap-2">
-                          {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
-                            <Button
-                              key={idx}
-                              variant={t.to === "REJETEE" ? "destructive" : (t.isVisa && myDec?.decision === "VISA") ? "secondary" : "default"}
-                              disabled={actionLoading === selected.id}
-                              onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}
-                            >
-                              {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                              {myDec ? (t.isVisa ? "Re-valider" : "Rejeter à nouveau") : t.label}
-                            </Button>
-                          ))}
-                        </div>
+                        {blocked ? (
+                          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                            <p className="font-medium">⏳ En attente du visa DGD</p>
+                            <p className="mt-1">Le DGD doit valider cette demande en premier avant que vous puissiez apposer votre visa.</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
+                              <Button
+                                key={idx}
+                                variant={t.to === "REJETEE" ? "destructive" : (t.isVisa && myDec?.decision === "VISA") ? "secondary" : "default"}
+                                disabled={actionLoading === selected.id}
+                                onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}
+                              >
+                                {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                                {myDec ? (t.isVisa ? "Re-valider" : "Rejeter à nouveau") : t.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
