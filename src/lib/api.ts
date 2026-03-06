@@ -532,7 +532,7 @@ export const delegueApi = {
 };
 
 // Certificats de crédit (P3)
-export type CertificatStatut = "DEMANDE" | "EMIS" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+export type CertificatStatut = "DEMANDE" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
 export interface CertificatCreditDto {
   id: number;
