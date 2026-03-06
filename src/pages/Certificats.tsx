@@ -384,11 +384,7 @@ const Certificats = () => {
             {/* Select correction */}
             <div className="space-y-2">
               <Label>Demande de correction (adoptée/notifiée) *</Label>
-              <Select value={selectedCorrectionId} onValueChange={(v) => {
-                setSelectedCorrectionId(v);
-                const corr = corrections.find(c => c.id === Number(v));
-                if (corr?.entrepriseId) setSelectedEntrepriseId(String(corr.entrepriseId));
-              }}>
+              <Select value={selectedCorrectionId} onValueChange={setSelectedCorrectionId}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner une correction..." /></SelectTrigger>
                 <SelectContent>
                   {corrections.length === 0 ? (
@@ -396,21 +392,6 @@ const Certificats = () => {
                   ) : corrections.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
                       {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Entreprise (auto-filled) */}
-            <div className="space-y-2">
-              <Label>Entreprise *</Label>
-              <Select value={selectedEntrepriseId} onValueChange={setSelectedEntrepriseId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner l'entreprise..." /></SelectTrigger>
-                <SelectContent>
-                  {entreprises.map((e) => (
-                    <SelectItem key={e.id} value={String(e.id)}>
-                      {e.raisonSociale} ({e.nif})
                     </SelectItem>
                   ))}
                 </SelectContent>
