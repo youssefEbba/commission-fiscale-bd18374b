@@ -551,6 +551,8 @@ export interface CertificatCreditDto {
   dateMiseAJour?: string;
   dateValidite?: string;
   lettreCorrectionId?: number;
+  demandeCorrectionId?: number;
+  marcheId?: number;
 }
 
 export interface CreateCertificatCreditRequest {
