@@ -17,7 +17,10 @@ import { Award, Search, RefreshCw, Eye, Loader2, CheckCircle, XCircle, Filter } 
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
-  EMIS: "bg-yellow-100 text-yellow-800",
+  EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
+  EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
+  VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
+  EN_OUVERTURE_DGTCP: "bg-yellow-100 text-yellow-800",
   OUVERT: "bg-emerald-100 text-emerald-800",
   MODIFIE: "bg-orange-100 text-orange-800",
   CLOTURE: "bg-gray-100 text-gray-800",
@@ -25,13 +28,22 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
 };
 
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string }[]> = {
-  DGTCP: [
-    { from: ["DEMANDE"], to: "EMIS", label: "Émettre le certificat" },
-    { from: ["EMIS"], to: "OUVERT", label: "Ouvrir le crédit" },
+  DGI: [
+    { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Vérifier (DGI)" },
+    { from: ["DEMANDE", "EN_VERIFICATION_DGI"], to: "ANNULE", label: "Annuler" },
   ],
   PRESIDENT: [
-    { from: ["EMIS", "OUVERT"], to: "OUVERT", label: "Valider & signer" },
-    { from: ["DEMANDE", "EMIS"], to: "ANNULE", label: "Annuler" },
+    { from: ["EN_VERIFICATION_DGI"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
+    { from: ["DEMANDE", "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT"], to: "ANNULE", label: "Annuler" },
+  ],
+  DGTCP: [
+    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Prendre en charge" },
+    { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit" },
+    { from: ["DEMANDE", "VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP"], to: "ANNULE", label: "Annuler" },
+  ],
+  AUTORITE_CONTRACTANTE: [
+    { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
   ],
 };
 
