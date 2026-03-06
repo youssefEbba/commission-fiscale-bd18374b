@@ -162,17 +162,19 @@ const AssistanceIA = () => {
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 py-16">
                 <Bot className="h-12 w-12 text-primary/40" />
                 <p className="text-sm">Aucun message. Posez votre première question !</p>
-                <div className="flex flex-wrap gap-2 mt-2 max-w-md">
+                <div className="flex flex-wrap gap-2 mt-2 max-w-lg">
                   {[
-                    "Quel est le montant total du DQE ?",
-                    "Y a-t-il des incohérences dans l'offre ?",
-                    "Résume les documents de cette demande",
+                    "CORRESPONDANCE (DQE vs OFFRE)",
+                    "Vérifie la cohérence des quantités (T, lots, unités)",
+                    "Identifie les produits qui pourraient être considérés comme \"non éligibles\" dans un marché public",
+                    "Identifie les libellés qui pourraient désigner les mêmes produits",
+                    "Vérifie l'exactitude arithmétique de tous les calculs",
                   ].map((q) => (
                     <Button
                       key={q}
                       variant="outline"
                       size="sm"
-                      className="text-xs"
+                      className="text-xs text-left whitespace-normal h-auto py-2"
                       onClick={() => { setInput(q); }}
                     >
                       {q}
