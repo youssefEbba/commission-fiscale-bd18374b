@@ -5,8 +5,8 @@ import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
-  entrepriseApi, EntrepriseDto,
   documentRequirementApi, DocumentRequirementDto,
+  DocumentDto,
   DocumentDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
