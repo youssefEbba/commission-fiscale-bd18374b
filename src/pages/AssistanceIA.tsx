@@ -115,7 +115,7 @@ const AssistanceIA = () => {
 
   const handleClearHistory = async () => {
     try {
-      await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/history/${id}`, {
+      await fetch(`${AI_SERVICE_BASE}/api/fiscal-chat/${id}/history`, {
         method: "DELETE",
         headers: { "ngrok-skip-browser-warning": "true" },
       });
