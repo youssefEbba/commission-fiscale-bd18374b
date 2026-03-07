@@ -127,8 +127,8 @@ const Utilisations = () => {
   };
 
   const handleCreate = async () => {
-    if (!form.certificatCreditId || !form.montant) {
-      toast({ title: "Erreur", description: "Certificat et montant requis", variant: "destructive" });
+    if (!form.certificatCreditId) {
+      toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
     setCreating(true);
