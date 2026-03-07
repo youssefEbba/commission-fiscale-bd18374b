@@ -34,7 +34,7 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string }[]> = {
+const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   DGI: [
     { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Vérifier (DGI)" },
     { from: ["DEMANDE", "EN_VERIFICATION_DGI"], to: "ANNULE", label: "Annuler" },
@@ -45,9 +45,8 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
     { from: ["DEMANDE", "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT"], to: "ANNULE", label: "Annuler" },
   ],
   DGTCP: [
-    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Prendre en charge" },
+    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Viser", icon: "visa" },
     { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit" },
-    { from: ["DEMANDE", "VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP"], to: "ANNULE", label: "Annuler" },
   ],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
