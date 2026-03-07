@@ -566,29 +566,45 @@ const DemandesMiseEnPlace = () => {
       </Dialog>
       {/* Montants Dialog (DGTCP) */}
       <Dialog open={!!showMontants} onOpenChange={() => setShowMontants(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-primary" />
               Renseigner les montants
             </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Demande {showMontants?.reference || `#${showMontants?.id}`} — {showMontants?.entrepriseNom}
+            <p className="text-sm text-muted-foreground mt-1">
+              Demande <span className="font-medium text-foreground">{showMontants?.reference || `#${showMontants?.id}`}</span> — {showMontants?.entrepriseNom || "—"}
             </p>
-            <div className="space-y-2">
-              <Label>Montant Cordon (Douane) *</Label>
-              <Input type="number" min="0" step="0.01" placeholder="Ex: 1000000" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} />
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant Cordon (Douane) *</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} className="pl-9 text-base font-medium" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Montant TVA Intérieure *</Label>
-              <Input type="number" min="0" step="0.01" placeholder="Ex: 200000" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant TVA Intérieure *</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} className="pl-9 text-base font-medium" />
+              </div>
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setShowMontants(null)}>Annuler</Button>
+          {montantCordon && montantTVAInt && Number(montantCordon) > 0 && Number(montantTVAInt) > 0 && (
+            <div className="rounded-lg bg-muted/50 border p-3 text-sm">
+              <p className="text-muted-foreground mb-1">Récapitulatif</p>
+              <div className="flex justify-between">
+                <span>Total crédit</span>
+                <span className="font-bold text-foreground">{(Number(montantCordon) + Number(montantTVAInt)).toLocaleString("fr-FR")} MRU</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-2">
+            <Button variant="outline" onClick={() => setShowMontants(null)} className="sm:mr-auto">Annuler</Button>
             <Button
+              variant="secondary"
               disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
               onClick={async () => {
                 if (!showMontants) return;
@@ -604,17 +620,15 @@ const DemandesMiseEnPlace = () => {
               }}
             >
               {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer les montants
+              Enregistrer
             </Button>
             <Button
-              variant="default"
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
               disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
               onClick={async () => {
                 if (!showMontants) return;
                 setSavingMontants(true);
                 try {
-                  // Save montants first, then open credit
                   await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
                   await certificatCreditApi.updateStatut(showMontants.id, "OUVERT");
                   toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert !" });
@@ -627,7 +641,7 @@ const DemandesMiseEnPlace = () => {
             >
               {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               <ShieldCheck className="h-4 w-4 mr-1" />
-              Valider montants & Viser
+              Valider & Ouvrir
             </Button>
           </DialogFooter>
         </DialogContent>
