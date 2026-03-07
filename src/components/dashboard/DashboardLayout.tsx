@@ -56,7 +56,7 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     label: "Opérations",
     icon: ArrowRightLeft,
-    roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
+    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
       // P6 (Modifications) : AC/ENT soumettent, DGTCP analyse, DGI consulté, PRESIDENT valide
       { label: "Modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
