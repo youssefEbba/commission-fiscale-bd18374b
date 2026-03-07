@@ -20,7 +20,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText } from "lucide-react";
+import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Doc types belonging to Douane vs TVA for GED filtering
+const DOUANE_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
+  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+];
+const TVA_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
+];
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   DEMANDEE: "bg-blue-100 text-blue-800",
