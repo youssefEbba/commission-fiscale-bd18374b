@@ -584,8 +584,9 @@ export const certificatCreditApi = {
     }),
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
-  uploadDocument: (id: number, file: File) => {
+  uploadDocument: (id: number, type: string, file: File) => {
     const formData = new FormData();
+    formData.append("type", type);
     formData.append("file", file);
     return apiFetch<void>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
