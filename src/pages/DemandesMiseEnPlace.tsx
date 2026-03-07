@@ -17,7 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info } from "lucide-react";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const API_BASE = "https://a488-102-214-208-11.ngrok-free.app/api";
@@ -83,6 +83,12 @@ const DemandesMiseEnPlace = () => {
   // Detail documents
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+
+  // Montants dialog (DGTCP)
+  const [showMontants, setShowMontants] = useState<CertificatCreditDto | null>(null);
+  const [montantCordon, setMontantCordon] = useState("");
+  const [montantTVAInt, setMontantTVAInt] = useState("");
+  const [savingMontants, setSavingMontants] = useState(false);
 
   const fetchCertificats = async () => {
     setLoading(true);
@@ -265,12 +271,17 @@ const DemandesMiseEnPlace = () => {
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
                       <TableCell className="text-muted-foreground">{c.entrepriseNom || "—"}</TableCell>
-                      <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
-                      <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
+                      <TableCell>{c.montantCordon != null ? c.montantCordon.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
+                      <TableCell>{c.montantTVAInterieure != null ? c.montantTVAInterieure.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
+                          {role === "DGTCP" && (c.statut === "EN_OUVERTURE_DGTCP" || c.statut === "VALIDE_PRESIDENT") && c.montantCordon == null && (
+                            <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
+                              <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
+                            </Button>
+                          )}
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
                               <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
@@ -299,9 +310,9 @@ const DemandesMiseEnPlace = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseNom || "—"}</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
-                <div><span className="text-muted-foreground">Montant Cordon</span><p className="font-medium">{selected.montantCordon?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Montant TVA Int.</span><p className="font-medium">{selected.montantTVAInterieure?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal?.toLocaleString("fr-FR") || "0"} MRU</p></div>
+              <div><span className="text-muted-foreground">Montant Cordon</span><p className="font-medium">{selected.montantCordon != null ? `${selected.montantCordon.toLocaleString("fr-FR")} MRU` : <span className="text-orange-500 italic">Non renseigné</span>}</p></div>
+                <div><span className="text-muted-foreground">Montant TVA Int.</span><p className="font-medium">{selected.montantTVAInterieure != null ? `${selected.montantTVAInterieure.toLocaleString("fr-FR")} MRU` : <span className="text-orange-500 italic">Non renseigné</span>}</p></div>
+                <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal != null ? `${selected.montantTotal.toLocaleString("fr-FR")} MRU` : "—"}</p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
                 {selected.demandeCorrectionId && <div><span className="text-muted-foreground">Correction</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
                 {selected.marcheId && <div><span className="text-muted-foreground">Marché</span><p className="font-medium">#{selected.marcheId}</p></div>}
@@ -433,6 +444,51 @@ const DemandesMiseEnPlace = () => {
             <Button onClick={handleCreate} disabled={creating || uploadingDocs}>
               {(creating || uploadingDocs) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Soumettre la demande
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Montants Dialog (DGTCP) */}
+      <Dialog open={!!showMontants} onOpenChange={() => setShowMontants(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Renseigner les montants
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Demande {showMontants?.reference || `#${showMontants?.id}`} — {showMontants?.entrepriseNom}
+            </p>
+            <div className="space-y-2">
+              <Label>Montant Cordon (Douane) *</Label>
+              <Input type="number" min="0" step="0.01" placeholder="Ex: 1000000" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Montant TVA Intérieure *</Label>
+              <Input type="number" min="0" step="0.01" placeholder="Ex: 200000" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMontants(null)}>Annuler</Button>
+            <Button
+              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
+              onClick={async () => {
+                if (!showMontants) return;
+                setSavingMontants(true);
+                try {
+                  await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
+                  toast({ title: "Succès", description: "Montants enregistrés" });
+                  setShowMontants(null);
+                  fetchCertificats();
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                } finally { setSavingMontants(false); }
+              }}
+            >
+              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>

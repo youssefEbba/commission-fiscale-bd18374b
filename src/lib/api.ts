@@ -575,6 +575,11 @@ export const certificatCreditApi = {
   getByEntreprise: (entrepriseId: number) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-entreprise/${entrepriseId}`),
   create: (data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>("/certificats-credit", { method: "POST", body: data }),
   updateStatut: (id: number, statut: CertificatStatut) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  updateMontants: (id: number, montantCordon: number, montantTVAInterieure: number) =>
+    apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
+      method: "PATCH",
+      body: { montantCordon, montantTVAInterieure },
+    }),
 };
 
 // Utilisations de crédit (P4/P5)
