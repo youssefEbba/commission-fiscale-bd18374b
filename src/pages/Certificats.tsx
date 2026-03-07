@@ -124,7 +124,7 @@ const Certificats = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
+  
 
   const pageTitle: Record<string, string> = {
     AUTORITE_CONTRACTANTE: "Mes certificats",
