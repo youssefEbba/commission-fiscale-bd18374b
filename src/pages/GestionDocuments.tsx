@@ -15,10 +15,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-const PROCESSUS_OPTIONS: { value: ProcessusType; label: string }[] = [
-  { value: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
-  { value: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { value: "UTILISATION_CI", label: "Utilisation CI" },
+// Document types that belong to Douane sub-type
+const DOUANE_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
+  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+];
+// Document types that belong to TVA Intérieure sub-type
+const TVA_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
+];
+
+type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean };
+
+const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
+  { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
+  { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
+  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", filterFn: (r) => DOUANE_DOC_TYPES.includes(r.typeDocument) },
+  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure (Achats locaux)", filterFn: (r) => TVA_DOC_TYPES.includes(r.typeDocument) },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
