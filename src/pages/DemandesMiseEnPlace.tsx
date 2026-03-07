@@ -44,9 +44,7 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
   DGTCP: [
     { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit", icon: "visa" },
   ],
-  PRESIDENT: [
-    { from: ["OUVERT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
-  ],
+  PRESIDENT: [],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
   ],
@@ -346,13 +344,6 @@ const DemandesMiseEnPlace = () => {
                           {role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && (
                             <Button variant="destructive" size="sm" onClick={() => { setShowReject(c); setMotifRejet(""); }}>
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
-                            </Button>
-                          )}
-                          {/* Président: Valider & signer après ouverture */}
-                          {role === "PRESIDENT" && c.statut === "OUVERT" && (
-                            <Button variant="default" size="sm" disabled={generatingCert === c.id} onClick={() => handlePresidentValidate(c)}>
-                              {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-                              Valider & signer
                             </Button>
                           )}
                           {transitions.map((t) =>
