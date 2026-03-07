@@ -66,7 +66,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: FileCheck,
-    title: "7. Demande d'Utilisation CI",
+    title: "5. Demande d'Utilisation CI",
     color: "from-sky-600 to-sky-800",
     points: [
       "Deux flux distincts : Douanier (DGD → DGTCP) et TVA Intérieure (DGTCP seul)",
