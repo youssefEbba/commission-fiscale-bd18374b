@@ -119,14 +119,15 @@ const Utilisations = () => {
     setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
     setCreateDocFiles({});
     try {
-      const [certs, reqs] = await Promise.all([
+      const [certs, extReqs, intReqs] = await Promise.all([
         role === "ENTREPRISE" && (user as any)?.entrepriseId
           ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
           : certificatCreditApi.getAll(),
         documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
         documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
+      ]);
       setCertificats(certs);
-      setGedRequirements(reqs);
+      setGedRequirements([...extReqs, ...intReqs]);
     } catch { /* ignore */ }
     setShowCreate(true);
   };
@@ -138,9 +139,9 @@ const Utilisations = () => {
   };
 
   const getFilteredRequirements = (): DocumentRequirementDto[] => {
-    const tag = createType === "DOUANIER" ? SOUS_SECTION_TAG_DOUANE : SOUS_SECTION_TAG_TVA;
+    const processus = createType === "DOUANIER" ? "UTILISATION_CI_EXTERIEUR" : "UTILISATION_CI_INTERIEUR";
     return gedRequirements
-      .filter((r) => hasSousTag(r.description, tag))
+      .filter((r) => r.processus === processus)
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
