@@ -310,12 +310,9 @@ const DemandesMiseEnPlace = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseNom || "—"}</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
-              <div><span className="text-muted-foreground">Montant Cordon</span><p className="font-medium">{selected.montantCordon != null ? `${selected.montantCordon.toLocaleString("fr-FR")} MRU` : <span className="text-orange-500 italic">Non renseigné</span>}</p></div>
-                <div><span className="text-muted-foreground">Montant TVA Int.</span><p className="font-medium">{selected.montantTVAInterieure != null ? `${selected.montantTVAInterieure.toLocaleString("fr-FR")} MRU` : <span className="text-orange-500 italic">Non renseigné</span>}</p></div>
-                <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal != null ? `${selected.montantTotal.toLocaleString("fr-FR")} MRU` : "—"}</p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-                {selected.demandeCorrectionId && <div><span className="text-muted-foreground">Correction</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
-                {selected.marcheId && <div><span className="text-muted-foreground">Marché</span><p className="font-medium">#{selected.marcheId}</p></div>}
+                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">{selected.demandeCorrectionNumero || (selected.demandeCorrectionId ? `#${selected.demandeCorrectionId}` : "—")}</p></div>
+                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">{selected.marcheIntitule || (selected.marcheId ? `#${selected.marcheId}` : "—")}</p></div>
               </div>
 
               {/* Documents */}
