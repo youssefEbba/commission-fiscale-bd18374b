@@ -33,8 +33,16 @@ const NAV_ENTRIES: NavEntry[] = [
   { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
   // Conventions (= Projets) : AC crée, DGB valide
   { label: "Conventions / Projets", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  // P2 (Correction de l'offre) : AC initie, DGD/DGI/DGB/DGTCP évaluent, PRESIDENT valide
-  { label: "Demandes", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  // Demandes groupées : Correction et Mise en place
+  {
+    label: "Demandes",
+    icon: FileText,
+    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
+    children: [
+      { label: "Correction", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { label: "Mise en place CI", href: "/dashboard/mise-en-place", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+    ],
+  },
   // Marchés : AC crée, admin consulte
   { label: "Attributions / Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI", "PRESIDENT"] },
   // Délégués : AC gère ses UPM/UEP
