@@ -281,7 +281,7 @@ const Utilisations = () => {
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => setSelected(u)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(u.id)}><FileText className="h-4 w-4" /></Button>
-                          {transitions.map((t) =>
+                          {getTransitions(role, u.type).map((t) =>
                             t.from.includes(u.statut) ? (
                               <Button key={t.to} variant={t.to === "REJETEE" ? "destructive" : "default"} size="sm" disabled={actionLoading === u.id} onClick={() => handleStatut(u.id, t.to)}>
                                 {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
