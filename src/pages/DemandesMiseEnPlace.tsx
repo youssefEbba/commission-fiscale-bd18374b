@@ -96,6 +96,15 @@ const DemandesMiseEnPlace = () => {
 
   // Info modal state
   const [infoModal, setInfoModal] = useState<{ type: "entreprise" | "correction" | "marche"; id: number } | null>(null);
+
+  // Reject dialog state (DGTCP)
+  const [showReject, setShowReject] = useState<CertificatCreditDto | null>(null);
+  const [motifRejet, setMotifRejet] = useState("");
+  const [rejecting, setRejecting] = useState(false);
+
+  // Certificate generation state (DGTCP)
+  const [generatingCert, setGeneratingCert] = useState<number | null>(null);
+
   const fetchCertificats = async () => {
     setLoading(true);
     try {
