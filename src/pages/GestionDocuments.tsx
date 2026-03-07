@@ -194,12 +194,13 @@ const GestionDocuments = () => {
         return;
       }
     }
+    const finalDescription = dialogSousTag ? `${dialogSousTag} ${description.trim()}`.trim() : description.trim();
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
       typeDocument: typeDocument.trim(),
       obligatoire,
       typesAutorises,
-      description: description.trim(),
+      description: finalDescription,
       ordreAffichage,
     };
     if (editItem) {
