@@ -15,23 +15,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-// Document types that belong to Douane sub-type
-const DOUANE_DOC_TYPES = [
-  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
-  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
-];
-// Document types that belong to TVA Intérieure sub-type
-const TVA_DOC_TYPES = [
-  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
-];
+// Tags stored in description to identify sub-section
+const SOUS_SECTION_TAG_DOUANE = "[DOUANE]";
+const SOUS_SECTION_TAG_TVA = "[TVA]";
 
-type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean };
+const hasSousTag = (desc: string | undefined, tag: string) => (desc || "").includes(tag);
+const stripSousTags = (desc: string | undefined) => (desc || "").replace(/\[(DOUANE|TVA)\]\s*/g, "").trim();
+
+type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean; sousTag?: string };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (SYDONIA)", filterFn: (r) => DOUANE_DOC_TYPES.includes(r.typeDocument) },
-  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", filterFn: (r) => TVA_DOC_TYPES.includes(r.typeDocument) },
+  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", sousTag: SOUS_SECTION_TAG_DOUANE, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_DOUANE) },
+  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", sousTag: SOUS_SECTION_TAG_TVA, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_TVA) },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
@@ -78,6 +75,7 @@ const GestionDocuments = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogProcessus, setDialogProcessus] = useState<ProcessusType>("CORRECTION_OFFRE_FISCALE");
+  const [dialogSousTag, setDialogSousTag] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
 
@@ -149,11 +147,13 @@ const GestionDocuments = () => {
     setTypesAutorises(["PDF", "WORD", "EXCEL", "IMAGE"]);
     setDescription("");
     setOrdreAffichage(1);
+    setDialogSousTag("");
   };
 
-  const openCreate = (processus: ProcessusType) => {
+  const openCreate = (processus: ProcessusType, sousTag?: string) => {
     closeDialog();
     setDialogProcessus(processus);
+    setDialogSousTag(sousTag || "");
     const reqs = queriesByProcessus[processus].data;
     setOrdreAffichage((reqs.length || 0) + 1);
     setDialogOpen(true);
@@ -165,7 +165,11 @@ const GestionDocuments = () => {
     setTypeDocument(item.typeDocument);
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
-    setDescription(item.description || "");
+    // Strip the sous-tag from description for editing
+    const rawDesc = item.description || "";
+    const tag = rawDesc.includes(SOUS_SECTION_TAG_DOUANE) ? SOUS_SECTION_TAG_DOUANE : rawDesc.includes(SOUS_SECTION_TAG_TVA) ? SOUS_SECTION_TAG_TVA : "";
+    setDialogSousTag(tag);
+    setDescription(stripSousTags(rawDesc));
     setOrdreAffichage(item.ordreAffichage || 1);
     setDialogOpen(true);
   };
@@ -190,12 +194,13 @@ const GestionDocuments = () => {
         return;
       }
     }
+    const finalDescription = dialogSousTag ? `${dialogSousTag} ${description.trim()}`.trim() : description.trim();
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
       typeDocument: typeDocument.trim(),
       obligatoire,
       typesAutorises,
-      description: description.trim(),
+      description: finalDescription,
       ordreAffichage,
     };
     if (editItem) {
@@ -232,7 +237,7 @@ const GestionDocuments = () => {
             <Card key={section.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(section.processus)}>
+                <Button size="sm" onClick={() => openCreate(section.processus, section.sousTag)}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un document
                 </Button>
               </CardHeader>
@@ -272,7 +277,7 @@ const GestionDocuments = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                              {req.description || "—"}
+                              {stripSousTags(req.description) || "—"}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
