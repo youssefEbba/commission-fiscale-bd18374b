@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -6,7 +6,7 @@ import {
   CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
-  DocumentDto, entrepriseApi, marcheApi,
+  DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
