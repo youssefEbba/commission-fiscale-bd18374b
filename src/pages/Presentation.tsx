@@ -33,7 +33,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: Bot,
-    title: "4. L'Assistant IA",
+    title: "2. L'Assistant IA",
     color: "from-violet-600 to-violet-800",
     points: [
       "Chatbot intégré pour assistance contextuelle",
