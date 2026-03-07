@@ -135,7 +135,14 @@ const Certificats = () => {
     ADMIN_SI: "Tous les certificats (Audit)",
   };
 
-  const canCreate = role === "AUTORITE_CONTRACTANTE";
+  const pageTitle: Record<string, string> = {
+    AUTORITE_CONTRACTANTE: "Mes certificats",
+    ENTREPRISE: "Mes certificats de crédit",
+    DGTCP: "Certificats – Ouverture & ventilation",
+    DGI: "Certificats – Contrôle fiscal",
+    PRESIDENT: "Certificats en attente de signature",
+    ADMIN_SI: "Tous les certificats (Audit)",
+  };
 
   return (
     <DashboardLayout>
