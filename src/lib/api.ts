@@ -628,7 +628,7 @@ export interface CreateUtilisationCreditRequest {
   certificatCreditId: number;
   entrepriseId: number;
   type: UtilisationType;
-  montant: number;
+  montant?: number;
   description?: string;
   // Douane
   numeroDeclaration?: string;
