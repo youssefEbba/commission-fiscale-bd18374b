@@ -258,8 +258,8 @@ const DemandesMiseEnPlace = () => {
                   <TableRow>
                     <TableHead>Réf.</TableHead>
                     <TableHead>Entreprise</TableHead>
-                    <TableHead>Cordon (Douane)</TableHead>
-                    <TableHead>TVA Int.</TableHead>
+                    <TableHead>Correction</TableHead>
+                    <TableHead>Marché</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -270,9 +270,9 @@ const DemandesMiseEnPlace = () => {
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.entrepriseNom || "—"}</TableCell>
-                      <TableCell>{c.montantCordon != null ? c.montantCordon.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
-                      <TableCell>{c.montantTVAInterieure != null ? c.montantTVAInterieure.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
+                      <TableCell>{c.entrepriseNom || "—"}</TableCell>
+                      <TableCell>{c.demandeCorrectionNumero || (c.demandeCorrectionId ? `#${c.demandeCorrectionId}` : "—")}</TableCell>
+                      <TableCell>{c.marcheIntitule || (c.marcheId ? `#${c.marcheId}` : "—")}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
