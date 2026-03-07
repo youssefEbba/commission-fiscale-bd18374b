@@ -75,7 +75,7 @@ const GestionDocuments = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogProcessus, setDialogProcessus] = useState<ProcessusType>("CORRECTION_OFFRE_FISCALE");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogSousTag, setDialogSousTag] = useState<string>("");
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
 
   const [typeDocument, setTypeDocument] = useState("");
