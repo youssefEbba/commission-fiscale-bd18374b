@@ -407,12 +407,11 @@ const Utilisations = () => {
                 <>
                   <div>
                     <Label>Type d'achat</Label>
-                    <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
+                     <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
                       <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ACHAT_LOCAL">Achat local</SelectItem>
-                        <SelectItem value="SERVICE">Service</SelectItem>
-                        <SelectItem value="TRAVAUX">Travaux</SelectItem>
+                        <SelectItem value="DECOMPTE">Décompte</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
