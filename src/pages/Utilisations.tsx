@@ -152,6 +152,7 @@ const Utilisations = () => {
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
+
   const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
     return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };
