@@ -45,8 +45,7 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
     { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit", icon: "visa" },
   ],
   PRESIDENT: [
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider, signer & ouvrir le crédit" },
+    { from: ["OUVERT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
   ],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
@@ -225,11 +224,11 @@ const DemandesMiseEnPlace = () => {
     } finally { setRejecting(false); }
   };
 
-  const handleGenerateCertificate = async (c: CertificatCreditDto) => {
+  const handlePresidentValidate = async (c: CertificatCreditDto) => {
     setGeneratingCert(c.id);
     try {
-      await certificatCreditApi.generateCertificate(c.id);
-      toast({ title: "Succès", description: "Certificat généré avec succès" });
+      await certificatCreditApi.updateStatut(c.id, "VALIDE_PRESIDENT");
+      toast({ title: "Succès", description: "Certificat validé et signé par le Président" });
       fetchCertificats();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -349,11 +348,11 @@ const DemandesMiseEnPlace = () => {
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
-                          {/* Président: Générer certificat après ouverture */}
-                          {role === "PRESIDENT" && (c.statut === "OUVERT" || c.statut === "VALIDE_PRESIDENT") && (
-                            <Button variant="outline" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
+                          {/* Président: Valider & signer après ouverture */}
+                          {role === "PRESIDENT" && c.statut === "OUVERT" && (
+                            <Button variant="default" size="sm" disabled={generatingCert === c.id} onClick={() => handlePresidentValidate(c)}>
                               {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-                              Générer certificat
+                              Valider & signer
                             </Button>
                           )}
                           {transitions.map((t) =>

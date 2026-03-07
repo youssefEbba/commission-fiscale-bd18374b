@@ -584,10 +584,11 @@ export const certificatCreditApi = {
     }),
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
-  generateCertificate: (id: number) =>
-    apiFetch<Blob>(`/certificats-credit/${id}/certificat/generate`, { method: "POST" }),
-  sendCertificate: (id: number) =>
-    apiFetch<void>(`/certificats-credit/${id}/certificat/send`, { method: "POST" }),
+  uploadDocument: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<void>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
+  },
 };
 
 // Utilisations de crédit (P4/P5)
