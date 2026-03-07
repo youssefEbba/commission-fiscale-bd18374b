@@ -225,11 +225,11 @@ const DemandesMiseEnPlace = () => {
     } finally { setRejecting(false); }
   };
 
-  const handleGenerateCertificate = async (c: CertificatCreditDto) => {
+  const handlePresidentValidate = async (c: CertificatCreditDto) => {
     setGeneratingCert(c.id);
     try {
-      await certificatCreditApi.generateCertificate(c.id);
-      toast({ title: "Succès", description: "Certificat généré avec succès" });
+      await certificatCreditApi.updateStatut(c.id, "VALIDE_PRESIDENT");
+      toast({ title: "Succès", description: "Certificat validé et signé par le Président" });
       fetchCertificats();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
