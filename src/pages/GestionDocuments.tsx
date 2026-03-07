@@ -27,11 +27,15 @@ const TVA_DOC_TYPES = [
 
 type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean };
 
+const isKnownUtilisationDoc = (typeDocument: string) =>
+  DOUANE_DOC_TYPES.includes(typeDocument) || TVA_DOC_TYPES.includes(typeDocument);
+
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
   { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", filterFn: (r) => DOUANE_DOC_TYPES.includes(r.typeDocument) },
   { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure (Achats locaux)", filterFn: (r) => TVA_DOC_TYPES.includes(r.typeDocument) },
+  { key: "UTIL_AUTRES", processus: "UTILISATION_CI", label: "Utilisation CI — Autres documents", filterFn: (r) => !isKnownUtilisationDoc(r.typeDocument) },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
