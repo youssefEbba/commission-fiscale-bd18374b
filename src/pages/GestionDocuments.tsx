@@ -147,11 +147,13 @@ const GestionDocuments = () => {
     setTypesAutorises(["PDF", "WORD", "EXCEL", "IMAGE"]);
     setDescription("");
     setOrdreAffichage(1);
+    setDialogSousTag("");
   };
 
-  const openCreate = (processus: ProcessusType) => {
+  const openCreate = (processus: ProcessusType, sousTag?: string) => {
     closeDialog();
     setDialogProcessus(processus);
+    setDialogSousTag(sousTag || "");
     const reqs = queriesByProcessus[processus].data;
     setOrdreAffichage((reqs.length || 0) + 1);
     setDialogOpen(true);
@@ -163,7 +165,11 @@ const GestionDocuments = () => {
     setTypeDocument(item.typeDocument);
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
-    setDescription(item.description || "");
+    // Strip the sous-tag from description for editing
+    const rawDesc = item.description || "";
+    const tag = rawDesc.includes(SOUS_SECTION_TAG_DOUANE) ? SOUS_SECTION_TAG_DOUANE : rawDesc.includes(SOUS_SECTION_TAG_TVA) ? SOUS_SECTION_TAG_TVA : "";
+    setDialogSousTag(tag);
+    setDescription(stripSousTags(rawDesc));
     setOrdreAffichage(item.ordreAffichage || 1);
     setDialogOpen(true);
   };
