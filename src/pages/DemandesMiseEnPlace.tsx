@@ -448,6 +448,51 @@ const DemandesMiseEnPlace = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Montants Dialog (DGTCP) */}
+      <Dialog open={!!showMontants} onOpenChange={() => setShowMontants(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Renseigner les montants
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Demande {showMontants?.reference || `#${showMontants?.id}`} — {showMontants?.entrepriseNom}
+            </p>
+            <div className="space-y-2">
+              <Label>Montant Cordon (Douane) *</Label>
+              <Input type="number" min="0" step="0.01" placeholder="Ex: 1000000" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Montant TVA Intérieure *</Label>
+              <Input type="number" min="0" step="0.01" placeholder="Ex: 200000" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMontants(null)}>Annuler</Button>
+            <Button
+              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
+              onClick={async () => {
+                if (!showMontants) return;
+                setSavingMontants(true);
+                try {
+                  await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
+                  toast({ title: "Succès", description: "Montants enregistrés" });
+                  setShowMontants(null);
+                  fetchCertificats();
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                } finally { setSavingMontants(false); }
+              }}
+            >
+              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
