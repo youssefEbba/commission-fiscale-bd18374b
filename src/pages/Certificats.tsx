@@ -124,16 +124,6 @@ const Certificats = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  
-
-  const pageTitle: Record<string, string> = {
-    AUTORITE_CONTRACTANTE: "Mes certificats",
-    ENTREPRISE: "Mes certificats de crédit",
-    DGTCP: "Certificats – Ouverture & ventilation",
-    DGI: "Certificats – Contrôle fiscal",
-    PRESIDENT: "Certificats en attente de signature",
-    ADMIN_SI: "Tous les certificats (Audit)",
-  };
 
   const pageTitle: Record<string, string> = {
     AUTORITE_CONTRACTANTE: "Mes certificats",
@@ -153,14 +143,9 @@ const Certificats = () => {
               <Award className="h-6 w-6 text-primary" />
               {pageTitle[role] || "Certificats de crédit"}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Mise en place du crédit d'impôt</p>
+            <p className="text-muted-foreground text-sm mt-1">Suivi des certificats de crédit d'impôt</p>
           </div>
           <div className="flex gap-2">
-            {canCreate && (
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
-              </Button>
-            )}
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
