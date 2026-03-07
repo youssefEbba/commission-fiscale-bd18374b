@@ -237,7 +237,7 @@ const GestionDocuments = () => {
             <Card key={section.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(section.processus)}>
+                <Button size="sm" onClick={() => openCreate(section.processus, section.sousTag)}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un document
                 </Button>
               </CardHeader>
