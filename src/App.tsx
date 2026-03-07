@@ -61,6 +61,11 @@ const App = () => (
                 <Delegues />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/mise-en-place" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <DemandesMiseEnPlace />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/certificats" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Certificats />
