@@ -51,12 +51,11 @@ const getTransitions = (role: string, type?: UtilisationType): { from: Utilisati
       { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
     ];
   }
-  if (role === "DGTCP") {
+    if (role === "DGTCP") {
     if (type === "DOUANIER") {
       return [
-        { from: ["VISE"], to: "VALIDEE", label: "Valider" },
-        { from: ["VISE", "VALIDEE"], to: "LIQUIDEE", label: "Liquider" },
-        { from: ["VISE", "VALIDEE"], to: "REJETEE", label: "Rejeter" },
+        { from: ["VISE"], to: "LIQUIDEE", label: "Liquider" },
+        { from: ["VISE"], to: "REJETEE", label: "Rejeter" },
       ];
     }
     if (type === "TVA_INTERIEURE") {
