@@ -337,19 +337,20 @@ const DemandesMiseEnPlace = () => {
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
-                          {role === "DGTCP" && (c.statut === "EN_OUVERTURE_DGTCP" || c.statut === "VALIDE_PRESIDENT") && c.montantCordon == null && (
+                          {/* DGTCP: renseigner montants avant de viser */}
+                          {role === "DGTCP" && c.statut === "EN_VERIFICATION_DGI" && c.montantCordon == null && (
                             <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
                               <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                             </Button>
                           )}
                           {/* DGTCP Reject button */}
-                          {role === "DGTCP" && ["VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP"].includes(c.statut) && (
+                          {role === "DGTCP" && c.statut === "EN_VERIFICATION_DGI" && (
                             <Button variant="destructive" size="sm" onClick={() => { setShowReject(c); setMotifRejet(""); }}>
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
-                          {/* DGTCP Generate certificate button */}
-                          {role === "DGTCP" && c.statut === "OUVERT" && (
+                          {/* Président: Générer certificat après ouverture */}
+                          {role === "PRESIDENT" && (c.statut === "OUVERT" || c.statut === "VALIDE_PRESIDENT") && (
                             <Button variant="outline" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
                               {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
                               Générer certificat
