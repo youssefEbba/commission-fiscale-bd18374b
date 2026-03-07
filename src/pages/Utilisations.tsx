@@ -482,10 +482,66 @@ const Utilisations = () => {
               )}
             </div>
 
+            {/* Documents requis (GED) */}
+            {getFilteredRequirements().length > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Documents requis
+                  <span className="text-xs text-muted-foreground font-normal">
+                    ({getMissingObligatoryDocs().length > 0
+                      ? `${getMissingObligatoryDocs().length} obligatoire(s) manquant(s)`
+                      : "Tous les documents obligatoires sont joints"})
+                  </span>
+                </h4>
+                <div className="space-y-2">
+                  {getFilteredRequirements().map((req) => {
+                    const hasFile = !!createDocFiles[req.typeDocument];
+                    return (
+                      <div key={req.id} className={`flex items-center gap-3 p-2.5 rounded-lg border text-sm ${hasFile ? "border-emerald-300 bg-emerald-50/50" : req.obligatoire ? "border-orange-300 bg-orange-50/50" : "border-border"}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {hasFile ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /> : req.obligatoire ? <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                            <span className="font-medium truncate">{formatDocLabel(req.typeDocument)}</span>
+                            {req.obligatoire && <Badge variant="destructive" className="text-[10px] px-1 py-0 shrink-0">Obligatoire</Badge>}
+                            {req.description && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild><Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" /></TooltipTrigger>
+                                  <TooltipContent><p className="max-w-xs text-xs">{req.description}</p></TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                          {hasFile && <span className="text-xs text-emerald-600 ml-5.5">{createDocFiles[req.typeDocument].name}</span>}
+                        </div>
+                        <div className="shrink-0">
+                          <Label htmlFor={`doc-${req.typeDocument}`} className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors">
+                            <Upload className="h-3 w-3" />
+                            {hasFile ? "Remplacer" : "Choisir"}
+                          </Label>
+                          <input
+                            id={`doc-${req.typeDocument}`}
+                            type="file"
+                            className="hidden"
+                            accept={req.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : f === "IMAGE" ? ".jpg,.jpeg,.png" : "").join(",")}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) setCreateDocFiles((prev) => ({ ...prev, [req.typeDocument]: file }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
               <Button onClick={handleCreate} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Créer
+                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Soumettre
               </Button>
             </div>
           </div>
