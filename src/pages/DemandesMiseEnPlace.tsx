@@ -277,6 +277,11 @@ const DemandesMiseEnPlace = () => {
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
+                          {role === "DGTCP" && (c.statut === "EN_OUVERTURE_DGTCP" || c.statut === "VALIDE_PRESIDENT") && c.montantCordon == null && (
+                            <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
+                              <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
+                            </Button>
+                          )}
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
                               <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
