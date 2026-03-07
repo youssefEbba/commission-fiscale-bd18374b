@@ -152,6 +152,9 @@ const Utilisations = () => {
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
+  // Debug: log what GED returned vs what filter keeps
+  console.log("[Utilisations] GED requirements:", gedRequirements.length, "filtered for", createType, ":", getFilteredRequirements().length, gedRequirements.map(r => r.typeDocument));
+
   const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
     return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };

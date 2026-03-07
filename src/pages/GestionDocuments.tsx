@@ -30,7 +30,8 @@ type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: st
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { key: "UTILISATION", processus: "UTILISATION_CI", label: "Utilisation CI (Douane & TVA Intérieure)" },
+  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (SYDONIA)", filterFn: (r) => DOUANE_DOC_TYPES.includes(r.typeDocument) },
+  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", filterFn: (r) => TVA_DOC_TYPES.includes(r.typeDocument) },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
