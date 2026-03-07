@@ -117,6 +117,8 @@ const Certificats = () => {
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const filtered = certificats.filter((c) => {
+    // Ne pas afficher les certificats qui ne sont pas encore ouverts
+    if (c.statut !== "OUVERT" && c.statut !== "MODIFIE" && c.statut !== "CLOTURE") return false;
     const ms = (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
       (c.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
       String(c.id).includes(search);
