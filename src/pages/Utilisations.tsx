@@ -94,7 +94,13 @@ const Utilisations = () => {
   const openCreate = async () => {
     setCreateType("DOUANIER");
     setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
-    try { setCertificats(await certificatCreditApi.getAll()); } catch { /* ignore */ }
+    try {
+      if (role === "ENTREPRISE" && (user as any)?.entrepriseId) {
+        setCertificats(await certificatCreditApi.getByEntreprise((user as any).entrepriseId));
+      } else {
+        setCertificats(await certificatCreditApi.getAll());
+      }
+    } catch { /* ignore */ }
     setShowCreate(true);
   };
 
