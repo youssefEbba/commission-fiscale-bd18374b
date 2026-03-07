@@ -523,6 +523,66 @@ const DemandesMiseEnPlace = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Info Modal for Entreprise / Correction / Marché */}
+      <Dialog open={!!infoModal} onOpenChange={() => setInfoModal(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              {infoModal?.type === "entreprise" && "Détails de l'entreprise"}
+              {infoModal?.type === "correction" && "Détails de la correction"}
+              {infoModal?.type === "marche" && "Détails du marché"}
+            </DialogTitle>
+          </DialogHeader>
+          {infoModal?.type === "entreprise" && (() => {
+            const ent = entrepriseCache[infoModal.id];
+            if (!ent) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">Raison sociale</span><p className="font-medium">{ent.raisonSociale}</p></div>
+                  <div><span className="text-muted-foreground">NIF</span><p className="font-medium">{ent.nif || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Adresse</span><p>{ent.adresse || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Téléphone</span><p>{ent.telephone || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Email</span><p>{ent.email || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Situation fiscale</span><p>{ent.situationFiscale || "—"}</p></div>
+                </div>
+              </div>
+            );
+          })()}
+          {infoModal?.type === "correction" && (() => {
+            const corr = correctionCache[infoModal.id];
+            if (!corr) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">Numéro</span><p className="font-medium">{corr.numero || `#${corr.id}`}</p></div>
+                  <div><span className="text-muted-foreground">Statut</span><p className="font-medium">{corr.statut}</p></div>
+                  <div><span className="text-muted-foreground">Entreprise</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Autorité contractante</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Date de dépôt</span><p>{corr.dateDepot ? new Date(corr.dateDepot).toLocaleDateString("fr-FR") : "—"}</p></div>
+                  {corr.motifRejet && <div className="col-span-2"><span className="text-muted-foreground">Motif de rejet</span><p className="text-destructive">{corr.motifRejet}</p></div>}
+                </div>
+              </div>
+            );
+          })()}
+          {infoModal?.type === "marche" && (() => {
+            const m = marcheCache[infoModal.id];
+            if (!m) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">N° Marché</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
+                  <div><span className="text-muted-foreground">Statut</span><p className="font-medium">{m.statut}</p></div>
+                  <div><span className="text-muted-foreground">Date signature</span><p>{m.dateSignature ? new Date(m.dateSignature).toLocaleDateString("fr-FR") : "—"}</p></div>
+                  <div><span className="text-muted-foreground">Montant TTC</span><p>{m.montantContratTtc != null ? `${m.montantContratTtc.toLocaleString("fr-FR")} MRU` : "—"}</p></div>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
