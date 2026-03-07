@@ -142,9 +142,9 @@ const Utilisations = () => {
   };
 
   const getFilteredRequirements = (): DocumentRequirementDto[] => {
-    const docTypes = createType === "DOUANIER" ? DOUANE_DOC_TYPES : TVA_DOC_TYPES;
+    const tag = createType === "DOUANIER" ? SOUS_SECTION_TAG_DOUANE : SOUS_SECTION_TAG_TVA;
     return gedRequirements
-      .filter((r) => docTypes.includes(r.typeDocument))
+      .filter((r) => hasSousTag(r.description, tag))
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
