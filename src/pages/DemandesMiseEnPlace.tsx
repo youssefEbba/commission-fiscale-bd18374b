@@ -6,7 +6,7 @@ import {
   CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
-  DocumentDto,
+  DocumentDto, entrepriseApi, marcheApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -90,10 +90,32 @@ const DemandesMiseEnPlace = () => {
   const [montantTVAInt, setMontantTVAInt] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
 
+  // Lookup caches for names
+  const [correctionNames, setCorrectionNames] = useState<Record<number, string>>({});
+  const [marcheNames, setMarcheNames] = useState<Record<number, string>>({});
+  const [entrepriseNames, setEntrepriseNames] = useState<Record<number, string>>({});
+
   const fetchCertificats = async () => {
     setLoading(true);
     try {
-      setCertificats(await certificatCreditApi.getAll());
+      const data = await certificatCreditApi.getAll();
+      setCertificats(data);
+
+      // Collect unique IDs to resolve
+      const corrIds = [...new Set(data.map(c => c.demandeCorrectionId).filter(Boolean))] as number[];
+      const marcheIds = [...new Set(data.map(c => c.marcheId).filter(Boolean))] as number[];
+      const entIds = [...new Set(data.map(c => c.entrepriseId).filter(Boolean))] as number[];
+
+      // Fetch names in parallel
+      const [corrResults, marcheResults, entResults] = await Promise.all([
+        Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, name: r.numero || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+        Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, name: r.numeroMarche || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+        Promise.all(entIds.map(id => entrepriseApi.getById(id).then(r => ({ id, name: r.raisonSociale || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+      ]);
+
+      setCorrectionNames(Object.fromEntries(corrResults.map(r => [r.id, r.name])));
+      setMarcheNames(Object.fromEntries(marcheResults.map(r => [r.id, r.name])));
+      setEntrepriseNames(Object.fromEntries(entResults.map(r => [r.id, r.name])));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
     } finally { setLoading(false); }
@@ -207,8 +229,11 @@ const DemandesMiseEnPlace = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
+  const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId ? entrepriseNames[c.entrepriseId] : null) || "—";
+  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId ? correctionNames[c.demandeCorrectionId] : null) || "—";
+  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId ? marcheNames[c.marcheId] : null) || "—";
 
+  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE";
 
   return (
@@ -270,9 +295,9 @@ const DemandesMiseEnPlace = () => {
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
-                      <TableCell>{c.entrepriseNom || "—"}</TableCell>
-                      <TableCell>{c.demandeCorrectionNumero || (c.demandeCorrectionId ? `#${c.demandeCorrectionId}` : "—")}</TableCell>
-                      <TableCell>{c.marcheIntitule || (c.marcheId ? `#${c.marcheId}` : "—")}</TableCell>
+                      <TableCell>{getEntrepriseName(c)}</TableCell>
+                      <TableCell>{getCorrectionName(c)}</TableCell>
+                      <TableCell>{getMarcheName(c)}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
@@ -308,11 +333,11 @@ const DemandesMiseEnPlace = () => {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseNom || "—"}</p></div>
+                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{getEntrepriseName(selected)}</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">{selected.demandeCorrectionNumero || (selected.demandeCorrectionId ? `#${selected.demandeCorrectionId}` : "—")}</p></div>
-                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">{selected.marcheIntitule || (selected.marcheId ? `#${selected.marcheId}` : "—")}</p></div>
+                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">{getCorrectionName(selected)}</p></div>
+                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">{getMarcheName(selected)}</p></div>
               </div>
 
               {/* Documents */}
