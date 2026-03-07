@@ -229,7 +229,9 @@ const DemandesMiseEnPlace = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
+  const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId ? entrepriseNames[c.entrepriseId] : null) || "—";
+  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId ? correctionNames[c.demandeCorrectionId] : null) || "—";
+  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId ? marcheNames[c.marcheId] : null) || "—";
 
   const canCreate = role === "AUTORITE_CONTRACTANTE";
 
