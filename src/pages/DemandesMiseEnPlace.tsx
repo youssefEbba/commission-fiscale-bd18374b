@@ -88,7 +88,7 @@ const DemandesMiseEnPlace = () => {
   const [showMontants, setShowMontants] = useState<CertificatCreditDto | null>(null);
   const [montantCordon, setMontantCordon] = useState("");
   const [montantTVAInt, setMontantTVAInt] = useState("");
-  const [savingMontants, setSavingMontants] = false);
+  const [savingMontants, setSavingMontants] = useState(false);
 
   // Lookup caches for names
   const [correctionNames, setCorrectionNames] = useState<Record<number, string>>({});
