@@ -110,14 +110,14 @@ const DemandesMiseEnPlace = () => {
 
       // Fetch names in parallel
       const [corrResults, marcheResults, entResults] = await Promise.all([
-        Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, name: r.numero || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
-        Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, name: r.numeroMarche || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
-        Promise.all(entIds.map(id => entrepriseApi.getById(id).then(r => ({ id, name: r.raisonSociale || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+        Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
+        Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
+        Promise.all(entIds.map(id => entrepriseApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
       ]);
 
-      setCorrectionNames(Object.fromEntries(corrResults.map(r => [r.id, r.name])));
-      setMarcheNames(Object.fromEntries(marcheResults.map(r => [r.id, r.name])));
-      setEntrepriseNames(Object.fromEntries(entResults.map(r => [r.id, r.name])));
+      setCorrectionCache(Object.fromEntries(corrResults.filter(Boolean).map(r => [r!.id, r!.data])));
+      setMarcheCache(Object.fromEntries(marcheResults.filter(Boolean).map(r => [r!.id, r!.data])));
+      setEntrepriseCache(Object.fromEntries(entResults.filter(Boolean).map(r => [r!.id, r!.data])));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
     } finally { setLoading(false); }
