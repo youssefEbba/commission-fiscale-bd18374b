@@ -25,6 +25,7 @@ import Marches from "./pages/Marches";
 import Delegues from "./pages/Delegues";
 import GestionDocuments from "./pages/GestionDocuments";
 import NotFound from "./pages/NotFound";
+import Presentation from "./pages/Presentation";
 
 const queryClient = new QueryClient();
 
