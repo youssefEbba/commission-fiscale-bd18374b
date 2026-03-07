@@ -173,7 +173,7 @@ const Utilisations = () => {
     } finally { setUploading(false); }
   };
 
-  const transitions = ROLE_TRANSITIONS[role] || [];
+  // transitions are now per-row, see rendering below
 
   const filtered = data.filter((u) => {
     const ms = (u.certificatReference || "").toLowerCase().includes(search.toLowerCase()) ||
