@@ -37,11 +37,11 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
 
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   DGI: [
-    { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Vérifier (DGI)" },
-    { from: ["DEMANDE", "EN_VERIFICATION_DGI"], to: "ANNULE", label: "Annuler" },
+    { from: ["DEMANDE"], to: "EN_OUVERTURE_DGTCP", label: "Vérifier (DGI)" },
+    { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
   ],
   DGTCP: [
-    { from: ["EN_VERIFICATION_DGI"], to: "EN_OUVERTURE_DGTCP", label: "Viser (DGTCP)", icon: "visa" },
+    { from: ["EN_OUVERTURE_DGTCP"], to: "EN_VALIDATION_PRESIDENT", label: "Viser (DGTCP)", icon: "visa" },
   ],
   PRESIDENT: [
     { from: ["EN_OUVERTURE_DGTCP"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
