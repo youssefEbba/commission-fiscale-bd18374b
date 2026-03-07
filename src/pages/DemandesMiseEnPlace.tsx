@@ -586,11 +586,11 @@ const DemandesMiseEnPlace = () => {
             </p>
             <div className="space-y-2">
               <Label>Motif du rejet *</Label>
-              <textarea
-                className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              <Textarea
                 placeholder="Veuillez préciser le motif du rejet..."
                 value={motifRejet}
                 onChange={(e) => setMotifRejet(e.target.value)}
+                className="min-h-[100px]"
               />
             </div>
           </div>
