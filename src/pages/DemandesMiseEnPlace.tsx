@@ -338,13 +338,13 @@ const DemandesMiseEnPlace = () => {
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
                           {/* DGTCP: renseigner montants avant de viser */}
-                          {role === "DGTCP" && c.statut === "EN_VERIFICATION_DGI" && c.montantCordon == null && (
+                          {role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null && (
                             <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
                               <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                             </Button>
                           )}
                           {/* DGTCP Reject button */}
-                          {role === "DGTCP" && c.statut === "EN_VERIFICATION_DGI" && (
+                          {role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && (
                             <Button variant="destructive" size="sm" onClick={() => { setShowReject(c); setMotifRejet(""); }}>
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
