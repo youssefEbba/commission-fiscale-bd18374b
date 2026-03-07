@@ -15,20 +15,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-// Tags stored in description to identify sub-section
-const SOUS_SECTION_TAG_DOUANE = "[DOUANE]";
-const SOUS_SECTION_TAG_TVA = "[TVA]";
-
-const hasSousTag = (desc: string | undefined, tag: string) => (desc || "").includes(tag);
-const stripSousTags = (desc: string | undefined) => (desc || "").replace(/\[(DOUANE|TVA)\]\s*/g, "").trim();
-
-type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean; sousTag?: string };
+type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", sousTag: SOUS_SECTION_TAG_DOUANE, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_DOUANE) },
-  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", sousTag: SOUS_SECTION_TAG_TVA, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_TVA) },
+  { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
+  { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
