@@ -94,7 +94,7 @@ const Utilisations = () => {
   // Document upload
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
-  const [docType, setDocType] = useState<TypeDocumentUtilisation>("DECLARATION_DOUANE");
+  const [docType, setDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
