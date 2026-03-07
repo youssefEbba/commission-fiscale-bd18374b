@@ -40,14 +40,13 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
     { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Vérifier (DGI)" },
     { from: ["DEMANDE", "EN_VERIFICATION_DGI"], to: "ANNULE", label: "Annuler" },
   ],
-  PRESIDENT: [
-    { from: ["EN_VERIFICATION_DGI"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
-    { from: ["DEMANDE", "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT"], to: "ANNULE", label: "Annuler" },
-  ],
   DGTCP: [
-    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Viser", icon: "visa" },
-    { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit" },
+    { from: ["EN_VERIFICATION_DGI"], to: "EN_OUVERTURE_DGTCP", label: "Viser (DGTCP)", icon: "visa" },
+  ],
+  PRESIDENT: [
+    { from: ["EN_OUVERTURE_DGTCP"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider, signer & ouvrir le crédit" },
   ],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
