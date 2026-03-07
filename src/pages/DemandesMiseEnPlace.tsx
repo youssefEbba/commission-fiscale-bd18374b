@@ -37,14 +37,14 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
 
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   DGI: [
-    { from: ["DEMANDE"], to: "EN_OUVERTURE_DGTCP", label: "Vérifier (DGI)" },
+    { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Prendre en charge (DGI)" },
+    { from: ["EN_VERIFICATION_DGI"], to: "EN_OUVERTURE_DGTCP", label: "Vérifier & transmettre au DGTCP" },
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
   ],
   DGTCP: [
-    { from: ["EN_OUVERTURE_DGTCP"], to: "EN_VALIDATION_PRESIDENT", label: "Viser (DGTCP)", icon: "visa" },
+    { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit", icon: "visa" },
   ],
   PRESIDENT: [
-    { from: ["EN_OUVERTURE_DGTCP"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
     { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
     { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider, signer & ouvrir le crédit" },
   ],
@@ -575,10 +575,10 @@ const DemandesMiseEnPlace = () => {
                 if (!showMontants) return;
                 setSavingMontants(true);
                 try {
-                  // Save montants first, then visa DGTCP
+                  // Save montants first, then open credit
                   await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
-                  await certificatCreditApi.updateStatut(showMontants.id, "EN_OUVERTURE_DGTCP");
-                  toast({ title: "Succès", description: "Montants enregistrés et demande visée par le DGTCP !" });
+                  await certificatCreditApi.updateStatut(showMontants.id, "OUVERT");
+                  toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert !" });
                   setShowMontants(null);
                   fetchCertificats();
                 } catch (e: any) {
