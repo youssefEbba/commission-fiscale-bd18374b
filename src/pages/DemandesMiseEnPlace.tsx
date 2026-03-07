@@ -106,7 +106,12 @@ const DemandesMiseEnPlace = () => {
   const fetchCertificats = async () => {
     setLoading(true);
     try {
-      const data = await certificatCreditApi.getAll();
+      let data: CertificatCreditDto[];
+      if (role === "ENTREPRISE" && user?.entrepriseId) {
+        data = await certificatCreditApi.getByEntreprise(user.entrepriseId);
+      } else {
+        data = await certificatCreditApi.getAll();
+      }
       setCertificats(data);
 
       // Collect unique IDs to resolve
