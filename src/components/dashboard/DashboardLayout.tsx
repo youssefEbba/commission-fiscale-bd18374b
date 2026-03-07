@@ -59,7 +59,7 @@ const NAV_ENTRIES: NavEntry[] = [
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
       // P6 (Modifications) : AC/ENT soumettent, DGTCP analyse, DGI consulté, PRESIDENT valide
-      { label: "Modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { label: "Modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       // P7 (Transfert Douane→Intérieur) : ENT demande, DGTCP contrôle, DGD consulté, PRESIDENT valide
       { label: "Transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       // P8 (Clôture/Archivage/Reporting) : DGTCP prépare, PRESIDENT valide, DGB consulte reporting
