@@ -233,6 +233,7 @@ const DemandesMiseEnPlace = () => {
   const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId ? correctionNames[c.demandeCorrectionId] : null) || "—";
   const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId ? marcheNames[c.marcheId] : null) || "—";
 
+  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE";
 
   return (
