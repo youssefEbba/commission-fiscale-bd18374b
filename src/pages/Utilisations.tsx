@@ -403,8 +403,8 @@ const Utilisations = () => {
               </TabsList>
             </Tabs>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="space-y-3">
+              <div>
                 <Label>Certificat de crédit *</Label>
                 <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
@@ -415,70 +415,6 @@ const Utilisations = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Montant (MRU) <span className="text-xs text-muted-foreground">(optionnel, auto-calculé)</span></Label>
-                <Input type="number" value={form.montant || ""} onChange={(e) => setForm({ ...form, montant: Number(e.target.value) || undefined })} placeholder="Laissez vide pour calcul auto" />
-              </div>
-
-              {createType === "DOUANIER" && (
-                <>
-                  <div>
-                    <Label>N° Déclaration</Label>
-                    <Input value={form.numeroDeclaration || ""} onChange={(e) => setForm({ ...form, numeroDeclaration: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>N° Bulletin</Label>
-                    <Input value={form.numeroBulletin || ""} onChange={(e) => setForm({ ...form, numeroBulletin: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Date déclaration</Label>
-                    <Input type="datetime-local" value={form.dateDeclaration || ""} onChange={(e) => setForm({ ...form, dateDeclaration: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Montant Droits</Label>
-                    <Input type="number" value={form.montantDroits || ""} onChange={(e) => setForm({ ...form, montantDroits: Number(e.target.value) || undefined })} />
-                  </div>
-                  <div>
-                    <Label>Montant TVA Douane</Label>
-                    <Input type="number" value={form.montantTVA || ""} onChange={(e) => setForm({ ...form, montantTVA: Number(e.target.value) || undefined })} />
-                  </div>
-                  <div className="flex items-center gap-2 pt-5">
-                    <Switch checked={form.enregistreeSYDONIA || false} onCheckedChange={(v) => setForm({ ...form, enregistreeSYDONIA: v })} />
-                    <Label>Enregistrée SYDONIA</Label>
-                  </div>
-                </>
-              )}
-
-              {createType === "TVA_INTERIEURE" && (
-                <>
-                  <div>
-                    <Label>Type d'achat</Label>
-                     <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
-                      <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ACHAT_LOCAL">Achat local</SelectItem>
-                        <SelectItem value="DECOMPTE">Décompte</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>N° Facture</Label>
-                    <Input value={form.numeroFacture || ""} onChange={(e) => setForm({ ...form, numeroFacture: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Date facture</Label>
-                    <Input type="datetime-local" value={form.dateFacture || ""} onChange={(e) => setForm({ ...form, dateFacture: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Montant TVA Intérieure</Label>
-                    <Input type="number" value={form.montantTVAInterieure || ""} onChange={(e) => setForm({ ...form, montantTVAInterieure: Number(e.target.value) || undefined })} />
-                  </div>
-                  <div>
-                    <Label>N° Décompte</Label>
-                    <Input value={form.numeroDecompte || ""} onChange={(e) => setForm({ ...form, numeroDecompte: e.target.value })} />
-                  </div>
-                </>
-              )}
             </div>
 
             {/* Documents requis (GED) */}
