@@ -231,9 +231,9 @@ const DemandesMiseEnPlace = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId ? entrepriseNames[c.entrepriseId] : null) || "—";
-  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId ? correctionNames[c.demandeCorrectionId] : null) || "—";
-  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId ? marcheNames[c.marcheId] : null) || "—";
+  const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId && entrepriseCache[c.entrepriseId]?.raisonSociale) || "—";
+  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId]?.numero) || "—";
+  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE";
