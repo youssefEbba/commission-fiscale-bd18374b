@@ -224,14 +224,15 @@ const GestionDocuments = () => {
           </p>
         </div>
 
-        {PROCESSUS_OPTIONS.map((p) => {
-          const q = queriesByProcessus[p.value];
-          const sorted = sortReqs(q.data);
+        {PROCESSUS_SECTIONS.map((section) => {
+          const q = queriesByProcessus[section.processus];
+          const filteredReqs = section.filterFn ? q.data.filter(section.filterFn) : q.data;
+          const sorted = sortReqs(filteredReqs);
           return (
-            <Card key={p.value}>
+            <Card key={section.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="text-lg text-primary">{p.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(p.value)}>
+                <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
+                <Button size="sm" onClick={() => openCreate(section.processus)}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un document
                 </Button>
               </CardHeader>
@@ -239,7 +240,7 @@ const GestionDocuments = () => {
                 {q.isLoading ? (
                   <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
                 ) : sorted.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré pour ce processus.</p>
+                  <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré.</p>
                 ) : (
                   <div className="overflow-auto">
                     <Table>
