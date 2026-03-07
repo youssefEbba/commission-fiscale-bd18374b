@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Conventions from "./pages/Conventions";
 import Demandes from "./pages/Demandes";
 import Certificats from "./pages/Certificats";
+import DemandesMiseEnPlace from "./pages/DemandesMiseEnPlace";
 import Utilisations from "./pages/Utilisations";
 import Utilisateurs from "./pages/Utilisateurs";
 import Roles from "./pages/Roles";
