@@ -7,6 +7,7 @@ import {
   certificatCreditApi, CertificatCreditDto,
   UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
   TypeDocumentUtilisation, DocumentDto,
+  documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText } from "lucide-react";
+import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Doc types belonging to Douane vs TVA for GED filtering
+const DOUANE_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
+  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+];
+const TVA_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
+];
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   DEMANDEE: "bg-blue-100 text-blue-800",
@@ -91,13 +102,17 @@ const Utilisations = () => {
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
 
-  // Document upload
+  // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docType, setDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
+
+  // GED requirements + create-time document uploads
+  const [gedRequirements, setGedRequirements] = useState<DocumentRequirementDto[]>([]);
+  const [createDocFiles, setCreateDocFiles] = useState<Record<string, File>>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -111,12 +126,16 @@ const Utilisations = () => {
   const openCreate = async () => {
     setCreateType("DOUANIER");
     setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
+    setCreateDocFiles({});
     try {
-      if (role === "ENTREPRISE" && (user as any)?.entrepriseId) {
-        setCertificats(await certificatCreditApi.getByEntreprise((user as any).entrepriseId));
-      } else {
-        setCertificats(await certificatCreditApi.getAll());
-      }
+      const [certs, reqs] = await Promise.all([
+        role === "ENTREPRISE" && (user as any)?.entrepriseId
+          ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
+          : certificatCreditApi.getAll(),
+        documentRequirementApi.getByProcessus("UTILISATION_CI"),
+      ]);
+      setCertificats(certs);
+      setGedRequirements(reqs);
     } catch { /* ignore */ }
     setShowCreate(true);
   };
@@ -124,6 +143,18 @@ const Utilisations = () => {
   const handleCreateTypeChange = (t: UtilisationType) => {
     setCreateType(t);
     setForm({ ...(t === "DOUANIER" ? emptyDouane : emptyTVA), certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
+    setCreateDocFiles({});
+  };
+
+  const getFilteredRequirements = (): DocumentRequirementDto[] => {
+    const docTypes = createType === "DOUANIER" ? DOUANE_DOC_TYPES : TVA_DOC_TYPES;
+    return gedRequirements
+      .filter((r) => docTypes.includes(r.typeDocument))
+      .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
+  };
+
+  const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
+    return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };
 
   const handleCreate = async () => {
@@ -131,10 +162,26 @@ const Utilisations = () => {
       toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
+    const missing = getMissingObligatoryDocs();
+    if (missing.length > 0) {
+      toast({
+        title: "Documents manquants",
+        description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
     setCreating(true);
     try {
-      await utilisationCreditApi.create(form as CreateUtilisationCreditRequest);
-      toast({ title: "Succès", description: "Utilisation créée" });
+      const created = await utilisationCreditApi.create(form as CreateUtilisationCreditRequest);
+      // Upload all attached documents
+      const uploadEntries = Object.entries(createDocFiles);
+      if (uploadEntries.length > 0) {
+        for (const [type, file] of uploadEntries) {
+          await utilisationCreditApi.uploadDocument(created.id, type as TypeDocumentUtilisation, file);
+        }
+      }
+      toast({ title: "Succès", description: `Utilisation créée avec ${uploadEntries.length} document(s)` });
       setShowCreate(false);
       fetchData();
     } catch (e: any) {
@@ -435,10 +482,66 @@ const Utilisations = () => {
               )}
             </div>
 
+            {/* Documents requis (GED) */}
+            {getFilteredRequirements().length > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Documents requis
+                  <span className="text-xs text-muted-foreground font-normal">
+                    ({getMissingObligatoryDocs().length > 0
+                      ? `${getMissingObligatoryDocs().length} obligatoire(s) manquant(s)`
+                      : "Tous les documents obligatoires sont joints"})
+                  </span>
+                </h4>
+                <div className="space-y-2">
+                  {getFilteredRequirements().map((req) => {
+                    const hasFile = !!createDocFiles[req.typeDocument];
+                    return (
+                      <div key={req.id} className={`flex items-center gap-3 p-2.5 rounded-lg border text-sm ${hasFile ? "border-emerald-300 bg-emerald-50/50" : req.obligatoire ? "border-orange-300 bg-orange-50/50" : "border-border"}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {hasFile ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /> : req.obligatoire ? <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                            <span className="font-medium truncate">{formatDocLabel(req.typeDocument)}</span>
+                            {req.obligatoire && <Badge variant="destructive" className="text-[10px] px-1 py-0 shrink-0">Obligatoire</Badge>}
+                            {req.description && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild><Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" /></TooltipTrigger>
+                                  <TooltipContent><p className="max-w-xs text-xs">{req.description}</p></TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                          {hasFile && <span className="text-xs text-emerald-600 ml-5.5">{createDocFiles[req.typeDocument].name}</span>}
+                        </div>
+                        <div className="shrink-0">
+                          <Label htmlFor={`doc-${req.typeDocument}`} className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors">
+                            <Upload className="h-3 w-3" />
+                            {hasFile ? "Remplacer" : "Choisir"}
+                          </Label>
+                          <input
+                            id={`doc-${req.typeDocument}`}
+                            type="file"
+                            className="hidden"
+                            accept={req.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : f === "IMAGE" ? ".jpg,.jpeg,.png" : "").join(",")}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) setCreateDocFiles((prev) => ({ ...prev, [req.typeDocument]: file }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
               <Button onClick={handleCreate} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Créer
+                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Soumettre
               </Button>
             </div>
           </div>
@@ -490,5 +593,13 @@ const Utilisations = () => {
     </DashboardLayout>
   );
 };
+
+function formatDocLabel(type: string): string {
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bCi\b/g, "CI")
+    .replace(/\bTva\b/g, "TVA");
+}
 
 export default Utilisations;

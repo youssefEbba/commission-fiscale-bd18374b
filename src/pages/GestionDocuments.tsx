@@ -15,10 +15,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-const PROCESSUS_OPTIONS: { value: ProcessusType; label: string }[] = [
-  { value: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
-  { value: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { value: "UTILISATION_CI", label: "Utilisation CI" },
+// Document types that belong to Douane sub-type
+const DOUANE_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
+  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+];
+// Document types that belong to TVA Intérieure sub-type
+const TVA_DOC_TYPES = [
+  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
+];
+
+type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean };
+
+const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
+  { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
+  { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
+  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", filterFn: (r) => DOUANE_DOC_TYPES.includes(r.typeDocument) },
+  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure (Achats locaux)", filterFn: (r) => TVA_DOC_TYPES.includes(r.typeDocument) },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
@@ -211,14 +224,15 @@ const GestionDocuments = () => {
           </p>
         </div>
 
-        {PROCESSUS_OPTIONS.map((p) => {
-          const q = queriesByProcessus[p.value];
-          const sorted = sortReqs(q.data);
+        {PROCESSUS_SECTIONS.map((section) => {
+          const q = queriesByProcessus[section.processus];
+          const filteredReqs = section.filterFn ? q.data.filter(section.filterFn) : q.data;
+          const sorted = sortReqs(filteredReqs);
           return (
-            <Card key={p.value}>
+            <Card key={section.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="text-lg text-primary">{p.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(p.value)}>
+                <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
+                <Button size="sm" onClick={() => openCreate(section.processus)}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un document
                 </Button>
               </CardHeader>
@@ -226,7 +240,7 @@ const GestionDocuments = () => {
                 {q.isLoading ? (
                   <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
                 ) : sorted.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré pour ce processus.</p>
+                  <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré.</p>
                 ) : (
                   <div className="overflow-auto">
                     <Table>
