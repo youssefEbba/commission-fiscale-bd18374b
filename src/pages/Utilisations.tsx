@@ -5,7 +5,8 @@ import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
   CreateUtilisationCreditRequest, UTILISATION_STATUT_LABELS,
   certificatCreditApi, CertificatCreditDto,
-  UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
+  UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
+  TypeDocumentUtilisation, DocumentDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -30,17 +31,33 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   REJETEE: "bg-red-100 text-red-800",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: UtilisationStatut[]; to: UtilisationStatut; label: string }[]> = {
-  DGD: [
-    { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
-    { from: ["EN_VERIFICATION"], to: "VISE", label: "Viser" },
-    { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
-  ],
-  DGTCP: [
-    { from: ["VISE"], to: "LIQUIDEE", label: "Liquider" },
-    { from: ["VISE"], to: "APUREE", label: "Apurer" },
-    { from: ["DEMANDEE", "EN_VERIFICATION", "VISE"], to: "REJETEE", label: "Rejeter" },
-  ],
+// Type-aware transitions: DGD handles Douane, DGTCP handles TVA + Douane final steps
+const getTransitions = (role: string, type?: UtilisationType): { from: UtilisationStatut[]; to: UtilisationStatut; label: string }[] => {
+  if (role === "DGD") {
+    return [
+      { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
+      { from: ["EN_VERIFICATION"], to: "VISE", label: "Viser" },
+      { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
+    ];
+  }
+  if (role === "DGTCP") {
+    if (type === "DOUANIER") {
+      return [
+        { from: ["VISE"], to: "VALIDEE", label: "Valider" },
+        { from: ["VISE", "VALIDEE"], to: "LIQUIDEE", label: "Liquider" },
+        { from: ["VISE", "VALIDEE"], to: "REJETEE", label: "Rejeter" },
+      ];
+    }
+    if (type === "TVA_INTERIEURE") {
+      return [
+        { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
+        { from: ["EN_VERIFICATION"], to: "VALIDEE", label: "Valider" },
+        { from: ["VALIDEE"], to: "APUREE", label: "Apurer" },
+        { from: ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"], to: "REJETEE", label: "Rejeter" },
+      ];
+    }
+  }
+  return [];
 };
 
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
@@ -77,7 +94,7 @@ const Utilisations = () => {
   // Document upload
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
-  const [docType, setDocType] = useState<TypeDocumentUtilisation>("DECLARATION_DOUANE");
+  const [docType, setDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
@@ -110,8 +127,8 @@ const Utilisations = () => {
   };
 
   const handleCreate = async () => {
-    if (!form.certificatCreditId || !form.montant) {
-      toast({ title: "Erreur", description: "Certificat et montant requis", variant: "destructive" });
+    if (!form.certificatCreditId) {
+      toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
     setCreating(true);
@@ -156,7 +173,7 @@ const Utilisations = () => {
     } finally { setUploading(false); }
   };
 
-  const transitions = ROLE_TRANSITIONS[role] || [];
+  // transitions are now per-row, see rendering below
 
   const filtered = data.filter((u) => {
     const ms = (u.certificatReference || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -264,7 +281,7 @@ const Utilisations = () => {
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => setSelected(u)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(u.id)}><FileText className="h-4 w-4" /></Button>
-                          {transitions.map((t) =>
+                          {getTransitions(role, u.type).map((t) =>
                             t.from.includes(u.statut) ? (
                               <Button key={t.to} variant={t.to === "REJETEE" ? "destructive" : "default"} size="sm" disabled={actionLoading === u.id} onClick={() => handleStatut(u.id, t.to)}>
                                 {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -353,8 +370,8 @@ const Utilisations = () => {
                 </Select>
               </div>
               <div>
-                <Label>Montant (MRU) *</Label>
-                <Input type="number" value={form.montant || ""} onChange={(e) => setForm({ ...form, montant: Number(e.target.value) || undefined })} />
+                <Label>Montant (MRU) <span className="text-xs text-muted-foreground">(optionnel, auto-calculé)</span></Label>
+                <Input type="number" value={form.montant || ""} onChange={(e) => setForm({ ...form, montant: Number(e.target.value) || undefined })} placeholder="Laissez vide pour calcul auto" />
               </div>
 
               {createType === "DOUANIER" && (
@@ -390,12 +407,11 @@ const Utilisations = () => {
                 <>
                   <div>
                     <Label>Type d'achat</Label>
-                    <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
+                     <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
                       <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ACHAT_LOCAL">Achat local</SelectItem>
-                        <SelectItem value="SERVICE">Service</SelectItem>
-                        <SelectItem value="TRAVAUX">Travaux</SelectItem>
+                        <SelectItem value="DECOMPTE">Décompte</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -456,7 +472,11 @@ const Utilisations = () => {
               <Select value={docType} onValueChange={(v) => setDocType(v as TypeDocumentUtilisation)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {UTILISATION_DOCUMENT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {(() => {
+                    const sel = data.find(u => u.id === docDialog);
+                    const types = sel?.type === "DOUANIER" ? UTILISATION_DOC_TYPES_DOUANE : sel?.type === "TVA_INTERIEURE" ? UTILISATION_DOC_TYPES_TVA : UTILISATION_DOCUMENT_TYPES;
+                    return types.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>);
+                  })()}
                 </SelectContent>
               </Select>
               <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
