@@ -346,13 +346,6 @@ const DemandesMiseEnPlace = () => {
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
-                          {/* Président: Valider & signer après ouverture */}
-                          {role === "PRESIDENT" && c.statut === "OUVERT" && (
-                            <Button variant="default" size="sm" disabled={generatingCert === c.id} onClick={() => handlePresidentValidate(c)}>
-                              {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-                              Valider & signer
-                            </Button>
-                          )}
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
                               <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
