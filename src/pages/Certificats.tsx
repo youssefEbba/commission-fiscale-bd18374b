@@ -69,15 +69,6 @@ const Certificats = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
 
-  // Creation dialog state
-  const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
-  const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
-  const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
-  const [docFiles, setDocFiles] = useState<Record<string, File>>({});
-  const [uploadingDocs, setUploadingDocs] = useState(false);
-
   // Detail documents
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
