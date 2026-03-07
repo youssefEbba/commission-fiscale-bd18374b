@@ -266,7 +266,7 @@ const DemandesMiseEnPlace = () => {
       // Convertir en fichier et uploader
       const pdfBlob = doc.output("blob");
       const pdfFile = new File([pdfBlob], `certificat-credit-${c.id}.pdf`, { type: "application/pdf" });
-      await certificatCreditApi.uploadDocument(c.id, "LETTRE_SAISINE", pdfFile);
+      await certificatCreditApi.uploadDocument(c.id, "CERTIFICAT_CREDIT_IMPOTS", pdfFile);
 
       toast({ title: "Succès", description: "Certificat généré et attaché au crédit" });
       fetchCertificats();
