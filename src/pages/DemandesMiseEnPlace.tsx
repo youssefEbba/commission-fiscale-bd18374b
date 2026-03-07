@@ -88,12 +88,34 @@ const DemandesMiseEnPlace = () => {
   const [showMontants, setShowMontants] = useState<CertificatCreditDto | null>(null);
   const [montantCordon, setMontantCordon] = useState("");
   const [montantTVAInt, setMontantTVAInt] = useState("");
-  const [savingMontants, setSavingMontants] = useState(false);
+  const [savingMontants, setSavingMontants] = false);
+
+  // Lookup caches for names
+  const [correctionNames, setCorrectionNames] = useState<Record<number, string>>({});
+  const [marcheNames, setMarcheNames] = useState<Record<number, string>>({});
+  const [entrepriseNames, setEntrepriseNames] = useState<Record<number, string>>({});
 
   const fetchCertificats = async () => {
     setLoading(true);
     try {
-      setCertificats(await certificatCreditApi.getAll());
+      const data = await certificatCreditApi.getAll();
+      setCertificats(data);
+
+      // Collect unique IDs to resolve
+      const corrIds = [...new Set(data.map(c => c.demandeCorrectionId).filter(Boolean))] as number[];
+      const marcheIds = [...new Set(data.map(c => c.marcheId).filter(Boolean))] as number[];
+      const entIds = [...new Set(data.map(c => c.entrepriseId).filter(Boolean))] as number[];
+
+      // Fetch names in parallel
+      const [corrResults, marcheResults, entResults] = await Promise.all([
+        Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, name: r.numero || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+        Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, name: r.numeroMarche || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+        Promise.all(entIds.map(id => entrepriseApi.getById(id).then(r => ({ id, name: r.raisonSociale || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+      ]);
+
+      setCorrectionNames(Object.fromEntries(corrResults.map(r => [r.id, r.name])));
+      setMarcheNames(Object.fromEntries(marcheResults.map(r => [r.id, r.name])));
+      setEntrepriseNames(Object.fromEntries(entResults.map(r => [r.id, r.name])));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
     } finally { setLoading(false); }
