@@ -31,17 +31,33 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   REJETEE: "bg-red-100 text-red-800",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: UtilisationStatut[]; to: UtilisationStatut; label: string }[]> = {
-  DGD: [
-    { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
-    { from: ["EN_VERIFICATION"], to: "VISE", label: "Viser" },
-    { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
-  ],
-  DGTCP: [
-    { from: ["VISE"], to: "LIQUIDEE", label: "Liquider" },
-    { from: ["VISE"], to: "APUREE", label: "Apurer" },
-    { from: ["DEMANDEE", "EN_VERIFICATION", "VISE"], to: "REJETEE", label: "Rejeter" },
-  ],
+// Type-aware transitions: DGD handles Douane, DGTCP handles TVA + Douane final steps
+const getTransitions = (role: string, type?: UtilisationType): { from: UtilisationStatut[]; to: UtilisationStatut; label: string }[] => {
+  if (role === "DGD") {
+    return [
+      { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
+      { from: ["EN_VERIFICATION"], to: "VISE", label: "Viser" },
+      { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
+    ];
+  }
+  if (role === "DGTCP") {
+    if (type === "DOUANIER") {
+      return [
+        { from: ["VISE"], to: "VALIDEE", label: "Valider" },
+        { from: ["VISE", "VALIDEE"], to: "LIQUIDEE", label: "Liquider" },
+        { from: ["VISE", "VALIDEE"], to: "REJETEE", label: "Rejeter" },
+      ];
+    }
+    if (type === "TVA_INTERIEURE") {
+      return [
+        { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
+        { from: ["EN_VERIFICATION"], to: "VALIDEE", label: "Valider" },
+        { from: ["VALIDEE"], to: "APUREE", label: "Apurer" },
+        { from: ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"], to: "REJETEE", label: "Rejeter" },
+      ];
+    }
+  }
+  return [];
 };
 
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
