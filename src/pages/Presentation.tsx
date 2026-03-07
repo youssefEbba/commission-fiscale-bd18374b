@@ -55,7 +55,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: FilePlus,
-    title: "6. Demande de Mise en Place CI",
+    title: "4. Demande de Mise en Place CI",
     color: "from-green-600 to-green-800",
     points: [
       "Workflow complet : AC → DGI → DGTCP → Président",
