@@ -102,13 +102,17 @@ const Utilisations = () => {
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
 
-  // Document upload
+  // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docType, setDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
+
+  // GED requirements + create-time document uploads
+  const [gedRequirements, setGedRequirements] = useState<DocumentRequirementDto[]>([]);
+  const [createDocFiles, setCreateDocFiles] = useState<Record<string, File>>({});
 
   const fetchData = async () => {
     setLoading(true);
