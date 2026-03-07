@@ -6,7 +6,7 @@ import {
   CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
-  DocumentDto,
+  DocumentDto, entrepriseApi, marcheApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
