@@ -86,15 +86,20 @@ const GestionDocuments = () => {
     queryKey: ["document-requirements", "MISE_EN_PLACE_CI"],
     queryFn: () => documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
   });
-  const utilisationQuery = useQuery({
-    queryKey: ["document-requirements", "UTILISATION_CI"],
-    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI"),
+  const exterieurQuery = useQuery({
+    queryKey: ["document-requirements", "UTILISATION_CI_EXTERIEUR"],
+    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
+  });
+  const interieurQuery = useQuery({
+    queryKey: ["document-requirements", "UTILISATION_CI_INTERIEUR"],
+    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
   });
 
-  const queriesByProcessus: Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }> = {
+  const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
     CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
     MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
-    UTILISATION_CI: { data: utilisationQuery.data || [], isLoading: utilisationQuery.isLoading },
+    UTILISATION_CI_EXTERIEUR: { data: exterieurQuery.data || [], isLoading: exterieurQuery.isLoading },
+    UTILISATION_CI_INTERIEUR: { data: interieurQuery.data || [], isLoading: interieurQuery.isLoading },
   };
 
   const createMutation = useMutation({
