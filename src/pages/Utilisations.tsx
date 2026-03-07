@@ -370,8 +370,8 @@ const Utilisations = () => {
                 </Select>
               </div>
               <div>
-                <Label>Montant (MRU) *</Label>
-                <Input type="number" value={form.montant || ""} onChange={(e) => setForm({ ...form, montant: Number(e.target.value) || undefined })} />
+                <Label>Montant (MRU) <span className="text-xs text-muted-foreground">(optionnel, auto-calculé)</span></Label>
+                <Input type="number" value={form.montant || ""} onChange={(e) => setForm({ ...form, montant: Number(e.target.value) || undefined })} placeholder="Laissez vide pour calcul auto" />
               </div>
 
               {createType === "DOUANIER" && (
