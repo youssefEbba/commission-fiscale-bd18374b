@@ -21,31 +21,8 @@ interface Section {
 
 const SECTIONS: Section[] = [
   {
-    icon: FileEdit,
-    title: "1. Les Modifications",
-    color: "from-emerald-600 to-emerald-800",
-    points: [
-      "Corrections douanières avec workflow structuré",
-      "Validation multi-acteurs : AC → DGI → DGTCP → Président",
-      "Suivi des statuts en temps réel (En attente, Validé, Rejeté)",
-      "Historique complet des actions dans les logs d'audit",
-    ],
-  },
-  {
-    icon: TrendingUp,
-    title: "2. Les Améliorations",
-    color: "from-teal-600 to-teal-800",
-    points: [
-      "Taux de change récupéré automatiquement via API",
-      "Bailleurs en référentiel avec ajout inline si inexistant",
-      "Devises proposées en liste avec création dynamique",
-      "Fusion automatique des fichiers de convention",
-      "Calcul automatique du montant en MRU",
-    ],
-  },
-  {
     icon: FolderOpen,
-    title: "3. La GED (Gestion Électronique des Documents)",
+    title: "1. La GED (Gestion Électronique des Documents)",
     color: "from-cyan-600 to-cyan-800",
     points: [
       "Configuration dynamique des exigences par processus",
