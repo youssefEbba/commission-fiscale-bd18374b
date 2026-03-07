@@ -472,7 +472,11 @@ const Utilisations = () => {
               <Select value={docType} onValueChange={(v) => setDocType(v as TypeDocumentUtilisation)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {UTILISATION_DOCUMENT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {(() => {
+                    const sel = data.find(u => u.id === docDialog);
+                    const types = sel?.type === "DOUANIER" ? UTILISATION_DOC_TYPES_DOUANE : sel?.type === "TVA_INTERIEURE" ? UTILISATION_DOC_TYPES_TVA : UTILISATION_DOCUMENT_TYPES;
+                    return types.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>);
+                  })()}
                 </SelectContent>
               </Select>
               <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
