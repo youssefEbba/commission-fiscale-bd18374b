@@ -90,11 +90,13 @@ const DemandesMiseEnPlace = () => {
   const [montantTVAInt, setMontantTVAInt] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
 
-  // Lookup caches for names
-  const [correctionNames, setCorrectionNames] = useState<Record<number, string>>({});
-  const [marcheNames, setMarcheNames] = useState<Record<number, string>>({});
-  const [entrepriseNames, setEntrepriseNames] = useState<Record<number, string>>({});
+  // Lookup caches for full objects
+  const [correctionCache, setCorrectionCache] = useState<Record<number, DemandeCorrectionDto>>({});
+  const [marcheCache, setMarcheCache] = useState<Record<number, MarcheDto>>({});
+  const [entrepriseCache, setEntrepriseCache] = useState<Record<number, EntrepriseDto>>({});
 
+  // Info modal state
+  const [infoModal, setInfoModal] = useState<{ type: "entreprise" | "correction" | "marche"; id: number } | null>(null);
   const fetchCertificats = async () => {
     setLoading(true);
     try {
