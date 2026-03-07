@@ -44,7 +44,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: Users,
-    title: "5. Les Délégués (UPM / UEP)",
+    title: "3. Les Délégués (UPM / UEP)",
     color: "from-amber-600 to-amber-800",
     points: [
       "Accès identique à l'Autorité Contractante sur leur périmètre",
