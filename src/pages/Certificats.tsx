@@ -75,7 +75,11 @@ const Certificats = () => {
   const fetchCertificats = async () => {
     setLoading(true);
     try {
-      setCertificats(await certificatCreditApi.getAll());
+      if (role === "ENTREPRISE" && user?.entrepriseId) {
+        setCertificats(await certificatCreditApi.getByEntreprise(user.entrepriseId));
+      } else {
+        setCertificats(await certificatCreditApi.getAll());
+      }
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les certificats", variant: "destructive" });
     } finally { setLoading(false); }
