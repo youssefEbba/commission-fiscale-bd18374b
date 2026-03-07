@@ -188,7 +188,7 @@ const GestionDocuments = () => {
         return;
       }
     }
-    const finalDescription = dialogSousTag ? `${dialogSousTag} ${description.trim()}`.trim() : description.trim();
+    const finalDescription = description.trim();
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
       typeDocument: typeDocument.trim(),
