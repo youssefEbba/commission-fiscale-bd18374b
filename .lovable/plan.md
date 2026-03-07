@@ -1,19 +1,12 @@
 
 
-## Probleme identifie
+## Plan : Renommer « Nouvelle demande » → « Nouvelle demande de correction »
 
-Quand le DGD clique sur "Apposer Visa", le systeme detecte qu'il n'a pas encore uploade l'Offre Fiscale Corrigee et ouvre le dialogue d'upload. Apres l'upload reussi, le dialogue se ferme mais **le visa n'est pas automatiquement appose**. Le DGD doit re-cliquer sur "Apposer Visa" une seconde fois.
+Deux endroits à modifier :
 
-## Solution
+1. **`src/pages/Dashboard.tsx` (ligne 28)** : Changer le label `"Nouvelle demande"` en `"Nouvelle demande de correction"` dans le tableau `QUICK_ACTIONS`.
 
-Modifier `handlePreVisaUpload` dans `src/pages/CorrectionDouaniere.tsx` pour qu'apres l'upload reussi du document, il enchaine automatiquement avec l'appel API d'apposition du visa (`demandeCorrectionApi.postDecision(demande.id, "VISA")`), puis rafraichisse les decisions et la demande.
+2. **`src/pages/Demandes.tsx` (ligne 525)** : Changer le texte du bouton `Nouvelle demande` en `Nouvelle demande de correction`.
 
-### Changement concret
-
-Dans la fonction `handlePreVisaUpload` (ligne ~188), apres le `fetchDocs()` et la fermeture du dialogue, ajouter :
-1. Appel a `demandeCorrectionApi.postDecision(demande.id, "VISA")`
-2. Toast de succes "Visa appose avec succes"
-3. Rafraichissement des decisions et de la demande (`fetchDecisions()` + `fetchDemande()`)
-
-Cela transforme le flux en une seule action : upload + visa en un seul clic sur "Uploader".
+Le wizard (`CreateDemandeWizard.tsx`) a déjà le bon libellé.
 

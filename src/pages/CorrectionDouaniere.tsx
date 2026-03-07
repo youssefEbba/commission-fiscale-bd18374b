@@ -194,6 +194,11 @@ const CorrectionDouaniere = () => {
       await fetchDocs();
       setPreVisaUploadOpen(false);
       setPreVisaFile(null);
+      // Auto-apposer le visa après upload réussi
+      await demandeCorrectionApi.postDecision(demande.id, "VISA");
+      toast({ title: "Succès", description: "Visa apposé avec succès" });
+      await fetchDecisions();
+      await fetchDemande();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
