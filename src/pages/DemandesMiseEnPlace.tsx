@@ -211,6 +211,31 @@ const DemandesMiseEnPlace = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleReject = async () => {
+    if (!showReject || !motifRejet.trim()) return;
+    setRejecting(true);
+    try {
+      await certificatCreditApi.reject(showReject.id, motifRejet.trim());
+      toast({ title: "Succès", description: "Demande rejetée" });
+      setShowReject(null);
+      setMotifRejet("");
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejecting(false); }
+  };
+
+  const handleGenerateCertificate = async (c: CertificatCreditDto) => {
+    setGeneratingCert(c.id);
+    try {
+      await certificatCreditApi.generateCertificate(c.id);
+      toast({ title: "Succès", description: "Certificat généré avec succès" });
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setGeneratingCert(null); }
+  };
+
   const openDetail = async (c: CertificatCreditDto) => {
     setSelected(c);
     setDetailDocs([]);
