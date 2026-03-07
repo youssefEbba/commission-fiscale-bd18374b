@@ -335,11 +335,17 @@ const DemandesMiseEnPlace = () => {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{getEntrepriseName(selected)}</p></div>
+                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">
+                  {selected.entrepriseId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "entreprise", id: selected.entrepriseId! })}>{getEntrepriseName(selected)}</button> : "—"}
+                </p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">{getCorrectionName(selected)}</p></div>
-                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">{getMarcheName(selected)}</p></div>
+                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">
+                  {selected.demandeCorrectionId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "correction", id: selected.demandeCorrectionId! })}>{getCorrectionName(selected)}</button> : "—"}
+                </p></div>
+                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">
+                  {selected.marcheId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "marche", id: selected.marcheId! })}>{getMarcheName(selected)}</button> : "—"}
+                </p></div>
               </div>
 
               {/* Documents */}
