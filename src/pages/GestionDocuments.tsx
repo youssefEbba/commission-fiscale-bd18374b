@@ -148,11 +148,11 @@ const GestionDocuments = () => {
     setDialogSousTag("");
   };
 
-  const openCreate = (processus: ProcessusType, sousTag?: string) => {
+  const openCreate = (processus: ProcessusType) => {
     closeDialog();
     setDialogProcessus(processus);
-    setDialogSousTag(sousTag || "");
-    const reqs = queriesByProcessus[processus].data;
+    setDialogSousTag("");
+    const reqs = queriesByProcessus[processus]?.data || [];
     setOrdreAffichage((reqs.length || 0) + 1);
     setDialogOpen(true);
   };
