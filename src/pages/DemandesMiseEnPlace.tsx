@@ -40,14 +40,13 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
     { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Vérifier (DGI)" },
     { from: ["DEMANDE", "EN_VERIFICATION_DGI"], to: "ANNULE", label: "Annuler" },
   ],
-  PRESIDENT: [
-    { from: ["EN_VERIFICATION_DGI"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
-    { from: ["DEMANDE", "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT"], to: "ANNULE", label: "Annuler" },
-  ],
   DGTCP: [
-    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Viser", icon: "visa" },
-    { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit" },
+    { from: ["EN_VERIFICATION_DGI"], to: "EN_OUVERTURE_DGTCP", label: "Viser (DGTCP)", icon: "visa" },
+  ],
+  PRESIDENT: [
+    { from: ["EN_OUVERTURE_DGTCP"], to: "EN_VALIDATION_PRESIDENT", label: "Prendre en charge" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider, signer & ouvrir le crédit" },
   ],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
@@ -338,19 +337,20 @@ const DemandesMiseEnPlace = () => {
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
-                          {role === "DGTCP" && (c.statut === "EN_OUVERTURE_DGTCP" || c.statut === "VALIDE_PRESIDENT") && c.montantCordon == null && (
+                          {/* DGTCP: renseigner montants avant de viser */}
+                          {role === "DGTCP" && c.statut === "EN_VERIFICATION_DGI" && c.montantCordon == null && (
                             <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
                               <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                             </Button>
                           )}
                           {/* DGTCP Reject button */}
-                          {role === "DGTCP" && ["VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP"].includes(c.statut) && (
+                          {role === "DGTCP" && c.statut === "EN_VERIFICATION_DGI" && (
                             <Button variant="destructive" size="sm" onClick={() => { setShowReject(c); setMotifRejet(""); }}>
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
-                          {/* DGTCP Generate certificate button */}
-                          {role === "DGTCP" && c.statut === "OUVERT" && (
+                          {/* Président: Générer certificat après ouverture */}
+                          {role === "PRESIDENT" && (c.statut === "OUVERT" || c.statut === "VALIDE_PRESIDENT") && (
                             <Button variant="outline" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
                               {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
                               Générer certificat
@@ -575,10 +575,10 @@ const DemandesMiseEnPlace = () => {
                 if (!showMontants) return;
                 setSavingMontants(true);
                 try {
-                  // Save montants first, then open credit
+                  // Save montants first, then visa DGTCP
                   await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
-                  await certificatCreditApi.updateStatut(showMontants.id, "OUVERT");
-                  toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert avec succès !" });
+                  await certificatCreditApi.updateStatut(showMontants.id, "EN_OUVERTURE_DGTCP");
+                  toast({ title: "Succès", description: "Montants enregistrés et demande visée par le DGTCP !" });
                   setShowMontants(null);
                   fetchCertificats();
                 } catch (e: any) {
@@ -587,8 +587,8 @@ const DemandesMiseEnPlace = () => {
               }}
             >
               {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Valider & Ouvrir le crédit
+              <ShieldCheck className="h-4 w-4 mr-1" />
+              Valider montants & Viser
             </Button>
           </DialogFooter>
         </DialogContent>
