@@ -547,7 +547,7 @@ const DemandesMiseEnPlace = () => {
               <Input type="number" min="0" step="0.01" placeholder="Ex: 200000" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowMontants(null)}>Annuler</Button>
             <Button
               disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
@@ -556,7 +556,7 @@ const DemandesMiseEnPlace = () => {
                 setSavingMontants(true);
                 try {
                   await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
-                  toast({ title: "Succès", description: "Montants enregistrés" });
+                  toast({ title: "Succès", description: "Montants enregistrés, vous pouvez maintenant ouvrir le crédit." });
                   setShowMontants(null);
                   fetchCertificats();
                 } catch (e: any) {
@@ -565,7 +565,30 @@ const DemandesMiseEnPlace = () => {
               }}
             >
               {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer
+              Enregistrer les montants
+            </Button>
+            <Button
+              variant="default"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
+              onClick={async () => {
+                if (!showMontants) return;
+                setSavingMontants(true);
+                try {
+                  // Save montants first, then open credit
+                  await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
+                  await certificatCreditApi.updateStatut(showMontants.id, "OUVERT");
+                  toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert avec succès !" });
+                  setShowMontants(null);
+                  fetchCertificats();
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                } finally { setSavingMontants(false); }
+              }}
+            >
+              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Valider & Ouvrir le crédit
             </Button>
           </DialogFooter>
         </DialogContent>
