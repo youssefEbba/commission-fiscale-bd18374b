@@ -582,6 +582,12 @@ export const certificatCreditApi = {
       method: "PATCH",
       body: { montantCordon, montantTVAInterieure },
     }),
+  reject: (id: number, motif: string) =>
+    apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
+  generateCertificate: (id: number) =>
+    apiFetch<Blob>(`/certificats-credit/${id}/certificat/generate`, { method: "POST" }),
+  sendCertificate: (id: number) =>
+    apiFetch<void>(`/certificats-credit/${id}/certificat/send`, { method: "POST" }),
 };
 
 // Utilisations de crédit (P4/P5)

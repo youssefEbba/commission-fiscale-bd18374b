@@ -17,7 +17,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, FileDown } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const API_BASE = "https://a488-102-214-208-11.ngrok-free.app/api";
@@ -34,7 +35,7 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string }[]> = {
+const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   DGI: [
     { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Vérifier (DGI)" },
     { from: ["DEMANDE", "EN_VERIFICATION_DGI"], to: "ANNULE", label: "Annuler" },
@@ -45,9 +46,8 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
     { from: ["DEMANDE", "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT"], to: "ANNULE", label: "Annuler" },
   ],
   DGTCP: [
-    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Prendre en charge" },
+    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Viser", icon: "visa" },
     { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit" },
-    { from: ["DEMANDE", "VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP"], to: "ANNULE", label: "Annuler" },
   ],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
@@ -97,6 +97,15 @@ const DemandesMiseEnPlace = () => {
 
   // Info modal state
   const [infoModal, setInfoModal] = useState<{ type: "entreprise" | "correction" | "marche"; id: number } | null>(null);
+
+  // Reject dialog state (DGTCP)
+  const [showReject, setShowReject] = useState<CertificatCreditDto | null>(null);
+  const [motifRejet, setMotifRejet] = useState("");
+  const [rejecting, setRejecting] = useState(false);
+
+  // Certificate generation state (DGTCP)
+  const [generatingCert, setGeneratingCert] = useState<number | null>(null);
+
   const fetchCertificats = async () => {
     setLoading(true);
     try {
@@ -203,6 +212,31 @@ const DemandesMiseEnPlace = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleReject = async () => {
+    if (!showReject || !motifRejet.trim()) return;
+    setRejecting(true);
+    try {
+      await certificatCreditApi.reject(showReject.id, motifRejet.trim());
+      toast({ title: "Succès", description: "Demande rejetée" });
+      setShowReject(null);
+      setMotifRejet("");
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejecting(false); }
+  };
+
+  const handleGenerateCertificate = async (c: CertificatCreditDto) => {
+    setGeneratingCert(c.id);
+    try {
+      await certificatCreditApi.generateCertificate(c.id);
+      toast({ title: "Succès", description: "Certificat généré avec succès" });
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setGeneratingCert(null); }
+  };
+
   const openDetail = async (c: CertificatCreditDto) => {
     setSelected(c);
     setDetailDocs([]);
@@ -307,6 +341,19 @@ const DemandesMiseEnPlace = () => {
                           {role === "DGTCP" && (c.statut === "EN_OUVERTURE_DGTCP" || c.statut === "VALIDE_PRESIDENT") && c.montantCordon == null && (
                             <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
                               <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
+                            </Button>
+                          )}
+                          {/* DGTCP Reject button */}
+                          {role === "DGTCP" && ["VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP"].includes(c.statut) && (
+                            <Button variant="destructive" size="sm" onClick={() => { setShowReject(c); setMotifRejet(""); }}>
+                              <XCircle className="h-4 w-4 mr-1" /> Rejeter
+                            </Button>
+                          )}
+                          {/* DGTCP Generate certificate button */}
+                          {role === "DGTCP" && c.statut === "OUVERT" && (
+                            <Button variant="outline" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
+                              {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
+                              Générer certificat
                             </Button>
                           )}
                           {transitions.map((t) =>
@@ -524,7 +571,39 @@ const DemandesMiseEnPlace = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Info Modal for Entreprise / Correction / Marché */}
+      {/* Reject Dialog (DGTCP) */}
+      <Dialog open={!!showReject} onOpenChange={() => setShowReject(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Rejeter la demande
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Demande {showReject?.reference || `#${showReject?.id}`} — {showReject ? getEntrepriseName(showReject) : ""}
+            </p>
+            <div className="space-y-2">
+              <Label>Motif du rejet *</Label>
+              <Textarea
+                placeholder="Veuillez préciser le motif du rejet..."
+                value={motifRejet}
+                onChange={(e) => setMotifRejet(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReject(null)}>Annuler</Button>
+            <Button variant="destructive" disabled={rejecting || !motifRejet.trim()} onClick={handleReject}>
+              {rejecting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!infoModal} onOpenChange={() => setInfoModal(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
