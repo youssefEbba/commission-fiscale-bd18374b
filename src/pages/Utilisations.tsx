@@ -126,12 +126,16 @@ const Utilisations = () => {
   const openCreate = async () => {
     setCreateType("DOUANIER");
     setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
+    setCreateDocFiles({});
     try {
-      if (role === "ENTREPRISE" && (user as any)?.entrepriseId) {
-        setCertificats(await certificatCreditApi.getByEntreprise((user as any).entrepriseId));
-      } else {
-        setCertificats(await certificatCreditApi.getAll());
-      }
+      const [certs, reqs] = await Promise.all([
+        role === "ENTREPRISE" && (user as any)?.entrepriseId
+          ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
+          : certificatCreditApi.getAll(),
+        documentRequirementApi.getByProcessus("UTILISATION_CI"),
+      ]);
+      setCertificats(certs);
+      setGedRequirements(reqs);
     } catch { /* ignore */ }
     setShowCreate(true);
   };
@@ -139,6 +143,18 @@ const Utilisations = () => {
   const handleCreateTypeChange = (t: UtilisationType) => {
     setCreateType(t);
     setForm({ ...(t === "DOUANIER" ? emptyDouane : emptyTVA), certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
+    setCreateDocFiles({});
+  };
+
+  const getFilteredRequirements = (): DocumentRequirementDto[] => {
+    const docTypes = createType === "DOUANIER" ? DOUANE_DOC_TYPES : TVA_DOC_TYPES;
+    return gedRequirements
+      .filter((r) => docTypes.includes(r.typeDocument))
+      .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
+  };
+
+  const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
+    return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };
 
   const handleCreate = async () => {
@@ -146,10 +162,26 @@ const Utilisations = () => {
       toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
+    const missing = getMissingObligatoryDocs();
+    if (missing.length > 0) {
+      toast({
+        title: "Documents manquants",
+        description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
     setCreating(true);
     try {
-      await utilisationCreditApi.create(form as CreateUtilisationCreditRequest);
-      toast({ title: "Succès", description: "Utilisation créée" });
+      const created = await utilisationCreditApi.create(form as CreateUtilisationCreditRequest);
+      // Upload all attached documents
+      const uploadEntries = Object.entries(createDocFiles);
+      if (uploadEntries.length > 0) {
+        for (const [type, file] of uploadEntries) {
+          await utilisationCreditApi.uploadDocument(created.id, type as TypeDocumentUtilisation, file);
+        }
+      }
+      toast({ title: "Succès", description: `Utilisation créée avec ${uploadEntries.length} document(s)` });
       setShowCreate(false);
       fetchData();
     } catch (e: any) {
