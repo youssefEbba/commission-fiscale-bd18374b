@@ -3,21 +3,18 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
-  CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
-  demandeCorrectionApi, DemandeCorrectionDto,
-  documentRequirementApi, DocumentRequirementDto,
+  CERTIFICAT_STATUT_LABELS,
   DocumentDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle } from "lucide-react";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, FileText } from "lucide-react";
 
 const API_BASE = "https://a488-102-214-208-11.ngrok-free.app/api";
 
@@ -53,14 +50,6 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
   ],
 };
 
-// Document types for mise en place
-const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
-  { value: "LETTRE_DEMANDE_MISE_EN_PLACE_CI", label: "Lettre de saisine" },
-  { value: "CONTRAT", label: "Contrat enregistré" },
-  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification du contrat" },
-  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
-  { value: "LETTRE_CORRECTION", label: "Lettre de correction (adoption)" },
-];
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (!doc.chemin) return "#";
@@ -79,15 +68,6 @@ const Certificats = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
 
-  // Creation dialog state
-  const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
-  const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
-  const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
-  const [docFiles, setDocFiles] = useState<Record<string, File>>({});
-  const [uploadingDocs, setUploadingDocs] = useState(false);
-
   // Detail documents
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -103,73 +83,6 @@ const Certificats = () => {
 
   useEffect(() => { fetchCertificats(); }, []);
 
-  const openCreateDialog = async () => {
-    setShowCreate(true);
-    setSelectedCorrectionId("");
-    setDocFiles({});
-    try {
-      const [corrs, reqs] = await Promise.all([
-        user?.autoriteContractanteId
-          ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
-          : demandeCorrectionApi.getAll(),
-        documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
-      ]);
-      setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
-      setDocRequirements(reqs);
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!selectedCorrectionId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
-      return;
-    }
-    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
-    if (!correction?.entrepriseId) {
-      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
-      return;
-    }
-
-    setCreating(true);
-    try {
-      const request: CreateCertificatCreditRequest = {
-        entrepriseId: correction.entrepriseId,
-        demandeCorrectionId: Number(selectedCorrectionId),
-      };
-      const created = await certificatCreditApi.create(request);
-
-      // Upload documents if any
-      if (Object.keys(docFiles).length > 0) {
-        setUploadingDocs(true);
-        for (const [type, file] of Object.entries(docFiles)) {
-          try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const token = localStorage.getItem("auth_token");
-            await fetch(`${API_BASE}/certificats-credit/${created.id}/documents?type=${encodeURIComponent(type)}`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "true",
-              },
-              body: formData,
-            });
-          } catch {
-            toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
-          }
-        }
-        setUploadingDocs(false);
-      }
-
-      toast({ title: "Succès", description: "Demande de mise en place créée avec succès" });
-      setShowCreate(false);
-      fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Impossible de créer la demande", variant: "destructive" });
-    } finally { setCreating(false); }
-  };
 
   const handleStatut = async (id: number, statut: CertificatStatut) => {
     setActionLoading(id);
@@ -210,7 +123,6 @@ const Certificats = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
 
   const pageTitle: Record<string, string> = {
     AUTORITE_CONTRACTANTE: "Mes certificats",
@@ -221,8 +133,6 @@ const Certificats = () => {
     ADMIN_SI: "Tous les certificats (Audit)",
   };
 
-  const canCreate = role === "AUTORITE_CONTRACTANTE";
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -232,14 +142,9 @@ const Certificats = () => {
               <Award className="h-6 w-6 text-primary" />
               {pageTitle[role] || "Certificats de crédit"}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Mise en place du crédit d'impôt</p>
+            <p className="text-muted-foreground text-sm mt-1">Suivi des certificats de crédit d'impôt</p>
           </div>
           <div className="flex gap-2">
-            {canCreate && (
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
-              </Button>
-            )}
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
@@ -368,99 +273,6 @@ const Certificats = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" />
-              Demande de mise en place du crédit d'impôt
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Select correction */}
-            <div className="space-y-2">
-              <Label>Demande de correction (adoptée/notifiée) *</Label>
-              <Select value={selectedCorrectionId} onValueChange={setSelectedCorrectionId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner une correction..." /></SelectTrigger>
-                <SelectContent>
-                  {corrections.length === 0 ? (
-                    <SelectItem value="__none" disabled>Aucune correction adoptée disponible</SelectItem>
-                  ) : corrections.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Info from selected correction */}
-            {selectedCorrection && (
-              <Card className="bg-muted/30">
-                <CardContent className="p-3 text-sm">
-                  <p className="font-semibold mb-1">Correction sélectionnée</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">N°</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
-                    <div><span className="text-muted-foreground">Entreprise</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">Statut</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">AC</span> {selectedCorrection.autoriteContractanteNom}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Documents upload */}
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Pièces du dossier</Label>
-              <div className="space-y-2">
-                {MISE_EN_PLACE_DOC_TYPES.map((dt) => {
-                  const req = docRequirements.find(r => r.typeDocument === dt.value);
-                  const isRequired = req?.obligatoire ?? false;
-                  const hasFile = !!docFiles[dt.value];
-                  return (
-                    <div key={dt.value} className="flex items-center gap-3 p-2 rounded border bg-background">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">
-                          {dt.label}
-                          {isRequired && <span className="text-destructive ml-1">*</span>}
-                        </p>
-                        {hasFile && (
-                          <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
-                            <CheckCircle className="h-3 w-3" /> {docFiles[dt.value].name}
-                          </p>
-                        )}
-                      </div>
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) setDocFiles(prev => ({ ...prev, [dt.value]: file }));
-                          }}
-                        />
-                        <div className="flex items-center gap-1 text-xs text-primary hover:underline">
-                          <Upload className="h-3 w-3" />
-                          {hasFile ? "Remplacer" : "Choisir"}
-                        </div>
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || uploadingDocs}>
-              {(creating || uploadingDocs) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Soumettre la demande
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

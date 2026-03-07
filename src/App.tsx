@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Conventions from "./pages/Conventions";
 import Demandes from "./pages/Demandes";
 import Certificats from "./pages/Certificats";
+import DemandesMiseEnPlace from "./pages/DemandesMiseEnPlace";
 import Utilisations from "./pages/Utilisations";
 import Utilisateurs from "./pages/Utilisateurs";
 import Roles from "./pages/Roles";
@@ -58,6 +59,11 @@ const App = () => (
             <Route path="/dashboard/delegues" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE"]}>
                 <Delegues />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/mise-en-place" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <DemandesMiseEnPlace />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={
