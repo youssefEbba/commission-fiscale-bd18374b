@@ -123,8 +123,8 @@ const Utilisations = () => {
         role === "ENTREPRISE" && (user as any)?.entrepriseId
           ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
           : certificatCreditApi.getAll(),
-        documentRequirementApi.getByProcessus("UTILISATION_CI"),
-      ]);
+        documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
+        documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
       setCertificats(certs);
       setGedRequirements(reqs);
     } catch { /* ignore */ }
