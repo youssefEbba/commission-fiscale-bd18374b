@@ -552,7 +552,9 @@ export interface CertificatCreditDto {
   dateValidite?: string;
   lettreCorrectionId?: number;
   demandeCorrectionId?: number;
+  demandeCorrectionNumero?: string;
   marcheId?: number;
+  marcheIntitule?: string;
 }
 
 export interface CreateCertificatCreditRequest {

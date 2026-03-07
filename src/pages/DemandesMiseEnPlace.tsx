@@ -258,8 +258,8 @@ const DemandesMiseEnPlace = () => {
                   <TableRow>
                     <TableHead>Réf.</TableHead>
                     <TableHead>Entreprise</TableHead>
-                    <TableHead>Cordon (Douane)</TableHead>
-                    <TableHead>TVA Int.</TableHead>
+                    <TableHead>Correction</TableHead>
+                    <TableHead>Marché</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -270,9 +270,9 @@ const DemandesMiseEnPlace = () => {
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.entrepriseNom || "—"}</TableCell>
-                      <TableCell>{c.montantCordon != null ? c.montantCordon.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
-                      <TableCell>{c.montantTVAInterieure != null ? c.montantTVAInterieure.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
+                      <TableCell>{c.entrepriseNom || "—"}</TableCell>
+                      <TableCell>{c.demandeCorrectionNumero || (c.demandeCorrectionId ? `#${c.demandeCorrectionId}` : "—")}</TableCell>
+                      <TableCell>{c.marcheIntitule || (c.marcheId ? `#${c.marcheId}` : "—")}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
@@ -310,12 +310,9 @@ const DemandesMiseEnPlace = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseNom || "—"}</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
-              <div><span className="text-muted-foreground">Montant Cordon</span><p className="font-medium">{selected.montantCordon != null ? `${selected.montantCordon.toLocaleString("fr-FR")} MRU` : <span className="text-orange-500 italic">Non renseigné</span>}</p></div>
-                <div><span className="text-muted-foreground">Montant TVA Int.</span><p className="font-medium">{selected.montantTVAInterieure != null ? `${selected.montantTVAInterieure.toLocaleString("fr-FR")} MRU` : <span className="text-orange-500 italic">Non renseigné</span>}</p></div>
-                <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal != null ? `${selected.montantTotal.toLocaleString("fr-FR")} MRU` : "—"}</p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-                {selected.demandeCorrectionId && <div><span className="text-muted-foreground">Correction</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
-                {selected.marcheId && <div><span className="text-muted-foreground">Marché</span><p className="font-medium">#{selected.marcheId}</p></div>}
+                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">{selected.demandeCorrectionNumero || (selected.demandeCorrectionId ? `#${selected.demandeCorrectionId}` : "—")}</p></div>
+                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">{selected.marcheIntitule || (selected.marcheId ? `#${selected.marcheId}` : "—")}</p></div>
               </div>
 
               {/* Documents */}
