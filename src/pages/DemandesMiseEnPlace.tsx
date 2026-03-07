@@ -45,8 +45,7 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
     { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit", icon: "visa" },
   ],
   PRESIDENT: [
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider, signer & ouvrir le crédit" },
+    { from: ["OUVERT"], to: "VALIDE_PRESIDENT", label: "Valider & signer" },
   ],
   AUTORITE_CONTRACTANTE: [
     { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
