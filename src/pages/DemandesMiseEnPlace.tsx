@@ -570,7 +570,39 @@ const DemandesMiseEnPlace = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Info Modal for Entreprise / Correction / Marché */}
+      {/* Reject Dialog (DGTCP) */}
+      <Dialog open={!!showReject} onOpenChange={() => setShowReject(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Rejeter la demande
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Demande {showReject?.reference || `#${showReject?.id}`} — {showReject ? getEntrepriseName(showReject) : ""}
+            </p>
+            <div className="space-y-2">
+              <Label>Motif du rejet *</Label>
+              <textarea
+                className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="Veuillez préciser le motif du rejet..."
+                value={motifRejet}
+                onChange={(e) => setMotifRejet(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReject(null)}>Annuler</Button>
+            <Button variant="destructive" disabled={rejecting || !motifRejet.trim()} onClick={handleReject}>
+              {rejecting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!infoModal} onOpenChange={() => setInfoModal(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
