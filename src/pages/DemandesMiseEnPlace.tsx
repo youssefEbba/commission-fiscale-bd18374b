@@ -84,6 +84,12 @@ const DemandesMiseEnPlace = () => {
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
+  // Montants dialog (DGTCP)
+  const [showMontants, setShowMontants] = useState<CertificatCreditDto | null>(null);
+  const [montantCordon, setMontantCordon] = useState("");
+  const [montantTVAInt, setMontantTVAInt] = useState("");
+  const [savingMontants, setSavingMontants] = useState(false);
+
   const fetchCertificats = async () => {
     setLoading(true);
     try {
