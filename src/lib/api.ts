@@ -815,7 +815,7 @@ export const tauxChangeApi = {
 };
 
 // Document Requirements (GED)
-export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI";
+export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI" | "UTILISATION_CI_EXTERIEUR" | "UTILISATION_CI_INTERIEUR";
 export type FormatFichier = "PDF" | "WORD" | "EXCEL" | "IMAGE";
 
 export interface DocumentRequirementDto {

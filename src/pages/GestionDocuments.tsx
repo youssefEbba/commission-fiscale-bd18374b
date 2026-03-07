@@ -15,20 +15,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-// Tags stored in description to identify sub-section
-const SOUS_SECTION_TAG_DOUANE = "[DOUANE]";
-const SOUS_SECTION_TAG_TVA = "[TVA]";
-
-const hasSousTag = (desc: string | undefined, tag: string) => (desc || "").includes(tag);
-const stripSousTags = (desc: string | undefined) => (desc || "").replace(/\[(DOUANE|TVA)\]\s*/g, "").trim();
-
-type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean; sousTag?: string };
+type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", sousTag: SOUS_SECTION_TAG_DOUANE, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_DOUANE) },
-  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", sousTag: SOUS_SECTION_TAG_TVA, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_TVA) },
+  { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
+  { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
@@ -93,15 +86,20 @@ const GestionDocuments = () => {
     queryKey: ["document-requirements", "MISE_EN_PLACE_CI"],
     queryFn: () => documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
   });
-  const utilisationQuery = useQuery({
-    queryKey: ["document-requirements", "UTILISATION_CI"],
-    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI"),
+  const exterieurQuery = useQuery({
+    queryKey: ["document-requirements", "UTILISATION_CI_EXTERIEUR"],
+    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
+  });
+  const interieurQuery = useQuery({
+    queryKey: ["document-requirements", "UTILISATION_CI_INTERIEUR"],
+    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
   });
 
-  const queriesByProcessus: Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }> = {
+  const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
     CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
     MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
-    UTILISATION_CI: { data: utilisationQuery.data || [], isLoading: utilisationQuery.isLoading },
+    UTILISATION_CI_EXTERIEUR: { data: exterieurQuery.data || [], isLoading: exterieurQuery.isLoading },
+    UTILISATION_CI_INTERIEUR: { data: interieurQuery.data || [], isLoading: interieurQuery.isLoading },
   };
 
   const createMutation = useMutation({
@@ -150,11 +148,11 @@ const GestionDocuments = () => {
     setDialogSousTag("");
   };
 
-  const openCreate = (processus: ProcessusType, sousTag?: string) => {
+  const openCreate = (processus: ProcessusType) => {
     closeDialog();
     setDialogProcessus(processus);
-    setDialogSousTag(sousTag || "");
-    const reqs = queriesByProcessus[processus].data;
+    setDialogSousTag("");
+    const reqs = queriesByProcessus[processus]?.data || [];
     setOrdreAffichage((reqs.length || 0) + 1);
     setDialogOpen(true);
   };
@@ -165,11 +163,7 @@ const GestionDocuments = () => {
     setTypeDocument(item.typeDocument);
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
-    // Strip the sous-tag from description for editing
-    const rawDesc = item.description || "";
-    const tag = rawDesc.includes(SOUS_SECTION_TAG_DOUANE) ? SOUS_SECTION_TAG_DOUANE : rawDesc.includes(SOUS_SECTION_TAG_TVA) ? SOUS_SECTION_TAG_TVA : "";
-    setDialogSousTag(tag);
-    setDescription(stripSousTags(rawDesc));
+    setDescription(item.description || "");
     setOrdreAffichage(item.ordreAffichage || 1);
     setDialogOpen(true);
   };
@@ -194,7 +188,7 @@ const GestionDocuments = () => {
         return;
       }
     }
-    const finalDescription = dialogSousTag ? `${dialogSousTag} ${description.trim()}`.trim() : description.trim();
+    const finalDescription = description.trim();
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
       typeDocument: typeDocument.trim(),
@@ -231,13 +225,13 @@ const GestionDocuments = () => {
 
         {PROCESSUS_SECTIONS.map((section) => {
           const q = queriesByProcessus[section.processus];
-          const filteredReqs = section.filterFn ? q.data.filter(section.filterFn) : q.data;
-          const sorted = sortReqs(filteredReqs);
+          if (!q) return null;
+          const sorted = sortReqs(q.data);
           return (
             <Card key={section.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(section.processus, section.sousTag)}>
+                <Button size="sm" onClick={() => openCreate(section.processus)}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un document
                 </Button>
               </CardHeader>
@@ -277,7 +271,7 @@ const GestionDocuments = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                              {stripSousTags(req.description) || "—"}
+                              {req.description || "—"}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
