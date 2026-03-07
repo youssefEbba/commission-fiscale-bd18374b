@@ -225,13 +225,13 @@ const GestionDocuments = () => {
 
         {PROCESSUS_SECTIONS.map((section) => {
           const q = queriesByProcessus[section.processus];
-          const filteredReqs = section.filterFn ? q.data.filter(section.filterFn) : q.data;
-          const sorted = sortReqs(filteredReqs);
+          if (!q) return null;
+          const sorted = sortReqs(q.data);
           return (
             <Card key={section.key}>
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(section.processus, section.sousTag)}>
+                <Button size="sm" onClick={() => openCreate(section.processus)}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un document
                 </Button>
               </CardHeader>
