@@ -271,7 +271,7 @@ const GestionDocuments = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                              {stripSousTags(req.description) || "—"}
+                              {req.description || "—"}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
