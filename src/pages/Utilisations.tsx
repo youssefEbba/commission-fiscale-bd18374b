@@ -23,10 +23,6 @@ import { Switch } from "@/components/ui/switch";
 import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Tags stored in description to identify sub-section
-const SOUS_SECTION_TAG_DOUANE = "[DOUANE]";
-const SOUS_SECTION_TAG_TVA = "[TVA]";
-const hasSousTag = (desc: string | undefined, tag: string) => (desc || "").includes(tag);
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   DEMANDEE: "bg-blue-100 text-blue-800",
