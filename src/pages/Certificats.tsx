@@ -3,9 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
-  CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
-  demandeCorrectionApi, DemandeCorrectionDto,
-  documentRequirementApi, DocumentRequirementDto,
+  CERTIFICAT_STATUT_LABELS,
   DocumentDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
