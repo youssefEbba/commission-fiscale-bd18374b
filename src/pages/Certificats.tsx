@@ -51,14 +51,6 @@ const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: Certifica
   ],
 };
 
-// Document types for mise en place
-const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
-  { value: "LETTRE_DEMANDE_MISE_EN_PLACE_CI", label: "Lettre de saisine" },
-  { value: "CONTRAT", label: "Contrat enregistré" },
-  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification du contrat" },
-  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
-  { value: "LETTRE_CORRECTION", label: "Lettre de correction (adoption)" },
-];
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (!doc.chemin) return "#";
