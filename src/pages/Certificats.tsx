@@ -15,7 +15,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Award, Search, RefreshCw, Eye, Loader2, Filter, FileText } from "lucide-react";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, FileText } from "lucide-react";
 
 const API_BASE = "https://a488-102-214-208-11.ngrok-free.app/api";
 
