@@ -23,14 +23,10 @@ import { Switch } from "@/components/ui/switch";
 import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Doc types belonging to Douane vs TVA for GED filtering
-const DOUANE_DOC_TYPES = [
-  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
-  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
-];
-const TVA_DOC_TYPES = [
-  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
-];
+// Tags stored in description to identify sub-section
+const SOUS_SECTION_TAG_DOUANE = "[DOUANE]";
+const SOUS_SECTION_TAG_TVA = "[TVA]";
+const hasSousTag = (desc: string | undefined, tag: string) => (desc || "").includes(tag);
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   DEMANDEE: "bg-blue-100 text-blue-800",

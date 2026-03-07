@@ -15,23 +15,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-// Document types that belong to Douane sub-type
-const DOUANE_DOC_TYPES = [
-  "DEMANDE_UTILISATION", "ORDRE_TRANSIT", "DECLARATION_DOUANE",
-  "BULLETIN_LIQUIDATION", "FACTURE", "CONNAISSEMENT", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
-];
-// Document types that belong to TVA Intérieure sub-type
-const TVA_DOC_TYPES = [
-  "DEMANDE_UTILISATION", "FACTURE", "DECLARATION_TVA", "DECOMPTE",
-];
+// Tags stored in description to identify sub-section
+const SOUS_SECTION_TAG_DOUANE = "[DOUANE]";
+const SOUS_SECTION_TAG_TVA = "[TVA]";
 
-type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean };
+const hasSousTag = (desc: string | undefined, tag: string) => (desc || "").includes(tag);
+const stripSousTags = (desc: string | undefined) => (desc || "").replace(/\[(DOUANE|TVA)\]\s*/g, "").trim();
+
+type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string; filterFn?: (r: DocumentRequirementDto) => boolean; sousTag?: string };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (SYDONIA)", filterFn: (r) => DOUANE_DOC_TYPES.includes(r.typeDocument) },
-  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", filterFn: (r) => TVA_DOC_TYPES.includes(r.typeDocument) },
+  { key: "UTIL_DOUANE", processus: "UTILISATION_CI", label: "Utilisation CI — Douane (Importation)", sousTag: SOUS_SECTION_TAG_DOUANE, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_DOUANE) },
+  { key: "UTIL_TVA", processus: "UTILISATION_CI", label: "Utilisation CI — TVA Intérieure", sousTag: SOUS_SECTION_TAG_TVA, filterFn: (r) => hasSousTag(r.description, SOUS_SECTION_TAG_TVA) },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
