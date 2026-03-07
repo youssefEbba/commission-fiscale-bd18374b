@@ -575,10 +575,10 @@ const DemandesMiseEnPlace = () => {
                 if (!showMontants) return;
                 setSavingMontants(true);
                 try {
-                  // Save montants first, then open credit
+                  // Save montants first, then visa DGTCP
                   await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
-                  await certificatCreditApi.updateStatut(showMontants.id, "OUVERT");
-                  toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert avec succès !" });
+                  await certificatCreditApi.updateStatut(showMontants.id, "EN_OUVERTURE_DGTCP");
+                  toast({ title: "Succès", description: "Montants enregistrés et demande visée par le DGTCP !" });
                   setShowMontants(null);
                   fetchCertificats();
                 } catch (e: any) {
@@ -587,8 +587,8 @@ const DemandesMiseEnPlace = () => {
               }}
             >
               {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Valider & Ouvrir le crédit
+              <ShieldCheck className="h-4 w-4 mr-1" />
+              Valider montants & Viser
             </Button>
           </DialogFooter>
         </DialogContent>
