@@ -163,11 +163,7 @@ const GestionDocuments = () => {
     setTypeDocument(item.typeDocument);
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
-    // Strip the sous-tag from description for editing
-    const rawDesc = item.description || "";
-    const tag = rawDesc.includes(SOUS_SECTION_TAG_DOUANE) ? SOUS_SECTION_TAG_DOUANE : rawDesc.includes(SOUS_SECTION_TAG_TVA) ? SOUS_SECTION_TAG_TVA : "";
-    setDialogSousTag(tag);
-    setDescription(stripSousTags(rawDesc));
+    setDescription(item.description || "");
     setOrdreAffichage(item.ordreAffichage || 1);
     setDialogOpen(true);
   };
