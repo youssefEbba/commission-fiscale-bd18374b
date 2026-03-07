@@ -295,9 +295,9 @@ const DemandesMiseEnPlace = () => {
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
-                      <TableCell>{c.entrepriseNom || "—"}</TableCell>
-                      <TableCell>{c.demandeCorrectionNumero || (c.demandeCorrectionId ? `#${c.demandeCorrectionId}` : "—")}</TableCell>
-                      <TableCell>{c.marcheIntitule || (c.marcheId ? `#${c.marcheId}` : "—")}</TableCell>
+                      <TableCell>{getEntrepriseName(c)}</TableCell>
+                      <TableCell>{getCorrectionName(c)}</TableCell>
+                      <TableCell>{getMarcheName(c)}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
