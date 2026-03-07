@@ -594,4 +594,12 @@ const Utilisations = () => {
   );
 };
 
+function formatDocLabel(type: string): string {
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bCi\b/g, "CI")
+    .replace(/\bTva\b/g, "TVA");
+}
+
 export default Utilisations;
