@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -6,7 +6,7 @@ import {
   CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
-  DocumentDto, entrepriseApi, marcheApi,
+  DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -90,11 +90,13 @@ const DemandesMiseEnPlace = () => {
   const [montantTVAInt, setMontantTVAInt] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
 
-  // Lookup caches for names
-  const [correctionNames, setCorrectionNames] = useState<Record<number, string>>({});
-  const [marcheNames, setMarcheNames] = useState<Record<number, string>>({});
-  const [entrepriseNames, setEntrepriseNames] = useState<Record<number, string>>({});
+  // Lookup caches for full objects
+  const [correctionCache, setCorrectionCache] = useState<Record<number, DemandeCorrectionDto>>({});
+  const [marcheCache, setMarcheCache] = useState<Record<number, MarcheDto>>({});
+  const [entrepriseCache, setEntrepriseCache] = useState<Record<number, EntrepriseDto>>({});
 
+  // Info modal state
+  const [infoModal, setInfoModal] = useState<{ type: "entreprise" | "correction" | "marche"; id: number } | null>(null);
   const fetchCertificats = async () => {
     setLoading(true);
     try {
@@ -108,14 +110,14 @@ const DemandesMiseEnPlace = () => {
 
       // Fetch names in parallel
       const [corrResults, marcheResults, entResults] = await Promise.all([
-        Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, name: r.numero || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
-        Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, name: r.numeroMarche || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
-        Promise.all(entIds.map(id => entrepriseApi.getById(id).then(r => ({ id, name: r.raisonSociale || `#${id}` })).catch(() => ({ id, name: `#${id}` })))),
+        Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
+        Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
+        Promise.all(entIds.map(id => entrepriseApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
       ]);
 
-      setCorrectionNames(Object.fromEntries(corrResults.map(r => [r.id, r.name])));
-      setMarcheNames(Object.fromEntries(marcheResults.map(r => [r.id, r.name])));
-      setEntrepriseNames(Object.fromEntries(entResults.map(r => [r.id, r.name])));
+      setCorrectionCache(Object.fromEntries(corrResults.filter(Boolean).map(r => [r!.id, r!.data])));
+      setMarcheCache(Object.fromEntries(marcheResults.filter(Boolean).map(r => [r!.id, r!.data])));
+      setEntrepriseCache(Object.fromEntries(entResults.filter(Boolean).map(r => [r!.id, r!.data])));
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
     } finally { setLoading(false); }
@@ -229,9 +231,9 @@ const DemandesMiseEnPlace = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-  const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId ? entrepriseNames[c.entrepriseId] : null) || "—";
-  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId ? correctionNames[c.demandeCorrectionId] : null) || "—";
-  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId ? marcheNames[c.marcheId] : null) || "—";
+  const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId && entrepriseCache[c.entrepriseId]?.raisonSociale) || "—";
+  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId]?.numero) || "—";
+  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE";
@@ -333,11 +335,17 @@ const DemandesMiseEnPlace = () => {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{getEntrepriseName(selected)}</p></div>
+                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">
+                  {selected.entrepriseId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "entreprise", id: selected.entrepriseId! })}>{getEntrepriseName(selected)}</button> : "—"}
+                </p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">{getCorrectionName(selected)}</p></div>
-                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">{getMarcheName(selected)}</p></div>
+                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">
+                  {selected.demandeCorrectionId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "correction", id: selected.demandeCorrectionId! })}>{getCorrectionName(selected)}</button> : "—"}
+                </p></div>
+                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">
+                  {selected.marcheId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "marche", id: selected.marcheId! })}>{getMarcheName(selected)}</button> : "—"}
+                </p></div>
               </div>
 
               {/* Documents */}
@@ -513,6 +521,66 @@ const DemandesMiseEnPlace = () => {
               Enregistrer
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Info Modal for Entreprise / Correction / Marché */}
+      <Dialog open={!!infoModal} onOpenChange={() => setInfoModal(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              {infoModal?.type === "entreprise" && "Détails de l'entreprise"}
+              {infoModal?.type === "correction" && "Détails de la correction"}
+              {infoModal?.type === "marche" && "Détails du marché"}
+            </DialogTitle>
+          </DialogHeader>
+          {infoModal?.type === "entreprise" && (() => {
+            const ent = entrepriseCache[infoModal.id];
+            if (!ent) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">Raison sociale</span><p className="font-medium">{ent.raisonSociale}</p></div>
+                  <div><span className="text-muted-foreground">NIF</span><p className="font-medium">{ent.nif || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Adresse</span><p>{ent.adresse || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Téléphone</span><p>{ent.telephone || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Email</span><p>{ent.email || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Situation fiscale</span><p>{ent.situationFiscale || "—"}</p></div>
+                </div>
+              </div>
+            );
+          })()}
+          {infoModal?.type === "correction" && (() => {
+            const corr = correctionCache[infoModal.id];
+            if (!corr) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">Numéro</span><p className="font-medium">{corr.numero || `#${corr.id}`}</p></div>
+                  <div><span className="text-muted-foreground">Statut</span><p className="font-medium">{corr.statut}</p></div>
+                  <div><span className="text-muted-foreground">Entreprise</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Autorité contractante</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Date de dépôt</span><p>{corr.dateDepot ? new Date(corr.dateDepot).toLocaleDateString("fr-FR") : "—"}</p></div>
+                  {corr.motifRejet && <div className="col-span-2"><span className="text-muted-foreground">Motif de rejet</span><p className="text-destructive">{corr.motifRejet}</p></div>}
+                </div>
+              </div>
+            );
+          })()}
+          {infoModal?.type === "marche" && (() => {
+            const m = marcheCache[infoModal.id];
+            if (!m) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">N° Marché</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
+                  <div><span className="text-muted-foreground">Statut</span><p className="font-medium">{m.statut}</p></div>
+                  <div><span className="text-muted-foreground">Date signature</span><p>{m.dateSignature ? new Date(m.dateSignature).toLocaleDateString("fr-FR") : "—"}</p></div>
+                  <div><span className="text-muted-foreground">Montant TTC</span><p>{m.montantContratTtc != null ? `${m.montantContratTtc.toLocaleString("fr-FR")} MRU` : "—"}</p></div>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </DashboardLayout>
