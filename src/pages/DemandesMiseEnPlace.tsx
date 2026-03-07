@@ -271,8 +271,8 @@ const DemandesMiseEnPlace = () => {
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
                       <TableCell className="text-muted-foreground">{c.entrepriseNom || "—"}</TableCell>
-                      <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
-                      <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
+                      <TableCell>{c.montantCordon != null ? c.montantCordon.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
+                      <TableCell>{c.montantTVAInterieure != null ? c.montantTVAInterieure.toLocaleString("fr-FR") : <span className="text-muted-foreground italic text-xs">Non renseigné</span>}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
