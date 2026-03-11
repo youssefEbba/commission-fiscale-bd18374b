@@ -237,7 +237,7 @@ const Certificats = () => {
                 <div><span className="text-muted-foreground">Solde Cordon</span><p className="font-bold">{selected.soldeCordon?.toLocaleString("fr-FR") ?? "—"} MRU</p></div>
                 <div><span className="text-muted-foreground">Solde TVA</span><p className="font-bold">{selected.soldeTVA?.toLocaleString("fr-FR") ?? "—"} MRU</p></div>
                 <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal?.toLocaleString("fr-FR") || "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
+                <div><span className="text-muted-foreground">Date</span><p>{(selected.dateEmission || selected.dateCreation) ? new Date(selected.dateEmission || selected.dateCreation!).toLocaleDateString("fr-FR") : "—"}</p></div>
                 {selected.dateValidite && <div><span className="text-muted-foreground">Validité</span><p>{new Date(selected.dateValidite).toLocaleDateString("fr-FR")}</p></div>}
                 {selected.demandeCorrectionId && <div><span className="text-muted-foreground">Demande correction</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
                 {selected.marcheId && <div><span className="text-muted-foreground">Marché</span><p className="font-medium">#{selected.marcheId}</p></div>}

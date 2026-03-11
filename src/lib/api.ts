@@ -550,6 +550,7 @@ export interface CertificatCreditDto {
   soldeCordon?: number;
   soldeTVA?: number;
   dateCreation?: string;
+  dateEmission?: string;
   dateMiseAJour?: string;
   dateValidite?: string;
   lettreCorrectionId?: number;
