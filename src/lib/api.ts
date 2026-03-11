@@ -537,8 +537,10 @@ export type CertificatStatut = "DEMANDE" | "EN_VERIFICATION_DGI" | "EN_VALIDATIO
 export interface CertificatCreditDto {
   id: number;
   reference?: string;
+  numero?: string;
   entrepriseId?: number;
   entrepriseNom?: string;
+  entrepriseRaisonSociale?: string;
   statut: CertificatStatut;
   montantDouane?: number;
   montantInterieur?: number;
@@ -548,6 +550,7 @@ export interface CertificatCreditDto {
   soldeCordon?: number;
   soldeTVA?: number;
   dateCreation?: string;
+  dateEmission?: string;
   dateMiseAJour?: string;
   dateValidite?: string;
   lettreCorrectionId?: number;
