@@ -1,4 +1,4 @@
-const API_BASE = "https://6bec-102-214-208-239.ngrok-free.app/api";
+const API_BASE = "https://1bcb-197-231-11-32.ngrok-free.app/api";
 
 interface RequestOptions {
   method?: string;
@@ -856,4 +856,4 @@ export const documentRequirementApi = {
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
 };
 
-export const WS_BASE = "https://6bec-102-214-208-239.ngrok-free.app/ws";
+export const WS_BASE = "https://1bcb-197-231-11-32.ngrok-free.app/ws";
