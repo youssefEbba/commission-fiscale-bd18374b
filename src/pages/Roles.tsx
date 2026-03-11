@@ -161,7 +161,7 @@ const Roles = () => {
                   Aucune permission trouvée dans le système.
                 </p>
               ) : (
-                <ScrollArea className="max-h-[60vh]">
+                <ScrollArea className="h-[60vh]">
                   <div className="space-y-6">
                     {Object.entries(grouped).map(([group, perms]) => (
                       <div key={group}>
