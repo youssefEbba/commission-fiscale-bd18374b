@@ -620,6 +620,62 @@ const Utilisations = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Apurement TVA dialog (DGTCP) */}
+      <Dialog open={!!apurementTarget} onOpenChange={() => setApurementTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Apurement TVA — Utilisation #{apurementTarget?.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Saisissez le montant TVA intérieure pour apurer cette utilisation. Le solde TVA du certificat sera automatiquement débité.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="apur-montant">Montant TVA Intérieure (MRU) *</Label>
+                <Input
+                  id="apur-montant"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={apurMontant}
+                  onChange={(e) => setApurMontant(e.target.value)}
+                />
+              </div>
+              {apurMontant && Number(apurMontant) > 0 && (
+                <div className="p-3 rounded-lg bg-muted text-sm">
+                  <span className="text-muted-foreground">Imputation sur soldeTVA :</span>{" "}
+                  <span className="font-bold text-primary">
+                    {Number(apurMontant).toLocaleString("fr-FR")} MRU
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setApurementTarget(null)}>Annuler</Button>
+              <Button
+                disabled={apurLoading || !apurMontant || Number(apurMontant) <= 0}
+                onClick={async () => {
+                  if (!apurementTarget) return;
+                  setApurLoading(true);
+                  try {
+                    await utilisationCreditApi.apurerTVA(apurementTarget.id, Number(apurMontant));
+                    toast({ title: "Succès", description: "Utilisation apurée — solde TVA mis à jour" });
+                    setApurementTarget(null);
+                    fetchData();
+                  } catch (e: any) {
+                    toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                  } finally { setApurLoading(false); }
+                }}
+              >
+                {apurLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Confirmer l'apurement
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
