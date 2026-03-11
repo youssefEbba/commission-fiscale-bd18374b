@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Award, Search, RefreshCw, Eye, Loader2, Filter, FileText } from "lucide-react";
 
-const API_BASE = "https://6bec-102-214-208-239.ngrok-free.app/api";
+const API_BASE = "https://1bcb-197-231-11-32.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
