@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const API_BASE = "https://1bcb-197-231-11-32.ngrok-free.app/api";
+const API_BASE = "https://5502-197-231-11-32.ngrok-free.app/api";
 
 const Login = () => {
   const [username, setUsername] = useState("");
