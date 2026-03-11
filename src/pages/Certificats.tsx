@@ -195,7 +195,7 @@ const Certificats = () => {
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
                        <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
-                       <TableCell className="text-muted-foreground">{c.entrepriseNom || "—"}</TableCell>
+                       <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
                        <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell className="font-semibold">{c.soldeCordon?.toLocaleString("fr-FR") ?? "—"}</TableCell>
