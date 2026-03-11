@@ -539,6 +539,7 @@ export interface CertificatCreditDto {
   reference?: string;
   entrepriseId?: number;
   entrepriseNom?: string;
+  entrepriseRaisonSociale?: string;
   statut: CertificatStatut;
   montantDouane?: number;
   montantInterieur?: number;
