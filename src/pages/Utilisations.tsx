@@ -346,10 +346,13 @@ const Utilisations = () => {
                                 disabled={actionLoading === u.id}
                                 onClick={() => {
                                   // Douane + LIQUIDEE → open dedicated dialog
-                                  if (u.type === "DOUANIER" && t.to === "LIQUIDEE") {
+                                   if (u.type === "DOUANIER" && t.to === "LIQUIDEE") {
                                     setLiquidationTarget(u);
                                     setLiqDroits("");
                                     setLiqTVA("");
+                                  } else if (u.type === "TVA_INTERIEURE" && t.to === "APUREE") {
+                                    setApurementTarget(u);
+                                    setApurMontant(u.montantTVAInterieure ? String(u.montantTVAInterieure) : "");
                                   } else {
                                     handleStatut(u.id, t.to);
                                   }
