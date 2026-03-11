@@ -99,6 +99,11 @@ const Utilisations = () => {
   const [liqTVA, setLiqTVA] = useState("");
   const [liqLoading, setLiqLoading] = useState(false);
 
+  // Apurement TVA dialog
+  const [apurementTarget, setApurementTarget] = useState<UtilisationCreditDto | null>(null);
+  const [apurMontant, setApurMontant] = useState("");
+  const [apurLoading, setApurLoading] = useState(false);
+
   // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);

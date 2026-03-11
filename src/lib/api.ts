@@ -701,6 +701,11 @@ export const utilisationCreditApi = {
       method: "POST",
       body: { montantDroits, montantTVA },
     }),
+  apurerTVA: (id: number, montantTVA: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
+      method: "POST",
+      body: { montantTVA },
+    }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
     const formData = new FormData();
