@@ -194,7 +194,7 @@ const Certificats = () => {
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun certificat</TableCell></TableRow>
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
-                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
+                       <TableCell className="font-medium">{c.numero || c.reference || `#${c.id}`}</TableCell>
                        <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
                        <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
