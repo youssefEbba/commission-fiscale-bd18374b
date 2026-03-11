@@ -329,7 +329,22 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => openDocs(u.id)}><FileText className="h-4 w-4" /></Button>
                           {getTransitions(role, u.type).map((t) =>
                             t.from.includes(u.statut) ? (
-                              <Button key={t.to} variant={t.to === "REJETEE" ? "destructive" : "default"} size="sm" disabled={actionLoading === u.id} onClick={() => handleStatut(u.id, t.to)}>
+                              <Button
+                                key={t.to}
+                                variant={t.to === "REJETEE" ? "destructive" : "default"}
+                                size="sm"
+                                disabled={actionLoading === u.id}
+                                onClick={() => {
+                                  // Douane + LIQUIDEE → open dedicated dialog
+                                  if (u.type === "DOUANIER" && t.to === "LIQUIDEE") {
+                                    setLiquidationTarget(u);
+                                    setLiqDroits("");
+                                    setLiqTVA("");
+                                  } else {
+                                    handleStatut(u.id, t.to);
+                                  }
+                                }}
+                              >
                                 {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                                 {t.label}
                               </Button>
