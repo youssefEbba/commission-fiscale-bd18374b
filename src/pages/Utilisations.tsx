@@ -93,6 +93,12 @@ const Utilisations = () => {
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
 
+  // Liquidation Douane dialog
+  const [liquidationTarget, setLiquidationTarget] = useState<UtilisationCreditDto | null>(null);
+  const [liqDroits, setLiqDroits] = useState("");
+  const [liqTVA, setLiqTVA] = useState("");
+  const [liqLoading, setLiqLoading] = useState(false);
+
   // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);

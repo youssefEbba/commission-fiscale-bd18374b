@@ -696,6 +696,11 @@ export const utilisationCreditApi = {
   getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
   create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
+  liquiderDouane: (id: number, montantDroits: number, montantTVA: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
+      method: "POST",
+      body: { montantDroits, montantTVA },
+    }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
     const formData = new FormData();
