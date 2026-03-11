@@ -172,7 +172,12 @@ const Utilisations = () => {
     }
     setCreating(true);
     try {
-      const created = await utilisationCreditApi.create(form as CreateUtilisationCreditRequest);
+      // Sanitize: replace empty strings with null/undefined so backend enums don't choke
+      const sanitized: Record<string, any> = {};
+      for (const [k, v] of Object.entries(form)) {
+        sanitized[k] = v === "" ? null : v;
+      }
+      const created = await utilisationCreditApi.create(sanitized as CreateUtilisationCreditRequest);
       // Upload all attached documents
       const uploadEntries = Object.entries(createDocFiles);
       if (uploadEntries.length > 0) {
