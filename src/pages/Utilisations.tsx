@@ -93,6 +93,12 @@ const Utilisations = () => {
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
 
+  // Liquidation Douane dialog
+  const [liquidationTarget, setLiquidationTarget] = useState<UtilisationCreditDto | null>(null);
+  const [liqDroits, setLiqDroits] = useState("");
+  const [liqTVA, setLiqTVA] = useState("");
+  const [liqLoading, setLiqLoading] = useState(false);
+
   // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
@@ -323,7 +329,22 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => openDocs(u.id)}><FileText className="h-4 w-4" /></Button>
                           {getTransitions(role, u.type).map((t) =>
                             t.from.includes(u.statut) ? (
-                              <Button key={t.to} variant={t.to === "REJETEE" ? "destructive" : "default"} size="sm" disabled={actionLoading === u.id} onClick={() => handleStatut(u.id, t.to)}>
+                              <Button
+                                key={t.to}
+                                variant={t.to === "REJETEE" ? "destructive" : "default"}
+                                size="sm"
+                                disabled={actionLoading === u.id}
+                                onClick={() => {
+                                  // Douane + LIQUIDEE → open dedicated dialog
+                                  if (u.type === "DOUANIER" && t.to === "LIQUIDEE") {
+                                    setLiquidationTarget(u);
+                                    setLiqDroits("");
+                                    setLiqTVA("");
+                                  } else {
+                                    handleStatut(u.id, t.to);
+                                  }
+                                }}
+                              >
                                 {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                                 {t.label}
                               </Button>
@@ -514,6 +535,73 @@ const Utilisations = () => {
               <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
               <Button onClick={handleUpload} disabled={uploading || !docFile} className="w-full">
                 {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Uploader
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Liquidation Douane dialog (DGTCP) */}
+      <Dialog open={!!liquidationTarget} onOpenChange={() => setLiquidationTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Liquidation Douane — Utilisation #{liquidationTarget?.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Saisissez les montants d'imputation pour liquider cette utilisation. Le solde du certificat sera automatiquement débité.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="liq-droits">Montant Droits de douane (MRU) *</Label>
+                <Input
+                  id="liq-droits"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={liqDroits}
+                  onChange={(e) => setLiqDroits(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="liq-tva">Montant TVA Douane (MRU) *</Label>
+                <Input
+                  id="liq-tva"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={liqTVA}
+                  onChange={(e) => setLiqTVA(e.target.value)}
+                />
+              </div>
+              {liqDroits && liqTVA && (
+                <div className="p-3 rounded-lg bg-muted text-sm">
+                  <span className="text-muted-foreground">Total imputation :</span>{" "}
+                  <span className="font-bold text-primary">
+                    {(Number(liqDroits) + Number(liqTVA)).toLocaleString("fr-FR")} MRU
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setLiquidationTarget(null)}>Annuler</Button>
+              <Button
+                disabled={liqLoading || !liqDroits || !liqTVA || (Number(liqDroits) + Number(liqTVA)) <= 0}
+                onClick={async () => {
+                  if (!liquidationTarget) return;
+                  setLiqLoading(true);
+                  try {
+                    await utilisationCreditApi.liquiderDouane(liquidationTarget.id, Number(liqDroits), Number(liqTVA));
+                    toast({ title: "Succès", description: "Utilisation liquidée — solde mis à jour" });
+                    setLiquidationTarget(null);
+                    fetchData();
+                  } catch (e: any) {
+                    toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                  } finally { setLiqLoading(false); }
+                }}
+              >
+                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Confirmer la liquidation
               </Button>
             </div>
           </div>
