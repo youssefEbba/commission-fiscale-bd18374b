@@ -29,6 +29,7 @@ import Transferts from "./pages/Transferts";
 import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import CertificatDetail from "./pages/CertificatDetail";
+import Cloture from "./pages/Cloture";
 
 const queryClient = new QueryClient();
 
