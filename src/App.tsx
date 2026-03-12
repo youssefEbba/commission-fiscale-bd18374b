@@ -29,6 +29,7 @@ import Transferts from "./pages/Transferts";
 import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import CertificatDetail from "./pages/CertificatDetail";
+import Cloture from "./pages/Cloture";
 
 const queryClient = new QueryClient();
 
@@ -93,7 +94,7 @@ const App = () => (
             } />
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
-                <Dashboard />
+                <Cloture />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/ged" element={
