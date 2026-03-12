@@ -94,6 +94,11 @@ const App = () => (
                 <GestionDocuments />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/certificats/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <CertificatDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
