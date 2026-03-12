@@ -26,6 +26,7 @@ import Delegues from "./pages/Delegues";
 import GestionDocuments from "./pages/GestionDocuments";
 import NotFound from "./pages/NotFound";
 import Presentation from "./pages/Presentation";
+import CertificatDetail from "./pages/CertificatDetail";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,11 @@ const App = () => (
             <Route path="/dashboard/ged" element={
               <ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}>
                 <GestionDocuments />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/certificats/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <CertificatDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />

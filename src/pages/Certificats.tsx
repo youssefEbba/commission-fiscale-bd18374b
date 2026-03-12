@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -59,6 +60,7 @@ function getDocFileUrl(doc: DocumentDto): string {
 
 const Certificats = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
@@ -193,7 +195,7 @@ const Certificats = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun certificat</TableCell></TableRow>
                   ) : filtered.map((c) => (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
                        <TableCell className="font-medium">{c.numero || c.reference || `#${c.id}`}</TableCell>
                        <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
                        <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
@@ -202,7 +204,7 @@ const Certificats = () => {
                        <TableCell className="font-semibold">{c.soldeTVA?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end flex-wrap">
+                        <div className="flex gap-1 justify-end flex-wrap" onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
