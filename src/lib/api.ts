@@ -932,4 +932,98 @@ export const transfertCreditApi = {
   },
 };
 
+// Sous-traitance (P8)
+export type StatutSousTraitance = "DEMANDE" | "EN_COURS" | "AUTORISEE" | "REFUSEE";
+
+export interface SousTraitanceDto {
+  id: number;
+  certificatCreditId: number;
+  certificatNumero?: string;
+  entrepriseSourceId?: number;
+  sousTraitantUserId: number;
+  sousTraitantUsername?: string;
+  contratEnregistre?: boolean;
+  volumes?: number;
+  quantites?: number;
+  dateAutorisation?: string;
+  statut: StatutSousTraitance;
+}
+
+export interface CreateSousTraitanceRequest {
+  certificatCreditId: number;
+  sousTraitantUserId: number;
+  contratEnregistre?: boolean;
+  volumes?: number;
+  quantites?: number;
+}
+
+export interface SousTraitanceOnboardingRequest {
+  certificatCreditId: number;
+  sousTraitantEntrepriseRaisonSociale: string;
+  sousTraitantEntrepriseNif: string;
+  sousTraitantEntrepriseAdresse?: string;
+  sousTraitantEntrepriseSituationFiscale?: string;
+  sousTraitantUsername: string;
+  sousTraitantPassword: string;
+  sousTraitantNomComplet?: string;
+  sousTraitantEmail?: string;
+  contratEnregistre?: boolean;
+  volumes?: number;
+  quantites?: number;
+}
+
+export interface SousTraitanceOnboardingResult {
+  sousTraitantEntrepriseId: number;
+  sousTraitantUserId: number;
+  sousTraitance: SousTraitanceDto;
+}
+
+export interface DocumentSousTraitanceDto {
+  id: number;
+  type: string;
+  nomFichier: string;
+  chemin?: string;
+  dateUpload?: string;
+  taille?: number;
+  version?: number;
+  actif?: boolean;
+}
+
+export type TypeDocumentSousTraitance = "CONTRAT_SOUS_TRAITANCE_ENREGISTRE" | "LETTRE_SOUS_TRAITANCE";
+
+export const SOUS_TRAITANCE_DOCUMENT_TYPES: { value: TypeDocumentSousTraitance; label: string }[] = [
+  { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
+  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre de sous-traitance" },
+];
+
+export const SOUS_TRAITANCE_STATUT_LABELS: Record<StatutSousTraitance, string> = {
+  DEMANDE: "Demandé",
+  EN_COURS: "En cours",
+  AUTORISEE: "Autorisée",
+  REFUSEE: "Refusée",
+};
+
+export const sousTraitanceApi = {
+  getAll: () => apiFetch<SousTraitanceDto[]>("/sous-traitances"),
+  getById: (id: number) => apiFetch<SousTraitanceDto>(`/sous-traitances/${id}`),
+  create: (data: CreateSousTraitanceRequest) =>
+    apiFetch<SousTraitanceDto>("/sous-traitances", { method: "POST", body: data }),
+  onboard: (data: SousTraitanceOnboardingRequest) =>
+    apiFetch<SousTraitanceOnboardingResult>("/sous-traitances/onboarding", { method: "POST", body: data }),
+  autoriser: (id: number) =>
+    apiFetch<SousTraitanceDto>(`/sous-traitances/${id}/autoriser`, { method: "POST" }),
+  refuser: (id: number) =>
+    apiFetch<SousTraitanceDto>(`/sous-traitances/${id}/refuser`, { method: "POST" }),
+  getDocuments: (id: number) =>
+    apiFetch<DocumentSousTraitanceDto[]>(`/sous-traitances/${id}/documents`),
+  uploadDocument: (id: number, type: TypeDocumentSousTraitance, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentSousTraitanceDto>(
+      `/sous-traitances/${id}/documents?type=${encodeURIComponent(type)}`,
+      { method: "POST", rawBody: formData }
+    );
+  },
+};
+
 export const WS_BASE = "https://5502-197-231-11-32.ngrok-free.app/ws";
