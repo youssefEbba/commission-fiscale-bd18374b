@@ -82,7 +82,7 @@ const App = () => (
             } />
             <Route path="/dashboard/transferts" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
-                <Dashboard />
+                <Transferts />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/cloture" element={
