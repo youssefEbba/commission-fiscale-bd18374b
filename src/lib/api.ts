@@ -1025,5 +1025,51 @@ export const sousTraitanceApi = {
     );
   },
 };
+// Clôture / Annulation (P9)
+export type MotifCloture = "RECEPTION_DEFINITIVE" | "SOLDE_ZERO" | "EXPIRATION_VALIDITE" | "RENONCIATION";
+export type TypeOperationCloture = "CLOTURE" | "ANNULATION";
+
+export interface ClotureCreditDto {
+  id: number;
+  dateProposition?: string;
+  dateCloture?: string;
+  motif: MotifCloture;
+  typeOperation: TypeOperationCloture;
+  soldeRestant?: number;
+  approuvee?: boolean | null;
+  certificatCreditId: number;
+  certificatNumero?: string;
+}
+
+export interface CreateClotureCreditRequest {
+  certificatCreditId: number;
+  motif: MotifCloture;
+  typeOperation: TypeOperationCloture;
+}
+
+export const MOTIF_CLOTURE_LABELS: Record<MotifCloture, string> = {
+  RECEPTION_DEFINITIVE: "Réception définitive",
+  SOLDE_ZERO: "Solde à zéro",
+  EXPIRATION_VALIDITE: "Expiration de validité",
+  RENONCIATION: "Renonciation",
+};
+
+export const TYPE_OPERATION_LABELS: Record<TypeOperationCloture, string> = {
+  CLOTURE: "Clôture",
+  ANNULATION: "Annulation",
+};
+
+export const clotureCreditApi = {
+  getEligible: () => apiFetch<number[]>("/clotures-credit/eligible"),
+  proposer: (data: CreateClotureCreditRequest) =>
+    apiFetch<ClotureCreditDto>("/clotures-credit", { method: "POST", body: data }),
+  getPropositions: () => apiFetch<ClotureCreditDto[]>("/clotures-credit/propositions"),
+  valider: (id: number) =>
+    apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/valider`, { method: "POST" }),
+  rejeter: (id: number) =>
+    apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/rejeter`, { method: "POST" }),
+  finaliser: (id: number) =>
+    apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/finaliser`, { method: "POST" }),
+};
 
 export const WS_BASE = "https://5502-197-231-11-32.ngrok-free.app/ws";
