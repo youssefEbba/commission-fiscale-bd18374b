@@ -861,4 +861,75 @@ export const documentRequirementApi = {
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
 };
 
+// Transferts de crédit (P7)
+export type StatutTransfert = "DEMANDE" | "EN_COURS" | "VALIDE" | "TRANSFERE" | "REJETE";
+
+export interface TransfertCreditDto {
+  id: number;
+  dateDemande?: string;
+  certificatCreditId: number;
+  certificatNumero?: string;
+  entrepriseSourceId?: number;
+  entrepriseDestinataireId: number;
+  entrepriseDestinataireNom?: string;
+  montant: number;
+  operationsDouaneCloturees?: boolean;
+  statut: StatutTransfert;
+}
+
+export interface CreateTransfertCreditRequest {
+  certificatCreditId: number;
+  entrepriseDestinataireId: number;
+  montant: number;
+  operationsDouaneCloturees?: boolean;
+}
+
+export interface DocumentTransfertCreditDto {
+  id: number;
+  type: string;
+  nomFichier: string;
+  chemin?: string;
+  dateUpload?: string;
+  taille?: number;
+  version?: number;
+  actif?: boolean;
+}
+
+export type TypeDocumentTransfert = "DEMANDE_MOTIVEE_TRANSFERT" | "DECLARATION_CLOTURE_DOUANE" | "JUSTIFICATIFS_CLOTURE_DOUANE";
+
+export const TRANSFERT_DOCUMENT_TYPES: { value: TypeDocumentTransfert; label: string }[] = [
+  { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée" },
+  { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
+  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs clôture douane" },
+];
+
+export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
+  DEMANDE: "Demandé",
+  EN_COURS: "En cours",
+  VALIDE: "Validé",
+  TRANSFERE: "Transféré",
+  REJETE: "Rejeté",
+};
+
+export const transfertCreditApi = {
+  getAll: () => apiFetch<TransfertCreditDto[]>("/transferts-credit"),
+  getById: (id: number) => apiFetch<TransfertCreditDto>(`/transferts-credit/${id}`),
+  create: (data: CreateTransfertCreditRequest) =>
+    apiFetch<TransfertCreditDto>("/transferts-credit", { method: "POST", body: data }),
+  valider: (id: number) =>
+    apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/valider`, { method: "POST" }),
+  rejeter: (id: number) =>
+    apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/rejeter`, { method: "POST" }),
+  getDocuments: (id: number) =>
+    apiFetch<DocumentTransfertCreditDto[]>(`/transferts-credit/${id}/documents`),
+  uploadDocument: (id: number, type: TypeDocumentTransfert, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentTransfertCreditDto>(
+      `/transferts-credit/${id}/documents?type=${encodeURIComponent(type)}`,
+      { method: "POST", rawBody: formData }
+    );
+  },
+};
+
 export const WS_BASE = "https://5502-197-231-11-32.ngrok-free.app/ws";
