@@ -204,7 +204,7 @@ const Certificats = () => {
                        <TableCell className="font-semibold">{c.soldeTVA?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end flex-wrap">
+                        <div className="flex gap-1 justify-end flex-wrap" onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
