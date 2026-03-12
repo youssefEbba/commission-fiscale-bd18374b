@@ -94,7 +94,7 @@ const App = () => (
             } />
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
-                <Dashboard />
+                <Cloture />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/ged" element={
