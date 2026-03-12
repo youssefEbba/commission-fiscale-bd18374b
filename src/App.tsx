@@ -25,6 +25,7 @@ import Marches from "./pages/Marches";
 import Delegues from "./pages/Delegues";
 import GestionDocuments from "./pages/GestionDocuments";
 import NotFound from "./pages/NotFound";
+import Transferts from "./pages/Transferts";
 import Presentation from "./pages/Presentation";
 import CertificatDetail from "./pages/CertificatDetail";
 
@@ -81,7 +82,7 @@ const App = () => (
             } />
             <Route path="/dashboard/transferts" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
-                <Dashboard />
+                <Transferts />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/cloture" element={
