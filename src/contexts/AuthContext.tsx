@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { LoginResponse } from "@/lib/api";
 
-export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP";
+export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT";
 
 interface AuthUser {
   token: string;
