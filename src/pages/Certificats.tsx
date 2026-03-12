@@ -60,6 +60,7 @@ function getDocFileUrl(doc: DocumentDto): string {
 
 const Certificats = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
