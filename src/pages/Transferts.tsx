@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle } from "lucide-react";
+import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
@@ -51,9 +52,6 @@ const Transferts = () => {
   // Document dialog
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentTransfertCreditDto[]>([]);
-  const [docType, setDocType] = useState<TypeDocumentTransfert>("DEMANDE_MOTIVEE_TRANSFERT");
-  const [docFile, setDocFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
 
   const fetchData = async () => {
@@ -125,17 +123,12 @@ const Transferts = () => {
     finally { setDocsLoading(false); }
   };
 
-  const handleUpload = async () => {
-    if (!docDialog || !docFile) return;
-    setUploading(true);
-    try {
-      await transfertCreditApi.uploadDocument(docDialog, docType, docFile);
-      toast({ title: "Succès", description: "Document uploadé" });
-      setDocFile(null);
-      setDocs(await transfertCreditApi.getDocuments(docDialog));
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setUploading(false); }
+  const refreshDocs = async (id: number) => {
+    try { setDocs(await transfertCreditApi.getDocuments(id)); } catch { /* ignore */ }
+  };
+
+  const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
+    await transfertCreditApi.uploadDocument(dossierId, type as TypeDocumentTransfert, file);
   };
 
   const filtered = data.filter((t) => {
@@ -315,73 +308,19 @@ const Transferts = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Document dialog */}
-      <Dialog open={docDialog !== null} onOpenChange={() => setDocDialog(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Documents — Transfert #{docDialog}</DialogTitle></DialogHeader>
-          {docsLoading ? (
-            <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin" /></div>
-          ) : (
-            <div className="space-y-4">
-              {docs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Aucun document</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Fichier</TableHead>
-                      <TableHead>Version</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {docs.filter(d => d.actif !== false).map((d) => (
-                      <TableRow key={d.id}>
-                        <TableCell className="text-xs">{TRANSFERT_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type}</TableCell>
-                        <TableCell>
-                          {d.chemin ? (
-                            <a href={d.chemin} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{d.nomFichier}</a>
-                          ) : (
-                            <span className="text-xs">{d.nomFichier}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs">v{d.version || 1}</TableCell>
-                        <TableCell className="text-xs">{d.dateUpload ? new Date(d.dateUpload).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-
-              {(role === "ENTREPRISE") && (
-                <div className="border-t pt-4 space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2"><Upload className="h-4 w-4" /> Ajouter un document</h4>
-                  <div>
-                    <Label>Type de document</Label>
-                    <Select value={docType} onValueChange={(v) => setDocType(v as TypeDocumentTransfert)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {TRANSFERT_DOCUMENT_TYPES.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Fichier</Label>
-                    <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
-                  </div>
-                  <Button onClick={handleUpload} disabled={uploading || !docFile} className="w-full">
-                    {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    Uploader
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* GED Document dialog */}
+      <DocumentGED
+        open={docDialog !== null}
+        onOpenChange={() => setDocDialog(null)}
+        title={`Documents — Transfert #${docDialog}`}
+        dossierId={docDialog}
+        documentTypes={TRANSFERT_DOCUMENT_TYPES}
+        documents={docs}
+        loading={docsLoading}
+        canUpload={role === "ENTREPRISE"}
+        onUpload={handleGEDUpload}
+        onRefresh={refreshDocs}
+      />
     </DashboardLayout>
   );
 };
