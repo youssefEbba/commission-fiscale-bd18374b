@@ -94,25 +94,47 @@ const DossiersList = () => {
                 className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary"
                 onClick={() => setSelectedDossier(dossier.id)}
               >
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FolderOpen className="h-5 w-5 text-primary" />
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FolderOpen className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{dossier.reference}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Créé le {new Date(dossier.dateCreation).toLocaleDateString("fr-FR")}
+                          {dossier.certificatId && ` • Certificat #${dossier.certificatId}`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{dossier.reference}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Créé le {new Date(dossier.dateCreation).toLocaleDateString("fr-FR")}
-                        {dossier.certificatId && ` • Certificat #${dossier.certificatId}`}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right text-sm">
+                        <p className="text-foreground font-medium">{totalDocs} document(s)</p>
+                        <p className="text-xs text-muted-foreground">{etapesAvecDocs}/11 étapes</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right text-sm">
-                      <p className="text-foreground font-medium">{totalDocs} document(s)</p>
-                      <p className="text-xs text-muted-foreground">{etapesAvecDocs}/11 étapes</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 pl-14 text-xs text-muted-foreground">
+                    {dossier.entrepriseRaisonSociale && (
+                      <span className="flex items-center gap-1">
+                        <Building2 className="h-3.5 w-3.5" />
+                        {dossier.entrepriseRaisonSociale}
+                      </span>
+                    )}
+                    {dossier.autoriteContractanteNom && (
+                      <span className="flex items-center gap-1">
+                        <Landmark className="h-3.5 w-3.5" />
+                        {dossier.autoriteContractanteNom}
+                      </span>
+                    )}
+                    {(dossier.marcheNumero || dossier.marcheIntitule) && (
+                      <span className="flex items-center gap-1">
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                        {dossier.marcheNumero || dossier.marcheIntitule}
+                      </span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
