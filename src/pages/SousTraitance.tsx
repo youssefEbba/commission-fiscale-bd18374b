@@ -471,7 +471,13 @@ const SousTraitance = () => {
                           <Loader2 className="h-4 w-4 animate-spin" /> Chargement des utilisateurs...
                         </div>
                       ) : entrepriseUsers.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-2">Aucun utilisateur trouvé pour cette entreprise.</p>
+                        <div className="text-sm py-2">
+                          <p className="text-muted-foreground">
+                            {usersAccessDenied
+                              ? "Accès refusé. Utilisez « Créer nouvelle » pour ajouter l'entreprise et son utilisateur."
+                              : "Aucun utilisateur trouvé pour cette entreprise. L'entreprise n'a pas encore d'utilisateur associé."}
+                          </p>
+                        </div>
                       ) : (
                         <Select value={selectedUserId ? String(selectedUserId) : ""} onValueChange={(v) => setSelectedUserId(Number(v))}>
                           <SelectTrigger><SelectValue placeholder="Choisir un utilisateur" /></SelectTrigger>
