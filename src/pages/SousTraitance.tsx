@@ -171,10 +171,7 @@ const SousTraitance = () => {
         toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
         return;
       }
-      if (!selectedUserId) {
-        toast({ title: "Erreur", description: "Veuillez sélectionner un utilisateur sous-traitant", variant: "destructive" });
-        return;
-      }
+      // selectedUserId is optional now
       setCreating(true);
       try {
         createdSousTraitance = await sousTraitanceApi.create({
