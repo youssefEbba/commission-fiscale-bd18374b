@@ -1069,3 +1069,33 @@ export const clotureCreditApi = {
 };
 
 export const WS_BASE = "https://5502-197-231-11-32.ngrok-free.app/ws";
+
+// ── Dossiers GED ──
+
+export interface DossierEtapeGed {
+  etape: string;
+  label: string;
+  documents: Array<{
+    id: number;
+    nom: string;
+    type: string;
+    dateUpload?: string;
+    taille?: number;
+    url?: string;
+  }>;
+}
+
+export interface DossierGedDto {
+  id: number;
+  reference: string;
+  entrepriseId: number;
+  demandeCorrectionId: number;
+  certificatId?: number;
+  dateCreation: string;
+  etapes: DossierEtapeGed[];
+}
+
+export const dossierGedApi = {
+  getAll: () => apiFetch<DossierGedDto[]>("/dossiers"),
+  getById: (id: number) => apiFetch<DossierGedDto>(`/dossiers/${id}`),
+};
