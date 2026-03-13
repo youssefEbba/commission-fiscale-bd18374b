@@ -160,6 +160,29 @@ const Marches = () => {
     }
   };
 
+  const openGed = async (m: MarcheDto) => {
+    setGedMarche(m);
+    setGedOpen(true);
+    setGedLoading(true);
+    try {
+      const docs = await marcheApi.getDocuments(m.id);
+      setGedDocs(docs);
+    } catch {
+      setGedDocs([]);
+    } finally {
+      setGedLoading(false);
+    }
+  };
+
+  const handleGedUpload = async (marcheId: number, type: string, file: File) => {
+    await marcheApi.uploadDocument(marcheId, type as TypeDocumentMarche, file);
+  };
+
+  const handleGedRefresh = async (marcheId: number) => {
+    const docs = await marcheApi.getDocuments(marcheId);
+    setGedDocs(docs);
+  };
+
   const handleSubmit = async () => {
     if (!form.numeroMarche?.trim()) {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
