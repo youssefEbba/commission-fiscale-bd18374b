@@ -73,6 +73,7 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
   // Convention
   { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
+  { value: "CONVENTION_JOIGNED_DOCUMENT", label: "Document joint convention" },
   { value: "AVENANT", label: "Avenant" },
   { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
   { value: "ANNEXE", label: "Annexe" },
@@ -80,6 +81,11 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
   { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
   { value: "CONTRAT_SIGNE", label: "Contrat signé" },
+  // Types backend enum
+  { value: "CERTIFICAT_CREDIT_IMPOTS", label: "Certificat crédit d'impôts" },
+  { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
+  { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée de transfert" },
+  { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
 ];
 
 const GedConfiguration = () => {
