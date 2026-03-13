@@ -171,15 +171,12 @@ const SousTraitance = () => {
         toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
         return;
       }
-      if (!selectedUserId) {
-        toast({ title: "Erreur", description: "Veuillez sélectionner un utilisateur sous-traitant", variant: "destructive" });
-        return;
-      }
+      // selectedUserId is optional now
       setCreating(true);
       try {
         createdSousTraitance = await sousTraitanceApi.create({
           certificatCreditId: f2.certificatCreditId,
-          sousTraitantUserId: selectedUserId,
+          sousTraitantUserId: selectedUserId || 0,
           contratEnregistre: f2.contratEnregistre,
           volumes: f2.volumes,
           quantites: f2.quantites,
@@ -461,35 +458,26 @@ const SousTraitance = () => {
                   </div>
 
                   {/* User selection from enterprise */}
-                  {selectedEntrepriseId && (
+                  {selectedEntrepriseId && loadingUsers && (
+                    <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Chargement...
+                    </div>
+                  )}
+                  {selectedEntrepriseId && !loadingUsers && entrepriseUsers.length > 0 && (
                     <div>
                       <Label className="flex items-center gap-2">
-                        <User className="h-4 w-4" /> Utilisateur sous-traitant *
+                        <User className="h-4 w-4" /> Utilisateur sous-traitant
                       </Label>
-                      {loadingUsers ? (
-                        <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" /> Chargement des utilisateurs...
-                        </div>
-                      ) : entrepriseUsers.length === 0 ? (
-                        <div className="text-sm py-2">
-                          <p className="text-muted-foreground">
-                            {usersAccessDenied
-                              ? "Accès refusé. Utilisez « Créer nouvelle » pour ajouter l'entreprise et son utilisateur."
-                              : "Aucun utilisateur trouvé pour cette entreprise. L'entreprise n'a pas encore d'utilisateur associé."}
-                          </p>
-                        </div>
-                      ) : (
-                        <Select value={selectedUserId ? String(selectedUserId) : ""} onValueChange={(v) => setSelectedUserId(Number(v))}>
-                          <SelectTrigger><SelectValue placeholder="Choisir un utilisateur" /></SelectTrigger>
-                          <SelectContent>
-                            {entrepriseUsers.map((u) => (
-                              <SelectItem key={u.id} value={String(u.id)}>
-                                {u.nomComplet || u.username} — {u.username}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      <Select value={selectedUserId ? String(selectedUserId) : ""} onValueChange={(v) => setSelectedUserId(Number(v))}>
+                        <SelectTrigger><SelectValue placeholder="Choisir un utilisateur (optionnel)" /></SelectTrigger>
+                        <SelectContent>
+                          {entrepriseUsers.map((u) => (
+                            <SelectItem key={u.id} value={String(u.id)}>
+                              {u.nomComplet || u.username} — {u.username}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>
