@@ -119,25 +119,8 @@ const SousTraitance = () => {
   };
 
   // Load users when enterprise is selected
-  const handleSelectEntreprise = async (entrepriseId: number) => {
+  const handleSelectEntreprise = (entrepriseId: number) => {
     setSelectedEntrepriseId(entrepriseId);
-    setSelectedUserId(null);
-    setEntrepriseUsers([]);
-    setLoadingUsers(true);
-    try {
-      const allSousTraitants = await utilisateurApi.getSousTraitants();
-      const filtered = allSousTraitants.filter((u) => u.entrepriseId === entrepriseId);
-      setEntrepriseUsers(filtered);
-    } catch {
-      setEntrepriseUsers([]);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les utilisateurs sous-traitants.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingUsers(false);
-    }
   };
 
   const handleCreate = async () => {
