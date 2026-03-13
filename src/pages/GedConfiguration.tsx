@@ -18,6 +18,8 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
+  { key: "CONVENTION", processus: "CONVENTION", label: "Convention" },
+  { key: "MARCHE", processus: "MARCHE", label: "Marché / Attribution / Adjudication" },
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
   { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
@@ -69,6 +71,15 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
   { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
   { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
+  // Convention
+  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
+  { value: "AVENANT", label: "Avenant" },
+  { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
+  { value: "ANNEXE", label: "Annexe" },
+  // Marché
+  { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
+  { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
+  { value: "CONTRAT_SIGNE", label: "Contrat signé" },
 ];
 
 const GedConfiguration = () => {
@@ -85,6 +96,14 @@ const GedConfiguration = () => {
   const [description, setDescription] = useState("");
   const [ordreAffichage, setOrdreAffichage] = useState(1);
 
+  const conventionReqQuery = useQuery({
+    queryKey: ["document-requirements", "CONVENTION"],
+    queryFn: () => documentRequirementApi.getByProcessus("CONVENTION"),
+  });
+  const marcheReqQuery = useQuery({
+    queryKey: ["document-requirements", "MARCHE"],
+    queryFn: () => documentRequirementApi.getByProcessus("MARCHE"),
+  });
   const correctionQuery = useQuery({
     queryKey: ["document-requirements", "CORRECTION_OFFRE_FISCALE"],
     queryFn: () => documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE"),
@@ -111,6 +130,8 @@ const GedConfiguration = () => {
   });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
+    CONVENTION: { data: conventionReqQuery.data || [], isLoading: conventionReqQuery.isLoading },
+    MARCHE: { data: marcheReqQuery.data || [], isLoading: marcheReqQuery.isLoading },
     CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
     MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
     UTILISATION_CI_EXTERIEUR: { data: exterieurQuery.data || [], isLoading: exterieurQuery.isLoading },
