@@ -580,31 +580,30 @@ const Conventions = () => {
                   <Loader2 className="h-4 w-4 animate-spin" /> Chargement des exigences GED...
                 </div>
               ) : gedRequirements.length > 0 ? (
-                <>
-                  {/* Checklist of required documents from GED config */}
-                  <div className="space-y-1">
-                    {gedRequirements
-                      .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
-                      .map((req) => {
-                        const hasDoc = createDocs.some(d => d.type === req.typeDocument);
-                        return (
-                          <div key={req.id} className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${req.obligatoire && !hasDoc ? "bg-destructive/10" : hasDoc ? "bg-green-50" : "bg-muted/30"}`}>
-                            {hasDoc ? (
-                              <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                            ) : (
-                              <XCircle className={`h-3.5 w-3.5 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />
-                            )}
-                            <span className={req.obligatoire && !hasDoc ? "text-destructive font-medium" : ""}>
-                              {req.description || req.typeDocument}
-                            </span>
-                            {req.obligatoire && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0">Obligatoire</Badge>
-                            )}
-                          </div>
-                        );
-                      })}
-                  </div>
-                </>
+                <div className="space-y-1">
+                  {gedRequirements
+                    .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
+                    .map((req) => {
+                      const docsForType = createDocs.filter(d => d.type === req.typeDocument);
+                      const hasDoc = docsForType.length > 0;
+                      return (
+                        <div key={req.id} className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${req.obligatoire && !hasDoc ? "bg-destructive/10" : hasDoc ? "bg-green-50" : "bg-muted/30"}`}>
+                          {hasDoc ? (
+                            <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                          ) : (
+                            <XCircle className={`h-3.5 w-3.5 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />
+                          )}
+                          <span className={req.obligatoire && !hasDoc ? "text-destructive font-medium" : ""}>
+                            {req.typeDocument}
+                          </span>
+                          {hasDoc && <span className="text-muted-foreground">({docsForType.length} fichier{docsForType.length > 1 ? "s" : ""})</span>}
+                          {req.obligatoire && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">Obligatoire</Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
               ) : (
                 <p className="text-xs text-muted-foreground">Aucune exigence GED configurée pour les conventions.</p>
               )}
@@ -617,7 +616,7 @@ const Conventions = () => {
                     {(gedRequirements.length > 0
                       ? gedRequirements
                           .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
-                          .map(r => ({ value: r.typeDocument, label: r.description || r.typeDocument }))
+                          .map(r => ({ value: r.typeDocument, label: r.typeDocument }))
                       : CONVENTION_DOCUMENT_TYPES
                     ).map((t) => (
                       <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -626,11 +625,12 @@ const Conventions = () => {
                 </Select>
                 <Input
                   type="file"
+                  multiple
                   className="flex-1"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      addCreateDoc(file);
+                    const files = e.target.files;
+                    if (files) {
+                      Array.from(files).forEach(file => addCreateDoc(file));
                       e.target.value = "";
                     }
                   }}
@@ -640,7 +640,7 @@ const Conventions = () => {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground">
-                      {createDocs.length} fichier(s) — Utilisez les flèches pour réordonner avant fusion
+                      {createDocs.length} fichier(s) — Réordonnez puis fusionnez les PDF
                     </span>
                     {createDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
                       <Button type="button" variant="outline" size="sm" onClick={mergeCreateDocs} disabled={merging}>
@@ -662,9 +662,7 @@ const Conventions = () => {
                       </div>
                       <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="outline" className="text-xs shrink-0">
-                        {gedRequirements.find(r => r.typeDocument === d.type)?.description
-                          || CONVENTION_DOCUMENT_TYPES.find(t => t.value === d.type)?.label
-                          || d.type}
+                        {d.type}
                       </Badge>
                       <span className="truncate flex-1">{d.file.name}</span>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCreateDoc(i)}>
