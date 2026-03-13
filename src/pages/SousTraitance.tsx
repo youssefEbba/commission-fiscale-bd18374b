@@ -73,8 +73,6 @@ const SousTraitance = () => {
     setForm({ contratEnregistre: true });
     setCreateNewEntreprise(false);
     setSelectedEntrepriseId(null);
-    setSelectedUserId(null);
-    setEntrepriseUsers([]);
     setCreateDocContrat(null);
     setCreateDocLettre(null);
 
