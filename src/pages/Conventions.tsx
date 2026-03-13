@@ -209,7 +209,7 @@ const Conventions = () => {
         pages.forEach(page => mergedPdf.addPage(page));
       }
       const mergedBytes = await mergedPdf.save();
-      const blob = new Blob([mergedBytes], { type: "application/pdf" });
+      const blob = new Blob([mergedBytes.buffer], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
