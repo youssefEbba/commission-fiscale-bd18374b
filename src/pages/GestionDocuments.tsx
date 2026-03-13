@@ -96,12 +96,22 @@ const GestionDocuments = () => {
     queryKey: ["document-requirements", "UTILISATION_CI_INTERIEUR"],
     queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
   });
+  const transfertQuery = useQuery({
+    queryKey: ["document-requirements", "TRANSFERT_CREDIT"],
+    queryFn: () => documentRequirementApi.getByProcessus("TRANSFERT_CREDIT"),
+  });
+  const sousTraitanceQuery = useQuery({
+    queryKey: ["document-requirements", "SOUS_TRAITANCE"],
+    queryFn: () => documentRequirementApi.getByProcessus("SOUS_TRAITANCE"),
+  });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
     CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
     MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
     UTILISATION_CI_EXTERIEUR: { data: exterieurQuery.data || [], isLoading: exterieurQuery.isLoading },
     UTILISATION_CI_INTERIEUR: { data: interieurQuery.data || [], isLoading: interieurQuery.isLoading },
+    TRANSFERT_CREDIT: { data: transfertQuery.data || [], isLoading: transfertQuery.isLoading },
+    SOUS_TRAITANCE: { data: sousTraitanceQuery.data || [], isLoading: sousTraitanceQuery.isLoading },
   };
 
   const createMutation = useMutation({
