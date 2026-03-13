@@ -126,17 +126,12 @@ const Transferts = () => {
     finally { setDocsLoading(false); }
   };
 
-  const handleUpload = async () => {
-    if (!docDialog || !docFile) return;
-    setUploading(true);
-    try {
-      await transfertCreditApi.uploadDocument(docDialog, docType, docFile);
-      toast({ title: "Succès", description: "Document uploadé" });
-      setDocFile(null);
-      setDocs(await transfertCreditApi.getDocuments(docDialog));
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setUploading(false); }
+  const refreshDocs = async (id: number) => {
+    try { setDocs(await transfertCreditApi.getDocuments(id)); } catch { /* ignore */ }
+  };
+
+  const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
+    await transfertCreditApi.uploadDocument(dossierId, type as TypeDocumentTransfert, file);
   };
 
   const filtered = data.filter((t) => {
