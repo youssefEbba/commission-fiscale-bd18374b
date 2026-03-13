@@ -88,21 +88,11 @@ export const authApi = {
 
 export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
 
-export interface SousTraitantUtilisateurDto {
-  id: number;
-  username: string;
-  nomComplet: string;
-  email: string;
-  actif: boolean;
-  entrepriseId: number;
-  entrepriseRaisonSociale: string;
-  entrepriseNif: string;
-}
 
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
   getByEntreprise: (entrepriseId: number) => apiFetch<UtilisateurDto[]>(`/utilisateurs?entrepriseId=${entrepriseId}`),
-  getSousTraitants: () => apiFetch<SousTraitantUtilisateurDto[]>("/utilisateurs/sous-traitants"),
+  getSousTraitants: () => apiFetch<EntrepriseDto[]>("/utilisateurs/sous-traitants"),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
@@ -953,8 +943,9 @@ export interface SousTraitanceDto {
   certificatCreditId: number;
   certificatNumero?: string;
   entrepriseSourceId?: number;
-  sousTraitantUserId: number;
-  sousTraitantUsername?: string;
+  sousTraitantEntrepriseId?: number;
+  sousTraitantEntrepriseRaisonSociale?: string;
+  sousTraitantEntrepriseNif?: string;
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
@@ -964,7 +955,7 @@ export interface SousTraitanceDto {
 
 export interface CreateSousTraitanceRequest {
   certificatCreditId: number;
-  sousTraitantUserId: number;
+  sousTraitantEntrepriseId: number;
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
@@ -976,10 +967,6 @@ export interface SousTraitanceOnboardingRequest {
   sousTraitantEntrepriseNif: string;
   sousTraitantEntrepriseAdresse?: string;
   sousTraitantEntrepriseSituationFiscale?: string;
-  sousTraitantUsername: string;
-  sousTraitantPassword: string;
-  sousTraitantNomComplet?: string;
-  sousTraitantEmail?: string;
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
@@ -987,7 +974,6 @@ export interface SousTraitanceOnboardingRequest {
 
 export interface SousTraitanceOnboardingResult {
   sousTraitantEntrepriseId: number;
-  sousTraitantUserId: number;
   sousTraitance: SousTraitanceDto;
 }
 

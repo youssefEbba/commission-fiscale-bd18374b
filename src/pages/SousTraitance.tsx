@@ -8,7 +8,6 @@ import {
   SOUS_TRAITANCE_DOCUMENT_TYPES, TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
   entrepriseApi, EntrepriseDto,
-  utilisateurApi, SousTraitantUtilisateurDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Handshake, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle, UserPlus, Building2, User } from "lucide-react";
+import { Handshake, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle, UserPlus, Building2 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutSousTraitance, string> = {
@@ -46,9 +45,6 @@ const SousTraitance = () => {
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [createNewEntreprise, setCreateNewEntreprise] = useState(false);
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<number | null>(null);
-  const [entrepriseUsers, setEntrepriseUsers] = useState<SousTraitantUtilisateurDto[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [form, setForm] = useState<Partial<SousTraitanceOnboardingRequest>>({});
   const [creating, setCreating] = useState(false);
 
@@ -77,8 +73,6 @@ const SousTraitance = () => {
     setForm({ contratEnregistre: true });
     setCreateNewEntreprise(false);
     setSelectedEntrepriseId(null);
-    setSelectedUserId(null);
-    setEntrepriseUsers([]);
     setCreateDocContrat(null);
     setCreateDocLettre(null);
 
@@ -125,25 +119,8 @@ const SousTraitance = () => {
   };
 
   // Load users when enterprise is selected
-  const handleSelectEntreprise = async (entrepriseId: number) => {
+  const handleSelectEntreprise = (entrepriseId: number) => {
     setSelectedEntrepriseId(entrepriseId);
-    setSelectedUserId(null);
-    setEntrepriseUsers([]);
-    setLoadingUsers(true);
-    try {
-      const allSousTraitants = await utilisateurApi.getSousTraitants();
-      const filtered = allSousTraitants.filter((u) => u.entrepriseId === entrepriseId);
-      setEntrepriseUsers(filtered);
-    } catch {
-      setEntrepriseUsers([]);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les utilisateurs sous-traitants.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingUsers(false);
-    }
   };
 
   const handleCreate = async () => {
@@ -157,17 +134,15 @@ const SousTraitance = () => {
     let createdSousTraitance: SousTraitanceDto | null = null;
 
     if (!createNewEntreprise) {
-      // Use existing enterprise + existing user → use create API
       if (!selectedEntrepriseId) {
         toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
         return;
       }
-      // selectedUserId is optional now
       setCreating(true);
       try {
         createdSousTraitance = await sousTraitanceApi.create({
           certificatCreditId: f2.certificatCreditId,
-          sousTraitantUserId: selectedUserId || 0,
+          sousTraitantEntrepriseId: selectedEntrepriseId,
           contratEnregistre: f2.contratEnregistre,
           volumes: f2.volumes,
           quantites: f2.quantites,
@@ -178,14 +153,10 @@ const SousTraitance = () => {
         return;
       }
     } else {
-      // Create new enterprise + user → use onboard API
-      const { sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif, sousTraitantUsername, sousTraitantPassword } = f2;
+      // Create new enterprise → use onboard API
+      const { sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif } = f2;
       if (!sousTraitantEntrepriseRaisonSociale || !sousTraitantEntrepriseNif) {
         toast({ title: "Erreur", description: "Veuillez remplir la raison sociale et le NIF", variant: "destructive" });
-        return;
-      }
-      if (!sousTraitantUsername || !sousTraitantPassword) {
-        toast({ title: "Erreur", description: "Veuillez remplir le nom d'utilisateur et le mot de passe", variant: "destructive" });
         return;
       }
       setCreating(true);
@@ -258,7 +229,7 @@ const SousTraitance = () => {
 
   const filtered = data.filter((t) => {
     const ms = (t.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
-      (t.sousTraitantUsername || "").toLowerCase().includes(search.toLowerCase()) ||
+      (t.sousTraitantEntrepriseRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       String(t.id).includes(search);
     const matchStatut = filterStatut === "ALL" || t.statut === filterStatut;
     return ms && matchStatut;
@@ -329,7 +300,7 @@ const SousTraitance = () => {
                     <TableRow key={t.id}>
                       <TableCell className="font-medium">#{t.id}</TableCell>
                       <TableCell className="text-muted-foreground">{t.certificatNumero || `Cert #${t.certificatCreditId}`}</TableCell>
-                      <TableCell>{t.sousTraitantUsername || `User #${t.sousTraitantUserId}`}</TableCell>
+                      <TableCell>{t.sousTraitantEntrepriseRaisonSociale || `Ent. #${t.sousTraitantEntrepriseId}`}</TableCell>
                       <TableCell>{f(t.volumes)}</TableCell>
                       <TableCell>{f(t.quantites)}</TableCell>
                       <TableCell>
@@ -374,7 +345,7 @@ const SousTraitance = () => {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
-                <div><span className="text-muted-foreground">Sous-traitant</span><p className="font-medium">{selected.sousTraitantUsername || `#${selected.sousTraitantUserId}`}</p></div>
+                <div><span className="text-muted-foreground">Sous-traitant</span><p className="font-medium">{selected.sousTraitantEntrepriseRaisonSociale || `#${selected.sousTraitantEntrepriseId}`}</p></div>
                 <div><span className="text-muted-foreground">Volumes</span><p className="font-medium">{f(selected.volumes)}</p></div>
                 <div><span className="text-muted-foreground">Quantités</span><p className="font-medium">{f(selected.quantites)}</p></div>
                 <div><span className="text-muted-foreground">Contrat enregistré</span><p className="font-medium">{selected.contratEnregistre ? "Oui" : "Non"}</p></div>
@@ -420,10 +391,8 @@ const SousTraitance = () => {
                     setCreateNewEntreprise(!createNewEntreprise);
                     if (!createNewEntreprise) {
                       setSelectedEntrepriseId(null);
-                      setSelectedUserId(null);
-                      setEntrepriseUsers([]);
                     } else {
-                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined, sousTraitantUsername: undefined, sousTraitantPassword: undefined, sousTraitantNomComplet: undefined, sousTraitantEmail: undefined });
+                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined });
                     }
                   }}
                 >
@@ -447,50 +416,6 @@ const SousTraitance = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* User selection from enterprise */}
-                  {selectedEntrepriseId && loadingUsers && (
-                    <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Chargement...
-                    </div>
-                  )}
-                  {selectedEntrepriseId && !loadingUsers && entrepriseUsers.length > 0 && (
-                    <div className="space-y-3">
-                      <Label className="flex items-center gap-2">
-                        <User className="h-4 w-4" /> Utilisateurs sous-traitants trouvés ({entrepriseUsers.length})
-                      </Label>
-                      <div className="grid gap-2">
-                        {entrepriseUsers.map((u) => (
-                          <div
-                            key={u.id}
-                            onClick={() => setSelectedUserId(u.id)}
-                            className={cn(
-                              "flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors",
-                              selectedUserId === u.id
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:border-primary/50 hover:bg-muted/50"
-                            )}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">{u.nomComplet || u.username}</p>
-                                <p className="text-xs text-muted-foreground">{u.email} · @{u.username}</p>
-                              </div>
-                            </div>
-                            <Badge variant={u.actif ? "default" : "secondary"}>
-                              {u.actif ? "Actif" : "Inactif"}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedEntrepriseId && !loadingUsers && entrepriseUsers.length === 0 && (
-                    <p className="text-sm text-muted-foreground py-2">Aucun utilisateur sous-traitant trouvé pour cette entreprise.</p>
-                  )}
                 </div>
               ) : (
                 <>
@@ -519,28 +444,6 @@ const SousTraitance = () => {
                     </div>
                   </div>
 
-                  {/* Utilisateur sous-traitant (new) */}
-                  <div className="border rounded-lg p-4 space-y-3 mt-3">
-                    <h4 className="font-semibold text-sm text-foreground">Utilisateur sous-traitant</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>Nom d'utilisateur *</Label>
-                        <Input value={form.sousTraitantUsername ?? ""} onChange={(e) => setForm({ ...form, sousTraitantUsername: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Mot de passe *</Label>
-                        <Input type="password" value={form.sousTraitantPassword ?? ""} onChange={(e) => setForm({ ...form, sousTraitantPassword: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Nom complet</Label>
-                        <Input value={form.sousTraitantNomComplet ?? ""} onChange={(e) => setForm({ ...form, sousTraitantNomComplet: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Email</Label>
-                        <Input type="email" value={form.sousTraitantEmail ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEmail: e.target.value })} />
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
