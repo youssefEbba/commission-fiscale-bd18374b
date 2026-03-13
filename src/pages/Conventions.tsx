@@ -68,6 +68,10 @@ const Conventions = () => {
   // Taux de change auto
   const [tauxLoading, setTauxLoading] = useState(false);
 
+  // GED requirements
+  const [gedRequirements, setGedRequirements] = useState<DocumentRequirementDto[]>([]);
+  const [gedReqLoading, setGedReqLoading] = useState(false);
+
   // Documents in creation form
   const [createDocs, setCreateDocs] = useState<{ type: TypeDocumentConvention; file: File }[]>([]);
   const [createDocType, setCreateDocType] = useState<TypeDocumentConvention>("CONVENTION_CONTRAT");
