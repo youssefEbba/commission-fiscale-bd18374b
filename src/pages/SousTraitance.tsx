@@ -124,16 +124,32 @@ const SousTraitance = () => {
   };
 
   // Load users when enterprise is selected
+  const [usersAccessDenied, setUsersAccessDenied] = useState(false);
+
   const handleSelectEntreprise = async (entrepriseId: number) => {
     setSelectedEntrepriseId(entrepriseId);
     setSelectedUserId(null);
     setEntrepriseUsers([]);
+    setUsersAccessDenied(false);
     setLoadingUsers(true);
     try {
       const users = await utilisateurApi.getByEntreprise(entrepriseId);
       setEntrepriseUsers(users);
-    } catch {
-      setEntrepriseUsers([]);
+    } catch (err1) {
+      // Fallback: try getAll and filter by entrepriseId
+      try {
+        const allUsers = await utilisateurApi.getAll();
+        const filtered = allUsers.filter((u) => u.entrepriseId === entrepriseId);
+        setEntrepriseUsers(filtered);
+      } catch {
+        setEntrepriseUsers([]);
+        setUsersAccessDenied(true);
+        toast({
+          title: "Permission manquante",
+          description: "Impossible de charger les utilisateurs de cette entreprise. Vous pouvez créer une nouvelle entreprise avec son utilisateur.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoadingUsers(false);
     }
@@ -455,7 +471,13 @@ const SousTraitance = () => {
                           <Loader2 className="h-4 w-4 animate-spin" /> Chargement des utilisateurs...
                         </div>
                       ) : entrepriseUsers.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-2">Aucun utilisateur trouvé pour cette entreprise.</p>
+                        <div className="text-sm py-2">
+                          <p className="text-muted-foreground">
+                            {usersAccessDenied
+                              ? "Accès refusé. Utilisez « Créer nouvelle » pour ajouter l'entreprise et son utilisateur."
+                              : "Aucun utilisateur trouvé pour cette entreprise. L'entreprise n'a pas encore d'utilisateur associé."}
+                          </p>
+                        </div>
                       ) : (
                         <Select value={selectedUserId ? String(selectedUserId) : ""} onValueChange={(v) => setSelectedUserId(Number(v))}>
                           <SelectTrigger><SelectValue placeholder="Choisir un utilisateur" /></SelectTrigger>
