@@ -68,11 +68,17 @@ const SousTraitance = () => {
 
   const openCreate = async () => {
     setForm({ contratEnregistre: true });
+    setCreateNewEntreprise(false);
+    setSelectedEntrepriseId(null);
     try {
-      const certs = role === "ENTREPRISE" && (user as any)?.entrepriseId
-        ? await certificatCreditApi.getByEntreprise((user as any).entrepriseId)
-        : await certificatCreditApi.getAll();
+      const [certs, ents] = await Promise.all([
+        role === "ENTREPRISE" && (user as any)?.entrepriseId
+          ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
+          : certificatCreditApi.getAll(),
+        entrepriseApi.getAll(),
+      ]);
       setCertificats(certs.filter(c => c.statut === "OUVERT"));
+      setEntreprises(ents);
     } catch { /* ignore */ }
     setShowCreate(true);
   };
