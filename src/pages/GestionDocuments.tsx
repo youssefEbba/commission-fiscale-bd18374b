@@ -1,6 +1,8 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DossiersList from "@/components/ged/DossiersList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -236,10 +238,18 @@ const GestionDocuments = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">GED – Gestion des Documents</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Configurez les documents requis par processus
+            Configurez les documents requis ou consultez les dossiers
           </p>
         </div>
 
+        <Tabs defaultValue="configuration" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="configuration">Configuration</TabsTrigger>
+            <TabsTrigger value="dossiers">Dossiers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="configuration">
+            <div className="space-y-6">
         {PROCESSUS_SECTIONS.map((section) => {
           const q = queriesByProcessus[section.processus];
           if (!q) return null;
@@ -281,7 +291,7 @@ const GestionDocuments = () => {
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {(req.typesAutorises || []).map((f) => (
-                                  <Badge key={f} className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs">
+                                  <Badge key={f} className="bg-primary text-primary-foreground text-xs">
                                     {f.toLowerCase()}
                                   </Badge>
                                 ))}
@@ -310,6 +320,13 @@ const GestionDocuments = () => {
             </Card>
           );
         })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="dossiers">
+            <DossiersList />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
@@ -347,7 +364,7 @@ const GestionDocuments = () => {
                       type="button"
                       onClick={() => toggleFormat(f.value)}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        selected ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                        selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {f.label}
