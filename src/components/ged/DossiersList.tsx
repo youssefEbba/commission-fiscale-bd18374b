@@ -197,9 +197,38 @@ const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
               <p className="text-sm text-muted-foreground">
                 Créé le {new Date(dossier.dateCreation).toLocaleDateString("fr-FR")}
                 {dossier.certificatId && ` • Certificat #${dossier.certificatId}`}
-                {` • Correction #${dossier.demandeCorrectionId}`}
+                {` • Correction ${dossier.demandeCorrectionNumero || `#${dossier.demandeCorrectionId}`}`}
               </p>
             </div>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 pl-[52px]">
+            {dossier.entrepriseRaisonSociale && (
+              <div className="flex items-center gap-2 text-sm">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Entreprise</p>
+                  <p className="font-medium text-foreground">{dossier.entrepriseRaisonSociale}</p>
+                </div>
+              </div>
+            )}
+            {dossier.autoriteContractanteNom && (
+              <div className="flex items-center gap-2 text-sm">
+                <Landmark className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Autorité Contractante</p>
+                  <p className="font-medium text-foreground">{dossier.autoriteContractanteNom}</p>
+                </div>
+              </div>
+            )}
+            {(dossier.marcheNumero || dossier.marcheIntitule) && (
+              <div className="flex items-center gap-2 text-sm">
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Marché</p>
+                  <p className="font-medium text-foreground">{dossier.marcheNumero}{dossier.marcheIntitule && ` – ${dossier.marcheIntitule}`}</p>
+                </div>
+              </div>
+            )}
           </div>
         </CardHeader>
       </Card>
