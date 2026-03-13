@@ -9,6 +9,7 @@ import {
   bailleurApi, BailleurDto, CreateBailleurRequest,
   deviseApi, DeviseDto, CreateDeviseRequest,
   tauxChangeApi,
+  documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,10 @@ const Conventions = () => {
   // Taux de change auto
   const [tauxLoading, setTauxLoading] = useState(false);
 
+  // GED requirements
+  const [gedRequirements, setGedRequirements] = useState<DocumentRequirementDto[]>([]);
+  const [gedReqLoading, setGedReqLoading] = useState(false);
+
   // Documents in creation form
   const [createDocs, setCreateDocs] = useState<{ type: TypeDocumentConvention; file: File }[]>([]);
   const [createDocType, setCreateDocType] = useState<TypeDocumentConvention>("CONVENTION_CONTRAT");
@@ -108,11 +113,22 @@ const Conventions = () => {
 
   useEffect(() => { fetchConventions(); }, []);
 
-  // Load references when create dialog opens
+  // Load references + GED requirements when create dialog opens
   useEffect(() => {
     if (createOpen) {
       fetchBailleurs();
       fetchDevises();
+      // Fetch GED requirements for CONVENTION
+      setGedReqLoading(true);
+      documentRequirementApi.getByProcessus("CONVENTION")
+        .then(reqs => {
+          setGedRequirements(reqs);
+          if (reqs.length > 0) {
+            setCreateDocType(reqs[0].typeDocument as TypeDocumentConvention);
+          }
+        })
+        .catch(() => setGedRequirements([]))
+        .finally(() => setGedReqLoading(false));
     }
   }, [createOpen]);
 
@@ -554,13 +570,43 @@ const Conventions = () => {
               </div>
             </div>
 
-            {/* Documents section */}
+            {/* Documents section - follows GED configuration */}
             <div className="border-t pt-4 space-y-3">
-            <Label className="text-sm font-semibold flex items-center gap-2">
+              <Label className="text-sm font-semibold flex items-center gap-2">
                 <Paperclip className="h-4 w-4" /> Documents joints
               </Label>
-              {!createDocs.some(d => d.type === "CONVENTION_CONTRAT") && (
-                <p className="text-xs text-destructive">Le document Convention/contrat est obligatoire.</p>
+              {gedReqLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Chargement des exigences GED...
+                </div>
+              ) : gedRequirements.length > 0 ? (
+                <>
+                  {/* Checklist of required documents from GED config */}
+                  <div className="space-y-1">
+                    {gedRequirements
+                      .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
+                      .map((req) => {
+                        const hasDoc = createDocs.some(d => d.type === req.typeDocument);
+                        return (
+                          <div key={req.id} className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${req.obligatoire && !hasDoc ? "bg-destructive/10" : hasDoc ? "bg-green-50" : "bg-muted/30"}`}>
+                            {hasDoc ? (
+                              <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                            ) : (
+                              <XCircle className={`h-3.5 w-3.5 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />
+                            )}
+                            <span className={req.obligatoire && !hasDoc ? "text-destructive font-medium" : ""}>
+                              {req.description || req.typeDocument}
+                            </span>
+                            {req.obligatoire && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">Obligatoire</Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Aucune exigence GED configurée pour les conventions.</p>
               )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={createDocType} onValueChange={(v) => setCreateDocType(v as TypeDocumentConvention)}>
@@ -568,7 +614,12 @@ const Conventions = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CONVENTION_DOCUMENT_TYPES.map((t) => (
+                    {(gedRequirements.length > 0
+                      ? gedRequirements
+                          .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
+                          .map(r => ({ value: r.typeDocument, label: r.description || r.typeDocument }))
+                      : CONVENTION_DOCUMENT_TYPES
+                    ).map((t) => (
                       <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -611,7 +662,9 @@ const Conventions = () => {
                       </div>
                       <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="outline" className="text-xs shrink-0">
-                        {CONVENTION_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type}
+                        {gedRequirements.find(r => r.typeDocument === d.type)?.description
+                          || CONVENTION_DOCUMENT_TYPES.find(t => t.value === d.type)?.label
+                          || d.type}
                       </Badge>
                       <span className="truncate flex-1">{d.file.name}</span>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCreateDoc(i)}>
@@ -625,7 +678,12 @@ const Conventions = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !form.reference || !form.intitule || !createDocs.some(d => d.type === "CONVENTION_CONTRAT")}>
+            <Button onClick={handleCreate} disabled={
+              creating || !form.reference || !form.intitule ||
+              (gedRequirements.length > 0
+                ? gedRequirements.filter(r => r.obligatoire).some(r => !createDocs.some(d => d.type === r.typeDocument))
+                : !createDocs.some(d => d.type === "CONVENTION_CONTRAT"))
+            }>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer
             </Button>
