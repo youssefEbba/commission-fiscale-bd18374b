@@ -320,6 +320,13 @@ const GestionDocuments = () => {
             </Card>
           );
         })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="dossiers">
+            <DossiersList />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
@@ -357,7 +364,7 @@ const GestionDocuments = () => {
                       type="button"
                       onClick={() => toggleFormat(f.value)}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        selected ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                        selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {f.label}
