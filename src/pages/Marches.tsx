@@ -297,6 +297,9 @@ const Marches = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
+                            <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
+                              <FileText className="h-4 w-4 mr-1" /> GED
+                            </Button>
                             {isAC && (
                               <>
                                 <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
