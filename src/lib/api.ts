@@ -989,7 +989,7 @@ export type TypeDocumentSousTraitance = "CONTRAT_SOUS_TRAITANCE_ENREGISTRE" | "L
 
 export const SOUS_TRAITANCE_DOCUMENT_TYPES: { value: TypeDocumentSousTraitance; label: string }[] = [
   { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
-  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre de sous-traitance" },
+  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
 ];
 
 export const SOUS_TRAITANCE_STATUT_LABELS: Record<StatutSousTraitance, string> = {
