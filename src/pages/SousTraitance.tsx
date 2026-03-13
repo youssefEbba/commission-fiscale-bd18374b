@@ -395,8 +395,6 @@ const SousTraitance = () => {
                     setCreateNewEntreprise(!createNewEntreprise);
                     if (!createNewEntreprise) {
                       setSelectedEntrepriseId(null);
-                      setSelectedUserId(null);
-                      setEntrepriseUsers([]);
                     } else {
                       setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined, sousTraitantUsername: undefined, sousTraitantPassword: undefined, sousTraitantNomComplet: undefined, sousTraitantEmail: undefined });
                     }
