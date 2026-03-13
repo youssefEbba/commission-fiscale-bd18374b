@@ -304,7 +304,7 @@ const SousTraitance = () => {
                     <TableRow key={t.id}>
                       <TableCell className="font-medium">#{t.id}</TableCell>
                       <TableCell className="text-muted-foreground">{t.certificatNumero || `Cert #${t.certificatCreditId}`}</TableCell>
-                      <TableCell>{t.sousTraitantUsername || `User #${t.sousTraitantUserId}`}</TableCell>
+                      <TableCell>{t.sousTraitantEntrepriseRaisonSociale || `Ent. #${t.sousTraitantEntrepriseId}`}</TableCell>
                       <TableCell>{f(t.volumes)}</TableCell>
                       <TableCell>{f(t.quantites)}</TableCell>
                       <TableCell>
