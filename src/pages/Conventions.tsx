@@ -9,6 +9,7 @@ import {
   bailleurApi, BailleurDto, CreateBailleurRequest,
   deviseApi, DeviseDto, CreateDeviseRequest,
   tauxChangeApi,
+  documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
