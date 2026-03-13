@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { dossierGedApi, DossierGedDto, DossierEtapeGed } from "@/lib/api";
+import { useState, useMemo } from "react";
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { dossierGedApi, DossierGedDto, DossierEtapeGed, demandeCorrectionApi, marcheApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,13 @@ const ETAPE_COLORS: Record<string, string> = {
   CLOTURE_CREDIT: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 };
 
+interface EnrichedDossier extends DossierGedDto {
+  _entreprise?: string;
+  _ac?: string;
+  _marcheNum?: string;
+  _marcheIntitule?: string;
+}
+
 const DossiersList = () => {
   const [selectedDossier, setSelectedDossier] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -36,6 +43,64 @@ const DossiersList = () => {
     queryFn: () => dossierGedApi.getAll(),
   });
 
+  const dossiers = dossiersQuery.data || [];
+
+  // Fetch correction details for each dossier to get entreprise/AC/marché
+  const correctionIds = useMemo(
+    () => [...new Set(dossiers.map((d) => d.demandeCorrectionId).filter(Boolean))],
+    [dossiers]
+  );
+
+  const correctionQueries = useQueries({
+    queries: correctionIds.map((id) => ({
+      queryKey: ["demande-correction", id],
+      queryFn: () => demandeCorrectionApi.getById(id),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const marcheQueries = useQueries({
+    queries: correctionIds.map((id) => ({
+      queryKey: ["marche-by-correction", id],
+      queryFn: () => marcheApi.getByCorrection(id).catch(() => null),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // Build a lookup map
+  const correctionMap = useMemo(() => {
+    const map: Record<number, { entreprise?: string; ac?: string; marcheNum?: string; marcheIntitule?: string }> = {};
+    correctionIds.forEach((id, i) => {
+      const correction = correctionQueries[i]?.data;
+      const marche = marcheQueries[i]?.data;
+      if (correction) {
+        map[id] = {
+          entreprise: correction.entrepriseRaisonSociale,
+          ac: correction.autoriteContractanteNom,
+          marcheNum: marche?.numeroMarche,
+          marcheIntitule: marche?.intitule,
+        };
+      }
+    });
+    return map;
+  }, [correctionIds, correctionQueries, marcheQueries]);
+
+  // Enrich dossiers
+  const enrichedDossiers: EnrichedDossier[] = useMemo(
+    () =>
+      dossiers.map((d) => {
+        const info = correctionMap[d.demandeCorrectionId];
+        return {
+          ...d,
+          _entreprise: d.entrepriseRaisonSociale || info?.entreprise,
+          _ac: d.autoriteContractanteNom || info?.ac,
+          _marcheNum: d.marcheNumero || info?.marcheNum,
+          _marcheIntitule: d.marcheIntitule || info?.marcheIntitule,
+        };
+      }),
+    [dossiers, correctionMap]
+  );
+
   const detailQuery = useQuery({
     queryKey: ["dossier-ged", selectedDossier],
     queryFn: () => dossierGedApi.getById(selectedDossier!),
@@ -43,20 +108,23 @@ const DossiersList = () => {
   });
 
   if (selectedDossier !== null) {
+    const enriched = enrichedDossiers.find((d) => d.id === selectedDossier);
     return (
       <DossierDetail
         dossier={detailQuery.data}
+        enrichment={enriched}
         isLoading={detailQuery.isLoading}
         onBack={() => setSelectedDossier(null)}
       />
     );
   }
 
-  const dossiers = dossiersQuery.data || [];
-  const filtered = dossiers.filter(
+  const filtered = enrichedDossiers.filter(
     (d) =>
       d.reference.toLowerCase().includes(search.toLowerCase()) ||
-      d.id.toString().includes(search)
+      d.id.toString().includes(search) ||
+      (d._entreprise || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d._ac || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -116,23 +184,24 @@ const DossiersList = () => {
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
+                  {/* Enriched info from correction */}
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 pl-14 text-xs text-muted-foreground">
-                    {dossier.entrepriseRaisonSociale && (
+                    {dossier._entreprise && (
                       <span className="flex items-center gap-1">
                         <Building2 className="h-3.5 w-3.5" />
-                        {dossier.entrepriseRaisonSociale}
+                        {dossier._entreprise}
                       </span>
                     )}
-                    {dossier.autoriteContractanteNom && (
+                    {dossier._ac && (
                       <span className="flex items-center gap-1">
                         <Landmark className="h-3.5 w-3.5" />
-                        {dossier.autoriteContractanteNom}
+                        {dossier._ac}
                       </span>
                     )}
-                    {(dossier.marcheNumero || dossier.marcheIntitule) && (
+                    {(dossier._marcheNum || dossier._marcheIntitule) && (
                       <span className="flex items-center gap-1">
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {dossier.marcheNumero || dossier.marcheIntitule}
+                        {dossier._marcheNum || dossier._marcheIntitule}
                       </span>
                     )}
                   </div>
@@ -148,11 +217,12 @@ const DossiersList = () => {
 
 interface DossierDetailProps {
   dossier?: DossierGedDto;
+  enrichment?: EnrichedDossier;
   isLoading: boolean;
   onBack: () => void;
 }
 
-const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
+const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -176,6 +246,10 @@ const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
   }
 
   const totalDocs = dossier.etapes.reduce((sum, e) => sum + (e.documents?.length || 0), 0);
+  const entreprise = dossier.entrepriseRaisonSociale || enrichment?._entreprise;
+  const ac = dossier.autoriteContractanteNom || enrichment?._ac;
+  const marcheNum = dossier.marcheNumero || enrichment?._marcheNum;
+  const marcheIntitule = dossier.marcheIntitule || enrichment?._marcheIntitule;
 
   return (
     <div className="space-y-4">
@@ -202,30 +276,30 @@ const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
             </div>
           </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 pl-[52px]">
-            {dossier.entrepriseRaisonSociale && (
+            {entreprise && (
               <div className="flex items-center gap-2 text-sm">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Entreprise</p>
-                  <p className="font-medium text-foreground">{dossier.entrepriseRaisonSociale}</p>
+                  <p className="font-medium text-foreground">{entreprise}</p>
                 </div>
               </div>
             )}
-            {dossier.autoriteContractanteNom && (
+            {ac && (
               <div className="flex items-center gap-2 text-sm">
                 <Landmark className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Autorité Contractante</p>
-                  <p className="font-medium text-foreground">{dossier.autoriteContractanteNom}</p>
+                  <p className="font-medium text-foreground">{ac}</p>
                 </div>
               </div>
             )}
-            {(dossier.marcheNumero || dossier.marcheIntitule) && (
+            {(marcheNum || marcheIntitule) && (
               <div className="flex items-center gap-2 text-sm">
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Marché</p>
-                  <p className="font-medium text-foreground">{dossier.marcheNumero}{dossier.marcheIntitule && ` – ${dossier.marcheIntitule}`}</p>
+                  <p className="font-medium text-foreground">{marcheNum}{marcheIntitule && ` – ${marcheIntitule}`}</p>
                 </div>
               </div>
             )}
