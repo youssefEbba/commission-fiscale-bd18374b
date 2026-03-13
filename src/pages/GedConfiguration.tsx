@@ -96,6 +96,14 @@ const GedConfiguration = () => {
   const [description, setDescription] = useState("");
   const [ordreAffichage, setOrdreAffichage] = useState(1);
 
+  const conventionReqQuery = useQuery({
+    queryKey: ["document-requirements", "CONVENTION"],
+    queryFn: () => documentRequirementApi.getByProcessus("CONVENTION"),
+  });
+  const marcheReqQuery = useQuery({
+    queryKey: ["document-requirements", "MARCHE"],
+    queryFn: () => documentRequirementApi.getByProcessus("MARCHE"),
+  });
   const correctionQuery = useQuery({
     queryKey: ["document-requirements", "CORRECTION_OFFRE_FISCALE"],
     queryFn: () => documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE"),
@@ -122,6 +130,8 @@ const GedConfiguration = () => {
   });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
+    CONVENTION: { data: conventionReqQuery.data || [], isLoading: conventionReqQuery.isLoading },
+    MARCHE: { data: marcheReqQuery.data || [], isLoading: marcheReqQuery.isLoading },
     CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
     MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
     UTILISATION_CI_EXTERIEUR: { data: exterieurQuery.data || [], isLoading: exterieurQuery.isLoading },
