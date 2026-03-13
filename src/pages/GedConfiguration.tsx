@@ -1,8 +1,6 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import DossiersList from "@/components/ged/DossiersList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +71,7 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
 ];
 
-const GestionDocuments = () => {
+const GedConfiguration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogProcessus, setDialogProcessus] = useState<ProcessusType>("CORRECTION_OFFRE_FISCALE");
@@ -192,12 +190,9 @@ const GestionDocuments = () => {
       toast({ title: "Veuillez saisir le type de document", variant: "destructive" });
       return;
     }
-    // Vérifier doublon côté frontend (sauf en mode édition du même type)
     if (!editItem || editItem.typeDocument !== typeDocument.trim()) {
-      const existing = queriesByProcessus[dialogProcessus].data;
-      const duplicate = existing.find(
-        (r) => r.typeDocument === typeDocument.trim()
-      );
+      const existing = queriesByProcessus[dialogProcessus]?.data || [];
+      const duplicate = existing.find((r) => r.typeDocument === typeDocument.trim());
       if (duplicate) {
         toast({
           title: "Doublon détecté",
@@ -207,13 +202,12 @@ const GestionDocuments = () => {
         return;
       }
     }
-    const finalDescription = description.trim();
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
       typeDocument: typeDocument.trim(),
       obligatoire,
       typesAutorises,
-      description: finalDescription,
+      description: description.trim(),
       ordreAffichage,
     };
     if (editItem) {
@@ -236,97 +230,84 @@ const GestionDocuments = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">GED – Gestion des Documents</h1>
+          <h1 className="text-2xl font-bold text-foreground">GED – Configuration</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Configurez les documents requis ou consultez les dossiers
+            Configurez les documents requis par processus
           </p>
         </div>
 
-        <Tabs defaultValue="configuration" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="configuration">Configuration</TabsTrigger>
-            <TabsTrigger value="dossiers">Dossiers</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="configuration">
-            <div className="space-y-6">
-        {PROCESSUS_SECTIONS.map((section) => {
-          const q = queriesByProcessus[section.processus];
-          if (!q) return null;
-          const sorted = sortReqs(q.data);
-          return (
-            <Card key={section.key}>
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
-                <Button size="sm" onClick={() => openCreate(section.processus)}>
-                  <Plus className="h-4 w-4 mr-1" /> Ajouter un document
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {q.isLoading ? (
-                  <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
-                ) : sorted.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré.</p>
-                ) : (
-                  <div className="overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[200px]">DOCUMENT</TableHead>
-                          <TableHead className="min-w-[120px]">OBLIGATOIRE ?</TableHead>
-                          <TableHead className="min-w-[250px]">TYPE</TableHead>
-                          <TableHead className="min-w-[250px]">DESCRIPTION</TableHead>
-                          <TableHead className="w-[100px]">ACTIONS</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {sorted.map((req) => (
-                          <TableRow key={req.id}>
-                            <TableCell className="font-medium">{formatDocLabel(req.typeDocument)}</TableCell>
-                            <TableCell>
-                              <Badge variant={req.obligatoire ? "default" : "secondary"}>
-                                {req.obligatoire ? "Oui" : "Non"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {(req.typesAutorises || []).map((f) => (
-                                  <Badge key={f} className="bg-primary text-primary-foreground text-xs">
-                                    {f.toLowerCase()}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                              {req.description || "—"}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => openEdit(req)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+        <div className="space-y-6">
+          {PROCESSUS_SECTIONS.map((section) => {
+            const q = queriesByProcessus[section.processus];
+            if (!q) return null;
+            const sorted = sortReqs(q.data);
+            return (
+              <Card key={section.key}>
+                <CardHeader className="flex flex-row items-center justify-between pb-4">
+                  <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
+                  <Button size="sm" onClick={() => openCreate(section.processus)}>
+                    <Plus className="h-4 w-4 mr-1" /> Ajouter un document
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {q.isLoading ? (
+                    <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
+                  ) : sorted.length === 0 ? (
+                    <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré.</p>
+                  ) : (
+                    <div className="overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[200px]">DOCUMENT</TableHead>
+                            <TableHead className="min-w-[120px]">OBLIGATOIRE ?</TableHead>
+                            <TableHead className="min-w-[250px]">TYPE</TableHead>
+                            <TableHead className="min-w-[250px]">DESCRIPTION</TableHead>
+                            <TableHead className="w-[100px]">ACTIONS</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="dossiers">
-            <DossiersList />
-          </TabsContent>
-        </Tabs>
+                        </TableHeader>
+                        <TableBody>
+                          {sorted.map((req) => (
+                            <TableRow key={req.id}>
+                              <TableCell className="font-medium">{formatDocLabel(req.typeDocument)}</TableCell>
+                              <TableCell>
+                                <Badge variant={req.obligatoire ? "default" : "secondary"}>
+                                  {req.obligatoire ? "Oui" : "Non"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {(req.typesAutorises || []).map((f) => (
+                                    <Badge key={f} className="bg-primary text-primary-foreground text-xs">
+                                      {f.toLowerCase()}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
+                                {req.description || "—"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button variant="ghost" size="icon" onClick={() => openEdit(req)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
@@ -403,4 +384,4 @@ function formatDocLabel(type: string): string {
     .replace(/\bTva\b/g, "TVA");
 }
 
-export default GestionDocuments;
+export default GedConfiguration;
