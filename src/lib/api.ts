@@ -1089,7 +1089,14 @@ export interface DossierGedDto {
   id: number;
   reference: string;
   entrepriseId: number;
+  entrepriseRaisonSociale?: string;
   demandeCorrectionId: number;
+  demandeCorrectionNumero?: string;
+  autoriteContractanteId?: number;
+  autoriteContractanteNom?: string;
+  marcheId?: number;
+  marcheNumero?: string;
+  marcheIntitule?: string;
   certificatId?: number;
   dateCreation: string;
   etapes: DossierEtapeGed[];
