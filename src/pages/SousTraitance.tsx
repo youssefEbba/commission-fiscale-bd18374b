@@ -349,7 +349,7 @@ const SousTraitance = () => {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
-                <div><span className="text-muted-foreground">Sous-traitant</span><p className="font-medium">{selected.sousTraitantUsername || `#${selected.sousTraitantUserId}`}</p></div>
+                <div><span className="text-muted-foreground">Sous-traitant</span><p className="font-medium">{selected.sousTraitantEntrepriseRaisonSociale || `#${selected.sousTraitantEntrepriseId}`}</p></div>
                 <div><span className="text-muted-foreground">Volumes</span><p className="font-medium">{f(selected.volumes)}</p></div>
                 <div><span className="text-muted-foreground">Quantités</span><p className="font-medium">{f(selected.quantites)}</p></div>
                 <div><span className="text-muted-foreground">Contrat enregistré</span><p className="font-medium">{selected.contratEnregistre ? "Oui" : "Non"}</p></div>
