@@ -6,6 +6,7 @@ import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   CERTIFICAT_STATUT_LABELS,
   DocumentDto,
+  sousTraitanceApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,8 @@ const Certificats = () => {
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
+  // Track which certificate IDs come from sous-traitance
+  const [sousTraiteCertIds, setSousTraiteCertIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
@@ -78,8 +81,36 @@ const Certificats = () => {
     setLoading(true);
     try {
       if (role === "ENTREPRISE" && user?.entrepriseId) {
-        setCertificats(await certificatCreditApi.getByEntreprise(user.entrepriseId));
+        // Fetch own certificates + certificates from authorized sous-traitances
+        const [ownCerts, allSousTraitances] = await Promise.all([
+          certificatCreditApi.getByEntreprise(user.entrepriseId),
+          sousTraitanceApi.getAll(),
+        ]);
+
+        // Find sous-traitances where this enterprise is the sous-traitant and status is AUTORISEE
+        const mySousTraitances = allSousTraitances.filter(
+          (st) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE"
+        );
+
+        // Fetch certificates linked to sous-traitances (avoid duplicates)
+        const ownCertIds = new Set(ownCerts.map((c) => c.id));
+        const stCertIds = new Set<number>();
+        const sousTraiteCerts: CertificatCreditDto[] = [];
+
+        for (const st of mySousTraitances) {
+          if (!ownCertIds.has(st.certificatCreditId) && !stCertIds.has(st.certificatCreditId)) {
+            stCertIds.add(st.certificatCreditId);
+            try {
+              const cert = await certificatCreditApi.getById(st.certificatCreditId);
+              sousTraiteCerts.push(cert);
+            } catch { /* skip if no access */ }
+          }
+        }
+
+        setSousTraiteCertIds(stCertIds);
+        setCertificats([...ownCerts, ...sousTraiteCerts]);
       } else {
+        setSousTraiteCertIds(new Set());
         setCertificats(await certificatCreditApi.getAll());
       }
     } catch {
@@ -195,8 +226,13 @@ const Certificats = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun certificat</TableCell></TableRow>
                   ) : filtered.map((c) => (
-                    <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
-                       <TableCell className="font-medium">{c.numero || c.reference || `#${c.id}`}</TableCell>
+                     <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
+                       <TableCell className="font-medium">
+                         {c.numero || c.reference || `#${c.id}`}
+                         {sousTraiteCertIds.has(c.id) && (
+                           <Badge className="ml-2 text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">Sous-traité</Badge>
+                         )}
+                       </TableCell>
                        <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
                        <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
