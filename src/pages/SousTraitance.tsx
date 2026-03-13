@@ -313,31 +313,65 @@ const SousTraitance = () => {
 
             {/* Entreprise sous-traitante */}
             <div className="border rounded-lg p-4 space-y-3">
-              <h4 className="font-semibold text-sm text-foreground">Entreprise sous-traitante</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                  <Building2 className="h-4 w-4" /> Entreprise sous-traitante
+                </h4>
+                <Button
+                  type="button"
+                  variant={createNewEntreprise ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setCreateNewEntreprise(!createNewEntreprise);
+                    if (!createNewEntreprise) setSelectedEntrepriseId(null);
+                    else setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined });
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  {createNewEntreprise ? "Sélectionner existante" : "Créer nouvelle"}
+                </Button>
+              </div>
+
+              {!createNewEntreprise ? (
                 <div>
-                  <Label>Raison sociale *</Label>
-                  <Input value={form.sousTraitantEntrepriseRaisonSociale ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseRaisonSociale: e.target.value })} />
-                </div>
-                <div>
-                  <Label>NIF *</Label>
-                  <Input value={form.sousTraitantEntrepriseNif ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseNif: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Adresse</Label>
-                  <Input value={form.sousTraitantEntrepriseAdresse ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseAdresse: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Situation fiscale</Label>
-                  <Select value={form.sousTraitantEntrepriseSituationFiscale ?? ""} onValueChange={(v) => setForm({ ...form, sousTraitantEntrepriseSituationFiscale: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <Label>Sélectionner une entreprise existante *</Label>
+                  <Select value={selectedEntrepriseId ? String(selectedEntrepriseId) : ""} onValueChange={(v) => setSelectedEntrepriseId(Number(v))}>
+                    <SelectTrigger><SelectValue placeholder="Choisir une entreprise" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="REGULIERE">Régulière</SelectItem>
-                      <SelectItem value="NON_REGULIERE">Non régulière</SelectItem>
+                      {entreprises.map((e) => (
+                        <SelectItem key={e.id} value={String(e.id)}>
+                          {e.raisonSociale} — NIF: {e.nif}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Raison sociale *</Label>
+                    <Input value={form.sousTraitantEntrepriseRaisonSociale ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseRaisonSociale: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>NIF *</Label>
+                    <Input value={form.sousTraitantEntrepriseNif ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseNif: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Adresse</Label>
+                    <Input value={form.sousTraitantEntrepriseAdresse ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseAdresse: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Situation fiscale</Label>
+                    <Select value={form.sousTraitantEntrepriseSituationFiscale ?? ""} onValueChange={(v) => setForm({ ...form, sousTraitantEntrepriseSituationFiscale: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="REGULIERE">Régulière</SelectItem>
+                        <SelectItem value="NON_REGULIERE">Non régulière</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Utilisateur sous-traitant */}
