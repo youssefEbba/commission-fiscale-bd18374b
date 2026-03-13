@@ -587,8 +587,28 @@ const Conventions = () => {
               </div>
               {createDocs.length > 0 && (
                 <div className="space-y-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      {createDocs.length} fichier(s) — Utilisez les flèches pour réordonner avant fusion
+                    </span>
+                    {createDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
+                      <Button type="button" variant="outline" size="sm" onClick={mergeCreateDocs} disabled={merging}>
+                        {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
+                        Fusionner PDF
+                      </Button>
+                    )}
+                  </div>
                   {createDocs.map((d, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm bg-muted/50 rounded px-3 py-1.5">
+                      <span className="text-xs text-muted-foreground font-mono w-5 shrink-0">{i + 1}</span>
+                      <div className="flex flex-col gap-0.5 shrink-0">
+                        <Button type="button" variant="ghost" size="sm" className="h-4 w-4 p-0" disabled={i === 0} onClick={() => moveCreateDoc(i, "up")}>
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" className="h-4 w-4 p-0" disabled={i === createDocs.length - 1} onClick={() => moveCreateDoc(i, "down")}>
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="outline" className="text-xs shrink-0">
                         {CONVENTION_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type}
