@@ -81,18 +81,24 @@ const Certificats = () => {
     setLoading(true);
     try {
       if (role === "ENTREPRISE" && user?.entrepriseId) {
-        // Fetch own certificates + certificates from authorized sous-traitances
-        const [ownCerts, allSousTraitances] = await Promise.all([
-          certificatCreditApi.getByEntreprise(user.entrepriseId),
-          sousTraitanceApi.getAll(),
-        ]);
+        // Fetch own certificates first
+        let ownCerts: CertificatCreditDto[] = [];
+        try {
+          ownCerts = await certificatCreditApi.getByEntreprise(user.entrepriseId);
+        } catch { /* ignore */ }
+
+        // Fetch sous-traitances separately (may fail with 403 for some roles)
+        let allSousTraitances: any[] = [];
+        try {
+          allSousTraitances = await sousTraitanceApi.getAll();
+        } catch { /* ignore - user may not have access to list all */ }
 
         // Find sous-traitances where this enterprise is the sous-traitant and status is AUTORISEE
         const mySousTraitances = allSousTraitances.filter(
-          (st) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE"
+          (st: any) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE"
         );
 
-        // Fetch certificates linked to sous-traitances (avoid duplicates)
+        // Build certificate entries from sous-traitance data
         const ownCertIds = new Set(ownCerts.map((c) => c.id));
         const stCertIds = new Set<number>();
         const sousTraiteCerts: CertificatCreditDto[] = [];
@@ -100,10 +106,21 @@ const Certificats = () => {
         for (const st of mySousTraitances) {
           if (!ownCertIds.has(st.certificatCreditId) && !stCertIds.has(st.certificatCreditId)) {
             stCertIds.add(st.certificatCreditId);
+            // Try to fetch the full cert; if 403, build a minimal version from ST data
             try {
               const cert = await certificatCreditApi.getById(st.certificatCreditId);
               sousTraiteCerts.push(cert);
-            } catch { /* skip if no access */ }
+            } catch {
+              // Build minimal cert from sous-traitance data so it still appears in the list
+              sousTraiteCerts.push({
+                id: st.certificatCreditId,
+                numero: st.certificatNumero || `CERT-${st.certificatCreditId}`,
+                reference: st.certificatNumero,
+                statut: "OUVERT" as CertificatStatut,
+                entrepriseId: st.entrepriseSourceId,
+                entrepriseRaisonSociale: st.entrepriseSourceRaisonSociale || "—",
+              } as CertificatCreditDto);
+            }
           }
         }
 
