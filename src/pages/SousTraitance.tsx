@@ -99,7 +99,11 @@ const SousTraitance = () => {
     }
 
     if (entsResult.status === "fulfilled") {
-      setEntreprises(entsResult.value);
+      // Exclure l'entreprise connectée (on ne peut pas sous-traiter à soi-même)
+      const filtered = user?.entrepriseId
+        ? entsResult.value.filter((e: EntrepriseDto) => e.id !== user.entrepriseId)
+        : entsResult.value;
+      setEntreprises(filtered);
     } else {
       setEntreprises([]);
       setCreateNewEntreprise(true);
