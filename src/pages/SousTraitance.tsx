@@ -134,17 +134,15 @@ const SousTraitance = () => {
     let createdSousTraitance: SousTraitanceDto | null = null;
 
     if (!createNewEntreprise) {
-      // Use existing enterprise + existing user → use create API
       if (!selectedEntrepriseId) {
         toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
         return;
       }
-      // selectedUserId is optional now
       setCreating(true);
       try {
         createdSousTraitance = await sousTraitanceApi.create({
           certificatCreditId: f2.certificatCreditId,
-          sousTraitantUserId: selectedUserId || 0,
+          sousTraitantEntrepriseId: selectedEntrepriseId,
           contratEnregistre: f2.contratEnregistre,
           volumes: f2.volumes,
           quantites: f2.quantites,
