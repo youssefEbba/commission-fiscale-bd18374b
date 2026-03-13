@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, ExternalLink } from "lucide-react";
+
+const API_BASE = "https://5502-197-231-11-32.ngrok-free.app/api";
 
 const ETAPE_COLORS: Record<string, string> = {
   DEMANDE_CORRECTION: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -222,13 +225,34 @@ const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
                             {doc.dateUpload ? new Date(doc.dateUpload).toLocaleDateString("fr-FR") : "—"}
                           </TableCell>
                           <TableCell>
-                            {doc.url && (
-                              <Button variant="ghost" size="icon" asChild>
-                                <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                  <Download className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ouvrir
+                                  </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
+                                    download={doc.nom}
+                                  >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Télécharger
+                                  </a>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))}
