@@ -103,24 +103,19 @@ const SousTraitance = () => {
     if (entsResult.status === "fulfilled") {
       setEntreprises(entsResult.value);
     } else {
-      let fallbackEntreprises: EntrepriseDto[] = [];
-
-      if (role === "ENTREPRISE" && user?.entrepriseId) {
-        try {
-          const ownEntreprise = await entrepriseApi.getById(user.entrepriseId);
-          fallbackEntreprises = ownEntreprise?.id ? [ownEntreprise] : [];
-        } catch {
-          fallbackEntreprises = [];
-        }
-      }
-
-      setEntreprises(fallbackEntreprises);
-      if (fallbackEntreprises.length === 0) {
-        setCreateNewEntreprise(true);
-      }
+      setEntreprises([]);
+      setCreateNewEntreprise(true);
 
       const entsError = entsResult.reason instanceof Error ? entsResult.reason.message : "Erreur inconnue";
-      toast({ title: "Erreur", description: `Impossible de charger les entreprises: ${entsError}`, variant: "destructive" });
+      const isAccessDenied = entsError.toLowerCase().includes("accès refusé") || entsError.toLowerCase().includes("access denied");
+
+      toast({
+        title: isAccessDenied ? "Permissions insuffisantes" : "Erreur",
+        description: isAccessDenied
+          ? "Votre profil ne peut pas lister les entreprises. Demandez l'ajout de la permission entreprise.list au rôle ENTREPRISE pour sélectionner une entreprise existante."
+          : `Impossible de charger les entreprises: ${entsError}`,
+        variant: "destructive",
+      });
     }
 
     setShowCreate(true);
