@@ -5,6 +5,7 @@ import {
   marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_LABELS,
   delegueApi, DelegueDto,
   conventionApi, ConventionDto,
+  DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
+import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -49,6 +51,12 @@ const Marches = () => {
   const [showCreateDelegue, setShowCreateDelegue] = useState(false);
   const [delegueForm, setDelegueForm] = useState<CreateDelegueRequest>({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
   const [creatingDelegue, setCreatingDelegue] = useState(false);
+
+  // GED Documents
+  const [gedOpen, setGedOpen] = useState(false);
+  const [gedMarche, setGedMarche] = useState<MarcheDto | null>(null);
+  const [gedDocs, setGedDocs] = useState<DocumentDto[]>([]);
+  const [gedLoading, setGedLoading] = useState(false);
 
   const fetchMarches = async () => {
     setLoading(true);
@@ -150,6 +158,29 @@ const Marches = () => {
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     }
+  };
+
+  const openGed = async (m: MarcheDto) => {
+    setGedMarche(m);
+    setGedOpen(true);
+    setGedLoading(true);
+    try {
+      const docs = await marcheApi.getDocuments(m.id);
+      setGedDocs(docs);
+    } catch {
+      setGedDocs([]);
+    } finally {
+      setGedLoading(false);
+    }
+  };
+
+  const handleGedUpload = async (marcheId: number, type: string, file: File) => {
+    await marcheApi.uploadDocument(marcheId, type as TypeDocumentMarche, file);
+  };
+
+  const handleGedRefresh = async (marcheId: number) => {
+    const docs = await marcheApi.getDocuments(marcheId);
+    setGedDocs(docs);
   };
 
   const handleSubmit = async () => {
@@ -266,6 +297,9 @@ const Marches = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
+                            <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
+                              <FileText className="h-4 w-4 mr-1" /> GED
+                            </Button>
                             {isAC && (
                               <>
                                 <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
@@ -451,6 +485,20 @@ const Marches = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* GED Documents Dialog */}
+      <DocumentGED
+        open={gedOpen}
+        onOpenChange={setGedOpen}
+        title={`Documents — Marché ${gedMarche?.numeroMarche || `#${gedMarche?.id}`}`}
+        dossierId={gedMarche?.id || null}
+        documentTypes={MARCHE_DOCUMENT_TYPES}
+        documents={gedDocs}
+        loading={gedLoading}
+        canUpload={isAC || isDelegate}
+        onUpload={handleGedUpload}
+        onRefresh={handleGedRefresh}
+      />
     </DashboardLayout>
   );
 };
