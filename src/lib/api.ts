@@ -978,7 +978,6 @@ export interface SousTraitanceOnboardingRequest {
 
 export interface SousTraitanceOnboardingResult {
   sousTraitantEntrepriseId: number;
-  sousTraitantUserId: number;
   sousTraitance: SousTraitanceDto;
 }
 
