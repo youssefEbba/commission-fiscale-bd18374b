@@ -82,18 +82,47 @@ const SousTraitance = () => {
     setEntrepriseUsers([]);
     setCreateDocContrat(null);
     setCreateDocLettre(null);
-    try {
-      const certsPromise = role === "ENTREPRISE" && user?.entrepriseId
-        ? certificatCreditApi.getByEntreprise(user.entrepriseId)
-        : certificatCreditApi.getAll();
-      const entsPromise = entrepriseApi.getAll();
-      const [certs, ents] = await Promise.all([certsPromise, entsPromise]);
-      setCertificats(certs.filter(c => c.statut === "OUVERT"));
-      setEntreprises(ents);
-    } catch (e: any) {
-      console.error("Erreur chargement certificats/entreprises:", e);
-      toast({ title: "Erreur", description: "Impossible de charger les certificats ou entreprises: " + e.message, variant: "destructive" });
+
+    const certsPromise = role === "ENTREPRISE" && user?.entrepriseId
+      ? certificatCreditApi.getByEntreprise(user.entrepriseId)
+      : certificatCreditApi.getAll();
+
+    const [certsResult, entsResult] = await Promise.allSettled([
+      certsPromise,
+      entrepriseApi.getAll(),
+    ]);
+
+    if (certsResult.status === "fulfilled") {
+      setCertificats(certsResult.value.filter((c) => c.statut === "OUVERT"));
+    } else {
+      setCertificats([]);
+      const certsError = certsResult.reason instanceof Error ? certsResult.reason.message : "Erreur inconnue";
+      toast({ title: "Erreur", description: `Impossible de charger les certificats: ${certsError}`, variant: "destructive" });
     }
+
+    if (entsResult.status === "fulfilled") {
+      setEntreprises(entsResult.value);
+    } else {
+      let fallbackEntreprises: EntrepriseDto[] = [];
+
+      if (role === "ENTREPRISE" && user?.entrepriseId) {
+        try {
+          const ownEntreprise = await entrepriseApi.getById(user.entrepriseId);
+          fallbackEntreprises = ownEntreprise?.id ? [ownEntreprise] : [];
+        } catch {
+          fallbackEntreprises = [];
+        }
+      }
+
+      setEntreprises(fallbackEntreprises);
+      if (fallbackEntreprises.length === 0) {
+        setCreateNewEntreprise(true);
+      }
+
+      const entsError = entsResult.reason instanceof Error ? entsResult.reason.message : "Erreur inconnue";
+      toast({ title: "Erreur", description: `Impossible de charger les entreprises: ${entsError}`, variant: "destructive" });
+    }
+
     setShowCreate(true);
   };
 
