@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
