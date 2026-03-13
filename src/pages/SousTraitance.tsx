@@ -420,50 +420,6 @@ const SousTraitance = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* User selection from enterprise */}
-                  {selectedEntrepriseId && loadingUsers && (
-                    <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Chargement...
-                    </div>
-                  )}
-                  {selectedEntrepriseId && !loadingUsers && entrepriseUsers.length > 0 && (
-                    <div className="space-y-3">
-                      <Label className="flex items-center gap-2">
-                        <User className="h-4 w-4" /> Utilisateurs sous-traitants trouvés ({entrepriseUsers.length})
-                      </Label>
-                      <div className="grid gap-2">
-                        {entrepriseUsers.map((u) => (
-                          <div
-                            key={u.id}
-                            onClick={() => setSelectedUserId(u.id)}
-                            className={cn(
-                              "flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors",
-                              selectedUserId === u.id
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:border-primary/50 hover:bg-muted/50"
-                            )}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">{u.nomComplet || u.username}</p>
-                                <p className="text-xs text-muted-foreground">{u.email} · @{u.username}</p>
-                              </div>
-                            </div>
-                            <Badge variant={u.actif ? "default" : "secondary"}>
-                              {u.actif ? "Actif" : "Inactif"}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedEntrepriseId && !loadingUsers && entrepriseUsers.length === 0 && (
-                    <p className="text-sm text-muted-foreground py-2">Aucun utilisateur sous-traitant trouvé pour cette entreprise.</p>
-                  )}
                 </div>
               ) : (
                 <>
