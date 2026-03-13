@@ -6,6 +6,7 @@ import {
   SousTraitanceOnboardingRequest, SOUS_TRAITANCE_STATUT_LABELS,
   SOUS_TRAITANCE_DOCUMENT_TYPES, TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
+  entrepriseApi, EntrepriseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
