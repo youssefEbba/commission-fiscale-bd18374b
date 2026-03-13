@@ -84,14 +84,33 @@ const SousTraitance = () => {
   };
 
   const handleCreate = async () => {
-    const { certificatCreditId, sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif, sousTraitantUsername, sousTraitantPassword } = form;
-    if (!certificatCreditId || !sousTraitantEntrepriseRaisonSociale || !sousTraitantEntrepriseNif || !sousTraitantUsername || !sousTraitantPassword) {
+    const f2 = { ...form };
+    // If selecting existing enterprise, fill enterprise fields from selection
+    if (!createNewEntreprise && selectedEntrepriseId) {
+      const ent = entreprises.find(e => e.id === selectedEntrepriseId);
+      if (ent) {
+        f2.sousTraitantEntrepriseRaisonSociale = ent.raisonSociale;
+        f2.sousTraitantEntrepriseNif = ent.nif;
+        f2.sousTraitantEntrepriseAdresse = ent.adresse;
+        f2.sousTraitantEntrepriseSituationFiscale = ent.situationFiscale;
+      }
+    }
+    const { certificatCreditId, sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif, sousTraitantUsername, sousTraitantPassword } = f2;
+    if (!certificatCreditId || !sousTraitantUsername || !sousTraitantPassword) {
       toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
+      return;
+    }
+    if (createNewEntreprise && (!sousTraitantEntrepriseRaisonSociale || !sousTraitantEntrepriseNif)) {
+      toast({ title: "Erreur", description: "Veuillez remplir la raison sociale et le NIF", variant: "destructive" });
+      return;
+    }
+    if (!createNewEntreprise && !selectedEntrepriseId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise ou en créer une nouvelle", variant: "destructive" });
       return;
     }
     setCreating(true);
     try {
-      await sousTraitanceApi.onboard(form as SousTraitanceOnboardingRequest);
+      await sousTraitanceApi.onboard(f2 as SousTraitanceOnboardingRequest);
       toast({ title: "Succès", description: "Sous-traitant créé et demande soumise" });
       setShowCreate(false);
       fetchData();
