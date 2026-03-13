@@ -499,6 +499,19 @@ export const MARCHE_STATUT_LABELS: Record<StatutMarche, string> = {
   CLOTURE: "Clôturé",
 };
 
+export type TypeDocumentMarche =
+  | "PV_ADJUDICATION"
+  | "AVIS_ATTRIBUTION"
+  | "CONTRAT_SIGNE"
+  | "AUTRE";
+
+export const MARCHE_DOCUMENT_TYPES: { value: TypeDocumentMarche; label: string }[] = [
+  { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
+  { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
+  { value: "CONTRAT_SIGNE", label: "Contrat signé" },
+  { value: "AUTRE", label: "Autre document" },
+];
+
 export const marcheApi = {
   getAll: () => apiFetch<MarcheDto[]>("/marches"),
   getById: (id: number) => apiFetch<MarcheDto>(`/marches/${id}`),
@@ -508,6 +521,16 @@ export const marcheApi = {
   assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign?delegueId=${delegueId}`, { method: "PATCH" }),
   addDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues`, { method: "POST", body: { delegueId } }),
   removeDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues/${delegueId}`, { method: "DELETE" }),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/marches/${id}/documents`),
+  uploadDocument: (id: number, type: TypeDocumentMarche, file: File) => {
+    const formData = new FormData();
+    formData.append("type", type);
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/marches/${id}/documents`, {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
 };
 
 // Délégués (AC -> UPM/UEP)
