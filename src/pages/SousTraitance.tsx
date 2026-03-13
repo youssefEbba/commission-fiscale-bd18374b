@@ -83,15 +83,17 @@ const SousTraitance = () => {
     setCreateDocContrat(null);
     setCreateDocLettre(null);
     try {
-      const [certs, ents] = await Promise.all([
-        role === "ENTREPRISE" && (user as any)?.entrepriseId
-          ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
-          : certificatCreditApi.getAll(),
-        entrepriseApi.getAll(),
-      ]);
+      const certsPromise = role === "ENTREPRISE" && user?.entrepriseId
+        ? certificatCreditApi.getByEntreprise(user.entrepriseId)
+        : certificatCreditApi.getAll();
+      const entsPromise = entrepriseApi.getAll();
+      const [certs, ents] = await Promise.all([certsPromise, entsPromise]);
       setCertificats(certs.filter(c => c.statut === "OUVERT"));
       setEntreprises(ents);
-    } catch { /* ignore */ }
+    } catch (e: any) {
+      console.error("Erreur chargement certificats/entreprises:", e);
+      toast({ title: "Erreur", description: "Impossible de charger les certificats ou entreprises: " + e.message, variant: "destructive" });
+    }
     setShowCreate(true);
   };
 
