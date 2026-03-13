@@ -6,7 +6,6 @@ import {
   CreateTransfertCreditRequest, TRANSFERT_STATUT_LABELS,
   TRANSFERT_DOCUMENT_TYPES, TypeDocumentTransfert, DocumentTransfertCreditDto,
   certificatCreditApi, CertificatCreditDto,
-  entrepriseApi, EntrepriseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, FileText, CheckCircle2, XCircle } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
@@ -42,7 +41,6 @@ const Transferts = () => {
   // Create dialog
   const [showCreate, setShowCreate] = useState(false);
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
-  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [form, setForm] = useState<Partial<CreateTransfertCreditRequest>>({});
   const [creating, setCreating] = useState(false);
 
@@ -66,27 +64,29 @@ const Transferts = () => {
   const openCreate = async () => {
     setForm({ operationsDouaneCloturees: true });
     try {
-      const [certs, ents] = await Promise.all([
-        role === "ENTREPRISE" && (user as any)?.entrepriseId
-          ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
-          : certificatCreditApi.getAll(),
-        entrepriseApi.getAll(),
-      ]);
+      const certs = role === "ENTREPRISE" && user?.entrepriseId
+        ? await certificatCreditApi.getByEntreprise(user.entrepriseId)
+        : await certificatCreditApi.getAll();
       setCertificats(certs.filter(c => c.statut === "OUVERT"));
-      setEntreprises(ents);
     } catch { /* ignore */ }
     setShowCreate(true);
   };
 
+  const selectedCert = certificats.find(c => c.id === form.certificatCreditId);
+
   const handleCreate = async () => {
-    if (!form.certificatCreditId || !form.entrepriseDestinataireId || !form.montant) {
-      toast({ title: "Erreur", description: "Tous les champs sont requis", variant: "destructive" });
+    if (!form.certificatCreditId || !form.montant) {
+      toast({ title: "Erreur", description: "Certificat et montant sont requis", variant: "destructive" });
+      return;
+    }
+    if (selectedCert && form.montant > (selectedCert.soldeCordon ?? 0)) {
+      toast({ title: "Erreur", description: "Le montant dépasse le solde Cordon disponible", variant: "destructive" });
       return;
     }
     setCreating(true);
     try {
       await transfertCreditApi.create(form as CreateTransfertCreditRequest);
-      toast({ title: "Succès", description: "Demande de transfert créée" });
+      toast({ title: "Succès", description: "Demande de renonciation créée" });
       setShowCreate(false);
       fetchData();
     } catch (e: any) {
@@ -98,7 +98,7 @@ const Transferts = () => {
     setActionLoading(id);
     try {
       await transfertCreditApi.valider(id);
-      toast({ title: "Succès", description: "Transfert validé et exécuté" });
+      toast({ title: "Succès", description: "Transfert validé — soldes mis à jour (Cordon → TVA)" });
       fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -133,7 +133,6 @@ const Transferts = () => {
 
   const filtered = data.filter((t) => {
     const ms = (t.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
-      (t.entrepriseDestinataireNom || "").toLowerCase().includes(search.toLowerCase()) ||
       String(t.id).includes(search);
     const matchStatut = filterStatut === "ALL" || t.statut === filterStatut;
     return ms && matchStatut;
@@ -150,13 +149,13 @@ const Transferts = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <ArrowRightLeft className="h-6 w-6 text-primary" />
-              Transferts de crédit
+              Transfert Douane → Intérieur
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Transfert de solde douanier entre entreprises</p>
+            <p className="text-muted-foreground text-sm mt-1">Renonciation aux importations — transfert du solde Cordon vers TVA intérieure</p>
           </div>
           <div className="flex gap-2">
             {canCreate && (
-              <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Nouveau transfert</Button>
+              <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Nouvelle renonciation</Button>
             )}
             <Button variant="outline" onClick={fetchData} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
@@ -167,7 +166,7 @@ const Transferts = () => {
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Rechercher par certificat..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48"><Filter className="h-4 w-4 mr-2" /><SelectValue /></SelectTrigger>
@@ -187,10 +186,9 @@ const Transferts = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>#</TableHead>
-                    <TableHead>Certificat source</TableHead>
-                    <TableHead>Entreprise dest.</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Douane clôturée</TableHead>
+                    <TableHead>Certificat</TableHead>
+                    <TableHead>Montant transféré</TableHead>
+                    <TableHead>Ops douane clôturées</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -198,13 +196,12 @@ const Transferts = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun transfert</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun transfert</TableCell></TableRow>
                   ) : filtered.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="font-medium">#{t.id}</TableCell>
                       <TableCell className="text-muted-foreground">{t.certificatNumero || `Cert #${t.certificatCreditId}`}</TableCell>
-                      <TableCell>{t.entrepriseDestinataireNom || `Ent #${t.entrepriseDestinataireId}`}</TableCell>
-                      <TableCell>{f(t.montant)} MRU</TableCell>
+                      <TableCell className="font-medium">{f(t.montant)} MRU</TableCell>
                       <TableCell>
                         <Badge variant={t.operationsDouaneCloturees ? "default" : "outline"} className="text-xs">
                           {t.operationsDouaneCloturees ? "Oui" : "Non"}
@@ -242,17 +239,21 @@ const Transferts = () => {
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Transfert #{selected?.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Transfert #{selected?.id} — Douane → Intérieur</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Certificat source</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
-                <div><span className="text-muted-foreground">Entreprise dest.</span><p className="font-medium">{selected.entrepriseDestinataireNom || `#${selected.entrepriseDestinataireId}`}</p></div>
-                <div><span className="text-muted-foreground">Montant</span><p className="font-medium">{f(selected.montant)} MRU</p></div>
+                <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
+                <div><span className="text-muted-foreground">Montant (Cordon → TVA)</span><p className="font-medium">{f(selected.montant)} MRU</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{TRANSFERT_STATUT_LABELS[selected.statut]}</Badge></p></div>
                 <div><span className="text-muted-foreground">Ops douane clôturées</span><p className="font-medium">{selected.operationsDouaneCloturees ? "Oui" : "Non"}</p></div>
                 <div><span className="text-muted-foreground">Date demande</span><p className="font-medium">{selected.dateDemande ? new Date(selected.dateDemande).toLocaleDateString("fr-FR") : "—"}</p></div>
               </div>
+              {selected.statut === "TRANSFERE" && (
+                <div className="p-3 rounded-md bg-muted/50 border border-border text-xs text-muted-foreground">
+                  ✅ Transfert exécuté : {f(selected.montant)} MRU débité du solde Cordon et crédité au solde TVA intérieure du même certificat.
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -261,37 +262,36 @@ const Transferts = () => {
       {/* Create dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Nouvelle demande de transfert</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Renonciation aux importations</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">Transférer un montant du solde Cordon (douane) vers le solde TVA intérieure du même certificat.</p>
+          </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Certificat source (OUVERT)</Label>
+              <Label>Certificat (OUVERT)</Label>
               <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
                 <SelectContent>
                   {certificats.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
-                      {c.reference || c.numero || `Cert #${c.id}`} — Solde Cordon: {f(c.soldeCordon)} MRU
+                      {c.numero || `Cert #${c.id}`} — Cordon: {f(c.soldeCordon)} | TVA: {f(c.soldeTVA)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            {selectedCert && (
+              <div className="p-3 rounded-md bg-muted/50 border border-border text-xs space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">Solde Cordon (douane)</span><span className="font-medium">{f(selectedCert.soldeCordon)} MRU</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Solde TVA (intérieur)</span><span className="font-medium">{f(selectedCert.soldeTVA)} MRU</span></div>
+              </div>
+            )}
             <div>
-              <Label>Entreprise destinataire</Label>
-              <Select value={form.entrepriseDestinataireId ? String(form.entrepriseDestinataireId) : ""} onValueChange={(v) => setForm({ ...form, entrepriseDestinataireId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner une entreprise" /></SelectTrigger>
-                <SelectContent>
-                  {entreprises.filter(e => e.id !== (user as any)?.entrepriseId).map((e) => (
-                    <SelectItem key={e.id} value={String(e.id!)}>
-                      {e.raisonSociale} ({e.nif})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Montant à transférer (MRU)</Label>
-              <Input type="number" min={1} value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
+              <Label>Montant à transférer (Cordon → TVA)</Label>
+              <Input type="number" min={1} max={selectedCert?.soldeCordon ?? undefined} value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
+              {selectedCert && form.montant && form.montant > (selectedCert.soldeCordon ?? 0) && (
+                <p className="text-xs text-destructive mt-1">Le montant dépasse le solde Cordon disponible ({f(selectedCert.soldeCordon)} MRU)</p>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={form.operationsDouaneCloturees ?? false} onCheckedChange={(v) => setForm({ ...form, operationsDouaneCloturees: v })} />
@@ -300,9 +300,9 @@ const Transferts = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating}>
+            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Soumettre
+              Soumettre la renonciation
             </Button>
           </DialogFooter>
         </DialogContent>

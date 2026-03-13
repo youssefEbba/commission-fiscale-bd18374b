@@ -873,8 +873,6 @@ export interface TransfertCreditDto {
   certificatCreditId: number;
   certificatNumero?: string;
   entrepriseSourceId?: number;
-  entrepriseDestinataireId: number;
-  entrepriseDestinataireNom?: string;
   montant: number;
   operationsDouaneCloturees?: boolean;
   statut: StatutTransfert;
@@ -882,7 +880,6 @@ export interface TransfertCreditDto {
 
 export interface CreateTransfertCreditRequest {
   certificatCreditId: number;
-  entrepriseDestinataireId: number;
   montant: number;
   operationsDouaneCloturees?: boolean;
 }
