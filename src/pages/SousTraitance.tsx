@@ -176,7 +176,7 @@ const SousTraitance = () => {
       try {
         createdSousTraitance = await sousTraitanceApi.create({
           certificatCreditId: f2.certificatCreditId,
-          sousTraitantUserId: selectedUserId,
+          sousTraitantUserId: selectedUserId || 0,
           contratEnregistre: f2.contratEnregistre,
           volumes: f2.volumes,
           quantites: f2.quantites,
