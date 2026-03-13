@@ -22,6 +22,8 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
   { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
   { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
+  { key: "TRANSFERT", processus: "TRANSFERT_CREDIT", label: "Transfert de crédit (Douane → Intérieur)" },
+  { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE", label: "Sous-traitance" },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
