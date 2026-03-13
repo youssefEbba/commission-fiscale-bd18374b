@@ -943,8 +943,9 @@ export interface SousTraitanceDto {
   certificatCreditId: number;
   certificatNumero?: string;
   entrepriseSourceId?: number;
-  sousTraitantUserId: number;
-  sousTraitantUsername?: string;
+  sousTraitantEntrepriseId?: number;
+  sousTraitantEntrepriseRaisonSociale?: string;
+  sousTraitantEntrepriseNif?: string;
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
@@ -954,7 +955,7 @@ export interface SousTraitanceDto {
 
 export interface CreateSousTraitanceRequest {
   certificatCreditId: number;
-  sousTraitantUserId: number;
+  sousTraitantEntrepriseId: number;
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
