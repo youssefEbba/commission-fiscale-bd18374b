@@ -88,16 +88,6 @@ export const authApi = {
 
 export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
 
-export interface SousTraitantUtilisateurDto {
-  id: number;
-  username: string;
-  nomComplet: string;
-  email: string;
-  actif: boolean;
-  entrepriseId: number;
-  entrepriseRaisonSociale: string;
-  entrepriseNif: string;
-}
 
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
