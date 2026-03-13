@@ -6,6 +6,7 @@ import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   CERTIFICAT_STATUT_LABELS,
   DocumentDto,
+  sousTraitanceApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
