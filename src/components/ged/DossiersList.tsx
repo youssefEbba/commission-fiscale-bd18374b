@@ -225,13 +225,34 @@ const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
                             {doc.dateUpload ? new Date(doc.dateUpload).toLocaleDateString("fr-FR") : "—"}
                           </TableCell>
                           <TableCell>
-                            {doc.url && (
-                              <Button variant="ghost" size="icon" asChild>
-                                <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                  <Download className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ouvrir
+                                  </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
+                                    download={doc.nom}
+                                  >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Télécharger
+                                  </a>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))}
