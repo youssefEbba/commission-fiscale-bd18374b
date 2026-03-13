@@ -728,6 +728,16 @@ const Conventions = () => {
               </Card>
             )}
 
+            {/* Merge button for existing docs */}
+            {!docsLoading && documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf")).length >= 2 && (
+              <div className="flex justify-end">
+                <Button variant="outline" size="sm" onClick={mergeExistingDocs} disabled={merging}>
+                  {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
+                  Fusionner tous les PDF
+                </Button>
+              </div>
+            )}
+
             {docsLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
