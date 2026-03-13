@@ -181,6 +181,86 @@ const Conventions = () => {
     setCreateDocs(prev => prev.filter((_, i) => i !== index));
   };
 
+  const moveCreateDoc = (index: number, direction: "up" | "down") => {
+    setCreateDocs(prev => {
+      const newDocs = [...prev];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newDocs.length) return prev;
+      [newDocs[index], newDocs[targetIndex]] = [newDocs[targetIndex], newDocs[index]];
+      return newDocs;
+    });
+  };
+
+  const [merging, setMerging] = useState(false);
+
+  const mergePdfs = useCallback(async (files: File[]) => {
+    const pdfFiles = files.filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+    if (pdfFiles.length < 2) {
+      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF à fusionner.", variant: "destructive" });
+      return;
+    }
+    setMerging(true);
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of pdfFiles) {
+        const bytes = await file.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([mergedBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "convention_fusionnee.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés avec succès.` });
+    } catch (e: any) {
+      toast({ title: "Erreur de fusion", description: e.message || "Impossible de fusionner les PDF", variant: "destructive" });
+    } finally {
+      setMerging(false);
+    }
+  }, [toast]);
+
+  const mergeCreateDocs = () => {
+    mergePdfs(createDocs.map(d => d.file));
+  };
+
+  const mergeExistingDocs = async () => {
+    if (documents.length < 2) return;
+    const pdfDocs = documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf") && d.chemin);
+    if (pdfDocs.length < 2) {
+      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF.", variant: "destructive" });
+      return;
+    }
+    setMerging(true);
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const doc of pdfDocs) {
+        const response = await fetch(doc.chemin!);
+        const bytes = await response.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([mergedBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `convention_${docsConvention?.reference || "merged"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Succès", description: `${pdfDocs.length} PDF fusionnés.` });
+    } catch (e: any) {
+      toast({ title: "Erreur de fusion", description: e.message, variant: "destructive" });
+    } finally {
+      setMerging(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.reference || !form.intitule) {
       toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
