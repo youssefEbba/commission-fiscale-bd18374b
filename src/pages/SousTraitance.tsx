@@ -233,7 +233,7 @@ const SousTraitance = () => {
 
   const filtered = data.filter((t) => {
     const ms = (t.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
-      (t.sousTraitantUsername || "").toLowerCase().includes(search.toLowerCase()) ||
+      (t.sousTraitantEntrepriseRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       String(t.id).includes(search);
     const matchStatut = filterStatut === "ALL" || t.statut === filterStatut;
     return ms && matchStatut;
