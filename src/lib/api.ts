@@ -88,9 +88,21 @@ export const authApi = {
 
 export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
 
+export interface SousTraitantUtilisateurDto {
+  id: number;
+  username: string;
+  nomComplet: string;
+  email: string;
+  actif: boolean;
+  entrepriseId: number;
+  entrepriseRaisonSociale: string;
+  entrepriseNif: string;
+}
+
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
   getByEntreprise: (entrepriseId: number) => apiFetch<UtilisateurDto[]>(`/utilisateurs?entrepriseId=${entrepriseId}`),
+  getSousTraitants: () => apiFetch<SousTraitantUtilisateurDto[]>("/utilisateurs/sous-traitants"),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),

@@ -7,7 +7,7 @@ import {
   SOUS_TRAITANCE_DOCUMENT_TYPES, TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
   entrepriseApi, EntrepriseDto,
-  utilisateurApi, UtilisateurDto,
+  utilisateurApi, SousTraitantUtilisateurDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ const SousTraitance = () => {
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [createNewEntreprise, setCreateNewEntreprise] = useState(false);
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<number | null>(null);
-  const [entrepriseUsers, setEntrepriseUsers] = useState<UtilisateurDto[]>([]);
+  const [entrepriseUsers, setEntrepriseUsers] = useState<SousTraitantUtilisateurDto[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [form, setForm] = useState<Partial<SousTraitanceOnboardingRequest>>({});
@@ -124,32 +124,22 @@ const SousTraitance = () => {
   };
 
   // Load users when enterprise is selected
-  const [usersAccessDenied, setUsersAccessDenied] = useState(false);
-
   const handleSelectEntreprise = async (entrepriseId: number) => {
     setSelectedEntrepriseId(entrepriseId);
     setSelectedUserId(null);
     setEntrepriseUsers([]);
-    setUsersAccessDenied(false);
     setLoadingUsers(true);
     try {
-      const users = await utilisateurApi.getByEntreprise(entrepriseId);
-      setEntrepriseUsers(users);
-    } catch (err1) {
-      // Fallback: try getAll and filter by entrepriseId
-      try {
-        const allUsers = await utilisateurApi.getAll();
-        const filtered = allUsers.filter((u) => u.entrepriseId === entrepriseId);
-        setEntrepriseUsers(filtered);
-      } catch {
-        setEntrepriseUsers([]);
-        setUsersAccessDenied(true);
-        toast({
-          title: "Permission manquante",
-          description: "Impossible de charger les utilisateurs de cette entreprise. Vous pouvez créer une nouvelle entreprise avec son utilisateur.",
-          variant: "destructive",
-        });
-      }
+      const allSousTraitants = await utilisateurApi.getSousTraitants();
+      const filtered = allSousTraitants.filter((u) => u.entrepriseId === entrepriseId);
+      setEntrepriseUsers(filtered);
+    } catch {
+      setEntrepriseUsers([]);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les utilisateurs sous-traitants.",
+        variant: "destructive",
+      });
     } finally {
       setLoadingUsers(false);
     }
