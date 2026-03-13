@@ -7,6 +7,7 @@ import {
   SOUS_TRAITANCE_DOCUMENT_TYPES, TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
   entrepriseApi, EntrepriseDto,
+  utilisateurApi, UtilisateurDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Handshake, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle, UserPlus, Building2 } from "lucide-react";
+import { Handshake, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle, UserPlus, Building2, User } from "lucide-react";
 
 const STATUT_COLORS: Record<StatutSousTraitance, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
@@ -43,8 +44,15 @@ const SousTraitance = () => {
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [createNewEntreprise, setCreateNewEntreprise] = useState(false);
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<number | null>(null);
+  const [entrepriseUsers, setEntrepriseUsers] = useState<UtilisateurDto[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [form, setForm] = useState<Partial<SousTraitanceOnboardingRequest>>({});
   const [creating, setCreating] = useState(false);
+
+  // Document uploads in creation
+  const [createDocContrat, setCreateDocContrat] = useState<File | null>(null);
+  const [createDocLettre, setCreateDocLettre] = useState<File | null>(null);
 
   // Detail dialog
   const [selected, setSelected] = useState<SousTraitanceDto | null>(null);
@@ -70,6 +78,10 @@ const SousTraitance = () => {
     setForm({ contratEnregistre: true });
     setCreateNewEntreprise(false);
     setSelectedEntrepriseId(null);
+    setSelectedUserId(null);
+    setEntrepriseUsers([]);
+    setCreateDocContrat(null);
+    setCreateDocLettre(null);
     try {
       const [certs, ents] = await Promise.all([
         role === "ENTREPRISE" && (user as any)?.entrepriseId
@@ -83,40 +95,96 @@ const SousTraitance = () => {
     setShowCreate(true);
   };
 
+  // Load users when enterprise is selected
+  const handleSelectEntreprise = async (entrepriseId: number) => {
+    setSelectedEntrepriseId(entrepriseId);
+    setSelectedUserId(null);
+    setEntrepriseUsers([]);
+    setLoadingUsers(true);
+    try {
+      const users = await utilisateurApi.getByEntreprise(entrepriseId);
+      setEntrepriseUsers(users);
+    } catch {
+      setEntrepriseUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   const handleCreate = async () => {
     const f2 = { ...form };
-    // If selecting existing enterprise, fill enterprise fields from selection
-    if (!createNewEntreprise && selectedEntrepriseId) {
-      const ent = entreprises.find(e => e.id === selectedEntrepriseId);
-      if (ent) {
-        f2.sousTraitantEntrepriseRaisonSociale = ent.raisonSociale;
-        f2.sousTraitantEntrepriseNif = ent.nif;
-        f2.sousTraitantEntrepriseAdresse = ent.adresse;
-        f2.sousTraitantEntrepriseSituationFiscale = ent.situationFiscale;
+
+    if (!f2.certificatCreditId) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner un certificat", variant: "destructive" });
+      return;
+    }
+
+    let createdSousTraitance: SousTraitanceDto | null = null;
+
+    if (!createNewEntreprise) {
+      // Use existing enterprise + existing user → use create API
+      if (!selectedEntrepriseId) {
+        toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
+        return;
+      }
+      if (!selectedUserId) {
+        toast({ title: "Erreur", description: "Veuillez sélectionner un utilisateur sous-traitant", variant: "destructive" });
+        return;
+      }
+      setCreating(true);
+      try {
+        createdSousTraitance = await sousTraitanceApi.create({
+          certificatCreditId: f2.certificatCreditId,
+          sousTraitantUserId: selectedUserId,
+          contratEnregistre: f2.contratEnregistre,
+          volumes: f2.volumes,
+          quantites: f2.quantites,
+        });
+      } catch (e: any) {
+        toast({ title: "Erreur", description: e.message, variant: "destructive" });
+        setCreating(false);
+        return;
+      }
+    } else {
+      // Create new enterprise + user → use onboard API
+      const { sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif, sousTraitantUsername, sousTraitantPassword } = f2;
+      if (!sousTraitantEntrepriseRaisonSociale || !sousTraitantEntrepriseNif) {
+        toast({ title: "Erreur", description: "Veuillez remplir la raison sociale et le NIF", variant: "destructive" });
+        return;
+      }
+      if (!sousTraitantUsername || !sousTraitantPassword) {
+        toast({ title: "Erreur", description: "Veuillez remplir le nom d'utilisateur et le mot de passe", variant: "destructive" });
+        return;
+      }
+      setCreating(true);
+      try {
+        const result = await sousTraitanceApi.onboard(f2 as SousTraitanceOnboardingRequest);
+        createdSousTraitance = result.sousTraitance;
+      } catch (e: any) {
+        toast({ title: "Erreur", description: e.message, variant: "destructive" });
+        setCreating(false);
+        return;
       }
     }
-    const { certificatCreditId, sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif, sousTraitantUsername, sousTraitantPassword } = f2;
-    if (!certificatCreditId || !sousTraitantUsername || !sousTraitantPassword) {
-      toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
-      return;
+
+    // Upload documents if provided
+    if (createdSousTraitance) {
+      try {
+        if (createDocContrat) {
+          await sousTraitanceApi.uploadDocument(createdSousTraitance.id, "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", createDocContrat);
+        }
+        if (createDocLettre) {
+          await sousTraitanceApi.uploadDocument(createdSousTraitance.id, "LETTRE_SOUS_TRAITANCE", createDocLettre);
+        }
+      } catch (e: any) {
+        toast({ title: "Attention", description: "Sous-traitance créée mais erreur lors de l'upload des documents: " + e.message, variant: "destructive" });
+      }
     }
-    if (createNewEntreprise && (!sousTraitantEntrepriseRaisonSociale || !sousTraitantEntrepriseNif)) {
-      toast({ title: "Erreur", description: "Veuillez remplir la raison sociale et le NIF", variant: "destructive" });
-      return;
-    }
-    if (!createNewEntreprise && !selectedEntrepriseId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise ou en créer une nouvelle", variant: "destructive" });
-      return;
-    }
-    setCreating(true);
-    try {
-      await sousTraitanceApi.onboard(f2 as SousTraitanceOnboardingRequest);
-      toast({ title: "Succès", description: "Sous-traitant créé et demande soumise" });
-      setShowCreate(false);
-      fetchData();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setCreating(false); }
+
+    toast({ title: "Succès", description: "Sous-traitance créée et demande soumise" });
+    setShowCreate(false);
+    setCreating(false);
+    fetchData();
   };
 
   const handleAutoriser = async (id: number) => {
@@ -294,7 +362,7 @@ const SousTraitance = () => {
       {/* Create / Onboarding dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Nouvelle sous-traitance (onboarding)</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Nouvelle sous-traitance</DialogTitle></DialogHeader>
           <div className="space-y-5">
             {/* Certificat */}
             <div>
@@ -323,8 +391,13 @@ const SousTraitance = () => {
                   size="sm"
                   onClick={() => {
                     setCreateNewEntreprise(!createNewEntreprise);
-                    if (!createNewEntreprise) setSelectedEntrepriseId(null);
-                    else setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined });
+                    if (!createNewEntreprise) {
+                      setSelectedEntrepriseId(null);
+                      setSelectedUserId(null);
+                      setEntrepriseUsers([]);
+                    } else {
+                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined, sousTraitantUsername: undefined, sousTraitantPassword: undefined, sousTraitantNomComplet: undefined, sousTraitantEmail: undefined });
+                    }
                   }}
                 >
                   <Plus className="h-4 w-4 mr-1" />
@@ -333,68 +406,99 @@ const SousTraitance = () => {
               </div>
 
               {!createNewEntreprise ? (
-                <div>
-                  <Label>Sélectionner une entreprise existante *</Label>
-                  <Select value={selectedEntrepriseId ? String(selectedEntrepriseId) : ""} onValueChange={(v) => setSelectedEntrepriseId(Number(v))}>
-                    <SelectTrigger><SelectValue placeholder="Choisir une entreprise" /></SelectTrigger>
-                    <SelectContent>
-                      {entreprises.map((e) => (
-                        <SelectItem key={e.id} value={String(e.id)}>
-                          {e.raisonSociale} — NIF: {e.nif}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
                   <div>
-                    <Label>Raison sociale *</Label>
-                    <Input value={form.sousTraitantEntrepriseRaisonSociale ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseRaisonSociale: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>NIF *</Label>
-                    <Input value={form.sousTraitantEntrepriseNif ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseNif: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Adresse</Label>
-                    <Input value={form.sousTraitantEntrepriseAdresse ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseAdresse: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Situation fiscale</Label>
-                    <Select value={form.sousTraitantEntrepriseSituationFiscale ?? ""} onValueChange={(v) => setForm({ ...form, sousTraitantEntrepriseSituationFiscale: v })}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <Label>Sélectionner une entreprise existante *</Label>
+                    <Select value={selectedEntrepriseId ? String(selectedEntrepriseId) : ""} onValueChange={(v) => handleSelectEntreprise(Number(v))}>
+                      <SelectTrigger><SelectValue placeholder="Choisir une entreprise" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="REGULIERE">Régulière</SelectItem>
-                        <SelectItem value="NON_REGULIERE">Non régulière</SelectItem>
+                        {entreprises.map((e) => (
+                          <SelectItem key={e.id} value={String(e.id!)}>
+                            {e.raisonSociale} — NIF: {e.nif}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              )}
-            </div>
 
-            {/* Utilisateur sous-traitant */}
-            <div className="border rounded-lg p-4 space-y-3">
-              <h4 className="font-semibold text-sm text-foreground">Utilisateur sous-traitant</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Nom d'utilisateur *</Label>
-                  <Input value={form.sousTraitantUsername ?? ""} onChange={(e) => setForm({ ...form, sousTraitantUsername: e.target.value })} />
+                  {/* User selection from enterprise */}
+                  {selectedEntrepriseId && (
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <User className="h-4 w-4" /> Utilisateur sous-traitant *
+                      </Label>
+                      {loadingUsers ? (
+                        <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Chargement des utilisateurs...
+                        </div>
+                      ) : entrepriseUsers.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">Aucun utilisateur trouvé pour cette entreprise.</p>
+                      ) : (
+                        <Select value={selectedUserId ? String(selectedUserId) : ""} onValueChange={(v) => setSelectedUserId(Number(v))}>
+                          <SelectTrigger><SelectValue placeholder="Choisir un utilisateur" /></SelectTrigger>
+                          <SelectContent>
+                            {entrepriseUsers.map((u) => (
+                              <SelectItem key={u.id} value={String(u.id)}>
+                                {u.nomComplet || u.username} — {u.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <Label>Mot de passe *</Label>
-                  <Input type="password" value={form.sousTraitantPassword ?? ""} onChange={(e) => setForm({ ...form, sousTraitantPassword: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Nom complet</Label>
-                  <Input value={form.sousTraitantNomComplet ?? ""} onChange={(e) => setForm({ ...form, sousTraitantNomComplet: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input type="email" value={form.sousTraitantEmail ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEmail: e.target.value })} />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Raison sociale *</Label>
+                      <Input value={form.sousTraitantEntrepriseRaisonSociale ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseRaisonSociale: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>NIF *</Label>
+                      <Input value={form.sousTraitantEntrepriseNif ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseNif: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Adresse</Label>
+                      <Input value={form.sousTraitantEntrepriseAdresse ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseAdresse: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Situation fiscale</Label>
+                      <Select value={form.sousTraitantEntrepriseSituationFiscale ?? ""} onValueChange={(v) => setForm({ ...form, sousTraitantEntrepriseSituationFiscale: v })}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="REGULIERE">Régulière</SelectItem>
+                          <SelectItem value="NON_REGULIERE">Non régulière</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Utilisateur sous-traitant (new) */}
+                  <div className="border rounded-lg p-4 space-y-3 mt-3">
+                    <h4 className="font-semibold text-sm text-foreground">Utilisateur sous-traitant</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Nom d'utilisateur *</Label>
+                        <Input value={form.sousTraitantUsername ?? ""} onChange={(e) => setForm({ ...form, sousTraitantUsername: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Mot de passe *</Label>
+                        <Input type="password" value={form.sousTraitantPassword ?? ""} onChange={(e) => setForm({ ...form, sousTraitantPassword: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Nom complet</Label>
+                        <Input value={form.sousTraitantNomComplet ?? ""} onChange={(e) => setForm({ ...form, sousTraitantNomComplet: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input type="email" value={form.sousTraitantEmail ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEmail: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Détails sous-traitance */}
@@ -411,6 +515,33 @@ const SousTraitance = () => {
             <div className="flex items-center gap-3">
               <Switch checked={form.contratEnregistre ?? false} onCheckedChange={(v) => setForm({ ...form, contratEnregistre: v })} />
               <Label>Contrat enregistré</Label>
+            </div>
+
+            {/* Documents obligatoires */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                <Upload className="h-4 w-4" /> Documents requis
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <Label>Contrat de sous-traitance enregistré *</Label>
+                  <Input type="file" onChange={(e) => setCreateDocContrat(e.target.files?.[0] || null)} />
+                  {createDocContrat && (
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {createDocContrat.name}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label>Lettre de sous-traitance *</Label>
+                  <Input type="file" onChange={(e) => setCreateDocLettre(e.target.files?.[0] || null)} />
+                  {createDocLettre && (
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {createDocLettre.name}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>

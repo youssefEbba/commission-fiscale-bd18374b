@@ -52,7 +52,7 @@ export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; autoriteContractanteId?: number; }
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; }
 
-export interface UtilisateurDto { id: number; username: string; role: string; nomComplet: string; email: string; actif: boolean; }
+export interface UtilisateurDto { id: number; username: string; role: string; nomComplet: string; email: string; actif: boolean; entrepriseId?: number; }
 
 export const ROLE_OPTIONS = [
   { value: "ENTREPRISE", label: "Entreprise" },
@@ -90,6 +90,7 @@ export interface UpdateUtilisateurRequest { username?: string; nomComplet?: stri
 
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
+  getByEntreprise: (entrepriseId: number) => apiFetch<UtilisateurDto[]>(`/utilisateurs?entrepriseId=${entrepriseId}`),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
