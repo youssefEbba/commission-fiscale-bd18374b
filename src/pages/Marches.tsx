@@ -52,6 +52,12 @@ const Marches = () => {
   const [delegueForm, setDelegueForm] = useState<CreateDelegueRequest>({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
   const [creatingDelegue, setCreatingDelegue] = useState(false);
 
+  // GED Documents
+  const [gedOpen, setGedOpen] = useState(false);
+  const [gedMarche, setGedMarche] = useState<MarcheDto | null>(null);
+  const [gedDocs, setGedDocs] = useState<DocumentDto[]>([]);
+  const [gedLoading, setGedLoading] = useState(false);
+
   const fetchMarches = async () => {
     setLoading(true);
     try {
