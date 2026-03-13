@@ -64,7 +64,15 @@ const NAV_ENTRIES: NavEntry[] = [
       { label: "Clôture & Reporting", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
-  { label: "GED", href: "/dashboard/ged", icon: FolderOpen, roles: ["PRESIDENT", "ADMIN_SI"] },
+  {
+    label: "GED",
+    icon: FolderOpen,
+    roles: ["PRESIDENT", "ADMIN_SI"],
+    children: [
+      { label: "Configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["PRESIDENT", "ADMIN_SI"] },
+      { label: "Dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["PRESIDENT", "ADMIN_SI"] },
+    ],
+  },
   {
     label: "Paramétrage",
     icon: Settings,

@@ -98,9 +98,14 @@ const App = () => (
                 <Cloture />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/ged" element={
+            <Route path="/dashboard/ged/configuration" element={
               <ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}>
-                <GestionDocuments />
+                <GedConfiguration />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/ged/dossiers" element={
+              <ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}>
+                <GedDossiers />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats/:id" element={
