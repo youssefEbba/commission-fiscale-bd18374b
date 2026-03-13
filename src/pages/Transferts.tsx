@@ -52,9 +52,6 @@ const Transferts = () => {
   // Document dialog
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentTransfertCreditDto[]>([]);
-  const [docType, setDocType] = useState<TypeDocumentTransfert>("DEMANDE_MOTIVEE_TRANSFERT");
-  const [docFile, setDocFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
 
   const fetchData = async () => {

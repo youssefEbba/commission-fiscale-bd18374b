@@ -61,9 +61,6 @@ const SousTraitance = () => {
   // Document dialog
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentSousTraitanceDto[]>([]);
-  const [docType, setDocType] = useState<TypeDocumentSousTraitance>("CONTRAT_SOUS_TRAITANCE_ENREGISTRE");
-  const [docFile, setDocFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [docsLoading, setDocsLoading] = useState(false);
 
   const fetchData = async () => {
