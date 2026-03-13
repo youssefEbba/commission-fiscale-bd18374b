@@ -9,7 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, ExternalLink } from "lucide-react";
+import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, ExternalLink, Building2, Landmark, ShoppingCart } from "lucide-react";
 
 const API_BASE = "https://5502-197-231-11-32.ngrok-free.app/api";
 
@@ -94,25 +94,47 @@ const DossiersList = () => {
                 className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary"
                 onClick={() => setSelectedDossier(dossier.id)}
               >
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FolderOpen className="h-5 w-5 text-primary" />
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FolderOpen className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{dossier.reference}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Créé le {new Date(dossier.dateCreation).toLocaleDateString("fr-FR")}
+                          {dossier.certificatId && ` • Certificat #${dossier.certificatId}`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{dossier.reference}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Créé le {new Date(dossier.dateCreation).toLocaleDateString("fr-FR")}
-                        {dossier.certificatId && ` • Certificat #${dossier.certificatId}`}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right text-sm">
+                        <p className="text-foreground font-medium">{totalDocs} document(s)</p>
+                        <p className="text-xs text-muted-foreground">{etapesAvecDocs}/11 étapes</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right text-sm">
-                      <p className="text-foreground font-medium">{totalDocs} document(s)</p>
-                      <p className="text-xs text-muted-foreground">{etapesAvecDocs}/11 étapes</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 pl-14 text-xs text-muted-foreground">
+                    {dossier.entrepriseRaisonSociale && (
+                      <span className="flex items-center gap-1">
+                        <Building2 className="h-3.5 w-3.5" />
+                        {dossier.entrepriseRaisonSociale}
+                      </span>
+                    )}
+                    {dossier.autoriteContractanteNom && (
+                      <span className="flex items-center gap-1">
+                        <Landmark className="h-3.5 w-3.5" />
+                        {dossier.autoriteContractanteNom}
+                      </span>
+                    )}
+                    {(dossier.marcheNumero || dossier.marcheIntitule) && (
+                      <span className="flex items-center gap-1">
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                        {dossier.marcheNumero || dossier.marcheIntitule}
+                      </span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -175,9 +197,38 @@ const DossierDetail = ({ dossier, isLoading, onBack }: DossierDetailProps) => {
               <p className="text-sm text-muted-foreground">
                 Créé le {new Date(dossier.dateCreation).toLocaleDateString("fr-FR")}
                 {dossier.certificatId && ` • Certificat #${dossier.certificatId}`}
-                {` • Correction #${dossier.demandeCorrectionId}`}
+                {` • Correction ${dossier.demandeCorrectionNumero || `#${dossier.demandeCorrectionId}`}`}
               </p>
             </div>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 pl-[52px]">
+            {dossier.entrepriseRaisonSociale && (
+              <div className="flex items-center gap-2 text-sm">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Entreprise</p>
+                  <p className="font-medium text-foreground">{dossier.entrepriseRaisonSociale}</p>
+                </div>
+              </div>
+            )}
+            {dossier.autoriteContractanteNom && (
+              <div className="flex items-center gap-2 text-sm">
+                <Landmark className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Autorité Contractante</p>
+                  <p className="font-medium text-foreground">{dossier.autoriteContractanteNom}</p>
+                </div>
+              </div>
+            )}
+            {(dossier.marcheNumero || dossier.marcheIntitule) && (
+              <div className="flex items-center gap-2 text-sm">
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Marché</p>
+                  <p className="font-medium text-foreground">{dossier.marcheNumero}{dossier.marcheIntitule && ` – ${dossier.marcheIntitule}`}</p>
+                </div>
+              </div>
+            )}
           </div>
         </CardHeader>
       </Card>
