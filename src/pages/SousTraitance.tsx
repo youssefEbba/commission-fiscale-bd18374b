@@ -576,69 +576,19 @@ const SousTraitance = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Document dialog */}
-      <Dialog open={docDialog !== null} onOpenChange={() => setDocDialog(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Documents — Sous-traitance #{docDialog}</DialogTitle></DialogHeader>
-          {docsLoading ? (
-            <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin" /></div>
-          ) : (
-            <div className="space-y-4">
-              {docs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Aucun document</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Fichier</TableHead>
-                      <TableHead>Version</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {docs.filter(d => d.actif !== false).map((d) => (
-                      <TableRow key={d.id}>
-                        <TableCell className="text-xs">{SOUS_TRAITANCE_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type}</TableCell>
-                        <TableCell>
-                          {d.chemin ? (
-                            <a href={d.chemin} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{d.nomFichier}</a>
-                          ) : (
-                            <span className="text-xs">{d.nomFichier}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs">v{d.version || 1}</TableCell>
-                        <TableCell className="text-xs">{d.dateUpload ? new Date(d.dateUpload).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-
-              {role === "ENTREPRISE" && (
-                <div className="border-t pt-4 space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2"><Upload className="h-4 w-4" /> Ajouter un document</h4>
-                  <div className="flex flex-col gap-2">
-                    <Select value={docType} onValueChange={(v) => setDocType(v as TypeDocumentSousTraitance)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {SOUS_TRAITANCE_DOCUMENT_TYPES.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
-                    <Button size="sm" onClick={handleUpload} disabled={uploading || !docFile}>
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                      Uploader
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* GED Document dialog */}
+      <DocumentGED
+        open={docDialog !== null}
+        onOpenChange={() => setDocDialog(null)}
+        title={`Documents — Sous-traitance #${docDialog}`}
+        dossierId={docDialog}
+        documentTypes={SOUS_TRAITANCE_DOCUMENT_TYPES}
+        documents={docs}
+        loading={docsLoading}
+        canUpload={role === "ENTREPRISE"}
+        onUpload={handleGEDUpload}
+        onRefresh={refreshDocs}
+      />
     </DashboardLayout>
   );
 };
