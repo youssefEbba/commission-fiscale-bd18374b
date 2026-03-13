@@ -7,7 +7,7 @@ import {
   SOUS_TRAITANCE_DOCUMENT_TYPES, TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
   entrepriseApi, EntrepriseDto,
-  utilisateurApi, UtilisateurDto,
+  utilisateurApi, SousTraitantUtilisateurDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
