@@ -64,6 +64,11 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "AUTRE_DOCUMENT", label: "Autre document" },
   { value: "CREDIT_EXTERIEUR", label: "Crédit extérieur" },
   { value: "CREDIT_INTERIEUR", label: "Crédit intérieur" },
+  { value: "DEMANDE_MOTIVEE", label: "Demande motivée" },
+  { value: "DECLARATION_CLOTURE", label: "Déclaration clôture" },
+  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
+  { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
+  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
 ];
 
 const GestionDocuments = () => {
