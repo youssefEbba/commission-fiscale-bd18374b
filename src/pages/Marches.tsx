@@ -485,6 +485,20 @@ const Marches = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* GED Documents Dialog */}
+      <DocumentGED
+        open={gedOpen}
+        onOpenChange={setGedOpen}
+        title={`Documents — Marché ${gedMarche?.numeroMarche || `#${gedMarche?.id}`}`}
+        dossierId={gedMarche?.id || null}
+        documentTypes={MARCHE_DOCUMENT_TYPES}
+        documents={gedDocs}
+        loading={gedLoading}
+        canUpload={isAC || isDelegate}
+        onUpload={handleGedUpload}
+        onRefresh={handleGedRefresh}
+      />
     </DashboardLayout>
   );
 };
