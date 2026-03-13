@@ -448,28 +448,6 @@ const SousTraitance = () => {
                     </div>
                   </div>
 
-                  {/* Utilisateur sous-traitant (new) */}
-                  <div className="border rounded-lg p-4 space-y-3 mt-3">
-                    <h4 className="font-semibold text-sm text-foreground">Utilisateur sous-traitant</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>Nom d'utilisateur *</Label>
-                        <Input value={form.sousTraitantUsername ?? ""} onChange={(e) => setForm({ ...form, sousTraitantUsername: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Mot de passe *</Label>
-                        <Input type="password" value={form.sousTraitantPassword ?? ""} onChange={(e) => setForm({ ...form, sousTraitantPassword: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Nom complet</Label>
-                        <Input value={form.sousTraitantNomComplet ?? ""} onChange={(e) => setForm({ ...form, sousTraitantNomComplet: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Email</Label>
-                        <Input type="email" value={form.sousTraitantEmail ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEmail: e.target.value })} />
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
