@@ -153,14 +153,10 @@ const SousTraitance = () => {
         return;
       }
     } else {
-      // Create new enterprise + user → use onboard API
-      const { sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif, sousTraitantUsername, sousTraitantPassword } = f2;
+      // Create new enterprise → use onboard API
+      const { sousTraitantEntrepriseRaisonSociale, sousTraitantEntrepriseNif } = f2;
       if (!sousTraitantEntrepriseRaisonSociale || !sousTraitantEntrepriseNif) {
         toast({ title: "Erreur", description: "Veuillez remplir la raison sociale et le NIF", variant: "destructive" });
-        return;
-      }
-      if (!sousTraitantUsername || !sousTraitantPassword) {
-        toast({ title: "Erreur", description: "Veuillez remplir le nom d'utilisateur et le mot de passe", variant: "destructive" });
         return;
       }
       setCreating(true);
