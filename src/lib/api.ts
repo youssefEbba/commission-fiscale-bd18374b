@@ -900,7 +900,7 @@ export type TypeDocumentTransfert = "DEMANDE_MOTIVEE_TRANSFERT" | "DECLARATION_C
 export const TRANSFERT_DOCUMENT_TYPES: { value: TypeDocumentTransfert; label: string }[] = [
   { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée" },
   { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
-  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs clôture douane" },
+  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
 ];
 
 export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
@@ -989,7 +989,7 @@ export type TypeDocumentSousTraitance = "CONTRAT_SOUS_TRAITANCE_ENREGISTRE" | "L
 
 export const SOUS_TRAITANCE_DOCUMENT_TYPES: { value: TypeDocumentSousTraitance; label: string }[] = [
   { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
-  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre de sous-traitance" },
+  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
 ];
 
 export const SOUS_TRAITANCE_STATUT_LABELS: Record<StatutSousTraitance, string> = {
