@@ -45,7 +45,7 @@ const SousTraitance = () => {
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [createNewEntreprise, setCreateNewEntreprise] = useState(false);
   const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<number | null>(null);
-  const [entrepriseUsers, setEntrepriseUsers] = useState<UtilisateurDto[]>([]);
+  const [entrepriseUsers, setEntrepriseUsers] = useState<SousTraitantUtilisateurDto[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [form, setForm] = useState<Partial<SousTraitanceOnboardingRequest>>({});
