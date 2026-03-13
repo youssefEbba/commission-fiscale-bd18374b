@@ -65,6 +65,8 @@ const Certificats = () => {
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
+  // Track which certificate IDs come from sous-traitance
+  const [sousTraiteCertIds, setSousTraiteCertIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
@@ -79,8 +81,36 @@ const Certificats = () => {
     setLoading(true);
     try {
       if (role === "ENTREPRISE" && user?.entrepriseId) {
-        setCertificats(await certificatCreditApi.getByEntreprise(user.entrepriseId));
+        // Fetch own certificates + certificates from authorized sous-traitances
+        const [ownCerts, allSousTraitances] = await Promise.all([
+          certificatCreditApi.getByEntreprise(user.entrepriseId),
+          sousTraitanceApi.getAll(),
+        ]);
+
+        // Find sous-traitances where this enterprise is the sous-traitant and status is AUTORISEE
+        const mySousTraitances = allSousTraitances.filter(
+          (st) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE"
+        );
+
+        // Fetch certificates linked to sous-traitances (avoid duplicates)
+        const ownCertIds = new Set(ownCerts.map((c) => c.id));
+        const stCertIds = new Set<number>();
+        const sousTraiteCerts: CertificatCreditDto[] = [];
+
+        for (const st of mySousTraitances) {
+          if (!ownCertIds.has(st.certificatCreditId) && !stCertIds.has(st.certificatCreditId)) {
+            stCertIds.add(st.certificatCreditId);
+            try {
+              const cert = await certificatCreditApi.getById(st.certificatCreditId);
+              sousTraiteCerts.push(cert);
+            } catch { /* skip if no access */ }
+          }
+        }
+
+        setSousTraiteCertIds(stCertIds);
+        setCertificats([...ownCerts, ...sousTraiteCerts]);
       } else {
+        setSousTraiteCertIds(new Set());
         setCertificats(await certificatCreditApi.getAll());
       }
     } catch {
