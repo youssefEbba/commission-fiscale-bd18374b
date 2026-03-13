@@ -18,6 +18,8 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
+  { key: "CONVENTION", processus: "CONVENTION", label: "Convention" },
+  { key: "MARCHE", processus: "MARCHE", label: "Marché / Attribution / Adjudication" },
   { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
   { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
