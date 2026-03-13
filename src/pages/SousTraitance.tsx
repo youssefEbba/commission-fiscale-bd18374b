@@ -124,16 +124,32 @@ const SousTraitance = () => {
   };
 
   // Load users when enterprise is selected
+  const [usersAccessDenied, setUsersAccessDenied] = useState(false);
+
   const handleSelectEntreprise = async (entrepriseId: number) => {
     setSelectedEntrepriseId(entrepriseId);
     setSelectedUserId(null);
     setEntrepriseUsers([]);
+    setUsersAccessDenied(false);
     setLoadingUsers(true);
     try {
       const users = await utilisateurApi.getByEntreprise(entrepriseId);
       setEntrepriseUsers(users);
-    } catch {
-      setEntrepriseUsers([]);
+    } catch (err1) {
+      // Fallback: try getAll and filter by entrepriseId
+      try {
+        const allUsers = await utilisateurApi.getAll();
+        const filtered = allUsers.filter((u) => u.entrepriseId === entrepriseId);
+        setEntrepriseUsers(filtered);
+      } catch {
+        setEntrepriseUsers([]);
+        setUsersAccessDenied(true);
+        toast({
+          title: "Permission manquante",
+          description: "Impossible de charger les utilisateurs de cette entreprise. Vous pouvez créer une nouvelle entreprise avec son utilisateur.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoadingUsers(false);
     }
