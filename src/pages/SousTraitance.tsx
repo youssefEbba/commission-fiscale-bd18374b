@@ -392,7 +392,7 @@ const SousTraitance = () => {
                     if (!createNewEntreprise) {
                       setSelectedEntrepriseId(null);
                     } else {
-                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined, sousTraitantUsername: undefined, sousTraitantPassword: undefined, sousTraitantNomComplet: undefined, sousTraitantEmail: undefined });
+                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined });
                     }
                   }}
                 >
