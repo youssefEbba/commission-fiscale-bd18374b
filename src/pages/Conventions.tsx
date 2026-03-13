@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { PDFDocument } from "pdf-lib";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -21,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Loader2,
   CheckCircle, XCircle, Filter, Upload, File, Paperclip,
+  ArrowUp, ArrowDown, Merge,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ConventionStatut, string> = {
