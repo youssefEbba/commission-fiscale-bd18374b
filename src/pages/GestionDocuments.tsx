@@ -22,6 +22,8 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
   { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
   { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
+  { key: "TRANSFERT", processus: "TRANSFERT_CREDIT", label: "Transfert de crédit (Douane → Intérieur)" },
+  { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE", label: "Sous-traitance" },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
@@ -62,6 +64,11 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "AUTRE_DOCUMENT", label: "Autre document" },
   { value: "CREDIT_EXTERIEUR", label: "Crédit extérieur" },
   { value: "CREDIT_INTERIEUR", label: "Crédit intérieur" },
+  { value: "DEMANDE_MOTIVEE", label: "Demande motivée" },
+  { value: "DECLARATION_CLOTURE", label: "Déclaration clôture" },
+  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
+  { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
+  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
 ];
 
 const GestionDocuments = () => {
@@ -94,12 +101,22 @@ const GestionDocuments = () => {
     queryKey: ["document-requirements", "UTILISATION_CI_INTERIEUR"],
     queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
   });
+  const transfertQuery = useQuery({
+    queryKey: ["document-requirements", "TRANSFERT_CREDIT"],
+    queryFn: () => documentRequirementApi.getByProcessus("TRANSFERT_CREDIT"),
+  });
+  const sousTraitanceQuery = useQuery({
+    queryKey: ["document-requirements", "SOUS_TRAITANCE"],
+    queryFn: () => documentRequirementApi.getByProcessus("SOUS_TRAITANCE"),
+  });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
     CORRECTION_OFFRE_FISCALE: { data: correctionQuery.data || [], isLoading: correctionQuery.isLoading },
     MISE_EN_PLACE_CI: { data: miseEnPlaceQuery.data || [], isLoading: miseEnPlaceQuery.isLoading },
     UTILISATION_CI_EXTERIEUR: { data: exterieurQuery.data || [], isLoading: exterieurQuery.isLoading },
     UTILISATION_CI_INTERIEUR: { data: interieurQuery.data || [], isLoading: interieurQuery.isLoading },
+    TRANSFERT_CREDIT: { data: transfertQuery.data || [], isLoading: transfertQuery.isLoading },
+    SOUS_TRAITANCE: { data: sousTraitanceQuery.data || [], isLoading: sousTraitanceQuery.isLoading },
   };
 
   const createMutation = useMutation({
