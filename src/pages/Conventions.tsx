@@ -113,11 +113,22 @@ const Conventions = () => {
 
   useEffect(() => { fetchConventions(); }, []);
 
-  // Load references when create dialog opens
+  // Load references + GED requirements when create dialog opens
   useEffect(() => {
     if (createOpen) {
       fetchBailleurs();
       fetchDevises();
+      // Fetch GED requirements for CONVENTION
+      setGedReqLoading(true);
+      documentRequirementApi.getByProcessus("CONVENTION")
+        .then(reqs => {
+          setGedRequirements(reqs);
+          if (reqs.length > 0) {
+            setCreateDocType(reqs[0].typeDocument as TypeDocumentConvention);
+          }
+        })
+        .catch(() => setGedRequirements([]))
+        .finally(() => setGedReqLoading(false));
     }
   }, [createOpen]);
 
