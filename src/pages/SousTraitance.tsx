@@ -243,17 +243,12 @@ const SousTraitance = () => {
     finally { setDocsLoading(false); }
   };
 
-  const handleUpload = async () => {
-    if (!docDialog || !docFile) return;
-    setUploading(true);
-    try {
-      await sousTraitanceApi.uploadDocument(docDialog, docType, docFile);
-      toast({ title: "Succès", description: "Document uploadé" });
-      setDocFile(null);
-      setDocs(await sousTraitanceApi.getDocuments(docDialog));
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setUploading(false); }
+  const refreshDocs = async (id: number) => {
+    try { setDocs(await sousTraitanceApi.getDocuments(id)); } catch { /* ignore */ }
+  };
+
+  const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
+    await sousTraitanceApi.uploadDocument(dossierId, type as TypeDocumentSousTraitance, file);
   };
 
   const filtered = data.filter((t) => {
