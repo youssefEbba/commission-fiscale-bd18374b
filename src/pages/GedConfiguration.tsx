@@ -71,6 +71,15 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
   { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
   { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
+  // Convention
+  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
+  { value: "AVENANT", label: "Avenant" },
+  { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
+  { value: "ANNEXE", label: "Annexe" },
+  // Marché
+  { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
+  { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
+  { value: "CONTRAT_SIGNE", label: "Contrat signé" },
 ];
 
 const GedConfiguration = () => {
