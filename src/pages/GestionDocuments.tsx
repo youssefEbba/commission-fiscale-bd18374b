@@ -238,10 +238,18 @@ const GestionDocuments = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">GED – Gestion des Documents</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Configurez les documents requis par processus
+            Configurez les documents requis ou consultez les dossiers
           </p>
         </div>
 
+        <Tabs defaultValue="configuration" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="configuration">Configuration</TabsTrigger>
+            <TabsTrigger value="dossiers">Dossiers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="configuration">
+            <div className="space-y-6">
         {PROCESSUS_SECTIONS.map((section) => {
           const q = queriesByProcessus[section.processus];
           if (!q) return null;
