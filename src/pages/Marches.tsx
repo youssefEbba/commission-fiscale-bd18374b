@@ -5,6 +5,7 @@ import {
   marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_LABELS,
   delegueApi, DelegueDto,
   conventionApi, ConventionDto,
+  DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
+import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
