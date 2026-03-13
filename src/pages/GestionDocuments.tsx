@@ -291,7 +291,7 @@ const GestionDocuments = () => {
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {(req.typesAutorises || []).map((f) => (
-                                  <Badge key={f} className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs">
+                                  <Badge key={f} className="bg-primary text-primary-foreground text-xs">
                                     {f.toLowerCase()}
                                   </Badge>
                                 ))}
