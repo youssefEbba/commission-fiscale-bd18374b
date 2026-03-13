@@ -40,6 +40,9 @@ const SousTraitance = () => {
   // Onboarding dialog
   const [showCreate, setShowCreate] = useState(false);
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
+  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
+  const [createNewEntreprise, setCreateNewEntreprise] = useState(false);
+  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<SousTraitanceOnboardingRequest>>({});
   const [creating, setCreating] = useState(false);
 
