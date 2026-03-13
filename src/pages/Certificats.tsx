@@ -226,8 +226,13 @@ const Certificats = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun certificat</TableCell></TableRow>
                   ) : filtered.map((c) => (
-                    <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
-                       <TableCell className="font-medium">{c.numero || c.reference || `#${c.id}`}</TableCell>
+                     <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
+                       <TableCell className="font-medium">
+                         {c.numero || c.reference || `#${c.id}`}
+                         {sousTraiteCertIds.has(c.id) && (
+                           <Badge className="ml-2 text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">Sous-traité</Badge>
+                         )}
+                       </TableCell>
                        <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
                        <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
                        <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
