@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { PDFDocument } from "pdf-lib";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -21,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Loader2,
   CheckCircle, XCircle, Filter, Upload, File, Paperclip,
+  ArrowUp, ArrowDown, Merge,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ConventionStatut, string> = {
@@ -177,6 +179,86 @@ const Conventions = () => {
 
   const removeCreateDoc = (index: number) => {
     setCreateDocs(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const moveCreateDoc = (index: number, direction: "up" | "down") => {
+    setCreateDocs(prev => {
+      const newDocs = [...prev];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newDocs.length) return prev;
+      [newDocs[index], newDocs[targetIndex]] = [newDocs[targetIndex], newDocs[index]];
+      return newDocs;
+    });
+  };
+
+  const [merging, setMerging] = useState(false);
+
+  const mergePdfs = useCallback(async (files: File[]) => {
+    const pdfFiles = files.filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+    if (pdfFiles.length < 2) {
+      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF à fusionner.", variant: "destructive" });
+      return;
+    }
+    setMerging(true);
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of pdfFiles) {
+        const bytes = await file.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([new Uint8Array(mergedBytes) as any], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "convention_fusionnee.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés avec succès.` });
+    } catch (e: any) {
+      toast({ title: "Erreur de fusion", description: e.message || "Impossible de fusionner les PDF", variant: "destructive" });
+    } finally {
+      setMerging(false);
+    }
+  }, [toast]);
+
+  const mergeCreateDocs = () => {
+    mergePdfs(createDocs.map(d => d.file));
+  };
+
+  const mergeExistingDocs = async () => {
+    if (documents.length < 2) return;
+    const pdfDocs = documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf") && d.chemin);
+    if (pdfDocs.length < 2) {
+      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF.", variant: "destructive" });
+      return;
+    }
+    setMerging(true);
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const doc of pdfDocs) {
+        const response = await fetch(doc.chemin!);
+        const bytes = await response.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([new Uint8Array(mergedBytes) as any], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `convention_${docsConvention?.reference || "merged"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Succès", description: `${pdfDocs.length} PDF fusionnés.` });
+    } catch (e: any) {
+      toast({ title: "Erreur de fusion", description: e.message, variant: "destructive" });
+    } finally {
+      setMerging(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -505,8 +587,28 @@ const Conventions = () => {
               </div>
               {createDocs.length > 0 && (
                 <div className="space-y-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      {createDocs.length} fichier(s) — Utilisez les flèches pour réordonner avant fusion
+                    </span>
+                    {createDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
+                      <Button type="button" variant="outline" size="sm" onClick={mergeCreateDocs} disabled={merging}>
+                        {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
+                        Fusionner PDF
+                      </Button>
+                    )}
+                  </div>
                   {createDocs.map((d, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm bg-muted/50 rounded px-3 py-1.5">
+                      <span className="text-xs text-muted-foreground font-mono w-5 shrink-0">{i + 1}</span>
+                      <div className="flex flex-col gap-0.5 shrink-0">
+                        <Button type="button" variant="ghost" size="sm" className="h-4 w-4 p-0" disabled={i === 0} onClick={() => moveCreateDoc(i, "up")}>
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" className="h-4 w-4 p-0" disabled={i === createDocs.length - 1} onClick={() => moveCreateDoc(i, "down")}>
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="outline" className="text-xs shrink-0">
                         {CONVENTION_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type}
@@ -624,6 +726,16 @@ const Conventions = () => {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Merge button for existing docs */}
+            {!docsLoading && documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf")).length >= 2 && (
+              <div className="flex justify-end">
+                <Button variant="outline" size="sm" onClick={mergeExistingDocs} disabled={merging}>
+                  {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
+                  Fusionner tous les PDF
+                </Button>
+              </div>
             )}
 
             {docsLoading ? (
