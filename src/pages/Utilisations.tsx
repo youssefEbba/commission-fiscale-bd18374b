@@ -186,7 +186,7 @@ const Utilisations = () => {
   const getFilteredRequirements = (): DocumentRequirementDto[] => {
     const processus = createType === "DOUANIER" ? "UTILISATION_CI_EXTERIEUR" : "UTILISATION_CI_INTERIEUR";
     return gedRequirements
-      .filter((r) => r.processus === processus)
+      .filter((r) => r.processus === processus || r.processus === "UTILISATION_CI")
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
