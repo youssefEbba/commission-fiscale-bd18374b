@@ -8,7 +8,7 @@ import {
   DocumentDto, TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
   bailleurApi, BailleurDto, CreateBailleurRequest,
   deviseApi, DeviseDto, CreateDeviseRequest,
-  tauxChangeApi,
+  forexApi,
   documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -132,27 +132,31 @@ const Conventions = () => {
     }
   }, [createOpen]);
 
-  // Auto-fetch taux de change when devise changes
-  const fetchTauxChange = async (deviseCode: string) => {
-    if (!deviseCode) return;
+  // Fetch taux via forex API on button click
+  const fetchTauxChange = async () => {
+    if (!form.deviseOrigine || !form.montantDevise) {
+      toast({ title: "Info", description: "Veuillez saisir la devise et le montant d'abord" });
+      return;
+    }
     setTauxLoading(true);
     try {
-      const res = await tauxChangeApi.get(deviseCode);
+      const res = await forexApi.convert(form.deviseOrigine, "MRU", form.montantDevise);
+      const rate = res.result / res.amount;
       setForm(f => ({
         ...f,
-        tauxChange: res.taux,
-        montantMru: f.montantDevise ? Math.round(f.montantDevise * res.taux * 100) / 100 : undefined,
+        tauxChange: Math.round(rate * 10000) / 10000,
+        montantMru: Math.round(res.result * 100) / 100,
       }));
+      toast({ title: "Taux récupéré", description: `1 ${form.deviseOrigine} = ${(Math.round(rate * 10000) / 10000).toLocaleString("fr-FR")} MRU` });
     } catch {
-      toast({ title: "Taux de change", description: `Impossible de récupérer le taux pour ${deviseCode}`, variant: "destructive" });
+      toast({ title: "Erreur", description: `Impossible de récupérer le taux pour ${form.deviseOrigine} → MRU`, variant: "destructive" });
     } finally {
       setTauxLoading(false);
     }
   };
 
   const handleDeviseChange = (code: string) => {
-    setForm(f => ({ ...f, deviseOrigine: code }));
-    fetchTauxChange(code);
+    setForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }));
   };
 
   const handleAddBailleur = async () => {
@@ -548,20 +552,16 @@ const Conventions = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 items-end">
               <div className="space-y-2">
                 <Label>Montant devise</Label>
                 <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
-                  setForm(f => ({
-                    ...f,
-                    montantDevise: val,
-                    montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined,
-                  }));
+                  setForm(f => ({ ...f, montantDevise: val, tauxChange: undefined, montantMru: undefined }));
                 }} placeholder="1200000" />
               </div>
               <div className="space-y-2">
-                <Label>Taux de change {tauxLoading && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</Label>
+                <Label>Taux de change</Label>
                 <Input readOnly value={form.tauxChange ?? "—"} className="bg-muted" />
               </div>
               <div className="space-y-2">
@@ -569,6 +569,17 @@ const Conventions = () => {
                 <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
               </div>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={fetchTauxChange}
+              disabled={tauxLoading || !form.deviseOrigine || !form.montantDevise}
+              className="mt-1"
+            >
+              {tauxLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Calculer le taux et montant MRU
+            </Button>
 
             {/* Documents section - follows GED configuration */}
             <div className="border-t pt-4 space-y-3">
