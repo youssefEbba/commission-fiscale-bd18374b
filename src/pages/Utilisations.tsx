@@ -554,8 +554,8 @@ const Utilisations = () => {
               )}
             </div>
 
-            {/* Documents requis (GED) */}
-            {getFilteredRequirements().length > 0 && (
+            {/* Documents requis (GED) — toujours affichés */}
+            {(() => { const reqs = getFilteredRequirements(); return reqs.length > 0 ? (
               <div className="border-t pt-4 space-y-3">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <Upload className="h-4 w-4" />
