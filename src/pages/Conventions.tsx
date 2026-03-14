@@ -585,17 +585,11 @@ const Conventions = () => {
                 <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={fetchTauxChange}
-              disabled={tauxLoading || !form.deviseOrigine || !form.montantDevise}
-              className="mt-1"
-            >
-              {tauxLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-              Calculer le taux et montant MRU
-            </Button>
+            {tauxLoading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Récupération du taux de change...
+              </div>
+            )}
 
             {/* Documents section - follows GED configuration */}
             <div className="border-t pt-4 space-y-3">
