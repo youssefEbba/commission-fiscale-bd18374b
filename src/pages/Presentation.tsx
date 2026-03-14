@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import {
   FileEdit, TrendingUp, FolderOpen, Bot, Users, FilePlus, FileCheck,
-  CheckCircle2, ArrowRight, Shield
+  CheckCircle2, ArrowRight, Shield, ArrowLeftRight, Handshake
 } from "lucide-react";
 
 const fadeUp = {
