@@ -639,33 +639,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <div className="space-y-2 border border-dashed border-border rounded-md p-2">
+                              <div className="space-y-3 border border-dashed border-border rounded-md p-3 max-h-[50vh] overflow-y-auto">
                                 <Input
                                   placeholder="Référence *"
-                                  value={newConvention.reference}
-                                  onChange={e => setNewConvention(prev => ({ ...prev, reference: e.target.value }))}
+                                  value={newConvForm.reference}
+                                  onChange={e => setNewConvForm(prev => ({ ...prev, reference: e.target.value }))}
                                 />
                                 <Input
                                   placeholder="Intitulé *"
-                                  value={newConvention.intitule}
-                                  onChange={e => setNewConvention(prev => ({ ...prev, intitule: e.target.value }))}
+                                  value={newConvForm.intitule}
+                                  onChange={e => setNewConvForm(prev => ({ ...prev, intitule: e.target.value }))}
                                 />
+                                {/* Bailleur */}
                                 <div className="space-y-1">
                                   <Label className="text-xs text-muted-foreground flex items-center justify-between">
                                     <span>Bailleur (optionnel)</span>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-5 text-xs text-primary p-0"
-                                      onClick={() => setShowCreateBailleur(!showCreateBailleur)}
-                                    >
+                                    <Button type="button" variant="ghost" size="sm" className="h-5 text-xs text-primary p-0" onClick={() => setShowCreateBailleur(!showCreateBailleur)}>
                                       <Plus className="h-3 w-3 mr-0.5" />
                                       {showCreateBailleur ? "Annuler" : "Ajouter"}
                                     </Button>
                                   </Label>
                                   {!showCreateBailleur ? (
-                                    <Select value={newConvention.bailleur || ""} onValueChange={v => setNewConvention(prev => ({ ...prev, bailleur: v }))}>
+                                    <Select value={newConvForm.bailleur || ""} onValueChange={v => setNewConvForm(prev => ({ ...prev, bailleur: v }))}>
                                       <SelectTrigger><SelectValue placeholder="Sélectionnez un bailleur" /></SelectTrigger>
                                       <SelectContent>
                                         {bailleurs.map(b => (
@@ -675,49 +670,159 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                     </Select>
                                   ) : (
                                     <div className="flex gap-1">
-                                      <Input
-                                        placeholder="Nom du bailleur"
-                                        value={newBailleurNom}
-                                        onChange={e => setNewBailleurNom(e.target.value)}
-                                        className="text-sm"
-                                      />
-                                      <Button
-                                        size="sm"
-                                        disabled={creatingBailleur || !newBailleurNom}
-                                        onClick={async () => {
-                                          setCreatingBailleur(true);
-                                          try {
-                                            const created = await bailleurApi.create({ nom: newBailleurNom });
-                                            setBailleurs(prev => [...prev, created]);
-                                            setNewConvention(prev => ({ ...prev, bailleur: created.nom }));
-                                            setNewBailleurNom("");
-                                            setShowCreateBailleur(false);
-                                            toast({ title: "Succès", description: "Bailleur ajouté" });
-                                          } catch (e: any) {
-                                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                                          } finally {
-                                            setCreatingBailleur(false);
-                                          }
-                                        }}
-                                      >
+                                      <Input placeholder="Nom du bailleur" value={newBailleurNom} onChange={e => setNewBailleurNom(e.target.value)} className="text-sm" />
+                                      <Button size="sm" disabled={creatingBailleur || !newBailleurNom} onClick={async () => {
+                                        setCreatingBailleur(true);
+                                        try {
+                                          const created = await bailleurApi.create({ nom: newBailleurNom });
+                                          setBailleurs(prev => [...prev, created]);
+                                          setNewConvForm(prev => ({ ...prev, bailleur: created.nom }));
+                                          setNewBailleurNom("");
+                                          setShowCreateBailleur(false);
+                                          toast({ title: "Succès", description: "Bailleur ajouté" });
+                                        } catch (e: any) {
+                                          toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                        } finally { setCreatingBailleur(false); }
+                                      }}>
                                         {creatingBailleur ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
                                       </Button>
                                     </div>
                                   )}
                                 </div>
-                                <div>
-                                  <Label className="text-xs text-muted-foreground">Date de signature *</Label>
-                                  <Input
-                                    type="date"
-                                    value={newConvention.dateSignature || ""}
-                                    onChange={e => setNewConvention(prev => ({ ...prev, dateSignature: e.target.value }))}
-                                  />
+                                <Input
+                                  placeholder="Descriptif de projets (optionnel)"
+                                  value={newConvForm.bailleurDetails}
+                                  onChange={e => setNewConvForm(prev => ({ ...prev, bailleurDetails: e.target.value }))}
+                                />
+                                {/* Dates */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Date signature *</Label>
+                                    <Input type="date" value={newConvForm.dateSignature || ""} onChange={e => setNewConvForm(prev => ({ ...prev, dateSignature: e.target.value }))} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Date fin</Label>
+                                    <Input type="date" value={newConvForm.dateFin || ""} onChange={e => setNewConvForm(prev => ({ ...prev, dateFin: e.target.value }))} />
+                                  </div>
+                                </div>
+                                {/* Devise */}
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Devise d'origine</Label>
+                                  <div className="flex gap-1">
+                                    <Select value={newConvForm.deviseOrigine || ""} onValueChange={code => setNewConvForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }))}>
+                                      <SelectTrigger className="flex-1">
+                                        {devisesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Devise" />}
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {devises.map(d => (
+                                          <SelectItem key={d.id} value={d.code}>{d.code} — {d.libelle}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setShowAddDevise(true)} title="Ajouter devise">
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                {/* Montants */}
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Montant devise</Label>
+                                    <Input type="number" value={newConvForm.montantDevise ?? ""} onChange={e => {
+                                      const val = e.target.value ? Number(e.target.value) : undefined;
+                                      setNewConvForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
+                                    }} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Taux de change</Label>
+                                    <Input readOnly value={newConvForm.tauxChange ?? "—"} className="bg-muted" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Montant MRU</Label>
+                                    <Input readOnly value={newConvForm.montantMru ? newConvForm.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
+                                  </div>
+                                </div>
+                                {convTauxLoading && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Récupération du taux...
+                                  </div>
+                                )}
+                                {/* Documents convention */}
+                                <div className="border-t border-border pt-2 space-y-2">
+                                  <Label className="text-xs font-semibold flex items-center gap-1">
+                                    <Paperclip className="h-3 w-3" /> Documents joints
+                                  </Label>
+                                  {convGedReqs.length > 0 && (
+                                    <div className="space-y-0.5">
+                                      {convGedReqs.map(req => {
+                                        const hasDoc = convCreateDocs.some(d => d.type === req.typeDocument);
+                                        return (
+                                          <div key={req.id} className={`flex items-center gap-1 text-[11px] rounded px-1.5 py-0.5 ${req.obligatoire && !hasDoc ? "bg-destructive/10" : hasDoc ? "bg-green-50" : "bg-muted/30"}`}>
+                                            {hasDoc ? <CheckCircle className="h-3 w-3 text-green-600 shrink-0" /> : <XCircle className={`h-3 w-3 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />}
+                                            <span>{req.typeDocument}</span>
+                                            {req.obligatoire && <span className="text-destructive">*</span>}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  <div className="flex gap-1">
+                                    <Select value={convDocType} onValueChange={v => setConvDocType(v as TypeDocumentConvention)}>
+                                      <SelectTrigger className="w-40 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {(convGedReqs.length > 0
+                                          ? convGedReqs.map(r => ({ value: r.typeDocument, label: r.typeDocument }))
+                                          : CONVENTION_DOCUMENT_TYPES
+                                        ).map(t => (
+                                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <Input type="file" multiple className="flex-1 text-xs" onChange={e => {
+                                      const files = e.target.files;
+                                      if (files) { Array.from(files).forEach(f => setConvCreateDocs(prev => [...prev, { type: convDocType, file: f }])); e.target.value = ""; }
+                                    }} />
+                                  </div>
+                                  {convCreateDocs.length > 0 && (
+                                    <div className="space-y-0.5">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[11px] text-muted-foreground">{convCreateDocs.length} fichier(s)</span>
+                                        {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
+                                          <Button type="button" variant="outline" size="sm" className="h-6 text-xs" onClick={convMergeCreateDocs} disabled={convMerging}>
+                                            {convMerging ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Merge className="h-3 w-3 mr-1" />}
+                                            Fusionner PDF
+                                          </Button>
+                                        )}
+                                      </div>
+                                      {convCreateDocs.map((d, i) => (
+                                        <div key={i} className="flex items-center gap-1 text-xs bg-muted/50 rounded px-2 py-1">
+                                          <span className="text-muted-foreground font-mono w-4 shrink-0">{i + 1}</span>
+                                          <div className="flex flex-col gap-0.5 shrink-0">
+                                            <Button type="button" variant="ghost" size="sm" className="h-3 w-3 p-0" disabled={i === 0} onClick={() => {
+                                              setConvCreateDocs(prev => { const n = [...prev]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; });
+                                            }}><ArrowUp className="h-2 w-2" /></Button>
+                                            <Button type="button" variant="ghost" size="sm" className="h-3 w-3 p-0" disabled={i === convCreateDocs.length - 1} onClick={() => {
+                                              setConvCreateDocs(prev => { const n = [...prev]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; return n; });
+                                            }}><ArrowDown className="h-2 w-2" /></Button>
+                                          </div>
+                                          <File className="h-3 w-3 text-muted-foreground shrink-0" />
+                                          <Badge variant="outline" className="text-[10px] shrink-0">{d.type}</Badge>
+                                          <span className="truncate flex-1">{d.file.name}</span>
+                                          <Button variant="ghost" size="sm" className="h-4 w-4 p-0 text-destructive" onClick={() => setConvCreateDocs(prev => prev.filter((_, j) => j !== i))}>
+                                            <XCircle className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 <Button
                                   size="sm"
                                   className="w-full"
                                   onClick={handleCreateConvention}
-                                  disabled={creatingConvention}
+                                  disabled={creatingConvention || !newConvForm.reference || !newConvForm.intitule}
                                 >
                                   {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                                   Créer la convention
