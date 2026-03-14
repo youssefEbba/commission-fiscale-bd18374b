@@ -106,9 +106,22 @@ const Conventions = () => {
     try { setBailleurs(await bailleurApi.getAll()); } catch { /* ignore */ } finally { setBailleursLoading(false); }
   };
 
+  const defaultDevises: DeviseDto[] = [
+    { id: -1, code: "EUR", libelle: "Euro", symbole: "€" },
+    { id: -2, code: "USD", libelle: "Dollar américain", symbole: "$" },
+  ];
+
   const fetchDevises = async () => {
     setDevisesLoading(true);
-    try { setDevises(await deviseApi.getAll()); } catch { /* ignore */ } finally { setDevisesLoading(false); }
+    try {
+      const fetched = await deviseApi.getAll();
+      // Merge: keep API results, add defaults if not already present
+      const codes = new Set(fetched.map(d => d.code));
+      const merged = [...fetched, ...defaultDevises.filter(d => !codes.has(d.code))];
+      setDevises(merged);
+    } catch {
+      setDevises(defaultDevises);
+    } finally { setDevisesLoading(false); }
   };
 
   useEffect(() => { fetchConventions(); }, []);
