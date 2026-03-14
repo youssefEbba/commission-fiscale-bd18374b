@@ -80,10 +80,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [newEntreprise, setNewEntreprise] = useState<EntrepriseDto>({ raisonSociale: "", nif: "" });
   const [creatingEntreprise, setCreatingEntreprise] = useState(false);
 
-  // Create convention inline
+  // Create convention inline – full form matching Conventions page
   const [showCreateConvention, setShowCreateConvention] = useState(false);
-  const [newConvention, setNewConvention] = useState<{ reference: string; intitule: string; bailleur?: string; dateSignature?: string }>({ reference: "", intitule: "" });
+  const [newConvForm, setNewConvForm] = useState<CreateConventionRequest>({
+    reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+    dateSignature: "", dateFin: "",
+    montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
+  });
   const [creatingConvention, setCreatingConvention] = useState(false);
+
+  // Devises référentiel (for convention creation)
+  const [devises, setDevises] = useState<DeviseDto[]>([]);
+  const [devisesLoading, setDevisesLoading] = useState(false);
+  const [showAddDevise, setShowAddDevise] = useState(false);
+  const [newDevise, setNewDevise] = useState<CreateDeviseRequest>({ code: "", libelle: "", symbole: "" });
+  const [addingDevise, setAddingDevise] = useState(false);
+  const [convTauxLoading, setConvTauxLoading] = useState(false);
+
+  // Convention documents (for inline creation)
+  const [convCreateDocs, setConvCreateDocs] = useState<{ type: TypeDocumentConvention; file: File }[]>([]);
+  const [convDocType, setConvDocType] = useState<TypeDocumentConvention>("CONVENTION_CONTRAT");
+  const [convGedReqs, setConvGedReqs] = useState<DocumentRequirementDto[]>([]);
+  const [convMerging, setConvMerging] = useState(false);
 
   // Create marché inline
   const [showCreateMarche, setShowCreateMarche] = useState(false);
