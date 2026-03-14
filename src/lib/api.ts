@@ -613,11 +613,12 @@ export const certificatCreditApi = {
     }),
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/certificats-credit/${id}/documents`),
   uploadDocument: (id: number, type: string, file: File) => {
     const formData = new FormData();
     formData.append("type", type);
     formData.append("file", file);
-    return apiFetch<void>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
+    return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
 };
 
