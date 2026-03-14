@@ -212,27 +212,102 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   };
 
+  // Auto-fetch devises + GED requirements when convention creation opens
+  useEffect(() => {
+    if (showCreateConvention) {
+      setDevisesLoading(true);
+      const defaultDevises: DeviseDto[] = [
+        { id: -1, code: "EUR", libelle: "Euro", symbole: "€" },
+        { id: -2, code: "USD", libelle: "Dollar américain", symbole: "$" },
+      ];
+      deviseApi.getAll()
+        .then(fetched => {
+          const codes = new Set(fetched.map(d => d.code));
+          setDevises([...fetched, ...defaultDevises.filter(d => !codes.has(d.code))]);
+        })
+        .catch(() => setDevises(defaultDevises))
+        .finally(() => setDevisesLoading(false));
+      documentRequirementApi.getByProcessus("CONVENTION")
+        .then(reqs => {
+          setConvGedReqs(reqs);
+          if (reqs.length > 0) setConvDocType(reqs[0].typeDocument as TypeDocumentConvention);
+        })
+        .catch(() => setConvGedReqs([]));
+    }
+  }, [showCreateConvention]);
+
+  // Auto-fetch taux when devise changes in convention form
+  useEffect(() => {
+    if (!newConvForm.deviseOrigine || newConvForm.deviseOrigine === "MRU") {
+      setNewConvForm(f => ({ ...f, tauxChange: newConvForm.deviseOrigine === "MRU" ? 1 : undefined, montantMru: newConvForm.deviseOrigine === "MRU" && f.montantDevise ? f.montantDevise : undefined }));
+      return;
+    }
+    let cancelled = false;
+    setConvTauxLoading(true);
+    forexApi.rate(newConvForm.deviseOrigine, "MRU")
+      .then(res => {
+        if (cancelled) return;
+        const rate = Math.round(res.rate * 10000) / 10000;
+        setNewConvForm(f => ({
+          ...f, tauxChange: rate,
+          montantMru: f.montantDevise ? Math.round(f.montantDevise * rate * 100) / 100 : undefined,
+        }));
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setConvTauxLoading(false); });
+    return () => { cancelled = true; };
+  }, [newConvForm.deviseOrigine]);
+
+  const convMergeCreateDocs = useCallback(async () => {
+    const pdfFiles = convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).map(d => d.file);
+    if (pdfFiles.length < 2) { toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF.", variant: "destructive" }); return; }
+    setConvMerging(true);
+    try {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of pdfFiles) {
+        const bytes = await file.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+      const mergedBytes = await mergedPdf.save();
+      const mergedBlob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
+      const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
+      setConvCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
+      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés.` });
+    } catch (e: any) {
+      toast({ title: "Erreur de fusion", description: e.message, variant: "destructive" });
+    } finally { setConvMerging(false); }
+  }, [convCreateDocs, toast]);
+
   // Create convention inline
   const handleCreateConvention = async () => {
-    if (!newConvention.reference || !newConvention.intitule) {
+    if (!newConvForm.reference || !newConvForm.intitule) {
       toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
       return;
     }
     setCreatingConvention(true);
     try {
       const created = await conventionApi.create({
-        reference: newConvention.reference,
-        intitule: newConvention.intitule,
-        bailleur: newConvention.bailleur,
-        dateSignature: newConvention.dateSignature || new Date().toISOString().split("T")[0],
+        ...newConvForm,
+        dateSignature: newConvForm.dateSignature || new Date().toISOString().split("T")[0],
         statut: "EN_ATTENTE",
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
       });
+      // Upload convention documents
+      for (const doc of convCreateDocs) {
+        try { await conventionApi.uploadDocument(created.id, doc.type, doc.file); } catch { /* continue */ }
+      }
       setConventions(prev => [...prev, created]);
       setConventionId(String(created.id));
       setShowCreateConvention(false);
-      setNewConvention({ reference: "", intitule: "", dateSignature: "" });
-      toast({ title: "Succès", description: "Convention créée" });
+      setNewConvForm({
+        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+        dateSignature: "", dateFin: "",
+        montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
+      });
+      setConvCreateDocs([]);
+      toast({ title: "Succès", description: `Convention créée${convCreateDocs.length ? ` avec ${convCreateDocs.length} document(s)` : ""}` });
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
