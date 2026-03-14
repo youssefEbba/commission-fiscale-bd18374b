@@ -177,7 +177,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setShowCreateEntreprise(false);
       setNewEntreprise({ raisonSociale: "", nif: "" });
       setShowCreateConvention(false);
-      setNewConvention({ reference: "", intitule: "", dateSignature: "" });
+      setNewConvForm({
+        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+        dateSignature: "", dateFin: "",
+        montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
+      });
+      setConvCreateDocs([]);
+      setConvGedReqs([]);
       setShowCreateMarche(false);
       setNewMarche({ numeroMarche: "" });
       // pendingMarche removed — marchés are now created directly via API
