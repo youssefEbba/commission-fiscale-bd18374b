@@ -477,6 +477,81 @@ const Utilisations = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <Label>Montant (MRU) *</Label>
+                <Input type="number" min="0" placeholder="0" value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
+              </div>
+
+              {createType === "DOUANIER" && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>N° Déclaration</Label>
+                      <Input placeholder="Ex: DEC-2024-001" value={form.numeroDeclaration || ""} onChange={(e) => setForm({ ...form, numeroDeclaration: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>N° Bulletin</Label>
+                      <Input placeholder="Ex: BUL-001" value={form.numeroBulletin || ""} onChange={(e) => setForm({ ...form, numeroBulletin: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Date déclaration</Label>
+                      <Input type="date" value={form.dateDeclaration || ""} onChange={(e) => setForm({ ...form, dateDeclaration: e.target.value })} />
+                    </div>
+                    <div className="flex items-end gap-2 pb-1">
+                      <Switch checked={!!form.enregistreeSYDONIA} onCheckedChange={(v) => setForm({ ...form, enregistreeSYDONIA: v })} />
+                      <Label className="text-sm">Enregistrée SYDONIA</Label>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Montant Droits</Label>
+                      <Input type="number" min="0" placeholder="0" value={form.montantDroits ?? ""} onChange={(e) => setForm({ ...form, montantDroits: e.target.value ? Number(e.target.value) : undefined })} />
+                    </div>
+                    <div>
+                      <Label>Montant TVA</Label>
+                      <Input type="number" min="0" placeholder="0" value={form.montantTVA ?? ""} onChange={(e) => setForm({ ...form, montantTVA: e.target.value ? Number(e.target.value) : undefined })} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {createType === "TVA_INTERIEURE" && (
+                <>
+                  <div>
+                    <Label>Type d'achat</Label>
+                    <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACHAT_LOCAL">Achat Local</SelectItem>
+                        <SelectItem value="DECOMPTE">Décompte</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>N° Facture</Label>
+                      <Input placeholder="Ex: FAC-001" value={form.numeroFacture || ""} onChange={(e) => setForm({ ...form, numeroFacture: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Date facture</Label>
+                      <Input type="date" value={form.dateFacture || ""} onChange={(e) => setForm({ ...form, dateFacture: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Montant TVA Intérieure</Label>
+                      <Input type="number" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={(e) => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} />
+                    </div>
+                    <div>
+                      <Label>N° Décompte</Label>
+                      <Input placeholder="Ex: DEC-001" value={form.numeroDecompte || ""} onChange={(e) => setForm({ ...form, numeroDecompte: e.target.value })} />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Documents requis (GED) */}
