@@ -229,8 +229,10 @@ const Conventions = () => {
 
   const [merging, setMerging] = useState(false);
 
-  const mergePdfs = useCallback(async (files: File[]) => {
-    const pdfFiles = files.filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+  const mergeCreateDocs = useCallback(async () => {
+    const pdfFiles = createDocs
+      .filter(d => d.file.type === "application/pdf" || d.file.name.toLowerCase().endsWith(".pdf"))
+      .map(d => d.file);
     if (pdfFiles.length < 2) {
       toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF à fusionner.", variant: "destructive" });
       return;
@@ -246,23 +248,16 @@ const Conventions = () => {
       }
       const mergedBytes = await mergedPdf.save();
       const blob = new Blob([new Uint8Array(mergedBytes) as any], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "convention_fusionnee.pdf";
-      a.click();
-      URL.revokeObjectURL(url);
-      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés avec succès.` });
+      const mergedFile = new File([blob], "convention_fusionnee.pdf", { type: "application/pdf" });
+      // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
+      setCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
+      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés. Le document résultant sera soumis comme CONVENTION_JOIGNED_DOCUMENT.` });
     } catch (e: any) {
       toast({ title: "Erreur de fusion", description: e.message || "Impossible de fusionner les PDF", variant: "destructive" });
     } finally {
       setMerging(false);
     }
-  }, [toast]);
-
-  const mergeCreateDocs = () => {
-    mergePdfs(createDocs.map(d => d.file));
-  };
+  }, [createDocs, toast]);
 
   const mergeExistingDocs = async () => {
     if (documents.length < 2) return;
