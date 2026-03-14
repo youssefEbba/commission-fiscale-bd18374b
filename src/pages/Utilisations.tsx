@@ -388,7 +388,7 @@ const Utilisations = () => {
                                     setLiqTVA("");
                                   } else if (u.type === "TVA_INTERIEURE" && t.to === "APUREE") {
                                     setApurementTarget(u);
-                                    setApurMontant(u.montantTVAInterieure ? String(u.montantTVAInterieure) : "");
+                                    setApurMontant("");
                                   } else {
                                     handleStatut(u.id, t.to);
                                   }
