@@ -75,6 +75,28 @@ const SECTIONS: Section[] = [
       "Traçabilité complète de chaque utilisation",
     ],
   },
+  {
+    icon: ArrowLeftRight,
+    title: "6. Transfert de Crédit d'Impôt",
+    color: "from-indigo-600 to-indigo-800",
+    points: [
+      "Transfert partiel ou total du solde d'un certificat vers un autre bénéficiaire",
+      "Workflow de validation : AC → DGTCP → Président",
+      "Vérification automatique du solde disponible avant transfert",
+      "Historique complet des transferts avec traçabilité des montants",
+    ],
+  },
+  {
+    icon: Handshake,
+    title: "7. Sous-traitance",
+    color: "from-rose-600 to-rose-800",
+    points: [
+      "Association directe entre entreprise titulaire et sous-traitante",
+      "Upload obligatoire du contrat de sous-traitance et lettre de volumes",
+      "Autorisation par la DGTCP activant les droits d'utilisation pour le sous-traitant",
+      "Visibilité des certificats sous-traités avec badge distinctif dans l'espace du sous-traitant",
+    ],
+  },
 ];
 
 const Presentation = () => {
