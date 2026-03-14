@@ -554,18 +554,24 @@ const Utilisations = () => {
               )}
             </div>
 
-            {/* Documents requis (GED) — toujours affichés */}
-            {(() => { const reqs = getFilteredRequirements(); return reqs.length > 0 ? (
-              <div className="border-t pt-4 space-y-3">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  Documents requis
+            {/* Documents requis (GED) */}
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Documents requis
+                {getFilteredRequirements().length > 0 && (
                   <span className="text-xs text-muted-foreground font-normal">
                     ({getMissingObligatoryDocs().length > 0
                       ? `${getMissingObligatoryDocs().length} obligatoire(s) manquant(s)`
                       : "Tous les documents obligatoires sont joints"})
                   </span>
-                </h4>
+                )}
+              </h4>
+              {getFilteredRequirements().length === 0 ? (
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Chargement des exigences documentaires...
+                </p>
+              ) : (
                 <div className="space-y-2">
                   {getFilteredRequirements().map((req) => {
                     const hasFile = !!createDocFiles[req.typeDocument];
@@ -607,8 +613,8 @@ const Utilisations = () => {
                     );
                   })}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
