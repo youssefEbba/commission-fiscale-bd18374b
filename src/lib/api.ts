@@ -853,6 +853,17 @@ export const tauxChangeApi = {
   get: (devise: string) => apiFetch<TauxChangeResponse>(`/taux-change?devise=${encodeURIComponent(devise)}`),
 };
 
+// Forex API (exchangerate.host)
+export interface ForexConvertResponse { from: string; to: string; amount: number; result: number; source: string; }
+export interface ForexRateResponse { from: string; to: string; rate: number; source: string; }
+
+export const forexApi = {
+  convert: (from: string, to: string, amount: number) =>
+    apiFetch<ForexConvertResponse>(`/forex/convert?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${amount}`),
+  rate: (from: string, to: string) =>
+    apiFetch<ForexRateResponse>(`/forex/rate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+};
+
 // Document Requirements (GED)
 export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI" | "UTILISATION_CI_EXTERIEUR" | "UTILISATION_CI_INTERIEUR" | "TRANSFERT_CREDIT" | "SOUS_TRAITANCE" | "CONVENTION" | "MARCHE" | "MODIFICATION_CI" | "CLOTURE_CI";
 export type FormatFichier = "PDF" | "WORD" | "EXCEL" | "IMAGE";

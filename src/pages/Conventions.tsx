@@ -552,20 +552,16 @@ const Conventions = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 items-end">
               <div className="space-y-2">
                 <Label>Montant devise</Label>
                 <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
-                  setForm(f => ({
-                    ...f,
-                    montantDevise: val,
-                    montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined,
-                  }));
+                  setForm(f => ({ ...f, montantDevise: val, tauxChange: undefined, montantMru: undefined }));
                 }} placeholder="1200000" />
               </div>
               <div className="space-y-2">
-                <Label>Taux de change {tauxLoading && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</Label>
+                <Label>Taux de change</Label>
                 <Input readOnly value={form.tauxChange ?? "—"} className="bg-muted" />
               </div>
               <div className="space-y-2">
@@ -573,6 +569,17 @@ const Conventions = () => {
                 <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
               </div>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={fetchTauxChange}
+              disabled={tauxLoading || !form.deviseOrigine || !form.montantDevise}
+              className="mt-1"
+            >
+              {tauxLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Calculer le taux et montant MRU
+            </Button>
 
             {/* Documents section - follows GED configuration */}
             <div className="border-t pt-4 space-y-3">
