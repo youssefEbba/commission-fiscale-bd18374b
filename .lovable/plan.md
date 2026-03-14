@@ -1,23 +1,12 @@
 
 
-## Plan : Filtrer les documents envoyés au service IA
+## Plan : Renommer « Nouvelle demande » → « Nouvelle demande de correction »
 
-**Objectif** : Lors de la soumission d'une demande, envoyer uniquement l'Offre Fiscale, l'Offre Financière et le DQE au service IA (au lieu de tous les documents).
+Deux endroits à modifier :
 
-### Modification unique
+1. **`src/pages/Dashboard.tsx` (ligne 28)** : Changer le label `"Nouvelle demande"` en `"Nouvelle demande de correction"` dans le tableau `QUICK_ACTIONS`.
 
-**Fichier** : `src/components/demandes/CreateDemandeWizard.tsx` (lignes 450-465)
+2. **`src/pages/Demandes.tsx` (ligne 525)** : Changer le texte du bouton `Nouvelle demande` en `Nouvelle demande de correction`.
 
-Ajouter un filtre sur les documents récupérés via `demandeCorrectionApi.getDocuments()` avant de construire `sourceUrls`. Seuls les documents dont le `typeDocument` contient `OFFRE_FISCALE`, `OFFRE_FINANCIERE` ou `DQE` seront transmis à l'endpoint `/api/fiscal-context/{id}`.
-
-```typescript
-const AI_DOC_TYPES = ["OFFRE_FISCALE", "OFFRE_FINANCIERE", "DQE"];
-
-const uploadedDocs = await demandeCorrectionApi.getDocuments(demande.id);
-const sourceUrls = uploadedDocs
-  .filter((d: any) => d.chemin && AI_DOC_TYPES.some(t => d.typeDocument?.includes(t)))
-  .map((d: any) => d.chemin.replace(/\\/g, "/"));
-```
-
-Aucun autre fichier n'est impacté.
+Le wizard (`CreateDemandeWizard.tsx`) a déjà le bon libellé.
 
