@@ -132,27 +132,31 @@ const Conventions = () => {
     }
   }, [createOpen]);
 
-  // Auto-fetch taux de change when devise changes
-  const fetchTauxChange = async (deviseCode: string) => {
-    if (!deviseCode) return;
+  // Fetch taux via forex API on button click
+  const fetchTauxChange = async () => {
+    if (!form.deviseOrigine || !form.montantDevise) {
+      toast({ title: "Info", description: "Veuillez saisir la devise et le montant d'abord" });
+      return;
+    }
     setTauxLoading(true);
     try {
-      const res = await tauxChangeApi.get(deviseCode);
+      const res = await forexApi.convert(form.deviseOrigine, "MRU", form.montantDevise);
+      const rate = res.result / res.amount;
       setForm(f => ({
         ...f,
-        tauxChange: res.taux,
-        montantMru: f.montantDevise ? Math.round(f.montantDevise * res.taux * 100) / 100 : undefined,
+        tauxChange: Math.round(rate * 10000) / 10000,
+        montantMru: Math.round(res.result * 100) / 100,
       }));
+      toast({ title: "Taux récupéré", description: `1 ${form.deviseOrigine} = ${(Math.round(rate * 10000) / 10000).toLocaleString("fr-FR")} MRU` });
     } catch {
-      toast({ title: "Taux de change", description: `Impossible de récupérer le taux pour ${deviseCode}`, variant: "destructive" });
+      toast({ title: "Erreur", description: `Impossible de récupérer le taux pour ${form.deviseOrigine} → MRU`, variant: "destructive" });
     } finally {
       setTauxLoading(false);
     }
   };
 
   const handleDeviseChange = (code: string) => {
-    setForm(f => ({ ...f, deviseOrigine: code }));
-    fetchTauxChange(code);
+    setForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }));
   };
 
   const handleAddBailleur = async () => {
