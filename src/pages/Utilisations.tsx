@@ -184,9 +184,11 @@ const Utilisations = () => {
   };
 
   const getFilteredRequirements = (): DocumentRequirementDto[] => {
-    const processus = createType === "DOUANIER" ? "UTILISATION_CI_EXTERIEUR" : "UTILISATION_CI_INTERIEUR";
+    const matchProcessus = createType === "DOUANIER"
+      ? ["UTILISATION_CI_EXTERIEUR", "UTILISATION_CI_DOUANE", "UTILISATION_CI"]
+      : ["UTILISATION_CI_INTERIEUR", "UTILISATION_CI_TVA_INTERIEURE", "UTILISATION_CI"];
     return gedRequirements
-      .filter((r) => r.processus === processus || r.processus === "UTILISATION_CI")
+      .filter((r) => matchProcessus.includes(r.processus))
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
