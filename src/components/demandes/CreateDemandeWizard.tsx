@@ -1187,5 +1187,37 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Add Devise dialog */}
+    <Dialog open={showAddDevise} onOpenChange={setShowAddDevise}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader><DialogTitle>Ajouter une devise</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <Input placeholder="Code (ex: GBP) *" value={newDevise.code} onChange={e => setNewDevise(prev => ({ ...prev, code: e.target.value.toUpperCase() }))} />
+          <Input placeholder="Libellé (ex: Livre sterling) *" value={newDevise.libelle} onChange={e => setNewDevise(prev => ({ ...prev, libelle: e.target.value }))} />
+          <Input placeholder="Symbole (ex: £)" value={newDevise.symbole} onChange={e => setNewDevise(prev => ({ ...prev, symbole: e.target.value }))} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowAddDevise(false)}>Annuler</Button>
+          <Button disabled={addingDevise || !newDevise.code || !newDevise.libelle} onClick={async () => {
+            setAddingDevise(true);
+            try {
+              const created = await deviseApi.create(newDevise);
+              setDevises(prev => [...prev, created]);
+              setNewConvForm(f => ({ ...f, deviseOrigine: created.code, tauxChange: undefined, montantMru: undefined }));
+              setShowAddDevise(false);
+              setNewDevise({ code: "", libelle: "", symbole: "" });
+              toast({ title: "Succès", description: "Devise ajoutée" });
+            } catch (e: any) {
+              toast({ title: "Erreur", description: e.message, variant: "destructive" });
+            } finally { setAddingDevise(false); }
+          }}>
+            {addingDevise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+            Ajouter
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
