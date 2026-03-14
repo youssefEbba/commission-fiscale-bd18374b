@@ -31,6 +31,7 @@ import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
+import Modifications from "./pages/Modifications";
 
 const queryClient = new QueryClient();
 
