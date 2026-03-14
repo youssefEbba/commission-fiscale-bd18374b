@@ -138,25 +138,38 @@ const Utilisations = () => {
         documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR").catch(() => []),
       ]);
       setCertificats(certs);
-      // Use backend requirements if available, otherwise build fallback from existing doc type constants
+      // Use backend requirements if available, otherwise build fallback from doc type constants
       if (extReqs.length > 0 || intReqs.length > 0) {
-        setGedRequirements([...extReqs, ...intReqs]);
+        // Merge backend data: ensure processus field is normalized
+        const allReqs = [...extReqs, ...intReqs].map(r => ({
+          ...r,
+          // Normalize: if backend returns generic "UTILISATION_CI", map based on doc type
+          processus: r.processus === "UTILISATION_CI"
+            ? (UTILISATION_DOC_TYPES_TVA.some(dt => dt.value === r.typeDocument && !UTILISATION_DOC_TYPES_DOUANE.some(dd => dd.value === r.typeDocument))
+              ? "UTILISATION_CI_INTERIEUR" as const
+              : "UTILISATION_CI_EXTERIEUR" as const)
+            : r.processus,
+        }));
+        setGedRequirements(allReqs);
       } else {
+        // Fallback: build from hardcoded doc type constants
         const fallbackExt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_DOUANE.map((dt, i) => ({
           id: -(i + 1),
           processus: "UTILISATION_CI_EXTERIEUR" as const,
           typeDocument: dt.value,
           obligatoire: dt.value === "DEMANDE_UTILISATION",
-          typesAutorises: ["PDF" as const, "IMAGE" as const],
+          typesAutorises: ["PDF" as const, "IMAGE" as const, "WORD" as const, "EXCEL" as const],
           ordreAffichage: i,
+          description: dt.label,
         }));
         const fallbackInt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_TVA.map((dt, i) => ({
           id: -(100 + i),
           processus: "UTILISATION_CI_INTERIEUR" as const,
           typeDocument: dt.value,
           obligatoire: dt.value === "DEMANDE_UTILISATION",
-          typesAutorises: ["PDF" as const, "IMAGE" as const],
+          typesAutorises: ["PDF" as const, "IMAGE" as const, "WORD" as const, "EXCEL" as const],
           ordreAffichage: i,
+          description: dt.label,
         }));
         setGedRequirements([...fallbackExt, ...fallbackInt]);
       }
@@ -173,7 +186,7 @@ const Utilisations = () => {
   const getFilteredRequirements = (): DocumentRequirementDto[] => {
     const processus = createType === "DOUANIER" ? "UTILISATION_CI_EXTERIEUR" : "UTILISATION_CI_INTERIEUR";
     return gedRequirements
-      .filter((r) => r.processus === processus)
+      .filter((r) => r.processus === processus || r.processus === "UTILISATION_CI")
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
