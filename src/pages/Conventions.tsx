@@ -246,6 +246,7 @@ const Conventions = () => {
         const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         pages.forEach(page => mergedPdf.addPage(page));
       }
+      const mergedBytes = await mergedPdf.save();
       const mergedBlob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
       // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
