@@ -110,10 +110,10 @@ const CertificatDetail = () => {
       const docs = await certificatCreditApi.getDocuments(certId);
       setGedDocs(docs.map((d: DocumentDto) => ({
         id: d.id,
-        type: d.type || d.typeDocument || "AUTRE",
+        type: d.type || "AUTRE",
         nomFichier: d.nomFichier,
         chemin: d.chemin,
-        dateUpload: d.dateUpload || d.dateCreation,
+        dateUpload: d.dateUpload,
         taille: d.taille,
         version: d.version,
         actif: d.actif,
