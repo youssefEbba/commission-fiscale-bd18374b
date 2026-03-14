@@ -134,11 +134,32 @@ const Utilisations = () => {
         role === "ENTREPRISE" && (user as any)?.entrepriseId
           ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
           : certificatCreditApi.getAll(),
-        documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
-        documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
+        documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR").catch(() => []),
+        documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR").catch(() => []),
       ]);
       setCertificats(certs);
-      setGedRequirements([...extReqs, ...intReqs]);
+      // Use backend requirements if available, otherwise build fallback from existing doc type constants
+      if (extReqs.length > 0 || intReqs.length > 0) {
+        setGedRequirements([...extReqs, ...intReqs]);
+      } else {
+        const fallbackExt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_DOUANE.map((dt, i) => ({
+          id: -(i + 1),
+          processus: "UTILISATION_CI_EXTERIEUR" as const,
+          typeDocument: dt.value,
+          obligatoire: dt.value === "DEMANDE_UTILISATION",
+          typesAutorises: ["PDF" as const, "IMAGE" as const],
+          ordreAffichage: i,
+        }));
+        const fallbackInt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_TVA.map((dt, i) => ({
+          id: -(100 + i),
+          processus: "UTILISATION_CI_INTERIEUR" as const,
+          typeDocument: dt.value,
+          obligatoire: dt.value === "DEMANDE_UTILISATION",
+          typesAutorises: ["PDF" as const, "IMAGE" as const],
+          ordreAffichage: i,
+        }));
+        setGedRequirements([...fallbackExt, ...fallbackInt]);
+      }
     } catch { /* ignore */ }
     setShowCreate(true);
   };
