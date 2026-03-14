@@ -247,8 +247,8 @@ const Conventions = () => {
         pages.forEach(page => mergedPdf.addPage(page));
       }
       const mergedBytes = await mergedPdf.save();
-      const blob = new Blob([new Uint8Array(mergedBytes) as any], { type: "application/pdf" });
-      const mergedFile = new File([blob], "convention_fusionnee.pdf", { type: "application/pdf" });
+      const mergedBlob = new Blob([mergedBytes], { type: "application/pdf" });
+      const mergedFile = new File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
       // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
       setCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
       toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés. Le document résultant sera soumis comme CONVENTION_JOIGNED_DOCUMENT.` });
