@@ -25,7 +25,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, CheckCircle, Send, FileText, Building2, Info,
+  XCircle, Merge, ArrowUp, ArrowDown, File, Paperclip,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // ── helpers ──
 const emptyImportation = (): ImportationLigne => ({
