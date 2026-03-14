@@ -485,6 +485,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   ];
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         <DialogHeader>
