@@ -447,11 +447,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         }
       }
 
-      // Send document URLs to AI service for context extraction
+      // Send only Offre Fiscale, Offre Financière & DQE to AI service
       try {
+        const AI_DOC_TYPES = ["OFFRE_FISCALE", "OFFRE_FINANCIERE", "DQE"];
         const uploadedDocs = await demandeCorrectionApi.getDocuments(demande.id);
         const sourceUrls = uploadedDocs
-          .filter((d: any) => d.chemin)
+          .filter((d: any) => d.chemin && AI_DOC_TYPES.some(t => d.typeDocument?.includes(t)))
           .map((d: any) => d.chemin.replace(/\\/g, "/"));
         if (sourceUrls.length > 0) {
           const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
