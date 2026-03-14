@@ -26,6 +26,8 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
   { key: "TRANSFERT", processus: "TRANSFERT_CREDIT", label: "Transfert de crédit (Douane → Intérieur)" },
   { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE", label: "Sous-traitance" },
+  { key: "MODIFICATION", processus: "MODIFICATION_CI", label: "Modification / Avenant (P8)" },
+  { key: "CLOTURE", processus: "CLOTURE_CI", label: "Clôture / Annulation (P11)" },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
