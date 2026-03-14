@@ -854,7 +854,7 @@ export const tauxChangeApi = {
 };
 
 // Document Requirements (GED)
-export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI" | "UTILISATION_CI_EXTERIEUR" | "UTILISATION_CI_INTERIEUR" | "TRANSFERT_CREDIT" | "SOUS_TRAITANCE" | "CONVENTION" | "MARCHE";
+export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI" | "UTILISATION_CI_EXTERIEUR" | "UTILISATION_CI_INTERIEUR" | "TRANSFERT_CREDIT" | "SOUS_TRAITANCE" | "CONVENTION" | "MARCHE" | "MODIFICATION_CI" | "CLOTURE_CI";
 export type FormatFichier = "PDF" | "WORD" | "EXCEL" | "IMAGE";
 
 export interface DocumentRequirementDto {
@@ -1089,6 +1089,76 @@ export const clotureCreditApi = {
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/rejeter`, { method: "POST" }),
   finaliser: (id: number) =>
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/finaliser`, { method: "POST" }),
+};
+
+// Avenants / Modifications (P8)
+export type StatutAvenant = "EN_ATTENTE" | "VALIDE" | "REJETE";
+
+export interface AvenantDto {
+  id: number;
+  certificatCreditId?: number;
+  certificatNumero?: string;
+  marcheId?: number;
+  marcheNumero?: string;
+  type?: string;
+  description?: string;
+  statut: StatutAvenant;
+  dateCreation?: string;
+  dateMiseAJour?: string;
+}
+
+export interface DocumentAvenantDto {
+  id: number;
+  type: string;
+  nomFichier: string;
+  chemin?: string;
+  dateUpload?: string;
+  taille?: number;
+  version?: number;
+  actif?: boolean;
+}
+
+export type TypeDocumentAvenant =
+  | "NOTE_SERVICE"
+  | "JUSTIFICATIONS_LEGALES"
+  | "LETTRES_MOTIVEES"
+  | "AVENANT_CONTRAT"
+  | "LETTRES_AUTORITE_CONTRACTANTE"
+  | "DETAIL_CORRECTIONS_NECESSAIRES"
+  | "DOCUMENTS_OFFICIELS"
+  | "DECISION_COMMISSION"
+  | "AUTRE_DOCUMENT";
+
+export const AVENANT_DOCUMENT_TYPES: { value: TypeDocumentAvenant; label: string }[] = [
+  { value: "NOTE_SERVICE", label: "Note de service" },
+  { value: "JUSTIFICATIONS_LEGALES", label: "Justifications légales" },
+  { value: "LETTRES_MOTIVEES", label: "Lettres motivées" },
+  { value: "AVENANT_CONTRAT", label: "Avenant au contrat" },
+  { value: "LETTRES_AUTORITE_CONTRACTANTE", label: "Lettres de l'autorité contractante" },
+  { value: "DETAIL_CORRECTIONS_NECESSAIRES", label: "Détail des corrections nécessaires" },
+  { value: "DOCUMENTS_OFFICIELS", label: "Documents officiels" },
+  { value: "DECISION_COMMISSION", label: "Décision de la commission" },
+  { value: "AUTRE_DOCUMENT", label: "Autre document" },
+];
+
+export const AVENANT_STATUT_LABELS: Record<StatutAvenant, string> = {
+  EN_ATTENTE: "En attente",
+  VALIDE: "Validé",
+  REJETE: "Rejeté",
+};
+
+export const avenantApi = {
+  getAll: () => apiFetch<AvenantDto[]>("/avenants"),
+  getById: (id: number) => apiFetch<AvenantDto>(`/avenants/${id}`),
+  getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`),
+  uploadDocument: (id: number, type: TypeDocumentAvenant, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentAvenantDto>(
+      `/avenants/${id}/documents?type=${encodeURIComponent(type)}`,
+      { method: "POST", rawBody: formData }
+    );
+  },
 };
 
 export const WS_BASE = "https://5502-197-231-11-32.ngrok-free.app/ws";

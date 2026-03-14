@@ -31,6 +31,7 @@ import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
+import Modifications from "./pages/Modifications";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,11 @@ const App = () => (
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Cloture />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/modifications" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <Modifications />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/ged/configuration" element={

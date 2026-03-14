@@ -26,6 +26,8 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
   { key: "TRANSFERT", processus: "TRANSFERT_CREDIT", label: "Transfert de crédit (Douane → Intérieur)" },
   { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE", label: "Sous-traitance" },
+  { key: "MODIFICATION", processus: "MODIFICATION_CI", label: "Modification / Avenant (P8)" },
+  { key: "CLOTURE", processus: "CLOTURE_CI", label: "Clôture / Annulation (P11)" },
 ];
 
 const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
@@ -86,6 +88,17 @@ const TYPE_DOCUMENT_OPTIONS = [
   { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
   { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée de transfert" },
   { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
+  // P8 - Modification / Avenant
+  { value: "NOTE_SERVICE", label: "Note de service" },
+  { value: "JUSTIFICATIONS_LEGALES", label: "Justifications légales" },
+  { value: "LETTRES_MOTIVEES", label: "Lettres motivées" },
+  { value: "AVENANT_CONTRAT", label: "Avenant au contrat" },
+  { value: "LETTRES_AUTORITE_CONTRACTANTE", label: "Lettres de l'autorité contractante" },
+  { value: "DETAIL_CORRECTIONS_NECESSAIRES", label: "Détail des corrections nécessaires" },
+  { value: "DOCUMENTS_OFFICIELS", label: "Documents officiels" },
+  { value: "DECISION_COMMISSION", label: "Décision de la commission" },
+  // P11 - Clôture
+  { value: "LISTE_CREDITS_A_CLOTURER", label: "Liste des crédits à clôturer" },
 ];
 
 const GedConfiguration = () => {
