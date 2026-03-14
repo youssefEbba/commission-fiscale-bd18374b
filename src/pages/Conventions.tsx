@@ -8,7 +8,7 @@ import {
   DocumentDto, TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
   bailleurApi, BailleurDto, CreateBailleurRequest,
   deviseApi, DeviseDto, CreateDeviseRequest,
-  tauxChangeApi,
+  forexApi,
   documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
