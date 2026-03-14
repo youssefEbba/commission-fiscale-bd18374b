@@ -5,6 +5,7 @@ import {
   certificatCreditApi, CertificatCreditDto, CERTIFICAT_STATUT_LABELS, CertificatStatut,
   utilisationCreditApi, UtilisationCreditDto, UTILISATION_STATUT_LABELS, UtilisationStatut,
 } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const STATUT_COLORS_UTIL: Record<UtilisationStatut, string> = {
 };
 
 const CertificatDetail = () => {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -46,16 +48,29 @@ const CertificatDetail = () => {
     if (!id) return;
     const certId = Number(id);
     setLoading(true);
+
+    const fetchCert = async (): Promise<CertificatCreditDto> => {
+      try {
+        return await certificatCreditApi.getById(certId);
+      } catch {
+        // Fallback for ENTREPRISE role (403 on getById)
+        if (user?.entrepriseId) {
+          const certs = await certificatCreditApi.getByEntreprise(user.entrepriseId);
+          const found = certs.find(c => c.id === certId);
+          if (found) return found;
+        }
+        throw new Error("Certificat introuvable");
+      }
+    };
+
     Promise.all([
-      certificatCreditApi.getById(certId),
-      utilisationCreditApi.getByCertificat(certId).catch(() => 
-        // Fallback: fetch all and filter
+      fetchCert(),
+      utilisationCreditApi.getByCertificat(certId).catch(() =>
         utilisationCreditApi.getAll().then(all => all.filter(u => u.certificatCreditId === certId))
       ),
     ])
       .then(([cert, utils]) => {
         setCertificat(cert);
-        // Filter only LIQUIDEE or APUREE
         setUtilisations(utils.filter(u => u.statut === "LIQUIDEE" || u.statut === "APUREE"));
       })
       .catch(() => {
