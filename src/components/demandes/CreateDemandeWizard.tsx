@@ -1,12 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
+import { PDFDocument } from "pdf-lib";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
-  conventionApi, ConventionDto,
+  conventionApi, ConventionDto, CreateConventionRequest,
+  TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
   demandeCorrectionApi,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
   marcheApi, MarcheDto,
   bailleurApi, BailleurDto,
+  deviseApi, DeviseDto, CreateDeviseRequest,
+  forexApi,
   documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
