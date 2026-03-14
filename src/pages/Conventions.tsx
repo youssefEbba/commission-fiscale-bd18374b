@@ -145,28 +145,31 @@ const Conventions = () => {
     }
   }, [createOpen]);
 
-  // Fetch taux via forex API on button click
-  const fetchTauxChange = async () => {
-    if (!form.deviseOrigine || !form.montantDevise) {
-      toast({ title: "Info", description: "Veuillez saisir la devise et le montant d'abord" });
+  // Auto-fetch taux when devise changes
+  useEffect(() => {
+    if (!form.deviseOrigine || form.deviseOrigine === "MRU") {
+      setForm(f => ({ ...f, tauxChange: form.deviseOrigine === "MRU" ? 1 : undefined, montantMru: form.deviseOrigine === "MRU" && f.montantDevise ? f.montantDevise : undefined }));
       return;
     }
+    let cancelled = false;
     setTauxLoading(true);
-    try {
-      const res = await forexApi.convert(form.deviseOrigine, "MRU", form.montantDevise);
-      const rate = res.result / res.amount;
-      setForm(f => ({
-        ...f,
-        tauxChange: Math.round(rate * 10000) / 10000,
-        montantMru: Math.round(res.result * 100) / 100,
-      }));
-      toast({ title: "Taux récupéré", description: `1 ${form.deviseOrigine} = ${(Math.round(rate * 10000) / 10000).toLocaleString("fr-FR")} MRU` });
-    } catch {
-      toast({ title: "Erreur", description: `Impossible de récupérer le taux pour ${form.deviseOrigine} → MRU`, variant: "destructive" });
-    } finally {
-      setTauxLoading(false);
-    }
-  };
+    forexApi.rate(form.deviseOrigine, "MRU")
+      .then(res => {
+        if (cancelled) return;
+        const rate = Math.round(res.rate * 10000) / 10000;
+        setForm(f => ({
+          ...f,
+          tauxChange: rate,
+          montantMru: f.montantDevise ? Math.round(f.montantDevise * rate * 100) / 100 : undefined,
+        }));
+        toast({ title: "Taux récupéré", description: `1 ${form.deviseOrigine} = ${rate.toLocaleString("fr-FR")} MRU` });
+      })
+      .catch(() => {
+        if (!cancelled) toast({ title: "Erreur", description: `Impossible de récupérer le taux pour ${form.deviseOrigine} → MRU`, variant: "destructive" });
+      })
+      .finally(() => { if (!cancelled) setTauxLoading(false); });
+    return () => { cancelled = true; };
+  }, [form.deviseOrigine]);
 
   const handleDeviseChange = (code: string) => {
     setForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }));
