@@ -678,7 +678,7 @@ const ChatbotDGD = () => {
               </Button>
             </div>
 
-            <Card className="flex flex-col border-border/50 min-h-[350px]" style={{ maxHeight: '50vh' }}>
+            <Card className="flex flex-col flex-1 border-border/50 min-h-0">
               {renderMessages(dqeMessages, dqeScrollRef, dqeLoading, "Lancez l'analyse DQE pour commencer")}
               <Separator />
               <div className="p-3 flex gap-2">
