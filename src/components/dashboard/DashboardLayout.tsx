@@ -175,9 +175,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </div>
       )}
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {/* Desktop top bar */}
-        <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card">
+        <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card shrink-0">
           <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -200,7 +200,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           </DropdownMenu>
         </header>
         {/* Mobile top bar */}
-        <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
+        <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMobileOpen(true)}>
               <Menu className="h-5 w-5" />
@@ -231,7 +231,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </DropdownMenu>
           </div>
         </header>
-        <div className="p-6 md:p-8">{children}</div>
+        <div className="flex-1 overflow-auto p-6 md:p-8">{children}</div>
       </main>
     </div>
   );
