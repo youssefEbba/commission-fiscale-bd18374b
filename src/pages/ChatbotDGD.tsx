@@ -658,7 +658,7 @@ const ChatbotDGD = () => {
             <TabsTrigger value="dqe" className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
               Phase 1 — DQE
-              {dqeGenerated && <CheckCircle className="h-3.5 w-3.5 text-green-600" />}
+              {(dqeGenerated || dqeCorrigeValid) && <CheckCircle className="h-3.5 w-3.5 text-green-600" />}
             </TabsTrigger>
             <TabsTrigger value="offre" className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
