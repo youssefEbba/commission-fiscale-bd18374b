@@ -755,7 +755,7 @@ const ChatbotDGD = () => {
               </div>
             </Card>
 
-            {renderJsonTable(ofGenerated, "Offre Fiscale générée (JSON multi-tables)")}
+            {renderJsonTable(ofGenerated, "Offre Fiscale générée (JSON multi-tables)", ofJsonOpen, setOfJsonOpen)}
           </TabsContent>
         </Tabs>
       </div>
