@@ -205,12 +205,13 @@ const ChatbotDGD = () => {
       const res = await aiFetch(`/api/dqe/history/${id}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.history)) {
-          setDqeMessages(data.history.map((m: any) => ({
+        const messages = data.history?.messages || (Array.isArray(data.history) ? data.history : []);
+        if (data.success && messages.length > 0) {
+          setDqeMessages(messages.map((m: any) => ({
             role: m.role === "user" ? "user" as const : "assistant" as const,
             content: m.content || "",
           })));
-          if (data.history.length > 0) setDqeAnalyzed(true);
+          setDqeAnalyzed(true);
         }
       }
     } catch { /* fresh */ }
