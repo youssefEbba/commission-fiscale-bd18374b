@@ -491,7 +491,7 @@ const ChatbotDGD = () => {
 
         {/* Extraction Status Banner */}
         <Card className="mb-4">
-          <CardContent className="py-3">
+          <CardContent className="py-3 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Zap className="h-5 w-5 text-primary" />
@@ -534,6 +534,37 @@ const ChatbotDGD = () => {
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+
+            {/* Page range for dqe_offre */}
+            <Separator />
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-xs font-medium text-muted-foreground">
+                Périmètre DQE dans l'offre financière (dqe_offre) :
+              </p>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Page de</label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="ex: 10"
+                  value={pageFrom}
+                  onChange={(e) => setPageFrom(e.target.value)}
+                  className="w-20 h-7 text-xs"
+                />
+                <label className="text-xs text-muted-foreground">à</label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="ex: 15"
+                  value={pageTo}
+                  onChange={(e) => setPageTo(e.target.value)}
+                  className="w-20 h-7 text-xs"
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground/70">
+                (Optionnel — max 30 pages. Laissez vide pour extraire tout le document)
+              </p>
             </div>
           </CardContent>
         </Card>
