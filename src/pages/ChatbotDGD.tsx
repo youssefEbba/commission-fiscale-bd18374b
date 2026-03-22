@@ -102,7 +102,20 @@ const ChatbotDGD = () => {
     setExtractionChecked(true);
   };
 
-  useEffect(() => { checkExtractionStatus(); }, [id]);
+  const checkDqeCorrigeStatus = async () => {
+    if (!id) return;
+    try {
+      const res = await aiFetch(`/api/dqe/corrige-status/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDqeCorrigeExists(data.exists === true);
+        setDqeCorrigeValid(data.valid === true);
+      }
+    } catch { /* ignore */ }
+    setDqeCorrigeChecked(true);
+  };
+
+  useEffect(() => { checkExtractionStatus(); checkDqeCorrigeStatus(); }, [id]);
 
   // ─── 1) Extract documents ───
   const handleExtract = async () => {
