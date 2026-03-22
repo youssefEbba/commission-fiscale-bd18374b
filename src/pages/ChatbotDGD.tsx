@@ -10,9 +10,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ArrowLeft, Loader2, Bot, Send, User, FileSpreadsheet,
-  CheckCircle, XCircle, Play, Download, RefreshCw, Zap,
+  CheckCircle, XCircle, Play, Download, RefreshCw, Zap, ChevronDown, ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
@@ -67,6 +68,8 @@ const ChatbotDGD = () => {
   const ofScrollRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState("dqe");
+  const [dqeJsonOpen, setDqeJsonOpen] = useState(false);
+  const [ofJsonOpen, setOfJsonOpen] = useState(false);
 
   // ─── Helpers ───
   const aiFetch = async (path: string, options: RequestInit = {}) => {
@@ -504,20 +507,28 @@ const ChatbotDGD = () => {
     </ScrollArea>
   );
 
-  // ─── JSON table renderer for generated data ───
-  const renderJsonTable = (data: any, title: string) => {
+  // ─── JSON table renderer for generated data (collapsible) ───
+
+  const renderJsonTable = (data: any, title: string, isOpen: boolean, setOpen: (v: boolean) => void) => {
     if (!data) return null;
     return (
-      <Card className="mt-4">
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <pre className="bg-muted rounded-lg p-3 text-xs overflow-auto max-h-80 whitespace-pre-wrap">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </CardContent>
-      </Card>
+      <Collapsible open={isOpen} onOpenChange={setOpen} className="mt-3">
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-between text-xs">
+            {title}
+            {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Card className="mt-1 border-border/50">
+            <CardContent className="p-3">
+              <pre className="bg-muted rounded-lg p-3 text-xs overflow-auto max-h-60 whitespace-pre-wrap">
+                {JSON.stringify(data, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
     );
   };
 
@@ -636,8 +647,8 @@ const ChatbotDGD = () => {
           </TabsList>
 
           {/* ═══ Phase 1: DQE ═══ */}
-          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-hidden mt-2">
-            <div className="flex gap-2 mb-2">
+          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-auto mt-2">
+            <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
                 onClick={handleDqeAnalyze}
@@ -667,7 +678,7 @@ const ChatbotDGD = () => {
               </Button>
             </div>
 
-            <Card className="flex-1 flex flex-col overflow-hidden border-border/50">
+            <Card className="flex flex-col border-border/50 min-h-[350px]" style={{ maxHeight: '50vh' }}>
               {renderMessages(dqeMessages, dqeScrollRef, dqeLoading, "Lancez l'analyse DQE pour commencer")}
               <Separator />
               <div className="p-3 flex gap-2">
@@ -685,12 +696,12 @@ const ChatbotDGD = () => {
               </div>
             </Card>
 
-            {renderJsonTable(dqeGenerated, "DQE Standard généré (JSON)")}
+            {renderJsonTable(dqeGenerated, "DQE Standard généré (JSON)", dqeJsonOpen, setDqeJsonOpen)}
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
-          <TabsContent value="offre" className="flex-1 flex flex-col overflow-hidden mt-2">
-            <div className="flex gap-2 mb-2">
+          <TabsContent value="offre" className="flex-1 flex flex-col overflow-auto mt-2">
+            <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
                 onClick={handleOfAnalyze}
@@ -726,7 +737,7 @@ const ChatbotDGD = () => {
               </div>
             )}
 
-            <Card className="flex-1 flex flex-col overflow-hidden border-border/50">
+            <Card className="flex flex-col border-border/50 min-h-[350px]" style={{ maxHeight: '50vh' }}>
               {renderMessages(ofMessages, ofScrollRef, ofLoading, "Lancez le diagnostic pour commencer la Phase 2")}
               <Separator />
               <div className="p-3 flex gap-2">
@@ -744,7 +755,7 @@ const ChatbotDGD = () => {
               </div>
             </Card>
 
-            {renderJsonTable(ofGenerated, "Offre Fiscale générée (JSON multi-tables)")}
+            {renderJsonTable(ofGenerated, "Offre Fiscale générée (JSON multi-tables)", ofJsonOpen, setOfJsonOpen)}
           </TabsContent>
         </Tabs>
       </div>
