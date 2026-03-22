@@ -21,6 +21,7 @@ import Simulation from "./pages/Simulation";
 import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
 import AssistanceIA from "./pages/AssistanceIA";
+import ChatbotDGD from "./pages/ChatbotDGD";
 import Marches from "./pages/Marches";
 import Delegues from "./pages/Delegues";
 import GedConfiguration from "./pages/GedConfiguration";
