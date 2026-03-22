@@ -726,7 +726,7 @@ const ChatbotDGD = () => {
               <Button
                 size="sm"
                 onClick={handleOfAnalyze}
-                disabled={ofAnalyzing || !allExtracted || !dqeGenerated}
+                disabled={ofAnalyzing || !allExtracted || (!dqeGenerated && !dqeCorrigeValid)}
                 variant={ofAnalyzed ? "outline" : "default"}
               >
                 {ofAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
