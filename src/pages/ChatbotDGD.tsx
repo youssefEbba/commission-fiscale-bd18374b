@@ -737,7 +737,7 @@ const ChatbotDGD = () => {
               </div>
             )}
 
-            <Card className="flex flex-col border-border/50 min-h-[350px]" style={{ maxHeight: '50vh' }}>
+            <Card className="flex flex-col flex-1 border-border/50 min-h-0">
               {renderMessages(ofMessages, ofScrollRef, ofLoading, "Lancez le diagnostic pour commencer la Phase 2")}
               <Separator />
               <div className="p-3 flex gap-2">
