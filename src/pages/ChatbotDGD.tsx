@@ -337,12 +337,13 @@ const ChatbotDGD = () => {
       const res = await aiFetch(`/api/of/history/${id}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.history)) {
-          setOfMessages(data.history.map((m: any) => ({
+        const messages = data.history?.messages || (Array.isArray(data.history) ? data.history : []);
+        if (data.success && messages.length > 0) {
+          setOfMessages(messages.map((m: any) => ({
             role: m.role === "user" ? "user" as const : "assistant" as const,
             content: m.content || "",
           })));
-          if (data.history.length > 0) setOfAnalyzed(true);
+          setOfAnalyzed(true);
         }
       }
     } catch { /* fresh */ }
