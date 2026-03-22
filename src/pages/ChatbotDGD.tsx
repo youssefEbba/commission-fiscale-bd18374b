@@ -116,12 +116,23 @@ const ChatbotDGD = () => {
 
       // Map docs to extraction format
       const documents: { name: string; url: string; pageRange?: { from: number; to: number } }[] = [];
+      let offreFinanciereUrl: string | null = null;
+
+      // First pass: find the OFFRE_FINANCIERE URL for dqe_offre
+      for (const d of relevantDocs) {
+        const type = (d.type || "").toUpperCase();
+        if (type.includes("FINANCIERE")) {
+          offreFinanciereUrl = d.chemin!.replace(/\\/g, "/");
+        }
+      }
+
       for (const d of relevantDocs) {
         const type = (d.type || "").toUpperCase();
         const url = d.chemin!.replace(/\\/g, "/");
         if (type.includes("DQE") && !type.includes("OFFRE")) {
           documents.push({ name: "dqe", url });
-          // Add dqe_offre with optional page range
+        } else if (type.includes("FINANCIERE")) {
+          // dqe_offre = pages from OFFRE_FINANCIERE (PDF)
           const dqeOffreDoc: { name: string; url: string; pageRange?: { from: number; to: number } } = { name: "dqe_offre", url };
           const from = parseInt(pageFrom);
           const to = parseInt(pageTo);
@@ -129,7 +140,7 @@ const ChatbotDGD = () => {
             dqeOffreDoc.pageRange = { from, to };
           }
           documents.push(dqeOffreDoc);
-        } else if (type.includes("OFFRE")) {
+        } else if (type.includes("FISCALE")) {
           documents.push({ name: "ofrefiscale", url });
         }
       }
