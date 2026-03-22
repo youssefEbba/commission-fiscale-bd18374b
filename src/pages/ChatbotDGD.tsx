@@ -115,13 +115,20 @@ const ChatbotDGD = () => {
       }
 
       // Map docs to extraction format
-      const documents: { name: string; url: string }[] = [];
+      const documents: { name: string; url: string; pageRange?: { from: number; to: number } }[] = [];
       for (const d of relevantDocs) {
         const type = (d.type || "").toUpperCase();
         const url = d.chemin!.replace(/\\/g, "/");
         if (type.includes("DQE") && !type.includes("OFFRE")) {
           documents.push({ name: "dqe", url });
-          documents.push({ name: "dqe_offre", url });
+          // Add dqe_offre with optional page range
+          const dqeOffreDoc: { name: string; url: string; pageRange?: { from: number; to: number } } = { name: "dqe_offre", url };
+          const from = parseInt(pageFrom);
+          const to = parseInt(pageTo);
+          if (!isNaN(from) && !isNaN(to) && from >= 1 && to >= from) {
+            dqeOffreDoc.pageRange = { from, to };
+          }
+          documents.push(dqeOffreDoc);
         } else if (type.includes("OFFRE")) {
           documents.push({ name: "ofrefiscale", url });
         }
