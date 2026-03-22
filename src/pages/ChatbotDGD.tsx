@@ -68,6 +68,8 @@ const ChatbotDGD = () => {
   const ofScrollRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState("dqe");
+  const [dqeJsonOpen, setDqeJsonOpen] = useState(false);
+  const [ofJsonOpen, setOfJsonOpen] = useState(false);
 
   // ─── Helpers ───
   const aiFetch = async (path: string, options: RequestInit = {}) => {
