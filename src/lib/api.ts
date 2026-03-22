@@ -1,4 +1,4 @@
-const API_BASE = "https://f07a-197-231-3-232.ngrok-free.app/api";
+const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
 
 interface RequestOptions {
   method?: string;
