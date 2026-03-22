@@ -700,8 +700,8 @@ const ChatbotDGD = () => {
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
-          <TabsContent value="offre" className="flex-1 flex flex-col overflow-hidden mt-2">
-            <div className="flex gap-2 mb-2">
+          <TabsContent value="offre" className="flex-1 flex flex-col overflow-auto mt-2">
+            <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
                 onClick={handleOfAnalyze}
@@ -737,7 +737,7 @@ const ChatbotDGD = () => {
               </div>
             )}
 
-            <Card className="flex-1 flex flex-col overflow-hidden border-border/50">
+            <Card className="flex flex-col border-border/50 min-h-[350px]" style={{ maxHeight: '50vh' }}>
               {renderMessages(ofMessages, ofScrollRef, ofLoading, "Lancez le diagnostic pour commencer la Phase 2")}
               <Separator />
               <div className="p-3 flex gap-2">
