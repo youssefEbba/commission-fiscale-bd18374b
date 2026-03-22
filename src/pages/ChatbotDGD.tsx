@@ -41,6 +41,11 @@ const ChatbotDGD = () => {
   const [extractionChecked, setExtractionChecked] = useState(false);
   const allExtracted = extractionStatus.length > 0 && extractionStatus.every(f => f.extracted);
 
+  // DQE corrigé status
+  const [dqeCorrigeExists, setDqeCorrigeExists] = useState(false);
+  const [dqeCorrigeValid, setDqeCorrigeValid] = useState(false);
+  const [dqeCorrigeChecked, setDqeCorrigeChecked] = useState(false);
+
   // Page range for dqe_offre
   const [pageFrom, setPageFrom] = useState<string>("");
   const [pageTo, setPageTo] = useState<string>("");
@@ -97,7 +102,20 @@ const ChatbotDGD = () => {
     setExtractionChecked(true);
   };
 
-  useEffect(() => { checkExtractionStatus(); }, [id]);
+  const checkDqeCorrigeStatus = async () => {
+    if (!id) return;
+    try {
+      const res = await aiFetch(`/api/dqe/corrige-status/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDqeCorrigeExists(data.exists === true);
+        setDqeCorrigeValid(data.valid === true);
+      }
+    } catch { /* ignore */ }
+    setDqeCorrigeChecked(true);
+  };
+
+  useEffect(() => { checkExtractionStatus(); checkDqeCorrigeStatus(); }, [id]);
 
   // ─── 1) Extract documents ───
   const handleExtract = async () => {
@@ -298,6 +316,7 @@ const ChatbotDGD = () => {
       if (!data.success) throw new Error("Génération échouée");
       setDqeGenerated(data.dqe);
       toast({ title: "DQE Standard généré" });
+      await checkDqeCorrigeStatus();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
@@ -639,7 +658,7 @@ const ChatbotDGD = () => {
             <TabsTrigger value="dqe" className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
               Phase 1 — DQE
-              {dqeGenerated && <CheckCircle className="h-3.5 w-3.5 text-green-600" />}
+              {(dqeGenerated || dqeCorrigeValid) && <CheckCircle className="h-3.5 w-3.5 text-green-600" />}
             </TabsTrigger>
             <TabsTrigger value="offre" className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
@@ -707,7 +726,7 @@ const ChatbotDGD = () => {
               <Button
                 size="sm"
                 onClick={handleOfAnalyze}
-                disabled={ofAnalyzing || !allExtracted || !dqeGenerated}
+                disabled={ofAnalyzing || !allExtracted || (!dqeGenerated && !dqeCorrigeValid)}
                 variant={ofAnalyzed ? "outline" : "default"}
               >
                 {ofAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
@@ -733,9 +752,14 @@ const ChatbotDGD = () => {
               </Button>
             </div>
 
-            {!dqeGenerated && (
+            {!dqeGenerated && !dqeCorrigeValid && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 mb-2">
                 ⚠️ Vous devez d'abord générer le DQE Standard (Phase 1) avant de lancer le diagnostic de l'Offre Fiscale.
+              </div>
+            )}
+            {dqeCorrigeValid && !dqeGenerated && (
+              <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-xs text-green-800 mb-2">
+                ✅ DQE corrigé détecté et valide — vous pouvez lancer le diagnostic de l'Offre Fiscale.
               </div>
             )}
 
