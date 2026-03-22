@@ -223,11 +223,28 @@ const ChatbotDGD = () => {
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const data = await res.json();
+      console.log("DQE analyze response:", data);
       if (!data.success) throw new Error("Analyse échouée");
 
-      const content = typeof data.analysis === "string"
-        ? data.analysis
-        : JSON.stringify(data.analysis, null, 2);
+      let content: string;
+      if (typeof data.analysis === "string") {
+        content = data.analysis;
+      } else if (data.analysis && typeof data.analysis === "object") {
+        // Format structured analysis as readable markdown
+        const parts: string[] = [];
+        if (data.analysis.resume) {
+          parts.push(data.analysis.resume);
+        }
+        if (Array.isArray(data.analysis.points_de_verification)) {
+          parts.push("\n### Points de vérification\n");
+          data.analysis.points_de_verification.forEach((p: string, i: number) => {
+            parts.push(`${i + 1}. ${p}`);
+          });
+        }
+        content = parts.join("\n");
+      } else {
+        content = JSON.stringify(data.analysis, null, 2);
+      }
       setDqeMessages([{ role: "assistant", content: `## Analyse initiale DQE\n\n${content}` }]);
       setDqeAnalyzed(true);
       toast({ title: "Analyse DQE terminée" });
