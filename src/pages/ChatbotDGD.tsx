@@ -40,6 +40,10 @@ const ChatbotDGD = () => {
   const [extractionChecked, setExtractionChecked] = useState(false);
   const allExtracted = extractionStatus.length > 0 && extractionStatus.every(f => f.extracted);
 
+  // Page range for dqe_offre
+  const [pageFrom, setPageFrom] = useState<string>("");
+  const [pageTo, setPageTo] = useState<string>("");
+
   // Phase 1 - DQE
   const [dqeMessages, setDqeMessages] = useState<ChatMessage[]>([]);
   const [dqeInput, setDqeInput] = useState("");
