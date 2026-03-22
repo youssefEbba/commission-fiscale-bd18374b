@@ -10,7 +10,7 @@ import * as XLSX from "xlsx";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const AI_SERVICE_URL = "https://superelegant-irretraceably-liv.ngrok-free.dev/api/audit-fiscale/correct-from-text";
+const AI_SERVICE_URL = "https://f7c6-197-231-9-128.ngrok-free.app/api/audit-fiscale/correct-from-text";
 
 interface ExcelData {
   fileName: string;
