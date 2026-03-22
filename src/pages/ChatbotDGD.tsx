@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
-const AI_SERVICE_BASE = "https://superelegant-irretraceably-liv.ngrok-free.dev";
+const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
 
 interface ChatMessage {
   role: "user" | "assistant";
