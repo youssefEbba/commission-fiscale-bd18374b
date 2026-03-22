@@ -1173,7 +1173,7 @@ export const avenantApi = {
   },
 };
 
-export const WS_BASE = "https://f07a-197-231-3-232.ngrok-free.app/ws";
+export const WS_BASE = "https://beb1-197-231-9-128.ngrok-free.app/ws";
 
 // ── Dossiers GED ──
 
