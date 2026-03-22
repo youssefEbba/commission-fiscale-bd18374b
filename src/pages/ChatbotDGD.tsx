@@ -10,9 +10,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ArrowLeft, Loader2, Bot, Send, User, FileSpreadsheet,
-  CheckCircle, XCircle, Play, Download, RefreshCw, Zap,
+  CheckCircle, XCircle, Play, Download, RefreshCw, Zap, ChevronDown, ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
