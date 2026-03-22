@@ -534,7 +534,7 @@ const ChatbotDGD = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-8rem)] max-w-5xl mx-auto">
+      <div className="flex flex-col h-[calc(100vh-5rem)] max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
@@ -647,7 +647,7 @@ const ChatbotDGD = () => {
           </TabsList>
 
           {/* ═══ Phase 1: DQE ═══ */}
-          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-auto mt-2">
+          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-hidden mt-2">
             <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
@@ -700,7 +700,7 @@ const ChatbotDGD = () => {
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
-          <TabsContent value="offre" className="flex-1 flex flex-col overflow-auto mt-2">
+          <TabsContent value="offre" className="flex-1 flex flex-col overflow-hidden mt-2">
             <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
