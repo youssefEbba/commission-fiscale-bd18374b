@@ -696,7 +696,7 @@ const ChatbotDGD = () => {
               </div>
             </Card>
 
-            {renderJsonTable(dqeGenerated, "DQE Standard généré (JSON)")}
+            {renderJsonTable(dqeGenerated, "DQE Standard généré (JSON)", dqeJsonOpen, setDqeJsonOpen)}
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
