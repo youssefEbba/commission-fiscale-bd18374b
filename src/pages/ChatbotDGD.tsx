@@ -142,17 +142,40 @@ const ChatbotDGD = () => {
         return true;
       });
 
-      const res = await aiFetch("/api/context/extract", {
-        method: "POST",
-        body: JSON.stringify({ correctionId: id, documents: uniqueDocs }),
-      });
+      // Extract documents one by one
+      let successCount = 0;
+      for (const doc of uniqueDocs) {
+        try {
+          const res = await aiFetch("/api/context/extract", {
+            method: "POST",
+            body: JSON.stringify({ correctionId: id, documents: [doc] }),
+          });
 
-      if (!res.ok) throw new Error(`Erreur extraction: ${res.status}`);
-      const data = await res.json();
-      if (!data.success) throw new Error("Extraction échouée");
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            const errorMsg = errorData.message || errorData.error || `Erreur ${res.status}`;
+            toast({ title: `Erreur: ${doc.name}`, description: errorMsg, variant: "destructive" });
+            continue;
+          }
+          const data = await res.json();
+          if (!data.success) {
+            toast({ title: `Échec: ${doc.name}`, description: "Extraction échouée", variant: "destructive" });
+            continue;
+          }
+          successCount++;
+          toast({ title: `Extrait: ${doc.name}`, description: `Document "${doc.name}" extrait avec succès.` });
+          // Refresh status after each successful extraction
+          await checkExtractionStatus();
+        } catch (e: any) {
+          toast({ title: `Erreur: ${doc.name}`, description: e.message, variant: "destructive" });
+        }
+      }
 
-      toast({ title: "Extraction terminée", description: "Les documents ont été extraits avec succès." });
-      await checkExtractionStatus();
+      if (successCount === uniqueDocs.length) {
+        toast({ title: "Extraction terminée", description: "Tous les documents ont été extraits avec succès." });
+      } else {
+        toast({ title: "Extraction partielle", description: `${successCount}/${uniqueDocs.length} documents extraits.`, variant: "destructive" });
+      }
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
