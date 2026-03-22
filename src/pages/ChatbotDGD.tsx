@@ -505,20 +505,30 @@ const ChatbotDGD = () => {
     </ScrollArea>
   );
 
-  // ─── JSON table renderer for generated data ───
-  const renderJsonTable = (data: any, title: string) => {
+  // ─── JSON table renderer for generated data (collapsible) ───
+  const [dqeJsonOpen, setDqeJsonOpen] = useState(false);
+  const [ofJsonOpen, setOfJsonOpen] = useState(false);
+
+  const renderJsonTable = (data: any, title: string, isOpen: boolean, setOpen: (v: boolean) => void) => {
     if (!data) return null;
     return (
-      <Card className="mt-4">
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <pre className="bg-muted rounded-lg p-3 text-xs overflow-auto max-h-80 whitespace-pre-wrap">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </CardContent>
-      </Card>
+      <Collapsible open={isOpen} onOpenChange={setOpen} className="mt-3">
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-between text-xs">
+            {title}
+            {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Card className="mt-1 border-border/50">
+            <CardContent className="p-3">
+              <pre className="bg-muted rounded-lg p-3 text-xs overflow-auto max-h-60 whitespace-pre-wrap">
+                {JSON.stringify(data, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
     );
   };
 
