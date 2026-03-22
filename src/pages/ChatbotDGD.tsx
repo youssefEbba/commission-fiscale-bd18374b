@@ -508,8 +508,6 @@ const ChatbotDGD = () => {
   );
 
   // ─── JSON table renderer for generated data (collapsible) ───
-  const [dqeJsonOpen, setDqeJsonOpen] = useState(false);
-  const [ofJsonOpen, setOfJsonOpen] = useState(false);
 
   const renderJsonTable = (data: any, title: string, isOpen: boolean, setOpen: (v: boolean) => void) => {
     if (!data) return null;
