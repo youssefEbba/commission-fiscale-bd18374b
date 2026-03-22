@@ -752,9 +752,14 @@ const ChatbotDGD = () => {
               </Button>
             </div>
 
-            {!dqeGenerated && (
+            {!dqeGenerated && !dqeCorrigeValid && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 mb-2">
                 ⚠️ Vous devez d'abord générer le DQE Standard (Phase 1) avant de lancer le diagnostic de l'Offre Fiscale.
+              </div>
+            )}
+            {dqeCorrigeValid && !dqeGenerated && (
+              <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-xs text-green-800 mb-2">
+                ✅ DQE corrigé détecté et valide — vous pouvez lancer le diagnostic de l'Offre Fiscale.
               </div>
             )}
 
