@@ -239,9 +239,9 @@ const ChatbotDGD = () => {
           parts.push(data.analysis.resume);
         }
         if (Array.isArray(data.analysis.points_de_verification)) {
-          parts.push("\n### Points de vérification\n");
+          parts.push("\n---\n\n### 📋 Points de vérification\n");
           data.analysis.points_de_verification.forEach((p: string, i: number) => {
-            parts.push(`${i + 1}. ${p}`);
+            parts.push(`${i + 1}. ${p}\n`);
           });
         }
         content = parts.join("\n");
