@@ -138,6 +138,11 @@ const App = () => (
                 <AssistanceIA />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/chatbot-dgd/:id" element={
+              <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
+                <ChatbotDGD />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
