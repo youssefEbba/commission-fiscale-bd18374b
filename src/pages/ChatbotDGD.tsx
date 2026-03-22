@@ -647,8 +647,8 @@ const ChatbotDGD = () => {
           </TabsList>
 
           {/* ═══ Phase 1: DQE ═══ */}
-          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-hidden mt-2">
-            <div className="flex gap-2 mb-2">
+          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-auto mt-2">
+            <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
                 onClick={handleDqeAnalyze}
@@ -678,7 +678,7 @@ const ChatbotDGD = () => {
               </Button>
             </div>
 
-            <Card className="flex-1 flex flex-col overflow-hidden border-border/50">
+            <Card className="flex flex-col border-border/50 min-h-[350px]" style={{ maxHeight: '50vh' }}>
               {renderMessages(dqeMessages, dqeScrollRef, dqeLoading, "Lancez l'analyse DQE pour commencer")}
               <Separator />
               <div className="p-3 flex gap-2">
