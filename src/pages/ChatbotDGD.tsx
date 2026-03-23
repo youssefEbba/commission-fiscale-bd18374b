@@ -481,7 +481,7 @@ const ChatbotDGD = () => {
     emptyText: string
   ) => (
     <div className="flex-1 min-h-0 overflow-auto p-4" ref={scrollRef}>
-      {messages.length === 0 ? (
+      {messages.length <= 1 ? (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 py-16">
           <Bot className="h-12 w-12 text-primary/40" />
           <p className="text-sm">{emptyText}</p>
