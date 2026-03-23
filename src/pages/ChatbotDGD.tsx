@@ -537,9 +537,9 @@ const ChatbotDGD = () => {
                 </Button>
               )}
               {(dqeGenerated || corrigeStatus?.dqe_corrige?.valid) && (
-                <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
+                <Button size="sm" onClick={() => setActiveTab("offre")}>
                   <ArrowRight className="h-4 w-4 mr-1" />
-                  Passer à la correction
+                  Passer à l'Offre Fiscale
                 </Button>
               )}
               <Button size="sm" variant="ghost" onClick={loadDqeHistory}>
