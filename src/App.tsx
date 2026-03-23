@@ -22,6 +22,7 @@ import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
 import AssistanceIA from "./pages/AssistanceIA";
 import ChatbotDGD from "./pages/ChatbotDGD";
+import ExtractionDGD from "./pages/ExtractionDGD";
 import Marches from "./pages/Marches";
 import Delegues from "./pages/Delegues";
 import GedConfiguration from "./pages/GedConfiguration";
@@ -136,6 +137,11 @@ const App = () => (
             <Route path="/dashboard/assistance-ia/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <AssistanceIA />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/extraction-dgd/:id" element={
+              <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
+                <ExtractionDGD />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/chatbot-dgd/:id" element={

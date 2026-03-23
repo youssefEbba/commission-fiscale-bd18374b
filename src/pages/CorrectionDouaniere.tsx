@@ -731,7 +731,7 @@ const CorrectionDouaniere = () => {
                   <Button className="w-full" onClick={() => navigate(`/dashboard/assistance-ia/${id}`)}>
                     <Bot className="h-4 w-4 mr-2" /> Chatbot Fiscal (ancien)
                   </Button>
-                  <Button className="w-full" variant="outline" onClick={() => navigate(`/dashboard/chatbot-dgd/${id}`)}>
+                  <Button className="w-full" variant="outline" onClick={() => navigate(`/dashboard/extraction-dgd/${id}`)}>
                     <Bot className="h-4 w-4 mr-2" /> Chatbot DQE + Offre Fiscale
                   </Button>
                 </CardContent>

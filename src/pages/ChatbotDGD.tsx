@@ -2,18 +2,15 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
-import { demandeCorrectionApi, DocumentDto } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ArrowLeft, Loader2, Bot, Send, User, FileSpreadsheet,
-  CheckCircle, XCircle, Play, Download, RefreshCw, Zap, ChevronDown, ChevronUp,
+  CheckCircle, Play, Download, RefreshCw, Zap, ChevronDown, ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
@@ -24,31 +21,13 @@ interface ChatMessage {
   content: string;
 }
 
-interface ExtractionFile {
-  name: string;
-  extracted: boolean;
-  path?: string;
-}
-
 const ChatbotDGD = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Extraction state
-  const [extracting, setExtracting] = useState(false);
-  const [extractionStatus, setExtractionStatus] = useState<ExtractionFile[]>([]);
-  const [extractionChecked, setExtractionChecked] = useState(false);
-  const allExtracted = extractionStatus.length > 0 && extractionStatus.every(f => f.extracted);
-
   // DQE corrigé status
-  const [dqeCorrigeExists, setDqeCorrigeExists] = useState(false);
   const [dqeCorrigeValid, setDqeCorrigeValid] = useState(false);
-  const [dqeCorrigeChecked, setDqeCorrigeChecked] = useState(false);
-
-  // Page range for dqe_offre
-  const [pageFrom, setPageFrom] = useState<string>("");
-  const [pageTo, setPageTo] = useState<string>("");
 
   // Phase 1 - DQE
   const [dqeMessages, setDqeMessages] = useState<ChatMessage[]>([]);
@@ -78,7 +57,7 @@ const ChatbotDGD = () => {
 
   // ─── Helpers ───
   const aiFetch = async (path: string, options: RequestInit = {}) => {
-    const res = await fetch(`${AI_SERVICE_BASE}${path}`, {
+    return fetch(`${AI_SERVICE_BASE}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -86,20 +65,6 @@ const ChatbotDGD = () => {
         ...(options.headers || {}),
       },
     });
-    return res;
-  };
-
-  // ─── 0) Check extraction status ───
-  const checkExtractionStatus = async () => {
-    if (!id) return;
-    try {
-      const res = await aiFetch(`/api/context/extract-status/${id}?names=dqe,dqe_offre,ofrefiscale`);
-      if (res.ok) {
-        const data = await res.json();
-        setExtractionStatus(data.files || []);
-      }
-    } catch { /* ignore */ }
-    setExtractionChecked(true);
   };
 
   const checkDqeCorrigeStatus = async () => {
@@ -108,112 +73,12 @@ const ChatbotDGD = () => {
       const res = await aiFetch(`/api/dqe/corrige-status/${id}`);
       if (res.ok) {
         const data = await res.json();
-        setDqeCorrigeExists(data.exists === true);
         setDqeCorrigeValid(data.valid === true);
       }
     } catch { /* ignore */ }
-    setDqeCorrigeChecked(true);
   };
 
-  useEffect(() => { checkExtractionStatus(); checkDqeCorrigeStatus(); }, [id]);
-
-  // ─── 1) Extract documents ───
-  const handleExtract = async () => {
-    if (!id) return;
-    setExtracting(true);
-    try {
-      // Get documents from the correction request
-      const docs: DocumentDto[] = await demandeCorrectionApi.getDocuments(Number(id));
-      const AI_DOC_TYPES = ["OFFRE_FISCALE", "OFFRE_FINANCIERE", "DQE", "DAO_DQE"];
-      const relevantDocs = docs.filter((d: any) =>
-        d.chemin && AI_DOC_TYPES.some(t => (d.type || d.typeDocument || "").includes(t))
-      );
-
-      if (relevantDocs.length === 0) {
-        toast({ title: "Aucun document", description: "Aucun document DQE ou Offre Fiscale trouvé dans le dossier.", variant: "destructive" });
-        setExtracting(false);
-        return;
-      }
-
-      // Map docs to extraction format
-      const documents: { name: string; url: string; pageRange?: { from: number; to: number } }[] = [];
-      let offreFinanciereUrl: string | null = null;
-
-      // First pass: find the OFFRE_FINANCIERE URL for dqe_offre
-      for (const d of relevantDocs) {
-        const type = (d.type || "").toUpperCase();
-        if (type.includes("FINANCIERE")) {
-          offreFinanciereUrl = d.chemin!.replace(/\\/g, "/");
-        }
-      }
-
-      for (const d of relevantDocs) {
-        const type = (d.type || "").toUpperCase();
-        const url = d.chemin!.replace(/\\/g, "/");
-        if (type.includes("DQE") && !type.includes("OFFRE")) {
-          documents.push({ name: "dqe", url });
-        } else if (type.includes("FINANCIERE")) {
-          // dqe_offre = pages from OFFRE_FINANCIERE (PDF)
-          const dqeOffreDoc: { name: string; url: string; pageRange?: { from: number; to: number } } = { name: "dqe_offre", url };
-          const from = parseInt(pageFrom);
-          const to = parseInt(pageTo);
-          if (!isNaN(from) && !isNaN(to) && from >= 1 && to >= from) {
-            dqeOffreDoc.pageRange = { from, to };
-          }
-          documents.push(dqeOffreDoc);
-        } else if (type.includes("FISCALE")) {
-          documents.push({ name: "ofrefiscale", url });
-        }
-      }
-
-      // Deduplicate by name
-      const seen = new Set<string>();
-      const uniqueDocs = documents.filter(d => {
-        if (seen.has(d.name)) return false;
-        seen.add(d.name);
-        return true;
-      });
-
-      // Extract documents one by one
-      let successCount = 0;
-      for (const doc of uniqueDocs) {
-        try {
-          const res = await aiFetch("/api/context/extract", {
-            method: "POST",
-            body: JSON.stringify({ correctionId: id, documents: [doc] }),
-          });
-
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            const errorMsg = errorData.message || errorData.error || `Erreur ${res.status}`;
-            toast({ title: `Erreur: ${doc.name}`, description: errorMsg, variant: "destructive" });
-            continue;
-          }
-          const data = await res.json();
-          if (!data.success) {
-            toast({ title: `Échec: ${doc.name}`, description: "Extraction échouée", variant: "destructive" });
-            continue;
-          }
-          successCount++;
-          toast({ title: `Extrait: ${doc.name}`, description: `Document "${doc.name}" extrait avec succès.` });
-          // Refresh status after each successful extraction
-          await checkExtractionStatus();
-        } catch (e: any) {
-          toast({ title: `Erreur: ${doc.name}`, description: e.message, variant: "destructive" });
-        }
-      }
-
-      if (successCount === uniqueDocs.length) {
-        toast({ title: "Extraction terminée", description: "Tous les documents ont été extraits avec succès." });
-      } else {
-        toast({ title: "Extraction partielle", description: `${successCount}/${uniqueDocs.length} documents extraits.`, variant: "destructive" });
-      }
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setExtracting(false);
-    }
-  };
+  useEffect(() => { checkDqeCorrigeStatus(); }, [id]);
 
   // ─── Phase 1: DQE ───
 
@@ -245,14 +110,12 @@ const ChatbotDGD = () => {
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const data = await res.json();
-      console.log("DQE analyze response:", data);
       if (!data.success) throw new Error("Analyse échouée");
 
       let content: string;
       if (typeof data.analysis === "string") {
         content = data.analysis;
       } else if (data.analysis && typeof data.analysis === "object") {
-        // Format structured analysis as readable markdown
         const parts: string[] = [];
         if (data.analysis.resume) {
           parts.push(data.analysis.resume);
@@ -286,10 +149,7 @@ const ChatbotDGD = () => {
     try {
       const res = await aiFetch("/api/dqe/chat", {
         method: "POST",
-        body: JSON.stringify({
-          correctionId: id,
-          messages: [{ role: "user", content: question }],
-        }),
+        body: JSON.stringify({ correctionId: id, messages: [{ role: "user", content: question }] }),
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const data = await res.json();
@@ -379,8 +239,6 @@ const ChatbotDGD = () => {
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const data = await res.json();
       if (!data.success) throw new Error("Analyse échouée");
-
-      // Display answer as markdown
       const content = data.answer || (typeof data.analysis === "string" ? data.analysis : JSON.stringify(data.analysis, null, 2));
       setOfMessages([{ role: "assistant", content }]);
       setOfAnalyzed(true);
@@ -401,10 +259,7 @@ const ChatbotDGD = () => {
     try {
       const res = await aiFetch("/api/of/chat", {
         method: "POST",
-        body: JSON.stringify({
-          correctionId: id,
-          messages: [{ role: "user", content: question }],
-        }),
+        body: JSON.stringify({ correctionId: id, messages: [{ role: "user", content: question }] }),
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const data = await res.json();
@@ -529,8 +384,7 @@ const ChatbotDGD = () => {
     </div>
   );
 
-  // ─── JSON table renderer for generated data (collapsible) ───
-
+  // ─── JSON table renderer ───
   const renderJsonTable = (data: any, title: string, isOpen: boolean, setOpen: (v: boolean) => void) => {
     if (!data) return null;
     return (
@@ -556,11 +410,11 @@ const ChatbotDGD = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col max-w-5xl mx-auto h-[calc(100vh-120px)] overflow-hidden">
+      <div className="flex flex-col h-[calc(100vh-120px)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+        <div className="flex items-center gap-4 mb-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/extraction-dgd/${id}`)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Extraction
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -572,86 +426,6 @@ const ChatbotDGD = () => {
             </p>
           </div>
         </div>
-
-        {/* Extraction Status Banner */}
-        <Card className="mb-4">
-          <CardContent className="py-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Zap className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Extraction des documents</p>
-                  <p className="text-xs text-muted-foreground">
-                    {!extractionChecked
-                      ? "Vérification..."
-                      : allExtracted
-                      ? "Tous les documents sont extraits ✓"
-                      : "Certains documents n'ont pas été extraits"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {extractionStatus.map((f) => (
-                  <Badge
-                    key={f.name}
-                    variant={f.extracted ? "default" : "outline"}
-                    className={`text-[10px] ${f.extracted ? "bg-green-100 text-green-800 border-green-200" : ""}`}
-                  >
-                    {f.extracted ? <CheckCircle className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
-                    {f.name}
-                  </Badge>
-                ))}
-                <Button
-                  size="sm"
-                  variant={allExtracted ? "outline" : "default"}
-                  onClick={handleExtract}
-                  disabled={extracting}
-                >
-                  {extracting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                  ) : (
-                    <Play className="h-4 w-4 mr-1" />
-                  )}
-                  {allExtracted ? "Ré-extraire" : "Extraire"}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={checkExtractionStatus}>
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Page range for dqe_offre */}
-            <Separator />
-            <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-xs font-medium text-muted-foreground">
-                Périmètre DQE dans l'offre financière (dqe_offre) :
-              </p>
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">Page de</label>
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="ex: 10"
-                  value={pageFrom}
-                  onChange={(e) => setPageFrom(e.target.value)}
-                  className="w-20 h-7 text-xs"
-                />
-                <label className="text-xs text-muted-foreground">à</label>
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="ex: 15"
-                  value={pageTo}
-                  onChange={(e) => setPageTo(e.target.value)}
-                  className="w-20 h-7 text-xs"
-                />
-              </div>
-              <p className="text-[10px] text-muted-foreground/70">
-                (Optionnel — max 30 pages. Laissez vide pour extraire tout le document)
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Tabs: Phase 1 (DQE) / Phase 2 (Offre Fiscale) */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -674,7 +448,7 @@ const ChatbotDGD = () => {
               <Button
                 size="sm"
                 onClick={handleDqeAnalyze}
-                disabled={dqeAnalyzing || !allExtracted}
+                disabled={dqeAnalyzing}
                 variant={dqeAnalyzed ? "outline" : "default"}
               >
                 {dqeAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
@@ -727,7 +501,7 @@ const ChatbotDGD = () => {
               <Button
                 size="sm"
                 onClick={handleOfAnalyze}
-                disabled={ofAnalyzing || !allExtracted || (!dqeGenerated && !dqeCorrigeValid)}
+                disabled={ofAnalyzing || (!dqeGenerated && !dqeCorrigeValid)}
                 variant={ofAnalyzed ? "outline" : "default"}
               >
                 {ofAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
