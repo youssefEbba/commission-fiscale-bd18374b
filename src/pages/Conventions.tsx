@@ -369,6 +369,90 @@ const Conventions = () => {
     }
   };
 
+  // Open detail dialog
+  const openDetail = (conv: ConventionDto) => {
+    setDetailConvention(conv);
+    setDetailOpen(true);
+  };
+
+  // Open edit dialog (AC only)
+  const openEdit = (conv: ConventionDto) => {
+    setEditConvention(conv);
+    setEditForm({
+      reference: conv.reference || "",
+      intitule: conv.intitule || "",
+      bailleur: conv.bailleur || "",
+      bailleurDetails: conv.bailleurDetails || "",
+      dateSignature: conv.dateSignature || "",
+      dateFin: conv.dateFin || "",
+      montantDevise: conv.montantDevise,
+      deviseOrigine: conv.deviseOrigine || "",
+      montantMru: conv.montantMru,
+      tauxChange: conv.tauxChange,
+    });
+    fetchBailleurs();
+    fetchDevises();
+    setEditOpen(true);
+  };
+
+  const handleEdit = async () => {
+    if (!editConvention || !editForm.reference || !editForm.intitule) return;
+    setEditing(true);
+    try {
+      await conventionApi.update(editConvention.id, editForm);
+      toast({ title: "Succès", description: "Convention modifiée" });
+      setEditOpen(false);
+      fetchConventions();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  // Open reject dialog
+  const openReject = (conv: ConventionDto) => {
+    setRejectConvention(conv);
+    setRejectMotif("");
+    setRejectOpen(true);
+  };
+
+  const handleReject = async () => {
+    if (!rejectConvention || !rejectMotif.trim()) return;
+    setRejecting(true);
+    try {
+      await conventionApi.updateStatut(rejectConvention.id, "REJETE", rejectMotif);
+      toast({ title: "Succès", description: "Convention rejetée" });
+      setRejectOpen(false);
+      fetchConventions();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  // Cancel convention (AC only)
+  const openCancel = (conv: ConventionDto) => {
+    setCancelConvention(conv);
+    setCancelOpen(true);
+  };
+
+  const handleCancel = async () => {
+    if (!cancelConvention) return;
+    setCancelling(true);
+    try {
+      await conventionApi.updateStatut(cancelConvention.id, "ANNULEE");
+      toast({ title: "Succès", description: "Convention annulée" });
+      setCancelOpen(false);
+      fetchConventions();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const openDocuments = async (conv: ConventionDto) => {
     setDocsConvention(conv);
     setDocsOpen(true);
