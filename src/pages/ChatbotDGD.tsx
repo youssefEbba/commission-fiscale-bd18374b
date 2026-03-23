@@ -24,8 +24,8 @@ interface ChatMessage {
 }
 
 interface CorrigeStatus {
-  dqe_corrige: { exists: boolean; valid: boolean; path?: string };
-  offre_fiscale_corrigee: { exists: boolean; valid: boolean; path?: string };
+  dqe_corrige: { exists: boolean; valid: boolean; path?: string; payload?: any };
+  offre_fiscale_corrigee: { exists: boolean; valid: boolean; path?: string; payload?: any };
 }
 
 const ChatbotDGD = () => {
