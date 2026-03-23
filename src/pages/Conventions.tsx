@@ -20,16 +20,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   FileText, Search, RefreshCw, Plus, Loader2,
   CheckCircle, XCircle, Filter, Upload, File, Paperclip,
-  ArrowUp, ArrowDown, Merge,
+  ArrowUp, ArrowDown, Merge, MoreHorizontal, Eye, Edit,
+  Trash2, Ban, ShieldCheck, ShieldX,
 } from "lucide-react";
 
-const STATUT_COLORS: Record<ConventionStatut, string> = {
+const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
   VALIDE: "bg-green-100 text-green-800",
   REJETE: "bg-red-100 text-red-800",
+  ANNULEE: "bg-gray-100 text-gray-800",
 };
 
 const Conventions = () => {
