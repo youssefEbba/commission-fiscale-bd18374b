@@ -203,7 +203,7 @@ const ChatbotDGD = () => {
       if (!data.success) throw new Error("Génération échouée");
       setDqeGenerated(data.dqe);
       toast({ title: "DQE Standard généré" });
-      await checkDqeCorrigeStatus();
+      await checkDqeCorrigeStatus(id!);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
