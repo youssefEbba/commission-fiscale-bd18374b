@@ -78,24 +78,17 @@ const ChatbotDGD = () => {
   const checkDqeCorrigeStatus = async (correctionId: string) => {
     try {
       console.log("[ChatbotDGD] Checking corrige-status for:", correctionId);
-      const res = await fetch(`${API_BASE}/correction/corrige-status/${correctionId}`, {
-        headers: { "ngrok-skip-browser-warning": "true" },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        console.log("[ChatbotDGD] corrige-status response:", data);
-        setCorrigeStatus(data);
-        setDqeCorrigeValid(data.dqe_corrige?.valid === true);
-        if (data.dqe_corrige?.valid) {
-          setDqeAnalyzed(true);
-          setDqeGenerated(data.dqe_corrige);
-        }
-        if (data.offre_fiscale_corrigee?.valid) {
-          setOfAnalyzed(true);
-          setOfGenerated(data.offre_fiscale_corrigee);
-        }
-      } else {
-        console.warn("[ChatbotDGD] corrige-status error:", res.status);
+      const data = await apiFetch<CorrigeStatus>(`/correction/corrige-status/${correctionId}`);
+      console.log("[ChatbotDGD] corrige-status response:", data);
+      setCorrigeStatus(data);
+      setDqeCorrigeValid(data.dqe_corrige?.valid === true);
+      if (data.dqe_corrige?.valid) {
+        setDqeAnalyzed(true);
+        setDqeGenerated(data.dqe_corrige);
+      }
+      if (data.offre_fiscale_corrigee?.valid) {
+        setOfAnalyzed(true);
+        setOfGenerated(data.offre_fiscale_corrigee);
       }
     } catch (err) {
       console.error("[ChatbotDGD] corrige-status fetch failed:", err);
