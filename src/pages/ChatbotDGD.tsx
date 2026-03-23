@@ -478,17 +478,18 @@ const ChatbotDGD = () => {
     messages: ChatMessage[],
     scrollRef: React.RefObject<HTMLDivElement>,
     loading: boolean,
-    emptyText: string
+    emptyText: string,
+    skipFirst: number = 1
   ) => (
     <div className="flex-1 min-h-0 overflow-auto p-4" ref={scrollRef}>
-      {messages.length <= 1 ? (
+      {messages.length <= skipFirst ? (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 py-16">
           <Bot className="h-12 w-12 text-primary/40" />
           <p className="text-sm">{emptyText}</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {messages.filter((_, i) => i > 0).map((msg, i) => (
+          {messages.filter((_, i) => i >= skipFirst).map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               {msg.role === "assistant" && (
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mt-1">
@@ -764,7 +765,7 @@ const ChatbotDGD = () => {
             )}
 
             <Card className="flex flex-col flex-1 border-border/50 min-h-[400px]">
-              {renderMessages(ofMessages, ofScrollRef, ofLoading, "Lancez le diagnostic pour commencer la Phase 2")}
+              {renderMessages(ofMessages, ofScrollRef, ofLoading, "Lancez le diagnostic pour commencer la Phase 2", 2)}
               <Separator />
               <div className="p-3 flex gap-2">
                 <Input
