@@ -1002,6 +1002,169 @@ const Conventions = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" /> Détails de la convention
+            </DialogTitle>
+          </DialogHeader>
+          {detailConvention && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">Référence :</span> <span className="font-medium">{detailConvention.reference || "—"}</span></div>
+                <div><span className="text-muted-foreground">Statut :</span> <Badge className={`text-xs ml-1 ${STATUT_COLORS[detailConvention.statut] || ""}`}>{CONVENTION_STATUT_LABELS[detailConvention.statut] || detailConvention.statut}</Badge></div>
+              </div>
+              <div><span className="text-muted-foreground">Intitulé :</span> <span className="font-medium">{detailConvention.intitule || "—"}</span></div>
+              <div><span className="text-muted-foreground">Bailleur :</span> {detailConvention.bailleur || "—"}</div>
+              <div><span className="text-muted-foreground">Descriptif :</span> {detailConvention.bailleurDetails || "—"}</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">Date signature :</span> {detailConvention.dateSignature ? new Date(detailConvention.dateSignature).toLocaleDateString("fr-FR") : "—"}</div>
+                <div><span className="text-muted-foreground">Date fin :</span> {detailConvention.dateFin ? new Date(detailConvention.dateFin).toLocaleDateString("fr-FR") : "—"}</div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><span className="text-muted-foreground">Montant devise :</span><br />{detailConvention.montantDevise ? `${detailConvention.montantDevise.toLocaleString("fr-FR")} ${detailConvention.deviseOrigine || ""}` : "—"}</div>
+                <div><span className="text-muted-foreground">Taux :</span><br />{detailConvention.tauxChange ?? "—"}</div>
+                <div><span className="text-muted-foreground">Montant MRU :</span><br />{detailConvention.montantMru ? `${detailConvention.montantMru.toLocaleString("fr-FR")} MRU` : "—"}</div>
+              </div>
+              {detailConvention.autoriteContractanteNom && (
+                <div><span className="text-muted-foreground">Autorité contractante :</span> {detailConvention.autoriteContractanteNom}</div>
+              )}
+              {detailConvention.motifRejet && (
+                <div className="bg-destructive/10 rounded p-2"><span className="text-destructive font-medium">Motif de rejet :</span> {detailConvention.motifRejet}</div>
+              )}
+              <div><span className="text-muted-foreground">Créée le :</span> {detailConvention.dateCreation ? new Date(detailConvention.dateCreation).toLocaleDateString("fr-FR") : "—"}</div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog (AC only) */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" /> Modifier la convention
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="space-y-2">
+              <Label>Référence *</Label>
+              <Input value={editForm.reference} onChange={(e) => setEditForm(f => ({ ...f, reference: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Intitulé *</Label>
+              <Input value={editForm.intitule} onChange={(e) => setEditForm(f => ({ ...f, intitule: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Bailleur</Label>
+              <Select value={editForm.bailleur || ""} onValueChange={(v) => setEditForm(f => ({ ...f, bailleur: v }))}>
+                <SelectTrigger>
+                  {bailleursLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner" />}
+                </SelectTrigger>
+                <SelectContent>
+                  {bailleurs.map((b) => (
+                    <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Descriptif</Label>
+              <Input value={editForm.bailleurDetails} onChange={(e) => setEditForm(f => ({ ...f, bailleurDetails: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Date signature</Label>
+                <Input type="date" value={editForm.dateSignature} onChange={(e) => setEditForm(f => ({ ...f, dateSignature: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Date fin</Label>
+                <Input type="date" value={editForm.dateFin} onChange={(e) => setEditForm(f => ({ ...f, dateFin: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Montant devise</Label>
+                <Input type="number" value={editForm.montantDevise ?? ""} onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setEditForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
+                }} />
+              </div>
+              <div className="space-y-2">
+                <Label>Taux</Label>
+                <Input readOnly value={editForm.tauxChange ?? "—"} className="bg-muted" />
+              </div>
+              <div className="space-y-2">
+                <Label>MRU</Label>
+                <Input readOnly value={editForm.montantMru ? editForm.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
+            <Button onClick={handleEdit} disabled={editing || !editForm.reference || !editForm.intitule}>
+              {editing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldX className="h-5 w-5" /> Rejeter la convention
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Convention : <span className="font-medium text-foreground">{rejectConvention?.reference || rejectConvention?.intitule}</span>
+            </p>
+            <div className="space-y-2">
+              <Label>Motif du rejet *</Label>
+              <Textarea
+                value={rejectMotif}
+                onChange={(e) => setRejectMotif(e.target.value)}
+                placeholder="Indiquer le motif du rejet..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={rejecting || !rejectMotif.trim()}>
+              {rejecting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Dialog (AC only) */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5" /> Annuler la convention
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Êtes-vous sûr de vouloir annuler la convention <span className="font-medium text-foreground">{cancelConvention?.reference || cancelConvention?.intitule}</span> ? Cette action est irréversible.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Non, garder</Button>
+            <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
+              Oui, annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
