@@ -461,36 +461,6 @@ const ChatbotDGD = () => {
 
           {/* ═══ Phase 1: DQE ═══ */}
           <TabsContent value="dqe" className="flex-1 mt-2 min-h-0 overflow-hidden" style={{ display: activeTab === 'dqe' ? 'flex' : 'none', flexDirection: 'column' }}>
-            <div className="flex gap-2 mb-2 flex-wrap">
-              <Button
-                size="sm"
-                onClick={handleDqeAnalyze}
-                disabled={dqeAnalyzing}
-                variant={dqeAnalyzed ? "outline" : "default"}
-              >
-                {dqeAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                {dqeAnalyzed ? "Ré-analyser" : "1. Analyser DQE"}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleDqeGenerate}
-                disabled={dqeGenerating || !dqeAnalyzed}
-                variant={dqeGenerated ? "outline" : "secondary"}
-              >
-                {dqeGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap className="h-4 w-4 mr-1" />}
-                {dqeGenerated ? "Ré-générer" : "2. Générer DQE Standard"}
-              </Button>
-              {dqeGenerated && (
-                <Button size="sm" variant="outline" onClick={handleDqeExport} disabled={dqeExporting}>
-                  {dqeExporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
-                  Export Excel
-                </Button>
-              )}
-              <Button size="sm" variant="ghost" onClick={loadDqeHistory}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-
             <Card className="flex flex-col flex-1 border-border/50 min-h-0 overflow-hidden">
               {renderMessages(dqeMessages, dqeScrollRef, dqeLoading, "Lancez l'analyse DQE pour commencer")}
               <Separator />
@@ -508,6 +478,43 @@ const ChatbotDGD = () => {
                 </Button>
               </div>
             </Card>
+
+            {/* Action buttons below chat */}
+            <div className="flex gap-2 mt-2 flex-wrap items-center">
+              <Button
+                size="sm"
+                onClick={handleDqeAnalyze}
+                disabled={dqeAnalyzing}
+                variant={dqeAnalyzed ? "outline" : "default"}
+              >
+                {dqeAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                {dqeAnalyzed ? "Ré-analyser" : "1. Analyser DQE"}
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleDqeGenerate}
+                disabled={dqeGenerating || !dqeAnalyzed}
+                variant={dqeGenerated || corrigeStatus?.dqe_corrige?.valid ? "outline" : "secondary"}
+              >
+                {dqeGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap className="h-4 w-4 mr-1" />}
+                {dqeGenerated || corrigeStatus?.dqe_corrige?.valid ? "Ré-générer" : "2. Générer DQE Standard"}
+              </Button>
+              {(dqeGenerated || corrigeStatus?.dqe_corrige?.valid) && (
+                <Button size="sm" variant="outline" onClick={handleDqeExport} disabled={dqeExporting}>
+                  {dqeExporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                  Télécharger Excel
+                </Button>
+              )}
+              {(dqeGenerated || corrigeStatus?.dqe_corrige?.valid) && (
+                <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
+                  <ArrowRight className="h-4 w-4 mr-1" />
+                  Passer à la correction
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={loadDqeHistory}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
 
             {renderJsonTable(dqeGenerated, "DQE Standard généré (JSON)", dqeJsonOpen, setDqeJsonOpen)}
           </TabsContent>
