@@ -334,12 +334,20 @@ const ChatbotDGD = () => {
   };
 
   const handleOfExport = async () => {
-    if (!ofGenerated) return;
     setOfExporting(true);
     try {
+      let ofPayload = ofGenerated;
+      if (!ofPayload && corrigeStatus?.offre_fiscale_corrigee?.valid) {
+        const statusRes = await aiFetch(`/api/correction/corrige-status/${id}?includePayload=true`);
+        if (!statusRes.ok) throw new Error(`Erreur chargement OF: ${statusRes.status}`);
+        const statusData = await statusRes.json();
+        ofPayload = statusData.offre_fiscale_corrigee?.payload;
+        if (ofPayload) setOfGenerated(ofPayload);
+      }
+      if (!ofPayload) throw new Error("Aucune Offre Fiscale disponible pour l'export");
       const res = await aiFetch("/api/of/export-xlsx", {
         method: "POST",
-        body: JSON.stringify({ offre_fiscale: ofGenerated }),
+        body: JSON.stringify({ offre_fiscale: ofPayload }),
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const blob = await res.blob();
