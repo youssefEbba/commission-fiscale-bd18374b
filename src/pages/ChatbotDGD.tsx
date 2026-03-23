@@ -89,11 +89,16 @@ const ChatbotDGD = () => {
       setDqeCorrigeValid(data.dqe_corrige?.valid === true);
       if (data.dqe_corrige?.valid) {
         setDqeAnalyzed(true);
-        setDqeGenerated(data.dqe_corrige);
+        // Store the actual payload if available, otherwise just mark as valid
+        if (data.dqe_corrige.payload) {
+          setDqeGenerated(data.dqe_corrige.payload);
+        }
       }
       if (data.offre_fiscale_corrigee?.valid) {
         setOfAnalyzed(true);
-        setOfGenerated(data.offre_fiscale_corrigee);
+        if (data.offre_fiscale_corrigee.payload) {
+          setOfGenerated(data.offre_fiscale_corrigee.payload);
+        }
       }
     } catch (err) {
       console.error("[ChatbotDGD] corrige-status fetch failed:", err);
