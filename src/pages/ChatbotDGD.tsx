@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  ArrowLeft, Loader2, Bot, Send, User, FileSpreadsheet,
+  ArrowLeft, ArrowRight, Loader2, Bot, Send, User, FileSpreadsheet,
   CheckCircle, Play, Download, RefreshCw, Zap, ChevronDown, ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
