@@ -74,28 +74,38 @@ const ChatbotDGD = () => {
     });
   };
 
-  const checkDqeCorrigeStatus = async () => {
-    if (!id) return;
+  const checkDqeCorrigeStatus = async (correctionId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/correction/corrige-status/${id}`, {
+      console.log("[ChatbotDGD] Checking corrige-status for:", correctionId);
+      const res = await fetch(`${API_BASE}/correction/corrige-status/${correctionId}`, {
         headers: { "ngrok-skip-browser-warning": "true" },
       });
       if (res.ok) {
         const data = await res.json();
+        console.log("[ChatbotDGD] corrige-status response:", data);
         setCorrigeStatus(data);
         setDqeCorrigeValid(data.dqe_corrige?.valid === true);
-        // If DQE already generated, mark as generated
         if (data.dqe_corrige?.valid) {
           setDqeAnalyzed(true);
+          setDqeGenerated(data.dqe_corrige);
         }
         if (data.offre_fiscale_corrigee?.valid) {
           setOfAnalyzed(true);
+          setOfGenerated(data.offre_fiscale_corrigee);
         }
+      } else {
+        console.warn("[ChatbotDGD] corrige-status error:", res.status);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("[ChatbotDGD] corrige-status fetch failed:", err);
+    }
   };
 
-  useEffect(() => { checkDqeCorrigeStatus(); }, [id]);
+  useEffect(() => {
+    if (id) {
+      checkDqeCorrigeStatus(id);
+    }
+  }, [id]);
 
   // ─── Phase 1: DQE ───
 
@@ -193,7 +203,7 @@ const ChatbotDGD = () => {
       if (!data.success) throw new Error("Génération échouée");
       setDqeGenerated(data.dqe);
       toast({ title: "DQE Standard généré" });
-      await checkDqeCorrigeStatus();
+      await checkDqeCorrigeStatus(id!);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
