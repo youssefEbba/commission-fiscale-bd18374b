@@ -582,22 +582,49 @@ const Conventions = () => {
                           {c.dateCreation ? new Date(c.dateCreation).toLocaleDateString("fr-FR") : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => openDocuments(c)}>
-                              <Paperclip className="h-4 w-4 mr-1" /> Documents
-                            </Button>
-                            {isDGB && c.statut === "EN_ATTENTE" && (
-                              <>
-                                <Button size="sm" disabled={actionLoading === c.id} onClick={() => handleStatutChange(c.id, "VALIDE")}>
-                                  {actionLoading === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                                  Valider
-                                </Button>
-                                <Button variant="destructive" size="sm" disabled={actionLoading === c.id} onClick={() => handleStatutChange(c.id, "REJETE")}>
-                                  <XCircle className="h-4 w-4 mr-1" /> Rejeter
-                                </Button>
-                              </>
-                            )}
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {/* Voir détails — tous */}
+                              <DropdownMenuItem onClick={() => openDetail(c)}>
+                                <Eye className="h-4 w-4 mr-2" /> Voir les détails
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem onClick={() => openDocuments(c)}>
+                                <Paperclip className="h-4 w-4 mr-2" /> Documents
+                              </DropdownMenuItem>
+
+                              {/* DGB / DGI : Valider + Rejeter */}
+                              {(isDGB || isDGI) && c.statut === "EN_ATTENTE" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleStatutChange(c.id, "VALIDE")}>
+                                    <ShieldCheck className="h-4 w-4 mr-2 text-green-600" /> Valider
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openReject(c)}>
+                                    <ShieldX className="h-4 w-4 mr-2 text-destructive" /> Rejeter
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
+                              {/* AC : Modifier, Gérer fichiers, Annuler */}
+                              {(isAC || isAdmin) && c.statut !== "VALIDE" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => openEdit(c)}>
+                                    <Edit className="h-4 w-4 mr-2" /> Modifier
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
+                                    <Ban className="h-4 w-4 mr-2" /> Annuler la convention
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
