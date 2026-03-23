@@ -78,7 +78,7 @@ const ChatbotDGD = () => {
   const checkDqeCorrigeStatus = async (correctionId: string) => {
     try {
       console.log("[ChatbotDGD] Checking corrige-status for:", correctionId);
-      const res = await aiFetch(`/api/correction/corrige-status/${correctionId}`);
+      const res = await aiFetch(`/api/correction/corrige-status/${correctionId}?includePayload=true`);
       if (!res.ok) {
         console.warn("[ChatbotDGD] corrige-status error:", res.status);
         return;
