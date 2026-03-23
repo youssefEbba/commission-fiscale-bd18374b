@@ -654,7 +654,7 @@ const ChatbotDGD = () => {
         </Card>
 
         {/* Tabs: Phase 1 (DQE) / Phase 2 (Offre Fiscale) */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-[500px]">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dqe" className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
