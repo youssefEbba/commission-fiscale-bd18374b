@@ -50,6 +50,31 @@ const Conventions = () => {
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
+  // Detail dialog
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailConvention, setDetailConvention] = useState<ConventionDto | null>(null);
+
+  // Edit dialog (AC only)
+  const [editOpen, setEditOpen] = useState(false);
+  const [editConvention, setEditConvention] = useState<ConventionDto | null>(null);
+  const [editForm, setEditForm] = useState<CreateConventionRequest>({
+    reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+    dateSignature: "", dateFin: "",
+    montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
+  });
+  const [editing, setEditing] = useState(false);
+
+  // Reject dialog
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectConvention, setRejectConvention] = useState<ConventionDto | null>(null);
+  const [rejectMotif, setRejectMotif] = useState("");
+  const [rejecting, setRejecting] = useState(false);
+
+  // Cancel dialog (AC only)
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelConvention, setCancelConvention] = useState<ConventionDto | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
     reference: "", intitule: "", bailleur: "", bailleurDetails: "",
