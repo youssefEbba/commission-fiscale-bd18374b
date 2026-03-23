@@ -488,7 +488,7 @@ const ChatbotDGD = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {messages.map((msg, i) => (
+          {messages.filter((_, i) => i > 0).map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               {msg.role === "assistant" && (
                 <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mt-1">
