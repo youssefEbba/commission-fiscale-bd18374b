@@ -555,7 +555,7 @@ const ChatbotDGD = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full max-w-5xl mx-auto">
+      <div className="flex flex-col max-w-5xl mx-auto" style={{ minHeight: 'calc(100vh - 120px)' }}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
@@ -653,7 +653,7 @@ const ChatbotDGD = () => {
         </Card>
 
         {/* Tabs: Phase 1 (DQE) / Phase 2 (Offre Fiscale) */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-[500px]">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dqe" className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
@@ -668,7 +668,7 @@ const ChatbotDGD = () => {
           </TabsList>
 
           {/* ═══ Phase 1: DQE ═══ */}
-          <TabsContent value="dqe" className="flex-1 flex flex-col overflow-hidden mt-2">
+          <TabsContent value="dqe" className="flex-1 flex flex-col mt-2">
             <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
@@ -699,7 +699,7 @@ const ChatbotDGD = () => {
               </Button>
             </div>
 
-            <Card className="flex flex-col flex-1 border-border/50 min-h-0">
+            <Card className="flex flex-col flex-1 border-border/50 min-h-[400px]">
               {renderMessages(dqeMessages, dqeScrollRef, dqeLoading, "Lancez l'analyse DQE pour commencer")}
               <Separator />
               <div className="p-3 flex gap-2">
@@ -721,7 +721,7 @@ const ChatbotDGD = () => {
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
-          <TabsContent value="offre" className="flex-1 flex flex-col overflow-hidden mt-2">
+          <TabsContent value="offre" className="flex-1 flex flex-col mt-2">
             <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
@@ -763,7 +763,7 @@ const ChatbotDGD = () => {
               </div>
             )}
 
-            <Card className="flex flex-col flex-1 border-border/50 min-h-0">
+            <Card className="flex flex-col flex-1 border-border/50 min-h-[400px]">
               {renderMessages(ofMessages, ofScrollRef, ofLoading, "Lancez le diagnostic pour commencer la Phase 2")}
               <Separator />
               <div className="p-3 flex gap-2">
