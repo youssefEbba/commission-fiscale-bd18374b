@@ -139,6 +139,11 @@ const App = () => (
                 <AssistanceIA />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/extraction-dgd/:id" element={
+              <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
+                <ExtractionDGD />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/chatbot-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ChatbotDGD />
