@@ -77,10 +77,20 @@ const ChatbotDGD = () => {
   const checkDqeCorrigeStatus = async () => {
     if (!id) return;
     try {
-      const res = await aiFetch(`/api/dqe/corrige-status/${id}`);
+      const res = await fetch(`${API_BASE}/correction/corrige-status/${id}`, {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
       if (res.ok) {
         const data = await res.json();
-        setDqeCorrigeValid(data.valid === true);
+        setCorrigeStatus(data);
+        setDqeCorrigeValid(data.dqe_corrige?.valid === true);
+        // If DQE already generated, mark as generated
+        if (data.dqe_corrige?.valid) {
+          setDqeAnalyzed(true);
+        }
+        if (data.offre_fiscale_corrigee?.valid) {
+          setOfAnalyzed(true);
+        }
       }
     } catch { /* ignore */ }
   };
