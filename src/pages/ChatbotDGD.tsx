@@ -669,7 +669,7 @@ const ChatbotDGD = () => {
           </TabsList>
 
           {/* ═══ Phase 1: DQE ═══ */}
-          <TabsContent value="dqe" className="flex-1 flex flex-col mt-2">
+          <TabsContent value="dqe" className="flex-1 flex flex-col mt-2 min-h-0 overflow-hidden">
             <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
