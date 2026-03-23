@@ -722,7 +722,7 @@ const ChatbotDGD = () => {
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
-          <TabsContent value="offre" className="flex-1 flex flex-col mt-2 min-h-0 overflow-hidden">
+          <TabsContent value="offre" className="flex-1 mt-2 min-h-0 overflow-hidden" style={{ display: activeTab === 'offre' ? 'flex' : 'none', flexDirection: 'column' }}>
             <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 size="sm"
