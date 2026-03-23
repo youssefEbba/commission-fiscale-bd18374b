@@ -15,10 +15,16 @@ import {
 import ReactMarkdown from "react-markdown";
 
 const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
+const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+}
+
+interface CorrigeStatus {
+  dqe_corrige: { exists: boolean; valid: boolean; path?: string };
+  offre_fiscale_corrigee: { exists: boolean; valid: boolean; path?: string };
 }
 
 const ChatbotDGD = () => {
@@ -28,6 +34,7 @@ const ChatbotDGD = () => {
 
   // DQE corrigé status
   const [dqeCorrigeValid, setDqeCorrigeValid] = useState(false);
+  const [corrigeStatus, setCorrigeStatus] = useState<CorrigeStatus | null>(null);
 
   // Phase 1 - DQE
   const [dqeMessages, setDqeMessages] = useState<ChatMessage[]>([]);
