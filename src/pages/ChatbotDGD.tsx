@@ -24,8 +24,8 @@ interface ChatMessage {
 }
 
 interface CorrigeStatus {
-  dqe_corrige: { exists: boolean; valid: boolean; path?: string };
-  offre_fiscale_corrigee: { exists: boolean; valid: boolean; path?: string };
+  dqe_corrige: { exists: boolean; valid: boolean; path?: string; payload?: any };
+  offre_fiscale_corrigee: { exists: boolean; valid: boolean; path?: string; payload?: any };
 }
 
 const ChatbotDGD = () => {
@@ -78,7 +78,7 @@ const ChatbotDGD = () => {
   const checkDqeCorrigeStatus = async (correctionId: string) => {
     try {
       console.log("[ChatbotDGD] Checking corrige-status for:", correctionId);
-      const res = await aiFetch(`/api/correction/corrige-status/${correctionId}`);
+      const res = await aiFetch(`/api/correction/corrige-status/${correctionId}?includePayload=true`);
       if (!res.ok) {
         console.warn("[ChatbotDGD] corrige-status error:", res.status);
         return;
@@ -89,11 +89,16 @@ const ChatbotDGD = () => {
       setDqeCorrigeValid(data.dqe_corrige?.valid === true);
       if (data.dqe_corrige?.valid) {
         setDqeAnalyzed(true);
-        setDqeGenerated(data.dqe_corrige);
+        // Store the actual payload if available, otherwise just mark as valid
+        if (data.dqe_corrige.payload) {
+          setDqeGenerated(data.dqe_corrige.payload);
+        }
       }
       if (data.offre_fiscale_corrigee?.valid) {
         setOfAnalyzed(true);
-        setOfGenerated(data.offre_fiscale_corrigee);
+        if (data.offre_fiscale_corrigee.payload) {
+          setOfGenerated(data.offre_fiscale_corrigee.payload);
+        }
       }
     } catch (err) {
       console.error("[ChatbotDGD] corrige-status fetch failed:", err);
@@ -211,12 +216,21 @@ const ChatbotDGD = () => {
   };
 
   const handleDqeExport = async () => {
-    if (!dqeGenerated) return;
     setDqeExporting(true);
     try {
+      let dqePayload = dqeGenerated;
+      // If we don't have the actual DQE payload in memory, fetch it from the server
+      if (!dqePayload && corrigeStatus?.dqe_corrige?.valid) {
+        const statusRes = await aiFetch(`/api/correction/corrige-status/${id}?includePayload=true`);
+        if (!statusRes.ok) throw new Error(`Erreur chargement DQE: ${statusRes.status}`);
+        const statusData = await statusRes.json();
+        dqePayload = statusData.dqe_corrige?.payload;
+        if (dqePayload) setDqeGenerated(dqePayload);
+      }
+      if (!dqePayload) throw new Error("Aucun DQE disponible pour l'export");
       const res = await aiFetch("/api/dqe/export-xlsx", {
         method: "POST",
-        body: JSON.stringify({ dqe: dqeGenerated }),
+        body: JSON.stringify({ dqe: dqePayload }),
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const blob = await res.blob();
@@ -320,12 +334,20 @@ const ChatbotDGD = () => {
   };
 
   const handleOfExport = async () => {
-    if (!ofGenerated) return;
     setOfExporting(true);
     try {
+      let ofPayload = ofGenerated;
+      if (!ofPayload && corrigeStatus?.offre_fiscale_corrigee?.valid) {
+        const statusRes = await aiFetch(`/api/correction/corrige-status/${id}?includePayload=true`);
+        if (!statusRes.ok) throw new Error(`Erreur chargement OF: ${statusRes.status}`);
+        const statusData = await statusRes.json();
+        ofPayload = statusData.offre_fiscale_corrigee?.payload;
+        if (ofPayload) setOfGenerated(ofPayload);
+      }
+      if (!ofPayload) throw new Error("Aucune Offre Fiscale disponible pour l'export");
       const res = await aiFetch("/api/of/export-xlsx", {
         method: "POST",
-        body: JSON.stringify({ offre_fiscale: ofGenerated }),
+        body: JSON.stringify({ offre_fiscale: ofPayload }),
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const blob = await res.blob();
