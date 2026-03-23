@@ -556,7 +556,7 @@ const ChatbotDGD = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col max-w-5xl mx-auto" style={{ minHeight: 'calc(100vh - 120px)' }}>
+      <div className="flex flex-col max-w-5xl mx-auto h-[calc(100vh-120px)] overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
