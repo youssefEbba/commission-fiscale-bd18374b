@@ -2,13 +2,10 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
-import { demandeCorrectionApi, DocumentDto } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -24,31 +21,15 @@ interface ChatMessage {
   content: string;
 }
 
-interface ExtractionFile {
-  name: string;
-  extracted: boolean;
-  path?: string;
-}
-
 const ChatbotDGD = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Extraction state
-  const [extracting, setExtracting] = useState(false);
-  const [extractionStatus, setExtractionStatus] = useState<ExtractionFile[]>([]);
-  const [extractionChecked, setExtractionChecked] = useState(false);
-  const allExtracted = extractionStatus.length > 0 && extractionStatus.every(f => f.extracted);
-
   // DQE corrigé status
   const [dqeCorrigeExists, setDqeCorrigeExists] = useState(false);
   const [dqeCorrigeValid, setDqeCorrigeValid] = useState(false);
   const [dqeCorrigeChecked, setDqeCorrigeChecked] = useState(false);
-
-  // Page range for dqe_offre
-  const [pageFrom, setPageFrom] = useState<string>("");
-  const [pageTo, setPageTo] = useState<string>("");
 
   // Phase 1 - DQE
   const [dqeMessages, setDqeMessages] = useState<ChatMessage[]>([]);
@@ -89,19 +70,6 @@ const ChatbotDGD = () => {
     return res;
   };
 
-  // ─── 0) Check extraction status ───
-  const checkExtractionStatus = async () => {
-    if (!id) return;
-    try {
-      const res = await aiFetch(`/api/context/extract-status/${id}?names=dqe,dqe_offre,ofrefiscale`);
-      if (res.ok) {
-        const data = await res.json();
-        setExtractionStatus(data.files || []);
-      }
-    } catch { /* ignore */ }
-    setExtractionChecked(true);
-  };
-
   const checkDqeCorrigeStatus = async () => {
     if (!id) return;
     try {
@@ -115,7 +83,7 @@ const ChatbotDGD = () => {
     setDqeCorrigeChecked(true);
   };
 
-  useEffect(() => { checkExtractionStatus(); checkDqeCorrigeStatus(); }, [id]);
+  useEffect(() => { checkDqeCorrigeStatus(); }, [id]);
 
   // ─── 1) Extract documents ───
   const handleExtract = async () => {
