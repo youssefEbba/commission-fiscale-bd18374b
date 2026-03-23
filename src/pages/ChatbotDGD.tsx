@@ -9,16 +9,22 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  ArrowLeft, Loader2, Bot, Send, User, FileSpreadsheet,
+  ArrowLeft, ArrowRight, Loader2, Bot, Send, User, FileSpreadsheet,
   CheckCircle, Play, Download, RefreshCw, Zap, ChevronDown, ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
+const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+}
+
+interface CorrigeStatus {
+  dqe_corrige: { exists: boolean; valid: boolean; path?: string };
+  offre_fiscale_corrigee: { exists: boolean; valid: boolean; path?: string };
 }
 
 const ChatbotDGD = () => {
@@ -28,6 +34,7 @@ const ChatbotDGD = () => {
 
   // DQE corrigé status
   const [dqeCorrigeValid, setDqeCorrigeValid] = useState(false);
+  const [corrigeStatus, setCorrigeStatus] = useState<CorrigeStatus | null>(null);
 
   // Phase 1 - DQE
   const [dqeMessages, setDqeMessages] = useState<ChatMessage[]>([]);
@@ -70,10 +77,20 @@ const ChatbotDGD = () => {
   const checkDqeCorrigeStatus = async () => {
     if (!id) return;
     try {
-      const res = await aiFetch(`/api/dqe/corrige-status/${id}`);
+      const res = await fetch(`${API_BASE}/correction/corrige-status/${id}`, {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
       if (res.ok) {
         const data = await res.json();
-        setDqeCorrigeValid(data.valid === true);
+        setCorrigeStatus(data);
+        setDqeCorrigeValid(data.dqe_corrige?.valid === true);
+        // If DQE already generated, mark as generated
+        if (data.dqe_corrige?.valid) {
+          setDqeAnalyzed(true);
+        }
+        if (data.offre_fiscale_corrigee?.valid) {
+          setOfAnalyzed(true);
+        }
       }
     } catch { /* ignore */ }
   };
@@ -444,36 +461,6 @@ const ChatbotDGD = () => {
 
           {/* ═══ Phase 1: DQE ═══ */}
           <TabsContent value="dqe" className="flex-1 mt-2 min-h-0 overflow-hidden" style={{ display: activeTab === 'dqe' ? 'flex' : 'none', flexDirection: 'column' }}>
-            <div className="flex gap-2 mb-2 flex-wrap">
-              <Button
-                size="sm"
-                onClick={handleDqeAnalyze}
-                disabled={dqeAnalyzing}
-                variant={dqeAnalyzed ? "outline" : "default"}
-              >
-                {dqeAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                {dqeAnalyzed ? "Ré-analyser" : "1. Analyser DQE"}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleDqeGenerate}
-                disabled={dqeGenerating || !dqeAnalyzed}
-                variant={dqeGenerated ? "outline" : "secondary"}
-              >
-                {dqeGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap className="h-4 w-4 mr-1" />}
-                {dqeGenerated ? "Ré-générer" : "2. Générer DQE Standard"}
-              </Button>
-              {dqeGenerated && (
-                <Button size="sm" variant="outline" onClick={handleDqeExport} disabled={dqeExporting}>
-                  {dqeExporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
-                  Export Excel
-                </Button>
-              )}
-              <Button size="sm" variant="ghost" onClick={loadDqeHistory}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-
             <Card className="flex flex-col flex-1 border-border/50 min-h-0 overflow-hidden">
               {renderMessages(dqeMessages, dqeScrollRef, dqeLoading, "Lancez l'analyse DQE pour commencer")}
               <Separator />
@@ -492,41 +479,48 @@ const ChatbotDGD = () => {
               </div>
             </Card>
 
+            {/* Action buttons below chat */}
+            <div className="flex gap-2 mt-2 flex-wrap items-center">
+              <Button
+                size="sm"
+                onClick={handleDqeAnalyze}
+                disabled={dqeAnalyzing}
+                variant={dqeAnalyzed ? "outline" : "default"}
+              >
+                {dqeAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                {dqeAnalyzed ? "Ré-analyser" : "1. Analyser DQE"}
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleDqeGenerate}
+                disabled={dqeGenerating || !dqeAnalyzed}
+                variant={dqeGenerated || corrigeStatus?.dqe_corrige?.valid ? "outline" : "secondary"}
+              >
+                {dqeGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap className="h-4 w-4 mr-1" />}
+                {dqeGenerated || corrigeStatus?.dqe_corrige?.valid ? "Ré-générer" : "2. Générer DQE Standard"}
+              </Button>
+              {(dqeGenerated || corrigeStatus?.dqe_corrige?.valid) && (
+                <Button size="sm" variant="outline" onClick={handleDqeExport} disabled={dqeExporting}>
+                  {dqeExporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                  Télécharger Excel
+                </Button>
+              )}
+              {(dqeGenerated || corrigeStatus?.dqe_corrige?.valid) && (
+                <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
+                  <ArrowRight className="h-4 w-4 mr-1" />
+                  Passer à la correction
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={loadDqeHistory}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+
             {renderJsonTable(dqeGenerated, "DQE Standard généré (JSON)", dqeJsonOpen, setDqeJsonOpen)}
           </TabsContent>
 
           {/* ═══ Phase 2: Offre Fiscale ═══ */}
           <TabsContent value="offre" className="flex-1 mt-2 min-h-0 overflow-hidden" style={{ display: activeTab === 'offre' ? 'flex' : 'none', flexDirection: 'column' }}>
-            <div className="flex gap-2 mb-2 flex-wrap">
-              <Button
-                size="sm"
-                onClick={handleOfAnalyze}
-                disabled={ofAnalyzing || (!dqeGenerated && !dqeCorrigeValid)}
-                variant={ofAnalyzed ? "outline" : "default"}
-              >
-                {ofAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                {ofAnalyzed ? "Ré-diagnostiquer" : "1. Diagnostic OF"}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleOfGenerate}
-                disabled={ofGenerating || !ofAnalyzed}
-                variant={ofGenerated ? "outline" : "secondary"}
-              >
-                {ofGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap className="h-4 w-4 mr-1" />}
-                {ofGenerated ? "Ré-générer" : "2. Générer Offre Fiscale"}
-              </Button>
-              {ofGenerated && (
-                <Button size="sm" variant="outline" onClick={handleOfExport} disabled={ofExporting}>
-                  {ofExporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
-                  Export Excel (3 feuilles)
-                </Button>
-              )}
-              <Button size="sm" variant="ghost" onClick={loadOfHistory}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-
             {!dqeGenerated && !dqeCorrigeValid && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 mb-2">
                 ⚠️ Vous devez d'abord générer le DQE Standard (Phase 1) avant de lancer le diagnostic de l'Offre Fiscale.
@@ -555,6 +549,43 @@ const ChatbotDGD = () => {
                 </Button>
               </div>
             </Card>
+
+            {/* Action buttons below chat */}
+            <div className="flex gap-2 mt-2 flex-wrap items-center">
+              <Button
+                size="sm"
+                onClick={handleOfAnalyze}
+                disabled={ofAnalyzing || (!dqeGenerated && !dqeCorrigeValid)}
+                variant={ofAnalyzed ? "outline" : "default"}
+              >
+                {ofAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                {ofAnalyzed ? "Ré-diagnostiquer" : "1. Diagnostic OF"}
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleOfGenerate}
+                disabled={ofGenerating || !ofAnalyzed}
+                variant={ofGenerated || corrigeStatus?.offre_fiscale_corrigee?.valid ? "outline" : "secondary"}
+              >
+                {ofGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap className="h-4 w-4 mr-1" />}
+                {ofGenerated || corrigeStatus?.offre_fiscale_corrigee?.valid ? "Ré-générer" : "2. Générer Offre Fiscale"}
+              </Button>
+              {(ofGenerated || corrigeStatus?.offre_fiscale_corrigee?.valid) && (
+                <Button size="sm" variant="outline" onClick={handleOfExport} disabled={ofExporting}>
+                  {ofExporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                  Télécharger Excel (3 feuilles)
+                </Button>
+              )}
+              {(ofGenerated || corrigeStatus?.offre_fiscale_corrigee?.valid) && (
+                <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${id}`)}>
+                  <ArrowRight className="h-4 w-4 mr-1" />
+                  Passer à la correction
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={loadOfHistory}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
 
             {renderJsonTable(ofGenerated, "Offre Fiscale générée (JSON multi-tables)", ofJsonOpen, setOfJsonOpen)}
           </TabsContent>
