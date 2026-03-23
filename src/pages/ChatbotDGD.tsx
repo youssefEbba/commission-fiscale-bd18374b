@@ -216,12 +216,21 @@ const ChatbotDGD = () => {
   };
 
   const handleDqeExport = async () => {
-    if (!dqeGenerated) return;
     setDqeExporting(true);
     try {
+      let dqePayload = dqeGenerated;
+      // If we don't have the actual DQE payload in memory, fetch it from the server
+      if (!dqePayload && corrigeStatus?.dqe_corrige?.valid) {
+        const statusRes = await aiFetch(`/api/correction/corrige-status/${id}?includePayload=true`);
+        if (!statusRes.ok) throw new Error(`Erreur chargement DQE: ${statusRes.status}`);
+        const statusData = await statusRes.json();
+        dqePayload = statusData.dqe_corrige?.payload;
+        if (dqePayload) setDqeGenerated(dqePayload);
+      }
+      if (!dqePayload) throw new Error("Aucun DQE disponible pour l'export");
       const res = await aiFetch("/api/dqe/export-xlsx", {
         method: "POST",
-        body: JSON.stringify({ dqe: dqeGenerated }),
+        body: JSON.stringify({ dqe: dqePayload }),
       });
       if (!res.ok) throw new Error(`Erreur: ${res.status}`);
       const blob = await res.blob();
