@@ -40,7 +40,19 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
       throw new Error("Accès refusé");
     }
     const text = await res.text().catch(() => "");
-    throw new Error(text || `Erreur ${res.status}`);
+    let errorMsg = `Erreur ${res.status}`;
+    if (text) {
+      try {
+        const json = JSON.parse(text);
+        errorMsg = json.message || json.error || errorMsg;
+      } catch {
+        // If text is short enough, use it; otherwise use generic message
+        if (text.length < 200 && !text.startsWith("<")) {
+          errorMsg = text;
+        }
+      }
+    }
+    throw new Error(errorMsg);
   }
 
   if (res.status === 204) return undefined as T;
