@@ -258,6 +258,21 @@ const Utilisations = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleRejetTemp = async () => {
+    if (!showRejetTemp || !rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
+    setRejetTempLoading(true);
+    try {
+      await utilisationCreditApi.postDecision(showRejetTemp.id, "REJET_TEMP", rejetTempMotif.trim(), rejetTempDocs);
+      toast({ title: "Succès", description: "Rejet temporaire envoyé — documents demandés" });
+      setShowRejetTemp(null);
+      setRejetTempMotif("");
+      setRejetTempDocs([]);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejetTempLoading(false); }
+  };
+
   const openDocs = async (id: number) => {
     setDocDialog(id);
     setDocsLoading(true);
