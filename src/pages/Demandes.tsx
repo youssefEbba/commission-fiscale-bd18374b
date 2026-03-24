@@ -383,6 +383,25 @@ const Demandes = () => {
     setRejectDecisionFinale(false);
   };
 
+  // Annulation par l'AC
+  const handleCancelDemande = async () => {
+    if (!cancelTargetId) return;
+    setCancelLoading(true);
+    try {
+      await demandeCorrectionApi.updateStatut(cancelTargetId, "ANNULEE");
+      toast({ title: "Demande annulée avec succès" });
+      setCancelOpen(false);
+      setCancelTargetId(null);
+      fetchDemandes();
+      if (selected?.id === cancelTargetId) setSelected(null);
+    } catch (e: any) {
+      const msg = e?.message || "Erreur lors de l'annulation";
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   // Adopter avec génération de lettre d'adoption
   const handleAdoptWithLetter = async (id: number) => {
     setActionLoading(id);
