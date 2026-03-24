@@ -318,7 +318,7 @@ export const conventionApi = {
 };
 
 // Demandes de correction (P2)
-export type DemandeStatut = "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE";
+export type DemandeStatut = "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {
   id: number;
@@ -849,7 +849,7 @@ export const auditLogApi = {
 export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
   RECUE: "Reçue", INCOMPLETE: "Incomplète", RECEVABLE: "Recevable",
   EN_EVALUATION: "En évaluation", EN_VALIDATION: "En validation",
-  ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée",
+  ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée", ANNULEE: "Annulée",
 };
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {

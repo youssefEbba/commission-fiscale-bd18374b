@@ -34,6 +34,7 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   ADOPTEE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
   NOTIFIEE: "bg-gray-100 text-gray-800",
+  ANNULEE: "bg-red-200 text-red-900",
 };
 
 // Visa/rejet actions: no status change on backend (decisionFinale=false)
@@ -134,6 +135,10 @@ const Demandes = () => {
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
   const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
+  // Cancel confirmation
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
   // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -376,6 +381,25 @@ const Demandes = () => {
     setRejectMotif("");
     setRejectDocsDemandes([]);
     setRejectDecisionFinale(false);
+  };
+
+  // Annulation par l'AC
+  const handleCancelDemande = async () => {
+    if (!cancelTargetId) return;
+    setCancelLoading(true);
+    try {
+      await demandeCorrectionApi.updateStatut(cancelTargetId, "ANNULEE");
+      toast({ title: "Demande annulée avec succès" });
+      setCancelOpen(false);
+      setCancelTargetId(null);
+      fetchDemandes();
+      if (selected?.id === cancelTargetId) setSelected(null);
+    } catch (e: any) {
+      const msg = e?.message || "Erreur lors de l'annulation";
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
+    } finally {
+      setCancelLoading(false);
+    }
   };
 
   // Adopter avec génération de lettre d'adoption
@@ -639,7 +663,17 @@ const Demandes = () => {
                                        </Button>
                                      );
                                    });
-                                 })()}
+                                  })()}
+                                {hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut) && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={actionLoading === d.id}
+                                    onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" /> Annuler
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>
@@ -1202,6 +1236,25 @@ const Demandes = () => {
             <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
               {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Uploader et valider
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel confirmation dialog */}
+      <Dialog open={cancelOpen} onOpenChange={(v) => { if (!v) { setCancelOpen(false); setCancelTargetId(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer l'annulation</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir annuler cette demande de correction ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelTargetId(null); }}>Non, garder</Button>
+            <Button variant="destructive" onClick={handleCancelDemande} disabled={cancelLoading}>
+              {cancelLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              Oui, annuler la demande
             </Button>
           </DialogFooter>
         </DialogContent>
