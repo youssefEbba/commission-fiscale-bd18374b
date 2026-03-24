@@ -135,6 +135,10 @@ const Demandes = () => {
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
   const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
+  // Cancel confirmation
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
   // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
