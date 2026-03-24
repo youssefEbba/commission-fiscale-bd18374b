@@ -1,4 +1,4 @@
-const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
+const API_BASE = "https://df36-197-231-15-212.ngrok-free.app/api";
 
 interface RequestOptions {
   method?: string;
@@ -1222,7 +1222,7 @@ export const avenantApi = {
   },
 };
 
-export const WS_BASE = "https://beb1-197-231-9-128.ngrok-free.app/ws";
+export const WS_BASE = "https://df36-197-231-15-212.ngrok-free.app/ws";
 
 // ── Dossiers GED ──
 

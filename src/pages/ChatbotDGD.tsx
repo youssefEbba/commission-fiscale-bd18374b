@@ -16,7 +16,7 @@ import ReactMarkdown from "react-markdown";
 import { apiFetch } from "@/lib/api";
 
 const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
-const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
+const API_BASE = "https://df36-197-231-15-212.ngrok-free.app/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
