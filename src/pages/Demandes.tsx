@@ -337,10 +337,10 @@ const Demandes = () => {
     }
   };
 
-  const handleTempReject = async (id: number, motif: string) => {
+  const handleTempReject = async (id: number, motif: string, documentsDemandes?: string[]) => {
     setActionLoading(id);
     try {
-      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif);
+      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif, documentsDemandes);
       await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDemandes();
