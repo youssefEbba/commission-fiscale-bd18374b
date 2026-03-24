@@ -663,7 +663,17 @@ const Demandes = () => {
                                        </Button>
                                      );
                                    });
-                                 })()}
+                                  })()}
+                                {hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut) && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={actionLoading === d.id}
+                                    onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" /> Annuler
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>
