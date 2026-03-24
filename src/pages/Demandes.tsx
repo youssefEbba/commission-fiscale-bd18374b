@@ -707,6 +707,16 @@ const Demandes = () => {
                         <Badge variant="outline" className="text-xs">{dec.role}</Badge>
                       </div>
                       {dec.motifRejet && <p className="text-sm ml-6">{dec.motifRejet}</p>}
+                      {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                        <div className="flex flex-wrap gap-1 ml-6 mt-1">
+                          <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                          {dec.documentsDemandes.map((dt: string) => (
+                            <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                              {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-3 text-xs text-muted-foreground ml-6">
                         {dec.utilisateurNom && <span>Par : {dec.utilisateurNom}</span>}
                         {dec.dateDecision && <span>Le : {new Date(dec.dateDecision).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
