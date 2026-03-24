@@ -28,6 +28,7 @@ const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
+  INCOMPLETE: "bg-amber-100 text-amber-800",
   EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
   EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
   VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
@@ -37,6 +38,15 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   CLOTURE: "bg-gray-100 text-gray-800",
   ANNULE: "bg-red-100 text-red-800",
 };
+
+// Document types for mise en place (P4)
+const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
+  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
+  { value: "CONTRAT", label: "Contrat enregistré" },
+  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification" },
+  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
+  { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
+];
 
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   DGI: [
