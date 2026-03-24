@@ -358,6 +358,7 @@ const Demandes = () => {
   const openRejectDialog = (id: number, decisionFinale?: boolean) => {
     setRejectTargetId(id);
     setRejectMotif("");
+    setRejectDocsDemandes([]);
     setRejectDecisionFinale(!!decisionFinale);
     setRejectOpen(true);
   };
