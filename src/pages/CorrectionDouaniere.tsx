@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import {
   FileText, ArrowLeft, Loader2, CheckCircle, XCircle,
   Download, ExternalLink, Bot, Upload, History, RefreshCw,
-  FileDown, ShieldCheck,
+  FileDown, ShieldCheck, AlertTriangle,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const STATUT_COLORS: Record<string, string> = {
   RECUE: "bg-blue-100 text-blue-800",
