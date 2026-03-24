@@ -877,19 +877,41 @@ const Demandes = () => {
                       const DOC_LABEL_MAP: Record<string, string> = {};
                       DOCUMENT_TYPES_REQUIS.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
 
+                      // Determine which doc types are unlocked for replacement
+                      const isIncomplete = selected.statut === "INCOMPLETE";
+                      const allowedDocTypes = isIncomplete
+                        ? (selected.decisions || [])
+                            .filter(d => d.decision === "REJET_TEMP" && d.documentsDemandes)
+                            .flatMap(d => d.documentsDemandes || [])
+                        : null; // null = no restriction
+
                       return Object.entries(groupedByType).map(([type, typeDocs]) => {
                         const sorted = [...typeDocs].sort((a, b) => (b.version || b.id) - (a.version || a.id));
                         const uploaded = sorted.find(d => d.actif === true) || sorted[0];
                         const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
                         const olderVersions = sorted.filter(d => d.id !== uploaded?.id);
                         const label = DOC_LABEL_MAP[type] || type;
+                        const isLocked = isIncomplete && allowedDocTypes !== null && !allowedDocTypes.includes(type);
+                        const isUnlocked = isIncomplete && allowedDocTypes !== null && allowedDocTypes.includes(type);
 
                         return (
                           <div key={type} className="space-y-1">
-                            <div className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                            <div className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
+                              isUnlocked ? "border-amber-300 bg-amber-50/50" : isLocked ? "border-border bg-muted/30 opacity-60" : "border-border"
+                            }`}>
+                              {isUnlocked ? (
+                                <Unlock className="h-4 w-4 text-amber-600 shrink-0" />
+                              ) : isLocked ? (
+                                <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                              )}
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{label}</p>
+                                <p className="font-medium truncate">
+                                  {label}
+                                  {isUnlocked && <Badge className="ml-2 text-[10px] bg-amber-100 text-amber-800 border-amber-200">À corriger</Badge>}
+                                  {isLocked && <Badge variant="outline" className="ml-2 text-[10px]">Verrouillé</Badge>}
+                                </p>
                                 {uploaded && (
                                   <p className="text-xs text-muted-foreground truncate">
                                     {uploaded.nomFichier}
@@ -910,7 +932,7 @@ const Demandes = () => {
                                     </a>
                                   </>
                                 )}
-                                {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                                {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
                                   <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadType(type); setUploadOpen(true); }}>
                                     <Upload className="h-3.5 w-3.5 mr-1" /> Nouvelle version
                                   </Button>
