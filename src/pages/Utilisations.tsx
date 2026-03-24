@@ -120,6 +120,15 @@ const Utilisations = () => {
   const [gedRequirements, setGedRequirements] = useState<DocumentRequirementDto[]>([]);
   const [createDocFiles, setCreateDocFiles] = useState<Record<string, File>>({});
 
+  // REJET_TEMP dialog state
+  const [showRejetTemp, setShowRejetTemp] = useState<UtilisationCreditDto | null>(null);
+  const [rejetTempMotif, setRejetTempMotif] = useState("");
+  const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
+  const [rejetTempLoading, setRejetTempLoading] = useState(false);
+
+  // Decisions state (detail)
+  const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
+
   const fetchData = async () => {
     setLoading(true);
     try { setData(await utilisationCreditApi.getAll()); }
