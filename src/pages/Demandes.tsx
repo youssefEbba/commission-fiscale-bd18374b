@@ -1086,22 +1086,56 @@ const Demandes = () => {
 
       {/* Rejection Motif Dialog */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Motif du rejet</DialogTitle>
-            <DialogDescription>Veuillez indiquer le motif du rejet de cette demande.</DialogDescription>
+            <DialogTitle>{rejectDecisionFinale ? "Rejet final" : "Rejet temporaire"}</DialogTitle>
+            <DialogDescription>
+              {rejectDecisionFinale
+                ? "Veuillez indiquer le motif du rejet final de cette demande."
+                : "Indiquez le motif du rejet et sélectionnez les documents à corriger/compléter."}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Textarea
               placeholder="Saisissez le motif du rejet..."
               value={rejectMotif}
               onChange={(e) => setRejectMotif(e.target.value)}
-              rows={4}
+              rows={3}
             />
+            {!rejectDecisionFinale && (
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Documents à corriger / compléter <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
+                  {ALL_DOCUMENT_TYPES.map(dt => (
+                    <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                      <Checkbox
+                        checked={rejectDocsDemandes.includes(dt.value)}
+                        onCheckedChange={(checked) => {
+                          setRejectDocsDemandes(prev =>
+                            checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value)
+                          );
+                        }}
+                      />
+                      <span>{dt.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {rejectDocsDemandes.length === 0 && (
+                  <p className="text-xs text-destructive mt-1">Sélectionnez au moins un document</p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
-            <Button variant="destructive" disabled={!rejectMotif.trim()} onClick={handleRejectConfirm}>
+            <Button
+              variant="destructive"
+              disabled={!rejectMotif.trim() || (!rejectDecisionFinale && rejectDocsDemandes.length === 0)}
+              onClick={handleRejectConfirm}
+            >
               <XCircle className="h-4 w-4 mr-1" /> Confirmer le rejet
             </Button>
           </DialogFooter>
