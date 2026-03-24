@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DocumentDto, DecisionCorrectionDto,
-  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS,
+  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS, ALL_DOCUMENT_TYPES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
