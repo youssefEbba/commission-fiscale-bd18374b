@@ -82,6 +82,7 @@ const CorrectionDouaniere = () => {
   // Reject modal for temp decision
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
+  const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
 
   // Final decision modal
   const [finalOpen, setFinalOpen] = useState(false);
