@@ -784,6 +784,15 @@ const Demandes = () => {
                               <>
                                 <p className="text-red-700 font-medium mt-0.5">Rejeté</p>
                                 {dec.motifRejet && <p className="text-muted-foreground mt-1 italic truncate" title={dec.motifRejet}>{dec.motifRejet}</p>}
+                                {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                  <div className="mt-1 flex flex-wrap gap-0.5 justify-center">
+                                    {dec.documentsDemandes.map((dt: string) => (
+                                      <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">
+                                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
                               </>
                             )}
                             {!dec && <p className="text-muted-foreground mt-0.5">En attente</p>}
