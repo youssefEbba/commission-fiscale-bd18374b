@@ -365,14 +365,16 @@ const Demandes = () => {
 
   const handleRejectConfirm = async () => {
     if (!rejectTargetId || !rejectMotif.trim()) return;
+    if (!rejectDecisionFinale && rejectDocsDemandes.length === 0) return;
     setRejectOpen(false);
     if (rejectDecisionFinale) {
       await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim(), true);
     } else {
-      await handleTempReject(rejectTargetId, rejectMotif.trim());
+      await handleTempReject(rejectTargetId, rejectMotif.trim(), rejectDocsDemandes);
     }
     setRejectTargetId(null);
     setRejectMotif("");
+    setRejectDocsDemandes([]);
     setRejectDecisionFinale(false);
   };
 
