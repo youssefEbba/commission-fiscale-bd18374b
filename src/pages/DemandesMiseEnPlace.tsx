@@ -8,6 +8,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
+  DecisionCorrectionDto, DecisionType,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, FileDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, FileDown, Lock, Unlock, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const API_BASE = "https://beb1-197-231-9-128.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
+  INCOMPLETE: "bg-amber-100 text-amber-800",
   EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
   EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
   VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
@@ -35,6 +38,15 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   CLOTURE: "bg-gray-100 text-gray-800",
   ANNULE: "bg-red-100 text-red-800",
 };
+
+// Document types for mise en place (P4)
+const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
+  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
+  { value: "CONTRAT", label: "Contrat enregistré" },
+  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification" },
+  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
+  { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
+];
 
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   DGI: [
@@ -99,6 +111,15 @@ const DemandesMiseEnPlace = () => {
   const [showReject, setShowReject] = useState<CertificatCreditDto | null>(null);
   const [motifRejet, setMotifRejet] = useState("");
   const [rejecting, setRejecting] = useState(false);
+
+  // REJET_TEMP dialog state
+  const [showRejetTemp, setShowRejetTemp] = useState<CertificatCreditDto | null>(null);
+  const [rejetTempMotif, setRejetTempMotif] = useState("");
+  const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
+  const [rejetTempLoading, setRejetTempLoading] = useState(false);
+
+  // Decisions state
+  const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
 
   // Certificate generation state (DGTCP)
   const [generatingCert, setGeneratingCert] = useState<number | null>(null);
@@ -228,6 +249,21 @@ const DemandesMiseEnPlace = () => {
     } finally { setRejecting(false); }
   };
 
+  const handleRejetTemp = async () => {
+    if (!showRejetTemp || !rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
+    setRejetTempLoading(true);
+    try {
+      await certificatCreditApi.postDecision(showRejetTemp.id, "REJET_TEMP", rejetTempMotif.trim(), rejetTempDocs);
+      toast({ title: "Succès", description: "Rejet temporaire envoyé — documents demandés" });
+      setShowRejetTemp(null);
+      setRejetTempMotif("");
+      setRejetTempDocs([]);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejetTempLoading(false); }
+  };
+
   const handleGenerateCertificate = async (c: CertificatCreditDto) => {
     setGeneratingCert(c.id);
     try {
@@ -283,18 +319,15 @@ const DemandesMiseEnPlace = () => {
   const openDetail = async (c: CertificatCreditDto) => {
     setSelected(c);
     setDetailDocs([]);
+    setDecisions([]);
     setLoadingDocs(true);
     try {
-      const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/certificats-credit/${c.id}/documents`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-      if (res.ok) {
-        setDetailDocs(await res.json());
-      }
+      const [docsRes, decisionsRes] = await Promise.all([
+        certificatCreditApi.getDocuments(c.id),
+        certificatCreditApi.getDecisions(c.id).catch(() => []),
+      ]);
+      setDetailDocs(docsRes);
+      setDecisions(decisionsRes);
     } catch { /* ignore */ }
     setLoadingDocs(false);
   };
@@ -393,6 +426,12 @@ const DemandesMiseEnPlace = () => {
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
+                          {/* REJET_TEMP button (DGI/DGTCP) */}
+                          {(role === "DGI" || role === "DGTCP") && ["DEMANDE", "EN_VERIFICATION_DGI", "EN_OUVERTURE_DGTCP"].includes(c.statut) && (
+                            <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(c); setRejetTempMotif(""); setRejetTempDocs([]); }}>
+                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
+                            </Button>
+                          )}
                           {/* Président: Générer certificat PDF (sans changer le statut) */}
                           {role === "PRESIDENT" && c.statut === "OUVERT" && (
                             <Button variant="default" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
@@ -463,6 +502,33 @@ const DemandesMiseEnPlace = () => {
                   </div>
                 )}
               </div>
+
+              {/* Decisions history */}
+              {decisions.length > 0 && (
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Historique des décisions</h4>
+                  <div className="space-y-2">
+                    {decisions.map((d) => (
+                      <div key={d.id} className={`p-2 rounded border text-xs ${d.decision === "REJET_TEMP" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={d.decision === "REJET_TEMP" ? "destructive" : "default"} className="text-[10px]">{d.decision}</Badge>
+                          <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                          {d.dateDecision && <span className="text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                        </div>
+                        {d.motifRejet && <p className="text-muted-foreground mb-1">{d.motifRejet}</p>}
+                        {d.documentsDemandes && d.documentsDemandes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-muted-foreground">Documents demandés :</span>
+                            {d.documentsDemandes.map((doc) => (
+                              <Badge key={doc} variant="outline" className="text-[10px]">{doc.replace(/_/g, " ")}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -680,6 +746,62 @@ const DemandesMiseEnPlace = () => {
             <Button variant="destructive" disabled={rejecting || !motifRejet.trim()} onClick={handleReject}>
               {rejecting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* REJET_TEMP Dialog */}
+      <Dialog open={!!showRejetTemp} onOpenChange={() => setShowRejetTemp(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Rejet temporaire — Demander des compléments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Demande {showRejetTemp?.reference || `#${showRejetTemp?.id}`} — {showRejetTemp ? getEntrepriseName(showRejetTemp) : ""}
+            </p>
+            <div className="space-y-2">
+              <Label>Motif *</Label>
+              <Textarea
+                placeholder="Précisez les corrections ou compléments attendus..."
+                value={rejetTempMotif}
+                onChange={(e) => setRejetTempMotif(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Documents à corriger / compléter *</Label>
+              <p className="text-xs text-muted-foreground">Sélectionnez au moins un document</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {MISE_EN_PLACE_DOC_TYPES.map((dt) => (
+                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                    <Checkbox
+                      checked={rejetTempDocs.includes(dt.value)}
+                      onCheckedChange={(checked) => {
+                        setRejetTempDocs(prev =>
+                          checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{dt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>Annuler</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              disabled={rejetTempLoading || !rejetTempMotif.trim() || rejetTempDocs.length === 0}
+              onClick={handleRejetTemp}
+            >
+              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer le rejet temporaire
             </Button>
           </DialogFooter>
         </DialogContent>

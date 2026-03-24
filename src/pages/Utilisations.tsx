@@ -8,6 +8,7 @@ import {
   UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
   TypeDocumentUtilisation, DocumentDto,
   documentRequirementApi, DocumentRequirementDto,
+  DecisionCorrectionDto, DecisionType,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -17,15 +18,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   DEMANDEE: "bg-blue-100 text-blue-800",
+  INCOMPLETE: "bg-amber-100 text-amber-800",
   EN_VERIFICATION: "bg-yellow-100 text-yellow-800",
   VISE: "bg-purple-100 text-purple-800",
   VALIDEE: "bg-emerald-100 text-emerald-800",
@@ -115,6 +119,15 @@ const Utilisations = () => {
   // GED requirements + create-time document uploads
   const [gedRequirements, setGedRequirements] = useState<DocumentRequirementDto[]>([]);
   const [createDocFiles, setCreateDocFiles] = useState<Record<string, File>>({});
+
+  // REJET_TEMP dialog state
+  const [showRejetTemp, setShowRejetTemp] = useState<UtilisationCreditDto | null>(null);
+  const [rejetTempMotif, setRejetTempMotif] = useState("");
+  const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
+  const [rejetTempLoading, setRejetTempLoading] = useState(false);
+
+  // Decisions state (detail)
+  const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -245,6 +258,21 @@ const Utilisations = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleRejetTemp = async () => {
+    if (!showRejetTemp || !rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
+    setRejetTempLoading(true);
+    try {
+      await utilisationCreditApi.postDecision(showRejetTemp.id, "REJET_TEMP", rejetTempMotif.trim(), rejetTempDocs);
+      toast({ title: "Succès", description: "Rejet temporaire envoyé — documents demandés" });
+      setShowRejetTemp(null);
+      setRejetTempMotif("");
+      setRejetTempDocs([]);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejetTempLoading(false); }
+  };
+
   const openDocs = async (id: number) => {
     setDocDialog(id);
     setDocsLoading(true);
@@ -371,7 +399,11 @@ const Utilisations = () => {
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{UTILISATION_STATUT_LABELS[u.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => setSelected(u)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setSelected(u);
+                            setDecisions([]);
+                            utilisationCreditApi.getDecisions(u.id).then(setDecisions).catch(() => setDecisions([]));
+                          }}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(u.id)}><FileText className="h-4 w-4" /></Button>
                           {getTransitions(role, u.type).map((t) =>
                             t.from.includes(u.statut) ? (
@@ -399,6 +431,12 @@ const Utilisations = () => {
                               </Button>
                             ) : null
                           )}
+                          {/* REJET_TEMP button (DGD/DGTCP) */}
+                          {(role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE"].includes(u.statut) && (
+                            <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(u); setRejetTempMotif(""); setRejetTempDocs([]); }}>
+                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temp.
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -412,7 +450,7 @@ const Utilisations = () => {
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Utilisation #{selected?.id}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
@@ -447,6 +485,32 @@ const Utilisations = () => {
                     <div><span className="text-muted-foreground">Date facture</span><p>{selected.dateFacture ? new Date(selected.dateFacture).toLocaleDateString("fr-FR") : "—"}</p></div>
                     <div><span className="text-muted-foreground">TVA Intérieure</span><p>{f(selected.montantTVAInterieure)} MRU</p></div>
                     <div><span className="text-muted-foreground">N° Décompte</span><p>{selected.numeroDecompte || "—"}</p></div>
+                  </div>
+                </div>
+              )}
+              {/* Decisions history */}
+              {decisions.length > 0 && (
+                <div className="border-t pt-3 mt-3">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Historique des décisions</h4>
+                  <div className="space-y-2">
+                    {decisions.map((d) => (
+                      <div key={d.id} className={`p-2 rounded border text-xs ${d.decision === "REJET_TEMP" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={d.decision === "REJET_TEMP" ? "destructive" : "default"} className="text-[10px]">{d.decision}</Badge>
+                          <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                          {d.dateDecision && <span className="text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                        </div>
+                        {d.motifRejet && <p className="text-muted-foreground mb-1">{d.motifRejet}</p>}
+                        {d.documentsDemandes && d.documentsDemandes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-muted-foreground">Documents demandés :</span>
+                            {d.documentsDemandes.map((doc) => (
+                              <Badge key={doc} variant="outline" className="text-[10px]">{doc.replace(/_/g, " ")}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -734,6 +798,62 @@ const Utilisations = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* REJET_TEMP Dialog */}
+      <Dialog open={!!showRejetTemp} onOpenChange={() => setShowRejetTemp(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Rejet temporaire — Demander des compléments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Utilisation #{showRejetTemp?.id} — {showRejetTemp?.entrepriseNom || ""}
+            </p>
+            <div className="space-y-2">
+              <Label>Motif *</Label>
+              <Textarea
+                placeholder="Précisez les corrections ou compléments attendus..."
+                value={rejetTempMotif}
+                onChange={(e) => setRejetTempMotif(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Documents à corriger / compléter *</Label>
+              <p className="text-xs text-muted-foreground">Sélectionnez au moins un document</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {(showRejetTemp?.type === "DOUANIER" ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).map((dt) => (
+                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                    <Checkbox
+                      checked={rejetTempDocs.includes(dt.value)}
+                      onCheckedChange={(checked) => {
+                        setRejetTempDocs(prev =>
+                          checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{dt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>Annuler</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              disabled={rejetTempLoading || !rejetTempMotif.trim() || rejetTempDocs.length === 0}
+              onClick={handleRejetTemp}
+            >
+              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer le rejet temporaire
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

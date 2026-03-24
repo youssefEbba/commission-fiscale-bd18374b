@@ -576,7 +576,7 @@ export const delegueApi = {
 };
 
 // Certificats de crédit (P3)
-export type CertificatStatut = "DEMANDE" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+export type CertificatStatut = "DEMANDE" | "INCOMPLETE" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
 export interface CertificatCreditDto {
   id: number;
@@ -638,10 +638,21 @@ export const certificatCreditApi = {
     formData.append("file", file);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
+  // Decisions (REJET_TEMP + VISA)
+  getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/certificats-credit/${id}/decisions`),
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+    apiFetch<DecisionCorrectionDto>(`/certificats-credit/${id}/decisions`, {
+      method: "POST",
+      body: {
+        decision,
+        ...(motifRejet ? { motifRejet } : {}),
+        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
+      },
+    }),
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "DEMANDEE" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
+export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface UtilisationCreditDto {
@@ -760,6 +771,17 @@ export const utilisationCreditApi = {
       rawBody: formData,
     });
   },
+  // Decisions (REJET_TEMP + VISA)
+  getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/utilisations-credit/${id}/decisions`),
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+    apiFetch<DecisionCorrectionDto>(`/utilisations-credit/${id}/decisions`, {
+      method: "POST",
+      body: {
+        decision,
+        ...(motifRejet ? { motifRejet } : {}),
+        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
+      },
+    }),
 };
 
 // Audit Logs (P8 / Admin)
@@ -812,6 +834,7 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
   DEMANDE: "Demandé",
+  INCOMPLETE: "Incomplète",
   EN_VERIFICATION_DGI: "En vérification DGI",
   EN_VALIDATION_PRESIDENT: "En validation Président",
   VALIDE_PRESIDENT: "Validé Président",
@@ -821,7 +844,7 @@ export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
 };
 
 export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
-  DEMANDEE: "Demandée", EN_VERIFICATION: "En vérification", VISE: "Visé",
+  DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
 };
 
