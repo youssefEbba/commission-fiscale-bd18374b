@@ -399,7 +399,11 @@ const Utilisations = () => {
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{UTILISATION_STATUT_LABELS[u.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => setSelected(u)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setSelected(u);
+                            setDecisions([]);
+                            utilisationCreditApi.getDecisions(u.id).then(setDecisions).catch(() => setDecisions([]));
+                          }}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(u.id)}><FileText className="h-4 w-4" /></Button>
                           {getTransitions(role, u.type).map((t) =>
                             t.from.includes(u.statut) ? (
