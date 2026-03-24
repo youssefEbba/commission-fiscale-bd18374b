@@ -229,11 +229,11 @@ const CorrectionDouaniere = () => {
   };
 
   const handleTempReject = async () => {
-    if (!demande || !rejectMotif.trim()) return;
+    if (!demande || !rejectMotif.trim() || rejectDocsDemandes.length === 0) return;
     setRejectOpen(false);
     setActionLoading(true);
     try {
-      await demandeCorrectionApi.postDecision(demande.id, "REJET_TEMP", rejectMotif.trim());
+      await demandeCorrectionApi.postDecision(demande.id, "REJET_TEMP", rejectMotif.trim(), rejectDocsDemandes);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       await fetchDecisions();
       await fetchDemande();
@@ -242,6 +242,7 @@ const CorrectionDouaniere = () => {
     } finally {
       setActionLoading(false);
       setRejectMotif("");
+      setRejectDocsDemandes([]);
     }
   };
 
