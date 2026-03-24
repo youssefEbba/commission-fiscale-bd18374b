@@ -753,39 +753,61 @@ const Utilisations = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Saisissez le montant TVA intérieure pour apurer cette utilisation. Le solde TVA du certificat sera automatiquement débité.
+              Saisissez le montant de TVA déductible (issue des importations) à imputer sur cette utilisation. Le système calculera la TVA nette et appliquera les 3 cas métier automatiquement.
             </p>
+            {apurementTarget && (
+              <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">TVA collectée (montant TVA) :</span><span className="font-semibold">{f(apurementTarget.montantTVAInterieure)} MRU</span></div>
+              </div>
+            )}
             <div className="space-y-3">
               <div>
-                <Label htmlFor="apur-montant">Montant TVA Intérieure (MRU) *</Label>
+                <Label htmlFor="apur-tva-ded">TVA déductible à utiliser (MRU) *</Label>
                 <Input
-                  id="apur-montant"
+                  id="apur-tva-ded"
                   type="number"
                   min="0"
                   placeholder="0"
                   value={apurMontant}
                   onChange={(e) => setApurMontant(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground mt-1">Montant de TVA déductible (provenant des liquidations Douane) à déduire de la TVA collectée.</p>
               </div>
-              {apurMontant && Number(apurMontant) > 0 && (
-                <div className="p-3 rounded-lg bg-muted text-sm">
-                  <span className="text-muted-foreground">Imputation sur soldeTVA :</span>{" "}
-                  <span className="font-bold text-primary">
-                    {Number(apurMontant).toLocaleString("fr-FR")} MRU
-                  </span>
+              {apurMontant && apurementTarget?.montantTVAInterieure != null && (
+                <div className="p-3 rounded-lg border space-y-1 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">TVA collectée :</span><span>{f(apurementTarget.montantTVAInterieure)} MRU</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">TVA déductible :</span><span>- {f(Number(apurMontant))} MRU</span></div>
+                  <div className="border-t pt-1 flex justify-between font-bold">
+                    <span>TVA nette :</span>
+                    <span className={
+                      (apurementTarget.montantTVAInterieure - Number(apurMontant)) > 0 ? "text-destructive" :
+                      (apurementTarget.montantTVAInterieure - Number(apurMontant)) < 0 ? "text-emerald-600" : "text-muted-foreground"
+                    }>
+                      {f(apurementTarget.montantTVAInterieure - Number(apurMontant))} MRU
+                    </span>
+                  </div>
+                  {(apurementTarget.montantTVAInterieure - Number(apurMontant)) > 0 && (
+                    <p className="text-xs text-amber-600 mt-1">⚠ Cas 2 : TVA nette positive — le solde TVA sera débité, un paiement complémentaire sera requis si le solde est insuffisant.</p>
+                  )}
+                  {(apurementTarget.montantTVAInterieure - Number(apurMontant)) < 0 && (
+                    <p className="text-xs text-emerald-600 mt-1">✅ Cas 3 : TVA nette négative — un report à nouveau sera ajouté au solde TVA.</p>
+                  )}
+                  {(apurementTarget.montantTVAInterieure - Number(apurMontant)) === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">➡ Cas 1 : TVA nette nulle — opération neutre.</p>
+                  )}
                 </div>
               )}
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setApurementTarget(null)}>Annuler</Button>
               <Button
-                disabled={apurLoading || !apurMontant || Number(apurMontant) <= 0}
+                disabled={apurLoading || !apurMontant || Number(apurMontant) < 0}
                 onClick={async () => {
                   if (!apurementTarget) return;
                   setApurLoading(true);
                   try {
                     await utilisationCreditApi.apurerTVA(apurementTarget.id, Number(apurMontant));
-                    toast({ title: "Succès", description: "Utilisation apurée — solde TVA mis à jour" });
+                    toast({ title: "Succès", description: "Utilisation apurée — TVA nette calculée et solde mis à jour" });
                     setApurementTarget(null);
                     fetchData();
                   } catch (e: any) {
