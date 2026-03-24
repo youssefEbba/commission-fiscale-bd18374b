@@ -844,7 +844,7 @@ export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
 };
 
 export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
-  DEMANDEE: "Demandée", EN_VERIFICATION: "En vérification", VISE: "Visé",
+  DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
 };
 
