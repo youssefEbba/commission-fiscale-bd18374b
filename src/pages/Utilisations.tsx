@@ -446,7 +446,7 @@ const Utilisations = () => {
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Utilisation #{selected?.id}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
