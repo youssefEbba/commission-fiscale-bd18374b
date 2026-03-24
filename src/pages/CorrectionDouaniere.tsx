@@ -516,7 +516,7 @@ const CorrectionDouaniere = () => {
                     </div>
                       );
                     })()}
-                   </div>
+                   </div>}
                 </CardContent>
               </Card>
 
