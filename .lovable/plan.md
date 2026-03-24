@@ -1,51 +1,44 @@
 
 
-## Transformer les actions des conventions en menu déroulant par rôle
+## Intégration du REJET_TEMP avec documentsDemandes et verrouillage des uploads
 
-### Probleme actuel
-Les actions sont des boutons inline dans la colonne "Actions" du tableau. Le user veut un menu déroulant (DropdownMenu) avec des options contextuelles selon le rôle et le statut.
+### Résumé
+Le backend supporte maintenant le rejet temporaire avec une liste de documents demandés (`documentsDemandes`), et le verrouillage des uploads (remplacement interdit sauf si le type est dans la liste des documents demandés). Le frontend doit être mis à jour pour :
+1. Permettre de sélectionner les documents à demander lors d'un REJET_TEMP
+2. Afficher les documents demandés dans les décisions
+3. Gérer le verrouillage côté UI (indiquer quels documents peuvent être remplacés)
 
-### Actions par rôle
+### Modifications
 
-**DGB** (validateur) :
-- Voir les détails
-- Valider (si EN_ATTENTE)
-- Rejeter avec motif (si EN_ATTENTE)
+#### 1. Mettre à jour `DecisionCorrectionDto` et `postDecision` (`src/lib/api.ts`)
+- Ajouter `documentsDemandes?: string[]` à `DecisionCorrectionDto`
+- Modifier `postDecision` pour accepter et envoyer `documentsDemandes` quand `decision === "REJET_TEMP"`
 
-**DGI** :
-- Voir les détails
-- Accepter (valider)
-- Rejeter
+#### 2. Enrichir le Dialog de rejet temporaire (`src/pages/CorrectionDouaniere.tsx`)
+- Ajouter une liste de checkboxes avec les types de documents (basée sur `DOCUMENT_TYPES_REQUIS` + types supplémentaires comme `PV_OUVERTURE`, `DAO_DQE`, etc.)
+- Les checkboxes sont obligatoires quand c'est un REJET_TEMP (au moins 1 document doit être coché)
+- Envoyer `documentsDemandes` dans l'appel `postDecision`
+- Le bouton "Confirmer" est désactivé si aucun document n'est sélectionné
 
-**Autorité Contractante** :
-- Voir les détails
-- Modifier les informations (si statut != VALIDE)
-- Gérer les documents / fichiers (si statut != VALIDE)
-- Annuler la convention (si statut != VALIDE)
+#### 3. Enrichir le Dialog de rejet temporaire (`src/pages/Demandes.tsx`)
+- Même logique : si `rejectDecisionFinale === false`, afficher les checkboxes de documents demandés
+- Envoyer `documentsDemandes` dans l'appel
 
-### Modifications backend requises
+#### 4. Afficher les documents demandés dans les décisions
+- Dans les deux pages (Demandes.tsx et CorrectionDouaniere.tsx), là où les décisions sont affichées, montrer les `documentsDemandes` sous forme de badges quand `decision === "REJET_TEMP"`
 
-Les endpoints suivants pourraient manquer :
-1. **PUT /api/conventions/{id}** - Modifier les informations d'une convention (reference, intitule, bailleur, dates, montants)
-2. **DELETE /api/conventions/{id}/documents/{docId}** - Supprimer un document
-3. **PATCH /api/conventions/{id}/statut?statut=ANNULEE** - Il faut ajouter le statut `ANNULEE` au enum si pas encore fait
+#### 5. Indicateur visuel de verrouillage des uploads
+- Dans la section d'upload de documents (côté AC), quand le statut est `INCOMPLETE` :
+  - Afficher un badge/icône sur les documents qui sont dans `documentsDemandes` (modifiables)
+  - Griser ou désactiver le bouton d'upload pour les documents qui ne sont PAS dans `documentsDemandes` et qui existent déjà
+  - Le backend rejette de toute façon, mais l'UI doit guider l'utilisateur
 
-### Plan d'implementation (frontend)
-
-1. **Remplacer les boutons inline par un DropdownMenu** dans la colonne Actions du tableau, avec un bouton "..." (MoreHorizontal) comme trigger
-2. **Ajouter un Dialog "Détails"** pour afficher toutes les infos de la convention en lecture seule
-3. **Ajouter un Dialog "Modifier"** (AC uniquement, si statut != VALIDE) - reprend le formulaire de création pré-rempli, appelle PUT /api/conventions/{id}
-4. **Ajouter un Dialog de confirmation "Rejeter"** avec champ motif obligatoire
-5. **Ajouter un Dialog de confirmation "Annuler"** (AC uniquement)
-6. **Mettre a jour `conventionApi`** dans api.ts avec les nouveaux endpoints (update, delete document)
-7. **Ajouter le statut ANNULEE** au type ConventionStatut si le backend le supporte
-
-### Fichiers a modifier
-- `src/pages/Conventions.tsx` - Refonte colonne actions + dialogs details/modifier/rejeter/annuler
-- `src/lib/api.ts` - Ajouter `update` et potentiellement `deleteDocument` dans conventionApi
+### Fichiers à modifier
+- `src/lib/api.ts` — `DecisionCorrectionDto` + `postDecision`
+- `src/pages/CorrectionDouaniere.tsx` — Dialog rejet + affichage décisions
+- `src/pages/Demandes.tsx` — Dialog rejet + affichage décisions + verrouillage uploads
 
 ### Details techniques
-- Utilisation de `DropdownMenu` + `DropdownMenuContent` + `DropdownMenuItem` deja present dans le projet
-- Import de `MoreHorizontal` de lucide-react comme trigger
-- Chaque item du menu conditionne son affichage sur `role` et `c.statut`
+- Utilisation de `Checkbox` de shadcn/ui pour la sélection des documents
+- La liste complète des types de documents doit inclure les 7 pièces du P1 : `LETTRE_SAISINE`, `PV_OUVERTURE`, `ATTESTATION_FISCALE`, `OFFRE_FINANCIERE`, `TABLEAU_MODELE`, `DAO_DQE`, `LISTE_ITEMS_EXCEL`
 
