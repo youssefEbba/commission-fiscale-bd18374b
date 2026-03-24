@@ -502,6 +502,33 @@ const DemandesMiseEnPlace = () => {
                   </div>
                 )}
               </div>
+
+              {/* Decisions history */}
+              {decisions.length > 0 && (
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Historique des décisions</h4>
+                  <div className="space-y-2">
+                    {decisions.map((d) => (
+                      <div key={d.id} className={`p-2 rounded border text-xs ${d.decision === "REJET_TEMP" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={d.decision === "REJET_TEMP" ? "destructive" : "default"} className="text-[10px]">{d.decision}</Badge>
+                          <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                          {d.dateDecision && <span className="text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                        </div>
+                        {d.motifRejet && <p className="text-muted-foreground mb-1">{d.motifRejet}</p>}
+                        {d.documentsDemandes && d.documentsDemandes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-muted-foreground">Documents demandés :</span>
+                            {d.documentsDemandes.map((doc) => (
+                              <Badge key={doc} variant="outline" className="text-[10px]">{doc.replace(/_/g, " ")}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
