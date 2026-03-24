@@ -112,6 +112,15 @@ const DemandesMiseEnPlace = () => {
   const [motifRejet, setMotifRejet] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
+  // REJET_TEMP dialog state
+  const [showRejetTemp, setShowRejetTemp] = useState<CertificatCreditDto | null>(null);
+  const [rejetTempMotif, setRejetTempMotif] = useState("");
+  const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
+  const [rejetTempLoading, setRejetTempLoading] = useState(false);
+
+  // Decisions state
+  const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
+
   // Certificate generation state (DGTCP)
   const [generatingCert, setGeneratingCert] = useState<number | null>(null);
 
