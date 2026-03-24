@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DocumentDto, DecisionCorrectionDto,
-  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS,
+  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS, ALL_DOCUMENT_TYPES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import {
   FileText, ArrowLeft, Loader2, CheckCircle, XCircle,
   Download, ExternalLink, Bot, Upload, History, RefreshCw,
-  FileDown, ShieldCheck,
+  FileDown, ShieldCheck, AlertTriangle,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const STATUT_COLORS: Record<string, string> = {
   RECUE: "bg-blue-100 text-blue-800",
@@ -82,6 +83,7 @@ const CorrectionDouaniere = () => {
   // Reject modal for temp decision
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
+  const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
 
   // Final decision modal
   const [finalOpen, setFinalOpen] = useState(false);
@@ -228,11 +230,11 @@ const CorrectionDouaniere = () => {
   };
 
   const handleTempReject = async () => {
-    if (!demande || !rejectMotif.trim()) return;
+    if (!demande || !rejectMotif.trim() || rejectDocsDemandes.length === 0) return;
     setRejectOpen(false);
     setActionLoading(true);
     try {
-      await demandeCorrectionApi.postDecision(demande.id, "REJET_TEMP", rejectMotif.trim());
+      await demandeCorrectionApi.postDecision(demande.id, "REJET_TEMP", rejectMotif.trim(), rejectDocsDemandes);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       await fetchDecisions();
       await fetchDemande();
@@ -241,6 +243,7 @@ const CorrectionDouaniere = () => {
     } finally {
       setActionLoading(false);
       setRejectMotif("");
+      setRejectDocsDemandes([]);
     }
   };
 
@@ -396,6 +399,13 @@ const CorrectionDouaniere = () => {
                             <>
                               <p className="text-red-700 font-medium mt-0.5">Rejet temp.</p>
                               {dec.motifRejet && <p className="text-muted-foreground mt-1 italic truncate" title={dec.motifRejet}>{dec.motifRejet}</p>}
+                              {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-0.5 justify-center">
+                                  {dec.documentsDemandes.map(dt => (
+                                    <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">{ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}</Badge>
+                                  ))}
+                                </div>
+                              )}
                             </>
                           )}
                           {!dec && <p className="text-muted-foreground mt-0.5">En attente</p>}
@@ -436,6 +446,16 @@ const CorrectionDouaniere = () => {
                                 </span>
                               </p>
                               {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-0.5">{dec.motifRejet}</p>}
+                              {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                  {dec.documentsDemandes.map(dt => (
+                                    <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                      {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <div className="text-right shrink-0 text-xs text-muted-foreground">
                               {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")} {new Date(dec.dateDecision).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>}
@@ -648,7 +668,7 @@ const CorrectionDouaniere = () => {
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                       {myDecision?.decision === "VISA" ? "Confirmer visa" : myDecision ? "Changer en Visa" : "Apposer visa"}
                     </Button>
-                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd}>
+                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd}>
                       <XCircle className="h-4 w-4 mr-2" />
                       {myDecision?.decision === "REJET_TEMP" ? "Modifier rejet" : myDecision ? "Changer en Rejet" : "Rejeter temporairement"}
                     </Button>
@@ -743,15 +763,41 @@ const CorrectionDouaniere = () => {
 
       {/* Reject Temp Dialog */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Rejet temporaire</DialogTitle>
-            <DialogDescription>Indiquez le motif du rejet. L'AC pourra corriger et resoumettre.</DialogDescription>
+            <DialogDescription>Indiquez le motif du rejet et sélectionnez les documents à corriger/compléter.</DialogDescription>
           </DialogHeader>
-          <Textarea placeholder="Motif du rejet temporaire..." value={rejectMotif} onChange={(e) => setRejectMotif(e.target.value)} rows={4} />
+          <div className="space-y-4">
+            <Textarea placeholder="Motif du rejet temporaire..." value={rejectMotif} onChange={(e) => setRejectMotif(e.target.value)} rows={3} />
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                Documents à corriger / compléter <span className="text-destructive">*</span>
+              </Label>
+              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
+                {ALL_DOCUMENT_TYPES.map(dt => (
+                  <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                    <Checkbox
+                      checked={rejectDocsDemandes.includes(dt.value)}
+                      onCheckedChange={(checked) => {
+                        setRejectDocsDemandes(prev =>
+                          checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value)
+                        );
+                      }}
+                    />
+                    <span>{dt.label}</span>
+                  </label>
+                ))}
+              </div>
+              {rejectDocsDemandes.length === 0 && (
+                <p className="text-xs text-destructive mt-1">Sélectionnez au moins un document</p>
+              )}
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
-            <Button variant="destructive" disabled={!rejectMotif.trim()} onClick={handleTempReject}>
+            <Button variant="destructive" disabled={!rejectMotif.trim() || rejectDocsDemandes.length === 0} onClick={handleTempReject}>
               <XCircle className="h-4 w-4 mr-1" /> Confirmer
             </Button>
           </DialogFooter>

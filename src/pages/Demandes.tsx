@@ -4,7 +4,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
-  DecisionCorrectionDto,
+  DecisionCorrectionDto, ALL_DOCUMENT_TYPES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
+  AlertTriangle, Lock, Unlock,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
@@ -131,6 +133,7 @@ const Demandes = () => {
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
+  const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
   // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -334,10 +337,10 @@ const Demandes = () => {
     }
   };
 
-  const handleTempReject = async (id: number, motif: string) => {
+  const handleTempReject = async (id: number, motif: string, documentsDemandes?: string[]) => {
     setActionLoading(id);
     try {
-      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif);
+      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif, documentsDemandes);
       await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDemandes();
@@ -355,20 +358,23 @@ const Demandes = () => {
   const openRejectDialog = (id: number, decisionFinale?: boolean) => {
     setRejectTargetId(id);
     setRejectMotif("");
+    setRejectDocsDemandes([]);
     setRejectDecisionFinale(!!decisionFinale);
     setRejectOpen(true);
   };
 
   const handleRejectConfirm = async () => {
     if (!rejectTargetId || !rejectMotif.trim()) return;
+    if (!rejectDecisionFinale && rejectDocsDemandes.length === 0) return;
     setRejectOpen(false);
     if (rejectDecisionFinale) {
       await handleStatutChange(rejectTargetId, "REJETEE", rejectMotif.trim(), true);
     } else {
-      await handleTempReject(rejectTargetId, rejectMotif.trim());
+      await handleTempReject(rejectTargetId, rejectMotif.trim(), rejectDocsDemandes);
     }
     setRejectTargetId(null);
     setRejectMotif("");
+    setRejectDocsDemandes([]);
     setRejectDecisionFinale(false);
   };
 
@@ -701,6 +707,16 @@ const Demandes = () => {
                         <Badge variant="outline" className="text-xs">{dec.role}</Badge>
                       </div>
                       {dec.motifRejet && <p className="text-sm ml-6">{dec.motifRejet}</p>}
+                      {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                        <div className="flex flex-wrap gap-1 ml-6 mt-1">
+                          <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                          {dec.documentsDemandes.map((dt: string) => (
+                            <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                              {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-3 text-xs text-muted-foreground ml-6">
                         {dec.utilisateurNom && <span>Par : {dec.utilisateurNom}</span>}
                         {dec.dateDecision && <span>Le : {new Date(dec.dateDecision).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
@@ -768,6 +784,15 @@ const Demandes = () => {
                               <>
                                 <p className="text-red-700 font-medium mt-0.5">Rejeté</p>
                                 {dec.motifRejet && <p className="text-muted-foreground mt-1 italic truncate" title={dec.motifRejet}>{dec.motifRejet}</p>}
+                                {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                  <div className="mt-1 flex flex-wrap gap-0.5 justify-center">
+                                    {dec.documentsDemandes.map((dt: string) => (
+                                      <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">
+                                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
                               </>
                             )}
                             {!dec && <p className="text-muted-foreground mt-0.5">En attente</p>}
@@ -861,19 +886,41 @@ const Demandes = () => {
                       const DOC_LABEL_MAP: Record<string, string> = {};
                       DOCUMENT_TYPES_REQUIS.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
 
+                      // Determine which doc types are unlocked for replacement
+                      const isIncomplete = selected.statut === "INCOMPLETE";
+                      const allowedDocTypes = isIncomplete
+                        ? (selected.decisions || [])
+                            .filter(d => d.decision === "REJET_TEMP" && d.documentsDemandes)
+                            .flatMap(d => d.documentsDemandes || [])
+                        : null; // null = no restriction
+
                       return Object.entries(groupedByType).map(([type, typeDocs]) => {
                         const sorted = [...typeDocs].sort((a, b) => (b.version || b.id) - (a.version || a.id));
                         const uploaded = sorted.find(d => d.actif === true) || sorted[0];
                         const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
                         const olderVersions = sorted.filter(d => d.id !== uploaded?.id);
                         const label = DOC_LABEL_MAP[type] || type;
+                        const isLocked = isIncomplete && allowedDocTypes !== null && !allowedDocTypes.includes(type);
+                        const isUnlocked = isIncomplete && allowedDocTypes !== null && allowedDocTypes.includes(type);
 
                         return (
                           <div key={type} className="space-y-1">
-                            <div className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                            <div className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
+                              isUnlocked ? "border-amber-300 bg-amber-50/50" : isLocked ? "border-border bg-muted/30 opacity-60" : "border-border"
+                            }`}>
+                              {isUnlocked ? (
+                                <Unlock className="h-4 w-4 text-amber-600 shrink-0" />
+                              ) : isLocked ? (
+                                <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                              )}
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{label}</p>
+                                <p className="font-medium truncate">
+                                  {label}
+                                  {isUnlocked && <Badge className="ml-2 text-[10px] bg-amber-100 text-amber-800 border-amber-200">À corriger</Badge>}
+                                  {isLocked && <Badge variant="outline" className="ml-2 text-[10px]">Verrouillé</Badge>}
+                                </p>
                                 {uploaded && (
                                   <p className="text-xs text-muted-foreground truncate">
                                     {uploaded.nomFichier}
@@ -894,7 +941,7 @@ const Demandes = () => {
                                     </a>
                                   </>
                                 )}
-                                {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                                {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
                                   <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadType(type); setUploadOpen(true); }}>
                                     <Upload className="h-3.5 w-3.5 mr-1" /> Nouvelle version
                                   </Button>
@@ -1080,22 +1127,56 @@ const Demandes = () => {
 
       {/* Rejection Motif Dialog */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Motif du rejet</DialogTitle>
-            <DialogDescription>Veuillez indiquer le motif du rejet de cette demande.</DialogDescription>
+            <DialogTitle>{rejectDecisionFinale ? "Rejet final" : "Rejet temporaire"}</DialogTitle>
+            <DialogDescription>
+              {rejectDecisionFinale
+                ? "Veuillez indiquer le motif du rejet final de cette demande."
+                : "Indiquez le motif du rejet et sélectionnez les documents à corriger/compléter."}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Textarea
               placeholder="Saisissez le motif du rejet..."
               value={rejectMotif}
               onChange={(e) => setRejectMotif(e.target.value)}
-              rows={4}
+              rows={3}
             />
+            {!rejectDecisionFinale && (
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Documents à corriger / compléter <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
+                  {ALL_DOCUMENT_TYPES.map(dt => (
+                    <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                      <Checkbox
+                        checked={rejectDocsDemandes.includes(dt.value)}
+                        onCheckedChange={(checked) => {
+                          setRejectDocsDemandes(prev =>
+                            checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value)
+                          );
+                        }}
+                      />
+                      <span>{dt.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {rejectDocsDemandes.length === 0 && (
+                  <p className="text-xs text-destructive mt-1">Sélectionnez au moins un document</p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
-            <Button variant="destructive" disabled={!rejectMotif.trim()} onClick={handleRejectConfirm}>
+            <Button
+              variant="destructive"
+              disabled={!rejectMotif.trim() || (!rejectDecisionFinale && rejectDocsDemandes.length === 0)}
+              onClick={handleRejectConfirm}
+            >
               <XCircle className="h-4 w-4 mr-1" /> Confirmer le rejet
             </Button>
           </DialogFooter>
