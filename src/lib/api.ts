@@ -638,6 +638,17 @@ export const certificatCreditApi = {
     formData.append("file", file);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
+  // Decisions (REJET_TEMP + VISA)
+  getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/certificats-credit/${id}/decisions`),
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+    apiFetch<DecisionCorrectionDto>(`/certificats-credit/${id}/decisions`, {
+      method: "POST",
+      body: {
+        decision,
+        ...(motifRejet ? { motifRejet } : {}),
+        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
+      },
+    }),
 };
 
 // Utilisations de crédit (P4/P5)
