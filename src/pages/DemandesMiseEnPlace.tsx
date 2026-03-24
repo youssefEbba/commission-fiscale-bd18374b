@@ -426,6 +426,12 @@ const DemandesMiseEnPlace = () => {
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
+                          {/* REJET_TEMP button (DGI/DGTCP) */}
+                          {(role === "DGI" || role === "DGTCP") && ["DEMANDE", "EN_VERIFICATION_DGI", "EN_OUVERTURE_DGTCP"].includes(c.statut) && (
+                            <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(c); setRejetTempMotif(""); setRejetTempDocs([]); }}>
+                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
+                            </Button>
+                          )}
                           {/* Président: Générer certificat PDF (sans changer le statut) */}
                           {role === "PRESIDENT" && c.statut === "OUVERT" && (
                             <Button variant="default" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
