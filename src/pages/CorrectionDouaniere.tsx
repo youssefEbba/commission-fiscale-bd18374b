@@ -467,8 +467,8 @@ const CorrectionDouaniere = () => {
                     </div>
                   )}
 
-                  {/* Special documents displayed below visas with large icons */}
-                  <div className="mt-6 pt-4 border-t border-border">
+                  {/* Special documents displayed below visas with large icons — visibles uniquement après adoption */}
+                  {(demande?.statut === "ADOPTEE" || demande?.statut === "NOTIFIEE") && <div className="mt-6 pt-4 border-t border-border">
                     <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4" /> Documents de décision
                     </p>

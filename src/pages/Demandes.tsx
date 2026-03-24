@@ -806,8 +806,8 @@ const Demandes = () => {
                   </div>
                 );
               })()}
-              {/* Documents de décision */}
-              {(() => {
+              {/* Documents de décision — visibles uniquement après adoption */}
+              {(selectedDemande?.statut === "ADOPTEE" || selectedDemande?.statut === "NOTIFIEE") && (() => {
                 const SPECIAL_DOC_TYPES_LIST = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
                 const SPECIAL_DOC_LABELS_MAP: Record<string, string> = {
                   OFFRE_FISCALE_CORRIGEE: "Offre Fiscale Corrigée",
