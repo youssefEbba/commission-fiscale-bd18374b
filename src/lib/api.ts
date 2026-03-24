@@ -477,10 +477,14 @@ export const demandeCorrectionApi = {
   },
   // Décisions temporaires
   getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/demandes-correction/${id}/decisions`),
-  postDecision: (id: number, decision: DecisionType, motifRejet?: string) =>
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
     apiFetch<DecisionCorrectionDto>(`/demandes-correction/${id}/decisions`, {
       method: "POST",
-      body: motifRejet ? { decision, motifRejet } : { decision },
+      body: {
+        decision,
+        ...(motifRejet ? { motifRejet } : {}),
+        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
+      },
     }),
 };
 
