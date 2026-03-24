@@ -651,7 +651,7 @@ const CorrectionDouaniere = () => {
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                       {myDecision?.decision === "VISA" ? "Confirmer visa" : myDecision ? "Changer en Visa" : "Apposer visa"}
                     </Button>
-                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd}>
+                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd}>
                       <XCircle className="h-4 w-4 mr-2" />
                       {myDecision?.decision === "REJET_TEMP" ? "Modifier rejet" : myDecision ? "Changer en Rejet" : "Rejeter temporairement"}
                     </Button>
