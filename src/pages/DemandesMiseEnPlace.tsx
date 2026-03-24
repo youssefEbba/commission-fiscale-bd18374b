@@ -751,6 +751,62 @@ const DemandesMiseEnPlace = () => {
         </DialogContent>
       </Dialog>
 
+      {/* REJET_TEMP Dialog */}
+      <Dialog open={!!showRejetTemp} onOpenChange={() => setShowRejetTemp(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Rejet temporaire — Demander des compléments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Demande {showRejetTemp?.reference || `#${showRejetTemp?.id}`} — {showRejetTemp ? getEntrepriseName(showRejetTemp) : ""}
+            </p>
+            <div className="space-y-2">
+              <Label>Motif *</Label>
+              <Textarea
+                placeholder="Précisez les corrections ou compléments attendus..."
+                value={rejetTempMotif}
+                onChange={(e) => setRejetTempMotif(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Documents à corriger / compléter *</Label>
+              <p className="text-xs text-muted-foreground">Sélectionnez au moins un document</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {MISE_EN_PLACE_DOC_TYPES.map((dt) => (
+                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                    <Checkbox
+                      checked={rejetTempDocs.includes(dt.value)}
+                      onCheckedChange={(checked) => {
+                        setRejetTempDocs(prev =>
+                          checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{dt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>Annuler</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              disabled={rejetTempLoading || !rejetTempMotif.trim() || rejetTempDocs.length === 0}
+              onClick={handleRejetTemp}
+            >
+              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer le rejet temporaire
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!infoModal} onOpenChange={() => setInfoModal(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
