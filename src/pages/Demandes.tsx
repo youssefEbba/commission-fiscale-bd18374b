@@ -133,6 +133,7 @@ const Demandes = () => {
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
+  const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
   // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
