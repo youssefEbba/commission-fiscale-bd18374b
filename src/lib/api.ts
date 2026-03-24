@@ -771,6 +771,17 @@ export const utilisationCreditApi = {
       rawBody: formData,
     });
   },
+  // Decisions (REJET_TEMP + VISA)
+  getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/utilisations-credit/${id}/decisions`),
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+    apiFetch<DecisionCorrectionDto>(`/utilisations-credit/${id}/decisions`, {
+      method: "POST",
+      body: {
+        decision,
+        ...(motifRejet ? { motifRejet } : {}),
+        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
+      },
+    }),
 };
 
 // Audit Logs (P8 / Admin)
