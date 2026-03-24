@@ -34,6 +34,7 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   ADOPTEE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
   NOTIFIEE: "bg-gray-100 text-gray-800",
+  ANNULEE: "bg-red-200 text-red-900",
 };
 
 // Visa/rejet actions: no status change on backend (decisionFinale=false)

@@ -849,7 +849,7 @@ export const auditLogApi = {
 export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
   RECUE: "Reçue", INCOMPLETE: "Incomplète", RECEVABLE: "Recevable",
   EN_EVALUATION: "En évaluation", EN_VALIDATION: "En validation",
-  ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée",
+  ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée", ANNULEE: "Annulée",
 };
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
