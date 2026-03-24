@@ -486,6 +486,22 @@ const Utilisations = () => {
                     <div><span className="text-muted-foreground">TVA Intérieure</span><p>{f(selected.montantTVAInterieure)} MRU</p></div>
                     <div><span className="text-muted-foreground">N° Décompte</span><p>{selected.numeroDecompte || "—"}</p></div>
                   </div>
+                  {/* Traçabilité TVA (après apurement) */}
+                  {selected.statut === "APUREE" && selected.tvaNette != null && (
+                    <div className="mt-3 p-3 rounded-lg border bg-muted/50 space-y-2">
+                      <h5 className="font-semibold text-sm flex items-center gap-1"><Info className="h-4 w-4" /> Traçabilité apurement</h5>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div><span className="text-muted-foreground">TVA déductible utilisée</span><p className="font-medium">{f(selected.tvaDeductibleUtilisee)} MRU</p></div>
+                        <div><span className="text-muted-foreground">TVA nette</span><p className={`font-bold ${(selected.tvaNette ?? 0) > 0 ? "text-destructive" : (selected.tvaNette ?? 0) < 0 ? "text-emerald-600" : ""}`}>{f(selected.tvaNette)} MRU</p></div>
+                        <div><span className="text-muted-foreground">Crédit intérieur utilisé</span><p className="font-medium">{f(selected.creditInterieurUtilise)} MRU</p></div>
+                        <div><span className="text-muted-foreground">Paiement entreprise</span><p className="font-medium">{f(selected.paiementEntreprise)} MRU</p></div>
+                        <div><span className="text-muted-foreground">Report à nouveau</span><p className="font-medium">{f(selected.reportANouveau)} MRU</p></div>
+                        <div className="col-span-2 border-t pt-1 flex justify-between">
+                          <span className="text-muted-foreground">Solde TVA : {f(selected.soldeTVAAvant)} → {f(selected.soldeTVAApres)} MRU</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {/* Decisions history */}
