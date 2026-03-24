@@ -1240,6 +1240,25 @@ const Demandes = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cancel confirmation dialog */}
+      <Dialog open={cancelOpen} onOpenChange={(v) => { if (!v) { setCancelOpen(false); setCancelTargetId(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer l'annulation</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir annuler cette demande de correction ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelTargetId(null); }}>Non, garder</Button>
+            <Button variant="destructive" onClick={handleCancelDemande} disabled={cancelLoading}>
+              {cancelLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              Oui, annuler la demande
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
