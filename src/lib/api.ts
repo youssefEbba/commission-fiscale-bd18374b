@@ -681,6 +681,14 @@ export interface UtilisationCreditDto {
   dateFacture?: string;
   montantTVAInterieure?: number;
   numeroDecompte?: string;
+  // Traçabilité TVA (après apurement)
+  tvaDeductibleUtilisee?: number;
+  tvaNette?: number;
+  creditInterieurUtilise?: number;
+  paiementEntreprise?: number;
+  reportANouveau?: number;
+  soldeTVAAvant?: number;
+  soldeTVAApres?: number;
 }
 
 export interface CreateUtilisationCreditRequest {
@@ -757,10 +765,10 @@ export const utilisationCreditApi = {
       method: "POST",
       body: { montantDroits, montantTVA },
     }),
-  apurerTVA: (id: number, montantTVA: number) =>
+  apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",
-      body: { montantTVA },
+      body: { tvaDeductibleUtilisee },
     }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
