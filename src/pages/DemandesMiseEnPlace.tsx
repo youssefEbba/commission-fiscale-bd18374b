@@ -249,6 +249,21 @@ const DemandesMiseEnPlace = () => {
     } finally { setRejecting(false); }
   };
 
+  const handleRejetTemp = async () => {
+    if (!showRejetTemp || !rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
+    setRejetTempLoading(true);
+    try {
+      await certificatCreditApi.postDecision(showRejetTemp.id, "REJET_TEMP", rejetTempMotif.trim(), rejetTempDocs);
+      toast({ title: "Succès", description: "Rejet temporaire envoyé — documents demandés" });
+      setShowRejetTemp(null);
+      setRejetTempMotif("");
+      setRejetTempDocs([]);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejetTempLoading(false); }
+  };
+
   const handleGenerateCertificate = async (c: CertificatCreditDto) => {
     setGeneratingCert(c.id);
     try {
