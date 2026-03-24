@@ -681,6 +681,14 @@ export interface UtilisationCreditDto {
   dateFacture?: string;
   montantTVAInterieure?: number;
   numeroDecompte?: string;
+  // Traçabilité TVA (après apurement)
+  tvaDeductibleUtilisee?: number;
+  tvaNette?: number;
+  creditInterieurUtilise?: number;
+  paiementEntreprise?: number;
+  reportANouveau?: number;
+  soldeTVAAvant?: number;
+  soldeTVAApres?: number;
 }
 
 export interface CreateUtilisationCreditRequest {
