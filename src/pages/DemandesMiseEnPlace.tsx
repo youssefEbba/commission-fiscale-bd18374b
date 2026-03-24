@@ -319,18 +319,15 @@ const DemandesMiseEnPlace = () => {
   const openDetail = async (c: CertificatCreditDto) => {
     setSelected(c);
     setDetailDocs([]);
+    setDecisions([]);
     setLoadingDocs(true);
     try {
-      const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/certificats-credit/${c.id}/documents`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-      if (res.ok) {
-        setDetailDocs(await res.json());
-      }
+      const [docsRes, decisionsRes] = await Promise.all([
+        certificatCreditApi.getDocuments(c.id),
+        certificatCreditApi.getDecisions(c.id).catch(() => []),
+      ]);
+      setDetailDocs(docsRes);
+      setDecisions(decisionsRes);
     } catch { /* ignore */ }
     setLoadingDocs(false);
   };
