@@ -432,6 +432,7 @@ export interface DecisionCorrectionDto {
   role: string;
   decision: DecisionType;
   motifRejet?: string;
+  documentsDemandes?: string[];
   dateDecision?: string;
   utilisateurId?: number;
   utilisateurNom?: string;
@@ -441,6 +442,17 @@ export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
   { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
   { value: "OFFRE_FINANCIERE", label: "Offre financière (table de calcul)" },
   { value: "TABLEAU_MODELE", label: "Tableau modèle" },
+];
+
+// All 7 document types from P1
+export const ALL_DOCUMENT_TYPES: { value: string; label: string }[] = [
+  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
+  { value: "PV_OUVERTURE", label: "PV ouverture offres financières" },
+  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale entreprise" },
+  { value: "OFFRE_FINANCIERE", label: "Offre financière" },
+  { value: "TABLEAU_MODELE", label: "Tableau modèle (nature, valeur, classification)" },
+  { value: "DAO_DQE", label: "DAO + DQE" },
+  { value: "LISTE_ITEMS_EXCEL", label: "Liste items Excel (FR/AR)" },
 ];
 
 export const DOCUMENT_TYPES = DOCUMENT_TYPES_REQUIS.map((t) => t.value);
