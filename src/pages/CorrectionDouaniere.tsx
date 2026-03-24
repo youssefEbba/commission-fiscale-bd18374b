@@ -446,6 +446,16 @@ const CorrectionDouaniere = () => {
                                 </span>
                               </p>
                               {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-0.5">{dec.motifRejet}</p>}
+                              {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                  {dec.documentsDemandes.map(dt => (
+                                    <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                      {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <div className="text-right shrink-0 text-xs text-muted-foreground">
                               {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")} {new Date(dec.dateDecision).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>}
