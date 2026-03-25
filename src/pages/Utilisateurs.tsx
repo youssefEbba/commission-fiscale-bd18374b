@@ -18,6 +18,8 @@ const Utilisateurs = () => {
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
   const { toast } = useToast();
@@ -154,12 +156,14 @@ const Utilisateurs = () => {
     } finally { setResetting(false); }
   };
 
-  const filtered = users.filter(
-    (u) =>
-      u.username.toLowerCase().includes(search.toLowerCase()) ||
+  const filtered = users.filter((u) => {
+    const matchSearch = u.username.toLowerCase().includes(search.toLowerCase()) ||
       u.nomComplet?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+      u.email?.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === "ALL" || u.role === roleFilter;
+    const matchStatus = statusFilter === "ALL" || (statusFilter === "ACTIF" ? u.actif : !u.actif);
+    return matchSearch && matchRole && matchStatus;
+  });
 
   const UserTable = ({ data }: { data: UtilisateurDto[] }) => (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -320,11 +324,32 @@ const Utilisateurs = () => {
             <TabsTrigger value="all">Tous ({users.length})</TabsTrigger>
             <TabsTrigger value="pending"><Clock className="h-3 w-3 mr-1" /> En attente ({pending.length})</TabsTrigger>
           </TabsList>
-          <div className="mt-4">
-            <div className="relative max-w-sm">
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher un utilisateur..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrer par rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tous les rôles</SelectItem>
+                {ROLE_OPTIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filtrer par statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tous les statuts</SelectItem>
+                <SelectItem value="ACTIF">Actif</SelectItem>
+                <SelectItem value="INACTIF">Inactif</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <TabsContent value="all" className="mt-4"><UserTable data={filtered} /></TabsContent>
           <TabsContent value="pending" className="mt-4"><UserTable data={pending} /></TabsContent>

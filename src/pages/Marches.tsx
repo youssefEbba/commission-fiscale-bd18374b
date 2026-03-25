@@ -37,7 +37,7 @@ const Marches = () => {
   // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
-  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
+  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: undefined as any, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
   // Assign delegate dialog
@@ -61,14 +61,15 @@ const Marches = () => {
   const fetchMarches = async () => {
     setLoading(true);
     try {
-      const [data, conv] = await Promise.all([
+      const results = await Promise.allSettled([
         marcheApi.getAll(),
-        conventionApi.getAll().catch(() => [] as ConventionDto[]),
+        conventionApi.getAll(),
       ]);
-      setMarches(data);
-      setConventions(conv);
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les marchés", variant: "destructive" });
+      setMarches(results[0].status === "fulfilled" ? results[0].value : []);
+      setConventions(results[1].status === "fulfilled" ? results[1].value : []);
+      if (results[0].status === "rejected") {
+        toast({ title: "Erreur", description: "Impossible de charger les marchés", variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
@@ -78,7 +79,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
+    setForm({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: undefined as any, statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
@@ -192,13 +193,18 @@ const Marches = () => {
       toast({ title: "Erreur", description: "La convention est obligatoire", variant: "destructive" });
       return;
     }
+    // Send montant only if provided
+    const payload = { ...form };
+    if (!payload.montantContratTtc && payload.montantContratTtc !== 0) {
+      delete (payload as any).montantContratTtc;
+    }
     setSubmitting(true);
     try {
       if (editing) {
-        await marcheApi.update(editing.id, form);
+        await marcheApi.update(editing.id, payload);
         toast({ title: "Succès", description: "Marché mis à jour" });
       } else {
-        await marcheApi.create(form);
+        await marcheApi.create(payload);
         toast({ title: "Succès", description: "Marché créé" });
       }
       setDialogOpen(false);
@@ -355,9 +361,9 @@ const Marches = () => {
               <Label>Date de signature</Label>
               <Input type="date" value={form.dateSignature} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
             </div>
-            <div className="space-y-2">
-              <Label>Montant contrat TTC</Label>
-              <Input type="number" value={form.montantContratTtc || ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: parseFloat(e.target.value) || 0 }))} />
+             <div className="space-y-2">
+              <Label>Montant contrat TTC <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
+              <Input type="number" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined as any }))} placeholder="Laisser vide si non applicable" />
             </div>
             <div className="space-y-2">
               <Label>Statut</Label>

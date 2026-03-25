@@ -32,6 +32,7 @@ const Register = () => {
   const { toast } = useToast();
 
   // New entreprise fields
+  const [phoneError, setPhoneError] = useState("");
   const [newEntreprise, setNewEntreprise] = useState({
     raisonSociale: "",
     nif: "",
@@ -50,10 +51,30 @@ const Register = () => {
   });
 
 
+  const validatePhone = (phone: string) => {
+    if (!phone) return "";
+    const cleaned = phone.replace(/\s/g, "");
+    if (!/^[234]\d{7}$/.test(cleaned)) {
+      return "Le téléphone doit commencer par 2, 3 ou 4 et contenir 8 chiffres";
+    }
+    return "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
+      return;
+    }
+    if (form.password.length < 6) {
+      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
+      return;
+    }
+    // Validate phone numbers
+    const entPhone = form.role === "ENTREPRISE" ? validatePhone(newEntreprise.telephone) : "";
+    const acPhone = form.role === "AUTORITE_CONTRACTANTE" ? validatePhone(newAC.telephone) : "";
+    if (entPhone || acPhone) {
+      toast({ title: "Erreur", description: entPhone || acPhone, variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -143,7 +164,7 @@ const Register = () => {
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="votre@email.mr" required />
+              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="votre@email.mr" required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title="Veuillez entrer une adresse email valide" />
             </div>
 
             <div className="space-y-2">
@@ -186,8 +207,9 @@ const Register = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Téléphone</Label>
-                      <Input value={newEntreprise.telephone} onChange={(e) => updateEntreprise("telephone", e.target.value)} placeholder="+222..." />
+                     <Label className="text-xs">Téléphone</Label>
+                      <Input value={newEntreprise.telephone} onChange={(e) => { updateEntreprise("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder="2XXXXXXX" pattern="[234]\d{7}" title="8 chiffres, commence par 2, 3 ou 4" maxLength={8} />
+                      {phoneError && newEntreprise.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Email entreprise</Label>
@@ -219,8 +241,9 @@ const Register = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Téléphone</Label>
-                      <Input value={newAC.telephone} onChange={(e) => updateAC("telephone", e.target.value)} placeholder="+222..." />
+                     <Label className="text-xs">Téléphone</Label>
+                      <Input value={newAC.telephone} onChange={(e) => { updateAC("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder="2XXXXXXX" pattern="[234]\d{7}" title="8 chiffres, commence par 2, 3 ou 4" maxLength={8} />
+                      {phoneError && newAC.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Email AC</Label>
