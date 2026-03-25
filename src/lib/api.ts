@@ -664,7 +664,7 @@ export const certificatCreditApi = {
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
+export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface UtilisationCreditDto {
