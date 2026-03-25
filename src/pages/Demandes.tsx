@@ -1008,140 +1008,170 @@ const Demandes = () => {
                   DGI: "DGI – Impôts",
                   DGB: "DGB – Budget",
                 };
+                const [activeOrg, setActiveOrg] = React.useState(DECISION_ROLES_LIST[0]);
+                const r = activeOrg;
+                const roleDecs = decs.filter(d => d.role === r);
+                const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
+                const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
+                const hasVisa = latestDec?.decision === "VISA";
+                const hasRejets = allRejets.length > 0;
+                const isMyRole = (role as string) === r;
+
                 return (
                   <div className="rounded-lg border border-border p-4">
                     <h3 className="text-sm font-semibold mb-1">Statut par organisme</h3>
                     <p className="text-[10px] text-muted-foreground mb-3">Les rejets ne sont pas modifiables. Vous pouvez annuler un rejet existant ou en soumettre un nouveau.</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {DECISION_ROLES_LIST.map((r) => {
-                        const roleDecs = decs.filter(d => d.role === r);
-                        const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
-                        const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
-                        const hasVisa = latestDec?.decision === "VISA";
-                        const hasRejets = allRejets.length > 0;
-                        const isMyRole = (role as string) === r;
+                    {/* Tab navigation */}
+                    <div className="flex border-b border-border mb-3 gap-0">
+                      {DECISION_ROLES_LIST.map((orgRole) => {
+                        const orgDecs = decs.filter(d => d.role === orgRole);
+                        const orgLatest = orgDecs.length > 0 ? orgDecs[orgDecs.length - 1] : undefined;
+                        const orgHasVisa = orgLatest?.decision === "VISA";
+                        const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
+                        const isActive = activeOrg === orgRole;
                         return (
-                          <div key={r} className={`rounded-lg border p-3 text-xs ${
-                            hasVisa ? "border-green-300 bg-green-50" :
-                            hasRejets ? "border-red-300 bg-red-50" :
-                            "border-border bg-muted/30"
-                          }`}>
-                            <div className="text-center">
-                              {hasVisa ? (
-                                <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                              ) : hasRejets ? (
-                                <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
-                              ) : (
-                                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
-                              )}
-                              <p className="font-medium">{DECISION_ROLE_LABELS[r] || r}</p>
-                              {hasVisa && <p className="text-green-700 font-medium mt-0.5">Visa</p>}
-                              {!latestDec && <p className="text-muted-foreground mt-0.5">En attente</p>}
-                            </div>
-                            {hasRejets && (
-                              <div className="mt-2 space-y-2">
-                                <p className="text-red-700 font-semibold text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
-                                {allRejets.map((rej, idx) => (
-                                  <div key={idx} className="border-l-2 border-red-300 pl-2 py-1 space-y-0.5">
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className="font-medium text-red-800">Rejet {idx + 1}</span>
-                                      {rej.rejetTempStatus && (
-                                        <Badge className={`text-[8px] ${rej.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                                          {rej.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
-                                        </Badge>
-                                      )}
-                                      {rej.dateDecision && (
-                                        <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>
-                                      )}
-                                    </div>
-                                    {rej.motifRejet && (
-                                      <p className="text-muted-foreground italic text-[11px]">{rej.motifRejet}</p>
-                                    )}
-                                    {rej.documentsDemandes && rej.documentsDemandes.length > 0 && (
-                                      <div className="flex flex-wrap gap-0.5">
-                                        {rej.documentsDemandes.map((dt: string) => (
-                                          <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">
-                                            {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {/* Réponses au rejet visibles par tous */}
-                                    {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
-                                      <div className="mt-1 space-y-1">
-                                        <span className="text-[9px] text-muted-foreground font-medium">Réponses :</span>
-                                        {rej.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
-                                          <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-1.5 text-[10px] space-y-0.5">
-                                            <p className="text-foreground">{resp.message}</p>
-                                            {resp.documentType && (
-                                              <div className="flex items-center gap-1 text-muted-foreground">
-                                                <FileText className="h-2.5 w-2.5" />
-                                                <span>{ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}</span>
-                                                {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
-                                              </div>
-                                            )}
-                                            <div className="flex gap-2 text-muted-foreground">
-                                              {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
-                                              {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR")}</span>}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {/* Boutons AC : répondre + upload doc pour ce rejet */}
-                                    {rej.rejetTempStatus === "OUVERT" && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                                      <div className="flex gap-1 mt-1">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-5 text-[9px] px-1.5"
-                                          onClick={() => { setResponseDecisionId(rej.id); setResponseMessage(""); setResponseOpen(true); }}
-                                        >
-                                          💬 Répondre
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-5 text-[9px] px-1.5"
-                                          onClick={() => { setUploadType(""); setUploadMessage(""); setUploadOpen(true); }}
-                                        >
-                                          <Upload className="h-2.5 w-2.5 mr-0.5" /> Upload doc
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {/* Actions for own role: cancel or new */}
-                                {isMyRole && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
-                                  <div className="flex flex-col gap-1 mt-1">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-6 text-[10px] w-full"
-                                      disabled={actionLoading === selected.id}
-                                      onClick={() => checkAndHandleVisa(selected.id)}
-                                    >
-                                      Annuler le rejet
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      className="h-6 text-[10px] w-full"
-                                      disabled={actionLoading === selected.id}
-                                      onClick={() => openRejectDialog(selected.id)}
-                                    >
-                                      Nouveau rejet
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
+                          <button
+                            key={orgRole}
+                            onClick={() => setActiveOrg(orgRole)}
+                            className={`relative flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                              isActive
+                                ? "border-primary text-primary"
+                                : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                            }`}
+                          >
+                            {orgHasVisa ? (
+                              <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                            ) : orgHasRejets ? (
+                              <XCircle className="h-3.5 w-3.5 text-red-600" />
+                            ) : (
+                              <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />
                             )}
-                            {latestDec?.dateDecision && hasVisa && (
-                              <p className="text-muted-foreground mt-0.5 text-[10px] text-center">{new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>
-                            )}
-                          </div>
+                            <span className="hidden sm:inline">{DECISION_ROLE_LABELS[orgRole]}</span>
+                            <span className="sm:hidden">{orgRole}</span>
+                          </button>
                         );
                       })}
+                    </div>
+                    {/* Active organism content */}
+                    <div className={`rounded-lg border p-4 min-h-[120px] ${
+                      hasVisa ? "border-green-300 bg-green-50" :
+                      hasRejets ? "border-red-300 bg-red-50" :
+                      "border-border bg-muted/30"
+                    }`}>
+                      <div className="text-center mb-3">
+                        {hasVisa ? (
+                          <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" />
+                        ) : hasRejets ? (
+                          <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" />
+                        ) : (
+                          <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
+                        )}
+                        <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r]}</p>
+                        {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">Visa apposé</p>}
+                        {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                        {hasVisa && latestDec?.dateDecision && (
+                          <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>
+                        )}
+                      </div>
+                      {hasRejets && (
+                        <div className="space-y-3">
+                          <p className="text-red-700 font-semibold text-xs text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
+                          {allRejets.map((rej, idx) => (
+                            <div key={idx} className="border-l-2 border-red-300 pl-3 py-2 space-y-1 bg-background/50 rounded-r">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-medium text-red-800 text-xs">Rejet {idx + 1}</span>
+                                {rej.rejetTempStatus && (
+                                  <Badge className={`text-[9px] ${rej.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                    {rej.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                                  </Badge>
+                                )}
+                                {rej.dateDecision && (
+                                  <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>
+                                )}
+                              </div>
+                              {rej.motifRejet && (
+                                <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>
+                              )}
+                              {rej.documentsDemandes && rej.documentsDemandes.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                  {rej.documentsDemandes.map((dt: string) => (
+                                    <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">
+                                      {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Réponses au rejet visibles par tous */}
+                              {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
+                                <div className="mt-1.5 space-y-1">
+                                  <span className="text-[10px] text-muted-foreground font-medium">Réponses :</span>
+                                  {rej.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                                    <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-2 text-[11px] space-y-0.5">
+                                      <p className="text-foreground">{resp.message}</p>
+                                      {resp.documentType && (
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                          <FileText className="h-3 w-3" />
+                                          <span>{ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}</span>
+                                          {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
+                                        </div>
+                                      )}
+                                      <div className="flex gap-2 text-muted-foreground">
+                                        {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
+                                        {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR")}</span>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Boutons AC : répondre + upload doc */}
+                              {rej.rejetTempStatus === "OUVERT" && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                                <div className="flex gap-1.5 mt-1.5">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2"
+                                    onClick={() => { setResponseDecisionId(rej.id); setResponseMessage(""); setResponseOpen(true); }}
+                                  >
+                                    💬 Répondre
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2"
+                                    onClick={() => { setUploadType(""); setUploadMessage(""); setUploadOpen(true); }}
+                                  >
+                                    <Upload className="h-3 w-3 mr-1" /> Upload doc
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {/* Actions for own role */}
+                          {isMyRole && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
+                            <div className="flex gap-2 mt-2 justify-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                disabled={actionLoading === selected.id}
+                                onClick={() => checkAndHandleVisa(selected.id)}
+                              >
+                                Annuler le rejet (Apposer visa)
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-7 text-xs"
+                                disabled={actionLoading === selected.id}
+                                onClick={() => openRejectDialog(selected.id)}
+                              >
+                                Nouveau rejet
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
