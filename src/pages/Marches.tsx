@@ -61,14 +61,15 @@ const Marches = () => {
   const fetchMarches = async () => {
     setLoading(true);
     try {
-      const [data, conv] = await Promise.all([
+      const results = await Promise.allSettled([
         marcheApi.getAll(),
-        conventionApi.getAll().catch(() => [] as ConventionDto[]),
+        conventionApi.getAll(),
       ]);
-      setMarches(data);
-      setConventions(conv);
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les marchés", variant: "destructive" });
+      setMarches(results[0].status === "fulfilled" ? results[0].value : []);
+      setConventions(results[1].status === "fulfilled" ? results[1].value : []);
+      if (results[0].status === "rejected") {
+        toast({ title: "Erreur", description: "Impossible de charger les marchés", variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
