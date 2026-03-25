@@ -4,7 +4,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
-  DecisionCorrectionDto, ALL_DOCUMENT_TYPES,
+  DecisionCorrectionDto, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -121,6 +121,13 @@ const Demandes = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+
+  // Message-only response to rejet
+  const [responseOpen, setResponseOpen] = useState(false);
+  const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
+  const [responseMessage, setResponseMessage] = useState("");
+  const [responseSending, setResponseSending] = useState(false);
 
   // Upload offre corrigée dialog (DGTCP/DGB before visa)
   const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
@@ -493,19 +500,52 @@ const Demandes = () => {
 
   const handleUpload = async () => {
     if (!selected || !uploadFile || !uploadType) return;
+    // Check if this upload responds to an open REJET_TEMP
+    const openRejets = (selected.decisions || []).filter(
+      d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+    );
+    if (openRejets.length > 0 && !uploadMessage.trim()) {
+      toast({ title: "Message requis", description: "Ce document répond à un rejet temporaire. Veuillez saisir un message.", variant: "destructive" });
+      return;
+    }
     setUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile);
+      await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
       toast({ title: "Succès", description: "Document uploadé" });
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
+      setUploadMessage("");
       const documents = await demandeCorrectionApi.getDocuments(selected.id);
       setDocs(documents);
+      // Refresh selected to get updated rejetTempStatus
+      const full = await demandeCorrectionApi.getById(selected.id);
+      setSelected(full);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRejetTempResponse = async () => {
+    if (!responseDecisionId || !responseMessage.trim()) return;
+    setResponseSending(true);
+    try {
+      await demandeCorrectionApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
+      toast({ title: "Succès", description: "Réponse envoyée" });
+      setResponseOpen(false);
+      setResponseDecisionId(null);
+      setResponseMessage("");
+      if (selected) {
+        const full = await demandeCorrectionApi.getById(selected.id);
+        setSelected(full);
+      }
+      fetchDemandes();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setResponseSending(false);
     }
   };
 
@@ -647,6 +687,7 @@ const Demandes = () => {
                                 docs: r.documentsDemandes || [],
                                 date: r.dateDecision,
                                 utilisateur: r.utilisateurNom,
+                                status: r.rejetTempStatus,
                               })),
                               ...((d.rejets && (!decs.length)) ? d.rejets.map(r => ({
                                 role: "—",
@@ -654,6 +695,7 @@ const Demandes = () => {
                                 docs: [] as string[],
                                 date: r.dateRejet,
                                 utilisateur: r.utilisateurNom,
+                                status: undefined as string | undefined,
                               })) : []),
                             ];
 
@@ -688,6 +730,11 @@ const Demandes = () => {
                                         <div className="flex items-center gap-1.5">
                                           <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
                                           <span className="font-medium">{r.role}</span>
+                                          {r.status && (
+                                            <Badge className={`text-[9px] ${r.status === "OUVERT" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                                              {r.status === "OUVERT" ? "Ouvert" : "Résolu"}
+                                            </Badge>
+                                          )}
                                           {r.date && <span className="text-muted-foreground ml-auto text-[10px]">{new Date(r.date).toLocaleDateString("fr-FR")}</span>}
                                         </div>
                                         <p className="text-muted-foreground ml-5">{r.motif}</p>
@@ -868,6 +915,11 @@ const Demandes = () => {
                         )}
                         <span className="font-medium">{dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}</span>
                         <Badge variant="outline" className="text-xs">{dec.role}</Badge>
+                        {dec.decision === "REJET_TEMP" && dec.rejetTempStatus && (
+                          <Badge className={`text-[10px] ${dec.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                            {dec.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                          </Badge>
+                        )}
                       </div>
                       {dec.motifRejet && <p className="text-sm ml-6">{dec.motifRejet}</p>}
                       {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
@@ -883,7 +935,43 @@ const Demandes = () => {
                       <div className="flex gap-3 text-xs text-muted-foreground ml-6">
                         {dec.utilisateurNom && <span>Par : {dec.utilisateurNom}</span>}
                         {dec.dateDecision && <span>Le : {new Date(dec.dateDecision).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
+                        {dec.rejetTempResolvedAt && <span>Résolu le : {new Date(dec.rejetTempResolvedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
                       </div>
+                      {/* Réponses au rejet */}
+                      {dec.decision === "REJET_TEMP" && dec.rejetTempResponses && dec.rejetTempResponses.length > 0 && (
+                        <div className="ml-6 mt-2 space-y-1.5">
+                          <span className="text-[10px] text-muted-foreground font-medium">Réponses :</span>
+                          {dec.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                            <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-2 text-xs space-y-0.5">
+                              <p className="text-foreground">{resp.message}</p>
+                              {resp.documentType && (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <FileText className="h-3 w-3" />
+                                  <span>{ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}</span>
+                                  {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
+                                </div>
+                              )}
+                              <div className="flex gap-2 text-muted-foreground">
+                                {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
+                                {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Bouton répondre si OUVERT et rôle AC */}
+                      {dec.decision === "REJET_TEMP" && dec.rejetTempStatus === "OUVERT" && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                        <div className="ml-6 mt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[10px]"
+                            onClick={() => { setResponseDecisionId(dec.id); setResponseMessage(""); setResponseOpen(true); }}
+                          >
+                            💬 Répondre au rejet
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {/* Legacy rejets */}
@@ -955,8 +1043,13 @@ const Demandes = () => {
                                 <p className="text-red-700 font-semibold text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
                                 {allRejets.map((rej, idx) => (
                                   <div key={idx} className="border-l-2 border-red-300 pl-2 py-1 space-y-0.5">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between gap-1">
                                       <span className="font-medium text-red-800">Rejet {idx + 1}</span>
+                                      {rej.rejetTempStatus && (
+                                        <Badge className={`text-[8px] ${rej.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                          {rej.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                                        </Badge>
+                                      )}
                                       {rej.dateDecision && (
                                         <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>
                                       )}
@@ -1257,7 +1350,7 @@ const Demandes = () => {
       </Dialog>
 
       {/* Upload Dialog */}
-      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) { setUploadMessage(""); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Ajouter un document</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -1276,12 +1369,56 @@ const Demandes = () => {
               <Label>Fichier</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
             </div>
+            {/* Message field — required if responding to an open REJET_TEMP */}
+            {(() => {
+              const isRejetResponse = selected && uploadType && (selected.decisions || []).some(
+                d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+              );
+              return (
+                <div className="space-y-2">
+                  <Label>
+                    Message {isRejetResponse && <span className="text-destructive">* (réponse à un rejet)</span>}
+                  </Label>
+                  <Textarea
+                    placeholder={isRejetResponse ? "Décrivez les corrections apportées..." : "Message optionnel..."}
+                    value={uploadMessage}
+                    onChange={(e) => setUploadMessage(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setUploadOpen(false); setUploadMessage(""); }}>Annuler</Button>
             <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadType}>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Uploader
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Message-only response to rejet dialog */}
+      <Dialog open={responseOpen} onOpenChange={(v) => { setResponseOpen(v); if (!v) { setResponseDecisionId(null); setResponseMessage(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Répondre au rejet temporaire</DialogTitle>
+            <DialogDescription>Envoyez un message de réponse sans upload de document.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Saisissez votre réponse..."
+              value={responseMessage}
+              onChange={(e) => setResponseMessage(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResponseOpen(false); setResponseDecisionId(null); setResponseMessage(""); }}>Annuler</Button>
+            <Button onClick={handleRejetTempResponse} disabled={responseSending || !responseMessage.trim()}>
+              {responseSending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Envoyer la réponse
             </Button>
           </DialogFooter>
         </DialogContent>
