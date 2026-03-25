@@ -192,6 +192,11 @@ const Marches = () => {
       toast({ title: "Erreur", description: "La convention est obligatoire", variant: "destructive" });
       return;
     }
+    // Send montant only if provided
+    const payload = { ...form };
+    if (!payload.montantContratTtc && payload.montantContratTtc !== 0) {
+      delete (payload as any).montantContratTtc;
+    }
     setSubmitting(true);
     try {
       if (editing) {
