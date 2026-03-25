@@ -345,9 +345,17 @@ const Demandes = () => {
   };
 
   const handleTempReject = async (id: number, motif: string, documentsDemandes?: string[]) => {
+    if (!motif.trim()) {
+      toast({ title: "Erreur", description: "Le motif est obligatoire pour un rejet", variant: "destructive" });
+      return;
+    }
     setActionLoading(id);
     try {
-      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif, documentsDemandes);
+      await demandeCorrectionApi.reject(
+        String(id),
+        motif,
+        documentsDemandes?.join(","),
+      );
       await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDemandes();
@@ -495,13 +503,38 @@ const Demandes = () => {
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile);
+      // Check if this upload is linked to an open REJET_TEMP for this document type
+      const decisions = selected.decisions || [];
+      const openRejet = decisions.find(
+        (d) => d.decision === "REJET_TEMP" && d.documentsDemandes?.includes(uploadType)
+      );
+      if (openRejet) {
+        // Upload linked to a rejection
+        await demandeCorrectionApi.uploadCorrectionDocument(
+          String(selected.id),
+          uploadType,
+          uploadFile,
+          true,
+          openRejet.motifRejet || "Correction suite à rejet"
+        );
+      } else {
+        // Normal upload
+        await demandeCorrectionApi.uploadCorrectionDocument(
+          String(selected.id),
+          uploadType,
+          uploadFile
+        );
+      }
       toast({ title: "Succès", description: "Document uploadé" });
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
       const documents = await demandeCorrectionApi.getDocuments(selected.id);
       setDocs(documents);
+      // Refresh demande to get updated status
+      const full = await demandeCorrectionApi.getById(selected.id);
+      setSelected(full);
+      fetchDemandes();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
@@ -1341,12 +1374,17 @@ const Demandes = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Textarea
-              placeholder="Saisissez le motif du rejet..."
-              value={rejectMotif}
-              onChange={(e) => setRejectMotif(e.target.value)}
-              rows={3}
-            />
+            <div>
+              <Textarea
+                placeholder="Saisissez le motif du rejet..."
+                value={rejectMotif}
+                onChange={(e) => setRejectMotif(e.target.value)}
+                rows={3}
+              />
+              {!rejectMotif.trim() && (
+                <p className="text-xs text-destructive mt-1">Le motif est obligatoire</p>
+              )}
+            </div>
             {!rejectDecisionFinale && (
               <div>
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
