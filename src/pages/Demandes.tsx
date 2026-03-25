@@ -927,41 +927,57 @@ const Demandes = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {DECISION_ROLES_LIST.map((r) => {
                         const roleDecs = decs.filter(d => d.role === r);
-                        const dec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
-                        const isVisa = dec?.decision === "VISA";
-                        const isRejet = dec?.decision === "REJET_TEMP";
+                        const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
+                        const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
+                        const hasVisa = latestDec?.decision === "VISA";
+                        const hasRejets = allRejets.length > 0;
                         const isMyRole = (role as string) === r;
                         return (
-                          <div key={r} className={`rounded-lg border p-3 text-center text-xs ${
-                            isVisa ? "border-green-300 bg-green-50" :
-                            isRejet ? "border-red-300 bg-red-50" :
+                          <div key={r} className={`rounded-lg border p-3 text-xs ${
+                            hasVisa ? "border-green-300 bg-green-50" :
+                            hasRejets ? "border-red-300 bg-red-50" :
                             "border-border bg-muted/30"
                           }`}>
-                            {isVisa ? (
-                              <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                            ) : isRejet ? (
-                              <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
-                            ) : (
-                              <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
-                            )}
-                            <p className="font-medium">{DECISION_ROLE_LABELS[r] || r}</p>
-                            {isVisa && <p className="text-green-700 font-medium mt-0.5">Visa</p>}
-                            {isRejet && (
-                              <>
-                                <p className="text-red-700 font-medium mt-0.5">Rejeté</p>
-                                {dec.motifRejet && <p className="text-muted-foreground mt-1 italic truncate" title={dec.motifRejet}>{dec.motifRejet}</p>}
-                                {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
-                                  <div className="mt-1 flex flex-wrap gap-0.5 justify-center">
-                                    {dec.documentsDemandes.map((dt: string) => (
-                                      <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">
-                                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
-                                      </Badge>
-                                    ))}
+                            <div className="text-center">
+                              {hasVisa ? (
+                                <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                              ) : hasRejets ? (
+                                <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
+                              ) : (
+                                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
+                              )}
+                              <p className="font-medium">{DECISION_ROLE_LABELS[r] || r}</p>
+                              {hasVisa && <p className="text-green-700 font-medium mt-0.5">Visa</p>}
+                              {!latestDec && <p className="text-muted-foreground mt-0.5">En attente</p>}
+                            </div>
+                            {hasRejets && (
+                              <div className="mt-2 space-y-2">
+                                <p className="text-red-700 font-semibold text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
+                                {allRejets.map((rej, idx) => (
+                                  <div key={idx} className="border-l-2 border-red-300 pl-2 py-1 space-y-0.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium text-red-800">Rejet {idx + 1}</span>
+                                      {rej.dateDecision && (
+                                        <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>
+                                      )}
+                                    </div>
+                                    {rej.motifRejet && (
+                                      <p className="text-muted-foreground italic text-[11px]">{rej.motifRejet}</p>
+                                    )}
+                                    {rej.documentsDemandes && rej.documentsDemandes.length > 0 && (
+                                      <div className="flex flex-wrap gap-0.5">
+                                        {rej.documentsDemandes.map((dt: string) => (
+                                          <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">
+                                            {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                {/* Actions for own role's rejection: cancel or new */}
+                                ))}
+                                {/* Actions for own role: cancel or new */}
                                 {isMyRole && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
-                                  <div className="mt-2 flex flex-col gap-1">
+                                  <div className="flex flex-col gap-1 mt-1">
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -982,11 +998,10 @@ const Demandes = () => {
                                     </Button>
                                   </div>
                                 )}
-                              </>
+                              </div>
                             )}
-                            {!dec && <p className="text-muted-foreground mt-0.5">En attente</p>}
-                            {dec?.dateDecision && (
-                              <p className="text-muted-foreground mt-0.5 text-[10px]">{new Date(dec.dateDecision).toLocaleDateString("fr-FR")}</p>
+                            {latestDec?.dateDecision && hasVisa && (
+                              <p className="text-muted-foreground mt-0.5 text-[10px] text-center">{new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>
                             )}
                           </div>
                         );
