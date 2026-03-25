@@ -623,6 +623,26 @@ const Demandes = () => {
                         <TableCell className="text-muted-foreground text-sm">
                           {d.dateDepot ? new Date(d.dateDepot).toLocaleDateString("fr-FR") : "—"}
                         </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
+                            const isCurrentDGD = (role as string) === "DGD";
+                            const isPres = (role as string) === "PRESIDENT";
+                            const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                            const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
+                            const myDecision = (d.decisions || []).find(dec => dec.role === role);
+                            return blocked
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>
+                              : hasRejet
+                              ? <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
+                              : myDecision?.decision === "VISA"
+                              ? <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
+                              : <span className="text-muted-foreground text-xs">—</span>;
+                          })()}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {d.dateDepot ? new Date(d.dateDepot).toLocaleDateString("fr-FR") : "—"}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end items-center">
                             {role === "DGD" ? (
@@ -630,22 +650,28 @@ const Demandes = () => {
                                 <ArrowRight className="h-4 w-4 mr-1" /> Correction douanière
                               </Button>
                             ) : (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(d)} title="Voir détail">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                {(() => {
-                                   const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
-                                   const isCurrentDGD = (role as string) === "DGD";
-                                   const isPres = (role as string) === "PRESIDENT";
-                                   const blocked = !isCurrentDGD && !isPres && !dgdVisa;
-                                   const myDecision = (d.decisions || []).find(dec => dec.role === role);
-                                   const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openDetail(d)}>
+                                    <Eye className="h-4 w-4 mr-2" /> Détail
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
+                                    <FileText className="h-4 w-4 mr-2" /> Éditer
+                                  </DropdownMenuItem>
+                                  {(() => {
+                                    const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
+                                    const isCurrentDGD = (role as string) === "DGD";
+                                    const isPres = (role as string) === "PRESIDENT";
+                                    const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                                    const myDecision = (d.decisions || []).find(dec => dec.role === role);
+                                    const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
 
-                                   const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
-
-                                   // Build dropdown menu items
-                                   const menuItems = transitions
+                                    const actionItems = transitions
                                       .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale)
                                       .filter(t => !(t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP"))
                                       .map((t, idx) => (
@@ -660,43 +686,24 @@ const Demandes = () => {
                                         </DropdownMenuItem>
                                       ));
 
-                                   // Status badge (shown alongside dropdown, not instead of it)
-                                   const statusBadge = blocked
-                                     ? <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>
-                                     : hasRejet
-                                     ? <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
-                                     : myDecision?.decision === "VISA"
-                                     ? <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
-                                     : null;
-
-                                   if (menuItems.length === 0 && !canCancel) return statusBadge;
-
-                                   return (
+                                    return (
                                       <>
-                                        {statusBadge}
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="icon" className="h-8 w-8">
-                                              <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            {menuItems}
-                                            {menuItems.length > 0 && canCancel && <DropdownMenuSeparator />}
-                                            {canCancel && (
-                                              <DropdownMenuItem
-                                                className="text-destructive focus:text-destructive"
-                                                onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
-                                              >
-                                                <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
-                                              </DropdownMenuItem>
-                                            )}
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {actionItems.length > 0 && <DropdownMenuSeparator />}
+                                        {actionItems}
+                                        {canCancel && <DropdownMenuSeparator />}
+                                        {canCancel && (
+                                          <DropdownMenuItem
+                                            className="text-destructive focus:text-destructive"
+                                            onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
+                                          >
+                                            <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
+                                          </DropdownMenuItem>
+                                        )}
                                       </>
                                     );
-                                 })()}
-                              </>
+                                  })()}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
                           </div>
                         </TableCell>
