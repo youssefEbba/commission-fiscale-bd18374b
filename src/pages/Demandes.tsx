@@ -822,7 +822,8 @@ const Demandes = () => {
                     <h3 className="text-sm font-semibold mb-3">Statut par organisme</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {DECISION_ROLES_LIST.map((r) => {
-                        const dec = decs.find(d => d.role === r);
+                        const roleDecs = decs.filter(d => d.role === r);
+                        const dec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
                         const isVisa = dec?.decision === "VISA";
                         const isRejet = dec?.decision === "REJET_TEMP";
                         return (
