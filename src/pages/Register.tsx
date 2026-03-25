@@ -32,6 +32,7 @@ const Register = () => {
   const { toast } = useToast();
 
   // New entreprise fields
+  const [phoneError, setPhoneError] = useState("");
   const [newEntreprise, setNewEntreprise] = useState({
     raisonSociale: "",
     nif: "",
