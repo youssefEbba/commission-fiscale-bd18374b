@@ -503,13 +503,38 @@ const Demandes = () => {
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile);
+      // Check if this upload is linked to an open REJET_TEMP for this document type
+      const decisions = selected.decisions || [];
+      const openRejet = decisions.find(
+        (d) => d.decision === "REJET_TEMP" && d.documentsDemandes?.includes(uploadType)
+      );
+      if (openRejet) {
+        // Upload linked to a rejection
+        await demandeCorrectionApi.uploadCorrectionDocument(
+          String(selected.id),
+          uploadType,
+          uploadFile,
+          true,
+          openRejet.motifRejet || "Correction suite à rejet"
+        );
+      } else {
+        // Normal upload
+        await demandeCorrectionApi.uploadCorrectionDocument(
+          String(selected.id),
+          uploadType,
+          uploadFile
+        );
+      }
       toast({ title: "Succès", description: "Document uploadé" });
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
       const documents = await demandeCorrectionApi.getDocuments(selected.id);
       setDocs(documents);
+      // Refresh demande to get updated status
+      const full = await demandeCorrectionApi.getById(selected.id);
+      setSelected(full);
+      fetchDemandes();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
