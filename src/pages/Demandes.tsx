@@ -908,6 +908,11 @@ const Demandes = () => {
                         )}
                         <span className="font-medium">{dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}</span>
                         <Badge variant="outline" className="text-xs">{dec.role}</Badge>
+                        {dec.decision === "REJET_TEMP" && dec.rejetTempStatus && (
+                          <Badge className={`text-[10px] ${dec.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                            {dec.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                          </Badge>
+                        )}
                       </div>
                       {dec.motifRejet && <p className="text-sm ml-6">{dec.motifRejet}</p>}
                       {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
@@ -923,7 +928,43 @@ const Demandes = () => {
                       <div className="flex gap-3 text-xs text-muted-foreground ml-6">
                         {dec.utilisateurNom && <span>Par : {dec.utilisateurNom}</span>}
                         {dec.dateDecision && <span>Le : {new Date(dec.dateDecision).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
+                        {dec.rejetTempResolvedAt && <span>Résolu le : {new Date(dec.rejetTempResolvedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
                       </div>
+                      {/* Réponses au rejet */}
+                      {dec.decision === "REJET_TEMP" && dec.rejetTempResponses && dec.rejetTempResponses.length > 0 && (
+                        <div className="ml-6 mt-2 space-y-1.5">
+                          <span className="text-[10px] text-muted-foreground font-medium">Réponses :</span>
+                          {dec.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                            <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-2 text-xs space-y-0.5">
+                              <p className="text-foreground">{resp.message}</p>
+                              {resp.documentType && (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <FileText className="h-3 w-3" />
+                                  <span>{ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}</span>
+                                  {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
+                                </div>
+                              )}
+                              <div className="flex gap-2 text-muted-foreground">
+                                {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
+                                {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Bouton répondre si OUVERT et rôle AC */}
+                      {dec.decision === "REJET_TEMP" && dec.rejetTempStatus === "OUVERT" && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                        <div className="ml-6 mt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[10px]"
+                            onClick={() => { setResponseDecisionId(dec.id); setResponseMessage(""); setResponseOpen(true); }}
+                          >
+                            💬 Répondre au rejet
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {/* Legacy rejets */}
