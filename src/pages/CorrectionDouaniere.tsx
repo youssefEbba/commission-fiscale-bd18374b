@@ -558,7 +558,6 @@ const CorrectionDouaniere = () => {
                       </div>
                     );
                   })()}
-                  )}
 
                   {/* Special documents displayed below visas with large icons — visibles uniquement après adoption */}
                   {(demande?.statut === "ADOPTEE" || demande?.statut === "NOTIFIEE") && <div className="mt-6 pt-4 border-t border-border">
