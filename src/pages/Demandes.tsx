@@ -1374,12 +1374,17 @@ const Demandes = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Textarea
-              placeholder="Saisissez le motif du rejet..."
-              value={rejectMotif}
-              onChange={(e) => setRejectMotif(e.target.value)}
-              rows={3}
-            />
+            <div>
+              <Textarea
+                placeholder="Saisissez le motif du rejet..."
+                value={rejectMotif}
+                onChange={(e) => setRejectMotif(e.target.value)}
+                rows={3}
+              />
+              {!rejectMotif.trim() && (
+                <p className="text-xs text-destructive mt-1">Le motif est obligatoire</p>
+              )}
+            </div>
             {!rejectDecisionFinale && (
               <div>
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
