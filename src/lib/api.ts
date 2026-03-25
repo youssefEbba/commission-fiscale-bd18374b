@@ -855,6 +855,7 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
   DEMANDE: "Demandé",
   INCOMPLETE: "Incomplète",
+  A_RECONTROLER: "À recontrôler",
   EN_VERIFICATION_DGI: "En vérification DGI",
   EN_VALIDATION_PRESIDENT: "En validation Président",
   VALIDE_PRESIDENT: "Validé Président",
