@@ -51,10 +51,30 @@ const Register = () => {
   });
 
 
+  const validatePhone = (phone: string) => {
+    if (!phone) return "";
+    const cleaned = phone.replace(/\s/g, "");
+    if (!/^[234]\d{7}$/.test(cleaned)) {
+      return "Le téléphone doit commencer par 2, 3 ou 4 et contenir 8 chiffres";
+    }
+    return "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
+      return;
+    }
+    if (form.password.length < 6) {
+      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
+      return;
+    }
+    // Validate phone numbers
+    const entPhone = form.role === "ENTREPRISE" ? validatePhone(newEntreprise.telephone) : "";
+    const acPhone = form.role === "AUTORITE_CONTRACTANTE" ? validatePhone(newAC.telephone) : "";
+    if (entPhone || acPhone) {
+      toast({ title: "Erreur", description: entPhone || acPhone, variant: "destructive" });
       return;
     }
     setLoading(true);
