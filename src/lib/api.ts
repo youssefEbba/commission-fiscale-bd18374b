@@ -498,6 +498,32 @@ export const demandeCorrectionApi = {
         ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
       },
     }),
+  // Nouveau endpoint rejet (motif obligatoire)
+  reject: (correctionId: string, motif: string, scope?: string, details?: Record<string, unknown>) =>
+    apiFetch<unknown>("/correction/reject", {
+      method: "POST",
+      body: {
+        correctionId,
+        motif,
+        ...(scope ? { scope } : {}),
+        ...(details ? { details } : {}),
+      },
+    }),
+  // Nouveau endpoint upload document (versionnement)
+  uploadCorrectionDocument: (correctionId: string, name: string, file: File, isRejet?: boolean, motif?: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("correctionId", correctionId);
+    formData.append("name", name);
+    if (isRejet) {
+      formData.append("isRejet", "1");
+      if (motif) formData.append("motif", motif);
+    }
+    return apiFetch<unknown>("/correction/upload-document", {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
 };
 
 // Marchés
