@@ -641,52 +641,59 @@ const Demandes = () => {
                                    const myDecision = (d.decisions || []).find(dec => dec.role === role);
                                    const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
 
-                                   // Collect status badges
-                                   if (blocked) return <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>;
-                                   if (hasRejet) return <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>;
-                                   if (myDecision?.decision === "VISA") return <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>;
+                                   const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
 
                                    // Build dropdown menu items
                                    const menuItems = transitions
-                                     .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale)
-                                     .filter(t => !(t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP"))
-                                     .map((t, idx) => (
-                                       <DropdownMenuItem
-                                         key={idx}
-                                         className={t.to === "REJETEE" ? "text-destructive focus:text-destructive" : ""}
-                                         disabled={actionLoading === d.id}
-                                         onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
-                                       >
-                                         <t.icon className="h-4 w-4 mr-2" />
-                                         {t.label}
-                                       </DropdownMenuItem>
-                                     ));
+                                      .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale)
+                                      .filter(t => !(t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP"))
+                                      .map((t, idx) => (
+                                        <DropdownMenuItem
+                                          key={idx}
+                                          className={t.to === "REJETEE" ? "text-destructive focus:text-destructive" : ""}
+                                          disabled={actionLoading === d.id}
+                                          onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
+                                        >
+                                          <t.icon className="h-4 w-4 mr-2" />
+                                          {t.label}
+                                        </DropdownMenuItem>
+                                      ));
 
-                                   const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
+                                   // Status badge (shown alongside dropdown, not instead of it)
+                                   const statusBadge = blocked
+                                     ? <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>
+                                     : hasRejet
+                                     ? <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
+                                     : myDecision?.decision === "VISA"
+                                     ? <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
+                                     : null;
 
-                                   if (menuItems.length === 0 && !canCancel) return null;
+                                   if (menuItems.length === 0 && !canCancel) return statusBadge;
 
                                    return (
-                                     <DropdownMenu>
-                                       <DropdownMenuTrigger asChild>
-                                         <Button variant="outline" size="icon" className="h-8 w-8">
-                                           <MoreHorizontal className="h-4 w-4" />
-                                         </Button>
-                                       </DropdownMenuTrigger>
-                                       <DropdownMenuContent align="end">
-                                         {menuItems}
-                                         {menuItems.length > 0 && canCancel && <DropdownMenuSeparator />}
-                                         {canCancel && (
-                                           <DropdownMenuItem
-                                             className="text-destructive focus:text-destructive"
-                                             onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
-                                           >
-                                             <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
-                                           </DropdownMenuItem>
-                                         )}
-                                       </DropdownMenuContent>
-                                     </DropdownMenu>
-                                   );
+                                      <>
+                                        {statusBadge}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="icon" className="h-8 w-8">
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {menuItems}
+                                            {menuItems.length > 0 && canCancel && <DropdownMenuSeparator />}
+                                            {canCancel && (
+                                              <DropdownMenuItem
+                                                className="text-destructive focus:text-destructive"
+                                                onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
+                                              >
+                                                <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </>
+                                    );
                                  })()}
                               </>
                             )}
