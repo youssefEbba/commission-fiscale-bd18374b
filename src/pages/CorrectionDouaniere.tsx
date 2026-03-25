@@ -285,12 +285,25 @@ const CorrectionDouaniere = () => {
     if (!demande || !uploadType || !uploadFile) return;
     setUploadLoading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(demande.id, uploadType, uploadFile);
+      // Check if this upload responds to an open REJET_TEMP
+      const openRejets = decisions.filter(
+        d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+      );
+      if (openRejets.length > 0 && !uploadMessage.trim()) {
+        toast({ title: "Message requis", description: "Ajoutez un message de justification pour répondre au rejet.", variant: "destructive" });
+        setUploadLoading(false);
+        return;
+      }
+      await demandeCorrectionApi.uploadDocument(demande.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
       toast({ title: "Succès", description: "Document uploadé (nouvelle version)" });
       await fetchDocs();
+      // Refresh decisions to get updated rejetTempStatus
+      await fetchDecisions();
+      await fetchDemande();
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
+      setUploadMessage("");
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
@@ -298,13 +311,33 @@ const CorrectionDouaniere = () => {
     }
   };
 
+  // ---- Répondre à un rejet temporaire (message seul) ----
+  const handleRejetResponse = async () => {
+    if (!responseDecisionId || !responseMessage.trim()) return;
+    setResponseLoading(true);
+    try {
+      await demandeCorrectionApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
+      toast({ title: "Réponse envoyée" });
+      await fetchDecisions();
+      setResponseOpen(false);
+      setResponseMessage("");
+      setResponseDecisionId(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setResponseLoading(false);
+    }
+  };
+
   const isDirection = userRole && DECISION_ROLES.includes(userRole);
   const canFinalDecision = userRole === "PRESIDENT";
-  const isAC = userRole === "AUTORITE_CONTRACTANTE";
+  const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE";
 
-  // Current user's decision
-  const myDecision = decisions.find(d => d.role === userRole);
+  // Current user's latest decision
+  const myDecision = [...decisions]
+    .filter(d => d.role === userRole)
+    .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0] || null;
   const hasAnyRejet = decisions.some(d => d.decision === "REJET_TEMP");
 
   // DGD must validate first — block others if DGD hasn't visa'd
