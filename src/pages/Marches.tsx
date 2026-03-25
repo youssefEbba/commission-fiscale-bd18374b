@@ -360,9 +360,9 @@ const Marches = () => {
               <Label>Date de signature</Label>
               <Input type="date" value={form.dateSignature} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
             </div>
-            <div className="space-y-2">
-              <Label>Montant contrat TTC</Label>
-              <Input type="number" value={form.montantContratTtc || ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: parseFloat(e.target.value) || 0 }))} />
+             <div className="space-y-2">
+              <Label>Montant contrat TTC <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
+              <Input type="number" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined as any }))} placeholder="Laisser vide si non applicable" />
             </div>
             <div className="space-y-2">
               <Label>Statut</Label>

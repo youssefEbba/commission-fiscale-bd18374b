@@ -241,8 +241,9 @@ const Register = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Téléphone</Label>
-                      <Input value={newAC.telephone} onChange={(e) => updateAC("telephone", e.target.value)} placeholder="+222..." />
+                     <Label className="text-xs">Téléphone</Label>
+                      <Input value={newAC.telephone} onChange={(e) => { updateAC("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder="2XXXXXXX" pattern="[234]\d{7}" title="8 chiffres, commence par 2, 3 ou 4" maxLength={8} />
+                      {phoneError && newAC.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Email AC</Label>

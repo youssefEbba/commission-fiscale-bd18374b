@@ -156,12 +156,14 @@ const Utilisateurs = () => {
     } finally { setResetting(false); }
   };
 
-  const filtered = users.filter(
-    (u) =>
-      u.username.toLowerCase().includes(search.toLowerCase()) ||
+  const filtered = users.filter((u) => {
+    const matchSearch = u.username.toLowerCase().includes(search.toLowerCase()) ||
       u.nomComplet?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+      u.email?.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === "ALL" || u.role === roleFilter;
+    const matchStatus = statusFilter === "ALL" || (statusFilter === "ACTIF" ? u.actif : !u.actif);
+    return matchSearch && matchRole && matchStatus;
+  });
 
   const UserTable = ({ data }: { data: UtilisateurDto[] }) => (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
