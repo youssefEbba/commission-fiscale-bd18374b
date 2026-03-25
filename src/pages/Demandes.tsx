@@ -1043,8 +1043,13 @@ const Demandes = () => {
                                 <p className="text-red-700 font-semibold text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
                                 {allRejets.map((rej, idx) => (
                                   <div key={idx} className="border-l-2 border-red-300 pl-2 py-1 space-y-0.5">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between gap-1">
                                       <span className="font-medium text-red-800">Rejet {idx + 1}</span>
+                                      {rej.rejetTempStatus && (
+                                        <Badge className={`text-[8px] ${rej.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                          {rej.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                                        </Badge>
+                                      )}
                                       {rej.dateDecision && (
                                         <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>
                                       )}
