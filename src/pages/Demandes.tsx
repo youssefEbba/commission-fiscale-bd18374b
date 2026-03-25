@@ -1009,7 +1009,7 @@ const Demandes = () => {
                   DGI: "DGI – Impôts",
                   DGB: "DGB – Budget",
                 };
-                const [activeOrg, setActiveOrg] = React.useState(DECISION_ROLES_LIST[0]);
+                
                 const r = activeOrg;
                 const roleDecs = decs.filter(d => d.role === r);
                 const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
