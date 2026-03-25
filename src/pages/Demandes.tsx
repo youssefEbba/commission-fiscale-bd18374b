@@ -345,9 +345,17 @@ const Demandes = () => {
   };
 
   const handleTempReject = async (id: number, motif: string, documentsDemandes?: string[]) => {
+    if (!motif.trim()) {
+      toast({ title: "Erreur", description: "Le motif est obligatoire pour un rejet", variant: "destructive" });
+      return;
+    }
     setActionLoading(id);
     try {
-      await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif, documentsDemandes);
+      await demandeCorrectionApi.reject(
+        String(id),
+        motif,
+        documentsDemandes?.join(","),
+      );
       await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDemandes();
