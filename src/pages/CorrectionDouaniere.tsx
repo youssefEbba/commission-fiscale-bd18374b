@@ -95,6 +95,16 @@ const CorrectionDouaniere = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+
+  // Tab navigation for organism decisions
+  const [activeOrg, setActiveOrg] = useState("DGD");
+
+  // Response to rejet dialog
+  const [responseOpen, setResponseOpen] = useState(false);
+  const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
+  const [responseMessage, setResponseMessage] = useState("");
+  const [responseLoading, setResponseLoading] = useState(false);
 
   // Upload required doc before visa
   const [preVisaUploadOpen, setPreVisaUploadOpen] = useState(false);
