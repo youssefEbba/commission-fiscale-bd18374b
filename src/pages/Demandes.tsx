@@ -692,13 +692,37 @@ const Demandes = () => {
                                         </div>
                                         <p className="text-muted-foreground ml-5">{r.motif}</p>
                                         {r.docs.length > 0 && (
-                                          <div className="ml-5 flex flex-wrap gap-1">
+                                          <div className="ml-5 space-y-1">
                                             <span className="text-[10px] text-muted-foreground">Docs requis :</span>
-                                            {r.docs.map(dt => (
-                                              <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                                {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
-                                              </Badge>
-                                            ))}
+                                            <div className="flex flex-wrap gap-1">
+                                              {r.docs.map(dt => (
+                                                <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                                  {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                                </Badge>
+                                              ))}
+                                            </div>
+                                            {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                {r.docs.map(dt => (
+                                                  <Button
+                                                    key={`upload-${dt}`}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[10px]"
+                                                    onClick={() => {
+                                                      openDetail(d);
+                                                      setTimeout(() => {
+                                                        setUploadType(dt);
+                                                        setUploadOpen(true);
+                                                      }, 500);
+                                                    }}
+                                                  >
+                                                    <Upload className="h-3 w-3 mr-1" />
+                                                    {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                                  </Button>
+                                                ))}
+                                              </div>
+                                            )}
                                           </div>
                                         )}
                                       </div>
