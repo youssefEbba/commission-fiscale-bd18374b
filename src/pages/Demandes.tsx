@@ -671,26 +671,29 @@ const Demandes = () => {
                                    if (menuItems.length === 0 && !canCancel) return statusBadge;
 
                                    return (
-                                     <DropdownMenu>
-                                       <DropdownMenuTrigger asChild>
-                                         <Button variant="outline" size="icon" className="h-8 w-8">
-                                           <MoreHorizontal className="h-4 w-4" />
-                                         </Button>
-                                       </DropdownMenuTrigger>
-                                       <DropdownMenuContent align="end">
-                                         {menuItems}
-                                         {menuItems.length > 0 && canCancel && <DropdownMenuSeparator />}
-                                         {canCancel && (
-                                           <DropdownMenuItem
-                                             className="text-destructive focus:text-destructive"
-                                             onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
-                                           >
-                                             <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
-                                           </DropdownMenuItem>
-                                         )}
-                                       </DropdownMenuContent>
-                                     </DropdownMenu>
-                                   );
+                                      <>
+                                        {statusBadge}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="icon" className="h-8 w-8">
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {menuItems}
+                                            {menuItems.length > 0 && canCancel && <DropdownMenuSeparator />}
+                                            {canCancel && (
+                                              <DropdownMenuItem
+                                                className="text-destructive focus:text-destructive"
+                                                onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
+                                              >
+                                                <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </>
+                                    );
                                  })()}
                               </>
                             )}
