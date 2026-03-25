@@ -78,7 +78,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: 0, statut: "EN_COURS" });
+    setForm({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: undefined as any, statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
