@@ -1150,7 +1150,7 @@ const Demandes = () => {
                       <div className="space-y-2">
                         {myDec && (
                           <div className={`text-xs rounded px-2 py-1 inline-block ${myDec.decision === "VISA" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                            Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"} — Vous pouvez la modifier ci-dessous
+                            Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"} — {myDec.decision === "REJET_TEMP" ? "Vous pouvez annuler ce rejet ou en soumettre un nouveau" : "Vous pouvez soumettre un nouveau rejet"}
                           </div>
                         )}
                         {blocked ? (
