@@ -1066,6 +1066,49 @@ const Demandes = () => {
                                         ))}
                                       </div>
                                     )}
+                                    {/* Réponses au rejet visibles par tous */}
+                                    {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
+                                      <div className="mt-1 space-y-1">
+                                        <span className="text-[9px] text-muted-foreground font-medium">Réponses :</span>
+                                        {rej.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                                          <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-1.5 text-[10px] space-y-0.5">
+                                            <p className="text-foreground">{resp.message}</p>
+                                            {resp.documentType && (
+                                              <div className="flex items-center gap-1 text-muted-foreground">
+                                                <FileText className="h-2.5 w-2.5" />
+                                                <span>{ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}</span>
+                                                {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
+                                              </div>
+                                            )}
+                                            <div className="flex gap-2 text-muted-foreground">
+                                              {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
+                                              {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR")}</span>}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {/* Boutons AC : répondre + upload doc pour ce rejet */}
+                                    {rej.rejetTempStatus === "OUVERT" && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                                      <div className="flex gap-1 mt-1">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-5 text-[9px] px-1.5"
+                                          onClick={() => { setResponseDecisionId(rej.id); setResponseMessage(""); setResponseOpen(true); }}
+                                        >
+                                          💬 Répondre
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-5 text-[9px] px-1.5"
+                                          onClick={() => { setUploadType(""); setUploadMessage(""); setUploadOpen(true); }}
+                                        >
+                                          <Upload className="h-2.5 w-2.5 mr-0.5" /> Upload doc
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                                 {/* Actions for own role: cancel or new */}
