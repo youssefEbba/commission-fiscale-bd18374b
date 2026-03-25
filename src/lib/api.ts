@@ -518,6 +518,11 @@ export const demandeCorrectionApi = {
       method: "POST",
       body: { message },
     }),
+  // Résoudre manuellement un rejet temporaire (acteur déclenchant)
+  resolveRejetTemp: (decisionId: number) =>
+    apiFetch<DecisionCorrectionDto>(`/demandes-correction/decisions/${decisionId}/resolve`, {
+      method: "PUT",
+    }),
 };
 
 // Marchés
