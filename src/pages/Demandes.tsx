@@ -1117,6 +1117,11 @@ const Demandes = () => {
                                           {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
                                         </div>
                                       )}
+                                      {resp.documentUrl && (
+                                        <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                                          <Upload className="h-2.5 w-2.5 mr-0.5" /> Document uploadé
+                                        </Badge>
+                                      )}
                                       <div className="flex gap-2 text-muted-foreground">
                                         {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
                                         {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR")}</span>}
@@ -1143,6 +1148,31 @@ const Demandes = () => {
                                     onClick={() => { setUploadType(""); setUploadMessage(""); setUploadOpen(true); }}
                                   >
                                     <Upload className="h-3 w-3 mr-1" /> Upload doc
+                                  </Button>
+                                </div>
+                              )}
+                              {/* Bouton "Marquer résolu" pour l'acteur déclenchant */}
+                              {rej.rejetTempStatus === "OUVERT" && rej.role === role && hasRole(["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"]) && (
+                                <div className="mt-1.5">
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="h-6 text-[10px] px-2"
+                                    disabled={actionLoading === selected.id}
+                                    onClick={async () => {
+                                      setActionLoading(selected.id);
+                                      try {
+                                        await demandeCorrectionApi.resolveRejetTemp(rej.id);
+                                        toast({ title: "Succès", description: "Rejet marqué comme résolu" });
+                                        await fetchDemandes();
+                                      } catch (e: any) {
+                                        toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                      } finally {
+                                        setActionLoading(null);
+                                      }
+                                    }}
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-0.5" /> Marquer résolu
                                   </Button>
                                 </div>
                               )}

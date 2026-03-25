@@ -507,10 +507,15 @@ const CorrectionDouaniere = () => {
                                       <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-2 text-xs space-y-0.5">
                                         <p className="text-foreground">{resp.message}</p>
                                         {resp.documentType && (
-                                          <p className="text-[10px] text-muted-foreground">
+                                          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                                             📎 {ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}
                                             {resp.documentVersion && ` (v${resp.documentVersion})`}
                                           </p>
+                                        )}
+                                        {resp.documentUrl && (
+                                          <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                                            <Upload className="h-2.5 w-2.5 mr-0.5" /> Document uploadé
+                                          </Badge>
                                         )}
                                         <p className="text-[10px] text-muted-foreground">
                                           {resp.auteurNom && `Par: ${resp.auteurNom}`}
@@ -544,6 +549,33 @@ const CorrectionDouaniere = () => {
                                       }}
                                     >
                                       <Upload className="h-3 w-3 mr-1" /> Upload doc
+                                    </Button>
+                                  </div>
+                                )}
+
+                                {/* Bouton "Marquer résolu" pour l'acteur déclenchant */}
+                                {dec.decision === "REJET_TEMP" && dec.rejetTempStatus === "OUVERT" && isDirection && userRole === dec.role && (
+                                  <div className="mt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      className="h-7 text-[11px]"
+                                      disabled={actionLoading}
+                                      onClick={async () => {
+                                        setActionLoading(true);
+                                        try {
+                                          await demandeCorrectionApi.resolveRejetTemp(dec.id);
+                                          toast({ title: "Succès", description: "Rejet marqué comme résolu" });
+                                          await fetchDecisions();
+                                          await fetchDemande();
+                                        } catch (e: any) {
+                                          toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                        } finally {
+                                          setActionLoading(false);
+                                        }
+                                      }}
+                                    >
+                                      <CheckCircle className="h-3 w-3 mr-1" /> Marquer résolu
                                     </Button>
                                   </div>
                                 )}
