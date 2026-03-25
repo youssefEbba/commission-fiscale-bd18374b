@@ -831,6 +831,11 @@ export const utilisationCreditApi = {
         ...(motifRejet ? { motifRejet } : {}),
         ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
       },
+      }),
+  // Résoudre manuellement un rejet temporaire
+  resolveRejetTemp: (decisionId: number) =>
+    apiFetch<DecisionCorrectionDto>(`/utilisations-credit/decisions/${decisionId}/resolve`, {
+      method: "PUT",
     }),
 };
 
