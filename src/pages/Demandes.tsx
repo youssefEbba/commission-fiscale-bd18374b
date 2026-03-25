@@ -121,6 +121,13 @@ const Demandes = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+
+  // Message-only response to rejet
+  const [responseOpen, setResponseOpen] = useState(false);
+  const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
+  const [responseMessage, setResponseMessage] = useState("");
+  const [responseSending, setResponseSending] = useState(false);
 
   // Upload offre corrigée dialog (DGTCP/DGB before visa)
   const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
