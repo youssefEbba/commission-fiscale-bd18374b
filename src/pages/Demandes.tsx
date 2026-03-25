@@ -607,7 +607,7 @@ const Demandes = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((d) => (
