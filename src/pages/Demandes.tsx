@@ -500,19 +500,52 @@ const Demandes = () => {
 
   const handleUpload = async () => {
     if (!selected || !uploadFile || !uploadType) return;
+    // Check if this upload responds to an open REJET_TEMP
+    const openRejets = (selected.decisions || []).filter(
+      d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+    );
+    if (openRejets.length > 0 && !uploadMessage.trim()) {
+      toast({ title: "Message requis", description: "Ce document répond à un rejet temporaire. Veuillez saisir un message.", variant: "destructive" });
+      return;
+    }
     setUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile);
+      await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
       toast({ title: "Succès", description: "Document uploadé" });
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
+      setUploadMessage("");
       const documents = await demandeCorrectionApi.getDocuments(selected.id);
       setDocs(documents);
+      // Refresh selected to get updated rejetTempStatus
+      const full = await demandeCorrectionApi.getById(selected.id);
+      setSelected(full);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRejetTempResponse = async () => {
+    if (!responseDecisionId || !responseMessage.trim()) return;
+    setResponseSending(true);
+    try {
+      await demandeCorrectionApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
+      toast({ title: "Succès", description: "Réponse envoyée" });
+      setResponseOpen(false);
+      setResponseDecisionId(null);
+      setResponseMessage("");
+      if (selected) {
+        const full = await demandeCorrectionApi.getById(selected.id);
+        setSelected(full);
+      }
+      fetchDemandes();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setResponseSending(false);
     }
   };
 
