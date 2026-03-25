@@ -687,6 +687,7 @@ const Demandes = () => {
                                 docs: r.documentsDemandes || [],
                                 date: r.dateDecision,
                                 utilisateur: r.utilisateurNom,
+                                status: r.rejetTempStatus,
                               })),
                               ...((d.rejets && (!decs.length)) ? d.rejets.map(r => ({
                                 role: "—",
@@ -694,6 +695,7 @@ const Demandes = () => {
                                 docs: [] as string[],
                                 date: r.dateRejet,
                                 utilisateur: r.utilisateurNom,
+                                status: undefined as string | undefined,
                               })) : []),
                             ];
 
