@@ -730,6 +730,11 @@ const Demandes = () => {
                                         <div className="flex items-center gap-1.5">
                                           <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
                                           <span className="font-medium">{r.role}</span>
+                                          {r.status && (
+                                            <Badge className={`text-[9px] ${r.status === "OUVERT" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                                              {r.status === "OUVERT" ? "Ouvert" : "Résolu"}
+                                            </Badge>
+                                          )}
                                           {r.date && <span className="text-muted-foreground ml-auto text-[10px]">{new Date(r.date).toLocaleDateString("fr-FR")}</span>}
                                         </div>
                                         <p className="text-muted-foreground ml-5">{r.motif}</p>
