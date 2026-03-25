@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DocumentDto, DecisionCorrectionDto,
-  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS, ALL_DOCUMENT_TYPES,
+  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,16 @@ const CorrectionDouaniere = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+
+  // Tab navigation for organism decisions
+  const [activeOrg, setActiveOrg] = useState("DGD");
+
+  // Response to rejet dialog
+  const [responseOpen, setResponseOpen] = useState(false);
+  const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
+  const [responseMessage, setResponseMessage] = useState("");
+  const [responseLoading, setResponseLoading] = useState(false);
 
   // Upload required doc before visa
   const [preVisaUploadOpen, setPreVisaUploadOpen] = useState(false);
@@ -275,12 +285,25 @@ const CorrectionDouaniere = () => {
     if (!demande || !uploadType || !uploadFile) return;
     setUploadLoading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(demande.id, uploadType, uploadFile);
+      // Check if this upload responds to an open REJET_TEMP
+      const openRejets = decisions.filter(
+        d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+      );
+      if (openRejets.length > 0 && !uploadMessage.trim()) {
+        toast({ title: "Message requis", description: "Ajoutez un message de justification pour répondre au rejet.", variant: "destructive" });
+        setUploadLoading(false);
+        return;
+      }
+      await demandeCorrectionApi.uploadDocument(demande.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
       toast({ title: "Succès", description: "Document uploadé (nouvelle version)" });
       await fetchDocs();
+      // Refresh decisions to get updated rejetTempStatus
+      await fetchDecisions();
+      await fetchDemande();
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
+      setUploadMessage("");
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
@@ -288,13 +311,33 @@ const CorrectionDouaniere = () => {
     }
   };
 
+  // ---- Répondre à un rejet temporaire (message seul) ----
+  const handleRejetResponse = async () => {
+    if (!responseDecisionId || !responseMessage.trim()) return;
+    setResponseLoading(true);
+    try {
+      await demandeCorrectionApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
+      toast({ title: "Réponse envoyée" });
+      await fetchDecisions();
+      setResponseOpen(false);
+      setResponseMessage("");
+      setResponseDecisionId(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setResponseLoading(false);
+    }
+  };
+
   const isDirection = userRole && DECISION_ROLES.includes(userRole);
   const canFinalDecision = userRole === "PRESIDENT";
-  const isAC = userRole === "AUTORITE_CONTRACTANTE";
+  const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE";
 
-  // Current user's decision
-  const myDecision = decisions.find(d => d.role === userRole);
+  // Current user's latest decision
+  const myDecision = [...decisions]
+    .filter(d => d.role === userRole)
+    .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0] || null;
   const hasAnyRejet = decisions.some(d => d.decision === "REJET_TEMP");
 
   // DGD must validate first — block others if DGD hasn't visa'd
@@ -366,7 +409,7 @@ const CorrectionDouaniere = () => {
                 </CardContent>
               </Card>
 
-              {/* Décisions par organisme */}
+              {/* Décisions par organisme — Navigation par onglets */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -375,97 +418,146 @@ const CorrectionDouaniere = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {/* Onglets */}
+                  <div className="flex border-b border-border mb-4 overflow-x-auto">
                     {DECISION_ROLES.map((role) => {
-                      const dec = decisions.find(d => d.role === role);
-                      const isVisa = dec?.decision === "VISA";
-                      const isRejet = dec?.decision === "REJET_TEMP";
+                      const roleDecs = decisions.filter(d => d.role === role);
+                      const orgHasVisa = roleDecs.some(d => d.decision === "VISA");
+                      const orgHasRejets = roleDecs.some(d => d.decision === "REJET_TEMP");
+                      const hasOpenRejet = roleDecs.some(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
                       return (
-                        <div key={role} className={`rounded-lg border p-3 text-center text-xs ${
-                          isVisa ? "border-green-300 bg-green-50" :
-                          isRejet ? "border-red-300 bg-red-50" :
-                          "border-border bg-muted/30"
-                        }`}>
-                          {isVisa ? (
-                            <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                          ) : isRejet ? (
-                            <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
+                        <button
+                          key={role}
+                          onClick={() => setActiveOrg(role)}
+                          className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                            activeOrg === role
+                              ? "border-primary text-primary"
+                              : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                          }`}
+                        >
+                          {orgHasVisa ? (
+                            <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                          ) : orgHasRejets ? (
+                            <XCircle className={`h-3.5 w-3.5 ${hasOpenRejet ? "text-red-600" : "text-amber-500"}`} />
                           ) : (
-                            <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />
+                            <div className="h-3 w-3 rounded-full border-2 border-muted-foreground/30" />
                           )}
-                          <p className="font-medium">{DECISION_ROLE_LABELS[role] || role}</p>
-                          {isVisa && <p className="text-green-700 font-medium mt-0.5">Visa</p>}
-                          {isRejet && (
-                            <>
-                              <p className="text-red-700 font-medium mt-0.5">Rejet temp.</p>
-                              {dec.motifRejet && <p className="text-muted-foreground mt-1 italic truncate" title={dec.motifRejet}>{dec.motifRejet}</p>}
-                              {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
-                                <div className="mt-1 flex flex-wrap gap-0.5 justify-center">
-                                  {dec.documentsDemandes.map(dt => (
-                                    <Badge key={dt} variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">{ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}</Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                          {!dec && <p className="text-muted-foreground mt-0.5">En attente</p>}
-                          {dec?.dateDecision && (
-                            <p className="text-muted-foreground mt-0.5 text-[10px]">{new Date(dec.dateDecision).toLocaleDateString("fr-FR")}</p>
-                          )}
-                          {dec?.utilisateurNom && (
-                            <p className="text-muted-foreground text-[10px]">Par: {dec.utilisateurNom}</p>
-                          )}
-                        </div>
+                          {DECISION_ROLE_LABELS[role]}
+                        </button>
                       );
                     })}
                   </div>
 
-                  {/* Historique complet des décisions */}
-                  {decisions.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-border">
-                      <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                        <History className="h-4 w-4" /> Historique des visa / rejets
-                      </p>
-                      <div className="space-y-2">
-                        {[...decisions]
-                          .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())
-                          .map((dec, idx) => (
-                          <div key={idx} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
+                  {/* Contenu de l'onglet actif */}
+                  {(() => {
+                    const roleDecs = decisions
+                      .filter(d => d.role === activeOrg)
+                      .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime());
+
+                    if (roleDecs.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <div className="h-10 w-10 rounded-full border-2 border-muted-foreground/20 mx-auto mb-3" />
+                          <p className="text-sm font-medium">En attente</p>
+                          <p className="text-xs mt-1">Aucune décision de {DECISION_ROLE_LABELS[activeOrg]} pour le moment.</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-3">
+                        {roleDecs.map((dec, idx) => (
+                          <div key={dec.id || idx} className={`rounded-lg border p-3 text-sm ${
                             dec.decision === "VISA" ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"
                           }`}>
-                            {dec.decision === "VISA" ? (
-                              <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-red-600 shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium">
-                                {DECISION_ROLE_LABELS[dec.role] || dec.role}
-                                <span className={`ml-2 text-xs ${dec.decision === "VISA" ? "text-green-700" : "text-red-700"}`}>
-                                  {dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}
-                                </span>
-                              </p>
-                              {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-0.5">{dec.motifRejet}</p>}
-                              {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
-                                  {dec.documentsDemandes.map(dt => (
-                                    <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                      {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
-                                    </Badge>
-                                  ))}
-                                </div>
+                            <div className="flex items-start gap-3">
+                              {dec.decision === "VISA" ? (
+                                <CheckCircle className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                               )}
-                            </div>
-                            <div className="text-right shrink-0 text-xs text-muted-foreground">
-                              {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")} {new Date(dec.dateDecision).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>}
-                              {dec.utilisateurNom && <p>Par: {dec.utilisateurNom}</p>}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={`font-medium text-xs ${dec.decision === "VISA" ? "text-green-800" : "text-red-800"}`}>
+                                    {dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}
+                                  </span>
+                                  {dec.decision === "REJET_TEMP" && dec.rejetTempStatus && (
+                                    <Badge className={`text-[9px] ${dec.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                      {dec.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{dec.motifRejet}</p>}
+                                {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                    {dec.documentsDemandes.map(dt => (
+                                      <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Réponses au rejet */}
+                                {dec.decision === "REJET_TEMP" && dec.rejetTempResponses && dec.rejetTempResponses.length > 0 && (
+                                  <div className="mt-2 space-y-1.5 ml-1">
+                                    <span className="text-[10px] text-muted-foreground font-medium">💬 Réponses :</span>
+                                    {dec.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                                      <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-2 text-xs space-y-0.5">
+                                        <p className="text-foreground">{resp.message}</p>
+                                        {resp.documentType && (
+                                          <p className="text-[10px] text-muted-foreground">
+                                            📎 {ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}
+                                            {resp.documentVersion && ` (v${resp.documentVersion})`}
+                                          </p>
+                                        )}
+                                        <p className="text-[10px] text-muted-foreground">
+                                          {resp.auteurNom && `Par: ${resp.auteurNom}`}
+                                          {resp.createdAt && ` · ${new Date(resp.createdAt).toLocaleDateString("fr-FR")} ${new Date(resp.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Boutons AC : répondre + upload doc */}
+                                {dec.decision === "REJET_TEMP" && dec.rejetTempStatus === "OUVERT" && isAC && (
+                                  <div className="flex gap-1.5 mt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-[11px]"
+                                      onClick={() => { setResponseDecisionId(dec.id); setResponseMessage(""); setResponseOpen(true); }}
+                                    >
+                                      💬 Répondre
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-[11px]"
+                                      onClick={() => {
+                                        if (dec.documentsDemandes?.length) setUploadType(dec.documentsDemandes[0]);
+                                        setUploadMessage("");
+                                        setUploadFile(null);
+                                        setUploadOpen(true);
+                                      }}
+                                    >
+                                      <Upload className="h-3 w-3 mr-1" /> Upload doc
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right shrink-0 text-[10px] text-muted-foreground">
+                                {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")} {new Date(dec.dateDecision).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>}
+                                {dec.utilisateurNom && <p>Par: {dec.utilisateurNom}</p>}
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Special documents displayed below visas with large icons — visibles uniquement après adoption */}
                   {(demande?.statut === "ADOPTEE" || demande?.statut === "NOTIFIEE") && <div className="mt-6 pt-4 border-t border-border">
@@ -866,7 +958,7 @@ const CorrectionDouaniere = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES_REQUIS.map(dt => (
+                  {ALL_DOCUMENT_TYPES.map(dt => (
                     <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -876,12 +968,55 @@ const CorrectionDouaniere = () => {
               <Label className="text-xs">Fichier</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
             </div>
+            {/* Message de justification si c'est en réponse à un rejet */}
+            {(() => {
+              const isRejetResponse = uploadType && decisions.some(
+                d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+              );
+              if (!isRejetResponse) return null;
+              return (
+                <div>
+                  <Label className="text-xs">Message de justification <span className="text-destructive">*</span></Label>
+                  <Textarea
+                    placeholder="Expliquez la correction apportée..."
+                    value={uploadMessage}
+                    onChange={(e) => setUploadMessage(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Annuler</Button>
             <Button disabled={!uploadType || !uploadFile || uploadLoading} onClick={handleUpload}>
               {uploadLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Uploader
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Répondre à un rejet (message seul) */}
+      <Dialog open={responseOpen} onOpenChange={setResponseOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Répondre au rejet</DialogTitle>
+            <DialogDescription>Envoyez un message de justification à l'organisme ayant émis le rejet.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              placeholder="Votre message de justification..."
+              value={responseMessage}
+              onChange={(e) => setResponseMessage(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResponseOpen(false)}>Annuler</Button>
+            <Button disabled={!responseMessage.trim() || responseLoading} onClick={handleRejetResponse}>
+              {responseLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Envoyer
             </Button>
           </DialogFooter>
         </DialogContent>
