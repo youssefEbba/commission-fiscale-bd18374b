@@ -492,9 +492,10 @@ export const demandeCorrectionApi = {
   create: (data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>("/demandes-correction", { method: "POST", body: data }),
   updateStatut: (id: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}${decisionFinale ? `&decisionFinale=true` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`),
-  uploadDocument: (id: number, type: string, file: File) => {
+  uploadDocument: (id: number, type: string, file: File, message?: string) => {
     const formData = new FormData();
     formData.append("file", file);
+    if (message) formData.append("message", message);
     return apiFetch<DocumentDto>(`/demandes-correction/${id}/documents?type=${encodeURIComponent(type)}`, {
       method: "POST",
       rawBody: formData,
@@ -510,6 +511,12 @@ export const demandeCorrectionApi = {
         ...(motifRejet ? { motifRejet } : {}),
         ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
       },
+    }),
+  // Réponse message seul à un rejet temporaire
+  postRejetTempResponse: (decisionId: number, message: string) =>
+    apiFetch<RejetTempResponseDto>(`/demandes-correction/decisions/${decisionId}/rejet-temp/reponses`, {
+      method: "POST",
+      body: { message },
     }),
 };
 
