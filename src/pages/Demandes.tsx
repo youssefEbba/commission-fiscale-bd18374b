@@ -18,9 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock,
+  AlertTriangle, Lock, Unlock, MoreHorizontal,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
@@ -622,58 +623,71 @@ const Demandes = () => {
                           {d.dateDepot ? new Date(d.dateDepot).toLocaleDateString("fr-FR") : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
+                          <div className="flex gap-1 justify-end items-center">
                             {role === "DGD" ? (
                               <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
-                                <ArrowRight className="h-4 w-4 mr-1" /> Commencer la correction douanière
+                                <ArrowRight className="h-4 w-4 mr-1" /> Correction douanière
                               </Button>
                             ) : (
                               <>
-                                <Button variant="ghost" size="sm" onClick={() => openDetail(d)}>
-                                  <Eye className="h-4 w-4 mr-1" /> Détail
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(d)} title="Voir détail">
+                                  <Eye className="h-4 w-4" />
                                 </Button>
                                 {(() => {
                                    const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
                                    const isCurrentDGD = (role as string) === "DGD";
                                    const isPres = (role as string) === "PRESIDENT";
                                    const blocked = !isCurrentDGD && !isPres && !dgdVisa;
-                                   if (blocked) return <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ En attente visa DGD</Badge>;
-                                   return transitions.map((t, idx) => {
-                                     if (!t.from.includes(d.statut)) return null;
-                                     if (t.isDecisionFinale) return null;
-                                     const myDecision = (d.decisions || []).find(dec => dec.role === role);
-                                     const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
-                                     if (t.isVisa && hasRejet) return (
-                                       <Badge key={idx + "-blocked"} className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
-                                     );
-                                     if (t.isVisa && myDecision?.decision === "VISA") return (
-                                       <Badge key={idx + "-done"} className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
-                                     );
-                                     if (t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP") return null;
-                                     return (
-                                       <Button
+                                   const myDecision = (d.decisions || []).find(dec => dec.role === role);
+                                   const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
+
+                                   // Collect status badges
+                                   if (blocked) return <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>;
+                                   if (hasRejet) return <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>;
+                                   if (myDecision?.decision === "VISA") return <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>;
+
+                                   // Build dropdown menu items
+                                   const menuItems = transitions
+                                     .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale)
+                                     .filter(t => !(t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP"))
+                                     .map((t, idx) => (
+                                       <DropdownMenuItem
                                          key={idx}
-                                         variant={t.to === "REJETEE" ? "destructive" : "default"}
-                                         size="sm"
+                                         className={t.to === "REJETEE" ? "text-destructive focus:text-destructive" : ""}
                                          disabled={actionLoading === d.id}
                                          onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
                                        >
-                                         {actionLoading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
+                                         <t.icon className="h-4 w-4 mr-2" />
                                          {t.label}
-                                       </Button>
-                                     );
-                                   });
-                                  })()}
-                                {hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut) && (
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    disabled={actionLoading === d.id}
-                                    onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" /> Annuler
-                                  </Button>
-                                )}
+                                       </DropdownMenuItem>
+                                     ));
+
+                                   const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
+
+                                   if (menuItems.length === 0 && !canCancel) return null;
+
+                                   return (
+                                     <DropdownMenu>
+                                       <DropdownMenuTrigger asChild>
+                                         <Button variant="outline" size="icon" className="h-8 w-8">
+                                           <MoreHorizontal className="h-4 w-4" />
+                                         </Button>
+                                       </DropdownMenuTrigger>
+                                       <DropdownMenuContent align="end">
+                                         {menuItems}
+                                         {menuItems.length > 0 && canCancel && <DropdownMenuSeparator />}
+                                         {canCancel && (
+                                           <DropdownMenuItem
+                                             className="text-destructive focus:text-destructive"
+                                             onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
+                                           >
+                                             <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
+                                           </DropdownMenuItem>
+                                         )}
+                                       </DropdownMenuContent>
+                                     </DropdownMenu>
+                                   );
+                                 })()}
                               </>
                             )}
                           </div>
