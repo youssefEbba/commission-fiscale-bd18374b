@@ -588,7 +588,7 @@ export const delegueApi = {
 };
 
 // Certificats de crédit (P3)
-export type CertificatStatut = "DEMANDE" | "INCOMPLETE" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+export type CertificatStatut = "DEMANDE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
 export interface CertificatCreditDto {
   id: number;
@@ -664,7 +664,7 @@ export const certificatCreditApi = {
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
+export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface UtilisationCreditDto {
@@ -855,6 +855,7 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
   DEMANDE: "Demandé",
   INCOMPLETE: "Incomplète",
+  A_RECONTROLER: "À recontrôler",
   EN_VERIFICATION_DGI: "En vérification DGI",
   EN_VALIDATION_PRESIDENT: "En validation Président",
   VALIDE_PRESIDENT: "Validé Président",
@@ -864,7 +865,8 @@ export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
 };
 
 export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
-  DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", EN_VERIFICATION: "En vérification", VISE: "Visé",
+  DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", A_RECONTROLER: "À recontrôler",
+  EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
 };
 
