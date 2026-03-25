@@ -599,6 +599,7 @@ const Demandes = () => {
                     <TableHead>Autorité Contractante</TableHead>
                     <TableHead>Entreprise</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Stade</TableHead>
                     <TableHead>Date dépôt</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
