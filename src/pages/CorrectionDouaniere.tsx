@@ -958,7 +958,7 @@ const CorrectionDouaniere = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES_REQUIS.map(dt => (
+                  {ALL_DOCUMENT_TYPES.map(dt => (
                     <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -968,12 +968,55 @@ const CorrectionDouaniere = () => {
               <Label className="text-xs">Fichier</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
             </div>
+            {/* Message de justification si c'est en réponse à un rejet */}
+            {(() => {
+              const isRejetResponse = uploadType && decisions.some(
+                d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+              );
+              if (!isRejetResponse) return null;
+              return (
+                <div>
+                  <Label className="text-xs">Message de justification <span className="text-destructive">*</span></Label>
+                  <Textarea
+                    placeholder="Expliquez la correction apportée..."
+                    value={uploadMessage}
+                    onChange={(e) => setUploadMessage(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Annuler</Button>
             <Button disabled={!uploadType || !uploadFile || uploadLoading} onClick={handleUpload}>
               {uploadLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Uploader
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Répondre à un rejet (message seul) */}
+      <Dialog open={responseOpen} onOpenChange={setResponseOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Répondre au rejet</DialogTitle>
+            <DialogDescription>Envoyez un message de justification à l'organisme ayant émis le rejet.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              placeholder="Votre message de justification..."
+              value={responseMessage}
+              onChange={(e) => setResponseMessage(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResponseOpen(false)}>Annuler</Button>
+            <Button disabled={!responseMessage.trim() || responseLoading} onClick={handleRejetResponse}>
+              {responseLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Envoyer
             </Button>
           </DialogFooter>
         </DialogContent>
