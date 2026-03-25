@@ -620,9 +620,6 @@ const Demandes = () => {
                             {DEMANDE_STATUT_LABELS[d.statut]}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {d.dateDepot ? new Date(d.dateDepot).toLocaleDateString("fr-FR") : "—"}
-                        </TableCell>
                         <TableCell>
                           {(() => {
                             const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
