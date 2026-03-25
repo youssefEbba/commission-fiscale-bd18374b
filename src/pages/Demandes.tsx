@@ -898,13 +898,15 @@ const Demandes = () => {
                 };
                 return (
                   <div className="rounded-lg border border-border p-4">
-                    <h3 className="text-sm font-semibold mb-3">Statut par organisme</h3>
+                    <h3 className="text-sm font-semibold mb-1">Statut par organisme</h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Les rejets ne sont pas modifiables. Vous pouvez annuler un rejet existant ou en soumettre un nouveau.</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {DECISION_ROLES_LIST.map((r) => {
                         const roleDecs = decs.filter(d => d.role === r);
                         const dec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
                         const isVisa = dec?.decision === "VISA";
                         const isRejet = dec?.decision === "REJET_TEMP";
+                        const isMyRole = (role as string) === r;
                         return (
                           <div key={r} className={`rounded-lg border p-3 text-center text-xs ${
                             isVisa ? "border-green-300 bg-green-50" :
@@ -931,6 +933,29 @@ const Demandes = () => {
                                         {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
                                       </Badge>
                                     ))}
+                                  </div>
+                                )}
+                                {/* Actions for own role's rejection: cancel or new */}
+                                {isMyRole && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
+                                  <div className="mt-2 flex flex-col gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 text-[10px] w-full"
+                                      disabled={actionLoading === selected.id}
+                                      onClick={() => checkAndHandleVisa(selected.id)}
+                                    >
+                                      Annuler le rejet
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="h-6 text-[10px] w-full"
+                                      disabled={actionLoading === selected.id}
+                                      onClick={() => openRejectDialog(selected.id)}
+                                    >
+                                      Nouveau rejet
+                                    </Button>
                                   </div>
                                 )}
                               </>
