@@ -18,8 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock, MoreHorizontal,
+  AlertTriangle, Lock, Unlock, MoreHorizontal, Info,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
@@ -622,19 +623,97 @@ const Demandes = () => {
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
+                            const decs = d.decisions || [];
+                            const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
                             const isCurrentDGD = (role as string) === "DGD";
                             const isPres = (role as string) === "PRESIDENT";
                             const blocked = !isCurrentDGD && !isPres && !dgdVisa;
-                            const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
-                            const myDecision = (d.decisions || []).find(dec => dec.role === role);
-                            return blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>
+                            const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
+                            const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
+                            const myDecision = decs.find(dec => dec.role === role);
+
+                            const badgeContent = blocked
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">⏳ Visa DGD</Badge>
                               : hasRejet
-                              ? <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
+                              ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">Rejet en cours</Badge>
                               : myDecision?.decision === "VISA"
-                              ? <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
+                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">Visa apposé</Badge>
                               : <span className="text-muted-foreground text-xs">—</span>;
+
+                            const allRejets = [
+                              ...rejets.map(r => ({
+                                role: r.role,
+                                motif: r.motifRejet || "—",
+                                docs: r.documentsDemandes || [],
+                                date: r.dateDecision,
+                                utilisateur: r.utilisateurNom,
+                              })),
+                              ...((d.rejets && (!decs.length)) ? d.rejets.map(r => ({
+                                role: "—",
+                                motif: r.motifRejet || "—",
+                                docs: [] as string[],
+                                date: r.dateRejet,
+                                utilisateur: r.utilisateurNom,
+                              })) : []),
+                            ];
+
+                            if (allRejets.length === 0 && decs.length === 0) return badgeContent;
+
+                            return (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="inline-flex">{badgeContent}</button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 p-0" align="start">
+                                  <div className="p-3 border-b">
+                                    <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                                      <Info className="h-4 w-4 text-primary" />
+                                      Détails du stade
+                                    </h4>
+                                  </div>
+                                  <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
+                                    {/* Visas */}
+                                    {decs.filter(dec => dec.decision === "VISA").map((v, i) => (
+                                      <div key={`v-${i}`} className="flex items-center gap-2 text-xs rounded border border-green-200 bg-green-50 p-2">
+                                        <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                                        <div>
+                                          <span className="font-medium">{v.role}</span> — Visa
+                                          {v.dateDecision && <span className="text-muted-foreground ml-1">({new Date(v.dateDecision).toLocaleDateString("fr-FR")})</span>}
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {/* Rejets */}
+                                    {allRejets.length > 0 ? allRejets.map((r, i) => (
+                                      <div key={`r-${i}`} className="rounded border border-red-200 bg-red-50 p-2 text-xs space-y-1">
+                                        <div className="flex items-center gap-1.5">
+                                          <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                                          <span className="font-medium">{r.role}</span>
+                                          {r.date && <span className="text-muted-foreground ml-auto text-[10px]">{new Date(r.date).toLocaleDateString("fr-FR")}</span>}
+                                        </div>
+                                        <p className="text-muted-foreground ml-5">{r.motif}</p>
+                                        {r.docs.length > 0 && (
+                                          <div className="ml-5 flex flex-wrap gap-1">
+                                            <span className="text-[10px] text-muted-foreground">Docs requis :</span>
+                                            {r.docs.map(dt => (
+                                              <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                                {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )) : (
+                                      <p className="text-xs text-muted-foreground text-center py-2">Aucun rejet</p>
+                                    )}
+                                    {blocked && (
+                                      <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                                        ⏳ Le DGD doit valider en premier.
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            );
                           })()}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
@@ -819,13 +898,15 @@ const Demandes = () => {
                 };
                 return (
                   <div className="rounded-lg border border-border p-4">
-                    <h3 className="text-sm font-semibold mb-3">Statut par organisme</h3>
+                    <h3 className="text-sm font-semibold mb-1">Statut par organisme</h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Les rejets ne sont pas modifiables. Vous pouvez annuler un rejet existant ou en soumettre un nouveau.</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {DECISION_ROLES_LIST.map((r) => {
                         const roleDecs = decs.filter(d => d.role === r);
                         const dec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
                         const isVisa = dec?.decision === "VISA";
                         const isRejet = dec?.decision === "REJET_TEMP";
+                        const isMyRole = (role as string) === r;
                         return (
                           <div key={r} className={`rounded-lg border p-3 text-center text-xs ${
                             isVisa ? "border-green-300 bg-green-50" :
@@ -852,6 +933,29 @@ const Demandes = () => {
                                         {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
                                       </Badge>
                                     ))}
+                                  </div>
+                                )}
+                                {/* Actions for own role's rejection: cancel or new */}
+                                {isMyRole && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
+                                  <div className="mt-2 flex flex-col gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 text-[10px] w-full"
+                                      disabled={actionLoading === selected.id}
+                                      onClick={() => checkAndHandleVisa(selected.id)}
+                                    >
+                                      Annuler le rejet
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="h-6 text-[10px] w-full"
+                                      disabled={actionLoading === selected.id}
+                                      onClick={() => openRejectDialog(selected.id)}
+                                    >
+                                      Nouveau rejet
+                                    </Button>
                                   </div>
                                 )}
                               </>
@@ -1046,7 +1150,7 @@ const Demandes = () => {
                       <div className="space-y-2">
                         {myDec && (
                           <div className={`text-xs rounded px-2 py-1 inline-block ${myDec.decision === "VISA" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                            Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"} — Vous pouvez la modifier ci-dessous
+                            Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"} — {myDec.decision === "REJET_TEMP" ? "Vous pouvez annuler ce rejet ou en soumettre un nouveau" : "Vous pouvez soumettre un nouveau rejet"}
                           </div>
                         )}
                         {blocked ? (
