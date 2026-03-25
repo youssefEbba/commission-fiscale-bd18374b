@@ -152,6 +152,7 @@ const Demandes = () => {
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
+  const [activeOrg, setActiveOrg] = useState("DGD");
 
   const openEntrepriseDetail = async (entrepriseId: number) => {
     setEntrepriseDialogOpen(true);
