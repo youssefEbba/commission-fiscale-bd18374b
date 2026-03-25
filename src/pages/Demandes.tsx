@@ -623,19 +623,97 @@ const Demandes = () => {
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
+                            const decs = d.decisions || [];
+                            const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
                             const isCurrentDGD = (role as string) === "DGD";
                             const isPres = (role as string) === "PRESIDENT";
                             const blocked = !isCurrentDGD && !isPres && !dgdVisa;
-                            const hasRejet = (d.decisions || []).some(dec => dec.decision === "REJET_TEMP") || (d.rejets && d.rejets.length > 0);
-                            const myDecision = (d.decisions || []).find(dec => dec.role === role);
-                            return blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">⏳ Visa DGD</Badge>
+                            const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
+                            const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
+                            const myDecision = decs.find(dec => dec.role === role);
+
+                            const badgeContent = blocked
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">⏳ Visa DGD</Badge>
                               : hasRejet
-                              ? <Badge className="bg-red-100 text-red-800 text-xs">Rejet en cours</Badge>
+                              ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">Rejet en cours</Badge>
                               : myDecision?.decision === "VISA"
-                              ? <Badge className="bg-green-100 text-green-800 text-xs">Visa apposé</Badge>
+                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">Visa apposé</Badge>
                               : <span className="text-muted-foreground text-xs">—</span>;
+
+                            const allRejets = [
+                              ...rejets.map(r => ({
+                                role: r.role,
+                                motif: r.motifRejet || "—",
+                                docs: r.documentsDemandes || [],
+                                date: r.dateDecision,
+                                utilisateur: r.utilisateurNom,
+                              })),
+                              ...((d.rejets && (!decs.length)) ? d.rejets.map(r => ({
+                                role: "—",
+                                motif: r.motifRejet || "—",
+                                docs: [] as string[],
+                                date: r.dateRejet,
+                                utilisateur: r.utilisateurNom,
+                              })) : []),
+                            ];
+
+                            if (allRejets.length === 0 && decs.length === 0) return badgeContent;
+
+                            return (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="inline-flex">{badgeContent}</button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 p-0" align="start">
+                                  <div className="p-3 border-b">
+                                    <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                                      <Info className="h-4 w-4 text-primary" />
+                                      Détails du stade
+                                    </h4>
+                                  </div>
+                                  <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
+                                    {/* Visas */}
+                                    {decs.filter(dec => dec.decision === "VISA").map((v, i) => (
+                                      <div key={`v-${i}`} className="flex items-center gap-2 text-xs rounded border border-green-200 bg-green-50 p-2">
+                                        <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                                        <div>
+                                          <span className="font-medium">{v.role}</span> — Visa
+                                          {v.dateDecision && <span className="text-muted-foreground ml-1">({new Date(v.dateDecision).toLocaleDateString("fr-FR")})</span>}
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {/* Rejets */}
+                                    {allRejets.length > 0 ? allRejets.map((r, i) => (
+                                      <div key={`r-${i}`} className="rounded border border-red-200 bg-red-50 p-2 text-xs space-y-1">
+                                        <div className="flex items-center gap-1.5">
+                                          <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                                          <span className="font-medium">{r.role}</span>
+                                          {r.date && <span className="text-muted-foreground ml-auto text-[10px]">{new Date(r.date).toLocaleDateString("fr-FR")}</span>}
+                                        </div>
+                                        <p className="text-muted-foreground ml-5">{r.motif}</p>
+                                        {r.docs.length > 0 && (
+                                          <div className="ml-5 flex flex-wrap gap-1">
+                                            <span className="text-[10px] text-muted-foreground">Docs requis :</span>
+                                            {r.docs.map(dt => (
+                                              <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                                {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )) : (
+                                      <p className="text-xs text-muted-foreground text-center py-2">Aucun rejet</p>
+                                    )}
+                                    {blocked && (
+                                      <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                                        ⏳ Le DGD doit valider en premier.
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            );
                           })()}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
