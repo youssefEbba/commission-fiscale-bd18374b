@@ -439,6 +439,16 @@ export interface DocumentDto {
 // Décisions temporaires par acteur
 export type DecisionType = "VISA" | "REJET_TEMP";
 
+export interface RejetTempResponseDto {
+  id: number;
+  message: string;
+  documentUrl?: string;
+  documentType?: string;
+  documentVersion?: number;
+  createdAt?: string;
+  auteurNom?: string;
+}
+
 export interface DecisionCorrectionDto {
   id: number;
   role: string;
@@ -448,6 +458,9 @@ export interface DecisionCorrectionDto {
   dateDecision?: string;
   utilisateurId?: number;
   utilisateurNom?: string;
+  rejetTempStatus?: "OUVERT" | "RESOLU";
+  rejetTempResolvedAt?: string;
+  rejetTempResponses?: RejetTempResponseDto[];
 }
 
 export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
