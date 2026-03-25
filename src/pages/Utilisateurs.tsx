@@ -18,6 +18,8 @@ const Utilisateurs = () => {
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
   const { toast } = useToast();
