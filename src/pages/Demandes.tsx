@@ -1338,7 +1338,7 @@ const Demandes = () => {
       </Dialog>
 
       {/* Upload Dialog */}
-      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) { setUploadMessage(""); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Ajouter un document</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -1357,12 +1357,56 @@ const Demandes = () => {
               <Label>Fichier</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
             </div>
+            {/* Message field — required if responding to an open REJET_TEMP */}
+            {(() => {
+              const isRejetResponse = selected && uploadType && (selected.decisions || []).some(
+                d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
+              );
+              return (
+                <div className="space-y-2">
+                  <Label>
+                    Message {isRejetResponse && <span className="text-destructive">* (réponse à un rejet)</span>}
+                  </Label>
+                  <Textarea
+                    placeholder={isRejetResponse ? "Décrivez les corrections apportées..." : "Message optionnel..."}
+                    value={uploadMessage}
+                    onChange={(e) => setUploadMessage(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setUploadOpen(false); setUploadMessage(""); }}>Annuler</Button>
             <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadType}>
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
               Uploader
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Message-only response to rejet dialog */}
+      <Dialog open={responseOpen} onOpenChange={(v) => { setResponseOpen(v); if (!v) { setResponseDecisionId(null); setResponseMessage(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Répondre au rejet temporaire</DialogTitle>
+            <DialogDescription>Envoyez un message de réponse sans upload de document.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Saisissez votre réponse..."
+              value={responseMessage}
+              onChange={(e) => setResponseMessage(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResponseOpen(false); setResponseDecisionId(null); setResponseMessage(""); }}>Annuler</Button>
+            <Button onClick={handleRejetTempResponse} disabled={responseSending || !responseMessage.trim()}>
+              {responseSending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Envoyer la réponse
             </Button>
           </DialogFooter>
         </DialogContent>
