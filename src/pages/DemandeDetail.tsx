@@ -474,6 +474,8 @@ const DemandeDetail = () => {
                 const orgLatest = orgDecs.length > 0 ? orgDecs[orgDecs.length - 1] : undefined;
                 const orgHasVisa = orgLatest?.decision === "VISA";
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
+                const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
+                const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
                 const isActive = activeOrg === orgRole;
                 return (
                   <button
@@ -483,7 +485,7 @@ const DemandeDetail = () => {
                       isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                     }`}
                   >
-                    {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
+                    {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
                     <span className="hidden sm:inline">{DECISION_ROLE_LABELS[orgRole]}</span>
                     <span className="sm:hidden">{orgRole}</span>
                   </button>
