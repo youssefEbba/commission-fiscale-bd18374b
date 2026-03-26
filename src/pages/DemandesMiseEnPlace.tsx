@@ -434,8 +434,23 @@ const DemandesMiseEnPlace = () => {
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
-                          {/* REJET_TEMP button (DGI/DGTCP/DGB/DGD) */}
-                          {(role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
+                          {/* Apposer visa (DGI/DGTCP/DGB/DGD/PRESIDENT) */}
+                          {(role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD" || role === "PRESIDENT") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
+                            <Button variant="outline" size="sm" className="text-green-600 border-green-300" disabled={visaLoading} onClick={async () => {
+                              setVisaLoading(true);
+                              try {
+                                await certificatCreditApi.postDecision(c.id, "VISA");
+                                toast({ title: "Succès", description: "Visa apposé" });
+                                fetchCertificats();
+                              } catch (e: any) {
+                                toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                              } finally { setVisaLoading(false); }
+                            }}>
+                              <ShieldCheck className="h-4 w-4 mr-1" /> Apposer visa
+                            </Button>
+                          )}
+                          {/* REJET_TEMP button (DGI/DGTCP/DGB/DGD/PRESIDENT) */}
+                          {(role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD" || role === "PRESIDENT") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
                             <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(c); setRejetTempMotif(""); setRejetTempDocs([]); }}>
                               <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
                             </Button>
