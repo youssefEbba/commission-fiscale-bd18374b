@@ -454,6 +454,10 @@ const CorrectionDouaniere = () => {
                       .filter(d => d.role === activeOrg)
                       .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime());
 
+                    // Séparer les décisions actives (visa + rejets ouverts) et résolues
+                    const activeDecs = roleDecs.filter(d => d.decision === "VISA" || (d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU"));
+                    const resolvedDecs = roleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
+
                     if (roleDecs.length === 0) {
                       return (
                         <div className="text-center py-8 text-muted-foreground">
@@ -466,7 +470,13 @@ const CorrectionDouaniere = () => {
 
                     return (
                       <div className="space-y-3">
-                        {roleDecs.map((dec, idx) => (
+                        {activeDecs.length === 0 && resolvedDecs.length > 0 && (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                            <p className="text-xs">Tous les rejets ont été résolus.</p>
+                          </div>
+                        )}
+                        {activeDecs.map((dec, idx) => (
                           <div key={dec.id || idx} className={`rounded-lg border p-3 text-sm ${
                             dec.decision === "VISA" ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"
                           }`}>
@@ -587,6 +597,65 @@ const CorrectionDouaniere = () => {
                             </div>
                           </div>
                         ))}
+
+                        {/* Historique des rejets résolus — pliable */}
+                        {resolvedDecs.length > 0 && (
+                          <details className="mt-3 border-t border-border pt-3">
+                            <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+                              <History className="h-3.5 w-3.5" />
+                              Historique ({resolvedDecs.length} rejet{resolvedDecs.length > 1 ? "s" : ""} résolu{resolvedDecs.length > 1 ? "s" : ""})
+                            </summary>
+                            <div className="space-y-2 mt-2">
+                              {resolvedDecs.map((dec, idx) => (
+                                <div key={dec.id || idx} className="rounded-lg border border-muted bg-muted/30 p-3 text-sm opacity-75">
+                                  <div className="flex items-start gap-3">
+                                    <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-medium text-xs text-muted-foreground">Rejet temporaire</span>
+                                        <Badge className="text-[9px] bg-green-100 text-green-700">Résolu</Badge>
+                                      </div>
+                                      {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{dec.motifRejet}</p>}
+                                      {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1.5">
+                                          <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                          {dec.documentsDemandes.map(dt => (
+                                            <Badge key={dt} variant="outline" className="text-[10px] bg-muted text-muted-foreground border-muted-foreground/20">
+                                              {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {dec.rejetTempResponses && dec.rejetTempResponses.length > 0 && (
+                                        <div className="mt-2 space-y-1.5 ml-1">
+                                          <span className="text-[10px] text-muted-foreground font-medium">💬 Réponses :</span>
+                                          {dec.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                                            <div key={ri} className="rounded border border-muted bg-background p-2 text-xs space-y-0.5">
+                                              <p className="text-foreground">{resp.message}</p>
+                                              {resp.documentUrl && (
+                                                <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                                                  <Upload className="h-2.5 w-2.5 mr-0.5" /> Document uploadé
+                                                </Badge>
+                                              )}
+                                              <p className="text-[10px] text-muted-foreground">
+                                                {resp.auteurNom && `Par: ${resp.auteurNom}`}
+                                                {resp.createdAt && ` · ${new Date(resp.createdAt).toLocaleDateString("fr-FR")}`}
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="text-right shrink-0 text-[10px] text-muted-foreground">
+                                      {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")}</p>}
+                                      {dec.utilisateurNom && <p>Par: {dec.utilisateurNom}</p>}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
                       </div>
                     );
                   })()}

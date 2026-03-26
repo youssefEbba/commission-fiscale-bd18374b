@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock, MoreHorizontal, Info,
+  AlertTriangle, Lock, Unlock, MoreHorizontal, Info, History,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1014,6 +1014,8 @@ const Demandes = () => {
                 const roleDecs = decs.filter(d => d.role === r);
                 const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
                 const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
+                const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
+                const resolvedRejets = allRejets.filter(d => d.rejetTempStatus === "RESOLU");
                 const hasVisa = latestDec?.decision === "VISA";
                 const hasRejets = allRejets.length > 0;
                 const isMyRole = (role as string) === r;
@@ -1076,8 +1078,16 @@ const Demandes = () => {
                       </div>
                       {hasRejets && (
                         <div className="space-y-3">
-                          <p className="text-red-700 font-semibold text-xs text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
-                          {allRejets.map((rej, idx) => (
+                          {openRejets.length > 0 && (
+                            <p className="text-red-700 font-semibold text-xs text-center">{openRejets.length} rejet{openRejets.length > 1 ? "s" : ""} ouvert{openRejets.length > 1 ? "s" : ""}</p>
+                          )}
+                          {openRejets.length === 0 && resolvedRejets.length > 0 && (
+                            <div className="text-center py-3 text-muted-foreground">
+                              <CheckCircle className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                              <p className="text-xs">Tous les rejets ont été résolus.</p>
+                            </div>
+                          )}
+                          {openRejets.map((rej, idx) => (
                             <div key={idx} className="border-l-2 border-red-300 pl-3 py-2 space-y-1 bg-background/50 rounded-r">
                               <div className="flex items-center justify-between gap-1">
                                 <span className="font-medium text-red-800 text-xs">Rejet {idx + 1}</span>
@@ -1200,6 +1210,59 @@ const Demandes = () => {
                                 Nouveau rejet
                               </Button>
                             </div>
+                          )}
+
+                          {/* Historique des rejets résolus — pliable */}
+                          {resolvedRejets.length > 0 && (
+                            <details className="mt-3 border-t border-border pt-3">
+                              <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+                                <History className="h-3.5 w-3.5" />
+                                Historique ({resolvedRejets.length} rejet{resolvedRejets.length > 1 ? "s" : ""} résolu{resolvedRejets.length > 1 ? "s" : ""})
+                              </summary>
+                              <div className="space-y-2 mt-2">
+                                {resolvedRejets.map((rej, idx) => (
+                                  <div key={idx} className="border-l-2 border-muted pl-3 py-2 space-y-1 bg-muted/30 rounded-r opacity-75">
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="font-medium text-muted-foreground text-xs">Rejet {idx + 1}</span>
+                                      <Badge className="text-[9px] bg-green-100 text-green-700">Résolu</Badge>
+                                      {rej.dateDecision && (
+                                        <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>
+                                      )}
+                                    </div>
+                                    {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
+                                    {rej.documentsDemandes && rej.documentsDemandes.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                        {rej.documentsDemandes.map((dt: string) => (
+                                          <Badge key={dt} variant="outline" className="text-[9px] bg-muted text-muted-foreground border-muted-foreground/20">
+                                            {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
+                                      <div className="mt-1.5 space-y-1">
+                                        <span className="text-[10px] text-muted-foreground font-medium">Réponses :</span>
+                                        {rej.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
+                                          <div key={ri} className="rounded border border-muted bg-background p-2 text-[11px] space-y-0.5">
+                                            <p className="text-foreground">{resp.message}</p>
+                                            {resp.documentUrl && (
+                                              <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                                                <Upload className="h-2.5 w-2.5 mr-0.5" /> Document uploadé
+                                              </Badge>
+                                            )}
+                                            <div className="flex gap-2 text-muted-foreground">
+                                              {resp.auteurNom && <span>Par : {resp.auteurNom}</span>}
+                                              {resp.createdAt && <span>Le : {new Date(resp.createdAt).toLocaleDateString("fr-FR")}</span>}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
                           )}
                         </div>
                       )}
