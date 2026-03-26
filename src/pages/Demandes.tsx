@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock, MoreHorizontal, Info,
+  AlertTriangle, Lock, Unlock, MoreHorizontal, Info, History,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
