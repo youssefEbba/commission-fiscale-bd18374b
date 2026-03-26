@@ -1527,7 +1527,10 @@ const Demandes = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES_REQUIS.map((t) => (
+                  {(uploadAllowedTypes.length > 0
+                    ? DOCUMENT_TYPES_REQUIS.filter(t => uploadAllowedTypes.includes(t.value))
+                    : DOCUMENT_TYPES_REQUIS
+                  ).map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
