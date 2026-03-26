@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, FileDown, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, FileDown, Lock, Unlock, AlertTriangle, History } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const API_BASE = "https://df36-197-231-15-212.ngrok-free.app/api";
@@ -124,6 +124,13 @@ const DemandesMiseEnPlace = () => {
 
   // Certificate generation state (DGTCP)
   const [generatingCert, setGeneratingCert] = useState<number | null>(null);
+
+  // Organism tabs state
+  const [activeOrg, setActiveOrg] = useState("DGI");
+
+  // Visa dialog
+  const [showVisaOrg, setShowVisaOrg] = useState<{ certId: number; orgRole: string } | null>(null);
+  const [visaLoading, setVisaLoading] = useState(false);
 
   const fetchCertificats = async () => {
     setLoading(true);
@@ -479,6 +486,150 @@ const DemandesMiseEnPlace = () => {
                 </p></div>
               </div>
 
+              {/* Statut par organisme — Tabs */}
+              {(() => {
+                const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "PRESIDENT"];
+                const DECISION_ROLE_LABELS: Record<string, string> = {
+                  DGI: "DGI – Impôts",
+                  DGTCP: "DGTCP – Trésor",
+                  DGB: "DGB – Budget",
+                  PRESIDENT: "Président",
+                };
+                const decs = decisions;
+                const r = activeOrg;
+                const roleDecs = decs.filter(d => d.role === r);
+                const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
+                const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
+                const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
+                const resolvedRejets = allRejets.filter(d => d.rejetTempStatus === "RESOLU");
+                const hasVisa = latestDec?.decision === "VISA";
+                const hasRejets = allRejets.length > 0;
+                const allResolved = hasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
+                const isMyRole = (role as string) === r;
+                const cardStyle = hasVisa ? "border-green-300 bg-green-50" : allResolved ? "border-emerald-300 bg-emerald-50" : hasRejets ? "border-red-300 bg-red-50" : "border-border bg-muted/30";
+
+                return (
+                  <div className="border-t pt-3">
+                    <h4 className="font-semibold mb-2 text-sm">Statut par organisme</h4>
+                    {/* Tab navigation */}
+                    <div className="flex border-b border-border mb-3 gap-0">
+                      {DECISION_ROLES_LIST.map((orgRole) => {
+                        const orgDecs = decs.filter(d => d.role === orgRole);
+                        const orgLatest = orgDecs.length > 0 ? orgDecs[orgDecs.length - 1] : undefined;
+                        const orgHasVisa = orgLatest?.decision === "VISA";
+                        const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
+                        const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
+                        const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
+                        const isActive = activeOrg === orgRole;
+                        return (
+                          <button
+                            key={orgRole}
+                            onClick={() => setActiveOrg(orgRole)}
+                            className={`relative flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                              isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                            }`}
+                          >
+                            {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
+                            <span>{DECISION_ROLE_LABELS[orgRole] || orgRole}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Active organism content */}
+                    <div className={`rounded-lg border p-4 min-h-[100px] ${cardStyle}`}>
+                      <div className="text-center mb-3">
+                        {hasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : allResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : hasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
+                        <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
+                        {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">Visa apposé</p>}
+                        {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets ont été résolus</p>}
+                        {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                        {hasVisa && latestDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>}
+                      </div>
+                      {/* Open rejets */}
+                      {openRejets.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-red-700 font-semibold text-xs text-center">{openRejets.length} rejet{openRejets.length > 1 ? "s" : ""} ouvert{openRejets.length > 1 ? "s" : ""}</p>
+                          {openRejets.map((rej, idx) => (
+                            <div key={idx} className="border-l-2 border-red-300 pl-3 py-2 space-y-1 bg-background/50 rounded-r">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-medium text-red-800 text-xs">Rejet {idx + 1}</span>
+                                <Badge className="text-[9px] bg-red-100 text-red-700">Ouvert</Badge>
+                                {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                              </div>
+                              {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
+                              {rej.documentsDemandes && rej.documentsDemandes.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                  {rej.documentsDemandes.map((dt: string) => (
+                                    <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">{MISE_EN_PLACE_DOC_TYPES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ")}</Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Resolve button for initiator */}
+                              {rej.role === role && (
+                                <Button size="sm" variant="default" className="h-6 text-[10px] px-2 mt-1" disabled={actionLoading === selected.id} onClick={async () => {
+                                  setActionLoading(selected.id);
+                                  try {
+                                    await certificatCreditApi.resolveRejetTemp(rej.id);
+                                    toast({ title: "Succès", description: "Rejet marqué comme résolu" });
+                                    openDetail(selected);
+                                  } catch (e: any) {
+                                    toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                  } finally { setActionLoading(null); }
+                                }}>
+                                  <CheckCircle className="h-3 w-3 mr-0.5" /> Marquer résolu
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Actions: visa + rejet for current role */}
+                      {isMyRole && !["OUVERT", "ANNULE", "CLOTURE"].includes(selected.statut) && (
+                        <div className="flex gap-2 mt-3 justify-center">
+                          <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={async () => {
+                            setVisaLoading(true);
+                            try {
+                              await certificatCreditApi.postDecision(selected.id, "VISA");
+                              toast({ title: "Succès", description: "Visa apposé" });
+                              openDetail(selected);
+                            } catch (e: any) {
+                              toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                            } finally { setVisaLoading(false); }
+                          }}>
+                            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Apposer visa
+                          </Button>
+                          <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={() => { setShowRejetTemp(selected); setRejetTempMotif(""); setRejetTempDocs([]); }}>
+                            <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
+                          </Button>
+                        </div>
+                      )}
+                      {/* Historique pliable */}
+                      {resolvedRejets.length > 0 && (
+                        <details className="mt-3 border-t border-border pt-3">
+                          <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+                            <History className="h-3.5 w-3.5" />
+                            Historique ({resolvedRejets.length} rejet{resolvedRejets.length > 1 ? "s" : ""} résolu{resolvedRejets.length > 1 ? "s" : ""})
+                          </summary>
+                          <div className="space-y-2 mt-2">
+                            {resolvedRejets.map((rej, idx) => (
+                              <div key={idx} className="border-l-2 border-muted pl-3 py-2 space-y-1 bg-muted/30 rounded-r opacity-75">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-medium text-muted-foreground text-xs">Rejet {idx + 1}</span>
+                                  <Badge className="text-[9px] bg-green-100 text-green-700">Résolu</Badge>
+                                  {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                                </div>
+                                {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Documents */}
               <div className="border-t pt-3">
                 <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Documents du dossier</h4>
@@ -503,33 +654,6 @@ const DemandesMiseEnPlace = () => {
                   </div>
                 )}
               </div>
-
-              {/* Decisions history */}
-              {decisions.length > 0 && (
-                <div className="border-t pt-3">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Historique des décisions</h4>
-                  <div className="space-y-2">
-                    {decisions.map((d) => (
-                      <div key={d.id} className={`p-2 rounded border text-xs ${d.decision === "REJET_TEMP" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant={d.decision === "REJET_TEMP" ? "destructive" : "default"} className="text-[10px]">{d.decision}</Badge>
-                          <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
-                          {d.dateDecision && <span className="text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
-                        </div>
-                        {d.motifRejet && <p className="text-muted-foreground mb-1">{d.motifRejet}</p>}
-                        {d.documentsDemandes && d.documentsDemandes.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            <span className="text-muted-foreground">Documents demandés :</span>
-                            {d.documentsDemandes.map((doc) => (
-                              <Badge key={doc} variant="outline" className="text-[10px]">{doc.replace(/_/g, " ")}</Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
