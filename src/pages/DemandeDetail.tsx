@@ -76,6 +76,38 @@ function getDocFileUrl(doc: DocumentDto): string {
   return "";
 }
 
+async function openDocInNewTab(url: string) {
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+  });
+  if (!res.ok) throw new Error("Impossible d'ouvrir le fichier");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  window.open(objectUrl, "_blank");
+}
+
+async function downloadDocAuthenticated(url: string, filename: string) {
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+  });
+  if (!res.ok) throw new Error("Téléchargement échoué");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
 const DemandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
