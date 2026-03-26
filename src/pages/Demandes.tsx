@@ -806,7 +806,7 @@ const Demandes = () => {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openDetail(d)}>
+                                  <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 mr-2" /> Détail
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
