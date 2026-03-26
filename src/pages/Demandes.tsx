@@ -1326,7 +1326,7 @@ const Demandes = () => {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Pièces du dossier</h3>
                   {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                    <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
+                    <Button variant="outline" size="sm" onClick={() => { setUploadAllowedTypes([]); setUploadType(""); setUploadOpen(true); }}>
                       <Upload className="h-4 w-4 mr-1" /> Ajouter un document
                     </Button>
                   )}
