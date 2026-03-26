@@ -1407,7 +1407,7 @@ const Demandes = () => {
                                   </>
                                 )}
                                 {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
-                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadType(type); setUploadOpen(true); }}>
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadAllowedTypes([]); setUploadType(type); setUploadOpen(true); }}>
                                     <Upload className="h-3.5 w-3.5 mr-1" /> Nouvelle version
                                   </Button>
                                 )}
