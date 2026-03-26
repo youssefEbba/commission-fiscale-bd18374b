@@ -1155,7 +1155,7 @@ const Demandes = () => {
                                     variant="outline"
                                     size="sm"
                                     className="h-6 text-[10px] px-2"
-                                    onClick={() => { setUploadType(""); setUploadMessage(""); setUploadOpen(true); }}
+                                    onClick={() => { if (rej.documentsDemandes?.length) setUploadType(rej.documentsDemandes[0]); else setUploadType(""); setUploadMessage(""); setUploadFile(null); setUploadOpen(true); }}
                                   >
                                     <Upload className="h-3 w-3 mr-1" /> Upload doc
                                   </Button>
