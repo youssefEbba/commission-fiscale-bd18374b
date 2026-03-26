@@ -1014,6 +1014,8 @@ const Demandes = () => {
                 const roleDecs = decs.filter(d => d.role === r);
                 const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
                 const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
+                const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
+                const resolvedRejets = allRejets.filter(d => d.rejetTempStatus === "RESOLU");
                 const hasVisa = latestDec?.decision === "VISA";
                 const hasRejets = allRejets.length > 0;
                 const isMyRole = (role as string) === r;
