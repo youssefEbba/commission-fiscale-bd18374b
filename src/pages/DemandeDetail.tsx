@@ -491,23 +491,22 @@ const DemandeDetail = () => {
               })}
             </div>
             {/* Active organism content */}
-            <div className={`rounded-lg border p-4 min-h-[120px] ${hasVisa ? "border-green-300 bg-green-50" : hasRejets ? "border-red-300 bg-red-50" : "border-border bg-muted/30"}`}>
+            {(() => {
+              const allResolved = hasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
+              const cardStyle = hasVisa ? "border-green-300 bg-green-50" : allResolved ? "border-emerald-300 bg-emerald-50" : hasRejets ? "border-red-300 bg-red-50" : "border-border bg-muted/30";
+              return (
+            <div className={`rounded-lg border p-4 min-h-[120px] ${cardStyle}`}>
               <div className="text-center mb-3">
-                {hasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : hasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
+                {hasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : allResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : hasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r]}</p>
                 {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">Visa apposé</p>}
+                {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">✅ Tous les rejets ont été résolus</p>}
                 {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
                 {hasVisa && latestDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>}
               </div>
               {hasRejets && (
                 <div className="space-y-3">
                   {openRejets.length > 0 && <p className="text-red-700 font-semibold text-xs text-center">{openRejets.length} rejet{openRejets.length > 1 ? "s" : ""} ouvert{openRejets.length > 1 ? "s" : ""}</p>}
-                  {openRejets.length === 0 && resolvedRejets.length > 0 && (
-                    <div className="text-center py-3 text-muted-foreground">
-                      <CheckCircle className="h-5 w-5 text-green-500 mx-auto mb-1" />
-                      <p className="text-xs">Tous les rejets ont été résolus.</p>
-                    </div>
-                  )}
                   {openRejets.map((rej, idx) => (
                     <div key={idx} className="border-l-2 border-red-300 pl-3 py-2 space-y-1 bg-background/50 rounded-r">
                       <div className="flex items-center justify-between gap-1">
