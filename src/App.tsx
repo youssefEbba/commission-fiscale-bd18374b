@@ -130,6 +130,11 @@ const App = () => (
                 <Simulation />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/demandes/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <DemandeDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/correction-douaniere/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <CorrectionDouaniere />
