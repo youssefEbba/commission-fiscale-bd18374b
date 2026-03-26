@@ -684,7 +684,7 @@ const DemandeDetail = () => {
                               <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
                             </Button>
                             <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" asChild>
-                              <a href={fileUrl} download={doc.nomFichier || doc.nom}>
+                              <a href={fileUrl} download={doc.nomFichier}>
                                 <Download className="h-3 w-3 mr-1" /> Télécharger
                               </a>
                             </Button>
