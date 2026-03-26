@@ -454,6 +454,10 @@ const CorrectionDouaniere = () => {
                       .filter(d => d.role === activeOrg)
                       .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime());
 
+                    // Séparer les décisions actives (visa + rejets ouverts) et résolues
+                    const activeDecs = roleDecs.filter(d => d.decision === "VISA" || (d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU"));
+                    const resolvedDecs = roleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
+
                     if (roleDecs.length === 0) {
                       return (
                         <div className="text-center py-8 text-muted-foreground">
@@ -466,7 +470,13 @@ const CorrectionDouaniere = () => {
 
                     return (
                       <div className="space-y-3">
-                        {roleDecs.map((dec, idx) => (
+                        {activeDecs.length === 0 && resolvedDecs.length > 0 && (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                            <p className="text-xs">Tous les rejets ont été résolus.</p>
+                          </div>
+                        )}
+                        {activeDecs.map((dec, idx) => (
                           <div key={dec.id || idx} className={`rounded-lg border p-3 text-sm ${
                             dec.decision === "VISA" ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"
                           }`}>
