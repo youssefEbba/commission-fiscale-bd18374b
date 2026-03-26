@@ -121,6 +121,7 @@ const Demandes = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadAllowedTypes, setUploadAllowedTypes] = useState<string[]>([]);
   const [uploadMessage, setUploadMessage] = useState("");
 
   // Message-only response to rejet
