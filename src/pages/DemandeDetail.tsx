@@ -652,6 +652,8 @@ const DemandeDetail = () => {
                 </div>
               )}
             </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
