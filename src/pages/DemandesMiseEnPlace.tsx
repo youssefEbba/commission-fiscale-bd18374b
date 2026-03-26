@@ -125,6 +125,13 @@ const DemandesMiseEnPlace = () => {
   // Certificate generation state (DGTCP)
   const [generatingCert, setGeneratingCert] = useState<number | null>(null);
 
+  // Organism tabs state
+  const [activeOrg, setActiveOrg] = useState("DGI");
+
+  // Visa dialog
+  const [showVisaOrg, setShowVisaOrg] = useState<{ certId: number; orgRole: string } | null>(null);
+  const [visaLoading, setVisaLoading] = useState(false);
+
   const fetchCertificats = async () => {
     setLoading(true);
     try {
