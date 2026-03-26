@@ -34,6 +34,7 @@ import Presentation from "./pages/Presentation";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
 import Modifications from "./pages/Modifications";
+import DemandeDetail from "./pages/DemandeDetail";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +128,11 @@ const App = () => (
             <Route path="/dashboard/simulation" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "ADMIN_SI"]}>
                 <Simulation />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/demandes/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <DemandeDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/correction-douaniere/:id" element={
