@@ -488,11 +488,12 @@ const DemandesMiseEnPlace = () => {
 
               {/* Statut par organisme — Tabs */}
               {(() => {
-                const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "PRESIDENT"];
+                const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
                 const DECISION_ROLE_LABELS: Record<string, string> = {
                   DGI: "DGI – Impôts",
                   DGTCP: "DGTCP – Trésor",
                   DGB: "DGB – Budget",
+                  DGD: "DGD – Douanes",
                   PRESIDENT: "Président",
                 };
                 const decs = decisions;
