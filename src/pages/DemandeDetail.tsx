@@ -76,6 +76,38 @@ function getDocFileUrl(doc: DocumentDto): string {
   return "";
 }
 
+async function openDocInNewTab(url: string) {
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+  });
+  if (!res.ok) throw new Error("Impossible d'ouvrir le fichier");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  window.open(objectUrl, "_blank");
+}
+
+async function downloadDocAuthenticated(url: string, filename: string) {
+  const token = localStorage.getItem("auth_token");
+  const res = await fetch(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+  });
+  if (!res.ok) throw new Error("Téléchargement échoué");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
 const DemandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -680,13 +712,11 @@ const DemandeDetail = () => {
                         <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{SPECIAL_DOC_LABELS_MAP[docType]}</p>
                         {doc && fileUrl ? (
                           <div className="flex items-center justify-center gap-2 mt-2">
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => window.open(fileUrl, "_blank")}>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => openDocInNewTab(fileUrl)}>
                               <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" asChild>
-                              <a href={fileUrl} download={doc.nomFichier}>
-                                <Download className="h-3 w-3 mr-1" /> Télécharger
-                              </a>
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => downloadDocAuthenticated(fileUrl, doc.nomFichier)}>
+                              <Download className="h-3 w-3 mr-1" /> Télécharger
                             </Button>
                           </div>
                         ) : (
