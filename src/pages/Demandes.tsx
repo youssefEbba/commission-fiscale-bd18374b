@@ -121,6 +121,7 @@ const Demandes = () => {
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadAllowedTypes, setUploadAllowedTypes] = useState<string[]>([]);
   const [uploadMessage, setUploadMessage] = useState("");
 
   // Message-only response to rejet
@@ -1155,7 +1156,7 @@ const Demandes = () => {
                                     variant="outline"
                                     size="sm"
                                     className="h-6 text-[10px] px-2"
-                                    onClick={() => { if (rej.documentsDemandes?.length) setUploadType(rej.documentsDemandes[0]); else setUploadType(""); setUploadMessage(""); setUploadFile(null); setUploadOpen(true); }}
+                                    onClick={() => { const docs = rej.documentsDemandes || []; setUploadAllowedTypes(docs); if (docs.length) setUploadType(docs[0]); else setUploadType(""); setUploadMessage(""); setUploadFile(null); setUploadOpen(true); }}
                                   >
                                     <Upload className="h-3 w-3 mr-1" /> Upload doc
                                   </Button>
@@ -1325,7 +1326,7 @@ const Demandes = () => {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Pièces du dossier</h3>
                   {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                    <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
+                    <Button variant="outline" size="sm" onClick={() => { setUploadAllowedTypes([]); setUploadType(""); setUploadOpen(true); }}>
                       <Upload className="h-4 w-4 mr-1" /> Ajouter un document
                     </Button>
                   )}
@@ -1406,7 +1407,7 @@ const Demandes = () => {
                                   </>
                                 )}
                                 {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
-                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadType(type); setUploadOpen(true); }}>
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadAllowedTypes([]); setUploadType(type); setUploadOpen(true); }}>
                                     <Upload className="h-3.5 w-3.5 mr-1" /> Nouvelle version
                                   </Button>
                                 )}
@@ -1526,7 +1527,10 @@ const Demandes = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES_REQUIS.map((t) => (
+                  {(uploadAllowedTypes.length > 0
+                    ? DOCUMENT_TYPES_REQUIS.filter(t => uploadAllowedTypes.includes(t.value))
+                    : DOCUMENT_TYPES_REQUIS
+                  ).map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
