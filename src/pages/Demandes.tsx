@@ -1078,8 +1078,16 @@ const Demandes = () => {
                       </div>
                       {hasRejets && (
                         <div className="space-y-3">
-                          <p className="text-red-700 font-semibold text-xs text-center">{allRejets.length} rejet{allRejets.length > 1 ? "s" : ""}</p>
-                          {allRejets.map((rej, idx) => (
+                          {openRejets.length > 0 && (
+                            <p className="text-red-700 font-semibold text-xs text-center">{openRejets.length} rejet{openRejets.length > 1 ? "s" : ""} ouvert{openRejets.length > 1 ? "s" : ""}</p>
+                          )}
+                          {openRejets.length === 0 && resolvedRejets.length > 0 && (
+                            <div className="text-center py-3 text-muted-foreground">
+                              <CheckCircle className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                              <p className="text-xs">Tous les rejets ont été résolus.</p>
+                            </div>
+                          )}
+                          {openRejets.map((rej, idx) => (
                             <div key={idx} className="border-l-2 border-red-300 pl-3 py-2 space-y-1 bg-background/50 rounded-r">
                               <div className="flex items-center justify-between gap-1">
                                 <span className="font-medium text-red-800 text-xs">Rejet {idx + 1}</span>
