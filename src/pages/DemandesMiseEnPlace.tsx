@@ -434,8 +434,8 @@ const DemandesMiseEnPlace = () => {
                               <XCircle className="h-4 w-4 mr-1" /> Rejeter
                             </Button>
                           )}
-                          {/* REJET_TEMP button (DGI/DGTCP) */}
-                          {(role === "DGI" || role === "DGTCP") && ["DEMANDE", "EN_VERIFICATION_DGI", "EN_OUVERTURE_DGTCP"].includes(c.statut) && (
+                          {/* REJET_TEMP button (DGI/DGTCP/DGB/DGD) */}
+                          {(role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
                             <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(c); setRejetTempMotif(""); setRejetTempDocs([]); }}>
                               <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
                             </Button>
@@ -488,11 +488,12 @@ const DemandesMiseEnPlace = () => {
 
               {/* Statut par organisme — Tabs */}
               {(() => {
-                const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "PRESIDENT"];
+                const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
                 const DECISION_ROLE_LABELS: Record<string, string> = {
                   DGI: "DGI – Impôts",
                   DGTCP: "DGTCP – Trésor",
                   DGB: "DGB – Budget",
+                  DGD: "DGD – Douanes",
                   PRESIDENT: "Président",
                 };
                 const decs = decisions;
