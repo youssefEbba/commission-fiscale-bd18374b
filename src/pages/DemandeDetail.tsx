@@ -679,9 +679,16 @@ const DemandeDetail = () => {
                         {doc ? <Download className="h-8 w-8 text-primary mx-auto mb-2" /> : <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />}
                         <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{SPECIAL_DOC_LABELS_MAP[docType]}</p>
                         {doc && fileUrl ? (
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] mt-2" onClick={() => window.open(fileUrl, "_blank")}>
-                            <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
-                          </Button>
+                          <div className="flex items-center justify-center gap-2 mt-2">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => window.open(fileUrl, "_blank")}>
+                              <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" asChild>
+                              <a href={fileUrl} download={doc.nomFichier || doc.nom}>
+                                <Download className="h-3 w-3 mr-1" /> Télécharger
+                              </a>
+                            </Button>
+                          </div>
                         ) : (
                           <p className="text-[10px] text-muted-foreground mt-1">Non disponible</p>
                         )}
