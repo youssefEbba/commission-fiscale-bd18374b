@@ -759,11 +759,7 @@ const Demandes = () => {
                                                     size="sm"
                                                     className="h-6 px-2 text-[10px]"
                                                     onClick={() => {
-                                                      openDetail(d);
-                                                      setTimeout(() => {
-                                                        setUploadType(dt);
-                                                        setUploadOpen(true);
-                                                      }, 500);
+                                                      navigate(`/dashboard/demandes/${d.id}`);
                                                     }}
                                                   >
                                                     <Upload className="h-3 w-3 mr-1" />
