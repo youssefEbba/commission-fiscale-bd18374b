@@ -516,7 +516,7 @@ const MiseEnPlaceDetail = () => {
                   Annuler
                 </Button>
               )}
-              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canSoumettreControle && !canMontants && !canGenerateCert && (
+              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canMontants && !canGenerateCert && (
                 <p className="text-sm text-muted-foreground">Aucune action disponible pour votre rôle.</p>
               )}
             </div>

@@ -53,9 +53,7 @@ const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
 
 // Updated for new parallel workflow
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
-  AUTORITE_CONTRACTANTE: [
-    { from: ["DEMANDE"], to: "EN_CONTROLE", label: "Soumettre au contrôle" },
-  ],
+  AUTORITE_CONTRACTANTE: [],
   PRESIDENT: [
     { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider" },
   ],
