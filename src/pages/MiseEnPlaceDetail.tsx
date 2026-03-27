@@ -475,7 +475,7 @@ const MiseEnPlaceDetail = () => {
                 </Button>
               )}
               {canAnnuler && (
-                <Button variant="destructive" onClick={() => handleStatut("ANNULE")} disabled={actionLoading}>
+                <Button variant="destructive" onClick={() => setShowAnnulation(true)} disabled={actionLoading}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                   Annuler
                 </Button>
