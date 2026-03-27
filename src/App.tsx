@@ -35,6 +35,7 @@ import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
 import Modifications from "./pages/Modifications";
 import DemandeDetail from "./pages/DemandeDetail";
+import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,11 @@ const App = () => (
             <Route path="/dashboard/mise-en-place" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <DemandesMiseEnPlace />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/mise-en-place/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <MiseEnPlaceDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={

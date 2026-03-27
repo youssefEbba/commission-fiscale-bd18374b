@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -74,6 +75,7 @@ const DemandesMiseEnPlace = () => {
   const { user } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -421,7 +423,7 @@ const DemandesMiseEnPlace = () => {
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}><Eye className="h-4 w-4 mr-1" /> Traiter</Button>
                           {/* DGTCP: renseigner montants avant de viser */}
                           {role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null && (
                             <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
