@@ -760,13 +760,12 @@ const MiseEnPlaceDetail = () => {
           <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-2">
             <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:mr-auto">Annuler</Button>
             <Button
-              variant="secondary"
               disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
               onClick={async () => {
                 setSavingMontants(true);
                 try {
                   await certificatCreditApi.updateMontants(c.id, Number(montantCordon), Number(montantTVAInt));
-                  toast({ title: "Succès", description: "Montants enregistrés." });
+                  toast({ title: "Succès", description: "Montants enregistrés. Le Président peut maintenant valider et ouvrir le certificat." });
                   setShowMontants(false);
                   fetchData();
                 } catch (e: any) {
@@ -775,27 +774,8 @@ const MiseEnPlaceDetail = () => {
               }}
             >
               {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer
-            </Button>
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
-              onClick={async () => {
-                setSavingMontants(true);
-                try {
-                  await certificatCreditApi.updateMontants(c.id, Number(montantCordon), Number(montantTVAInt));
-                  await certificatCreditApi.updateStatut(c.id, "OUVERT");
-                  toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert !" });
-                  setShowMontants(false);
-                  fetchData();
-                } catch (e: any) {
-                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                } finally { setSavingMontants(false); }
-              }}
-            >
-              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <ShieldCheck className="h-4 w-4 mr-1" />
-              Valider & Ouvrir
+              <DollarSign className="h-4 w-4 mr-1" />
+              Enregistrer les montants
             </Button>
           </DialogFooter>
         </DialogContent>
