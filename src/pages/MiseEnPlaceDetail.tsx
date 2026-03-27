@@ -193,8 +193,9 @@ const MiseEnPlaceDetail = () => {
   // Rule 3: VISA blocks REJET_TEMP — can't reject after visa
   const canDoVisa = isDecisionRole && !isClosed && !myHasVisa && !myHasOpenRejet;
   const canDoRejetTemp = isDecisionRole && !isClosed && !myHasVisa;
-  // DGD cannot annuler — only DGI and AC can
-  const canAnnuler = (role === "DGI" || role === "AUTORITE_CONTRACTANTE") && c.statut === "DEMANDE";
+  // DGD et DGB ne peuvent pas annuler — AC, DGI, PRESIDENT et DGTCP peuvent
+  const canAnnuler = ["DGI", "AUTORITE_CONTRACTANTE", "PRESIDENT", "DGTCP"].includes(role as string)
+    && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
   const canPriseEnCharge = role === "DGI" && c.statut === "DEMANDE";
   const canVerifier = role === "DGI" && c.statut === "EN_VERIFICATION_DGI";
   const canMontants = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null;
