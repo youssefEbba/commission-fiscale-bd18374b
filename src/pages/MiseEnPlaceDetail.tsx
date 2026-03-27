@@ -78,7 +78,7 @@ const MiseEnPlaceDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role as AppRole;
-  const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
   const [loading, setLoading] = useState(true);

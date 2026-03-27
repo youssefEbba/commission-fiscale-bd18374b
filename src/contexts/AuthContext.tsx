@@ -3,6 +3,21 @@ import { LoginResponse } from "@/lib/api";
 
 export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT";
 
+// Permissions granulaires par rôle
+const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
+  PRESIDENT: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat"],
+  DGI: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.prise_en_charge", "mise_en_place.verifier"],
+  DGTCP: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.rejeter_dgtcp"],
+  DGB: ["mise_en_place.visa", "mise_en_place.rejet_temp"],
+  DGD: ["mise_en_place.visa", "mise_en_place.rejet_temp"],
+  AUTORITE_CONTRACTANTE: ["mise_en_place.annuler", "mise_en_place.creer"],
+  ENTREPRISE: [],
+  ADMIN_SI: [],
+  AUTORITE_UPM: [],
+  AUTORITE_UEP: [],
+  SOUS_TRAITANT: [],
+};
+
 interface AuthUser {
   token: string;
   userId: number;
@@ -20,6 +35,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   hasRole: (roles: AppRole[]) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const ADMIN_ROLES: AppRole[] = ["PRESIDENT", "ADMIN_SI"];
@@ -63,9 +79,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = !!user && ADMIN_ROLES.includes(user.role);
   const hasRole = (roles: AppRole[]) => !!user && roles.includes(user.role);
+  const hasPermission = (permission: string) => {
+    if (!user) return false;
+    const perms = ROLE_PERMISSIONS[user.role] || [];
+    return perms.includes(permission);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isAdmin, hasRole }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isAdmin, hasRole, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );
