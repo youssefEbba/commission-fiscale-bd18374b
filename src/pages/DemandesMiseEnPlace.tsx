@@ -75,6 +75,7 @@ const DemandesMiseEnPlace = () => {
   const { user } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
