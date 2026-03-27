@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, ExternalLink, Building2, Landmark, ShoppingCart } from "lucide-react";
 
-const API_BASE = "https://33ca-197-231-3-222.ngrok-free.app/api";
+const API_BASE = "https://edf0-197-231-3-222.ngrok-free.app/api";
 
 const ETAPE_COLORS: Record<string, string> = {
   DEMANDE_CORRECTION: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",

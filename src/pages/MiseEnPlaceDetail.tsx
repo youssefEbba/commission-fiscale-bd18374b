@@ -24,7 +24,7 @@ import {
   AlertTriangle, History, DollarSign, FileDown, MessageSquare, Send,
 } from "lucide-react";
 
-const API_BASE = "https://33ca-197-231-3-222.ngrok-free.app/api";
+const API_BASE = "https://edf0-197-231-3-222.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
