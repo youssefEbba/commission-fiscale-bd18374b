@@ -187,24 +187,38 @@ const MiseEnPlaceDetail = () => {
   const myHasOpenRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "OUVERT";
   const myHasResolvedRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "RESOLU";
 
-  // Roles that can participate in workflow
-  const isDecisionRole = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"].includes(role as string);
+  // Roles that can participate in parallel visa workflow (EN_CONTROLE)
+  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string);
+  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string);
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
 
-  // Rule 1: VISA blocks everything — if already VISA'd, no more actions
-  // Rule 2: REJET_TEMP blocks VISA — must resolve first
-  // Rule 3: VISA blocks REJET_TEMP — can't reject after visa
-  const canDoVisa = isDecisionRole && !isClosed && !myHasVisa && !myHasOpenRejet;
-  const canDoRejetTemp = isDecisionRole && !isClosed && !myHasVisa;
-  // Permission "mise_en_place.annuler" : AC, DGI, PRESIDENT, DGTCP (pas DGD ni DGB)
+  // NEW WORKFLOW:
+  // AC submits DEMANDE → EN_CONTROLE
+  const canSoumettreControle = role === "AUTORITE_CONTRACTANTE" && c.statut === "DEMANDE";
+
+  // During EN_CONTROLE: DGI, DGD, DGTCP give parallel visas
+  const isInControle = c.statut === "EN_CONTROLE" || c.statut === "INCOMPLETE" || c.statut === "A_RECONTROLER";
+  const canDoVisa = isControlRole && isInControle && !myHasVisa && !myHasOpenRejet;
+  const canDoRejetTemp = isControlRole && isInControle && !myHasVisa;
+
+  // DGTCP must enter montants before visa (during EN_CONTROLE phase)
+  const canMontants = role === "DGTCP" && isInControle && c.montantCordon == null;
+  // DGTCP visa blocked if montants not set
+  const dgtcpMontantsRequired = role === "DGTCP" && isInControle && c.montantCordon == null;
+
+  // Permission "mise_en_place.annuler" : AC, DGI, PRESIDENT, DGTCP
   const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
-  const canPriseEnCharge = role === "DGI" && c.statut === "DEMANDE";
-  const canVerifier = role === "DGI" && c.statut === "EN_VERIFICATION_DGI";
-  const canMontants = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null;
-  const canRejectDGTCP = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
-  const canOuvrirCert = role === "PRESIDENT" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon != null && c.montantTVAInterieure != null;
+
+  // President validates after auto-transition to EN_VALIDATION_PRESIDENT
+  const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT";
+
+  // DGTCP opens after president validation
+  const canPreparerOuverture = role === "DGTCP" && c.statut === "VALIDE_PRESIDENT";
+  const canOuvrirCredit = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
+
+  // President generates certificate when OUVERT
   const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
 
   const handleStatut = async (statut: CertificatStatut) => {
