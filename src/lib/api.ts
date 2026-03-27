@@ -1,4 +1,4 @@
-const API_BASE = "https://33ca-197-231-3-222.ngrok-free.app/api";
+const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
 
 interface RequestOptions {
   method?: string;
@@ -1279,7 +1279,7 @@ export const avenantApi = {
   },
 };
 
-export const WS_BASE = "https://33ca-197-231-3-222.ngrok-free.app/ws";
+export const WS_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/ws";
 
 // ── Dossiers GED ──
 
