@@ -447,6 +447,8 @@ export interface RejetTempResponseDto {
   documentVersion?: number;
   createdAt?: string;
   auteurNom?: string;
+  utilisateurId?: number;
+  utilisateurNom?: string;
 }
 
 export interface DecisionCorrectionDto {
@@ -690,6 +692,12 @@ export const certificatCreditApi = {
   resolveRejetTemp: (decisionId: number) =>
     apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve`, {
       method: "PUT",
+    }),
+  // Répondre à un rejet temporaire (entreprise/AC)
+  postRejetTempResponse: (decisionId: number, message: string) =>
+    apiFetch<RejetTempResponseDto>(`/certificats-credit/decisions/${decisionId}/rejet-temp/reponses`, {
+      method: "POST",
+      body: { message },
     }),
 };
 

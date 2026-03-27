@@ -8,7 +8,7 @@ import {
   CERTIFICAT_STATUT_LABELS,
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
-  DecisionCorrectionDto,
+  DecisionCorrectionDto, RejetTempResponseDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, DollarSign, FileDown, Info,
+  AlertTriangle, History, DollarSign, FileDown, MessageSquare, Send,
 } from "lucide-react";
 
 const API_BASE = "https://cc6b-197-231-6-182.ngrok-free.app/api";
@@ -40,12 +40,22 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
-  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
-  { value: "CONTRAT", label: "Contrat enregistré" },
-  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification" },
-  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
-  { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
+// Types de documents demandables (aligné avec le backend TypeDocument enum)
+const DOC_TYPES_DEMANDABLES: { value: string; label: string }[] = [
+  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale" },
+  { value: "BULLETIN_PAIEMENT", label: "Bulletin de paiement" },
+  { value: "CONVENTION", label: "Convention" },
+  { value: "MARCHE", label: "Marché" },
+  { value: "FACTURE", label: "Facture" },
+  { value: "BORDEREAU_LIVRAISON", label: "Bordereau de livraison" },
+  { value: "PROCES_VERBAL", label: "Procès verbal" },
+  { value: "ORDRE_SERVICE", label: "Ordre de service" },
+  { value: "AVENANT", label: "Avenant" },
+  { value: "ATTESTATION_BONNE_EXECUTION", label: "Attestation de bonne exécution" },
+  { value: "CERTIFICAT_ORIGINE", label: "Certificat d'origine" },
+  { value: "DECLARATION_IMPORTATION", label: "Déclaration d'importation" },
+  { value: "QUITTANCE_DOUANE", label: "Quittance de douane" },
+  { value: "AUTRE", label: "Autre" },
 ];
 
 const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
@@ -103,6 +113,11 @@ const MiseEnPlaceDetail = () => {
   const [motifRejet, setMotifRejet] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
+  // Response to rejet (AC/Entreprise)
+  const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
+  const [responseMessage, setResponseMessage] = useState("");
+  const [respondingLoading, setRespondingLoading] = useState(false);
+
   const fetchData = async () => {
     if (!id) return;
     setLoading(true);
@@ -158,9 +173,26 @@ const MiseEnPlaceDetail = () => {
   const correctionRef = c.demandeCorrectionNumero || (correction ? correction.numero || `#${correction.id}` : "—");
   const marcheRef = c.marcheIntitule || marche?.numeroMarche || "—";
 
-  // Role-based permissions
-  const canVisa = (role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD" || role === "PRESIDENT") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
-  const canRejetTemp = canVisa; // same roles
+  // ===== WORKFLOW LOGIC (from backend rules) =====
+  // For the active tab's role, get decisions
+  const getMyDecisionForRole = (r: string) => decisions.find(d => d.role === r);
+  const getMyDecision = () => getMyDecisionForRole(role as string);
+
+  const myDecision = getMyDecision();
+  const myHasVisa = myDecision?.decision === "VISA";
+  const myHasOpenRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "OUVERT";
+  const myHasResolvedRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "RESOLU";
+
+  // Roles that can participate in workflow
+  const isDecisionRole = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"].includes(role as string);
+  const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
+  const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
+
+  // Rule 1: VISA blocks everything — if already VISA'd, no more actions
+  // Rule 2: REJET_TEMP blocks VISA — must resolve first
+  // Rule 3: VISA blocks REJET_TEMP — can't reject after visa
+  const canDoVisa = isDecisionRole && !isClosed && !myHasVisa && !myHasOpenRejet;
+  const canDoRejetTemp = isDecisionRole && !isClosed && !myHasVisa;
   // DGD cannot annuler — only DGI and AC can
   const canAnnuler = (role === "DGI" || role === "AUTORITE_CONTRACTANTE") && c.statut === "DEMANDE";
   const canPriseEnCharge = role === "DGI" && c.statut === "DEMANDE";
@@ -184,6 +216,19 @@ const MiseEnPlaceDetail = () => {
     } finally { setActionLoading(false); }
   };
 
+  const handleVisa = async () => {
+    setVisaLoading(true);
+    try {
+      await certificatCreditApi.postDecision(c.id, "VISA");
+      toast({ title: "Succès", description: "Visa apposé" });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      // Refresh to get latest state
+      fetchData();
+    } finally { setVisaLoading(false); }
+  };
+
   const handleRejetTemp = async () => {
     if (!rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
     setRejetTempLoading(true);
@@ -196,7 +241,33 @@ const MiseEnPlaceDetail = () => {
       fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      fetchData();
     } finally { setRejetTempLoading(false); }
+  };
+
+  const handleResolve = async (decisionId: number) => {
+    setActionLoading(true);
+    try {
+      await certificatCreditApi.resolveRejetTemp(decisionId);
+      toast({ title: "Succès", description: "Rejet résolu. Vous pouvez maintenant apposer votre visa." });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setActionLoading(false); }
+  };
+
+  const handleResponse = async () => {
+    if (!responseDecisionId || !responseMessage.trim()) return;
+    setRespondingLoading(true);
+    try {
+      await certificatCreditApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
+      toast({ title: "Succès", description: "Réponse envoyée" });
+      setResponseDecisionId(null);
+      setResponseMessage("");
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRespondingLoading(false); }
   };
 
   const handleReject = async () => {
@@ -255,18 +326,30 @@ const MiseEnPlaceDetail = () => {
     } finally { setGeneratingCert(false); }
   };
 
-  // Organism tab content
+  // ===== Organism tab content =====
   const r = activeOrg;
   const roleDecs = decisions.filter(d => d.role === r);
-  const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
+  const tabDecision = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
   const resolvedRejets = allRejets.filter(d => d.rejetTempStatus === "RESOLU");
-  const hasVisa = latestDec?.decision === "VISA";
-  const hasRejets = allRejets.length > 0;
-  const allResolved = hasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
-  const isMyRole = (role as string) === r;
-  const cardStyle = hasVisa ? "border-green-300 bg-green-50" : allResolved ? "border-emerald-300 bg-emerald-50" : hasRejets ? "border-red-300 bg-red-50" : "border-border bg-muted/30";
+  const tabHasVisa = tabDecision?.decision === "VISA";
+  const tabHasRejets = allRejets.length > 0;
+  const tabAllResolved = tabHasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
+  const isMyTab = (role as string) === r;
+
+  // Tab-level action permissions (applying backend rules per tab)
+  const tabCanVisa = isMyTab && !isClosed && !tabHasVisa && !openRejets.length;
+  const tabCanRejetTemp = isMyTab && !isClosed && !tabHasVisa;
+  const tabCanResolve = isMyTab && openRejets.length > 0;
+
+  const cardStyle = tabHasVisa
+    ? "border-green-300 bg-green-50"
+    : tabAllResolved
+    ? "border-emerald-300 bg-emerald-50"
+    : tabHasRejets
+    ? "border-red-300 bg-red-50"
+    : "border-border bg-muted/30";
 
   return (
     <DashboardLayout>
@@ -335,21 +418,26 @@ const MiseEnPlaceDetail = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">Actions disponibles</h3>
             <div className="flex flex-wrap gap-2">
-              {canVisa && (
-                <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={async () => {
-                  setVisaLoading(true);
-                  try {
-                    await certificatCreditApi.postDecision(c.id, "VISA");
-                    toast({ title: "Succès", description: "Visa apposé" });
-                    fetchData();
-                  } catch (e: any) {
-                    toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                  } finally { setVisaLoading(false); }
-                }}>
+              {/* Workflow info messages */}
+              {isDecisionRole && myHasVisa && (
+                <div className="w-full flex items-center gap-2 p-2 rounded bg-green-50 border border-green-200 text-green-800 text-sm mb-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Vous avez déjà apposé votre visa. Aucune autre action possible.</span>
+                </div>
+              )}
+              {isDecisionRole && myHasOpenRejet && (
+                <div className="w-full flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Un rejet temporaire est en cours. Résolvez-le d'abord pour pouvoir viser.</span>
+                </div>
+              )}
+
+              {canDoVisa && !myHasVisa && (
+                <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={handleVisa}>
                   <ShieldCheck className="h-4 w-4 mr-1" /> Apposer visa
                 </Button>
               )}
-              {canRejetTemp && (
+              {canDoRejetTemp && (
                 <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(true); setRejetTempMotif(""); setRejetTempDocs([]); }}>
                   <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
                 </Button>
@@ -388,6 +476,9 @@ const MiseEnPlaceDetail = () => {
                   Annuler
                 </Button>
               )}
+              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canPriseEnCharge && !canVerifier && !canMontants && !canRejectDGTCP && !canGenerateCert && (
+                <p className="text-sm text-muted-foreground">Aucune action disponible pour votre rôle.</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -421,13 +512,14 @@ const MiseEnPlaceDetail = () => {
             </div>
             <div className={`rounded-lg border p-4 min-h-[120px] ${cardStyle}`}>
               <div className="text-center mb-3">
-                {hasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : allResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : hasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
+                {tabHasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : tabAllResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : tabHasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
-                {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">Visa apposé</p>}
-                {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets résolus</p>}
-                {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
-                {hasVisa && latestDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>}
+                {tabHasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">✓ Visa apposé — Plus d'actions possibles</p>}
+                {tabAllResolved && !tabHasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets résolus — Peut viser</p>}
+                {!tabDecision && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                {tabHasVisa && tabDecision?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(tabDecision.dateDecision).toLocaleDateString("fr-FR")}</p>}
               </div>
+
               {/* Open rejets */}
               {openRejets.length > 0 && (
                 <div className="space-y-2">
@@ -444,48 +536,83 @@ const MiseEnPlaceDetail = () => {
                         <div className="flex flex-wrap gap-1">
                           <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
                           {rej.documentsDemandes.map((dt: string) => (
-                            <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">{MISE_EN_PLACE_DOC_TYPES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ")}</Badge>
+                            <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">{DOC_TYPES_DEMANDABLES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ")}</Badge>
                           ))}
                         </div>
                       )}
-                      {rej.role === role && (
-                        <Button size="sm" variant="default" className="h-6 text-[10px] px-2 mt-1" disabled={actionLoading} onClick={async () => {
-                          setActionLoading(true);
-                          try {
-                            await certificatCreditApi.resolveRejetTemp(rej.id);
-                            toast({ title: "Succès", description: "Rejet marqué comme résolu" });
-                            fetchData();
-                          } catch (e: any) {
-                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                          } finally { setActionLoading(false); }
-                        }}>
-                          <CheckCircle className="h-3 w-3 mr-0.5" /> Marquer résolu
+                      {/* Responses history */}
+                      {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
+                        <div className="mt-1 space-y-1">
+                          {rej.rejetTempResponses.map((resp, rIdx) => (
+                            <div key={rIdx} className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium text-blue-800">
+                                  <MessageSquare className="h-3 w-3 inline mr-1" />
+                                  {resp.utilisateurNom || resp.auteurNom || "Réponse"}
+                                </span>
+                                {resp.createdAt && <span className="text-muted-foreground text-[10px]">{new Date(resp.createdAt).toLocaleDateString("fr-FR")}</span>}
+                              </div>
+                              <p className="text-blue-700 mt-0.5">{resp.message}</p>
+                              {resp.documentUrl && <Badge className="text-[9px] bg-blue-100 text-blue-700 mt-1">📎 Document uploadé</Badge>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* AC/Entreprise: respond to rejet */}
+                      {isACOrEntreprise && (
+                        <div className="mt-2">
+                          {responseDecisionId === rej.id ? (
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Votre réponse..."
+                                value={responseMessage}
+                                onChange={(e) => setResponseMessage(e.target.value)}
+                                className="text-xs h-7"
+                              />
+                              <Button size="sm" className="h-7 text-[10px] px-2" disabled={respondingLoading || !responseMessage.trim()} onClick={handleResponse}>
+                                {respondingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-[10px] px-2" onClick={() => { setResponseDecisionId(null); setResponseMessage(""); }}>
+                                ✕
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => { setResponseDecisionId(rej.id); setResponseMessage(""); }}>
+                              <MessageSquare className="h-3 w-3 mr-0.5" /> Répondre
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      {/* Acteur who created the rejet: resolve it */}
+                      {rej.role === (role as string) && (
+                        <Button size="sm" variant="default" className="h-6 text-[10px] px-2 mt-1" disabled={actionLoading} onClick={() => handleResolve(rej.id)}>
+                          <CheckCircle className="h-3 w-3 mr-0.5" /> Résoudre le rejet
                         </Button>
                       )}
                     </div>
                   ))}
                 </div>
               )}
-              {/* Actions in tab */}
-              {isMyRole && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
+
+              {/* Actions in tab (for the actor of this tab) */}
+              {isMyTab && !isClosed && !tabHasVisa && (
                 <div className="flex gap-2 mt-3 justify-center">
-                  <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={async () => {
-                    setVisaLoading(true);
-                    try {
-                      await certificatCreditApi.postDecision(c.id, "VISA");
-                      toast({ title: "Succès", description: "Visa apposé" });
-                      fetchData();
-                    } catch (e: any) {
-                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                    } finally { setVisaLoading(false); }
-                  }}>
-                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Apposer visa
-                  </Button>
-                  <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={() => { setShowRejetTemp(true); setRejetTempMotif(""); setRejetTempDocs([]); }}>
-                    <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
-                  </Button>
+                  {tabCanVisa && (
+                    <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={handleVisa}>
+                      <CheckCircle className="h-3.5 w-3.5 mr-1" /> Apposer visa
+                    </Button>
+                  )}
+                  {tabCanRejetTemp && (
+                    <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={() => { setShowRejetTemp(true); setRejetTempMotif(""); setRejetTempDocs([]); }}>
+                      <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
+                    </Button>
+                  )}
+                  {openRejets.length > 0 && (
+                    <p className="text-amber-700 text-[10px] self-center">Résolvez le rejet avant de pouvoir viser</p>
+                  )}
                 </div>
               )}
+
               {/* Resolved history */}
               {resolvedRejets.length > 0 && (
                 <details className="mt-3 border-t border-border pt-3">
@@ -502,6 +629,15 @@ const MiseEnPlaceDetail = () => {
                           {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>}
                         </div>
                         {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
+                        {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
+                          <div className="space-y-1 mt-1">
+                            {rej.rejetTempResponses.map((resp, rIdx) => (
+                              <div key={rIdx} className="text-[10px] text-muted-foreground">
+                                💬 {resp.utilisateurNom || resp.auteurNom}: {resp.message}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -558,7 +694,7 @@ const MiseEnPlaceDetail = () => {
               <Label>Documents à corriger / compléter *</Label>
               <p className="text-xs text-muted-foreground">Sélectionnez au moins un document</p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {MISE_EN_PLACE_DOC_TYPES.map((dt) => (
+                {DOC_TYPES_DEMANDABLES.map((dt) => (
                   <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
                     <Checkbox
                       checked={rejetTempDocs.includes(dt.value)}
