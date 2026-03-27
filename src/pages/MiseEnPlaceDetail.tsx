@@ -193,9 +193,7 @@ const MiseEnPlaceDetail = () => {
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
 
-  // NEW WORKFLOW:
-  // AC submits DEMANDE → EN_CONTROLE
-  const canSoumettreControle = role === "AUTORITE_CONTRACTANTE" && c.statut === "DEMANDE";
+  // AC submission is automatic upon creation (no manual submit button needed)
 
   // During EN_CONTROLE: DGI, DGD, DGTCP give parallel visas
   const isInControle = c.statut === "EN_CONTROLE" || c.statut === "INCOMPLETE" || c.statut === "A_RECONTROLER";
