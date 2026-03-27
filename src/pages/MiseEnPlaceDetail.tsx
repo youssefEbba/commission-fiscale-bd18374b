@@ -457,13 +457,6 @@ const MiseEnPlaceDetail = () => {
                 </div>
               )}
 
-              {/* AC: submit to EN_CONTROLE */}
-              {canSoumettreControle && (
-                <Button onClick={() => handleStatut("EN_CONTROLE")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  Soumettre au contrôle
-                </Button>
-              )}
 
               {/* Parallel visas: DGI, DGD, DGTCP during EN_CONTROLE */}
               {canDoVisa && !dgtcpMontantsRequired && (
