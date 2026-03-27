@@ -204,6 +204,7 @@ const MiseEnPlaceDetail = () => {
   const canVerifier = role === "DGI" && c.statut === "EN_VERIFICATION_DGI";
   const canMontants = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null;
   const canRejectDGTCP = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
+  const canOuvrirCert = role === "PRESIDENT" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon != null && c.montantTVAInterieure != null;
   const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
 
   const handleStatut = async (statut: CertificatStatut) => {
