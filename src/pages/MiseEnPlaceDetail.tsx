@@ -118,6 +118,9 @@ const MiseEnPlaceDetail = () => {
   const [responseMessage, setResponseMessage] = useState("");
   const [respondingLoading, setRespondingLoading] = useState(false);
 
+  // Annulation confirmation dialog
+  const [showAnnulation, setShowAnnulation] = useState(false);
+
   const fetchData = async () => {
     if (!id) return;
     setLoading(true);
