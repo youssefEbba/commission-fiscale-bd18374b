@@ -28,6 +28,7 @@ const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
+  EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
   A_RECONTROLER: "bg-cyan-100 text-cyan-800",
   EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
@@ -58,12 +59,11 @@ const DOC_TYPES_DEMANDABLES: { value: string; label: string }[] = [
   { value: "AUTRE", label: "Autre" },
 ];
 
-const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
+const DECISION_ROLES_LIST = ["DGI", "DGD", "DGTCP", "PRESIDENT"];
 const DECISION_ROLE_LABELS: Record<string, string> = {
   DGI: "DGI – Impôts",
-  DGTCP: "DGTCP – Trésor",
-  DGB: "DGB – Budget",
   DGD: "DGD – Douanes",
+  DGTCP: "DGTCP – Trésor",
   PRESIDENT: "Président",
 };
 
@@ -187,24 +187,38 @@ const MiseEnPlaceDetail = () => {
   const myHasOpenRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "OUVERT";
   const myHasResolvedRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "RESOLU";
 
-  // Roles that can participate in workflow
-  const isDecisionRole = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"].includes(role as string);
+  // Roles that can participate in parallel visa workflow (EN_CONTROLE)
+  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string);
+  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string);
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
 
-  // Rule 1: VISA blocks everything — if already VISA'd, no more actions
-  // Rule 2: REJET_TEMP blocks VISA — must resolve first
-  // Rule 3: VISA blocks REJET_TEMP — can't reject after visa
-  const canDoVisa = isDecisionRole && !isClosed && !myHasVisa && !myHasOpenRejet;
-  const canDoRejetTemp = isDecisionRole && !isClosed && !myHasVisa;
-  // Permission "mise_en_place.annuler" : AC, DGI, PRESIDENT, DGTCP (pas DGD ni DGB)
+  // NEW WORKFLOW:
+  // AC submits DEMANDE → EN_CONTROLE
+  const canSoumettreControle = role === "AUTORITE_CONTRACTANTE" && c.statut === "DEMANDE";
+
+  // During EN_CONTROLE: DGI, DGD, DGTCP give parallel visas
+  const isInControle = c.statut === "EN_CONTROLE" || c.statut === "INCOMPLETE" || c.statut === "A_RECONTROLER";
+  const canDoVisa = isControlRole && isInControle && !myHasVisa && !myHasOpenRejet;
+  const canDoRejetTemp = isControlRole && isInControle && !myHasVisa;
+
+  // DGTCP must enter montants before visa (during EN_CONTROLE phase)
+  const canMontants = role === "DGTCP" && isInControle && c.montantCordon == null;
+  // DGTCP visa blocked if montants not set
+  const dgtcpMontantsRequired = role === "DGTCP" && isInControle && c.montantCordon == null;
+
+  // Permission "mise_en_place.annuler" : AC, DGI, PRESIDENT, DGTCP
   const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
-  const canPriseEnCharge = role === "DGI" && c.statut === "DEMANDE";
-  const canVerifier = role === "DGI" && c.statut === "EN_VERIFICATION_DGI";
-  const canMontants = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null;
-  const canRejectDGTCP = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
-  const canOuvrirCert = role === "PRESIDENT" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon != null && c.montantTVAInterieure != null;
+
+  // President validates after auto-transition to EN_VALIDATION_PRESIDENT
+  const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT";
+
+  // DGTCP opens after president validation
+  const canPreparerOuverture = role === "DGTCP" && c.statut === "VALIDE_PRESIDENT";
+  const canOuvrirCredit = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
+
+  // President generates certificate when OUVERT
   const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
 
   const handleStatut = async (statut: CertificatStatut) => {
@@ -344,9 +358,10 @@ const MiseEnPlaceDetail = () => {
   const tabAllResolved = tabHasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
   const isMyTab = (role as string) === r;
 
-  // Tab-level action permissions (applying backend rules per tab)
-  const tabCanVisa = isMyTab && !isClosed && !tabHasVisa && !openRejets.length;
-  const tabCanRejetTemp = isMyTab && !isClosed && !tabHasVisa;
+  // Tab-level action permissions (only for control roles during EN_CONTROLE phase)
+  const isControlTab = ["DGI", "DGD", "DGTCP"].includes(r);
+  const tabCanVisa = isMyTab && isControlTab && isInControle && !tabHasVisa && !openRejets.length && !(r === "DGTCP" && c.montantCordon == null);
+  const tabCanRejetTemp = isMyTab && isControlTab && isInControle && !tabHasVisa;
   const tabCanResolve = isMyTab && openRejets.length > 0;
 
   const cardStyle = tabHasVisa
@@ -425,20 +440,35 @@ const MiseEnPlaceDetail = () => {
             <h3 className="font-semibold mb-3">Actions disponibles</h3>
             <div className="flex flex-wrap gap-2">
               {/* Workflow info messages */}
-              {isDecisionRole && myHasVisa && (
+              {isControlRole && isInControle && myHasVisa && (
                 <div className="w-full flex items-center gap-2 p-2 rounded bg-green-50 border border-green-200 text-green-800 text-sm mb-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Vous avez déjà apposé votre visa. Aucune autre action possible.</span>
                 </div>
               )}
-              {isDecisionRole && myHasOpenRejet && (
+              {isControlRole && isInControle && myHasOpenRejet && (
                 <div className="w-full flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-2">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Un rejet temporaire est en cours. Résolvez-le d'abord pour pouvoir viser.</span>
                 </div>
               )}
+              {dgtcpMontantsRequired && !myHasVisa && (
+                <div className="w-full flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Vous devez renseigner les montants avant de pouvoir apposer votre visa.</span>
+                </div>
+              )}
 
-              {canDoVisa && !myHasVisa && (
+              {/* AC: submit to EN_CONTROLE */}
+              {canSoumettreControle && (
+                <Button onClick={() => handleStatut("EN_CONTROLE")} disabled={actionLoading}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Soumettre au contrôle
+                </Button>
+              )}
+
+              {/* Parallel visas: DGI, DGD, DGTCP during EN_CONTROLE */}
+              {canDoVisa && !dgtcpMontantsRequired && (
                 <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={handleVisa}>
                   <ShieldCheck className="h-4 w-4 mr-1" /> Apposer visa
                 </Button>
@@ -448,47 +478,54 @@ const MiseEnPlaceDetail = () => {
                   <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
                 </Button>
               )}
-              {canPriseEnCharge && (
-                <Button onClick={() => handleStatut("EN_VERIFICATION_DGI")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  Prendre en charge (DGI)
-                </Button>
-              )}
-              {canVerifier && (
-                <Button onClick={() => handleStatut("EN_OUVERTURE_DGTCP")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  Vérifier & transmettre au DGTCP
-                </Button>
-              )}
+
+              {/* DGTCP: enter montants before visa */}
               {canMontants && (
                 <Button variant="outline" onClick={() => { setShowMontants(true); setMontantCordon(""); setMontantTVAInt(""); }}>
                   <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                 </Button>
               )}
-              {canRejectDGTCP && (
-                <Button variant="destructive" onClick={() => { setShowReject(true); setMotifRejet(""); }}>
-                  <XCircle className="h-4 w-4 mr-1" /> Rejeter
+
+              {/* President: validate after auto-transition */}
+              {canValiderPresident && (
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled={actionLoading} onClick={() => handleStatut("VALIDE_PRESIDENT")}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider le certificat
                 </Button>
               )}
-              {canOuvrirCert && (
+
+              {/* DGTCP: prepare opening */}
+              {canPreparerOuverture && (
+                <Button onClick={() => handleStatut("EN_OUVERTURE_DGTCP")} disabled={actionLoading}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Préparer l'ouverture
+                </Button>
+              )}
+
+              {/* DGTCP: open the credit */}
+              {canOuvrirCredit && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={actionLoading} onClick={() => handleStatut("OUVERT")}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider & Ouvrir le certificat
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Ouvrir le crédit
                 </Button>
               )}
+
+              {/* President: generate certificate */}
               {canGenerateCert && (
                 <Button disabled={generatingCert} onClick={handleGenerateCertificate}>
                   {generatingCert ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
                   Générer certificat
                 </Button>
               )}
+
+              {/* Annulation */}
               {canAnnuler && (
                 <Button variant="destructive" onClick={() => setShowAnnulation(true)} disabled={actionLoading}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                   Annuler
                 </Button>
               )}
-              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canPriseEnCharge && !canVerifier && !canMontants && !canRejectDGTCP && !canGenerateCert && (
+              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canSoumettreControle && !canMontants && !canGenerateCert && (
                 <p className="text-sm text-muted-foreground">Aucune action disponible pour votre rôle.</p>
               )}
             </div>

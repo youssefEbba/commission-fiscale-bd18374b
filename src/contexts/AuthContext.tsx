@@ -5,12 +5,12 @@ export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI"
 
 // Permissions granulaires par rôle
 const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
-  PRESIDENT: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat"],
-  DGI: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.prise_en_charge", "mise_en_place.verifier"],
-  DGTCP: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.rejeter_dgtcp"],
-  DGB: ["mise_en_place.visa", "mise_en_place.rejet_temp"],
+  PRESIDENT: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat", "mise_en_place.valider_president"],
+  DGI: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp"],
+  DGTCP: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.dgtcp.validate", "mise_en_place.dgtcp.reject", "mise_en_place.ouvrir"],
+  DGB: [],
   DGD: ["mise_en_place.visa", "mise_en_place.rejet_temp"],
-  AUTORITE_CONTRACTANTE: ["mise_en_place.annuler", "mise_en_place.creer"],
+  AUTORITE_CONTRACTANTE: ["mise_en_place.annuler", "mise_en_place.creer", "mise_en_place.soumettre"],
   ENTREPRISE: [],
   ADMIN_SI: [],
   AUTORITE_UPM: [],

@@ -18,6 +18,7 @@ import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCar
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
+  EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
   A_RECONTROLER: "bg-cyan-100 text-cyan-800",
   EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
