@@ -29,6 +29,7 @@ const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
+  EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
   A_RECONTROLER: "bg-cyan-100 text-cyan-800",
   EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
@@ -50,18 +51,17 @@ const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
   { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
 ];
 
+// Updated for new parallel workflow
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
-  DGI: [
-    { from: ["DEMANDE"], to: "EN_VERIFICATION_DGI", label: "Prendre en charge (DGI)" },
-    { from: ["EN_VERIFICATION_DGI"], to: "EN_OUVERTURE_DGTCP", label: "Vérifier & transmettre au DGTCP" },
-    { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
+  AUTORITE_CONTRACTANTE: [
+    { from: ["DEMANDE"], to: "EN_CONTROLE", label: "Soumettre au contrôle" },
+  ],
+  PRESIDENT: [
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider" },
   ],
   DGTCP: [
+    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Préparer l'ouverture" },
     { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit", icon: "visa" },
-  ],
-  PRESIDENT: [],
-  AUTORITE_CONTRACTANTE: [
-    { from: ["DEMANDE"], to: "ANNULE", label: "Annuler" },
   ],
 };
 

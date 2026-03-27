@@ -28,6 +28,7 @@ const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
+  EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
   A_RECONTROLER: "bg-cyan-100 text-cyan-800",
   EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
