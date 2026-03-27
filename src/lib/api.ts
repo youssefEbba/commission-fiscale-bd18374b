@@ -897,6 +897,7 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
   DEMANDE: "Demandé",
+  EN_CONTROLE: "En contrôle",
   INCOMPLETE: "Incomplète",
   A_RECONTROLER: "À recontrôler",
   EN_VERIFICATION_DGI: "En vérification DGI",
