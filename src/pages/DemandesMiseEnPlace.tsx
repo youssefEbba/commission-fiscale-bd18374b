@@ -226,7 +226,14 @@ const DemandesMiseEnPlace = () => {
         setUploadingDocs(false);
       }
 
-      toast({ title: "Succès", description: "Demande de mise en place créée avec succès" });
+      // Auto-submit to EN_CONTROLE
+      try {
+        await certificatCreditApi.updateStatut(created.id, "EN_CONTROLE");
+      } catch {
+        // If auto-submit fails, the demand is still created
+      }
+
+      toast({ title: "Succès", description: "Demande soumise au contrôle avec succès" });
       setShowCreate(false);
       fetchCertificats();
     } catch (e: any) {
