@@ -78,6 +78,7 @@ const MiseEnPlaceDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role as AppRole;
+  const { hasPermission } = useAuth();
   const { toast } = useToast();
 
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
@@ -196,8 +197,8 @@ const MiseEnPlaceDetail = () => {
   // Rule 3: VISA blocks REJET_TEMP — can't reject after visa
   const canDoVisa = isDecisionRole && !isClosed && !myHasVisa && !myHasOpenRejet;
   const canDoRejetTemp = isDecisionRole && !isClosed && !myHasVisa;
-  // DGD et DGB ne peuvent pas annuler — AC, DGI, PRESIDENT et DGTCP peuvent
-  const canAnnuler = ["DGI", "AUTORITE_CONTRACTANTE", "PRESIDENT", "DGTCP"].includes(role as string)
+  // Permission "mise_en_place.annuler" : AC, DGI, PRESIDENT, DGTCP (pas DGD ni DGB)
+  const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
   const canPriseEnCharge = role === "DGI" && c.statut === "DEMANDE";
   const canVerifier = role === "DGI" && c.statut === "EN_VERIFICATION_DGI";
