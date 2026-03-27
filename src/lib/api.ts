@@ -691,6 +691,12 @@ export const certificatCreditApi = {
     apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve`, {
       method: "PUT",
     }),
+  // Répondre à un rejet temporaire (entreprise/AC)
+  postRejetTempResponse: (decisionId: number, message: string) =>
+    apiFetch<RejetTempResponseDto>(`/certificats-credit/decisions/${decisionId}/rejet-temp/reponses`, {
+      method: "POST",
+      body: { message },
+    }),
 };
 
 // Utilisations de crédit (P4/P5)
