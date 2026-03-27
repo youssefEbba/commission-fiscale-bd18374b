@@ -53,9 +53,7 @@ const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
 
 // Updated for new parallel workflow
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
-  AUTORITE_CONTRACTANTE: [
-    { from: ["DEMANDE"], to: "EN_CONTROLE", label: "Soumettre au contrôle" },
-  ],
+  AUTORITE_CONTRACTANTE: [],
   PRESIDENT: [
     { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider" },
   ],
@@ -226,7 +224,14 @@ const DemandesMiseEnPlace = () => {
         setUploadingDocs(false);
       }
 
-      toast({ title: "Succès", description: "Demande de mise en place créée avec succès" });
+      // Auto-submit to EN_CONTROLE
+      try {
+        await certificatCreditApi.updateStatut(created.id, "EN_CONTROLE");
+      } catch {
+        // If auto-submit fails, the demand is still created
+      }
+
+      toast({ title: "Succès", description: "Demande soumise au contrôle avec succès" });
       setShowCreate(false);
       fetchCertificats();
     } catch (e: any) {
