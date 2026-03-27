@@ -358,9 +358,10 @@ const MiseEnPlaceDetail = () => {
   const tabAllResolved = tabHasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
   const isMyTab = (role as string) === r;
 
-  // Tab-level action permissions (applying backend rules per tab)
-  const tabCanVisa = isMyTab && !isClosed && !tabHasVisa && !openRejets.length;
-  const tabCanRejetTemp = isMyTab && !isClosed && !tabHasVisa;
+  // Tab-level action permissions (only for control roles during EN_CONTROLE phase)
+  const isControlTab = ["DGI", "DGD", "DGTCP"].includes(r);
+  const tabCanVisa = isMyTab && isControlTab && isInControle && !tabHasVisa && !openRejets.length && !(r === "DGTCP" && c.montantCordon == null);
+  const tabCanRejetTemp = isMyTab && isControlTab && isInControle && !tabHasVisa;
   const tabCanResolve = isMyTab && openRejets.length > 0;
 
   const cardStyle = tabHasVisa
