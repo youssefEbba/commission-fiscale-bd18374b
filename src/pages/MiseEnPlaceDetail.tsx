@@ -209,12 +209,8 @@ const MiseEnPlaceDetail = () => {
   const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
 
-  // President validates after auto-transition to EN_VALIDATION_PRESIDENT
+  // President validates and opens directly
   const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT";
-
-  // DGTCP opens after president validation
-  const canPreparerOuverture = role === "DGTCP" && c.statut === "VALIDE_PRESIDENT";
-  const canOuvrirCredit = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
 
   // President generates certificate when OUVERT
   const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
@@ -477,27 +473,11 @@ const MiseEnPlaceDetail = () => {
                 </Button>
               )}
 
-              {/* President: validate after auto-transition */}
+              {/* President: validate and open directly */}
               {canValiderPresident && (
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled={actionLoading} onClick={() => handleStatut("VALIDE_PRESIDENT")}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider le certificat
-                </Button>
-              )}
-
-              {/* DGTCP: prepare opening */}
-              {canPreparerOuverture && (
-                <Button onClick={() => handleStatut("EN_OUVERTURE_DGTCP")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  Préparer l'ouverture
-                </Button>
-              )}
-
-              {/* DGTCP: open the credit */}
-              {canOuvrirCredit && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={actionLoading} onClick={() => handleStatut("OUVERT")}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  <ShieldCheck className="h-4 w-4 mr-1" /> Ouvrir le crédit
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider et ouvrir le certificat
                 </Button>
               )}
 

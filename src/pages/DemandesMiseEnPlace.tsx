@@ -55,12 +55,9 @@ const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
 const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
   AUTORITE_CONTRACTANTE: [],
   PRESIDENT: [
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "VALIDE_PRESIDENT", label: "Valider" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider et ouvrir" },
   ],
-  DGTCP: [
-    { from: ["VALIDE_PRESIDENT"], to: "EN_OUVERTURE_DGTCP", label: "Préparer l'ouverture" },
-    { from: ["EN_OUVERTURE_DGTCP"], to: "OUVERT", label: "Ouvrir le crédit", icon: "visa" },
-  ],
+  DGTCP: [],
 };
 
 function getDocFileUrl(doc: DocumentDto): string {
