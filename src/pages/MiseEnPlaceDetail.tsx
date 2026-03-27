@@ -439,20 +439,35 @@ const MiseEnPlaceDetail = () => {
             <h3 className="font-semibold mb-3">Actions disponibles</h3>
             <div className="flex flex-wrap gap-2">
               {/* Workflow info messages */}
-              {isDecisionRole && myHasVisa && (
+              {isControlRole && isInControle && myHasVisa && (
                 <div className="w-full flex items-center gap-2 p-2 rounded bg-green-50 border border-green-200 text-green-800 text-sm mb-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Vous avez déjà apposé votre visa. Aucune autre action possible.</span>
                 </div>
               )}
-              {isDecisionRole && myHasOpenRejet && (
+              {isControlRole && isInControle && myHasOpenRejet && (
                 <div className="w-full flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-2">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Un rejet temporaire est en cours. Résolvez-le d'abord pour pouvoir viser.</span>
                 </div>
               )}
+              {dgtcpMontantsRequired && !myHasVisa && (
+                <div className="w-full flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Vous devez renseigner les montants avant de pouvoir apposer votre visa.</span>
+                </div>
+              )}
 
-              {canDoVisa && !myHasVisa && (
+              {/* AC: submit to EN_CONTROLE */}
+              {canSoumettreControle && (
+                <Button onClick={() => handleStatut("EN_CONTROLE")} disabled={actionLoading}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Soumettre au contrôle
+                </Button>
+              )}
+
+              {/* Parallel visas: DGI, DGD, DGTCP during EN_CONTROLE */}
+              {canDoVisa && !dgtcpMontantsRequired && (
                 <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={handleVisa}>
                   <ShieldCheck className="h-4 w-4 mr-1" /> Apposer visa
                 </Button>
@@ -462,47 +477,54 @@ const MiseEnPlaceDetail = () => {
                   <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
                 </Button>
               )}
-              {canPriseEnCharge && (
-                <Button onClick={() => handleStatut("EN_VERIFICATION_DGI")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  Prendre en charge (DGI)
-                </Button>
-              )}
-              {canVerifier && (
-                <Button onClick={() => handleStatut("EN_OUVERTURE_DGTCP")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  Vérifier & transmettre au DGTCP
-                </Button>
-              )}
+
+              {/* DGTCP: enter montants before visa */}
               {canMontants && (
                 <Button variant="outline" onClick={() => { setShowMontants(true); setMontantCordon(""); setMontantTVAInt(""); }}>
                   <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                 </Button>
               )}
-              {canRejectDGTCP && (
-                <Button variant="destructive" onClick={() => { setShowReject(true); setMotifRejet(""); }}>
-                  <XCircle className="h-4 w-4 mr-1" /> Rejeter
+
+              {/* President: validate after auto-transition */}
+              {canValiderPresident && (
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled={actionLoading} onClick={() => handleStatut("VALIDE_PRESIDENT")}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider le certificat
                 </Button>
               )}
-              {canOuvrirCert && (
+
+              {/* DGTCP: prepare opening */}
+              {canPreparerOuverture && (
+                <Button onClick={() => handleStatut("EN_OUVERTURE_DGTCP")} disabled={actionLoading}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Préparer l'ouverture
+                </Button>
+              )}
+
+              {/* DGTCP: open the credit */}
+              {canOuvrirCredit && (
                 <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={actionLoading} onClick={() => handleStatut("OUVERT")}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider & Ouvrir le certificat
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Ouvrir le crédit
                 </Button>
               )}
+
+              {/* President: generate certificate */}
               {canGenerateCert && (
                 <Button disabled={generatingCert} onClick={handleGenerateCertificate}>
                   {generatingCert ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
                   Générer certificat
                 </Button>
               )}
+
+              {/* Annulation */}
               {canAnnuler && (
                 <Button variant="destructive" onClick={() => setShowAnnulation(true)} disabled={actionLoading}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                   Annuler
                 </Button>
               )}
-              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canPriseEnCharge && !canVerifier && !canMontants && !canRejectDGTCP && !canGenerateCert && (
+              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canSoumettreControle && !canMontants && !canGenerateCert && (
                 <p className="text-sm text-muted-foreground">Aucune action disponible pour votre rôle.</p>
               )}
             </div>
