@@ -447,6 +447,8 @@ export interface RejetTempResponseDto {
   documentVersion?: number;
   createdAt?: string;
   auteurNom?: string;
+  utilisateurId?: number;
+  utilisateurNom?: string;
 }
 
 export interface DecisionCorrectionDto {
