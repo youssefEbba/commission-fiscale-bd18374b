@@ -209,12 +209,8 @@ const MiseEnPlaceDetail = () => {
   const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
 
-  // President validates after auto-transition to EN_VALIDATION_PRESIDENT
+  // President validates and opens directly
   const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT";
-
-  // DGTCP opens after president validation
-  const canPreparerOuverture = role === "DGTCP" && c.statut === "VALIDE_PRESIDENT";
-  const canOuvrirCredit = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP";
 
   // President generates certificate when OUVERT
   const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
