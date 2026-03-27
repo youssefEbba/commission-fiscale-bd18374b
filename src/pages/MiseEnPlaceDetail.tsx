@@ -470,6 +470,12 @@ const MiseEnPlaceDetail = () => {
                   <XCircle className="h-4 w-4 mr-1" /> Rejeter
                 </Button>
               )}
+              {canOuvrirCert && (
+                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={actionLoading} onClick={() => handleStatut("OUVERT")}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider & Ouvrir le certificat
+                </Button>
+              )}
               {canGenerateCert && (
                 <Button disabled={generatingCert} onClick={handleGenerateCertificate}>
                   {generatingCert ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
