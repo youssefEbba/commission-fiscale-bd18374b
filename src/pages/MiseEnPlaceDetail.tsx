@@ -59,7 +59,7 @@ const DOC_TYPES_DEMANDABLES: { value: string; label: string }[] = [
   { value: "AUTRE", label: "Autre" },
 ];
 
-const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
+const DECISION_ROLES_LIST = ["DGI", "DGD", "DGTCP", "PRESIDENT"];
 const DECISION_ROLE_LABELS: Record<string, string> = {
   DGI: "DGI – Impôts",
   DGTCP: "DGTCP – Trésor",
