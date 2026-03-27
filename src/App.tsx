@@ -35,6 +35,7 @@ import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
 import Modifications from "./pages/Modifications";
 import DemandeDetail from "./pages/DemandeDetail";
+import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 
 const queryClient = new QueryClient();
 
