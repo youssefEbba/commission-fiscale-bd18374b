@@ -118,6 +118,9 @@ const MiseEnPlaceDetail = () => {
   const [responseMessage, setResponseMessage] = useState("");
   const [respondingLoading, setRespondingLoading] = useState(false);
 
+  // Annulation confirmation dialog
+  const [showAnnulation, setShowAnnulation] = useState(false);
+
   const fetchData = async () => {
     if (!id) return;
     setLoading(true);
@@ -193,8 +196,9 @@ const MiseEnPlaceDetail = () => {
   // Rule 3: VISA blocks REJET_TEMP — can't reject after visa
   const canDoVisa = isDecisionRole && !isClosed && !myHasVisa && !myHasOpenRejet;
   const canDoRejetTemp = isDecisionRole && !isClosed && !myHasVisa;
-  // DGD cannot annuler — only DGI and AC can
-  const canAnnuler = (role === "DGI" || role === "AUTORITE_CONTRACTANTE") && c.statut === "DEMANDE";
+  // DGD et DGB ne peuvent pas annuler — AC, DGI, PRESIDENT et DGTCP peuvent
+  const canAnnuler = ["DGI", "AUTORITE_CONTRACTANTE", "PRESIDENT", "DGTCP"].includes(role as string)
+    && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
   const canPriseEnCharge = role === "DGI" && c.statut === "DEMANDE";
   const canVerifier = role === "DGI" && c.statut === "EN_VERIFICATION_DGI";
   const canMontants = role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null;
@@ -471,7 +475,7 @@ const MiseEnPlaceDetail = () => {
                 </Button>
               )}
               {canAnnuler && (
-                <Button variant="destructive" onClick={() => handleStatut("ANNULE")} disabled={actionLoading}>
+                <Button variant="destructive" onClick={() => setShowAnnulation(true)} disabled={actionLoading}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                   Annuler
                 </Button>
@@ -817,6 +821,40 @@ const MiseEnPlaceDetail = () => {
             <Button variant="destructive" disabled={rejecting || !motifRejet.trim()} onClick={handleReject}>
               {rejecting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Annulation Confirmation Dialog */}
+      <Dialog open={showAnnulation} onOpenChange={setShowAnnulation}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Confirmer l'annulation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Êtes-vous sûr de vouloir annuler le certificat <strong>{c.reference || `#${c.id}`}</strong> ?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cette action est irréversible. Vous pourrez créer un nouveau certificat sur la même demande de correction après l'annulation.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAnnulation(false)}>Non, revenir</Button>
+            <Button
+              variant="destructive"
+              disabled={actionLoading}
+              onClick={async () => {
+                setShowAnnulation(false);
+                await handleStatut("ANNULE");
+              }}
+            >
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Oui, annuler le certificat
             </Button>
           </DialogFooter>
         </DialogContent>
