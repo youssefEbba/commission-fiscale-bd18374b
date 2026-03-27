@@ -423,55 +423,9 @@ const DemandesMiseEnPlace = () => {
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}><Eye className="h-4 w-4 mr-1" /> Traiter</Button>
-                          {/* DGTCP: renseigner montants avant de viser */}
-                          {role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && c.montantCordon == null && (
-                            <Button variant="outline" size="sm" onClick={() => { setShowMontants(c); setMontantCordon(""); setMontantTVAInt(""); }}>
-                              <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
-                            </Button>
-                          )}
-                          {/* DGTCP Reject button */}
-                          {role === "DGTCP" && c.statut === "EN_OUVERTURE_DGTCP" && (
-                            <Button variant="destructive" size="sm" onClick={() => { setShowReject(c); setMotifRejet(""); }}>
-                              <XCircle className="h-4 w-4 mr-1" /> Rejeter
-                            </Button>
-                          )}
-                          {/* Apposer visa (DGI/DGTCP/DGB/DGD/PRESIDENT) */}
-                          {(role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD" || role === "PRESIDENT") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
-                            <Button variant="outline" size="sm" className="text-green-600 border-green-300" disabled={visaLoading} onClick={async () => {
-                              setVisaLoading(true);
-                              try {
-                                await certificatCreditApi.postDecision(c.id, "VISA");
-                                toast({ title: "Succès", description: "Visa apposé" });
-                                fetchCertificats();
-                              } catch (e: any) {
-                                toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                              } finally { setVisaLoading(false); }
-                            }}>
-                              <ShieldCheck className="h-4 w-4 mr-1" /> Apposer visa
-                            </Button>
-                          )}
-                          {/* REJET_TEMP button (DGI/DGTCP/DGB/DGD/PRESIDENT) */}
-                          {(role === "DGI" || role === "DGTCP" || role === "DGB" || role === "DGD" || role === "PRESIDENT") && !["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut) && (
-                            <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(c); setRejetTempMotif(""); setRejetTempDocs([]); }}>
-                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
-                            </Button>
-                          )}
-                          {/* Président: Générer certificat PDF (sans changer le statut) */}
-                          {role === "PRESIDENT" && c.statut === "OUVERT" && (
-                            <Button variant="default" size="sm" disabled={generatingCert === c.id} onClick={() => handleGenerateCertificate(c)}>
-                              {generatingCert === c.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-                              Générer certificat
-                            </Button>
-                          )}
-                          {transitions.map((t) =>
-                            t.from.includes(c.statut) ? (
-                              <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
-                                {actionLoading === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                {t.label}
-                              </Button>
-                            ) : null
-                          )}
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
+                            <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

@@ -367,9 +367,9 @@ const MiseEnPlaceDetail = () => {
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Award className="h-6 w-6 text-primary" />
-                Traitement — {c.reference || `#${c.id}`}
+                 {role === "AUTORITE_CONTRACTANTE" ? "Détails" : "Traitement"} — {c.reference || `#${c.id}`}
               </h1>
-              <p className="text-muted-foreground text-sm">Page de traitement de la demande de mise en place</p>
+              <p className="text-muted-foreground text-sm">{role === "AUTORITE_CONTRACTANTE" ? "Visualisation de la demande de mise en place" : "Page de traitement de la demande de mise en place"}</p>
             </div>
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[c.statut]}`}>
