@@ -189,7 +189,6 @@ const UtilisationDetail = () => {
     if (!respondDecisionId || !responseMsg.trim()) return;
     setResponding(true);
     try {
-      // Use the rejet temp response endpoint for utilisations
       await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
         method: "POST",
         body: { message: responseMsg.trim() },
@@ -201,6 +200,28 @@ const UtilisationDetail = () => {
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setResponding(false); }
+  };
+
+  const handleUploadRejetDoc = async () => {
+    if (!uploadRejetDecisionId || !rejetUploadFile) return;
+    setRejetUploading(true);
+    try {
+      // First upload the document to the utilisation
+      await utilisationCreditApi.uploadDocument(utilId, rejetUploadDocType, rejetUploadFile);
+      // Then send a response message referencing the upload
+      const msg = rejetUploadMsg.trim() || `Document "${rejetUploadFile.name}" uploadé (${rejetUploadDocType.replace(/_/g, " ")})`;
+      await apiFetch(`/utilisations-credit/decisions/${uploadRejetDecisionId}/rejet-temp/reponses`, {
+        method: "POST",
+        body: { message: msg },
+      });
+      toast({ title: "Succès", description: "Document uploadé et réponse envoyée" });
+      setUploadRejetDecisionId(null);
+      setRejetUploadFile(null);
+      setRejetUploadMsg("");
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejetUploading(false); }
   };
 
   const handleResolveRejet = async (decisionId: number) => {
