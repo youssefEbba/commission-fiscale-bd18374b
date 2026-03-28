@@ -209,7 +209,7 @@ const UtilisationDetail = () => {
       // First upload the document to the utilisation
       await utilisationCreditApi.uploadDocument(utilId, rejetUploadDocType, rejetUploadFile);
       // Then send a response message referencing the upload
-      const msg = rejetUploadMsg.trim() || `Document "${rejetUploadFile.name}" uploadé (${rejetUploadDocType.replace(/_/g, " ")})`;
+      const msg = rejetUploadMsg.trim();
       await apiFetch(`/utilisations-credit/decisions/${uploadRejetDecisionId}/rejet-temp/reponses`, {
         method: "POST",
         body: { message: msg },
