@@ -1242,6 +1242,15 @@ export const clotureCreditApi = {
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/rejeter`, { method: "POST" }),
   finaliser: (id: number) =>
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/finaliser`, { method: "POST" }),
+  getDocuments: (id: number) => apiFetch<any[]>(`/clotures-credit/${id}/documents`),
+  uploadDocument: (id: number, type: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<any>(
+      `/clotures-credit/${id}/documents?type=${encodeURIComponent(type)}`,
+      { method: "POST", rawBody: formData }
+    );
+  },
 };
 
 // Avenants / Modifications (P8)
