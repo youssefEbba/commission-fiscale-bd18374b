@@ -705,6 +705,17 @@ export const certificatCreditApi = {
 export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
+export interface TvaDeductibleStockDto {
+  id: number;
+  utilisationDouaneId: number;
+  numeroDeclaration?: string;
+  montantInitial: number;
+  montantRestant: number;
+  montantConsomme: number;
+  dateCreation?: string;
+  epuise: boolean;
+}
+
 export interface UtilisationCreditDto {
   id: number;
   certificatCreditId: number;
@@ -725,6 +736,9 @@ export interface UtilisationCreditDto {
   montantDroits?: number;
   montantTVADouane?: number;
   enregistreeSYDONIA?: boolean;
+  // Douane liquidation trace
+  soldeCordonAvant?: number;
+  soldeCordonApres?: number;
   // TVA intérieure fields
   typeAchat?: string;
   numeroFacture?: string;
