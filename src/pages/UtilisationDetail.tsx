@@ -203,13 +203,13 @@ const UtilisationDetail = () => {
   };
 
   const handleUploadRejetDoc = async () => {
-    if (!uploadRejetDecisionId || !rejetUploadFile) return;
+    if (!uploadRejetDecisionId || !rejetUploadFile || !rejetUploadMsg.trim()) return;
     setRejetUploading(true);
     try {
       // First upload the document to the utilisation
       await utilisationCreditApi.uploadDocument(utilId, rejetUploadDocType, rejetUploadFile);
       // Then send a response message referencing the upload
-      const msg = rejetUploadMsg.trim() || `Document "${rejetUploadFile.name}" uploadé (${rejetUploadDocType.replace(/_/g, " ")})`;
+      const msg = rejetUploadMsg.trim();
       await apiFetch(`/utilisations-credit/decisions/${uploadRejetDecisionId}/rejet-temp/reponses`, {
         method: "POST",
         body: { message: msg },
@@ -784,12 +784,12 @@ const UtilisationDetail = () => {
               <Input type="file" onChange={e => setRejetUploadFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
             </div>
             <div>
-              <Label className="text-sm">Message (optionnel)</Label>
-              <Textarea placeholder="Commentaire sur le document..." value={rejetUploadMsg} onChange={e => setRejetUploadMsg(e.target.value)} className="min-h-[60px]" />
+              <Label className="text-sm">Message justificatif *</Label>
+              <Textarea placeholder="Décrivez le document fourni..." value={rejetUploadMsg} onChange={e => setRejetUploadMsg(e.target.value)} className="min-h-[60px]" />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setUploadRejetDecisionId(null)}>Annuler</Button>
-              <Button disabled={rejetUploading || !rejetUploadFile} onClick={handleUploadRejetDoc}>
+              <Button disabled={rejetUploading || !rejetUploadFile || !rejetUploadMsg.trim()} onClick={handleUploadRejetDoc}>
                 {rejetUploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Uploader
               </Button>
             </DialogFooter>
