@@ -214,7 +214,16 @@ const UtilisationDetail = () => {
         method: "POST",
         rawBody: formData,
       });
-      toast({ title: "Succès", description: "Document uploadé avec succès" });
+      
+      // Auto-resolve the rejection after successful document upload
+      try {
+        await utilisationCreditApi.resolveRejetTemp(uploadRejetDecisionId);
+        toast({ title: "Succès", description: "Document uploadé et rejet résolu automatiquement" });
+      } catch {
+        // If auto-resolve fails (e.g. not all docs provided), just notify upload success
+        toast({ title: "Succès", description: "Document uploadé avec succès" });
+      }
+      
       setUploadRejetDecisionId(null);
       setRejetUploadFile(null);
       setRejetUploadMsg("");
