@@ -95,6 +95,10 @@ const CertificatDetail = () => {
       .then(([cert, utils]) => {
         setCertificat(cert);
         setUtilisations(utils);
+        // Load TVA stock if role allows
+        if (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE") {
+          certificatCreditApi.getTvaStock(certId).then(setTvaStock).catch(() => setTvaStock([]));
+        }
       })
       .catch(() => {
         toast({ title: "Erreur", description: "Impossible de charger le certificat", variant: "destructive" });
