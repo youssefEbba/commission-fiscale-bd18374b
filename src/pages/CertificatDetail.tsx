@@ -71,36 +71,57 @@ const CertificatDetail = () => {
       try {
         return await certificatCreditApi.getById(certId);
       } catch {
-        // Fallback: try enterprise list or global list
         try {
           if (user?.entrepriseId) {
             const certs = await certificatCreditApi.getByEntreprise(user.entrepriseId);
-            const found = certs.find(c => c.id === certId);
+            const found = certs.find((c) => c.id === certId);
             if (found) return found;
           }
+
           const all = await certificatCreditApi.getAll();
-          const found = all.find(c => c.id === certId);
+          const found = all.find((c) => c.id === certId);
           if (found) return found;
-        } catch { /* ignore */ }
+        } catch {
+          // ignore fallback errors
+        }
+
         throw new Error("Certificat introuvable");
       }
     };
 
-    Promise.all([
-      fetchCert(),
-      utilisationCreditApi.getByCertificat(certId).catch(() =>
-        utilisationCreditApi.getAll().then(all => all.filter(u => u.certificatCreditId === certId))
-      ),
-    ])
-      .then(([cert, utils]) => {
-        setCertificat(cert);
-        setUtilisations(utils);
-        // Load TVA stock if role allows
-        if (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE") {
-          certificatCreditApi.getTvaStock(certId).then(setTvaStock).catch(() => setTvaStock([]));
+    const fetchUtilisations = async () => {
+      try {
+        return await utilisationCreditApi.getByCertificat(certId);
+      } catch {
+        try {
+          const all = await utilisationCreditApi.getAll();
+          return all.filter((u) => u.certificatCreditId === certId);
+        } catch {
+          return [];
         }
+      }
+    };
+
+    Promise.allSettled([
+      fetchCert(),
+      fetchUtilisations(),
+      role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE"
+        ? certificatCreditApi.getTvaStock(certId)
+        : Promise.resolve([] as TvaDeductibleStockDto[]),
+    ])
+      .then(([certResult, utilsResult, stockResult]) => {
+        if (certResult.status !== "fulfilled") {
+          throw certResult.reason;
+        }
+
+        setCertificat(certResult.value);
+        setUtilisations(utilsResult.status === "fulfilled" ? utilsResult.value : []);
+        setTvaStock(stockResult.status === "fulfilled" ? stockResult.value : []);
       })
       .catch(() => {
+        setCertificat(null);
+        setUtilisations([]);
+        setTvaStock([]);
         toast({ title: "Erreur", description: "Impossible de charger le certificat", variant: "destructive" });
       })
       .finally(() => setLoading(false));
@@ -118,7 +139,7 @@ const CertificatDetail = () => {
           { value: "AUTRE", label: "Autre" },
         ]);
       });
-  }, [id]);
+  }, [id, role, toast, user?.entrepriseId]);
 
   const loadGedDocs = async (certId: number) => {
     setGedLoading(true);
