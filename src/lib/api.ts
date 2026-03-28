@@ -677,6 +677,8 @@ export const certificatCreditApi = {
     formData.append("file", file);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
+  // TVA Stock FIFO
+  getTvaStock: (id: number) => apiFetch<TvaDeductibleStockDto[]>(`/certificats-credit/${id}/tva-stock`),
   // Decisions (REJET_TEMP + VISA)
   getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/certificats-credit/${id}/decisions`),
   postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
