@@ -36,6 +36,7 @@ import Cloture from "./pages/Cloture";
 import Modifications from "./pages/Modifications";
 import DemandeDetail from "./pages/DemandeDetail";
 import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
+import UtilisationDetail from "./pages/UtilisationDetail";
 
 const queryClient = new QueryClient();
 
