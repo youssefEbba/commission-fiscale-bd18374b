@@ -378,16 +378,7 @@ const DemandeDetail = () => {
     setUploading(true);
     try {
       await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
-      
-      // Auto-resolve matching open rejets after successful upload
-      let autoResolved = false;
-      for (const rej of openRejets) {
-        try {
-          await demandeCorrectionApi.resolveRejetTemp(rej.id);
-          autoResolved = true;
-        } catch { /* ignore if resolve fails */ }
-      }
-      toast({ title: "Succès", description: autoResolved ? "Document uploadé et rejet résolu automatiquement" : "Document uploadé" });
+      toast({ title: "Succès", description: "Document uploadé" });
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");

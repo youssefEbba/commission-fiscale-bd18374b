@@ -206,7 +206,6 @@ const UtilisationDetail = () => {
     if (!uploadRejetDecisionId || !rejetUploadFile || !rejetUploadMsg.trim()) return;
     setRejetUploading(true);
     try {
-      // Backend requires message in the document upload FormData when rejet is open
       const formData = new FormData();
       formData.append("file", rejetUploadFile);
       formData.append("message", rejetUploadMsg.trim());
@@ -214,16 +213,7 @@ const UtilisationDetail = () => {
         method: "POST",
         rawBody: formData,
       });
-      
-      // Auto-resolve the rejection after successful document upload
-      try {
-        await utilisationCreditApi.resolveRejetTemp(uploadRejetDecisionId);
-        toast({ title: "Succès", description: "Document uploadé et rejet résolu automatiquement" });
-      } catch {
-        // If auto-resolve fails (e.g. not all docs provided), just notify upload success
-        toast({ title: "Succès", description: "Document uploadé avec succès" });
-      }
-      
+      toast({ title: "Succès", description: "Document uploadé avec succès" });
       setUploadRejetDecisionId(null);
       setRejetUploadFile(null);
       setRejetUploadMsg("");
