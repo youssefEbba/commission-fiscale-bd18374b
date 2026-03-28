@@ -203,7 +203,7 @@ const UtilisationDetail = () => {
   };
 
   const handleUploadRejetDoc = async () => {
-    if (!uploadRejetDecisionId || !rejetUploadFile) return;
+    if (!uploadRejetDecisionId || !rejetUploadFile || !rejetUploadMsg.trim()) return;
     setRejetUploading(true);
     try {
       // First upload the document to the utilisation
