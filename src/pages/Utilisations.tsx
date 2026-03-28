@@ -555,28 +555,56 @@ const Utilisations = () => {
                   <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
                   <SelectContent>
                     {certificats.filter(c => c.statut === "OUVERT").map(c => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.reference || `#${c.id}`} — {c.entrepriseNom}</SelectItem>
+                      <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label>Montant (MRU) *</Label>
-                <Input type="number" min="0" placeholder="0" value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
-              </div>
+              {createType === "DOUANIER" && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>N° Déclaration *</Label><Input placeholder="DEC-2024-001" value={form.numeroDeclaration || ""} onChange={e => setForm({ ...form, numeroDeclaration: e.target.value })} /></div>
+                    <div><Label>N° Bulletin *</Label><Input placeholder="BUL-2024-001" value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
+                  </div>
+                  <div><Label>Date déclaration</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Montant Droits (MRU) *</Label><Input type="number" min="0" placeholder="0" value={form.montantDroits ?? ""} onChange={e => setForm({ ...form, montantDroits: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                    <div><Label>Montant TVA import (MRU) *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVA ?? ""} onChange={e => setForm({ ...form, montantTVA: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                  </div>
+                  {form.montantDroits != null && form.montantTVA != null && (
+                    <div className="p-2 rounded bg-muted text-sm">Montant total : <strong>{((form.montantDroits || 0) + (form.montantTVA || 0)).toLocaleString("fr-FR")} MRU</strong> (auto-calculé)</div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Switch checked={form.enregistreeSYDONIA || false} onCheckedChange={v => setForm({ ...form, enregistreeSYDONIA: v })} />
+                    <Label>Enregistrée dans SYDONIA</Label>
+                  </div>
+                </>
+              )}
 
               {createType === "TVA_INTERIEURE" && (
-                <div>
-                  <Label>Type d'achat</Label>
-                  <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ACHAT_LOCAL">Achat Local</SelectItem>
-                      <SelectItem value="DECOMPTE">Décompte</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div>
+                    <Label>Type d'achat *</Label>
+                    <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACHAT_LOCAL">Achat Local</SelectItem>
+                        <SelectItem value="DECOMPTE">Décompte</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {form.typeAchat === "ACHAT_LOCAL" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>N° Facture *</Label><Input placeholder="FAC-2024-042" value={form.numeroFacture || ""} onChange={e => setForm({ ...form, numeroFacture: e.target.value })} /></div>
+                      <div><Label>Date facture</Label><Input type="date" value={form.dateFacture || ""} onChange={e => setForm({ ...form, dateFacture: e.target.value })} /></div>
+                    </div>
+                  )}
+                  {form.typeAchat === "DECOMPTE" && (
+                    <div><Label>N° Décompte *</Label><Input placeholder="DEC-TRAV-003" value={form.numeroDecompte || ""} onChange={e => setForm({ ...form, numeroDecompte: e.target.value })} /></div>
+                  )}
+                  <div><Label>Montant TVA Intérieure (MRU) *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                </>
               )}
             </div>
 
