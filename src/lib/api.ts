@@ -108,6 +108,7 @@ export const utilisateurApi = {
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
+  // NOT SUPPORTED BY BACKEND — kept for future use
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
   resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
@@ -301,8 +302,9 @@ export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: 
 export const conventionApi = {
   getAll: () => apiFetch<ConventionDto[]>("/conventions"),
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
-  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/statut/${statut}`),
+  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
+  // NOT SUPPORTED BY BACKEND — kept for future use
   update: (id: number, data: CreateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
@@ -575,7 +577,7 @@ export const marcheApi = {
   getByCorrection: (demandeCorrectionId: number) => apiFetch<MarcheDto>(`/marches/by-correction/${demandeCorrectionId}`),
   create: (data: CreateMarcheRequest) => apiFetch<MarcheDto>("/marches", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateMarcheRequest>) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: data }),
-  assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign?delegueId=${delegueId}`, { method: "PATCH" }),
+  assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign`, { method: "PATCH", body: { delegueId } }),
   addDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues`, { method: "POST", body: { delegueId } }),
   removeDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues/${delegueId}`, { method: "DELETE" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/marches/${id}/documents`),
@@ -1240,6 +1242,15 @@ export const clotureCreditApi = {
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/rejeter`, { method: "POST" }),
   finaliser: (id: number) =>
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/finaliser`, { method: "POST" }),
+  getDocuments: (id: number) => apiFetch<any[]>(`/clotures-credit/${id}/documents`),
+  uploadDocument: (id: number, type: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<any>(
+      `/clotures-credit/${id}/documents?type=${encodeURIComponent(type)}`,
+      { method: "POST", rawBody: formData }
+    );
+  },
 };
 
 // Avenants / Modifications (P8)
@@ -1299,8 +1310,7 @@ export const AVENANT_STATUT_LABELS: Record<StatutAvenant, string> = {
 };
 
 export const avenantApi = {
-  getAll: () => apiFetch<AvenantDto[]>("/avenants"),
-  getById: (id: number) => apiFetch<AvenantDto>(`/avenants/${id}`),
+  // getAll and getById removed — backend only supports document endpoints
   getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentAvenant, file: File) => {
     const formData = new FormData();
