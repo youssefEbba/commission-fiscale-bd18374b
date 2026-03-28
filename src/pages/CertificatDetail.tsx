@@ -6,7 +6,7 @@ import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
 import {
   certificatCreditApi, CertificatCreditDto, CERTIFICAT_STATUT_LABELS, CertificatStatut,
   utilisationCreditApi, UtilisationCreditDto, UTILISATION_STATUT_LABELS, UtilisationStatut,
-  documentRequirementApi, DocumentRequirementDto, DocumentDto,
+  documentRequirementApi, DocumentRequirementDto, DocumentDto, TvaDeductibleStockDto,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText } from "lucide-react";
+import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, Ship, TrendingUp, TrendingDown, CheckCircle2, XCircle, Info } from "lucide-react";
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
