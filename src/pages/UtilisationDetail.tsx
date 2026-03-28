@@ -527,9 +527,14 @@ const UtilisationDetail = () => {
                     )}
                     <div className="flex gap-2 mt-2">
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
-                        <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); }}>
-                          Répondre
-                        </Button>
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); setResponseFile(null); }}>
+                            Répondre
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); setResponseFile(null); }}>
+                            <Upload className="h-3.5 w-3.5 mr-1" /> Upload doc
+                          </Button>
+                        </>
                       )}
                       {d.role === role && (
                         <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => handleResolveRejet(d.id)}>
