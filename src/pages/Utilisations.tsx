@@ -434,7 +434,7 @@ const Utilisations = () => {
                             ) : null
                           )}
                           {/* REJET_TEMP button (DGD/DGTCP) */}
-                          {(role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE"].includes(u.statut) && (
+                          {((role === "DGD" && u.type === "DOUANIER") || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE"].includes(u.statut) && (
                             <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(u); setRejetTempMotif(""); setRejetTempDocs([]); }}>
                               <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temp.
                             </Button>
