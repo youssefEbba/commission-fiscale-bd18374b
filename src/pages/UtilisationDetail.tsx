@@ -85,13 +85,6 @@ const UtilisationDetail = () => {
   const [responseMsg, setResponseMsg] = useState("");
   const [responding, setResponding] = useState(false);
 
-  // Rejet temp upload doc response
-  const [uploadRejetDecisionId, setUploadRejetDecisionId] = useState<number | null>(null);
-  const [rejetUploadDocType, setRejetUploadDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
-  const [rejetUploadFile, setRejetUploadFile] = useState<File | null>(null);
-  const [rejetUploadMsg, setRejetUploadMsg] = useState("");
-  const [rejetUploading, setRejetUploading] = useState(false);
-
   const utilId = Number(id);
 
   const fetchAll = async () => {
@@ -189,6 +182,7 @@ const UtilisationDetail = () => {
     if (!respondDecisionId || !responseMsg.trim()) return;
     setResponding(true);
     try {
+      // Use the rejet temp response endpoint for utilisations
       await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
         method: "POST",
         body: { message: responseMsg.trim() },
@@ -200,27 +194,6 @@ const UtilisationDetail = () => {
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setResponding(false); }
-  };
-
-  const handleUploadRejetDoc = async () => {
-    if (!uploadRejetDecisionId || !rejetUploadFile || !rejetUploadMsg.trim()) return;
-    setRejetUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", rejetUploadFile);
-      formData.append("message", rejetUploadMsg.trim());
-      await apiFetch(`/utilisations-credit/${utilId}/documents?type=${encodeURIComponent(rejetUploadDocType)}`, {
-        method: "POST",
-        rawBody: formData,
-      });
-      toast({ title: "Succès", description: "Document uploadé avec succès" });
-      setUploadRejetDecisionId(null);
-      setRejetUploadFile(null);
-      setRejetUploadMsg("");
-      fetchAll();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setRejetUploading(false); }
   };
 
   const handleResolveRejet = async (decisionId: number) => {
@@ -264,19 +237,19 @@ const UtilisationDetail = () => {
   const totalStockDisponible = tvaStock.reduce((s, t) => s + t.montantRestant, 0);
 
   // Determine available actions
-  // DGD n'a PAS d'actions sur les utilisations — seule la DGTCP agit
-  const canDGDVerify = false;
-  const canDGDVisa = false;
+  const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
+  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION";
   const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
-  const canRejetTemp = role === "DGTCP" && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
-  const canReject = (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
+  const canRejetTemp = (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
+  const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION"].includes(u.statut)) ||
+    (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
     (role === "DGTCP" && isDouane && u.statut === "VISE");
 
-  // A_RECONTROLER transitions — DGTCP uniquement
-  const canDGDReVerify = false;
+  // A_RECONTROLER transitions
+  const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
   const canDGTCPReVerifyTVA = role === "DGTCP" && isTVA && u.statut === "A_RECONTROLER";
 
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
@@ -537,21 +510,9 @@ const UtilisationDetail = () => {
                     )}
                     <div className="flex gap-2 mt-2">
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); }}>
-                            Répondre
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-primary" onClick={() => {
-                            setUploadRejetDecisionId(d.id);
-                            setRejetUploadFile(null);
-                            setRejetUploadMsg("");
-                            // Pre-select first requested doc type if available
-                            const requestedDocs = d.documentsDemandes || [];
-                            setRejetUploadDocType(requestedDocs.length > 0 ? requestedDocs[0] as TypeDocumentUtilisation : "DEMANDE_UTILISATION");
-                          }}>
-                            <Upload className="h-4 w-4 mr-1" /> Upload doc
-                          </Button>
-                        </>
+                        <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); }}>
+                          Répondre
+                        </Button>
                       )}
                       {d.role === role && (
                         <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => handleResolveRejet(d.id)}>
@@ -735,61 +696,6 @@ const UtilisationDetail = () => {
               <Button variant="outline" onClick={() => setRespondDecisionId(null)}>Annuler</Button>
               <Button disabled={responding || !responseMsg.trim()} onClick={handleRespondRejet}>
                 {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Envoyer
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Upload doc for rejet temp */}
-      <Dialog open={uploadRejetDecisionId !== null} onOpenChange={() => setUploadRejetDecisionId(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5 text-primary" /> Ajouter un document manquant
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Show requested doc types from the rejet */}
-            {(() => {
-              const decision = decisions.find(d => d.id === uploadRejetDecisionId);
-              const requestedDocs = decision?.documentsDemandes || [];
-              const availableDocTypes = requestedDocs.length > 0
-                ? (isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).filter(dt => requestedDocs.includes(dt.value))
-                : (isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA);
-              return (
-                <>
-                  {requestedDocs.length > 0 && (
-                    <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                      <span className="font-semibold">Documents demandés :</span> {requestedDocs.map(d => d.replace(/_/g, " ")).join(", ")}
-                    </div>
-                  )}
-                  <div>
-                    <Label className="text-sm">Type de document</Label>
-                    <Select value={rejetUploadDocType} onValueChange={v => setRejetUploadDocType(v as TypeDocumentUtilisation)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {availableDocTypes.map(t => (
-                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              );
-            })()}
-            <div>
-              <Label className="text-sm">Fichier *</Label>
-              <Input type="file" onChange={e => setRejetUploadFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
-            </div>
-            <div>
-              <Label className="text-sm">Message justificatif *</Label>
-              <Textarea placeholder="Décrivez le document fourni..." value={rejetUploadMsg} onChange={e => setRejetUploadMsg(e.target.value)} className="min-h-[60px]" />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setUploadRejetDecisionId(null)}>Annuler</Button>
-              <Button disabled={rejetUploading || !rejetUploadFile || !rejetUploadMsg.trim()} onClick={handleUploadRejetDoc}>
-                {rejetUploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Uploader
               </Button>
             </DialogFooter>
           </div>
