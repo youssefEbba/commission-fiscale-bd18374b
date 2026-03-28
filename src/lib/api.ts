@@ -108,6 +108,7 @@ export const utilisateurApi = {
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
+  // NOT SUPPORTED BY BACKEND — kept for future use
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
   resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
