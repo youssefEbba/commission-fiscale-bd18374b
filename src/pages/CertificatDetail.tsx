@@ -51,6 +51,7 @@ const CertificatDetail = () => {
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
   const [utilisations, setUtilisations] = useState<UtilisationCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
 
   // GED documents state
   const [showGed, setShowGed] = useState(false);
