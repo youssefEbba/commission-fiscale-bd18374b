@@ -206,15 +206,15 @@ const UtilisationDetail = () => {
     if (!uploadRejetDecisionId || !rejetUploadFile || !rejetUploadMsg.trim()) return;
     setRejetUploading(true);
     try {
-      // First upload the document to the utilisation
-      await utilisationCreditApi.uploadDocument(utilId, rejetUploadDocType, rejetUploadFile);
-      // Then send a response message referencing the upload
-      const msg = rejetUploadMsg.trim();
-      await apiFetch(`/utilisations-credit/decisions/${uploadRejetDecisionId}/rejet-temp/reponses`, {
+      // Backend requires message in the document upload FormData when rejet is open
+      const formData = new FormData();
+      formData.append("file", rejetUploadFile);
+      formData.append("message", rejetUploadMsg.trim());
+      await apiFetch(`/utilisations-credit/${utilId}/documents?type=${encodeURIComponent(rejetUploadDocType)}`, {
         method: "POST",
-        body: { message: msg },
+        rawBody: formData,
       });
-      toast({ title: "Succès", description: "Document uploadé et réponse envoyée" });
+      toast({ title: "Succès", description: "Document uploadé avec succès" });
       setUploadRejetDecisionId(null);
       setRejetUploadFile(null);
       setRejetUploadMsg("");
