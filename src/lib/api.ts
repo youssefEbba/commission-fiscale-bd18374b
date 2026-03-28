@@ -301,7 +301,7 @@ export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: 
 export const conventionApi = {
   getAll: () => apiFetch<ConventionDto[]>("/conventions"),
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
-  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/statut/${statut}`),
+  getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
   update: (id: number, data: CreateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
