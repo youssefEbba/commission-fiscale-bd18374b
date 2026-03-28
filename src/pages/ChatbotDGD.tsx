@@ -143,25 +143,8 @@ const ChatbotDGD = () => {
       const data = await res.json();
       if (!data.success) throw new Error("Analyse échouée");
 
-      let content: string;
-      if (typeof data.analysis === "string") {
-        content = data.analysis;
-      } else if (data.analysis && typeof data.analysis === "object") {
-        const parts: string[] = [];
-        if (data.analysis.resume) {
-          parts.push(data.analysis.resume);
-        }
-        if (Array.isArray(data.analysis.points_de_verification)) {
-          parts.push("\n---\n\n### 📋 Points de vérification\n");
-          data.analysis.points_de_verification.forEach((p: string, i: number) => {
-            parts.push(`${i + 1}. ${p}\n`);
-          });
-        }
-        content = parts.join("\n");
-      } else {
-        content = JSON.stringify(data.analysis, null, 2);
-      }
-      setDqeMessages([{ role: "assistant", content: `## Analyse initiale DQE\n\n${content}` }]);
+      const content = data.answer || (typeof data.analysis === "string" ? data.analysis : JSON.stringify(data.analysis, null, 2));
+      setDqeMessages([{ role: "assistant", content }]);
       setDqeAnalyzed(true);
       toast({ title: "Analyse DQE terminée" });
     } catch (e: any) {
