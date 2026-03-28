@@ -311,13 +311,81 @@ const CertificatDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Indicateurs tableau de bord */}
+        {c.statut === "OUVERT" && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {(() => {
+              const liquidees = utilisations.filter(u => u.type === "DOUANIER" && u.statut === "LIQUIDEE");
+              const apurees = utilisations.filter(u => u.type === "TVA_INTERIEURE" && u.statut === "APUREE");
+              const totalStock = tvaStock.reduce((s, t) => s + t.montantRestant, 0);
+              const totalCash = apurees.reduce((s, u) => s + (u.paiementEntreprise ?? 0), 0);
+              const totalReport = apurees.reduce((s, u) => s + (u.reportANouveau ?? 0), 0);
+              return (
+                <>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Importations liquidées</p><p className="text-2xl font-bold">{liquidees.length}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Apurements réalisés</p><p className="text-2xl font-bold">{apurees.length}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Stock TVA déductible</p><p className="text-2xl font-bold text-blue-600">{totalStock.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Paiement cash cumulé</p><p className="text-2xl font-bold text-amber-600">{totalCash.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Reports à nouveau</p><p className="text-2xl font-bold text-emerald-600">{totalReport.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Utilisations en cours</p><p className="text-2xl font-bold">{utilisations.filter(u => !["LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut)).length}</p></CardContent></Card>
+                </>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Stock TVA déductible FIFO */}
+        {tvaStock.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Info className="h-5 w-5 text-primary" />
+                Stock TVA déductible (FIFO) — Total disponible : {tvaStock.reduce((s, t) => s + t.montantRestant, 0).toLocaleString("fr-FR")} MRU
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Déclaration</TableHead>
+                    <TableHead>Montant initial</TableHead>
+                    <TableHead>Consommé</TableHead>
+                    <TableHead>Restant</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>État</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tvaStock.map(t => (
+                    <TableRow key={t.id} className={t.epuise ? "opacity-50" : ""}>
+                      <TableCell className="font-medium">{t.numeroDeclaration || `Util #${t.utilisationDouaneId}`}</TableCell>
+                      <TableCell>{t.montantInitial.toLocaleString("fr-FR")} MRU</TableCell>
+                      <TableCell>{t.montantConsomme.toLocaleString("fr-FR")} MRU</TableCell>
+                      <TableCell className="font-bold">{t.montantRestant.toLocaleString("fr-FR")} MRU</TableCell>
+                      <TableCell>{t.dateCreation ? new Date(t.dateCreation).toLocaleDateString("fr-FR") : "—"}</TableCell>
+                      <TableCell>{t.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Utilisations */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Landmark className="h-5 w-5 text-primary" />
-              Utilisations liées ({utilisations.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Landmark className="h-5 w-5 text-primary" />
+                Utilisations liées ({utilisations.length})
+              </CardTitle>
+              {c.statut === "OUVERT" && (role === "ENTREPRISE" || role === "ADMIN_SI") && (
+                <Button size="sm" onClick={() => navigate("/dashboard/utilisations")}>
+                  <Plus className="h-4 w-4 mr-2" /> Nouvelle utilisation
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -330,22 +398,23 @@ const CertificatDetail = () => {
                   <TableHead>TVA</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {utilisations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Aucune utilisation pour ce certificat
                     </TableCell>
                   </TableRow>
                 ) : (
                   utilisations.map((u) => (
-                    <TableRow key={u.id}>
+                    <TableRow key={u.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                       <TableCell className="font-medium">#{u.id}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {u.type === "DOUANIER" ? "Douane (P6)" : "TVA Int. (P7)"}
+                          {u.type === "DOUANIER" ? "Douane" : "TVA Int."}
                         </Badge>
                       </TableCell>
                       <TableCell>{u.montant?.toLocaleString("fr-FR") ?? "—"} MRU</TableCell>
@@ -368,6 +437,9 @@ const CertificatDetail = () => {
                         <Badge className={`text-xs ${STATUT_COLORS_UTIL[u.statut]}`}>
                           {UTILISATION_STATUT_LABELS[u.statut]}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))
