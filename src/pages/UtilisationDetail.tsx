@@ -741,6 +741,61 @@ const UtilisationDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upload doc for rejet temp */}
+      <Dialog open={uploadRejetDecisionId !== null} onOpenChange={() => setUploadRejetDecisionId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-primary" /> Ajouter un document manquant
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Show requested doc types from the rejet */}
+            {(() => {
+              const decision = decisions.find(d => d.id === uploadRejetDecisionId);
+              const requestedDocs = decision?.documentsDemandes || [];
+              const availableDocTypes = requestedDocs.length > 0
+                ? (isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).filter(dt => requestedDocs.includes(dt.value))
+                : (isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA);
+              return (
+                <>
+                  {requestedDocs.length > 0 && (
+                    <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                      <span className="font-semibold">Documents demandés :</span> {requestedDocs.map(d => d.replace(/_/g, " ")).join(", ")}
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-sm">Type de document</Label>
+                    <Select value={rejetUploadDocType} onValueChange={v => setRejetUploadDocType(v as TypeDocumentUtilisation)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {availableDocTypes.map(t => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              );
+            })()}
+            <div>
+              <Label className="text-sm">Fichier *</Label>
+              <Input type="file" onChange={e => setRejetUploadFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+            </div>
+            <div>
+              <Label className="text-sm">Message (optionnel)</Label>
+              <Textarea placeholder="Commentaire sur le document..." value={rejetUploadMsg} onChange={e => setRejetUploadMsg(e.target.value)} className="min-h-[60px]" />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUploadRejetDecisionId(null)}>Annuler</Button>
+              <Button disabled={rejetUploading || !rejetUploadFile} onClick={handleUploadRejetDoc}>
+                {rejetUploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Uploader
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
