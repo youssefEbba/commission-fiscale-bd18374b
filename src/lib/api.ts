@@ -1301,8 +1301,7 @@ export const AVENANT_STATUT_LABELS: Record<StatutAvenant, string> = {
 };
 
 export const avenantApi = {
-  getAll: () => apiFetch<AvenantDto[]>("/avenants"),
-  getById: (id: number) => apiFetch<AvenantDto>(`/avenants/${id}`),
+  // getAll and getById removed — backend only supports document endpoints
   getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentAvenant, file: File) => {
     const formData = new FormData();
