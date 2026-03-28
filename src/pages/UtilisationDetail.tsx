@@ -83,6 +83,7 @@ const UtilisationDetail = () => {
   // Rejet temp response
   const [respondDecisionId, setRespondDecisionId] = useState<number | null>(null);
   const [responseMsg, setResponseMsg] = useState("");
+  const [responseFile, setResponseFile] = useState<File | null>(null);
   const [responding, setResponding] = useState(false);
 
   const utilId = Number(id);
@@ -179,17 +180,33 @@ const UtilisationDetail = () => {
   };
 
   const handleRespondRejet = async () => {
-    if (!respondDecisionId || !responseMsg.trim()) return;
+    if (!respondDecisionId || (!responseMsg.trim() && !responseFile)) return;
     setResponding(true);
     try {
-      // Use the rejet temp response endpoint for utilisations
-      await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
-        method: "POST",
-        body: { message: responseMsg.trim() },
-      });
+      if (responseFile) {
+        // Upload file with message as multipart
+        const formData = new FormData();
+        formData.append("file", responseFile);
+        formData.append("message", responseMsg.trim() || "Document joint");
+        const token = localStorage.getItem("auth_token");
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: formData,
+        }).then(async r => { if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || "Erreur"); });
+      } else {
+        await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
+          method: "POST",
+          body: { message: responseMsg.trim() },
+        });
+      }
       toast({ title: "Succès", description: "Réponse envoyée" });
       setRespondDecisionId(null);
       setResponseMsg("");
+      setResponseFile(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -510,9 +527,14 @@ const UtilisationDetail = () => {
                     )}
                     <div className="flex gap-2 mt-2">
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
-                        <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); }}>
-                          Répondre
-                        </Button>
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); setResponseFile(null); }}>
+                            Répondre
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); setResponseFile(null); }}>
+                            <Upload className="h-3.5 w-3.5 mr-1" /> Upload doc
+                          </Button>
+                        </>
                       )}
                       {d.role === role && (
                         <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => handleResolveRejet(d.id)}>
@@ -687,14 +709,23 @@ const UtilisationDetail = () => {
       </Dialog>
 
       {/* Respond to rejet */}
-      <Dialog open={respondDecisionId !== null} onOpenChange={() => setRespondDecisionId(null)}>
+      <Dialog open={respondDecisionId !== null} onOpenChange={() => { setRespondDecisionId(null); setResponseFile(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Répondre au rejet temporaire</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Textarea placeholder="Votre réponse..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
+            <Textarea placeholder="Votre réponse ou justification..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
+            <div>
+              <Label className="text-sm">Joindre un document (optionnel)</Label>
+              <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+              {responseFile && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <FileText className="h-3 w-3" /> {responseFile.name}
+                </p>
+              )}
+            </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRespondDecisionId(null)}>Annuler</Button>
-              <Button disabled={responding || !responseMsg.trim()} onClick={handleRespondRejet}>
+              <Button variant="outline" onClick={() => { setRespondDecisionId(null); setResponseFile(null); }}>Annuler</Button>
+              <Button disabled={responding || (!responseMsg.trim() && !responseFile)} onClick={handleRespondRejet}>
                 {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Envoyer
               </Button>
             </DialogFooter>
