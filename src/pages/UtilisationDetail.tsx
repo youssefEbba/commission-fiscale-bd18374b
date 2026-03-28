@@ -709,14 +709,23 @@ const UtilisationDetail = () => {
       </Dialog>
 
       {/* Respond to rejet */}
-      <Dialog open={respondDecisionId !== null} onOpenChange={() => setRespondDecisionId(null)}>
+      <Dialog open={respondDecisionId !== null} onOpenChange={() => { setRespondDecisionId(null); setResponseFile(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Répondre au rejet temporaire</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Textarea placeholder="Votre réponse..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
+            <Textarea placeholder="Votre réponse ou justification..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
+            <div>
+              <Label className="text-sm">Joindre un document (optionnel)</Label>
+              <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+              {responseFile && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <FileText className="h-3 w-3" /> {responseFile.name}
+                </p>
+              )}
+            </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRespondDecisionId(null)}>Annuler</Button>
-              <Button disabled={responding || !responseMsg.trim()} onClick={handleRespondRejet}>
+              <Button variant="outline" onClick={() => { setRespondDecisionId(null); setResponseFile(null); }}>Annuler</Button>
+              <Button disabled={responding || (!responseMsg.trim() && !responseFile)} onClick={handleRespondRejet}>
                 {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Envoyer
               </Button>
             </DialogFooter>
