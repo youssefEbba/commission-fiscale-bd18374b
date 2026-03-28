@@ -41,7 +41,9 @@ const Modifications = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      setData(await avenantApi.getAll());
+      // Backend does not support GET /avenants — endpoint not available
+      // Avenants can only be accessed by ID via their document endpoints
+      setData([]);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les avenants", variant: "destructive" });
     } finally {
