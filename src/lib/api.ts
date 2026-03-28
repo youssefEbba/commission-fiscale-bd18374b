@@ -856,6 +856,22 @@ export const utilisationCreditApi = {
         ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
       },
       }),
+  postRejetTempResponse: (decisionId: number, message: string, file?: File) => {
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("message", message);
+      return apiFetch<RejetTempResponseDto>(`/utilisations-credit/decisions/${decisionId}/rejet-temp/reponses`, {
+        method: "POST",
+        rawBody: formData,
+      });
+    }
+
+    return apiFetch<RejetTempResponseDto>(`/utilisations-credit/decisions/${decisionId}/rejet-temp/reponses`, {
+      method: "POST",
+      body: { message },
+    });
+  },
   // Résoudre manuellement un rejet temporaire
   resolveRejetTemp: (decisionId: number) =>
     apiFetch<DecisionCorrectionDto>(`/utilisations-credit/decisions/${decisionId}/resolve`, {
