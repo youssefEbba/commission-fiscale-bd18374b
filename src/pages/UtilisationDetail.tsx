@@ -538,9 +538,21 @@ const UtilisationDetail = () => {
                     )}
                     <div className="flex gap-2 mt-2">
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
-                        <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); }}>
-                          Répondre
-                        </Button>
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); }}>
+                            Répondre
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-primary" onClick={() => {
+                            setUploadRejetDecisionId(d.id);
+                            setRejetUploadFile(null);
+                            setRejetUploadMsg("");
+                            // Pre-select first requested doc type if available
+                            const requestedDocs = d.documentsDemandes || [];
+                            setRejetUploadDocType(requestedDocs.length > 0 ? requestedDocs[0] as TypeDocumentUtilisation : "DEMANDE_UTILISATION");
+                          }}>
+                            <Upload className="h-4 w-4 mr-1" /> Upload doc
+                          </Button>
+                        </>
                       )}
                       {d.role === role && (
                         <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => handleResolveRejet(d.id)}>
