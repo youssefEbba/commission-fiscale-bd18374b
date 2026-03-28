@@ -83,6 +83,7 @@ const UtilisationDetail = () => {
   // Rejet temp response
   const [respondDecisionId, setRespondDecisionId] = useState<number | null>(null);
   const [responseMsg, setResponseMsg] = useState("");
+  const [responseFile, setResponseFile] = useState<File | null>(null);
   const [responding, setResponding] = useState(false);
 
   const utilId = Number(id);
