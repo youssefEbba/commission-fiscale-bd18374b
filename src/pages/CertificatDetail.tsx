@@ -70,11 +70,17 @@ const CertificatDetail = () => {
       try {
         return await certificatCreditApi.getById(certId);
       } catch {
-        if (user?.entrepriseId) {
-          const certs = await certificatCreditApi.getByEntreprise(user.entrepriseId);
-          const found = certs.find(c => c.id === certId);
+        // Fallback: try enterprise list or global list
+        try {
+          if (user?.entrepriseId) {
+            const certs = await certificatCreditApi.getByEntreprise(user.entrepriseId);
+            const found = certs.find(c => c.id === certId);
+            if (found) return found;
+          }
+          const all = await certificatCreditApi.getAll();
+          const found = all.find(c => c.id === certId);
           if (found) return found;
-        }
+        } catch { /* ignore */ }
         throw new Error("Certificat introuvable");
       }
     };
