@@ -81,6 +81,7 @@ const emptyTVA: Partial<CreateUtilisationCreditRequest> = {
 const Utilisations = () => {
   const { user } = useAuth();
   const role = user?.role as AppRole;
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [data, setData] = useState<UtilisationCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
