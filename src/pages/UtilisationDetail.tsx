@@ -180,17 +180,33 @@ const UtilisationDetail = () => {
   };
 
   const handleRespondRejet = async () => {
-    if (!respondDecisionId || !responseMsg.trim()) return;
+    if (!respondDecisionId || (!responseMsg.trim() && !responseFile)) return;
     setResponding(true);
     try {
-      // Use the rejet temp response endpoint for utilisations
-      await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
-        method: "POST",
-        body: { message: responseMsg.trim() },
-      });
+      if (responseFile) {
+        // Upload file with message as multipart
+        const formData = new FormData();
+        formData.append("file", responseFile);
+        formData.append("message", responseMsg.trim() || "Document joint");
+        const token = localStorage.getItem("auth_token");
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: formData,
+        }).then(async r => { if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || "Erreur"); });
+      } else {
+        await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
+          method: "POST",
+          body: { message: responseMsg.trim() },
+        });
+      }
       toast({ title: "Succès", description: "Réponse envoyée" });
       setRespondDecisionId(null);
       setResponseMsg("");
+      setResponseFile(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
