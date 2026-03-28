@@ -237,19 +237,19 @@ const UtilisationDetail = () => {
   const totalStockDisponible = tvaStock.reduce((s, t) => s + t.montantRestant, 0);
 
   // Determine available actions
-  const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
-  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION";
+  // DGD n'a PAS d'actions sur les utilisations — seule la DGTCP agit
+  const canDGDVerify = false;
+  const canDGDVisa = false;
   const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
-  const canRejetTemp = (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
-  const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION"].includes(u.statut)) ||
-    (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
+  const canRejetTemp = role === "DGTCP" && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
+  const canReject = (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
     (role === "DGTCP" && isDouane && u.statut === "VISE");
 
-  // A_RECONTROLER transitions
-  const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
+  // A_RECONTROLER transitions — DGTCP uniquement
+  const canDGDReVerify = false;
   const canDGTCPReVerifyTVA = role === "DGTCP" && isTVA && u.statut === "A_RECONTROLER";
 
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");

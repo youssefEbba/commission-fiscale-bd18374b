@@ -42,13 +42,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
 
 // Type-aware transitions: DGD handles Douane, DGTCP handles TVA + Douane final steps
 const getTransitions = (role: string, type?: UtilisationType): { from: UtilisationStatut[]; to: UtilisationStatut; label: string }[] => {
-  if (role === "DGD") {
-    return [
-      { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
-      { from: ["EN_VERIFICATION"], to: "VISE", label: "Viser" },
-      { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
-    ];
-  }
+  // DGD n'a pas d'actions sur les utilisations
     if (role === "DGTCP") {
     if (type === "DOUANIER") {
       return [
