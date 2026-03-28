@@ -85,6 +85,13 @@ const UtilisationDetail = () => {
   const [responseMsg, setResponseMsg] = useState("");
   const [responding, setResponding] = useState(false);
 
+  // Rejet temp upload doc response
+  const [uploadRejetDecisionId, setUploadRejetDecisionId] = useState<number | null>(null);
+  const [rejetUploadDocType, setRejetUploadDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
+  const [rejetUploadFile, setRejetUploadFile] = useState<File | null>(null);
+  const [rejetUploadMsg, setRejetUploadMsg] = useState("");
+  const [rejetUploading, setRejetUploading] = useState(false);
+
   const utilId = Number(id);
 
   const fetchAll = async () => {
