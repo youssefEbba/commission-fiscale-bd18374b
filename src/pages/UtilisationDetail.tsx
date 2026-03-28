@@ -26,7 +26,6 @@ import {
   AlertTriangle, CheckCircle2, Clock, CreditCard, XCircle, CircleDollarSign,
   TrendingDown, TrendingUp, Minus
 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   DEMANDEE: "bg-blue-100 text-blue-800",
@@ -183,20 +182,11 @@ const UtilisationDetail = () => {
     if (!respondDecisionId || (!responseMsg.trim() && !responseFile)) return;
     setResponding(true);
     try {
-      if (responseFile) {
-        const formData = new FormData();
-        formData.append("file", responseFile);
-        formData.append("message", responseMsg.trim() || "Document joint");
-        await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
-          method: "POST",
-          rawBody: formData,
-        });
-      } else {
-        await apiFetch(`/utilisations-credit/decisions/${respondDecisionId}/rejet-temp/reponses`, {
-          method: "POST",
-          body: { message: responseMsg.trim() },
-        });
-      }
+      await utilisationCreditApi.postRejetTempResponse(
+        respondDecisionId,
+        responseMsg.trim() || "Document joint",
+        responseFile ?? undefined,
+      );
       toast({ title: "Succès", description: "Réponse envoyée" });
       setRespondDecisionId(null);
       setResponseMsg("");
