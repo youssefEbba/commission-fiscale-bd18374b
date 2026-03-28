@@ -94,6 +94,11 @@ const App = () => (
                 <Utilisations />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/utilisations/:id" element={
+              <ProtectedRoute allowedRoles={["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"]}>
+                <UtilisationDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/transferts" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Transferts />
