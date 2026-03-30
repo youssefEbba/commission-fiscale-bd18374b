@@ -455,7 +455,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           .filter((d: any) => d.chemin && AI_DOC_TYPES.some(t => (d.type || d.typeDocument || "").includes(t)))
           .map((d: any) => d.chemin.replace(/\\/g, "/"));
         if (sourceUrls.length > 0) {
-          const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
+          
           await fetch(`${AI_SERVICE_BASE}/api/fiscal-context/${demande.id}`, {
             method: "POST",
             headers: {

@@ -12,7 +12,7 @@ import {
   ArrowLeft, Loader2, CheckCircle, XCircle, Play, RefreshCw, Zap, Bot, ArrowRight,
 } from "lucide-react";
 
-const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
+import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 
 interface ExtractionFile {
   name: string;

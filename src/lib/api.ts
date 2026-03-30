@@ -1322,7 +1322,7 @@ export const avenantApi = {
   },
 };
 
-export const WS_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/ws";
+export { WS_BASE } from "./apiConfig";
 
 // ── Dossiers GED ──
 
