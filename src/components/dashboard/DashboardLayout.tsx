@@ -67,16 +67,16 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     label: "GED",
     icon: FolderOpen,
-    roles: ["PRESIDENT", "ADMIN_SI"],
+    roles: ["ADMIN_SI"],
     children: [
-      { label: "Configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["PRESIDENT", "ADMIN_SI"] },
-      { label: "Dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["PRESIDENT", "ADMIN_SI"] },
+      { label: "Configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
+      { label: "Dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI"] },
     ],
   },
   {
     label: "Paramétrage",
     icon: Settings,
-    roles: ["PRESIDENT", "ADMIN_SI"],
+    roles: ["ADMIN_SI"],
     children: [
       { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
       { label: "Rôles & Permissions", href: "/dashboard/roles", icon: Tag },
