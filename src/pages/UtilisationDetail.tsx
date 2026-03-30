@@ -181,18 +181,24 @@ const UtilisationDetail = () => {
   };
 
   const handleRespondRejet = async () => {
-    if (!respondDecision || (!responseMsg.trim() && !responseFile)) return;
+    if (!respondDecision) return;
+    const files = respondWithUpload ? Object.values(responseFiles) : (responseFile ? [responseFile] : []);
+    if (!responseMsg.trim() && files.length === 0) return;
     setResponding(true);
     try {
-      await utilisationCreditApi.postRejetTempResponse(
-        respondDecision.id,
-        responseMsg.trim() || "Document joint",
-        responseFile ?? undefined,
-      );
-      toast({ title: "Succès", description: "Réponse envoyée" });
+      // Send one API call per file, or a single call if text-only
+      if (files.length === 0) {
+        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim(), undefined);
+      } else {
+        for (let i = 0; i < files.length; i++) {
+          const msg = i === 0 ? (responseMsg.trim() || "Document joint") : "Document joint";
+          await utilisationCreditApi.postRejetTempResponse(respondDecision.id, msg, files[i]);
+        }
+      }
+      toast({ title: "Succès", description: files.length > 1 ? `${files.length} documents envoyés` : "Réponse envoyée" });
       setRespondDecision(null);
       setRespondWithUpload(false);
-      setResponseDocType("");
+      setResponseFiles({});
       setResponseMsg("");
       setResponseFile(null);
       fetchAll();
