@@ -188,12 +188,17 @@ const UtilisationDetail = () => {
     try {
       // Send one API call per file, or a single call if text-only
       if (files.length === 0) {
-        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim(), undefined);
-      } else {
-        for (let i = 0; i < files.length; i++) {
+        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim(), undefined, undefined);
+      } else if (respondWithUpload && respondDecision.documentsDemandes?.length) {
+        // Multi-upload: responseFiles is keyed by doc type
+        const entries = Object.entries(responseFiles);
+        for (let i = 0; i < entries.length; i++) {
+          const [docType, file] = entries[i];
           const msg = i === 0 ? (responseMsg.trim() || "Document joint") : "Document joint";
-          await utilisationCreditApi.postRejetTempResponse(respondDecision.id, msg, files[i]);
+          await utilisationCreditApi.postRejetTempResponse(respondDecision.id, msg, file, docType);
         }
+      } else if (responseFile) {
+        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim() || "Document joint", responseFile);
       }
       toast({ title: "Succès", description: files.length > 1 ? `${files.length} documents envoyés` : "Réponse envoyée" });
       setRespondDecision(null);
