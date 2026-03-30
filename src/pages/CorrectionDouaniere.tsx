@@ -33,7 +33,7 @@ const STATUT_COLORS: Record<string, string> = {
   NOTIFIEE: "bg-gray-100 text-gray-800",
 };
 
-const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
+import { API_BASE } from "@/lib/apiConfig";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
