@@ -230,10 +230,17 @@ const Utilisations = () => {
     }
     setCreating(true);
     try {
-      // Sanitize: replace empty strings with null/undefined so backend enums don't choke
+      // Sanitize: replace empty strings with null, convert date fields to Instant format
+      const dateFields = ["dateDeclaration", "dateFacture"];
       const sanitized: Record<string, any> = {};
       for (const [k, v] of Object.entries(form)) {
-        sanitized[k] = v === "" ? null : v;
+        if (v === "") {
+          sanitized[k] = null;
+        } else if (dateFields.includes(k) && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+          sanitized[k] = `${v}T00:00:00Z`;
+        } else {
+          sanitized[k] = v;
+        }
       }
       const created = await utilisationCreditApi.create(sanitized as CreateUtilisationCreditRequest);
       // Upload all attached documents
