@@ -68,7 +68,7 @@ const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatu
   ],
 };
 
-const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
+import { API_BASE } from "@/lib/apiConfig";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
