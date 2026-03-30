@@ -82,7 +82,7 @@ const UtilisationDetail = () => {
   // Rejet temp response
   const [respondDecision, setRespondDecision] = useState<DecisionCorrectionDto | null>(null);
   const [respondWithUpload, setRespondWithUpload] = useState(false);
-  const [responseDocType, setResponseDocType] = useState<string>("");
+  const [responseFiles, setResponseFiles] = useState<Record<string, File>>({});
   const [responseMsg, setResponseMsg] = useState("");
   const [responseFile, setResponseFile] = useState<File | null>(null);
   const [responding, setResponding] = useState(false);
@@ -181,18 +181,24 @@ const UtilisationDetail = () => {
   };
 
   const handleRespondRejet = async () => {
-    if (!respondDecision || (!responseMsg.trim() && !responseFile)) return;
+    if (!respondDecision) return;
+    const files = respondWithUpload ? Object.values(responseFiles) : (responseFile ? [responseFile] : []);
+    if (!responseMsg.trim() && files.length === 0) return;
     setResponding(true);
     try {
-      await utilisationCreditApi.postRejetTempResponse(
-        respondDecision.id,
-        responseMsg.trim() || "Document joint",
-        responseFile ?? undefined,
-      );
-      toast({ title: "Succès", description: "Réponse envoyée" });
+      // Send one API call per file, or a single call if text-only
+      if (files.length === 0) {
+        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim(), undefined);
+      } else {
+        for (let i = 0; i < files.length; i++) {
+          const msg = i === 0 ? (responseMsg.trim() || "Document joint") : "Document joint";
+          await utilisationCreditApi.postRejetTempResponse(respondDecision.id, msg, files[i]);
+        }
+      }
+      toast({ title: "Succès", description: files.length > 1 ? `${files.length} documents envoyés` : "Réponse envoyée" });
       setRespondDecision(null);
       setRespondWithUpload(false);
-      setResponseDocType("");
+      setResponseFiles({});
       setResponseMsg("");
       setResponseFile(null);
       fetchAll();
@@ -516,10 +522,10 @@ const UtilisationDetail = () => {
                     <div className="flex gap-2 mt-2">
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(false); setResponseMsg(""); setResponseFile(null); setResponseDocType(""); }}>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(false); setResponseMsg(""); setResponseFile(null); setResponseFiles({}); }}>
                              Répondre
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(true); setResponseMsg(""); setResponseFile(null); setResponseDocType(d.documentsDemandes?.length === 1 ? d.documentsDemandes[0] : ""); }}>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(true); setResponseMsg(""); setResponseFile(null); setResponseFiles({}); }}>
                             <Upload className="h-3.5 w-3.5 mr-1" /> Upload doc
                           </Button>
                         </>
@@ -697,37 +703,40 @@ const UtilisationDetail = () => {
       </Dialog>
 
       {/* Respond to rejet */}
-      <Dialog open={respondDecision !== null} onOpenChange={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseDocType(""); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>{respondWithUpload ? "Uploader un document demandé" : "Répondre au rejet temporaire"}</DialogTitle></DialogHeader>
+      <Dialog open={respondDecision !== null} onOpenChange={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseFiles({}); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>{respondWithUpload ? "Uploader les documents demandés" : "Répondre au rejet temporaire"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <Textarea placeholder="Votre réponse ou justification..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
-            {respondWithUpload && (
-              <>
-                {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
-                  <div>
-                    <Label className="text-sm">Type de document demandé *</Label>
-                    <Select value={responseDocType} onValueChange={setResponseDocType}>
-                      <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionnez le type de document" /></SelectTrigger>
-                      <SelectContent>
-                        {respondDecision.documentsDemandes.map(docType => {
-                          const docLabel = UTILISATION_DOCUMENT_TYPES.find(t => t.value === docType)?.label || docType.replace(/_/g, " ");
-                          return <SelectItem key={docType} value={docType}>{docLabel}</SelectItem>;
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div>
-                  <Label className="text-sm">Fichier *</Label>
-                  <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
-                  {responseFile && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" /> {responseFile.name}
-                    </p>
-                  )}
-                </div>
-              </>
+            {respondWithUpload && respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Documents demandés ({respondDecision.documentsDemandes.length})</Label>
+                {respondDecision.documentsDemandes.map(dt => {
+                  const docLabel = UTILISATION_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ");
+                  const file = responseFiles[dt];
+                  return (
+                    <div key={dt} className="p-3 rounded-lg border space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{docLabel}</span>
+                        {file && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">✓ Sélectionné</Badge>}
+                      </div>
+                      <Input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          setResponseFiles(prev => {
+                            const next = { ...prev };
+                            if (f) next[dt] = f; else delete next[dt];
+                            return next;
+                          });
+                        }}
+                      />
+                      {file && <p className="text-xs text-muted-foreground flex items-center gap-1"><FileText className="h-3 w-3" /> {file.name}</p>}
+                    </div>
+                  );
+                })}
+              </div>
             )}
             {!respondWithUpload && (
               <div>
@@ -741,9 +750,13 @@ const UtilisationDetail = () => {
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseDocType(""); }}>Annuler</Button>
-              <Button disabled={responding || (!responseMsg.trim() && !responseFile) || (respondWithUpload && respondDecision?.documentsDemandes?.length ? (!responseDocType || !responseFile) : false)} onClick={handleRespondRejet}>
-                {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Envoyer
+              <Button variant="outline" onClick={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseFiles({}); }}>Annuler</Button>
+              <Button
+                disabled={responding || (!responseMsg.trim() && !responseFile && Object.keys(responseFiles).length === 0) || (respondWithUpload && respondDecision?.documentsDemandes?.length ? Object.keys(responseFiles).length === 0 : false)}
+                onClick={handleRespondRejet}
+              >
+                {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {respondWithUpload && Object.keys(responseFiles).length > 1 ? `Envoyer ${Object.keys(responseFiles).length} documents` : "Envoyer"}
               </Button>
             </DialogFooter>
           </div>
