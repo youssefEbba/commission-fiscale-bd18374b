@@ -181,16 +181,18 @@ const UtilisationDetail = () => {
   };
 
   const handleRespondRejet = async () => {
-    if (!respondDecisionId || (!responseMsg.trim() && !responseFile)) return;
+    if (!respondDecision || (!responseMsg.trim() && !responseFile)) return;
     setResponding(true);
     try {
       await utilisationCreditApi.postRejetTempResponse(
-        respondDecisionId,
+        respondDecision.id,
         responseMsg.trim() || "Document joint",
         responseFile ?? undefined,
       );
       toast({ title: "Succès", description: "Réponse envoyée" });
-      setRespondDecisionId(null);
+      setRespondDecision(null);
+      setRespondWithUpload(false);
+      setResponseDocType("");
       setResponseMsg("");
       setResponseFile(null);
       fetchAll();
