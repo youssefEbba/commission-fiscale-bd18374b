@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { PDFDocument } from "pdf-lib";
 import { useAuth } from "@/contexts/AuthContext";
 import {
