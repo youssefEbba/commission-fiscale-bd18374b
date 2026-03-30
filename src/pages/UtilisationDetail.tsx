@@ -711,7 +711,7 @@ const UtilisationDetail = () => {
                       <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionnez le type de document" /></SelectTrigger>
                       <SelectContent>
                         {respondDecision.documentsDemandes.map(docType => {
-                          const docLabel = UTILISATION_DOCUMENT_TYPES[docType as TypeDocumentUtilisation] || docType.replace(/_/g, " ");
+                          const docLabel = UTILISATION_DOCUMENT_TYPES.find(t => t.value === docType)?.label || docType.replace(/_/g, " ");
                           return <SelectItem key={docType} value={docType}>{docLabel}</SelectItem>;
                         })}
                       </SelectContent>
