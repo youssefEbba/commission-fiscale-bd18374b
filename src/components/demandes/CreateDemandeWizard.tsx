@@ -289,9 +289,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
     setCreatingConvention(true);
     try {
+      const toInstant = (d?: string) => d ? `${d}T00:00:00Z` : new Date().toISOString();
       const created = await conventionApi.create({
         ...newConvForm,
-        dateSignature: newConvForm.dateSignature || new Date().toISOString().split("T")[0],
+        dateSignature: toInstant(newConvForm.dateSignature),
+        dateFin: newConvForm.dateFin ? toInstant(newConvForm.dateFin) : undefined,
         statut: "EN_ATTENTE",
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
       });
@@ -328,11 +330,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
     setCreatingMarche(true);
     try {
+      const toInstant = (d?: string) => d ? `${d}T00:00:00Z` : new Date().toISOString();
       const created = await marcheApi.create({
         conventionId: Number(conventionId),
         numeroMarche: newMarche.numeroMarche,
         montantContratTtc: newMarche.montantContratTtc,
-        dateSignature: newMarche.dateSignature || new Date().toISOString().split("T")[0],
+        dateSignature: toInstant(newMarche.dateSignature),
         statut: "EN_COURS",
       });
       setMarches(prev => [...prev, created]);
