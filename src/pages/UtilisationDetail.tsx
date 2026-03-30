@@ -80,7 +80,9 @@ const UtilisationDetail = () => {
   const [uploading, setUploading] = useState(false);
 
   // Rejet temp response
-  const [respondDecisionId, setRespondDecisionId] = useState<number | null>(null);
+  const [respondDecision, setRespondDecision] = useState<DecisionCorrectionDto | null>(null);
+  const [respondWithUpload, setRespondWithUpload] = useState(false);
+  const [responseDocType, setResponseDocType] = useState<string>("");
   const [responseMsg, setResponseMsg] = useState("");
   const [responseFile, setResponseFile] = useState<File | null>(null);
   const [responding, setResponding] = useState(false);
