@@ -76,7 +76,7 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     label: "Paramétrage",
     icon: Settings,
-    roles: ["PRESIDENT", "ADMIN_SI"],
+    roles: ["ADMIN_SI"],
     children: [
       { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
       { label: "Rôles & Permissions", href: "/dashboard/roles", icon: Tag },
