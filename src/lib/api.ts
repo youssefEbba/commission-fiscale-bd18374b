@@ -1,4 +1,4 @@
-const API_BASE = "https://1b5f-197-231-3-222.ngrok-free.app/api";
+import { API_BASE } from "./apiConfig";
 
 interface RequestOptions {
   method?: string;
