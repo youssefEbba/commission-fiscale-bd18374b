@@ -858,11 +858,12 @@ export const utilisationCreditApi = {
         ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
       },
       }),
-  postRejetTempResponse: (decisionId: number, message: string, file?: File) => {
+  postRejetTempResponse: (decisionId: number, message: string, file?: File, typeDocument?: string) => {
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("message", message);
+      if (typeDocument) formData.append("typeDocument", typeDocument);
       return apiFetch<RejetTempResponseDto>(`/utilisations-credit/decisions/${decisionId}/rejet-temp/reponses`, {
         method: "POST",
         rawBody: formData,
