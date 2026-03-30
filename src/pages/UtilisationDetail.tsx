@@ -697,23 +697,52 @@ const UtilisationDetail = () => {
       </Dialog>
 
       {/* Respond to rejet */}
-      <Dialog open={respondDecisionId !== null} onOpenChange={() => { setRespondDecisionId(null); setResponseFile(null); }}>
+      <Dialog open={respondDecision !== null} onOpenChange={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseDocType(""); }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Répondre au rejet temporaire</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{respondWithUpload ? "Uploader un document demandé" : "Répondre au rejet temporaire"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <Textarea placeholder="Votre réponse ou justification..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
-            <div>
-              <Label className="text-sm">Joindre un document (optionnel)</Label>
-              <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
-              {responseFile && (
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <FileText className="h-3 w-3" /> {responseFile.name}
-                </p>
-              )}
-            </div>
+            {respondWithUpload && (
+              <>
+                {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
+                  <div>
+                    <Label className="text-sm">Type de document demandé *</Label>
+                    <Select value={responseDocType} onValueChange={setResponseDocType}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionnez le type de document" /></SelectTrigger>
+                      <SelectContent>
+                        {respondDecision.documentsDemandes.map(docType => {
+                          const docLabel = UTILISATION_DOCUMENT_TYPES[docType as TypeDocumentUtilisation] || docType.replace(/_/g, " ");
+                          return <SelectItem key={docType} value={docType}>{docLabel}</SelectItem>;
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div>
+                  <Label className="text-sm">Fichier *</Label>
+                  <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+                  {responseFile && (
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {responseFile.name}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+            {!respondWithUpload && (
+              <div>
+                <Label className="text-sm">Joindre un document (optionnel)</Label>
+                <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+                {responseFile && (
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <FileText className="h-3 w-3" /> {responseFile.name}
+                  </p>
+                )}
+              </div>
+            )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setRespondDecisionId(null); setResponseFile(null); }}>Annuler</Button>
-              <Button disabled={responding || (!responseMsg.trim() && !responseFile)} onClick={handleRespondRejet}>
+              <Button variant="outline" onClick={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseDocType(""); }}>Annuler</Button>
+              <Button disabled={responding || (!responseMsg.trim() && !responseFile) || (respondWithUpload && respondDecision?.documentsDemandes?.length ? (!responseDocType || !responseFile) : false)} onClick={handleRespondRejet}>
                 {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Envoyer
               </Button>
             </DialogFooter>
