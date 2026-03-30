@@ -516,10 +516,10 @@ const UtilisationDetail = () => {
                     <div className="flex gap-2 mt-2">
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); setResponseFile(null); }}>
-                            Répondre
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(false); setResponseMsg(""); setResponseFile(null); setResponseDocType(""); }}>
+                             Répondre
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => { setRespondDecisionId(d.id); setResponseMsg(""); setResponseFile(null); }}>
+                          <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(true); setResponseMsg(""); setResponseFile(null); setResponseDocType(d.documentsDemandes?.length === 1 ? d.documentsDemandes[0] : ""); }}>
                             <Upload className="h-3.5 w-3.5 mr-1" /> Upload doc
                           </Button>
                         </>
