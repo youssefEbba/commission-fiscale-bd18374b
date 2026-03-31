@@ -10,7 +10,7 @@ export const API_BASE = "https://aa88-197-231-3-90.ngrok-free.app/api";
 export const WS_BASE = "https://aa88-197-231-3-90.ngrok-free.app/ws";
 
 /** Service IA (Python / FastAPI) */
-export const AI_SERVICE_BASE = "https://f7c6-197-231-9-128.ngrok-free.app";
+export const AI_SERVICE_BASE = "http://localhost:3000";
 
 /** Headers communs pour ngrok */
 export const NGROK_HEADERS = {
