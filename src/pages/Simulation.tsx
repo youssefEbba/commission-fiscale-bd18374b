@@ -273,16 +273,8 @@ function UploadStep({
         </p>
       </div>
 
-      {/* Entreprise ID - read-only */}
-      <Card>
-        <CardContent className="pt-5">
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="text-sm px-3 py-1">
-              Entreprise ID : {entrepriseId}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FileUploadZone
