@@ -97,6 +97,41 @@ const SECTIONS: Section[] = [
       "Visibilité des certificats sous-traités avec badge distinctif dans l'espace du sous-traitant",
     ],
   },
+  {
+    icon: FileEdit,
+    title: "8. Correction Douanière & Chatbot IA",
+    color: "from-teal-600 to-teal-800",
+    points: [
+      "Workflow en 2 phases : Phase 1 (DQE vs Offre Financière) puis Phase 2 (DQE corrigé vs Offre Fiscale)",
+      "Chatbot intelligent intégré avec analyse automatique des documents (PDF/Excel)",
+      "Extraction automatique des données via IA (Gemini + Anthropic)",
+      "Export des documents corrigés (DQE standard, Offre Fiscale) au format Excel",
+      "Historique des échanges et traçabilité complète des corrections",
+    ],
+  },
+  {
+    icon: TrendingUp,
+    title: "9. Simulation Entreprise",
+    color: "from-orange-600 to-orange-800",
+    points: [
+      "Simulation autonome par entreprise sans passer par le workflow complet de correction",
+      "Upload du DQE et de l'offre fiscale avec extraction et structuration automatiques",
+      "Génération de l'offre fiscale corrigée en un clic via les modèles IA",
+      "Téléchargement de l'offre corrigée au format Excel directement depuis l'espace simulation",
+      "Persistance des résultats : consultation et re-téléchargement à tout moment",
+    ],
+  },
+  {
+    icon: Shield,
+    title: "10. Extraction & Indexation Intelligente",
+    color: "from-fuchsia-600 to-fuchsia-800",
+    points: [
+      "Extraction automatique du contenu des documents PDF et Excel via API IA",
+      "Filtrage intelligent des types de documents supportés (DQE, DAO, Offre Fiscale/Financière)",
+      "Limitation automatique à 30 pages pour les documents volumineux",
+      "Stockage structuré des extractions par session de correction ou simulation",
+    ],
+  },
 ];
 
 const Presentation = () => {
