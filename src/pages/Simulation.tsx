@@ -1,101 +1,47 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, Play, Loader2, AlertTriangle, CheckCircle, X, ChevronDown, Eye, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Upload, FileSpreadsheet, Play, Loader2, CheckCircle, X,
+  ChevronDown, Eye, ArrowLeft, FileText, AlertTriangle, RefreshCw,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 
-const AI_SERVICE_URL = "https://f7c6-197-231-9-128.ngrok-free.app/api/audit-fiscale/correct-from-text";
+/* ──────────────── Types ──────────────── */
 
-interface ExcelData {
+interface ExcelPreviewData {
   fileName: string;
   sheets: { name: string; data: string[][] }[];
-  rawText: string;
   workbook: XLSX.WorkBook;
 }
 
-// Result types
-interface ValeurDouane {
-  VD: number;
-  DD: number;
-  RS: number;
-  PSC: number;
-  BaseTVA: number;
-  TVA: number;
-  TotalD_T: number;
+interface SimulationStatus {
+  exists: boolean;
+  hasDqeStandard: boolean;
+  hasOffreFiscale: boolean;
+  meta?: any;
 }
 
-interface CorrectionDouane {
-  produit: string;
-  valeurDeclaree: ValeurDouane;
-  valeurCorrigee: ValeurDouane;
-  ecart: ValeurDouane;
-  niveauErreur: string;
-}
+type Step = "upload" | "preview" | "processing" | "results";
 
-interface ValeurInterieure {
-  HT: number;
-  TVA: number;
-}
-
-interface CorrectionInterieure {
-  prestation: string;
-  valeurDeclaree: ValeurInterieure;
-  valeurCorrigee: ValeurInterieure;
-  ecart: ValeurInterieure;
-  niveauErreur: string;
-}
-
-interface CorrectionResult {
-  correctionsDouane: CorrectionDouane[];
-  correctionsInterieure: CorrectionInterieure[];
-  creditImpôtCorrige: {
-    creditDouanier: { DD: number; RS: number; PSC: number; TVA: number; totalA: number };
-    creditInterieur: { TVAInterieure: number; TVADouane: number; TVANette: number; totalB: number };
-    creditTotalCorrige: number;
-  };
-  ecartGlobal: { creditDeclare: number; creditCorrige: number; difference: number };
-  resumeAudit: {
-    nombreErreursDetectees: number;
-    graviteGlobale: string;
-    risqueFiscal: string;
-    explications: string[];
-  };
-}
+/* ──────────────── Helpers ──────────────── */
 
 function formatNumber(n: number | undefined | null): string {
   if (n === undefined || n === null || isNaN(n)) return "-";
-  // Treat very small floating point errors as 0
   if (Math.abs(n) < 0.001) return "0";
   return n.toLocaleString("fr-FR", { maximumFractionDigits: 3 });
 }
 
-// Helper to get nested value safely from douane objects (handles both old and new API formats)
-function getDouaneVal(obj: any, key: string): number | undefined {
-  if (!obj) return undefined;
-  return obj[key] ?? obj[key.toLowerCase()] ?? undefined;
-}
-
-function niveauBadge(niveau: string) {
-  if (niveau === "Aucune") return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Aucune</Badge>;
-  if (niveau === "Mineure") return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Mineure</Badge>;
-  if (niveau === "Majeure") return <Badge variant="destructive">Majeure</Badge>;
-  return <Badge variant="outline">{niveau}</Badge>;
-}
-
-function sheetsToText(sheets: { name: string; data: string[][] }[]): string {
-  return sheets.map(s => {
-    const rows = s.data.map(r => r.join("\t")).join("\n");
-    return `=== ${s.name} ===\n${rows}`;
-  }).join("\n\n");
-}
-
-function readExcelFile(file: File): Promise<ExcelData> {
+function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -107,8 +53,7 @@ function readExcelFile(file: File): Promise<ExcelData> {
           const json: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
           return { name, data: json };
         });
-        const rawText = sheetsToText(sheets);
-        resolve({ fileName: file.name, sheets, rawText, workbook: wb });
+        resolve({ fileName: file.name, sheets, workbook: wb });
       } catch (err) {
         reject(err);
       }
@@ -118,99 +63,175 @@ function readExcelFile(file: File): Promise<ExcelData> {
   });
 }
 
-type Step = "upload" | "preview" | "results";
+/* ──────────────── Main Component ──────────────── */
 
 const Simulation = () => {
   const { toast } = useToast();
-  const [offreFile, setOffreFile] = useState<ExcelData | null>(null);
-  const [dqeFile, setDqeFile] = useState<ExcelData | null>(null);
+  const [entrepriseId, setEntrepriseId] = useState("");
+  const [dqeFile, setDqeFile] = useState<File | null>(null);
+  const [ofFile, setOfFile] = useState<File | null>(null);
+  const [dqePreview, setDqePreview] = useState<ExcelPreviewData | null>(null);
+  const [ofPreview, setOfPreview] = useState<ExcelPreviewData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<CorrectionResult | null>(null);
   const [step, setStep] = useState<Step>("upload");
+  const [progressMsg, setProgressMsg] = useState("");
+  const [dqeStandard, setDqeStandard] = useState<any>(null);
+  const [offreFiscale, setOffreFiscale] = useState<any>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleFileUpload = async (file: File, type: "offre" | "dqe") => {
-    try {
-      const data = await readExcelFile(file);
-      if (type === "offre") setOffreFile(data);
-      else setDqeFile(data);
-      toast({ title: `${file.name} chargé avec succès` });
-    } catch {
-      toast({ title: "Erreur de lecture du fichier Excel", variant: "destructive" });
+  const handleFileUpload = async (file: File, type: "dqe" | "of") => {
+    if (type === "dqe") {
+      setDqeFile(file);
+      try {
+        const preview = await readExcelForPreview(file);
+        setDqePreview(preview);
+      } catch { setDqePreview(null); }
+    } else {
+      setOfFile(file);
+      try {
+        const preview = await readExcelForPreview(file);
+        setOfPreview(preview);
+      } catch { setOfPreview(null); }
     }
+    toast({ title: `${file.name} chargé avec succès` });
   };
 
-  const handleDrop = (e: React.DragEvent, type: "offre" | "dqe") => {
+  const handleDrop = (e: React.DragEvent, type: "dqe" | "of") => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file, type);
   };
 
-  const startCorrection = async () => {
-    if (!offreFile) return;
-    setStep("results");
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const pollStatus = useCallback((eid: string) => {
+    stopPolling();
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(eid)}/status`);
+        if (!res.ok) return;
+        const status: SimulationStatus = await res.json();
+
+        if (status.hasDqeStandard && status.hasOffreFiscale) {
+          stopPolling();
+          setProgressMsg("Récupération des résultats...");
+          // Fetch both results
+          const [dqeRes, ofRes] = await Promise.all([
+            fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(eid)}/dqe-standard`),
+            fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(eid)}/offre-fiscale`),
+          ]);
+          if (dqeRes.ok) setDqeStandard(await dqeRes.json());
+          if (ofRes.ok) setOffreFiscale(await ofRes.json());
+          setLoading(false);
+          setStep("results");
+          toast({ title: "Simulation terminée avec succès" });
+        } else if (status.hasDqeStandard && !status.hasOffreFiscale) {
+          setProgressMsg("DQE standard généré. Génération de l'offre fiscale corrigée...");
+        } else if (status.exists) {
+          setProgressMsg("Extraction et analyse des documents en cours...");
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 3000);
+  }, [stopPolling, toast]);
+
+  const startSimulation = async () => {
+    if (!dqeFile || !entrepriseId.trim()) {
+      toast({ title: "Veuillez renseigner l'ID entreprise et le fichier DQE", variant: "destructive" });
+      return;
+    }
+
+    setStep("processing");
     setLoading(true);
-    setResult(null);
+    setProgressMsg("Envoi des fichiers...");
+    setDqeStandard(null);
+    setOffreFiscale(null);
+
     try {
-      const res = await fetch(AI_SERVICE_URL, {
+      const fd = new FormData();
+      fd.append("entrepriseId", entrepriseId.trim());
+      fd.append("dqe", dqeFile);
+      if (ofFile) fd.append("offreFiscale", ofFile);
+
+      const res = await fetch(`${AI_SERVICE_BASE}/api/simulation/run`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify({
-          offreText: offreFile.rawText,
-          dqeText: dqeFile?.rawText || "",
-          provider: "gemini",
-          model: "gemini-2.5-flash",
-        }),
+        body: fd,
       });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data: CorrectionResult = await res.json();
-      setResult(data);
-      toast({ title: "Correction terminée avec succès" });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || errData.details || `Erreur ${res.status}`);
+      }
+
+      setProgressMsg("Traitement lancé. Extraction et analyse en cours...");
+      // Start polling for status
+      pollStatus(entrepriseId.trim());
     } catch (err: any) {
-      toast({ title: "Erreur lors de la correction", description: err.message, variant: "destructive" });
-      setStep("preview");
-    } finally {
+      toast({ title: "Erreur lors du lancement", description: err.message, variant: "destructive" });
+      setStep("upload");
       setLoading(false);
     }
   };
 
   const reset = () => {
-    setOffreFile(null);
+    stopPolling();
+    setEntrepriseId("");
     setDqeFile(null);
+    setOfFile(null);
+    setDqePreview(null);
+    setOfPreview(null);
+    setDqeStandard(null);
+    setOffreFiscale(null);
     setResult(null);
     setStep("upload");
+    setLoading(false);
   };
+
+  // Legacy compat
+  const setResult = (_: any) => {};
 
   return (
     <DashboardLayout>
       {step === "upload" && (
         <UploadStep
-          offreFile={offreFile}
+          entrepriseId={entrepriseId}
+          setEntrepriseId={setEntrepriseId}
           dqeFile={dqeFile}
+          ofFile={ofFile}
+          dqePreview={dqePreview}
+          ofPreview={ofPreview}
           onUpload={handleFileUpload}
           onDrop={handleDrop}
-          onRemoveOffre={() => setOffreFile(null)}
-          onRemoveDqe={() => setDqeFile(null)}
+          onRemoveDqe={() => { setDqeFile(null); setDqePreview(null); }}
+          onRemoveOf={() => { setOfFile(null); setOfPreview(null); }}
           onPreview={() => setStep("preview")}
         />
       )}
       {step === "preview" && (
         <PreviewStep
-          offreFile={offreFile}
-          dqeFile={dqeFile}
+          dqePreview={dqePreview}
+          ofPreview={ofPreview}
           onBack={() => setStep("upload")}
-          onStartCorrection={startCorrection}
+          onStartSimulation={startSimulation}
           loading={loading}
         />
       )}
+      {step === "processing" && (
+        <ProcessingStep progressMsg={progressMsg} />
+      )}
       {step === "results" && (
         <ResultsStep
-          loading={loading}
-          result={result}
+          dqeStandard={dqeStandard}
+          offreFiscale={offreFiscale}
+          entrepriseId={entrepriseId}
           onReset={reset}
-          onBack={() => setStep("preview")}
+          onBack={() => setStep("upload")}
         />
       )}
     </DashboardLayout>
@@ -219,43 +240,70 @@ const Simulation = () => {
 
 /* ======== STEP 1: Upload ======== */
 function UploadStep({
-  offreFile, dqeFile, onUpload, onDrop, onRemoveOffre, onRemoveDqe, onPreview,
+  entrepriseId, setEntrepriseId,
+  dqeFile, ofFile, dqePreview, ofPreview,
+  onUpload, onDrop, onRemoveDqe, onRemoveOf, onPreview,
 }: {
-  offreFile: ExcelData | null; dqeFile: ExcelData | null;
-  onUpload: (f: File, type: "offre" | "dqe") => void;
-  onDrop: (e: React.DragEvent, type: "offre" | "dqe") => void;
-  onRemoveOffre: () => void; onRemoveDqe: () => void;
+  entrepriseId: string; setEntrepriseId: (v: string) => void;
+  dqeFile: File | null; ofFile: File | null;
+  dqePreview: ExcelPreviewData | null; ofPreview: ExcelPreviewData | null;
+  onUpload: (f: File, type: "dqe" | "of") => void;
+  onDrop: (e: React.DragEvent, type: "dqe" | "of") => void;
+  onRemoveDqe: () => void; onRemoveOf: () => void;
   onPreview: () => void;
 }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Simulation de correction</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Simulation Entreprise</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Uploadez vos fichiers Excel pour simuler la correction fiscale par l'IA.
+          Uploadez vos fichiers (DQE + Offre Fiscale optionnelle) pour simuler la correction automatique.
         </p>
       </div>
 
+      {/* Entreprise ID */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Identifiant Entreprise</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="entrepriseId">ID Entreprise *</Label>
+            <Input
+              id="entrepriseId"
+              placeholder="Ex: ENT-12345"
+              value={entrepriseId}
+              onChange={(e) => setEntrepriseId(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Identifiant unique pour cette session de simulation.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <UploadZone
-          label="Offre Fiscale"
-          description="Fichier Excel de l'offre fiscale (modèle fiscal)"
-          file={offreFile}
-          onUpload={(f) => onUpload(f, "offre")}
-          onDrop={(e) => onDrop(e, "offre")}
-          onRemove={onRemoveOffre}
-        />
-        <UploadZone
-          label="DQE (optionnel)"
-          description="Fichier Excel du Devis Quantitatif et Estimatif"
+        <FileUploadZone
+          label="DQE (obligatoire)"
+          description="Fichier du Devis Quantitatif et Estimatif"
           file={dqeFile}
           onUpload={(f) => onUpload(f, "dqe")}
           onDrop={(e) => onDrop(e, "dqe")}
           onRemove={onRemoveDqe}
+          accept=".xlsx,.xls,.pdf,.docx"
+        />
+        <FileUploadZone
+          label="Offre Fiscale (optionnel)"
+          description="Fichier de l'offre fiscale"
+          file={ofFile}
+          onUpload={(f) => onUpload(f, "of")}
+          onDrop={(e) => onDrop(e, "of")}
+          onRemove={onRemoveOf}
+          accept=".xlsx,.xls,.pdf,.docx"
         />
       </div>
 
-      {offreFile && (
+      {dqeFile && entrepriseId.trim() && (
         <div className="flex justify-center">
           <Button size="lg" onClick={onPreview} className="px-8">
             <Eye className="h-5 w-5 mr-2" />
@@ -269,10 +317,10 @@ function UploadStep({
 
 /* ======== STEP 2: Preview ======== */
 function PreviewStep({
-  offreFile, dqeFile, onBack, onStartCorrection, loading,
+  dqePreview, ofPreview, onBack, onStartSimulation, loading,
 }: {
-  offreFile: ExcelData | null; dqeFile: ExcelData | null;
-  onBack: () => void; onStartCorrection: () => void; loading: boolean;
+  dqePreview: ExcelPreviewData | null; ofPreview: ExcelPreviewData | null;
+  onBack: () => void; onStartSimulation: () => void; loading: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -284,88 +332,274 @@ function PreviewStep({
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Aperçu des fichiers</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Vérifiez le contenu extrait de vos fichiers avant de lancer la correction.
+              Vérifiez le contenu avant de lancer la simulation.
             </p>
           </div>
         </div>
       </div>
 
-      {offreFile && <FullExcelPreview data={offreFile} />}
-      {dqeFile && <FullExcelPreview data={dqeFile} />}
+      {dqePreview && <FullExcelPreview data={dqePreview} />}
+      {ofPreview && <FullExcelPreview data={ofPreview} />}
+
+      {!dqePreview && !ofPreview && (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>Les fichiers uploadés ne sont pas des fichiers Excel. L'aperçu n'est pas disponible.</p>
+            <p className="text-xs mt-1">Le backend extraira le contenu (PDF/Word → texte).</p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex justify-center gap-4 pb-6">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour
         </Button>
-        <Button size="lg" onClick={onStartCorrection} disabled={loading} className="px-8">
+        <Button size="lg" onClick={onStartSimulation} disabled={loading} className="px-8">
           <Play className="h-5 w-5 mr-2" />
-          Démarrer la correction
+          Lancer la simulation
         </Button>
       </div>
     </div>
   );
 }
 
-/* ======== STEP 3: Results ======== */
-function ResultsStep({
-  loading, result, onReset, onBack,
-}: {
-  loading: boolean; result: CorrectionResult | null;
-  onReset: () => void; onBack: () => void;
-}) {
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="relative">
-          <div className="h-24 w-24 rounded-full border-4 border-muted animate-pulse" />
-          <Loader2 className="h-12 w-12 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-        </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold">Analyse en cours par l'IA...</h2>
-          <p className="text-muted-foreground text-sm max-w-md">
-            Veuillez patienter, la correction de l'offre fiscale est en cours de traitement. Cela peut prendre quelques instants.
-          </p>
-        </div>
-        <div className="flex gap-2 mt-4">
-          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-          <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!result) return null;
-
+/* ======== STEP 3: Processing ======== */
+function ProcessingStep({ progressMsg }: { progressMsg: string }) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Résultats de la correction</h1>
-          <p className="text-muted-foreground text-sm mt-1">Analyse complète de votre offre fiscale.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Aperçu
-          </Button>
-          <Button variant="outline" size="sm" onClick={onReset}>
-            <X className="h-4 w-4 mr-1" /> Nouvelle simulation
-          </Button>
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+      <div className="relative">
+        <div className="h-24 w-24 rounded-full border-4 border-muted animate-pulse" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
       </div>
-
-      <CorrectionResults result={result} />
+      <div className="text-center space-y-2">
+        <h2 className="text-xl font-semibold">Simulation en cours...</h2>
+        <p className="text-muted-foreground text-sm max-w-md">{progressMsg}</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Extraction → Analyse DQE → Génération offre fiscale corrigée. Cela peut prendre quelques minutes.
+        </p>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+      </div>
     </div>
   );
 }
 
-/* ======== Upload Zone ======== */
-function UploadZone({
-  label, description, file, onUpload, onDrop, onRemove,
+/* ======== STEP 4: Results ======== */
+function ResultsStep({
+  dqeStandard, offreFiscale, entrepriseId, onReset, onBack,
 }: {
-  label: string; description: string; file: ExcelData | null;
-  onUpload: (f: File) => void; onDrop: (e: React.DragEvent) => void; onRemove: () => void;
+  dqeStandard: any; offreFiscale: any; entrepriseId: string;
+  onReset: () => void; onBack: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Résultats de la simulation</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Entreprise : <span className="font-medium text-foreground">{entrepriseId}</span>
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+          </Button>
+          <Button variant="outline" size="sm" onClick={onReset}>
+            <RefreshCw className="h-4 w-4 mr-1" /> Nouvelle simulation
+          </Button>
+        </div>
+      </div>
+
+      {/* DQE Standard */}
+      {dqeStandard && (
+        <DqeStandardView data={dqeStandard} />
+      )}
+
+      {/* Offre Fiscale Corrigée */}
+      {offreFiscale && (
+        <OffreFiscaleView data={offreFiscale} />
+      )}
+
+      {!dqeStandard && !offreFiscale && (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-yellow-500" />
+            <p>Aucun résultat disponible. Le traitement a peut-être échoué.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ======== DQE Standard View ======== */
+function DqeStandardView({ data }: { data: any }) {
+  const dqe = data?.dqe || data;
+  const items = dqe?.items || dqe?.lignes || [];
+
+  return (
+    <Collapsible defaultOpen>
+      <Card>
+        <CollapsibleTrigger className="w-full">
+          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ChevronDown className="h-4 w-4" />
+              <FileSpreadsheet className="h-4 w-4 text-primary" />
+              DQE Standard ({items.length} lignes)
+              {data?.savedAt && (
+                <span className="text-xs text-muted-foreground font-normal ml-auto">
+                  {new Date(data.savedAt).toLocaleString("fr-FR")}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent>
+            {items.length > 0 ? (
+              <ScrollArea className="w-full">
+                <div className="overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs min-w-[50px]">#</TableHead>
+                        <TableHead className="text-xs min-w-[200px]">Désignation</TableHead>
+                        <TableHead className="text-xs text-right">Quantité</TableHead>
+                        <TableHead className="text-xs text-right">Prix Unitaire</TableHead>
+                        <TableHead className="text-xs text-right">Montant</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((item: any, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-xs">{item.numero || item.num || i + 1}</TableCell>
+                          <TableCell className="text-xs font-medium">{item.designation || item.description || item.libelle || "-"}</TableCell>
+                          <TableCell className="text-xs text-right font-mono">{formatNumber(item.quantite || item.qte)}</TableCell>
+                          <TableCell className="text-xs text-right font-mono">{formatNumber(item.prixUnitaire || item.pu)}</TableCell>
+                          <TableCell className="text-xs text-right font-mono font-medium">{formatNumber(item.montant || item.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                <pre className="whitespace-pre-wrap text-xs bg-muted p-4 rounded-lg max-h-[400px] overflow-auto">
+                  {JSON.stringify(dqe, null, 2)}
+                </pre>
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
+/* ======== Offre Fiscale Corrigée View ======== */
+function OffreFiscaleView({ data }: { data: any }) {
+  const of = data?.offre_fiscale || data;
+  const feuilles = of?.feuilles || of?.sheets || [];
+  const creditImpot = of?.creditImpot || of?.credit_impot || of?.feuille3 || null;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Offre Fiscale Corrigée
+            {data?.savedAt && (
+              <span className="text-xs text-muted-foreground font-normal ml-auto">
+                {new Date(data.savedAt).toLocaleString("fr-FR")}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {feuilles.length > 0 ? (
+            <div className="space-y-4">
+              {feuilles.map((feuille: any, i: number) => (
+                <Collapsible key={i}>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                      <ChevronDown className="h-4 w-4" />
+                      <span className="text-sm font-medium">{feuille.nom || feuille.name || `Feuille ${i + 1}`}</span>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-2">
+                      {feuille.lignes?.length > 0 ? (
+                        <ScrollArea className="w-full">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                {Object.keys(feuille.lignes[0] || {}).map((key) => (
+                                  <TableHead key={key} className="text-xs">{key}</TableHead>
+                                ))}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {feuille.lignes.map((ligne: any, j: number) => (
+                                <TableRow key={j}>
+                                  {Object.values(ligne).map((val: any, k: number) => (
+                                    <TableCell key={k} className="text-xs font-mono">
+                                      {typeof val === "number" ? formatNumber(val) : String(val ?? "-")}
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      ) : (
+                        <pre className="text-xs bg-muted p-3 rounded max-h-[300px] overflow-auto whitespace-pre-wrap">
+                          {JSON.stringify(feuille, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          ) : (
+            <pre className="whitespace-pre-wrap text-xs bg-muted p-4 rounded-lg max-h-[500px] overflow-auto">
+              {JSON.stringify(of, null, 2)}
+            </pre>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Credit Impôt */}
+      {creditImpot && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Crédit d'Impôt (Feuille 3)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="whitespace-pre-wrap text-xs bg-muted p-4 rounded-lg max-h-[400px] overflow-auto">
+              {JSON.stringify(creditImpot, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ======== File Upload Zone ======== */
+function FileUploadZone({
+  label, description, file, onUpload, onDrop, onRemove, accept,
+}: {
+  label: string; description: string; file: File | null;
+  onUpload: (f: File) => void; onDrop: (e: React.DragEvent) => void;
+  onRemove: () => void; accept: string;
 }) {
   return (
     <Card>
@@ -380,8 +614,10 @@ function UploadZone({
           <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium">{file.fileName}</span>
-              <span className="text-xs text-muted-foreground">({file.sheets.length} feuille{file.sheets.length > 1 ? "s" : ""})</span>
+              <span className="text-sm font-medium">{file.name}</span>
+              <span className="text-xs text-muted-foreground">
+                ({(file.size / 1024).toFixed(0)} Ko)
+              </span>
             </div>
             <Button variant="ghost" size="sm" onClick={onRemove}><X className="h-4 w-4" /></Button>
           </div>
@@ -394,11 +630,13 @@ function UploadZone({
             <Upload className="h-8 w-8 text-muted-foreground/50" />
             <div className="text-center">
               <p className="text-sm font-medium">{description}</p>
-              <p className="text-xs text-muted-foreground mt-1">Glissez-déposez ou cliquez pour sélectionner (.xlsx, .xls)</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Glissez-déposez ou cliquez pour sélectionner (.xlsx, .xls, .pdf, .docx)
+              </p>
             </div>
             <input
               type="file"
-              accept=".xlsx,.xls"
+              accept={accept}
               className="hidden"
               onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
             />
@@ -410,7 +648,7 @@ function UploadZone({
 }
 
 /* ======== Full Excel Preview (native rendering) ======== */
-function FullExcelPreview({ data }: { data: ExcelData }) {
+function FullExcelPreview({ data }: { data: ExcelPreviewData }) {
   const [openSheet, setOpenSheet] = useState(0);
   const sheetName = data.sheets[openSheet]?.name;
   if (!sheetName) return null;
@@ -442,9 +680,7 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
                 variant={openSheet === i ? "default" : "ghost"}
                 size="sm"
                 className={`text-xs h-8 rounded-full px-4 transition-all ${
-                  openSheet === i
-                    ? "shadow-sm"
-                    : "hover:bg-muted text-muted-foreground"
+                  openSheet === i ? "shadow-sm" : "hover:bg-muted text-muted-foreground"
                 }`}
                 onClick={() => setOpenSheet(i)}
               >
@@ -459,215 +695,6 @@ function FullExcelPreview({ data }: { data: ExcelData }) {
         />
       </CardContent>
     </Card>
-  );
-}
-
-/* ======== Correction Results ======== */
-function CorrectionResults({ result }: { result: CorrectionResult }) {
-  const resumeAudit = result.resumeAudit || { nombreErreursDetectees: 0, graviteGlobale: "Aucune", risqueFiscal: "Inconnu", explications: [] };
-  const ecartGlobal = result.ecartGlobal || { creditDeclare: 0, creditCorrige: 0, difference: 0 };
-  const correctionsDouane = result.correctionsDouane || [];
-  const correctionsInterieure = result.correctionsInterieure || [];
-  const creditImpot = result.creditImpôtCorrige || { creditDouanier: { DD: 0, RS: 0, PSC: 0, TVA: 0, totalA: 0 }, creditInterieur: { TVAInterieure: 0, TVADouane: 0, TVANette: 0, totalB: 0 }, creditTotalCorrige: 0 };
-
-  return (
-    <div className="space-y-6">
-      {/* Audit Summary */}
-      <Card className={resumeAudit.graviteGlobale === "Majeure" ? "border-destructive/50" : "border-yellow-300"}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className={`h-5 w-5 ${resumeAudit.graviteGlobale === "Majeure" ? "text-destructive" : "text-yellow-500"}`} />
-            Résumé de l'audit
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-3 rounded-lg bg-muted">
-              <p className="text-xs text-muted-foreground">Erreurs détectées</p>
-              <p className="text-2xl font-bold">{resumeAudit.nombreErreursDetectees}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted">
-              <p className="text-xs text-muted-foreground">Gravité globale</p>
-              <p className="text-lg font-bold">{niveauBadge(resumeAudit.graviteGlobale)}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted">
-              <p className="text-xs text-muted-foreground">Risque fiscal</p>
-              <p className="text-lg font-semibold">{resumeAudit.risqueFiscal}</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Explications :</p>
-            <ul className="space-y-1">
-              {(resumeAudit.explications || []).map((exp, i) => (
-                <li key={i} className="text-xs text-muted-foreground flex gap-2">
-                  <span className="shrink-0 mt-0.5">•</span>
-                  <span>{exp}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Ecart Global */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Écart Global</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-3 rounded-lg bg-muted text-center">
-              <p className="text-xs text-muted-foreground">Crédit déclaré</p>
-              <p className="text-lg font-bold">{formatNumber(ecartGlobal.creditDeclare)} MRU</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted text-center">
-              <p className="text-xs text-muted-foreground">Crédit corrigé</p>
-              <p className="text-lg font-bold">{formatNumber(ecartGlobal.creditCorrige)} MRU</p>
-            </div>
-            <div className={`p-3 rounded-lg text-center ${ecartGlobal.difference !== 0 ? "bg-destructive/10" : "bg-green-50"}`}>
-              <p className="text-xs text-muted-foreground">Différence</p>
-              <p className={`text-lg font-bold ${ecartGlobal.difference !== 0 ? "text-destructive" : "text-green-700"}`}>
-                {formatNumber(ecartGlobal.difference)} MRU
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Corrections Douane */}
-      {correctionsDouane.length > 0 && (
-      <Collapsible defaultOpen>
-        <Card>
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:rotate-[-90deg]" />
-                Corrections Douane ({correctionsDouane.length} produits)
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent>
-              <ScrollArea className="w-full">
-                <div className="overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs min-w-[200px]">Produit</TableHead>
-                        <TableHead className="text-xs text-right">Val. Douane (Décl.)</TableHead>
-                        <TableHead className="text-xs text-right">Val. Douane (Corr.)</TableHead>
-                        <TableHead className="text-xs text-right">Total D&T (Décl.)</TableHead>
-                        <TableHead className="text-xs text-right">Total D&T (Corr.)</TableHead>
-                        <TableHead className="text-xs text-right">Écart Total</TableHead>
-                        <TableHead className="text-xs">Erreur</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {correctionsDouane.map((c, i) => (
-                        <TableRow key={i} className={c.niveauErreur !== "Aucune" ? "bg-yellow-50/50" : ""}>
-                          <TableCell className="text-xs font-medium max-w-[250px] truncate" title={c.produit}>{c.produit}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.VD)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.VD)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber((c.valeurDeclaree as any)?.TotalD_T ?? (c.valeurDeclaree as any)?.TotalDT ?? (c.valeurDeclaree as any)?.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className="text-xs text-right">{formatNumber((c.valeurCorrigee as any)?.TotalD_T ?? (c.valeurCorrigee as any)?.TotalDT ?? (c.valeurCorrigee as any)?.totalDroitsEtTaxes)}</TableCell>
-                          <TableCell className={`text-xs text-right font-medium ${((c.ecart as any)?.TotalD_T ?? (c.ecart as any)?.TotalDT ?? 0) !== 0 ? "text-destructive" : ""}`}>
-                            {formatNumber((c.ecart as any)?.TotalD_T ?? (c.ecart as any)?.TotalDT ?? (c.ecart as any)?.totalDroitsEtTaxes)}
-                          </TableCell>
-                          <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-      )}
-
-      {/* Corrections Intérieure */}
-      {correctionsInterieure.length > 0 && (
-        <Collapsible defaultOpen>
-          <Card>
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ChevronDown className="h-4 w-4" />
-                  Corrections Fiscalité Intérieure ({correctionsInterieure.length})
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Prestation</TableHead>
-                      <TableHead className="text-xs text-right">Montant HT (Décl.)</TableHead>
-                      <TableHead className="text-xs text-right">Montant HT (Corr.)</TableHead>
-                      <TableHead className="text-xs text-right">TVA (Décl.)</TableHead>
-                      <TableHead className="text-xs text-right">TVA (Corr.)</TableHead>
-                      <TableHead className="text-xs text-right">Écart Total DGI</TableHead>
-                      <TableHead className="text-xs">Erreur</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {correctionsInterieure.map((c, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-xs font-medium">{c.prestation}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.HT)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.HT)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurDeclaree?.TVA)}</TableCell>
-                        <TableCell className="text-xs text-right">{formatNumber(c.valeurCorrigee?.TVA)}</TableCell>
-                        <TableCell className={`text-xs text-right font-medium ${(c.ecart?.HT !== 0 || c.ecart?.TVA !== 0) ? "text-destructive" : ""}`}>
-                          {formatNumber((c.ecart?.HT || 0) + (c.ecart?.TVA || 0))}
-                        </TableCell>
-                        <TableCell className="text-xs">{niveauBadge(c.niveauErreur)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
-
-      {/* Crédit d'Impôt Corrigé */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Crédit d'Impôt Corrigé</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Crédit Douanier</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span>DD</span><span>{formatNumber(creditImpot.creditDouanier?.DD)}</span></div>
-                <div className="flex justify-between"><span>RS</span><span>{formatNumber(creditImpot.creditDouanier?.RS)}</span></div>
-                <div className="flex justify-between"><span>PSC</span><span>{formatNumber(creditImpot.creditDouanier?.PSC)}</span></div>
-                <div className="flex justify-between"><span>TVA</span><span>{formatNumber(creditImpot.creditDouanier?.TVA)}</span></div>
-                <div className="flex justify-between font-bold border-t pt-1"><span>Total A</span><span>{formatNumber(creditImpot.creditDouanier?.totalA)}</span></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Crédit Intérieur</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span>TVA Intérieure</span><span>{formatNumber(creditImpot.creditInterieur?.TVAInterieure)}</span></div>
-                <div className="flex justify-between"><span>TVA Douane</span><span>{formatNumber(creditImpot.creditInterieur?.TVADouane)}</span></div>
-                <div className="flex justify-between"><span>TVA Nette</span><span>{formatNumber(creditImpot.creditInterieur?.TVANette)}</span></div>
-                <div className="flex justify-between font-bold border-t pt-1"><span>Total B</span><span>{formatNumber(creditImpot.creditInterieur?.totalB)}</span></div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 p-3 rounded-lg bg-primary/10 text-center">
-            <p className="text-xs text-muted-foreground">Crédit Total Corrigé</p>
-            <p className="text-xl font-bold text-primary">{formatNumber(creditImpot.creditTotalCorrige)} MRU</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
   );
 }
 
