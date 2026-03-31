@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import {
-  FileEdit, TrendingUp, FolderOpen, Bot, Users, FilePlus, FileCheck,
-  CheckCircle2, ArrowRight, Shield, ArrowLeftRight, Handshake
+  FileEdit, TrendingUp, FolderOpen, Users, FilePlus, FileCheck,
+  CheckCircle2, ArrowRight, Shield, ArrowLeftRight, Handshake, FlaskConical
 } from "lucide-react";
 
 const fadeUp = {
@@ -17,6 +17,7 @@ interface Section {
   title: string;
   color: string;
   points: string[];
+  tag?: string;
 }
 
 const SECTIONS: Section[] = [
@@ -32,30 +33,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: Bot,
-    title: "2. L'Assistant IA",
-    color: "from-violet-600 to-violet-800",
-    points: [
-      "Chatbot intégré pour assistance contextuelle",
-      "Connecté via API dédiée (temps réel)",
-      "Aide à la navigation et compréhension des procédures",
-      "Réponses adaptées au contexte de la demande en cours",
-    ],
-  },
-  {
-    icon: Users,
-    title: "3. Les Délégués (UPM / UEP)",
-    color: "from-amber-600 to-amber-800",
-    points: [
-      "Accès identique à l'Autorité Contractante sur leur périmètre",
-      "Filtrage automatique par marchés affectés",
-      "Visibilité sur les conventions, demandes et certificats liés",
-      "Séparation des rôles UPM et UEP avec périmètres distincts",
-    ],
-  },
-  {
     icon: FilePlus,
-    title: "4. Demande de Mise en Place CI",
+    title: "2. Demande de Mise en Place CI",
     color: "from-green-600 to-green-800",
     points: [
       "Workflow complet : AC → DGI → DGTCP → Président",
@@ -66,7 +45,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: FileCheck,
-    title: "5. Demande d'Utilisation CI",
+    title: "3. Demande d'Utilisation CI",
     color: "from-sky-600 to-sky-800",
     points: [
       "Deux flux distincts : Douanier (DGD → DGTCP) et TVA Intérieure (DGTCP seul)",
@@ -76,30 +55,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: ArrowLeftRight,
-    title: "6. Transfert de Crédit d'Impôt",
-    color: "from-indigo-600 to-indigo-800",
-    points: [
-      "Transfert partiel ou total du solde d'un certificat vers un autre bénéficiaire",
-      "Workflow de validation : AC → DGTCP → Président",
-      "Vérification automatique du solde disponible avant transfert",
-      "Historique complet des transferts avec traçabilité des montants",
-    ],
-  },
-  {
-    icon: Handshake,
-    title: "7. Sous-traitance",
-    color: "from-rose-600 to-rose-800",
-    points: [
-      "Association directe entre entreprise titulaire et sous-traitante",
-      "Upload obligatoire du contrat de sous-traitance et lettre de volumes",
-      "Autorisation par la DGTCP activant les droits d'utilisation pour le sous-traitant",
-      "Visibilité des certificats sous-traités avec badge distinctif dans l'espace du sous-traitant",
-    ],
-  },
-  {
     icon: FileEdit,
-    title: "8. Correction Douanière & Chatbot IA",
+    title: "4. Correction Douanière & Chatbot IA",
     color: "from-teal-600 to-teal-800",
     points: [
       "Workflow en 2 phases : Phase 1 (DQE vs Offre Financière) puis Phase 2 (DQE corrigé vs Offre Fiscale)",
@@ -111,7 +68,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: TrendingUp,
-    title: "9. Simulation Entreprise",
+    title: "5. Simulation Entreprise",
     color: "from-orange-600 to-orange-800",
     points: [
       "Simulation autonome par entreprise sans passer par le workflow complet de correction",
@@ -123,7 +80,7 @@ const SECTIONS: Section[] = [
   },
   {
     icon: Shield,
-    title: "10. Extraction & Indexation Intelligente",
+    title: "6. Extraction & Indexation Intelligente",
     color: "from-fuchsia-600 to-fuchsia-800",
     points: [
       "Extraction automatique du contenu des documents PDF et Excel via API IA",
@@ -131,6 +88,42 @@ const SECTIONS: Section[] = [
       "Limitation automatique à 30 pages pour les documents volumineux",
       "Stockage structuré des extractions par session de correction ou simulation",
     ],
+  },
+  {
+    icon: Users,
+    title: "7. Les Délégués (UPM / UEP)",
+    color: "from-amber-600 to-amber-800",
+    points: [
+      "Accès identique à l'Autorité Contractante sur leur périmètre",
+      "Filtrage automatique par marchés affectés",
+      "Visibilité sur les conventions, demandes et certificats liés",
+      "Séparation des rôles UPM et UEP avec périmètres distincts",
+    ],
+    tag: "À tester",
+  },
+  {
+    icon: ArrowLeftRight,
+    title: "8. Transfert de Crédit d'Impôt",
+    color: "from-indigo-600 to-indigo-800",
+    points: [
+      "Transfert partiel ou total du solde d'un certificat vers un autre bénéficiaire",
+      "Workflow de validation : AC → DGTCP → Président",
+      "Vérification automatique du solde disponible avant transfert",
+      "Historique complet des transferts avec traçabilité des montants",
+    ],
+    tag: "À tester",
+  },
+  {
+    icon: Handshake,
+    title: "9. Sous-traitance",
+    color: "from-rose-600 to-rose-800",
+    points: [
+      "Association directe entre entreprise titulaire et sous-traitante",
+      "Upload obligatoire du contrat de sous-traitance et lettre de volumes",
+      "Autorisation par la DGTCP activant les droits d'utilisation pour le sous-traitant",
+      "Visibilité des certificats sous-traités avec badge distinctif dans l'espace du sous-traitant",
+    ],
+    tag: "À tester",
   },
 ];
 
