@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +80,30 @@ const Simulation = () => {
   const [dqeStandard, setDqeStandard] = useState<any>(null);
   const [offreFiscale, setOffreFiscale] = useState<any>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [existingLoading, setExistingLoading] = useState(true);
+
+  // Check if an existing offre fiscale already exists for this entreprise
+  useEffect(() => {
+    if (!entrepriseId) { setExistingLoading(false); return; }
+    const checkExisting = async () => {
+      try {
+        const res = await fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId)}/status`);
+        if (!res.ok) { setExistingLoading(false); return; }
+        const status: SimulationStatus = await res.json();
+        if (status.hasDqeStandard || status.hasOffreFiscale) {
+          const [dqeRes, ofRes] = await Promise.all([
+            status.hasDqeStandard ? fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId)}/dqe-standard`) : Promise.resolve(null),
+            status.hasOffreFiscale ? fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId)}/offre-fiscale`) : Promise.resolve(null),
+          ]);
+          if (dqeRes?.ok) setDqeStandard(await dqeRes.json());
+          if (ofRes?.ok) setOffreFiscale(await ofRes.json());
+          setStep("results");
+        }
+      } catch { /* ignore */ }
+      setExistingLoading(false);
+    };
+    checkExisting();
+  }, [entrepriseId]);
 
   const handleFileUpload = async (file: File, type: "dqe" | "of") => {
     if (type === "dqe") {
@@ -171,9 +195,32 @@ const Simulation = () => {
         throw new Error(errData.error || errData.details || `Erreur ${res.status}`);
       }
 
-      setProgressMsg("Traitement lancé. Extraction et analyse en cours...");
-      // Start polling for status
-      pollStatus(entrepriseId.trim());
+      // Try to use the response directly (the backend may return results inline)
+      const runData = await res.json().catch(() => null);
+      
+      if (runData?.offre_fiscale || runData?.dqe) {
+        // Results returned directly from run endpoint
+        if (runData.dqe) setDqeStandard(runData);
+        if (runData.offre_fiscale) setOffreFiscale(runData);
+        
+        // Also fetch structured results from dedicated endpoints
+        try {
+          const [dqeRes, ofRes] = await Promise.all([
+            fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId.trim())}/dqe-standard`),
+            fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId.trim())}/offre-fiscale`),
+          ]);
+          if (dqeRes.ok) setDqeStandard(await dqeRes.json());
+          if (ofRes.ok) setOffreFiscale(await ofRes.json());
+        } catch { /* use inline data */ }
+        
+        setLoading(false);
+        setStep("results");
+        toast({ title: "Simulation terminée avec succès" });
+      } else {
+        // Fallback: start polling if run didn't return results inline
+        setProgressMsg("Traitement lancé. Extraction et analyse en cours...");
+        pollStatus(entrepriseId.trim());
+      }
     } catch (err: any) {
       toast({ title: "Erreur lors du lancement", description: err.message, variant: "destructive" });
       setStep("upload");
@@ -201,9 +248,20 @@ const Simulation = () => {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <AlertTriangle className="h-12 w-12 text-yellow-500" />
+          <AlertTriangle className="h-12 w-12 text-destructive" />
           <h2 className="text-xl font-semibold">Aucune entreprise associée</h2>
           <p className="text-muted-foreground text-sm">Votre compte n'est pas lié à une entreprise. Veuillez contacter l'administrateur.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (existingLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground text-sm">Vérification des résultats existants...</p>
         </div>
       </DashboardLayout>
     );
