@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { PDFDocument } from "pdf-lib";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,9 +24,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, CheckCircle, Send, FileText, Building2, Info,
-  XCircle, Merge, ArrowUp, ArrowDown, File, Paperclip,
+  XCircle, Merge, ArrowUp, ArrowDown, File, Paperclip, Search, Check, AlertCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -76,6 +78,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [loadingData, setLoadingData] = useState(false);
 
+  // Entreprise search combobox
+  const [entrepriseOpen, setEntrepriseOpen] = useState(false);
+
   // Create enterprise inline
   const [showCreateEntreprise, setShowCreateEntreprise] = useState(false);
   const [newEntreprise, setNewEntreprise] = useState<EntrepriseDto>({ raisonSociale: "", nif: "" });
@@ -118,6 +123,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   // GED document requirements
   const [gedDocTypes, setGedDocTypes] = useState<DocumentRequirementDto[]>([]);
 
+  // Drag and drop state
+  const [dragOverType, setDragOverType] = useState<string | null>(null);
+
   // Step 1: Modèle fiscal
   const [typeProjet, setTypeProjet] = useState("BTP");
   const [referenceDossier, setReferenceDossier] = useState("");
@@ -150,7 +158,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       ]);
       setEntreprises(ent);
       setConventions(conv);
-      // Delegates only see marchés assigned to them
       if (isDelegate && user?.userId) {
         setMarches(marc.filter(m => m.delegueIds?.includes(user.userId)));
       } else {
@@ -187,15 +194,18 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       setConvGedReqs([]);
       setShowCreateMarche(false);
       setNewMarche({ numeroMarche: "" });
-      // pendingMarche removed — marchés are now created directly via API
       loadInitialData();
     }
   }, [open, loadInitialData]);
 
   // Create enterprise inline
   const handleCreateEntreprise = async () => {
-    if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
-      toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
+    if (!newEntreprise.raisonSociale) {
+      toast({ title: "Erreur", description: "La raison sociale est obligatoire", variant: "destructive" });
+      return;
+    }
+    if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
+      toast({ title: "Erreur", description: "Le NIF doit contenir exactement 8 caractères", variant: "destructive" });
       return;
     }
     setCreatingEntreprise(true);
@@ -297,7 +307,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         statut: "EN_ATTENTE",
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
       });
-      // Upload convention documents
       for (const doc of convCreateDocs) {
         try { await conventionApi.uploadDocument(created.id, doc.type, doc.file); } catch { /* continue */ }
       }
@@ -318,7 +327,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   };
 
-  // Create marché inline — now calls API directly with conventionId
+  // Create marché inline
   const handleCreateMarche = async () => {
     if (!newMarche.numeroMarche) {
       toast({ title: "Erreur", description: "Le numéro de marché est obligatoire", variant: "destructive" });
@@ -326,6 +335,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
     if (!conventionId) {
       toast({ title: "Erreur", description: "Veuillez d'abord sélectionner une convention", variant: "destructive" });
+      return;
+    }
+    if (!newMarche.dateSignature) {
+      toast({ title: "Erreur", description: "La date d'attribution est obligatoire", variant: "destructive" });
+      return;
+    }
+    const today = new Date().toISOString().split("T")[0];
+    if (newMarche.dateSignature > today) {
+      toast({ title: "Erreur", description: "La date d'attribution doit être antérieure à la date du jour", variant: "destructive" });
       return;
     }
     setCreatingMarche(true);
@@ -393,6 +411,29 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const dqeMontantTVA = dqeTotalHT * dqeTauxTVA / 100;
   const dqeTotalTTC = dqeTotalHT + dqeMontantTVA;
 
+  // ── Drag & drop helpers ──
+  const handleDragOver = (e: React.DragEvent, typeDocument: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverType(typeDocument);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverType(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, typeDocument: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverType(null);
+    const f = e.dataTransfer.files?.[0];
+    if (f) {
+      setDocFiles(prev => ({ ...prev, [typeDocument]: f }));
+    }
+  };
+
   // ── Submit ──
   const handleSubmit = async () => {
     if ((user?.role === "AUTORITE_CONTRACTANTE" || isDelegate) && !user?.autoriteContractanteId) {
@@ -408,7 +449,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       return;
     }
 
-    // If a marché is selected, get its conventionId from the marché data
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
 
@@ -439,9 +479,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         },
       });
 
-      // Marché is now created directly via API (no longer deferred)
-
-      // Upload documents
       const docEntries = Object.entries(docFiles);
       for (const [type, file] of docEntries) {
         try {
@@ -451,7 +488,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         }
       }
 
-      // Send only Offre Fiscale, Offre Financière & DQE to AI service
       try {
         const AI_DOC_TYPES = ["OFFRE_FISCALE", "OFFRE_FINANCIERE", "DQE", "DAO_DQE"];
         const uploadedDocs = await demandeCorrectionApi.getDocuments(demande.id);
@@ -459,7 +495,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           .filter((d: any) => d.chemin && AI_DOC_TYPES.some(t => (d.type || d.typeDocument || "").includes(t)))
           .map((d: any) => d.chemin.replace(/\\/g, "/"));
         if (sourceUrls.length > 0) {
-          
           await fetch(`${AI_SERVICE_BASE}/api/fiscal-context/${demande.id}`, {
             method: "POST",
             headers: {
@@ -485,9 +520,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
   const steps = [
     { label: "Entreprise & Documents", icon: FileText },
-    // { label: "Modèle Fiscal", icon: FileText },
-    // { label: "DQE", icon: FileText },
   ];
+
+  const selectedEntreprise = entreprises.find(e => String(e.id) === entrepriseId);
 
   return (
     <>
@@ -518,7 +553,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Entreprise with create option */}
+                  {/* Entreprise with searchable combobox */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
                       <span>Entreprise *</span>
@@ -534,46 +569,102 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                       </Button>
                     </Label>
                     {!showCreateEntreprise ? (
-                      <Select value={entrepriseId} onValueChange={setEntrepriseId}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger>
-                        <SelectContent>
-                          {entreprises.map(e => (
-                            <SelectItem key={e.id} value={String(e.id)}>{e.raisonSociale} — NIF: {e.nif}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={entrepriseOpen} onOpenChange={setEntrepriseOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={entrepriseOpen}
+                            className="w-full justify-between font-normal"
+                          >
+                            {selectedEntreprise
+                              ? `${selectedEntreprise.raisonSociale} — NIF: ${selectedEntreprise.nif}`
+                              : "Rechercher une entreprise..."}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Rechercher par nom ou NIF..." />
+                            <CommandList>
+                              <CommandEmpty>Aucune entreprise trouvée.</CommandEmpty>
+                              <CommandGroup>
+                                {entreprises.map(e => (
+                                  <CommandItem
+                                    key={e.id}
+                                    value={`${e.raisonSociale} ${e.nif}`}
+                                    onSelect={() => {
+                                      setEntrepriseId(String(e.id));
+                                      setEntrepriseOpen(false);
+                                    }}
+                                  >
+                                    <Check className={`mr-2 h-4 w-4 ${entrepriseId === String(e.id) ? "opacity-100" : "opacity-0"}`} />
+                                    {e.raisonSociale} — NIF: {e.nif}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <Card className="border-primary/30">
-                        <CardContent className="p-3 space-y-2">
+                        <CardContent className="p-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-primary">
                             <Building2 className="h-4 w-4" />
                             Nouvelle entreprise
                           </div>
-                          <Input
-                            placeholder="Raison sociale *"
-                            value={newEntreprise.raisonSociale}
-                            onChange={e => setNewEntreprise(prev => ({ ...prev, raisonSociale: e.target.value }))}
-                          />
-                          <Input
-                            placeholder="NIF *"
-                            value={newEntreprise.nif}
-                            onChange={e => setNewEntreprise(prev => ({ ...prev, nif: e.target.value }))}
-                          />
-                          <Input
-                            placeholder="Adresse (optionnel)"
-                            value={newEntreprise.adresse || ""}
-                            onChange={e => setNewEntreprise(prev => ({ ...prev, adresse: e.target.value }))}
-                          />
-                          <Input
-                            placeholder="Email (optionnel)"
-                            value={newEntreprise.email || ""}
-                            onChange={e => setNewEntreprise(prev => ({ ...prev, email: e.target.value }))}
-                          />
+                          <div className="space-y-1">
+                            <Label className="text-xs">Raison sociale <span className="text-destructive">*</span></Label>
+                            <Input
+                              placeholder="Ex: SARL Mon Entreprise"
+                              value={newEntreprise.raisonSociale}
+                              onChange={e => setNewEntreprise(prev => ({ ...prev, raisonSociale: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">NIF <span className="text-destructive">*</span> <span className="text-muted-foreground">(exactement 8 caractères)</span></Label>
+                            <Input
+                              placeholder="Ex: 12345678"
+                              value={newEntreprise.nif}
+                              maxLength={8}
+                              onChange={e => setNewEntreprise(prev => ({ ...prev, nif: e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) }))}
+                            />
+                            {newEntreprise.nif && newEntreprise.nif.length !== 8 && (
+                              <p className="text-xs text-destructive flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                {newEntreprise.nif.length}/8 caractères
+                              </p>
+                            )}
+                            {newEntreprise.nif && newEntreprise.nif.length === 8 && (
+                              <p className="text-xs text-green-600 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                8/8 caractères
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Adresse</Label>
+                            <Input
+                              placeholder="Ex: Avenue Gamal Abdel Nasser, Nouakchott"
+                              value={newEntreprise.adresse || ""}
+                              onChange={e => setNewEntreprise(prev => ({ ...prev, adresse: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Email</Label>
+                            <Input
+                              placeholder="Ex: contact@entreprise.mr"
+                              type="email"
+                              value={newEntreprise.email || ""}
+                              onChange={e => setNewEntreprise(prev => ({ ...prev, email: e.target.value }))}
+                            />
+                          </div>
                           <Button
                             size="sm"
                             className="w-full"
                             onClick={handleCreateEntreprise}
-                            disabled={creatingEntreprise}
+                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || newEntreprise.nif.length !== 8}
                           >
                             {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                             Créer l'entreprise
@@ -601,7 +692,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
 
                     {!showCreateMarche ? (
                       <Select value={marcheId} onValueChange={setMarcheId}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez (optionnel)" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger>
                         <SelectContent>
                           {marches.map(m => (
                             <SelectItem key={m.id} value={String(m.id)}>
@@ -618,10 +709,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                             Nouveau marché
                           </div>
 
-                          {/* Convention selector — only during creation */}
+                          {/* Convention selector */}
                           <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                              <span>Convention *</span>
+                              <span>Convention <span className="text-destructive">*</span></span>
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -659,7 +750,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                 {/* Bailleur */}
                                 <div className="space-y-1">
                                   <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                                    <span>Bailleur (optionnel)</span>
+                                    <span>Bailleur</span>
                                     <Button type="button" variant="ghost" size="sm" className="h-5 text-xs text-primary p-0" onClick={() => setShowCreateBailleur(!showCreateBailleur)}>
                                       <Plus className="h-3 w-3 mr-0.5" />
                                       {showCreateBailleur ? "Annuler" : "Ajouter"}
@@ -696,14 +787,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                   )}
                                 </div>
                                 <Input
-                                  placeholder="Descriptif de projets (optionnel)"
+                                  placeholder="Descriptif de projets"
                                   value={newConvForm.bailleurDetails}
                                   onChange={e => setNewConvForm(prev => ({ ...prev, bailleurDetails: e.target.value }))}
                                 />
                                 {/* Dates */}
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Date signature *</Label>
+                                    <Label className="text-xs text-muted-foreground">Date signature <span className="text-destructive">*</span></Label>
                                     <Input type="date" value={newConvForm.dateSignature || ""} onChange={e => setNewConvForm(prev => ({ ...prev, dateSignature: e.target.value }))} />
                                   </div>
                                   <div className="space-y-1">
@@ -741,7 +832,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                   </div>
                                   <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground">Taux de change</Label>
-                                    <Input readOnly value={newConvForm.tauxChange ?? "—"} className="bg-muted" />
+                                    <Input
+                                      type="number"
+                                      step="0.0001"
+                                      value={newConvForm.tauxChange ?? ""}
+                                      placeholder="—"
+                                      onChange={e => {
+                                        const rate = e.target.value ? Number(e.target.value) : undefined;
+                                        setNewConvForm(f => ({
+                                          ...f,
+                                          tauxChange: rate,
+                                          montantMru: f.montantDevise && rate ? Math.round(f.montantDevise * rate * 100) / 100 : undefined,
+                                        }));
+                                      }}
+                                    />
                                   </div>
                                   <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground">Montant MRU</Label>
@@ -792,16 +896,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                     }} />
                                   </div>
                                   {convCreateDocs.length > 0 && (
-                                    <div className="space-y-0.5">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-[11px] text-muted-foreground">{convCreateDocs.length} fichier(s)</span>
-                                        {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
-                                          <Button type="button" variant="outline" size="sm" className="h-6 text-xs" onClick={convMergeCreateDocs} disabled={convMerging}>
-                                            {convMerging ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Merge className="h-3 w-3 mr-1" />}
-                                            Fusionner PDF
-                                          </Button>
-                                        )}
-                                      </div>
+                                    <div className="space-y-1">
+                                      <span className="text-[11px] text-muted-foreground">{convCreateDocs.length} fichier(s)</span>
                                       {convCreateDocs.map((d, i) => (
                                         <div key={i} className="flex items-center gap-1 text-xs bg-muted/50 rounded px-2 py-1">
                                           <span className="text-muted-foreground font-mono w-4 shrink-0">{i + 1}</span>
@@ -821,6 +917,26 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                           </Button>
                                         </div>
                                       ))}
+                                      {/* Fusion section with messages */}
+                                      <div className="mt-2 p-2 bg-muted/30 rounded-md space-y-2">
+                                        <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                                          <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                          <div>
+                                            <p className="font-medium text-foreground">Fusion de fichiers PDF</p>
+                                            <p>Vous pouvez fusionner plusieurs fichiers PDF en un seul document. Réorganisez l'ordre des fichiers ci-dessus avant de lancer la fusion. Seuls les fichiers PDF seront inclus.</p>
+                                          </div>
+                                        </div>
+                                        {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 ? (
+                                          <Button type="button" variant="outline" size="sm" className="w-full" onClick={convMergeCreateDocs} disabled={convMerging}>
+                                            {convMerging ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Merge className="h-3 w-3 mr-1" />}
+                                            Fusionner les {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length} fichiers PDF
+                                          </Button>
+                                        ) : (
+                                          <p className="text-[11px] text-muted-foreground italic text-center">
+                                            Ajoutez au moins 2 fichiers PDF pour activer la fusion.
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -844,31 +960,40 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                             </p>
                           ) : (
                             <>
-                              <Input
-                                placeholder="Numéro de marché *"
-                                value={newMarche.numeroMarche}
-                                onChange={e => setNewMarche(prev => ({ ...prev, numeroMarche: e.target.value }))}
-                              />
-                              <Input
-                                placeholder="Montant TTC (optionnel)"
-                                type="number"
-                                value={newMarche.montantContratTtc || ""}
-                                onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                              />
-                              <div>
-                                <Label className="text-xs text-muted-foreground">Date de signature</Label>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Numéro de marché <span className="text-destructive">*</span></Label>
+                                <Input
+                                  placeholder="Ex: MARCHE-2026-001"
+                                  value={newMarche.numeroMarche}
+                                  onChange={e => setNewMarche(prev => ({ ...prev, numeroMarche: e.target.value }))}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Montant TTC</Label>
+                                <Input
+                                  placeholder="Ex: 50000000"
+                                  type="number"
+                                  value={newMarche.montantContratTtc || ""}
+                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Date d'attribution <span className="text-destructive">*</span></Label>
                                 <Input
                                   type="date"
+                                  max={new Date().toISOString().split("T")[0]}
                                   value={newMarche.dateSignature || ""}
                                   onChange={e => setNewMarche(prev => ({ ...prev, dateSignature: e.target.value }))}
                                 />
+                                <p className="text-[11px] text-muted-foreground">Doit être antérieure à la date du jour</p>
                               </div>
                               <Button
                                 size="sm"
                                 className="w-full"
                                 onClick={handleCreateMarche}
+                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature}
                               >
-                                <Plus className="h-4 w-4 mr-1" />
+                                {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
                                 Créer le marché
                               </Button>
                             </>
@@ -886,7 +1011,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                   ) : (
                     <div className="space-y-2">
                       {gedDocTypes.map(dt => (
-                        <div key={dt.id} className="flex items-center gap-2 rounded-lg border border-border p-2">
+                        <div
+                          key={dt.id}
+                          className={`flex items-center gap-2 rounded-lg border p-2 transition-colors ${
+                            dragOverType === dt.typeDocument
+                              ? "border-primary bg-primary/5 border-dashed"
+                              : "border-border"
+                          }`}
+                          onDragOver={e => handleDragOver(e, dt.typeDocument)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={e => handleDrop(e, dt.typeDocument)}
+                        >
                           {docFiles[dt.typeDocument] ? (
                             <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
                           ) : (
@@ -909,6 +1044,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                           {docFiles[dt.typeDocument] && (
                             <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.typeDocument].name}</span>
                           )}
+                          {!docFiles[dt.typeDocument] && (
+                            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                              Glissez un fichier ici ou
+                            </span>
+                          )}
                           <label className="cursor-pointer">
                             <input
                               type="file"
@@ -919,7 +1059,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
                                 if (f) setDocFiles(prev => ({ ...prev, [dt.typeDocument]: f }));
                               }}
                             />
-                            <span className="text-xs text-primary hover:underline">{docFiles[dt.typeDocument] ? "Changer" : "Choisir"}</span>
+                            <span className="text-xs text-primary hover:underline">{docFiles[dt.typeDocument] ? "Changer" : "Parcourir"}</span>
                           </label>
                         </div>
                       ))}
@@ -962,7 +1102,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
               </CardContent>
             </Card>
 
-            {/* Section 1: Importations */}
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1030,7 +1169,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
               </CardContent>
             </Card>
 
-            {/* Section 2: Fiscalité intérieure */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">2 — Fiscalité intérieure (DGI)</CardTitle>
@@ -1069,7 +1207,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
               </CardContent>
             </Card>
 
-            {/* Section 3: Récapitulatif */}
             <Card className="border-primary/30">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">3 — Récapitulatif</CardTitle>
