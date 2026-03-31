@@ -195,9 +195,32 @@ const Simulation = () => {
         throw new Error(errData.error || errData.details || `Erreur ${res.status}`);
       }
 
-      setProgressMsg("Traitement lancé. Extraction et analyse en cours...");
-      // Start polling for status
-      pollStatus(entrepriseId.trim());
+      // Try to use the response directly (the backend may return results inline)
+      const runData = await res.json().catch(() => null);
+      
+      if (runData?.offre_fiscale || runData?.dqe) {
+        // Results returned directly from run endpoint
+        if (runData.dqe) setDqeStandard(runData);
+        if (runData.offre_fiscale) setOffreFiscale(runData);
+        
+        // Also fetch structured results from dedicated endpoints
+        try {
+          const [dqeRes, ofRes] = await Promise.all([
+            fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId.trim())}/dqe-standard`),
+            fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId.trim())}/offre-fiscale`),
+          ]);
+          if (dqeRes.ok) setDqeStandard(await dqeRes.json());
+          if (ofRes.ok) setOffreFiscale(await ofRes.json());
+        } catch { /* use inline data */ }
+        
+        setLoading(false);
+        setStep("results");
+        toast({ title: "Simulation terminée avec succès" });
+      } else {
+        // Fallback: start polling if run didn't return results inline
+        setProgressMsg("Traitement lancé. Extraction et analyse en cours...");
+        pollStatus(entrepriseId.trim());
+      }
     } catch (err: any) {
       toast({ title: "Erreur lors du lancement", description: err.message, variant: "destructive" });
       setStep("upload");
