@@ -68,7 +68,8 @@ function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
 
 const Simulation = () => {
   const { toast } = useToast();
-  const [entrepriseId, setEntrepriseId] = useState("");
+  const { user } = useAuth();
+  const entrepriseId = user?.entrepriseId ? String(user.entrepriseId) : "";
   const [dqeFile, setDqeFile] = useState<File | null>(null);
   const [ofFile, setOfFile] = useState<File | null>(null);
   const [dqePreview, setDqePreview] = useState<ExcelPreviewData | null>(null);
