@@ -113,7 +113,7 @@ const Simulation = () => {
       try { setDqePreview(await readExcelForPreview(file)); } catch { setDqePreview(null); }
     } else {
       setOfFile(file);
-      try { setOfPreview(await and readExcelForPreview(file)); } catch { setOfPreview(null); }
+      try { setOfPreview(await readExcelForPreview(file)); } catch { setOfPreview(null); }
     }
     toast({ title: `${file.name} chargé avec succès` });
   };
