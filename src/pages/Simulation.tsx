@@ -252,11 +252,11 @@ const Simulation = () => {
 
 /* ======== STEP 1: Upload ======== */
 function UploadStep({
-  entrepriseId, setEntrepriseId,
+  entrepriseId,
   dqeFile, ofFile, dqePreview, ofPreview,
   onUpload, onDrop, onRemoveDqe, onRemoveOf, onPreview,
 }: {
-  entrepriseId: string; setEntrepriseId: (v: string) => void;
+  entrepriseId: string;
   dqeFile: File | null; ofFile: File | null;
   dqePreview: ExcelPreviewData | null; ofPreview: ExcelPreviewData | null;
   onUpload: (f: File, type: "dqe" | "of") => void;
@@ -273,23 +273,13 @@ function UploadStep({
         </p>
       </div>
 
-      {/* Entreprise ID */}
+      {/* Entreprise ID - read-only */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Identifiant Entreprise</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="entrepriseId">ID Entreprise *</Label>
-            <Input
-              id="entrepriseId"
-              placeholder="Ex: ENT-12345"
-              value={entrepriseId}
-              onChange={(e) => setEntrepriseId(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Identifiant unique pour cette session de simulation.
-            </p>
+        <CardContent className="pt-5">
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-sm px-3 py-1">
+              Entreprise ID : {entrepriseId}
+            </Badge>
           </div>
         </CardContent>
       </Card>
