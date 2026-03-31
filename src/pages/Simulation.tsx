@@ -15,6 +15,7 @@ import * as XLSX from "xlsx";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ──────────────── Types ──────────────── */
 
@@ -67,7 +68,8 @@ function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
 
 const Simulation = () => {
   const { toast } = useToast();
-  const [entrepriseId, setEntrepriseId] = useState("");
+  const { user } = useAuth();
+  const entrepriseId = user?.entrepriseId ? String(user.entrepriseId) : "";
   const [dqeFile, setDqeFile] = useState<File | null>(null);
   const [ofFile, setOfFile] = useState<File | null>(null);
   const [dqePreview, setDqePreview] = useState<ExcelPreviewData | null>(null);
@@ -181,7 +183,6 @@ const Simulation = () => {
 
   const reset = () => {
     stopPolling();
-    setEntrepriseId("");
     setDqeFile(null);
     setOfFile(null);
     setDqePreview(null);
@@ -196,12 +197,23 @@ const Simulation = () => {
   // Legacy compat
   const setResult = (_: any) => {};
 
+  if (!entrepriseId) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <AlertTriangle className="h-12 w-12 text-yellow-500" />
+          <h2 className="text-xl font-semibold">Aucune entreprise associée</h2>
+          <p className="text-muted-foreground text-sm">Votre compte n'est pas lié à une entreprise. Veuillez contacter l'administrateur.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       {step === "upload" && (
         <UploadStep
           entrepriseId={entrepriseId}
-          setEntrepriseId={setEntrepriseId}
           dqeFile={dqeFile}
           ofFile={ofFile}
           dqePreview={dqePreview}
@@ -240,11 +252,11 @@ const Simulation = () => {
 
 /* ======== STEP 1: Upload ======== */
 function UploadStep({
-  entrepriseId, setEntrepriseId,
+  entrepriseId,
   dqeFile, ofFile, dqePreview, ofPreview,
   onUpload, onDrop, onRemoveDqe, onRemoveOf, onPreview,
 }: {
-  entrepriseId: string; setEntrepriseId: (v: string) => void;
+  entrepriseId: string;
   dqeFile: File | null; ofFile: File | null;
   dqePreview: ExcelPreviewData | null; ofPreview: ExcelPreviewData | null;
   onUpload: (f: File, type: "dqe" | "of") => void;
@@ -261,23 +273,13 @@ function UploadStep({
         </p>
       </div>
 
-      {/* Entreprise ID */}
+      {/* Entreprise ID - read-only */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Identifiant Entreprise</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="entrepriseId">ID Entreprise *</Label>
-            <Input
-              id="entrepriseId"
-              placeholder="Ex: ENT-12345"
-              value={entrepriseId}
-              onChange={(e) => setEntrepriseId(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Identifiant unique pour cette session de simulation.
-            </p>
+        <CardContent className="pt-5">
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-sm px-3 py-1">
+              Entreprise ID : {entrepriseId}
+            </Badge>
           </div>
         </CardContent>
       </Card>
