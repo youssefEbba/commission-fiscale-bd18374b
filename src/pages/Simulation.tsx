@@ -15,6 +15,7 @@ import * as XLSX from "xlsx";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ──────────────── Types ──────────────── */
 
