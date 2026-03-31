@@ -248,9 +248,20 @@ const Simulation = () => {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <AlertTriangle className="h-12 w-12 text-yellow-500" />
+          <AlertTriangle className="h-12 w-12 text-destructive" />
           <h2 className="text-xl font-semibold">Aucune entreprise associée</h2>
           <p className="text-muted-foreground text-sm">Votre compte n'est pas lié à une entreprise. Veuillez contacter l'administrateur.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (existingLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground text-sm">Vérification des résultats existants...</p>
         </div>
       </DashboardLayout>
     );
