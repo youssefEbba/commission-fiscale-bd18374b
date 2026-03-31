@@ -183,7 +183,6 @@ const Simulation = () => {
 
   const reset = () => {
     stopPolling();
-    setEntrepriseId("");
     setDqeFile(null);
     setOfFile(null);
     setDqePreview(null);
@@ -198,12 +197,23 @@ const Simulation = () => {
   // Legacy compat
   const setResult = (_: any) => {};
 
+  if (!entrepriseId) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <AlertTriangle className="h-12 w-12 text-yellow-500" />
+          <h2 className="text-xl font-semibold">Aucune entreprise associée</h2>
+          <p className="text-muted-foreground text-sm">Votre compte n'est pas lié à une entreprise. Veuillez contacter l'administrateur.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       {step === "upload" && (
         <UploadStep
           entrepriseId={entrepriseId}
-          setEntrepriseId={setEntrepriseId}
           dqeFile={dqeFile}
           ofFile={ofFile}
           dqePreview={dqePreview}
