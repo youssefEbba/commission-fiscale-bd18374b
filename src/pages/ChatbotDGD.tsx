@@ -138,7 +138,10 @@ const ChatbotDGD = () => {
         method: "POST",
         body: JSON.stringify({ correctionId: id }),
       });
-      if (!res.ok) throw new Error(`Erreur: ${res.status}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || errData.details || `Erreur: ${res.status}`);
+      }
       const data = await res.json();
       if (!data.success) throw new Error("Analyse échouée");
 
