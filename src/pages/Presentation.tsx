@@ -174,6 +174,11 @@ const Presentation = () => {
             <div className={`bg-gradient-to-r ${section.color} px-8 py-5 flex items-center gap-4`}>
               <section.icon className="h-7 w-7 text-white/90" />
               <h3 className="text-xl font-bold text-white">{section.title}</h3>
+              {section.tag && (
+                <span className="ml-auto text-xs font-bold uppercase tracking-wider bg-yellow-400/90 text-yellow-950 px-3 py-1 rounded-full">
+                  {section.tag}
+                </span>
+              )}
             </div>
             <ul className="px-8 py-6 space-y-3">
               {section.points.map((point) => (
