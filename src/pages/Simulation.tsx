@@ -80,6 +80,30 @@ const Simulation = () => {
   const [dqeStandard, setDqeStandard] = useState<any>(null);
   const [offreFiscale, setOffreFiscale] = useState<any>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [existingLoading, setExistingLoading] = useState(true);
+
+  // Check if an existing offre fiscale already exists for this entreprise
+  useEffect(() => {
+    if (!entrepriseId) { setExistingLoading(false); return; }
+    const checkExisting = async () => {
+      try {
+        const res = await fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId)}/status`);
+        if (!res.ok) { setExistingLoading(false); return; }
+        const status: SimulationStatus = await res.json();
+        if (status.hasDqeStandard || status.hasOffreFiscale) {
+          const [dqeRes, ofRes] = await Promise.all([
+            status.hasDqeStandard ? fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId)}/dqe-standard`) : Promise.resolve(null),
+            status.hasOffreFiscale ? fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(entrepriseId)}/offre-fiscale`) : Promise.resolve(null),
+          ]);
+          if (dqeRes?.ok) setDqeStandard(await dqeRes.json());
+          if (ofRes?.ok) setOffreFiscale(await ofRes.json());
+          setStep("results");
+        }
+      } catch { /* ignore */ }
+      setExistingLoading(false);
+    };
+    checkExisting();
+  }, [entrepriseId]);
 
   const handleFileUpload = async (file: File, type: "dqe" | "of") => {
     if (type === "dqe") {
