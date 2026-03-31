@@ -143,7 +143,8 @@ const ChatbotDGD = () => {
       if (!data.success) throw new Error("Analyse échouée");
 
       const content = data.answer || (typeof data.analysis === "string" ? data.analysis : JSON.stringify(data.analysis, null, 2));
-      setDqeMessages([{ role: "assistant", content }]);
+      // Insert a placeholder at index 0 (context) so the analysis appears at index 1, matching history format
+      setDqeMessages([{ role: "user", content: "[Contexte DQE]" }, { role: "assistant", content }]);
       setDqeAnalyzed(true);
       toast({ title: "Analyse DQE terminée" });
     } catch (e: any) {
