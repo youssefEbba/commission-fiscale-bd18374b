@@ -117,7 +117,11 @@ const Conventions = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
+  // Document replace
+  const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
+
   const isDGB = hasRole(["DGB"]);
   const isDGI = hasRole(["DGI"]);
   const isAdmin = hasRole(["ADMIN_SI", "PRESIDENT"]);
