@@ -31,6 +31,7 @@ import NotFound from "./pages/NotFound";
 import Transferts from "./pages/Transferts";
 import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
+import Reporting from "./pages/Reporting";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
 import Modifications from "./pages/Modifications";
