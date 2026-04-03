@@ -62,13 +62,17 @@ const getFileIcon = (filename: string) => {
 
 const DocumentGED = ({
   open, onOpenChange, title, dossierId, documentTypes,
-  documents, loading, canUpload, onUpload, onRefresh,
+  documents, loading, canUpload, canManageDocuments, onUpload, onRefresh,
+  onDeleteDocument, onReplaceDocument,
 }: DocumentGEDProps) => {
   const { toast } = useToast();
   const [tab, setTab] = useState<"actifs" | "historique">("actifs");
   const [uploadType, setUploadType] = useState(documentTypes[0]?.value || "");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   const activeDocs = documents.filter(d => d.actif !== false);
   const historyDocs = documents.filter(d => d.actif === false);
