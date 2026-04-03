@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   FolderOpen, Search, RefreshCw, Plus, Eye, Upload, Loader2,
-  CheckCircle, XCircle, Filter, FileText, AlertTriangle,
+  CheckCircle, XCircle, Filter, FileText, AlertTriangle, Ban, Trash2, Replace,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ReferentielStatut, string> = {
