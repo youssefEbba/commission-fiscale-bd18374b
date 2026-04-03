@@ -59,7 +59,11 @@ const Marches = () => {
   const [gedDocs, setGedDocs] = useState<DocumentDto[]>([]);
   const [gedLoading, setGedLoading] = useState(false);
 
-  const fetchMarches = async () => {
+  // Cancel dialog
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelMarche, setCancelMarche] = useState<MarcheDto | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
     setLoading(true);
     try {
       const results = await Promise.allSettled([
