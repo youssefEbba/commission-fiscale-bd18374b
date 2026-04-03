@@ -122,6 +122,7 @@ const DocumentGED = ({
     }
   };
 
+  const renderDocTable = (docs: GEDDocument[], showActifBadge = false) => (
     <Table>
       <TableHeader>
         <TableRow>
