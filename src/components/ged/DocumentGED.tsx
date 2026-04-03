@@ -38,8 +38,11 @@ interface DocumentGEDProps {
   documents: GEDDocument[];
   loading: boolean;
   canUpload: boolean;
+  canManageDocuments?: boolean;
   onUpload: (dossierId: number, type: string, file: File) => Promise<void>;
   onRefresh: (dossierId: number) => Promise<void>;
+  onDeleteDocument?: (dossierId: number, docId: number) => Promise<void>;
+  onReplaceDocument?: (dossierId: number, docId: number, file: File) => Promise<void>;
 }
 
 const formatFileSize = (bytes?: number): string => {
