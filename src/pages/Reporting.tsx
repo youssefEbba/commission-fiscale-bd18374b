@@ -219,6 +219,7 @@ const Reporting = () => {
         )}
 
         {summary && (
+          <>
             {/* KPI Cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <KPICard icon={FileText} label="Demandes" value={summary.demandes.total} color="text-primary" />
