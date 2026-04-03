@@ -655,32 +655,55 @@ const ReferentielProjets = () => {
                 </div>
               )}
 
-              {/* Documents du projet (upload pour AC uniquement) */}
-              {(isAC || isAdmin) && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold">Documents du projet</h3>
+              {/* Documents du projet */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold">Documents du projet</h3>
+                  {(isAC || isAdmin) && selected.statut !== "VALIDE" && selected.statut !== "ANNULE" && (
                     <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
                       <Upload className="h-4 w-4 mr-1" /> Déposer un document
                     </Button>
-                  </div>
-                  {docsLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : docs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Aucun document déposé</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {docs.map((doc) => (
-                        <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
-                          <FileText className="h-4 w-4 text-primary shrink-0" />
-                          <span className="flex-1 truncate">{doc.nomFichier}</span>
-                          <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </div>
-              )}
+                {docsLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : docs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun document déposé</p>
+                ) : (
+                  <div className="space-y-1">
+                    {docs.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                        <FileText className="h-4 w-4 text-primary shrink-0" />
+                        <span className="flex-1 truncate">{doc.nomFichier}</span>
+                        <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
+                        {(isAC || isAdmin) && selected.statut !== "VALIDE" && selected.statut !== "ANNULE" && (
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplaceDocId(doc.id); setReplaceFile(null); }}>
+                              <Replace className="h-3 w-3 mr-1" /> Remplacer
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive" onClick={() => handleDeleteDoc(doc.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Replace file input */}
+                {replaceDocId && (
+                  <div className="mt-2 flex items-center gap-2 border border-border rounded-lg p-2">
+                    <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                    <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
+                      {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Replace className="h-4 w-4 mr-1" />}
+                      Confirmer
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               {/* Workflow Actions in detail (DGB only) */}
               {isDGB && selected.statut === "EN_ATTENTE" && (
@@ -691,6 +714,15 @@ const ReferentielProjets = () => {
                   </Button>
                   <Button variant="destructive" disabled={actionLoading === selected.id} onClick={() => openRejectDialog(selected.id)}>
                     <XCircle className="h-4 w-4 mr-1" /> Rejeter
+                  </Button>
+                </div>
+              )}
+
+              {/* Annulation (AC only, not if VALIDE or already ANNULE) */}
+              {(isAC || isAdmin) && selected.statut !== "VALIDE" && selected.statut !== "ANNULE" && (
+                <div className="pt-2 border-t border-border">
+                  <Button variant="destructive" size="sm" onClick={() => openCancelDialog(selected.id)}>
+                    <Ban className="h-4 w-4 mr-1" /> Annuler le projet
                   </Button>
                 </div>
               )}
