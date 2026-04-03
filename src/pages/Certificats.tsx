@@ -250,7 +250,7 @@ const Certificats = () => {
                        <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="sm" onClick={() => openDetail(c)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
                           {transitions.map((t) =>
                             t.from.includes(c.statut) ? (
                               <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
