@@ -31,16 +31,14 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
-      // Only force logout if the token was actually present (real expiration)
-      // Don't redirect if we're already handling the error in a component
-      const hadToken = !!token;
+    if (res.status === 401 && !options.skipAuthRedirect) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
-      if (hadToken && !window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login";
-      }
+      window.location.href = "/login";
       throw new Error("Session expirée");
+    }
+    if (res.status === 401) {
+      throw new Error("Non autorisé");
     }
     if (res.status === 403) {
       throw new Error("Accès refusé");
