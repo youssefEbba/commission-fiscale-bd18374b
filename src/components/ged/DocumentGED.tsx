@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Upload, FileText, Loader2, Download, Clock, CheckCircle2, Archive,
-  File, FileImage, FileSpreadsheet, AlertCircle
+  File, FileImage, FileSpreadsheet, AlertCircle, Trash2, Replace
 } from "lucide-react";
 
 export interface GEDDocument {
@@ -38,8 +38,11 @@ interface DocumentGEDProps {
   documents: GEDDocument[];
   loading: boolean;
   canUpload: boolean;
+  canManageDocuments?: boolean;
   onUpload: (dossierId: number, type: string, file: File) => Promise<void>;
   onRefresh: (dossierId: number) => Promise<void>;
+  onDeleteDocument?: (dossierId: number, docId: number) => Promise<void>;
+  onReplaceDocument?: (dossierId: number, docId: number, file: File) => Promise<void>;
 }
 
 const formatFileSize = (bytes?: number): string => {
@@ -59,13 +62,17 @@ const getFileIcon = (filename: string) => {
 
 const DocumentGED = ({
   open, onOpenChange, title, dossierId, documentTypes,
-  documents, loading, canUpload, onUpload, onRefresh,
+  documents, loading, canUpload, canManageDocuments, onUpload, onRefresh,
+  onDeleteDocument, onReplaceDocument,
 }: DocumentGEDProps) => {
   const { toast } = useToast();
   const [tab, setTab] = useState<"actifs" | "historique">("actifs");
   const [uploadType, setUploadType] = useState(documentTypes[0]?.value || "");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   const activeDocs = documents.filter(d => d.actif !== false);
   const historyDocs = documents.filter(d => d.actif === false);
@@ -88,6 +95,33 @@ const DocumentGED = ({
     }
   };
 
+  const handleDeleteDoc = async (docId: number) => {
+    if (!dossierId || !onDeleteDocument) return;
+    try {
+      await onDeleteDocument(dossierId, docId);
+      toast({ title: "Succès", description: "Document supprimé" });
+      await onRefresh(dossierId);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleReplaceDoc = async () => {
+    if (!dossierId || !replaceDocId || !replaceFile || !onReplaceDocument) return;
+    setReplacing(true);
+    try {
+      await onReplaceDocument(dossierId, replaceDocId, replaceFile);
+      toast({ title: "Succès", description: "Document remplacé" });
+      setReplaceDocId(null);
+      setReplaceFile(null);
+      await onRefresh(dossierId);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReplacing(false);
+    }
+  };
+
   const renderDocTable = (docs: GEDDocument[], showActifBadge = false) => (
     <Table>
       <TableHeader>
@@ -98,12 +132,13 @@ const DocumentGED = ({
           <TableHead>Version</TableHead>
           <TableHead>Date</TableHead>
           {showActifBadge && <TableHead>État</TableHead>}
+          {canManageDocuments && !showActifBadge && <TableHead className="text-right">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {docs.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={showActifBadge ? 6 : 5} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={canManageDocuments && !showActifBadge ? 7 : (showActifBadge ? 6 : 5)} className="text-center py-6 text-muted-foreground">
               Aucun document
             </TableCell>
           </TableRow>
@@ -145,6 +180,18 @@ const DocumentGED = ({
                 <Badge variant={d.actif !== false ? "default" : "secondary"} className="text-xs">
                   {d.actif !== false ? "Actif" : "Remplacé"}
                 </Badge>
+              </TableCell>
+            )}
+            {canManageDocuments && !showActifBadge && (
+              <TableCell className="text-right">
+                <div className="flex gap-1 justify-end">
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplaceDocId(d.id); setReplaceFile(null); }}>
+                    <Replace className="h-3 w-3 mr-1" /> Remplacer
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive" onClick={() => handleDeleteDoc(d.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </TableCell>
             )}
           </TableRow>
@@ -224,7 +271,20 @@ const DocumentGED = ({
               </TabsContent>
             </Tabs>
 
-            {/* Upload section */}
+            {/* Inline replace file input */}
+            {replaceDocId && (
+              <div className="flex items-center gap-2 border border-border rounded-lg p-2">
+                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
+                  {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Replace className="h-4 w-4 mr-1" />}
+                  Confirmer
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
+                  ✕
+                </Button>
+              </div>
+            )}
+
             {canUpload && (
               <div className="border-t pt-4 space-y-3">
                 <h4 className="text-sm font-semibold flex items-center gap-2">

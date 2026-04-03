@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 
@@ -24,6 +24,7 @@ const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
   AVENANT: "bg-orange-100 text-orange-800",
   CLOTURE: "bg-gray-100 text-gray-800",
+  ANNULE: "bg-red-100 text-red-800",
 };
 
 const Marches = () => {
@@ -58,7 +59,11 @@ const Marches = () => {
   const [gedDocs, setGedDocs] = useState<DocumentDto[]>([]);
   const [gedLoading, setGedLoading] = useState(false);
 
-  const fetchMarches = async () => {
+  // Cancel dialog
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelMarche, setCancelMarche] = useState<MarcheDto | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
     setLoading(true);
     try {
       const results = await Promise.allSettled([
@@ -184,6 +189,35 @@ const Marches = () => {
     setGedDocs(docs);
   };
 
+  const handleGedDelete = async (marcheId: number, docId: number) => {
+    await marcheApi.deleteDocument(marcheId, docId);
+  };
+
+  const handleGedReplace = async (marcheId: number, docId: number, file: File) => {
+    await marcheApi.replaceDocument(marcheId, docId, file);
+  };
+
+  const openCancelMarche = (m: MarcheDto) => {
+    setCancelMarche(m);
+    setCancelOpen(true);
+  };
+
+  const handleCancelMarche = async () => {
+    if (!cancelMarche) return;
+    setCancelling(true);
+    try {
+      await marcheApi.updateStatut(cancelMarche.id, "ANNULE");
+      toast({ title: "Succès", description: "Marché annulé" });
+      setCancelOpen(false);
+      setCancelMarche(null);
+      fetchMarches();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.numeroMarche?.trim()) {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
@@ -306,13 +340,16 @@ const Marches = () => {
                             <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
                               <FileText className="h-4 w-4 mr-1" /> GED
                             </Button>
-                            {isAC && (
+                            {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
                               <>
                                 <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
                                   <Edit className="h-4 w-4 mr-1" /> Modifier
                                 </Button>
                                 <Button variant="outline" size="sm" onClick={() => openAssign(m)}>
                                   <UserPlus className="h-4 w-4 mr-1" /> Affecter
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => openCancelMarche(m)}>
+                                  <Ban className="h-4 w-4 mr-1" /> Annuler
                                 </Button>
                               </>
                             )}
@@ -501,10 +538,34 @@ const Marches = () => {
         documentTypes={MARCHE_DOCUMENT_TYPES}
         documents={gedDocs}
         loading={gedLoading}
-        canUpload={isAC || isDelegate}
+        canUpload={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
+        canManageDocuments={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
         onUpload={handleGedUpload}
         onRefresh={handleGedRefresh}
+        onDeleteDocument={handleGedDelete}
+        onReplaceDocument={handleGedReplace}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Ban className="h-5 w-5" /> Annuler le marché
+            </DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir annuler ce marché ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Non, garder</Button>
+            <Button variant="destructive" onClick={handleCancelMarche} disabled={cancelling}>
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
+              Oui, annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

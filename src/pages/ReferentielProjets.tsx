@@ -20,13 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   FolderOpen, Search, RefreshCw, Plus, Eye, Upload, Loader2,
-  CheckCircle, XCircle, Filter, FileText, AlertTriangle,
+  CheckCircle, XCircle, Filter, FileText, AlertTriangle, Ban, Trash2, Replace,
 } from "lucide-react";
 
 const STATUT_COLORS: Record<ReferentielStatut, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
   VALIDE: "bg-green-100 text-green-800",
   REJETE: "bg-red-100 text-red-800",
+  ANNULE: "bg-gray-100 text-gray-800",
 };
 
 const ReferentielProjets = () => {
@@ -68,6 +69,15 @@ const ReferentielProjets = () => {
   const [convDocs, setConvDocs] = useState<DocumentDto[]>([]);
   const [convDocsLoading, setConvDocsLoading] = useState(false);
 
+  // Cancel dialog
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelId, setCancelId] = useState<number | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Document replace
+  const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDGB = hasRole(["DGB"]);
@@ -193,7 +203,61 @@ const ReferentielProjets = () => {
     setRejectMotif("");
   };
 
-  const handleUpload = async () => {
+  // Cancel project (AC only, not if VALIDE)
+  const openCancelDialog = (id: number) => {
+    setCancelId(id);
+    setCancelOpen(true);
+  };
+
+  const handleCancel = async () => {
+    if (!cancelId) return;
+    setCancelling(true);
+    try {
+      await referentielProjetApi.updateStatut(cancelId, "ANNULE");
+      toast({ title: "Succès", description: "Projet annulé" });
+      setCancelOpen(false);
+      setCancelId(null);
+      fetchProjets();
+      if (selected?.id === cancelId) setSelected((prev) => prev ? { ...prev, statut: "ANNULE" as ReferentielStatut } : null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  // Delete document
+  const handleDeleteDoc = async (docId: number) => {
+    if (!selected) return;
+    try {
+      await referentielProjetApi.deleteDocument(selected.id, docId);
+      toast({ title: "Succès", description: "Document supprimé" });
+      const documents = await referentielProjetApi.getDocuments(selected.id);
+      setDocs(documents);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // Replace document
+  const handleReplaceDoc = async () => {
+    if (!selected || !replaceDocId || !replaceFile) return;
+    setReplacing(true);
+    try {
+      await referentielProjetApi.replaceDocument(selected.id, replaceDocId, replaceFile);
+      toast({ title: "Succès", description: "Document remplacé" });
+      setReplaceDocId(null);
+      setReplaceFile(null);
+      const documents = await referentielProjetApi.getDocuments(selected.id);
+      setDocs(documents);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReplacing(false);
+    }
+  };
+
+
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
     try {
@@ -591,32 +655,55 @@ const ReferentielProjets = () => {
                 </div>
               )}
 
-              {/* Documents du projet (upload pour AC uniquement) */}
-              {(isAC || isAdmin) && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold">Documents du projet</h3>
+              {/* Documents du projet */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold">Documents du projet</h3>
+                  {(isAC || isAdmin) && selected.statut !== "VALIDE" && selected.statut !== "ANNULE" && (
                     <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
                       <Upload className="h-4 w-4 mr-1" /> Déposer un document
                     </Button>
-                  </div>
-                  {docsLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : docs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Aucun document déposé</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {docs.map((doc) => (
-                        <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
-                          <FileText className="h-4 w-4 text-primary shrink-0" />
-                          <span className="flex-1 truncate">{doc.nomFichier}</span>
-                          <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </div>
-              )}
+                {docsLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : docs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun document déposé</p>
+                ) : (
+                  <div className="space-y-1">
+                    {docs.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                        <FileText className="h-4 w-4 text-primary shrink-0" />
+                        <span className="flex-1 truncate">{doc.nomFichier}</span>
+                        <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
+                        {(isAC || isAdmin) && selected.statut !== "VALIDE" && selected.statut !== "ANNULE" && (
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplaceDocId(doc.id); setReplaceFile(null); }}>
+                              <Replace className="h-3 w-3 mr-1" /> Remplacer
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive" onClick={() => handleDeleteDoc(doc.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Replace file input */}
+                {replaceDocId && (
+                  <div className="mt-2 flex items-center gap-2 border border-border rounded-lg p-2">
+                    <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                    <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
+                      {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Replace className="h-4 w-4 mr-1" />}
+                      Confirmer
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               {/* Workflow Actions in detail (DGB only) */}
               {isDGB && selected.statut === "EN_ATTENTE" && (
@@ -627,6 +714,15 @@ const ReferentielProjets = () => {
                   </Button>
                   <Button variant="destructive" disabled={actionLoading === selected.id} onClick={() => openRejectDialog(selected.id)}>
                     <XCircle className="h-4 w-4 mr-1" /> Rejeter
+                  </Button>
+                </div>
+              )}
+
+              {/* Annulation (AC only, not if VALIDE or already ANNULE) */}
+              {(isAC || isAdmin) && selected.statut !== "VALIDE" && selected.statut !== "ANNULE" && (
+                <div className="pt-2 border-t border-border">
+                  <Button variant="destructive" size="sm" onClick={() => openCancelDialog(selected.id)}>
+                    <Ban className="h-4 w-4 mr-1" /> Annuler le projet
                   </Button>
                 </div>
               )}
@@ -688,6 +784,27 @@ const ReferentielProjets = () => {
             <Button variant="destructive" onClick={confirmReject} disabled={!rejectMotif.trim() || actionLoading !== null}>
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
               Confirmer le rejet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Ban className="h-5 w-5" /> Annuler le projet
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Êtes-vous sûr de vouloir annuler ce projet ? Cette action est irréversible.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Non, garder</Button>
+            <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
+              Oui, annuler
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -117,7 +117,11 @@ const Conventions = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
+  // Document replace
+  const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
+
   const isDGB = hasRole(["DGB"]);
   const isDGI = hasRole(["DGI"]);
   const isAdmin = hasRole(["ADMIN_SI", "PRESIDENT"]);
@@ -480,6 +484,35 @@ const Conventions = () => {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteConvDoc = async (docId: number) => {
+    if (!docsConvention) return;
+    try {
+      await conventionApi.deleteDocument(docsConvention.id, docId);
+      toast({ title: "Succès", description: "Document supprimé" });
+      const docs = await conventionApi.getDocuments(docsConvention.id);
+      setDocuments(docs);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleReplaceConvDoc = async () => {
+    if (!docsConvention || !replaceDocId || !replaceFile) return;
+    setReplacing(true);
+    try {
+      await conventionApi.replaceDocument(docsConvention.id, replaceDocId, replaceFile);
+      toast({ title: "Succès", description: "Document remplacé" });
+      setReplaceDocId(null);
+      setReplaceFile(null);
+      const docs = await conventionApi.getDocuments(docsConvention.id);
+      setDocuments(docs);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReplacing(false);
     }
   };
 
@@ -915,7 +948,7 @@ const Conventions = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[65vh] overflow-y-auto">
-            {(isAC || isAdmin) && (
+            {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== "ANNULEE" && (
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Label className="text-sm font-semibold">Ajouter un document</Label>
@@ -986,18 +1019,43 @@ const Conventions = () => {
                         {doc.dateUpload ? new Date(doc.dateUpload).toLocaleDateString("fr-FR") : "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {doc.chemin && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
-                              <FileText className="h-4 w-4 mr-1" /> Ouvrir
-                            </a>
-                          </Button>
-                        )}
+                        <div className="flex gap-1 justify-end">
+                          {doc.chemin && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-4 w-4 mr-1" /> Ouvrir
+                              </a>
+                            </Button>
+                          )}
+                          {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== "ANNULEE" && (
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => { setReplaceDocId(doc.id); setReplaceFile(null); }}>
+                                Remplacer
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-destructive" onClick={() => handleDeleteConvDoc(doc.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            )}
+            {/* Inline replace file input */}
+            {replaceDocId && (
+              <div className="flex items-center gap-2 border border-border rounded-lg p-2">
+                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <Button size="sm" onClick={handleReplaceConvDoc} disabled={replacing || !replaceFile}>
+                  {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Confirmer
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
+                  ✕
+                </Button>
+              </div>
             )}
           </div>
         </DialogContent>

@@ -148,7 +148,7 @@ export const autoriteContractanteApi = {
 };
 
 // Référentiel Projet (P1)
-export type ReferentielStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
+export type ReferentielStatut = "EN_ATTENTE" | "VALIDE" | "REJETE" | "ANNULE";
 
 export interface ReferentielProjetDto {
   id: number;
@@ -202,6 +202,7 @@ export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
   EN_ATTENTE: "En attente",
   VALIDE: "Validé",
   REJETE: "Rejeté",
+  ANNULE: "Annulé",
 };
 
 export type TypeDocumentProjet =
@@ -227,7 +228,7 @@ export const referentielProjetApi = {
   getByStatut: (statut: ReferentielStatut) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-statut?statut=${statut}`),
   getByAutorite: (autoriteId: number) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-autorite/${autoriteId}`),
   create: (data: CreateReferentielProjetRequest) => apiFetch<ReferentielProjetDto>("/referentiels-projet", { method: "POST", body: data }),
-  updateStatut: (id: number, statut: "VALIDE" | "REJETE", motifRejet?: string) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
+  updateStatut: (id: number, statut: "VALIDE" | "REJETE" | "ANNULE", motifRejet?: string) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentProjet, file: File) => {
     const formData = new FormData();
@@ -238,10 +239,19 @@ export const referentielProjetApi = {
       rawBody: formData,
     });
   },
+  deleteDocument: (projetId: number, docId: number) => apiFetch<void>(`/referentiels-projet/${projetId}/documents/${docId}`, { method: "DELETE" }),
+  replaceDocument: (projetId: number, docId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/referentiels-projet/${projetId}/documents/${docId}`, {
+      method: "PUT",
+      rawBody: formData,
+    });
+  },
 };
 
 // Conventions
-export type ConventionStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
+export type ConventionStatut = "EN_ATTENTE" | "VALIDE" | "REJETE" | "ANNULEE";
 
 export interface ConventionDto {
   id: number;
@@ -284,6 +294,7 @@ export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
   EN_ATTENTE: "En attente",
   VALIDE: "Validée",
   REJETE: "Rejetée",
+  ANNULEE: "Annulée",
 };
 
 export type TypeDocumentConvention =
@@ -309,6 +320,14 @@ export const conventionApi = {
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
   deleteDocument: (conventionId: number, docId: number) => apiFetch<void>(`/conventions/${conventionId}/documents/${docId}`, { method: "DELETE" }),
+  replaceDocument: (conventionId: number, docId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/conventions/${conventionId}/documents/${docId}`, {
+      method: "PUT",
+      rawBody: formData,
+    });
+  },
   uploadDocument: (id: number, type: TypeDocumentConvention, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -530,7 +549,7 @@ export const demandeCorrectionApi = {
 };
 
 // Marchés
-export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE";
+export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE" | "ANNULE";
 
 export interface MarcheDto {
   id: number;
@@ -556,6 +575,7 @@ export const MARCHE_STATUT_LABELS: Record<StatutMarche, string> = {
   EN_COURS: "En cours",
   AVENANT: "Avenant",
   CLOTURE: "Clôturé",
+  ANNULE: "Annulé",
 };
 
 export type TypeDocumentMarche =
@@ -590,6 +610,16 @@ export const marcheApi = {
       rawBody: formData,
     });
   },
+  deleteDocument: (marcheId: number, docId: number) => apiFetch<void>(`/marches/${marcheId}/documents/${docId}`, { method: "DELETE" }),
+  replaceDocument: (marcheId: number, docId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/marches/${marcheId}/documents/${docId}`, {
+      method: "PUT",
+      rawBody: formData,
+    });
+  },
+  updateStatut: (id: number, statut: StatutMarche) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: { statut } }),
 };
 
 // Délégués (AC -> UPM/UEP)
