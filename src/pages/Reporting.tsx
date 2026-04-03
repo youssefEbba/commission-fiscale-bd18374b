@@ -49,6 +49,7 @@ const Reporting = () => {
   const isNational = hasRole(NATIONAL_ROLES);
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<ReportingSummaryDto | null>(null);
   const [timeseries, setTimeseries] = useState<TimeSeriesPointDto[]>([]);
 
@@ -82,6 +83,7 @@ const Reporting = () => {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = buildParams();
       const [s, ts] = await Promise.all([
@@ -90,8 +92,11 @@ const Reporting = () => {
       ]);
       setSummary(s);
       setTimeseries(ts);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Reporting load error", e);
+      setError(e?.message || "Impossible de charger les données de reporting");
+      setSummary(null);
+      setTimeseries([]);
     } finally {
       setLoading(false);
     }
@@ -193,6 +198,25 @@ const Reporting = () => {
             </div>
           </CardContent>
         </Card>
+
+        {loading && !summary && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Chargement des statistiques…</span>
+          </div>
+        )}
+
+        {error && !loading && (
+          <Card className="border-destructive/50">
+            <CardContent className="p-6 text-center">
+              <p className="text-destructive font-medium mb-2">Erreur de chargement</p>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+              <Button variant="outline" onClick={loadData}>
+                Réessayer
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {summary && (
           <>
