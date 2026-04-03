@@ -948,7 +948,7 @@ const Conventions = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[65vh] overflow-y-auto">
-            {(isAC || isAdmin) && (
+            {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== "ANNULEE" && (
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Label className="text-sm font-semibold">Ajouter un document</Label>
