@@ -487,7 +487,36 @@ const Conventions = () => {
     }
   };
 
-  const filtered = conventions.filter((c) => {
+  const handleDeleteConvDoc = async (docId: number) => {
+    if (!docsConvention) return;
+    try {
+      await conventionApi.deleteDocument(docsConvention.id, docId);
+      toast({ title: "Succès", description: "Document supprimé" });
+      const docs = await conventionApi.getDocuments(docsConvention.id);
+      setDocuments(docs);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleReplaceConvDoc = async () => {
+    if (!docsConvention || !replaceDocId || !replaceFile) return;
+    setReplacing(true);
+    try {
+      await conventionApi.replaceDocument(docsConvention.id, replaceDocId, replaceFile);
+      toast({ title: "Succès", description: "Document remplacé" });
+      setReplaceDocId(null);
+      setReplaceFile(null);
+      const docs = await conventionApi.getDocuments(docsConvention.id);
+      setDocuments(docs);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReplacing(false);
+    }
+  };
+
+
     const matchSearch =
       (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
       (c.intitule || "").toLowerCase().includes(search.toLowerCase()) ||
