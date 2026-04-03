@@ -228,7 +228,7 @@ export const referentielProjetApi = {
   getByStatut: (statut: ReferentielStatut) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-statut?statut=${statut}`),
   getByAutorite: (autoriteId: number) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-autorite/${autoriteId}`),
   create: (data: CreateReferentielProjetRequest) => apiFetch<ReferentielProjetDto>("/referentiels-projet", { method: "POST", body: data }),
-  updateStatut: (id: number, statut: "VALIDE" | "REJETE", motifRejet?: string) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
+  updateStatut: (id: number, statut: "VALIDE" | "REJETE" | "ANNULE", motifRejet?: string) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`),
   uploadDocument: (id: number, type: TypeDocumentProjet, file: File) => {
     const formData = new FormData();
@@ -236,6 +236,15 @@ export const referentielProjetApi = {
     formData.append("file", file);
     return apiFetch<DocumentDto>(`/referentiels-projet/${id}/documents`, {
       method: "POST",
+      rawBody: formData,
+    });
+  },
+  deleteDocument: (projetId: number, docId: number) => apiFetch<void>(`/referentiels-projet/${projetId}/documents/${docId}`, { method: "DELETE" }),
+  replaceDocument: (projetId: number, docId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/referentiels-projet/${projetId}/documents/${docId}`, {
+      method: "PUT",
       rawBody: formData,
     });
   },
