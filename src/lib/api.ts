@@ -320,6 +320,14 @@ export const conventionApi = {
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
   deleteDocument: (conventionId: number, docId: number) => apiFetch<void>(`/conventions/${conventionId}/documents/${docId}`, { method: "DELETE" }),
+  replaceDocument: (conventionId: number, docId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/conventions/${conventionId}/documents/${docId}`, {
+      method: "PUT",
+      rawBody: formData,
+    });
+  },
   uploadDocument: (id: number, type: TypeDocumentConvention, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
