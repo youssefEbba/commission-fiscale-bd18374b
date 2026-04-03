@@ -516,7 +516,7 @@ const Conventions = () => {
     }
   };
 
-
+  const filtered = conventions.filter((c) => {
     const matchSearch =
       (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
       (c.intitule || "").toLowerCase().includes(search.toLowerCase()) ||
