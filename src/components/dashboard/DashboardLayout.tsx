@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake } from "lucide-react";
+import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -53,6 +53,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
   // Simulation : Entreprise uniquement
   { label: "Simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
+  { label: "Reporting", href: "/dashboard/reporting", icon: PieChart },
   {
     label: "Opérations",
     icon: ArrowRightLeft,
