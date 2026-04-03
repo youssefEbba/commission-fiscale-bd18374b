@@ -602,6 +602,16 @@ export const marcheApi = {
       rawBody: formData,
     });
   },
+  deleteDocument: (marcheId: number, docId: number) => apiFetch<void>(`/marches/${marcheId}/documents/${docId}`, { method: "DELETE" }),
+  replaceDocument: (marcheId: number, docId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<DocumentDto>(`/marches/${marcheId}/documents/${docId}`, {
+      method: "PUT",
+      rawBody: formData,
+    });
+  },
+  updateStatut: (id: number, statut: StatutMarche) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: { statut } }),
 };
 
 // Délégués (AC -> UPM/UEP)
