@@ -271,7 +271,20 @@ const DocumentGED = ({
               </TabsContent>
             </Tabs>
 
-            {/* Upload section */}
+            {/* Inline replace file input */}
+            {replaceDocId && (
+              <div className="flex items-center gap-2 border border-border rounded-lg p-2">
+                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
+                  {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Replace className="h-4 w-4 mr-1" />}
+                  Confirmer
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
+                  ✕
+                </Button>
+              </div>
+            )}
+
             {canUpload && (
               <div className="border-t pt-4 space-y-3">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
