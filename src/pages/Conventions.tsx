@@ -122,6 +122,7 @@ const Conventions = () => {
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replacing, setReplacing] = useState(false);
 
+  const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDGB = hasRole(["DGB"]);
   const isDGI = hasRole(["DGI"]);
   const isAdmin = hasRole(["ADMIN_SI", "PRESIDENT"]);
