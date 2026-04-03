@@ -49,6 +49,7 @@ const Reporting = () => {
   const isNational = hasRole(NATIONAL_ROLES);
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<ReportingSummaryDto | null>(null);
   const [timeseries, setTimeseries] = useState<TimeSeriesPointDto[]>([]);
 
