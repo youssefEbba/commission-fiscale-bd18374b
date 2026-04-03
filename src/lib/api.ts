@@ -567,6 +567,7 @@ export const MARCHE_STATUT_LABELS: Record<StatutMarche, string> = {
   EN_COURS: "En cours",
   AVENANT: "Avenant",
   CLOTURE: "Clôturé",
+  ANNULE: "Annulé",
 };
 
 export type TypeDocumentMarche =
