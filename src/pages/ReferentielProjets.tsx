@@ -69,6 +69,15 @@ const ReferentielProjets = () => {
   const [convDocs, setConvDocs] = useState<DocumentDto[]>([]);
   const [convDocsLoading, setConvDocsLoading] = useState(false);
 
+  // Cancel dialog
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelId, setCancelId] = useState<number | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Document replace
+  const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDGB = hasRole(["DGB"]);
