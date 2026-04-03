@@ -1019,13 +1019,25 @@ const Conventions = () => {
                         {doc.dateUpload ? new Date(doc.dateUpload).toLocaleDateString("fr-FR") : "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {doc.chemin && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
-                              <FileText className="h-4 w-4 mr-1" /> Ouvrir
-                            </a>
-                          </Button>
-                        )}
+                        <div className="flex gap-1 justify-end">
+                          {doc.chemin && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-4 w-4 mr-1" /> Ouvrir
+                              </a>
+                            </Button>
+                          )}
+                          {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== "ANNULEE" && (
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => { setReplaceDocId(doc.id); setReplaceFile(null); }}>
+                                Remplacer
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-destructive" onClick={() => handleDeleteConvDoc(doc.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
