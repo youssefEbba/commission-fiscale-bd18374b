@@ -53,6 +53,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
   // Simulation : Entreprise uniquement
   { label: "Simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
+  { label: "Reporting", href: "/dashboard/reporting", icon: PieChart },
   {
     label: "Opérations",
     icon: ArrowRightLeft,
