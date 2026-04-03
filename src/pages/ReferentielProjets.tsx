@@ -257,7 +257,7 @@ const ReferentielProjets = () => {
     }
   };
 
-
+  const handleUpload = async () => {
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
     try {
