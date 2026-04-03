@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Upload, FileText, Loader2, Download, Clock, CheckCircle2, Archive,
-  File, FileImage, FileSpreadsheet, AlertCircle
+  File, FileImage, FileSpreadsheet, AlertCircle, Trash2, Replace
 } from "lucide-react";
 
 export interface GEDDocument {
