@@ -541,7 +541,7 @@ export const demandeCorrectionApi = {
 };
 
 // Marchés
-export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE";
+export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE" | "ANNULE";
 
 export interface MarcheDto {
   id: number;
