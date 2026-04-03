@@ -251,7 +251,7 @@ export const referentielProjetApi = {
 };
 
 // Conventions
-export type ConventionStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
+export type ConventionStatut = "EN_ATTENTE" | "VALIDE" | "REJETE" | "ANNULEE";
 
 export interface ConventionDto {
   id: number;
