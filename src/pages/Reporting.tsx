@@ -199,8 +199,26 @@ const Reporting = () => {
           </CardContent>
         </Card>
 
+        {loading && !summary && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Chargement des statistiques…</span>
+          </div>
+        )}
+
+        {error && !loading && (
+          <Card className="border-destructive/50">
+            <CardContent className="p-6 text-center">
+              <p className="text-destructive font-medium mb-2">Erreur de chargement</p>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+              <Button variant="outline" onClick={loadData}>
+                Réessayer
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {summary && (
-          <>
             {/* KPI Cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <KPICard icon={FileText} label="Demandes" value={summary.demandes.total} color="text-primary" />
