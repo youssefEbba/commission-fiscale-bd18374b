@@ -218,6 +218,7 @@ const Marches = () => {
     }
   };
 
+  const handleSubmit = async () => {
     if (!form.numeroMarche?.trim()) {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
       return;
