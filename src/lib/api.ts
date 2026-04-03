@@ -5,6 +5,7 @@ interface RequestOptions {
   body?: unknown;
   headers?: Record<string, string>;
   rawBody?: FormData;
+  skipAuthRedirect?: boolean;
 }
 
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
