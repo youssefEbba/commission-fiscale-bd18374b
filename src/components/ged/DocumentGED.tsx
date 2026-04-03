@@ -132,6 +132,7 @@ const DocumentGED = ({
           <TableHead>Version</TableHead>
           <TableHead>Date</TableHead>
           {showActifBadge && <TableHead>État</TableHead>}
+          {canManageDocuments && !showActifBadge && <TableHead className="text-right">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
