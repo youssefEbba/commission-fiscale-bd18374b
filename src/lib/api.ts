@@ -1353,6 +1353,73 @@ export const avenantApi = {
   },
 };
 
+// ── Reporting API ──
+
+export interface KeyCount { key: string; count: number; }
+
+export interface ReportingDemandeStatsDto {
+  byStatut: KeyCount[];
+  total: number;
+  tauxAdoptionPct: number | null;
+  tauxRejetPct: number | null;
+}
+
+export interface ReportingAuditStatsDto {
+  byAction: KeyCount[];
+  topEntityTypes: KeyCount[];
+  totalActions: number;
+}
+
+export interface CertificatFinancialTotalsDto {
+  montantCordon: number;
+  montantTVAInterieure: number;
+  soldeCordon: number;
+  soldeTVA: number;
+  certificatCount: number;
+}
+
+export interface ReportingSummaryDto {
+  demandes: ReportingDemandeStatsDto;
+  certificatsByStatut: KeyCount[];
+  certificatsTotal: number;
+  certificatsEnValidationPresident: number;
+  utilisationsByStatut: KeyCount[];
+  utilisationsByType: KeyCount[];
+  utilisationsTotal: number;
+  conventionsByStatut: KeyCount[];
+  referentielsByStatut: KeyCount[];
+  marchesByStatut: KeyCount[];
+  transfertsTotal: number;
+  sousTraitancesTotal: number;
+  audit: ReportingAuditStatsDto;
+  certificatFinancials: CertificatFinancialTotalsDto;
+  filtersApplied: boolean;
+}
+
+export interface TimeSeriesPointDto { period: string; count: number; }
+
+export interface ReportingParams {
+  from?: string;
+  to?: string;
+  autoriteContractanteId?: number;
+  entrepriseId?: number;
+}
+
+function buildReportingQuery(params?: ReportingParams): string {
+  if (!params) return "";
+  const parts: string[] = [];
+  if (params.from) parts.push(`from=${encodeURIComponent(params.from)}`);
+  if (params.to) parts.push(`to=${encodeURIComponent(params.to)}`);
+  if (params.autoriteContractanteId) parts.push(`autoriteContractanteId=${params.autoriteContractanteId}`);
+  if (params.entrepriseId) parts.push(`entrepriseId=${params.entrepriseId}`);
+  return parts.length ? `?${parts.join("&")}` : "";
+}
+
+export const reportingApi = {
+  getSummary: (params?: ReportingParams) => apiFetch<ReportingSummaryDto>(`/reporting/summary${buildReportingQuery(params)}`),
+  getDemandesTimeseries: (params?: ReportingParams) => apiFetch<TimeSeriesPointDto[]>(`/reporting/timeseries/demandes${buildReportingQuery(params)}`),
+};
+
 export { WS_BASE } from "./apiConfig";
 
 // ── Dossiers GED ──
