@@ -538,10 +538,34 @@ const Marches = () => {
         documentTypes={MARCHE_DOCUMENT_TYPES}
         documents={gedDocs}
         loading={gedLoading}
-        canUpload={isAC || isDelegate}
+        canUpload={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
+        canManageDocuments={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
         onUpload={handleGedUpload}
         onRefresh={handleGedRefresh}
+        onDeleteDocument={handleGedDelete}
+        onReplaceDocument={handleGedReplace}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Ban className="h-5 w-5" /> Annuler le marché
+            </DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir annuler ce marché ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Non, garder</Button>
+            <Button variant="destructive" onClick={handleCancelMarche} disabled={cancelling}>
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
+              Oui, annuler
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
