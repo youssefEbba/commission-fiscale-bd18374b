@@ -294,6 +294,7 @@ export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
   EN_ATTENTE: "En attente",
   VALIDE: "Validée",
   REJETE: "Rejetée",
+  ANNULEE: "Annulée",
 };
 
 export type TypeDocumentConvention =
