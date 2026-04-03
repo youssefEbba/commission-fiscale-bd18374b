@@ -138,7 +138,7 @@ const DocumentGED = ({
       <TableBody>
         {docs.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={showActifBadge ? 6 : 5} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={canManageDocuments && !showActifBadge ? 7 : (showActifBadge ? 6 : 5)} className="text-center py-6 text-muted-foreground">
               Aucun document
             </TableCell>
           </TableRow>
