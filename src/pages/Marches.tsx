@@ -64,6 +64,7 @@ const Marches = () => {
   const [cancelMarche, setCancelMarche] = useState<MarcheDto | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
+  const fetchMarches = async () => {
     setLoading(true);
     try {
       const results = await Promise.allSettled([
