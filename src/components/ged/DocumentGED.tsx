@@ -182,6 +182,18 @@ const DocumentGED = ({
                 </Badge>
               </TableCell>
             )}
+            {canManageDocuments && !showActifBadge && (
+              <TableCell className="text-right">
+                <div className="flex gap-1 justify-end">
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplaceDocId(d.id); setReplaceFile(null); }}>
+                    <Replace className="h-3 w-3 mr-1" /> Remplacer
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive" onClick={() => handleDeleteDoc(d.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>
