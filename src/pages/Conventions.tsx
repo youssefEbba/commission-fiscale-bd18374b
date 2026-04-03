@@ -1044,6 +1044,19 @@ const Conventions = () => {
                 </TableBody>
               </Table>
             )}
+            {/* Inline replace file input */}
+            {replaceDocId && (
+              <div className="flex items-center gap-2 border border-border rounded-lg p-2">
+                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <Button size="sm" onClick={handleReplaceConvDoc} disabled={replacing || !replaceFile}>
+                  {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Confirmer
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
+                  ✕
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
