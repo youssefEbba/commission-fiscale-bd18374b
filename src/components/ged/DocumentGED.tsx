@@ -95,7 +95,33 @@ const DocumentGED = ({
     }
   };
 
-  const renderDocTable = (docs: GEDDocument[], showActifBadge = false) => (
+  const handleDeleteDoc = async (docId: number) => {
+    if (!dossierId || !onDeleteDocument) return;
+    try {
+      await onDeleteDocument(dossierId, docId);
+      toast({ title: "Succès", description: "Document supprimé" });
+      await onRefresh(dossierId);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleReplaceDoc = async () => {
+    if (!dossierId || !replaceDocId || !replaceFile || !onReplaceDocument) return;
+    setReplacing(true);
+    try {
+      await onReplaceDocument(dossierId, replaceDocId, replaceFile);
+      toast({ title: "Succès", description: "Document remplacé" });
+      setReplaceDocId(null);
+      setReplaceFile(null);
+      await onRefresh(dossierId);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReplacing(false);
+    }
+  };
+
     <Table>
       <TableHeader>
         <TableRow>
