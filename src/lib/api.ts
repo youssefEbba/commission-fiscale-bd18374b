@@ -148,7 +148,7 @@ export const autoriteContractanteApi = {
 };
 
 // Référentiel Projet (P1)
-export type ReferentielStatut = "EN_ATTENTE" | "VALIDE" | "REJETE";
+export type ReferentielStatut = "EN_ATTENTE" | "VALIDE" | "REJETE" | "ANNULE";
 
 export interface ReferentielProjetDto {
   id: number;
