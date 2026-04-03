@@ -203,7 +203,61 @@ const ReferentielProjets = () => {
     setRejectMotif("");
   };
 
-  const handleUpload = async () => {
+  // Cancel project (AC only, not if VALIDE)
+  const openCancelDialog = (id: number) => {
+    setCancelId(id);
+    setCancelOpen(true);
+  };
+
+  const handleCancel = async () => {
+    if (!cancelId) return;
+    setCancelling(true);
+    try {
+      await referentielProjetApi.updateStatut(cancelId, "ANNULE");
+      toast({ title: "Succès", description: "Projet annulé" });
+      setCancelOpen(false);
+      setCancelId(null);
+      fetchProjets();
+      if (selected?.id === cancelId) setSelected((prev) => prev ? { ...prev, statut: "ANNULE" as ReferentielStatut } : null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  // Delete document
+  const handleDeleteDoc = async (docId: number) => {
+    if (!selected) return;
+    try {
+      await referentielProjetApi.deleteDocument(selected.id, docId);
+      toast({ title: "Succès", description: "Document supprimé" });
+      const documents = await referentielProjetApi.getDocuments(selected.id);
+      setDocs(documents);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // Replace document
+  const handleReplaceDoc = async () => {
+    if (!selected || !replaceDocId || !replaceFile) return;
+    setReplacing(true);
+    try {
+      await referentielProjetApi.replaceDocument(selected.id, replaceDocId, replaceFile);
+      toast({ title: "Succès", description: "Document remplacé" });
+      setReplaceDocId(null);
+      setReplaceFile(null);
+      const documents = await referentielProjetApi.getDocuments(selected.id);
+      setDocs(documents);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReplacing(false);
+    }
+  };
+
+
     if (!selected || !uploadFile || !uploadType) return;
     setUploading(true);
     try {
