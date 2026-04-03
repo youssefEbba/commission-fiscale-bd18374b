@@ -5,6 +5,7 @@ interface RequestOptions {
   body?: unknown;
   headers?: Record<string, string>;
   rawBody?: FormData;
+  skipAuthRedirect?: boolean;
 }
 
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -30,11 +31,14 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
+    if (res.status === 401 && !options.skipAuthRedirect) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
       window.location.href = "/login";
       throw new Error("Session expirée");
+    }
+    if (res.status === 401) {
+      throw new Error("Non autorisé");
     }
     if (res.status === 403) {
       throw new Error("Accès refusé");
@@ -1416,8 +1420,8 @@ function buildReportingQuery(params?: ReportingParams): string {
 }
 
 export const reportingApi = {
-  getSummary: (params?: ReportingParams) => apiFetch<ReportingSummaryDto>(`/reporting/summary${buildReportingQuery(params)}`),
-  getDemandesTimeseries: (params?: ReportingParams) => apiFetch<TimeSeriesPointDto[]>(`/reporting/timeseries/demandes${buildReportingQuery(params)}`),
+  getSummary: (params?: ReportingParams) => apiFetch<ReportingSummaryDto>(`/reporting/summary${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
+  getDemandesTimeseries: (params?: ReportingParams) => apiFetch<TimeSeriesPointDto[]>(`/reporting/timeseries/demandes${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
 };
 
 export { WS_BASE } from "./apiConfig";
