@@ -340,13 +340,16 @@ const Marches = () => {
                             <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
                               <FileText className="h-4 w-4 mr-1" /> GED
                             </Button>
-                            {isAC && (
+                            {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
                               <>
                                 <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
                                   <Edit className="h-4 w-4 mr-1" /> Modifier
                                 </Button>
                                 <Button variant="outline" size="sm" onClick={() => openAssign(m)}>
                                   <UserPlus className="h-4 w-4 mr-1" /> Affecter
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => openCancelMarche(m)}>
+                                  <Ban className="h-4 w-4 mr-1" /> Annuler
                                 </Button>
                               </>
                             )}
