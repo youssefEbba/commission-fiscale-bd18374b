@@ -189,7 +189,35 @@ const Marches = () => {
     setGedDocs(docs);
   };
 
-  const handleSubmit = async () => {
+  const handleGedDelete = async (marcheId: number, docId: number) => {
+    await marcheApi.deleteDocument(marcheId, docId);
+  };
+
+  const handleGedReplace = async (marcheId: number, docId: number, file: File) => {
+    await marcheApi.replaceDocument(marcheId, docId, file);
+  };
+
+  const openCancelMarche = (m: MarcheDto) => {
+    setCancelMarche(m);
+    setCancelOpen(true);
+  };
+
+  const handleCancelMarche = async () => {
+    if (!cancelMarche) return;
+    setCancelling(true);
+    try {
+      await marcheApi.updateStatut(cancelMarche.id, "ANNULE");
+      toast({ title: "Succès", description: "Marché annulé" });
+      setCancelOpen(false);
+      setCancelMarche(null);
+      fetchMarches();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
     if (!form.numeroMarche?.trim()) {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
       return;
