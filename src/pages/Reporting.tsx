@@ -83,6 +83,7 @@ const Reporting = () => {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = buildParams();
       const [s, ts] = await Promise.all([
@@ -91,8 +92,11 @@ const Reporting = () => {
       ]);
       setSummary(s);
       setTimeseries(ts);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Reporting load error", e);
+      setError(e?.message || "Impossible de charger les données de reporting");
+      setSummary(null);
+      setTimeseries([]);
     } finally {
       setLoading(false);
     }
