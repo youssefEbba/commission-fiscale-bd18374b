@@ -202,6 +202,7 @@ export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
   EN_ATTENTE: "En attente",
   VALIDE: "Validé",
   REJETE: "Rejeté",
+  ANNULE: "Annulé",
 };
 
 export type TypeDocumentProjet =
