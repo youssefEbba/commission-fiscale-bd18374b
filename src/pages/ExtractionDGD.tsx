@@ -60,6 +60,15 @@ const ExtractionDGD = () => {
 
   const handleExtract = async () => {
     if (!id) return;
+
+    // Validate page range is provided
+    const from = parseInt(pageFrom);
+    const to = parseInt(pageTo);
+    if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
+      toast({ title: "Périmètre requis", description: "Veuillez préciser les pages de début et de fin du DQE dans l'offre financière.", variant: "destructive" });
+      return;
+    }
+
     setExtracting(true);
     try {
       const docs: DocumentDto[] = await demandeCorrectionApi.getDocuments(Number(id));
@@ -67,12 +76,6 @@ const ExtractionDGD = () => {
       const relevantDocs = docs.filter((d: any) =>
         d.chemin && AI_DOC_TYPES.some(t => (d.type || d.typeDocument || "").includes(t))
       );
-
-      if (relevantDocs.length === 0) {
-        toast({ title: "Aucun document", description: "Aucun document DQE ou Offre Fiscale trouvé dans le dossier.", variant: "destructive" });
-        setExtracting(false);
-        return;
-      }
 
       const documents: { name: string; url: string; pageRange?: { from: number; to: number } }[] = [];
 
@@ -82,13 +85,7 @@ const ExtractionDGD = () => {
         if (type.includes("DQE") && !type.includes("OFFRE")) {
           documents.push({ name: "dqe", url });
         } else if (type.includes("FINANCIERE")) {
-          const dqeOffreDoc: { name: string; url: string; pageRange?: { from: number; to: number } } = { name: "dqe_offre", url };
-          const from = parseInt(pageFrom);
-          const to = parseInt(pageTo);
-          if (!isNaN(from) && !isNaN(to) && from >= 1 && to >= from) {
-            dqeOffreDoc.pageRange = { from, to };
-          }
-          documents.push(dqeOffreDoc);
+          documents.push({ name: "dqe_offre", url, pageRange: { from, to } });
         } else if (type.includes("FISCALE")) {
           documents.push({ name: "ofrefiscale", url });
         }
