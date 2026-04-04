@@ -325,6 +325,7 @@ const Utilisations = () => {
 
   const pageTitle: Record<string, string> = {
     ENTREPRISE: "Mes utilisations de crédit",
+    SOUS_TRAITANT: "Mes utilisations (sous-traitant)",
     DGD: "Utilisations Douane – Vérification",
     DGTCP: "Utilisations – Imputation & apurement",
     DGI: "Utilisations – Consultation",
