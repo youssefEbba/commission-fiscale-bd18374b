@@ -360,6 +360,16 @@ const Utilisations = () => {
             <TabsTrigger value="all">Toutes</TabsTrigger>
             <TabsTrigger value="DOUANIER">Douane (SYDONIA)</TabsTrigger>
             <TabsTrigger value="TVA_INTERIEURE">TVA Intérieure</TabsTrigger>
+            {(role === "ENTREPRISE" || role === "ADMIN_SI" || role === "DGD" || role === "DGTCP") && (
+              <TabsTrigger value="SOUS_TRAITANT">
+                Sous-traitants
+                {data.filter(u => u.demandeurEstSousTraitant).length > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">
+                    {data.filter(u => u.demandeurEstSousTraitant).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
 
