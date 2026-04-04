@@ -287,7 +287,13 @@ const UtilisationDetail = () => {
             <p className="text-muted-foreground text-sm mt-1">
               Certificat {u.certificatReference || `#${u.certificatCreditId}`}
               {u.entrepriseNom && ` — ${u.entrepriseNom}`}
+              {u.demandeurEstSousTraitant && (
+                <Badge variant="outline" className="ml-2 text-[10px] border-orange-300 text-orange-700 bg-orange-50">Sous-traité</Badge>
+              )}
             </p>
+            {u.demandeurEstSousTraitant && u.certificatTitulaireRaisonSociale && (
+              <p className="text-xs text-muted-foreground mt-0.5">Titulaire du certificat : <span className="font-medium">{u.certificatTitulaireRaisonSociale}</span></p>
+            )}
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[u.statut]}`}>
             {UTILISATION_STATUT_LABELS[u.statut]}

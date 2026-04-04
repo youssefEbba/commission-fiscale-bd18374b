@@ -309,20 +309,23 @@ const Utilisations = () => {
   const filtered = data.filter((u) => {
     const ms = (u.certificatReference || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.certificatTitulaireRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.numeroDeclaration || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut;
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
-      (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE");
+      (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
+      (tab === "SOUS_TRAITANT" && u.demandeurEstSousTraitant === true);
     return ms && matchStatut && matchTab;
   });
 
-  const canCreate = role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI";
+  const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI";
 
   const pageTitle: Record<string, string> = {
     ENTREPRISE: "Mes utilisations de crédit",
+    SOUS_TRAITANT: "Mes utilisations (sous-traitant)",
     DGD: "Utilisations Douane – Vérification",
     DGTCP: "Utilisations – Imputation & apurement",
     DGI: "Utilisations – Consultation",
@@ -357,6 +360,16 @@ const Utilisations = () => {
             <TabsTrigger value="all">Toutes</TabsTrigger>
             <TabsTrigger value="DOUANIER">Douane (SYDONIA)</TabsTrigger>
             <TabsTrigger value="TVA_INTERIEURE">TVA Intérieure</TabsTrigger>
+            {(role === "ENTREPRISE" || role === "ADMIN_SI" || role === "DGD" || role === "DGTCP") && (
+              <TabsTrigger value="SOUS_TRAITANT">
+                Sous-traitants
+                {data.filter(u => u.demandeurEstSousTraitant).length > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">
+                    {data.filter(u => u.demandeurEstSousTraitant).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
 
@@ -384,6 +397,7 @@ const Utilisations = () => {
                   <TableRow>
                     <TableHead>#</TableHead>
                     <TableHead>Certificat</TableHead>
+                    <TableHead>Demandeur</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Réf. métier</TableHead>
                     <TableHead>Montant</TableHead>
@@ -393,11 +407,26 @@ const Utilisations = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
                   ) : filtered.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">#{u.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{u.certificatReference || `Cert #${u.certificatCreditId}`}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div>{u.certificatReference || `Cert #${u.certificatCreditId}`}</div>
+                        {u.certificatTitulaireRaisonSociale && (
+                          <div className="text-[11px] text-muted-foreground/70">Titulaire : {u.certificatTitulaireRaisonSociale}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{u.entrepriseNom || "—"}</span>
+                          {u.demandeurEstSousTraitant && (
+                            <Badge variant="outline" className="text-[10px] border-orange-300 text-orange-700 bg-orange-50">
+                              Sous-traité
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {u.type === "DOUANIER" ? "Douane" : u.type === "TVA_INTERIEURE" ? "TVA Int." : "—"}
@@ -467,7 +496,8 @@ const Utilisations = () => {
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{UTILISATION_STATUT_LABELS[selected.statut]}</Badge></p></div>
                 <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatReference || `#${selected.certificatCreditId}`}</p></div>
                 <div><span className="text-muted-foreground">Montant</span><p className="font-bold text-primary">{f(selected.montant)} MRU</p></div>
-                {selected.entrepriseNom && <div><span className="text-muted-foreground">Entreprise</span><p>{selected.entrepriseNom}</p></div>}
+                {selected.entrepriseNom && <div><span className="text-muted-foreground">Demandeur</span><p>{selected.entrepriseNom}{selected.demandeurEstSousTraitant && <Badge variant="outline" className="ml-1.5 text-[10px] border-orange-300 text-orange-700 bg-orange-50">Sous-traité</Badge>}</p></div>}
+                {selected.demandeurEstSousTraitant && selected.certificatTitulaireRaisonSociale && <div><span className="text-muted-foreground">Titulaire du certificat</span><p className="font-medium">{selected.certificatTitulaireRaisonSociale}</p></div>}
                 {selected.dateCreation && <div><span className="text-muted-foreground">Date création</span><p>{new Date(selected.dateCreation).toLocaleDateString("fr-FR")}</p></div>}
                 {selected.dateLiquidation && <div><span className="text-muted-foreground">Date liquidation</span><p>{new Date(selected.dateLiquidation).toLocaleDateString("fr-FR")}</p></div>}
               </div>
