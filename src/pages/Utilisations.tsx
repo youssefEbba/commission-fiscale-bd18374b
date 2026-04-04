@@ -309,17 +309,19 @@ const Utilisations = () => {
   const filtered = data.filter((u) => {
     const ms = (u.certificatReference || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.certificatTitulaireRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.numeroDeclaration || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut;
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
-      (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE");
+      (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
+      (tab === "SOUS_TRAITANT" && u.demandeurEstSousTraitant === true);
     return ms && matchStatut && matchTab;
   });
 
-  const canCreate = role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI";
+  const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI";
 
   const pageTitle: Record<string, string> = {
     ENTREPRISE: "Mes utilisations de crédit",
