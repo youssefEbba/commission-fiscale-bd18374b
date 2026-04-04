@@ -496,7 +496,8 @@ const Utilisations = () => {
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{UTILISATION_STATUT_LABELS[selected.statut]}</Badge></p></div>
                 <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatReference || `#${selected.certificatCreditId}`}</p></div>
                 <div><span className="text-muted-foreground">Montant</span><p className="font-bold text-primary">{f(selected.montant)} MRU</p></div>
-                {selected.entrepriseNom && <div><span className="text-muted-foreground">Entreprise</span><p>{selected.entrepriseNom}</p></div>}
+                {selected.entrepriseNom && <div><span className="text-muted-foreground">Demandeur</span><p>{selected.entrepriseNom}{selected.demandeurEstSousTraitant && <Badge variant="outline" className="ml-1.5 text-[10px] border-orange-300 text-orange-700 bg-orange-50">Sous-traité</Badge>}</p></div>}
+                {selected.demandeurEstSousTraitant && selected.certificatTitulaireRaisonSociale && <div><span className="text-muted-foreground">Titulaire du certificat</span><p className="font-medium">{selected.certificatTitulaireRaisonSociale}</p></div>}
                 {selected.dateCreation && <div><span className="text-muted-foreground">Date création</span><p>{new Date(selected.dateCreation).toLocaleDateString("fr-FR")}</p></div>}
                 {selected.dateLiquidation && <div><span className="text-muted-foreground">Date liquidation</span><p>{new Date(selected.dateLiquidation).toLocaleDateString("fr-FR")}</p></div>}
               </div>
