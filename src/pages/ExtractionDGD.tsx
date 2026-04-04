@@ -98,6 +98,19 @@ const ExtractionDGD = () => {
         return true;
       });
 
+      // Check all 3 required files are present
+      const requiredNames = ["dqe", "dqe_offre", "ofrefiscale"];
+      const missingNames = requiredNames.filter(n => !uniqueDocs.some(d => d.name === n));
+      if (missingNames.length > 0) {
+        toast({
+          title: "Documents manquants",
+          description: `Les documents suivants sont introuvables dans le dossier : ${missingNames.join(", ")}. Les 3 fichiers (DQE, Offre Financière, Offre Fiscale) sont requis.`,
+          variant: "destructive",
+        });
+        setExtracting(false);
+        return;
+      }
+
       let successCount = 0;
       for (const doc of uniqueDocs) {
         try {
