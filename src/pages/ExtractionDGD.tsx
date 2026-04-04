@@ -199,8 +199,8 @@ const ExtractionDGD = () => {
 
             {/* Page range for dqe_offre */}
             <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-sm font-medium text-muted-foreground">
-                Périmètre DQE dans l'offre financière (dqe_offre) :
+              <p className="text-sm font-medium text-foreground">
+                Périmètre DQE dans l'offre financière (dqe_offre) <span className="text-destructive">*</span> :
               </p>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-muted-foreground">Page de</label>
@@ -211,6 +211,7 @@ const ExtractionDGD = () => {
                   value={pageFrom}
                   onChange={(e) => setPageFrom(e.target.value)}
                   className="w-24 h-9"
+                  required
                 />
                 <label className="text-sm text-muted-foreground">à</label>
                 <Input
@@ -220,10 +221,11 @@ const ExtractionDGD = () => {
                   value={pageTo}
                   onChange={(e) => setPageTo(e.target.value)}
                   className="w-24 h-9"
+                  required
                 />
               </div>
-              <p className="text-xs text-muted-foreground/70">
-                (Optionnel — max 30 pages. Laissez vide pour extraire tout le document)
+              <p className="text-xs text-destructive">
+                Obligatoire — précisez les pages contenant le DQE dans l'offre financière
               </p>
             </div>
 
