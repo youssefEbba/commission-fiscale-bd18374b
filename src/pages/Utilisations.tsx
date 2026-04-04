@@ -397,6 +397,7 @@ const Utilisations = () => {
                   <TableRow>
                     <TableHead>#</TableHead>
                     <TableHead>Certificat</TableHead>
+                    <TableHead>Demandeur</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Réf. métier</TableHead>
                     <TableHead>Montant</TableHead>
@@ -406,11 +407,26 @@ const Utilisations = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
                   ) : filtered.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">#{u.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{u.certificatReference || `Cert #${u.certificatCreditId}`}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div>{u.certificatReference || `Cert #${u.certificatCreditId}`}</div>
+                        {u.certificatTitulaireRaisonSociale && (
+                          <div className="text-[11px] text-muted-foreground/70">Titulaire : {u.certificatTitulaireRaisonSociale}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{u.entrepriseNom || "—"}</span>
+                          {u.demandeurEstSousTraitant && (
+                            <Badge variant="outline" className="text-[10px] border-orange-300 text-orange-700 bg-orange-50">
+                              Sous-traité
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {u.type === "DOUANIER" ? "Douane" : u.type === "TVA_INTERIEURE" ? "TVA Int." : "—"}
