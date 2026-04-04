@@ -861,7 +861,10 @@ export const UTILISATION_DOCUMENT_TYPES: { value: TypeDocumentUtilisation; label
 ];
 
 export const utilisationCreditApi = {
-  getAll: () => apiFetch<UtilisationCreditDto[]>("/utilisations-credit"),
+  getAll: (params?: { demandeurSousTraitantOnly?: boolean }) => {
+    const qs = params?.demandeurSousTraitantOnly ? "?demandeurSousTraitantOnly=true" : "";
+    return apiFetch<UtilisationCreditDto[]>(`/utilisations-credit${qs}`);
+  },
   getById: (id: number) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`),
   getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
   create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
