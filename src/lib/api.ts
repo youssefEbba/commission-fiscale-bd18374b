@@ -791,6 +791,10 @@ export interface UtilisationCreditDto {
   reportANouveau?: number;
   soldeTVAAvant?: number;
   soldeTVAApres?: number;
+  // Traçabilité sous-traitant
+  certificatTitulaireEntrepriseId?: number;
+  certificatTitulaireRaisonSociale?: string;
+  demandeurEstSousTraitant?: boolean;
 }
 
 export interface CreateUtilisationCreditRequest {
