@@ -1,21 +1,39 @@
 
 
-# Restreindre les types de document dans la réponse au rejet
+## Plan : Corriger le CORS / ngrok pour SockJS WebSocket
 
-## Problème
-Quand l'entreprise clique "Upload doc" sur un rejet temporaire, le dialogue actuel affiche un simple `<input type="file">` sans sélecteur de type de document. Les types de documents demandés dans le rejet (`documentsDemandes`) ne sont pas utilisés pour filtrer ou guider l'upload.
+### Problème
 
-## Solution
-Modifier le dialogue "Répondre au rejet temporaire" (lignes 696-718) pour :
+SockJS effectue une requête HTTP `GET /ws/info` avant d'établir la connexion WebSocket. Sur ngrok (plan gratuit), cette requête reçoit la page d'avertissement au lieu de la réponse JSON attendue, car le header `ngrok-skip-browser-warning` n'est pas envoyé. SockJS ne permet pas d'injecter des headers HTTP personnalisés.
 
-1. **Stocker la décision complète** au lieu de juste l'ID — passer de `respondDecisionId: number` à `respondDecision: DecisionCorrectionDto | null`
-2. **Ajouter un sélecteur de type de document** restreint aux types listés dans `decision.documentsDemandes`
-3. **Différencier les deux boutons** : "Répondre" ouvre le dialogue en mode texte seul, "Upload doc" ouvre le dialogue avec le sélecteur de document pré-affiché
+### Solution
 
-## Fichier modifié
-**`src/pages/UtilisationDetail.tsx`** :
-- Remplacer `respondDecisionId` par `respondDecision` (objet complet)
-- Dans le dialogue, si `respondDecision.documentsDemandes` existe et n'est pas vide, afficher un `<Select>` filtré sur ces types uniquement (au lieu du champ fichier libre)
-- Le label "Joindre un document" devient "Document demandé" avec le type pré-sélectionné si un seul type est demandé
-- Adapter `handleRespondRejet` pour envoyer le type de document sélectionné
+**Fichier : `src/hooks/useNotifications.ts`**
+
+Remplacer `SockJS` par une **WebSocket native** dans `webSocketFactory`. Cela permet d'utiliser l'URL `wss://` directe (sans le roundtrip `/info` de SockJS) et d'éviter complètement le blocage ngrok.
+
+Étapes :
+1. Construire l'URL WebSocket en remplaçant `https://` par `wss://` sur `WS_BASE`
+2. Ajouter le token en query param
+3. Supprimer l'import et l'usage de `sockjs-client`
+
+```typescript
+// Avant
+webSocketFactory: () => new SockJS(WS_BASE + "?token=...")
+
+// Après
+webSocketFactory: () => {
+  const wsUrl = WS_BASE.replace(/^https/, "wss").replace(/^http/, "ws")
+    + "?token=" + encodeURIComponent(user.token);
+  return new WebSocket(wsUrl);
+}
+```
+
+Cela élimine le problème `/ws/info` bloqué par ngrok. Le backend Spring accepte déjà les connexions WebSocket natives via le endpoint `/ws`.
+
+### Fichiers modifiés
+
+| Fichier | Modification |
+|---------|-------------|
+| `src/hooks/useNotifications.ts` | Remplacer SockJS par WebSocket natif |
 
