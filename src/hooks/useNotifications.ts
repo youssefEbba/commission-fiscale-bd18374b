@@ -27,9 +27,11 @@ export function useNotifications() {
     }
   }, [user]);
 
-  // WebSocket STOMP connection
+  // WebSocket STOMP connection (best-effort, falls back to polling)
   useEffect(() => {
     if (!user) return;
+
+    let cancelled = false;
 
     const client = new Client({
       webSocketFactory: () => {
@@ -37,16 +39,17 @@ export function useNotifications() {
           + "?token=" + encodeURIComponent(user.token);
         return new WebSocket(wsUrl);
       },
-      reconnectDelay: 5000,
+      reconnectDelay: 15000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
+      debug: () => {}, // silence STOMP debug logs
       onConnect: () => {
+        console.info("WS notifications connecté");
         client.subscribe(`/topic/notifications/user/${user.userId}`, (message) => {
           try {
             const notif: NotificationDto = JSON.parse(message.body);
             setNotifications((prev) => [notif, ...prev]);
             setUnreadCount((prev) => prev + 1);
-            // Play notification sound
             try {
               const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
               const osc = audioCtx.createOscillator();
@@ -66,19 +69,27 @@ export function useNotifications() {
           }
         });
       },
-      onStompError: (frame) => {
-        console.error("STOMP error:", frame.headers["message"]);
+      onStompError: () => {},
+      onWebSocketError: () => {
+        // WS not available (ngrok limitation) — silent, will use polling fallback
       },
     });
 
     client.activate();
     clientRef.current = client;
 
+    // Polling fallback: refresh every 30s in case WS is down
+    const pollInterval = setInterval(() => {
+      if (!cancelled) fetchNotifications();
+    }, 30000);
+
     return () => {
+      cancelled = true;
+      clearInterval(pollInterval);
       client.deactivate();
       clientRef.current = null;
     };
-  }, [user]);
+  }, [user, fetchNotifications]);
 
   // Initial fetch
   useEffect(() => {
