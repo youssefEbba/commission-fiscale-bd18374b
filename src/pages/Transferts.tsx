@@ -297,6 +297,11 @@ const Transferts = () => {
                 <div><span className="text-muted-foreground">Ops douane clôturées</span><p className="font-medium">{selected.operationsDouaneCloturees ? "Oui" : "Non"}</p></div>
                 <div><span className="text-muted-foreground">Date demande</span><p className="font-medium">{selected.dateDemande ? new Date(selected.dateDemande).toLocaleDateString("fr-FR") : "—"}</p></div>
               </div>
+              {selected.statut === "EN_COURS" && (
+                <div className="p-3 rounded-md bg-muted/50 border border-border text-xs text-muted-foreground">
+                  📄 Dossier en cours de constitution — au moins une pièce a été déposée. Déposez les 3 documents obligatoires pour permettre la validation.
+                </div>
+              )}
               {selected.statut === "TRANSFERE" && (
                 <div className="p-3 rounded-md bg-muted/50 border border-border text-xs text-muted-foreground">
                   ✅ Transfert exécuté : {f(selected.montant)} MRU débité du solde Cordon et crédité au solde TVA intérieure du même certificat.
