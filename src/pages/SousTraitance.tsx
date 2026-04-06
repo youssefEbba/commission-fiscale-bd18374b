@@ -7,7 +7,7 @@ import {
   SousTraitanceOnboardingRequest, SOUS_TRAITANCE_STATUT_LABELS,
   SOUS_TRAITANCE_DOCUMENT_TYPES, TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
-  entrepriseApi, EntrepriseDto,
+  entrepriseApi, EntrepriseDto, utilisateurApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ const SousTraitance = () => {
 
     const [certsResult, entsResult] = await Promise.allSettled([
       certsPromise,
-      entrepriseApi.getAll(),
+      utilisateurApi.getEntreprisesSousTraitantes(),
     ]);
 
     if (certsResult.status === "fulfilled") {
