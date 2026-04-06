@@ -26,6 +26,7 @@ interface AuthUser {
   nomComplet: string;
   autoriteContractanteId?: number;
   entrepriseId?: number;
+  permissions?: string[];
 }
 
 interface AuthContextType {
