@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, FileText, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, FileText, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
@@ -27,6 +27,9 @@ const STATUT_COLORS: Record<StatutTransfert, string> = {
   TRANSFERE: "bg-green-100 text-green-800",
   REJETE: "bg-red-100 text-red-800",
 };
+
+/** Visible statuses in filter dropdown (VALIDE is not used by backend) */
+const VISIBLE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "TRANSFERE", "REJETE"];
 
 const Transferts = () => {
   const { user } = useAuth();
@@ -38,8 +41,9 @@ const Transferts = () => {
   const [filterStatut, setFilterStatut] = useState("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  // Create dialog
+  // Create / re-submit dialog
   const [showCreate, setShowCreate] = useState(false);
+  const [resubmitTarget, setResubmitTarget] = useState<TransfertCreditDto | null>(null);
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [form, setForm] = useState<Partial<CreateTransfertCreditRequest>>({});
   const [creating, setCreating] = useState(false);
@@ -48,7 +52,7 @@ const Transferts = () => {
   const [selected, setSelected] = useState<TransfertCreditDto | null>(null);
 
   // Document dialog
-  const [docDialog, setDocDialog] = useState<number | null>(null);
+  const [docDialog, setDocDialog] = useState<TransfertCreditDto | null>(null);
   const [docs, setDocs] = useState<DocumentTransfertCreditDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
@@ -61,32 +65,60 @@ const Transferts = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // ---------- Create new ----------
   const openCreate = async () => {
+    setResubmitTarget(null);
     setForm({ operationsDouaneCloturees: true });
     try {
       const certs = role === "ENTREPRISE" && user?.entrepriseId
         ? await certificatCreditApi.getByEntreprise(user.entrepriseId)
         : await certificatCreditApi.getAll();
-      setCertificats(certs.filter(c => c.statut === "OUVERT"));
+      // Filter out certs that already have an active (non-REJETE) transfert
+      const activeCertIds = new Set(
+        data.filter(t => t.statut !== "REJETE").map(t => t.certificatCreditId)
+      );
+      setCertificats(certs.filter(c => c.statut === "OUVERT" && !activeCertIds.has(c.id)));
     } catch { /* ignore */ }
+    setShowCreate(true);
+  };
+
+  // ---------- Re-submit after REJETE ----------
+  const openResubmit = (t: TransfertCreditDto) => {
+    setResubmitTarget(t);
+    setForm({
+      certificatCreditId: t.certificatCreditId,
+      montant: undefined,
+      operationsDouaneCloturees: true,
+    });
+    setCertificats([]); // not needed, cert is fixed
     setShowCreate(true);
   };
 
   const selectedCert = certificats.find(c => c.id === form.certificatCreditId);
 
   const handleCreate = async () => {
-    if (!form.certificatCreditId || !form.montant) {
+    const certId = resubmitTarget ? resubmitTarget.certificatCreditId : form.certificatCreditId;
+    if (!certId || !form.montant) {
       toast({ title: "Erreur", description: "Certificat et montant sont requis", variant: "destructive" });
       return;
     }
-    if (selectedCert && form.montant > (selectedCert.soldeCordon ?? 0)) {
+    if (!resubmitTarget && selectedCert && form.montant > (selectedCert.soldeCordon ?? 0)) {
       toast({ title: "Erreur", description: "Le montant dépasse le solde Cordon disponible", variant: "destructive" });
       return;
     }
     setCreating(true);
     try {
-      await transfertCreditApi.create(form as CreateTransfertCreditRequest);
-      toast({ title: "Succès", description: "Demande de renonciation créée" });
+      await transfertCreditApi.create({
+        certificatCreditId: certId,
+        montant: form.montant,
+        operationsDouaneCloturees: form.operationsDouaneCloturees,
+      });
+      toast({
+        title: "Succès",
+        description: resubmitTarget
+          ? "Demande renvoyée — les anciennes pièces sont désactivées, veuillez re-déposer les 3 documents"
+          : "Demande de renonciation créée",
+      });
       setShowCreate(false);
       fetchData();
     } catch (e: any) {
@@ -116,10 +148,10 @@ const Transferts = () => {
     } finally { setActionLoading(null); }
   };
 
-  const openDocs = async (id: number) => {
-    setDocDialog(id);
+  const openDocs = async (t: TransfertCreditDto) => {
+    setDocDialog(t);
     setDocsLoading(true);
-    try { setDocs(await transfertCreditApi.getDocuments(id)); } catch { setDocs([]); }
+    try { setDocs(await transfertCreditApi.getDocuments(t.id)); } catch { setDocs([]); }
     finally { setDocsLoading(false); }
   };
 
@@ -141,6 +173,10 @@ const Transferts = () => {
   const canCreate = role === "ENTREPRISE";
   const canValidate = role === "DGTCP";
   const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
+
+  /** Upload allowed only in DEMANDE or EN_COURS */
+  const canUploadDocs = (t: TransfertCreditDto) =>
+    role === "ENTREPRISE" && (t.statut === "DEMANDE" || t.statut === "EN_COURS");
 
   return (
     <DashboardLayout>
@@ -172,7 +208,7 @@ const Transferts = () => {
             <SelectTrigger className="w-48"><Filter className="h-4 w-4 mr-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(TRANSFERT_STATUT_LABELS).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              {VISIBLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{TRANSFERT_STATUT_LABELS[k]}</SelectItem>))}
             </SelectContent>
           </Select>
         </div>
@@ -212,7 +248,14 @@ const Transferts = () => {
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => setSelected(t)}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="sm" onClick={() => openDocs(t.id)}><FileText className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => openDocs(t)}><FileText className="h-4 w-4" /></Button>
+                          {/* Re-submit after REJETE */}
+                          {canCreate && t.statut === "REJETE" && (
+                            <Button variant="outline" size="sm" onClick={() => openResubmit(t)}>
+                              <RotateCcw className="h-4 w-4 mr-1" /> Renvoyer
+                            </Button>
+                          )}
+                          {/* DGTCP validate/reject */}
                           {canValidate && (t.statut === "DEMANDE" || t.statut === "EN_COURS") && (
                             <>
                               <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
@@ -254,33 +297,44 @@ const Transferts = () => {
                   ✅ Transfert exécuté : {f(selected.montant)} MRU débité du solde Cordon et crédité au solde TVA intérieure du même certificat.
                 </div>
               )}
+              {selected.statut === "REJETE" && (
+                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/30 text-xs text-destructive">
+                  ❌ Demande rejetée par la DGTCP. Vous pouvez renvoyer une nouvelle demande avec un montant corrigé — les anciennes pièces seront désactivées.
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Create dialog */}
+      {/* Create / re-submit dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Renonciation aux importations</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">Transférer un montant du solde Cordon (douane) vers le solde TVA intérieure du même certificat.</p>
+            <DialogTitle>{resubmitTarget ? "Renvoyer la demande" : "Renonciation aux importations"}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {resubmitTarget
+                ? `Certificat ${resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}`} — les anciennes pièces seront désactivées, vous devrez re-déposer les 3 documents.`
+                : "Transférer un montant du solde Cordon (douane) vers le solde TVA intérieure du même certificat."}
+            </p>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Certificat (OUVERT)</Label>
-              <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
-                <SelectContent>
-                  {certificats.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.numero || `Cert #${c.id}`} — Cordon: {f(c.soldeCordon)} | TVA: {f(c.soldeTVA)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedCert && (
+            {!resubmitTarget && (
+              <div>
+                <Label>Certificat (OUVERT)</Label>
+                <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
+                  <SelectContent>
+                    {certificats.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.numero || `Cert #${c.id}`} — Cordon: {f(c.soldeCordon)} | TVA: {f(c.soldeTVA)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {!resubmitTarget && selectedCert && (
               <div className="p-3 rounded-md bg-muted/50 border border-border text-xs space-y-1">
                 <div className="flex justify-between"><span className="text-muted-foreground">Solde Cordon (douane)</span><span className="font-medium">{f(selectedCert.soldeCordon)} MRU</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Solde TVA (intérieur)</span><span className="font-medium">{f(selectedCert.soldeTVA)} MRU</span></div>
@@ -289,7 +343,7 @@ const Transferts = () => {
             <div>
               <Label>Montant à transférer (Cordon → TVA)</Label>
               <Input type="number" min={1} max={selectedCert?.soldeCordon ?? undefined} value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
-              {selectedCert && form.montant && form.montant > (selectedCert.soldeCordon ?? 0) && (
+              {!resubmitTarget && selectedCert && form.montant && form.montant > (selectedCert.soldeCordon ?? 0) && (
                 <p className="text-xs text-destructive mt-1">Le montant dépasse le solde Cordon disponible ({f(selectedCert.soldeCordon)} MRU)</p>
               )}
             </div>
@@ -302,22 +356,22 @@ const Transferts = () => {
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
             <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Soumettre la renonciation
+              {resubmitTarget ? "Renvoyer la demande" : "Soumettre la renonciation"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* GED Document dialog */}
+      {/* GED Document dialog — upload only if DEMANDE/EN_COURS */}
       <DocumentGED
         open={docDialog !== null}
         onOpenChange={() => setDocDialog(null)}
-        title={`Documents — Transfert #${docDialog}`}
-        dossierId={docDialog}
+        title={`Documents — Transfert #${docDialog?.id}`}
+        dossierId={docDialog?.id ?? null}
         documentTypes={TRANSFERT_DOCUMENT_TYPES}
         documents={docs}
         loading={docsLoading}
-        canUpload={role === "ENTREPRISE"}
+        canUpload={docDialog ? canUploadDocs(docDialog) : false}
         onUpload={handleGEDUpload}
         onRefresh={refreshDocs}
       />
