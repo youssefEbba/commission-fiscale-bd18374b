@@ -8,6 +8,50 @@ interface RequestOptions {
   skipAuthRedirect?: boolean;
 }
 
+// Structured error from the backend (GlobalExceptionHandler)
+export interface ApiError {
+  timestamp?: string;
+  status: number;
+  code: string;
+  message: string;
+  error?: string;
+  details?: unknown;
+}
+
+export class ApiRequestError extends Error {
+  status: number;
+  code: string;
+  details?: unknown;
+
+  constructor(apiError: ApiError) {
+    super(apiError.message || apiError.error || `Erreur ${apiError.status}`);
+    this.name = "ApiRequestError";
+    this.status = apiError.status;
+    this.code = apiError.code;
+    this.details = apiError.details;
+  }
+}
+
+// Known backend error codes
+export const ApiErrorCode = {
+  RESOURCE_NOT_FOUND: "RESOURCE_NOT_FOUND",
+  ACCESS_DENIED: "ACCESS_DENIED",
+  ROLE_FORBIDDEN: "ROLE_FORBIDDEN",
+  CONFLICT: "CONFLICT",
+  BUSINESS_RULE_VIOLATION: "BUSINESS_RULE_VIOLATION",
+  WORKFLOW_TRANSITION_INVALID: "WORKFLOW_TRANSITION_INVALID",
+  VALIDATION_FAILED: "VALIDATION_FAILED",
+  AUTH_REQUIRED: "AUTH_REQUIRED",
+  INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
+  STORAGE_UPLOAD_FAILED: "STORAGE_UPLOAD_FAILED",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+  FILE_TOO_LARGE: "FILE_TOO_LARGE",
+} as const;
+
+export function isApiError(err: unknown): err is ApiRequestError {
+  return err instanceof ApiRequestError;
+}
+
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const token = localStorage.getItem("auth_token");
 
@@ -31,32 +75,38 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   });
 
   if (!res.ok) {
+    // Try to parse structured error response
+    const text = await res.text().catch(() => "");
+    let apiError: ApiError | null = null;
+    if (text) {
+      try {
+        const json = JSON.parse(text);
+        if (json.code && json.message) {
+          apiError = json as ApiError;
+        } else {
+          // Legacy format: build a pseudo ApiError
+          const msg = json.message || json.error || `Erreur ${res.status}`;
+          apiError = { status: res.status, code: "UNKNOWN", message: msg };
+        }
+      } catch {
+        if (text.length < 200 && !text.startsWith("<")) {
+          apiError = { status: res.status, code: "UNKNOWN", message: text };
+        }
+      }
+    }
+    if (!apiError) {
+      apiError = { status: res.status, code: "UNKNOWN", message: `Erreur ${res.status}` };
+    }
+
+    // Auth redirect on 401
     if (res.status === 401 && !options.skipAuthRedirect) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
       window.location.href = "/login";
-      throw new Error("Session expirée");
+      throw new ApiRequestError(apiError);
     }
-    if (res.status === 401) {
-      throw new Error("Non autorisé");
-    }
-    if (res.status === 403) {
-      throw new Error("Accès refusé");
-    }
-    const text = await res.text().catch(() => "");
-    let errorMsg = `Erreur ${res.status}`;
-    if (text) {
-      try {
-        const json = JSON.parse(text);
-        errorMsg = json.message || json.error || errorMsg;
-      } catch {
-        // If text is short enough, use it; otherwise use generic message
-        if (text.length < 200 && !text.startsWith("<")) {
-          errorMsg = text;
-        }
-      }
-    }
-    throw new Error(errorMsg);
+
+    throw new ApiRequestError(apiError);
   }
 
   if (res.status === 204) return undefined as T;
