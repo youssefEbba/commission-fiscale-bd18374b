@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { useAuth } from "@/contexts/AuthContext";
 import { delegueApi, DelegueDto, CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Plus, RefreshCw, Loader2, Search, UserCheck, UserX } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Users, Plus, RefreshCw, Loader2, Search, UserCheck, UserX, MoreHorizontal, Pencil, FileText } from "lucide-react";
+import DelegueEditDialog from "@/components/delegues/DelegueEditDialog";
+import DelegueMarchesDialog from "@/components/delegues/DelegueMarchesDialog";
 
 const Delegues = () => {
   const { toast } = useToast();
@@ -23,6 +25,12 @@ const Delegues = () => {
   const [form, setForm] = useState<CreateDelegueRequest>({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
   const [creating, setCreating] = useState(false);
   const [toggling, setToggling] = useState<number | null>(null);
+
+  // Edit & Marches dialogs
+  const [editDelegue, setEditDelegue] = useState<DelegueDto | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [marchesDelegue, setMarchesDelegue] = useState<DelegueDto | null>(null);
+  const [marchesOpen, setMarchesOpen] = useState(false);
 
   const fetchDelegues = async () => {
     setLoading(true);
@@ -138,16 +146,30 @@ const Delegues = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant={d.actif ? "destructive" : "default"}
-                            size="sm"
-                            disabled={toggling === d.id}
-                            onClick={() => toggleActif(d)}
-                          >
-                            {toggling === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> :
-                              d.actif ? <UserX className="h-4 w-4 mr-1" /> : <UserCheck className="h-4 w-4 mr-1" />}
-                            {d.actif ? "Désactiver" : "Activer"}
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => { setEditDelegue(d); setEditOpen(true); }}>
+                                <Pencil className="h-4 w-4 mr-2" /> Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setMarchesDelegue(d); setMarchesOpen(true); }}>
+                                <FileText className="h-4 w-4 mr-2" /> Marchés rattachés
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => toggleActif(d)}
+                                disabled={toggling === d.id}
+                                className={d.actif ? "text-destructive" : ""}
+                              >
+                                {toggling === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> :
+                                  d.actif ? <UserX className="h-4 w-4 mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
+                                {d.actif ? "Désactiver" : "Activer"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -203,6 +225,12 @@ const Delegues = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <DelegueEditDialog delegue={editDelegue} open={editOpen} onOpenChange={setEditOpen} onUpdated={fetchDelegues} />
+
+      {/* Marches Dialog */}
+      <DelegueMarchesDialog delegue={marchesDelegue} open={marchesOpen} onOpenChange={setMarchesOpen} />
     </DashboardLayout>
   );
 };

@@ -644,10 +644,27 @@ export interface CreateDelegueRequest {
   email?: string;
 }
 
+export interface UpdateDelegueRequest {
+  nomComplet?: string;
+  email?: string;
+  newPassword?: string;
+}
+
+export interface DelegueMarcheDto {
+  id: number;
+  objet?: string;
+  reference?: string;
+  statut?: string;
+}
+
 export const delegueApi = {
   getAll: () => apiFetch<DelegueDto[]>("/delegues"),
+  getById: (id: number) => apiFetch<DelegueDto>(`/delegues/${id}`),
   create: (data: CreateDelegueRequest) => apiFetch<DelegueDto>("/delegues", { method: "POST", body: data }),
+  update: (id: number, data: UpdateDelegueRequest) => apiFetch<DelegueDto>(`/delegues/${id}`, { method: "PATCH", body: data }),
   setActif: (id: number, actif: boolean) => apiFetch<DelegueDto>(`/delegues/${id}/actif?actif=${actif}`, { method: "PATCH" }),
+  getMarches: (id: number) => apiFetch<DelegueMarcheDto[]>(`/delegues/${id}/marches`),
+  syncMarches: (id: number, marcheIds: number[]) => apiFetch<void>(`/delegues/${id}/marches`, { method: "PUT", body: { marcheIds } }),
 };
 
 // Certificats de crédit (P3)
