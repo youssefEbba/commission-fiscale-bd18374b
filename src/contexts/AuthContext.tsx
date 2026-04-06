@@ -58,6 +58,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(getStoredUser);
 
   const login = (data: LoginResponse) => {
+    // Extract permissions from JWT payload if not in response
+    let permissions = data.permissions;
+    if (!permissions) {
+      try {
+        const payload = JSON.parse(atob(data.token.split(".")[1]));
+        if (Array.isArray(payload.permissions)) permissions = payload.permissions;
+      } catch { /* ignore */ }
+    }
     const authUser: AuthUser = {
       token: data.token,
       userId: data.userId,
@@ -66,6 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       nomComplet: data.nomComplet,
       autoriteContractanteId: data.autoriteContractanteId,
       entrepriseId: data.entrepriseId,
+      permissions,
     };
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("auth_user", JSON.stringify(authUser));
@@ -82,6 +91,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const hasRole = (roles: AppRole[]) => !!user && roles.includes(user.role);
   const hasPermission = (permission: string) => {
     if (!user) return false;
+    // Prefer JWT permissions if available
+    if (user.permissions && user.permissions.length > 0) {
+      return user.permissions.includes(permission);
+    }
+    // Fallback to hardcoded role permissions
     const perms = ROLE_PERMISSIONS[user.role] || [];
     return perms.includes(permission);
   };
