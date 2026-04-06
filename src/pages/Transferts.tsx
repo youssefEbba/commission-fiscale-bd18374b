@@ -157,6 +157,8 @@ const Transferts = () => {
 
   const refreshDocs = async (id: number) => {
     try { setDocs(await transfertCreditApi.getDocuments(id)); } catch { /* ignore */ }
+    // Refresh main list to catch DEMANDE→EN_COURS transition after upload
+    fetchData();
   };
 
   const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
