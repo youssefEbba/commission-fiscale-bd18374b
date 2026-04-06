@@ -1099,7 +1099,7 @@ export const documentRequirementApi = {
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
 };
 
-// Transferts de crédit (P7)
+// Transferts de crédit (P9)
 export type StatutTransfert = "DEMANDE" | "EN_COURS" | "VALIDE" | "TRANSFERE" | "REJETE";
 
 export interface TransfertCreditDto {
@@ -1108,7 +1108,7 @@ export interface TransfertCreditDto {
   certificatCreditId: number;
   certificatNumero?: string;
   entrepriseSourceId?: number;
-  montant: number;
+  montant: string | number; // BigDecimal → string from backend
   operationsDouaneCloturees?: boolean;
   statut: StatutTransfert;
 }
@@ -1149,6 +1149,8 @@ export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
 export const transfertCreditApi = {
   getAll: () => apiFetch<TransfertCreditDto[]>("/transferts-credit"),
   getById: (id: number) => apiFetch<TransfertCreditDto>(`/transferts-credit/${id}`),
+  getByCertificat: (certificatCreditId: number) =>
+    apiFetch<TransfertCreditDto>(`/transferts-credit/by-certificat/${certificatCreditId}`),
   create: (data: CreateTransfertCreditRequest) =>
     apiFetch<TransfertCreditDto>("/transferts-credit", { method: "POST", body: data }),
   valider: (id: number) =>
