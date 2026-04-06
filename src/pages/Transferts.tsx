@@ -32,7 +32,7 @@ const STATUT_COLORS: Record<StatutTransfert, string> = {
 const VISIBLE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "TRANSFERE", "REJETE"];
 
 const Transferts = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [data, setData] = useState<TransfertCreditDto[]>([]);
@@ -171,7 +171,8 @@ const Transferts = () => {
   });
 
   const canCreate = role === "ENTREPRISE";
-  const canValidate = role === "DGTCP";
+  const canValider = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.validate");
+  const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
   const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
 
   /** Upload allowed only in DEMANDE or EN_COURS */
