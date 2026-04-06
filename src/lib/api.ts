@@ -109,6 +109,7 @@ export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
   getByEntreprise: (entrepriseId: number) => apiFetch<UtilisateurDto[]>(`/utilisateurs?entrepriseId=${entrepriseId}`),
   getSousTraitants: () => apiFetch<EntrepriseDto[]>("/utilisateurs/sous-traitants"),
+  getEntreprisesSousTraitantes: () => apiFetch<EntrepriseDto[]>("/sous-traitances/entreprises-sous-traitantes"),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
@@ -1140,8 +1141,8 @@ export const TRANSFERT_DOCUMENT_TYPES: { value: TypeDocumentTransfert; label: st
 
 export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
   DEMANDE: "Demandé",
-  EN_COURS: "En cours",
-  VALIDE: "Validé",
+  EN_COURS: "En cours (pièces déposées)",
+  VALIDE: "Ancien / réservé",
   TRANSFERE: "Transféré",
   REJETE: "Rejeté",
 };
