@@ -256,17 +256,21 @@ const Transferts = () => {
                               <RotateCcw className="h-4 w-4 mr-1" /> Renvoyer
                             </Button>
                           )}
-                          {/* DGTCP validate/reject */}
-                          {canValidate && (t.statut === "DEMANDE" || t.statut === "EN_COURS") && (
+                          {/* DGTCP / Président validate/reject */}
+                          {(canValider || canRejeter) && (t.statut === "DEMANDE" || t.statut === "EN_COURS") && (
                             <>
-                              <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
-                                {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                                Valider
-                              </Button>
-                              <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
-                                {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
-                                Rejeter
-                              </Button>
+                              {canValider && (
+                                <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
+                                  {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                                  Valider
+                                </Button>
+                              )}
+                              {canRejeter && (
+                                <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
+                                  {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                                  Rejeter
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
