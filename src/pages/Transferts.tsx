@@ -32,7 +32,7 @@ const STATUT_COLORS: Record<StatutTransfert, string> = {
 const VISIBLE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "TRANSFERE", "REJETE"];
 
 const Transferts = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [data, setData] = useState<TransfertCreditDto[]>([]);
@@ -171,7 +171,8 @@ const Transferts = () => {
   });
 
   const canCreate = role === "ENTREPRISE";
-  const canValidate = role === "DGTCP";
+  const canValider = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.validate");
+  const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
   const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
 
   /** Upload allowed only in DEMANDE or EN_COURS */
@@ -255,17 +256,21 @@ const Transferts = () => {
                               <RotateCcw className="h-4 w-4 mr-1" /> Renvoyer
                             </Button>
                           )}
-                          {/* DGTCP validate/reject */}
-                          {canValidate && (t.statut === "DEMANDE" || t.statut === "EN_COURS") && (
+                          {/* DGTCP / Président validate/reject */}
+                          {(canValider || canRejeter) && (t.statut === "DEMANDE" || t.statut === "EN_COURS") && (
                             <>
-                              <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
-                                {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                                Valider
-                              </Button>
-                              <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
-                                {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
-                                Rejeter
-                              </Button>
+                              {canValider && (
+                                <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
+                                  {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                                  Valider
+                                </Button>
+                              )}
+                              {canRejeter && (
+                                <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
+                                  {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                                  Rejeter
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
