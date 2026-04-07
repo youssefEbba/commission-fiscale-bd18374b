@@ -39,12 +39,15 @@ export function useNotifications() {
           + "?token=" + encodeURIComponent(user.token);
         return new WebSocket(wsUrl);
       },
+      connectHeaders: {
+        Authorization: `Bearer ${user.token}`,
+      },
       reconnectDelay: 15000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
-      debug: () => {}, // silence STOMP debug logs
+      debug: () => {},
       onConnect: () => {
-        console.info("WS notifications connecté");
+        console.info("WS notifications connecté (STOMP CONNECT OK)");
         client.subscribe(`/topic/notifications/user/${user.userId}`, (message) => {
           try {
             const notif: NotificationDto = JSON.parse(message.body);
@@ -69,9 +72,11 @@ export function useNotifications() {
           }
         });
       },
-      onStompError: () => {},
+      onStompError: (frame) => {
+        console.warn("STOMP error:", frame.headers?.message || frame.body || "unknown");
+      },
       onWebSocketError: () => {
-        // WS not available (ngrok limitation) — silent, will use polling fallback
+        // WS not available — silent, will use polling fallback
       },
     });
 
