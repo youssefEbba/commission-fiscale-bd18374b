@@ -30,7 +30,8 @@ function formatNumber(n: number): string {
   return new Intl.NumberFormat("fr-FR").format(n);
 }
 
-function formatCurrency(n: number): string {
+function formatCurrency(n: number | null | undefined): string {
+  if (n == null || isNaN(n)) return "0 MRU";
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "MRU", maximumFractionDigits: 0 }).format(n);
 }
 
