@@ -550,14 +550,25 @@ const UtilisationDetail = () => {
                     </div>
                   </div>
                 ))}
-                {/* Resolved decisions */}
-                {resolvedDecisions.map(d => (
-                  <div key={d.id} className={`p-2 rounded border text-sm ${d.decision === "VISA" ? "border-emerald-300 bg-emerald-50/50" : "border-muted bg-muted/30"}`}>
+                {/* Visa decisions */}
+                {visaDecisions.map(d => (
+                  <div key={d.id} className="p-2 rounded border text-sm border-emerald-300 bg-emerald-50/50">
                     <div className="flex items-center gap-2">
-                      <Badge variant={d.decision === "VISA" ? "default" : "secondary"} className="text-[10px]">{d.decision}</Badge>
+                      <Badge variant="default" className="text-[10px]">VISA</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
-                      {d.rejetTempStatus === "RESOLU" && <Badge className="text-[10px] bg-emerald-100 text-emerald-800">Résolu</Badge>}
+                    </div>
+                    {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
+                  </div>
+                ))}
+                {/* Resolved rejets (NOT visas) */}
+                {resolvedRejets.map(d => (
+                  <div key={d.id} className="p-2 rounded border text-sm border-muted bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-[10px]">REJET_TEMP</Badge>
+                      <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                      <Badge className="text-[10px] bg-emerald-100 text-emerald-800">Résolu</Badge>
                     </div>
                     {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
                   </div>
