@@ -674,16 +674,17 @@ const Demandes = () => {
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
                             const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
                             const allRejetsResolved = hasRejet && openRejets.length === 0;
-                            const myDecision = decs.find(dec => dec.role === role);
+                            const myRoleDecs = decs.filter(dec => dec.role === role);
+                            const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
 
                             const badgeContent = blocked
                               ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">⏳ Visa DGD</Badge>
+                              : myHasVisa
+                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">Visa apposé</Badge>
                               : hasRejet && !allRejetsResolved
                               ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">Rejet en cours</Badge>
-                              : allRejetsResolved && !myDecision?.decision
+                              : allRejetsResolved
                               ? <Badge className="bg-emerald-100 text-emerald-800 text-xs cursor-pointer">Rejets résolus</Badge>
-                              : myDecision?.decision === "VISA"
-                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">Visa apposé</Badge>
                               : <span className="text-muted-foreground text-xs">—</span>;
 
                             const allRejets = [
