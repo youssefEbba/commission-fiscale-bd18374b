@@ -5,6 +5,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
   DecisionCorrectionDto, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
+  ReclamationDemandeCorrectionDto, RECLAMATION_STATUT_LABELS,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
