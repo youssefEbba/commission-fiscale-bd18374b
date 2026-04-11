@@ -192,6 +192,13 @@ const DemandeDetail = () => {
       } catch {
         setDocs(full.documents || []);
       }
+      // Fetch reclamations
+      if (["ADOPTEE", "NOTIFIEE", "RECUE", "EN_EVALUATION", "EN_VALIDATION"].includes(full.statut)) {
+        try {
+          const recs = await demandeCorrectionApi.getReclamations(Number(id));
+          setReclamations(recs);
+        } catch { setReclamations([]); }
+      }
     } catch (e: any) {
       toast({ title: "Erreur", description: "Impossible de charger la demande", variant: "destructive" });
     } finally {
