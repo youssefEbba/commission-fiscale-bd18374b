@@ -155,6 +155,24 @@ const DemandeDetail = () => {
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
 
+  // Adoption with lettre upload (President)
+  const [adoptionOpen, setAdoptionOpen] = useState(false);
+  const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
+  const [adoptionUploading, setAdoptionUploading] = useState(false);
+
+  // Réclamations
+  const [reclamations, setReclamations] = useState<ReclamationDemandeCorrectionDto[]>([]);
+  const [reclamationsLoading, setReclamationsLoading] = useState(false);
+  const [reclamationOpen, setReclamationOpen] = useState(false);
+  const [reclamationTexte, setReclamationTexte] = useState("");
+  const [reclamationFile, setReclamationFile] = useState<File | null>(null);
+  const [reclamationSubmitting, setReclamationSubmitting] = useState(false);
+  const [traiterReclamationId, setTraiterReclamationId] = useState<number | null>(null);
+  const [traiterAcceptee, setTraiterAcceptee] = useState(true);
+  const [traiterMotif, setTraiterMotif] = useState("");
+  const [traiterOpen, setTraiterOpen] = useState(false);
+  const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
     DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
   };
