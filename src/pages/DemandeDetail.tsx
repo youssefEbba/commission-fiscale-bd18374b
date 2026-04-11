@@ -761,7 +761,7 @@ const DemandeDetail = () => {
                   }
 
                   const DOC_LABEL_MAP: Record<string, string> = {};
-                  DOCUMENT_TYPES_REQUIS.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
+                  ALL_DOCUMENT_TYPES.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
 
                   const isIncomplete = selected.statut === "INCOMPLETE";
                   const allowedDocTypes = isIncomplete
@@ -926,7 +926,7 @@ const DemandeDetail = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
                 <SelectContent>
-                  {(uploadAllowedTypes.length > 0 ? DOCUMENT_TYPES_REQUIS.filter(t => uploadAllowedTypes.includes(t.value)) : DOCUMENT_TYPES_REQUIS).map((t) => (
+                  {(uploadAllowedTypes.length > 0 ? ALL_DOCUMENT_TYPES.filter(t => uploadAllowedTypes.includes(t.value)) : ALL_DOCUMENT_TYPES).map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
