@@ -817,14 +817,19 @@ const CorrectionDouaniere = () => {
                             <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-1" />
                             <p className="font-semibold text-green-700 text-sm">Visa apposé</p>
                           </>
+                        ) : myDecision.rejetTempStatus === "RESOLU" ? (
+                          <>
+                            <CheckCircle className="h-8 w-8 text-emerald-600 mx-auto mb-1" />
+                            <p className="font-semibold text-emerald-700 text-sm">Rejet résolu</p>
+                            <p className="text-xs text-muted-foreground mt-1">Le rejet a été résolu — vous pouvez maintenant apposer votre visa</p>
+                          </>
                         ) : (
                           <>
                             <XCircle className="h-8 w-8 text-red-600 mx-auto mb-1" />
-                            <p className="font-semibold text-red-700 text-sm">Rejet temporaire</p>
+                            <p className="font-semibold text-red-700 text-sm">Rejet temporaire en cours</p>
                             {myDecision.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{myDecision.motifRejet}</p>}
                           </>
                         )}
-                        <p className="text-xs text-muted-foreground mt-2">Vous pouvez changer votre décision</p>
                       </div>
                     ) : null}
 
@@ -1105,6 +1110,26 @@ const CorrectionDouaniere = () => {
             <DialogDescription>Envoyez un message de justification à l'organisme ayant émis le rejet.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {/* Afficher les documents demandés par ce rejet */}
+            {(() => {
+              const rejetDec = decisions.find(d => d.id === responseDecisionId);
+              if (!rejetDec?.documentsDemandes?.length) return null;
+              return (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-xs font-medium text-amber-800 mb-1.5">📋 Documents demandés par ce rejet :</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rejetDec.documentsDemandes.map((dt: string) => (
+                      <Badge key={dt} variant="outline" className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
+                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                      </Badge>
+                    ))}
+                  </div>
+                  {rejetDec.motifRejet && (
+                    <p className="text-xs text-amber-700 italic mt-2">Motif : {rejetDec.motifRejet}</p>
+                  )}
+                </div>
+              );
+            })()}
             <Textarea
               placeholder="Votre message de justification..."
               value={responseMessage}
