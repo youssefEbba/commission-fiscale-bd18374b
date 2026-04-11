@@ -178,14 +178,11 @@ const MiseEnPlaceDetail = () => {
   const marcheRef = c.marcheIntitule || marche?.numeroMarche || "—";
 
   // ===== WORKFLOW LOGIC (from backend rules) =====
-  // For the active tab's role, get decisions
-  const getMyDecisionForRole = (r: string) => decisions.find(d => d.role === r);
-  const getMyDecision = () => getMyDecisionForRole(role as string);
-
-  const myDecision = getMyDecision();
-  const myHasVisa = myDecision?.decision === "VISA";
-  const myHasOpenRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "OUVERT";
-  const myHasResolvedRejet = myDecision?.decision === "REJET_TEMP" && myDecision?.rejetTempStatus === "RESOLU";
+  // For the current user's role, check ALL decisions (multiple REJET_TEMP possible per role)
+  const myRoleDecs = decisions.filter(d => d.role === (role as string));
+  const myHasVisa = myRoleDecs.some(d => d.decision === "VISA");
+  const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
+  const myHasOpenRejet = myOpenRejets.length > 0;
 
   // Roles that can participate in parallel visa workflow (EN_CONTROLE)
   const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string);
@@ -197,7 +194,9 @@ const MiseEnPlaceDetail = () => {
 
   // During EN_CONTROLE: DGI, DGD, DGTCP give parallel visas
   const isInControle = c.statut === "EN_CONTROLE" || c.statut === "INCOMPLETE" || c.statut === "A_RECONTROLER";
+  // VISA only if no open rejets for this role AND no existing visa
   const canDoVisa = isControlRole && isInControle && !myHasVisa && !myHasOpenRejet;
+  // New REJET_TEMP only if no existing visa for this role
   const canDoRejetTemp = isControlRole && isInControle && !myHasVisa;
 
   // DGTCP must enter montants before visa (during EN_CONTROLE phase)
@@ -343,11 +342,10 @@ const MiseEnPlaceDetail = () => {
   // ===== Organism tab content =====
   const r = activeOrg;
   const roleDecs = decisions.filter(d => d.role === r);
-  const tabDecision = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
   const resolvedRejets = allRejets.filter(d => d.rejetTempStatus === "RESOLU");
-  const tabHasVisa = tabDecision?.decision === "VISA";
+  const tabHasVisa = roleDecs.some(d => d.decision === "VISA");
   const tabHasRejets = allRejets.length > 0;
   const tabAllResolved = tabHasRejets && openRejets.length === 0 && resolvedRejets.length > 0;
   const isMyTab = (role as string) === r;
@@ -510,8 +508,7 @@ const MiseEnPlaceDetail = () => {
             <div className="flex border-b border-border mb-3 gap-0">
               {DECISION_ROLES_LIST.map((orgRole) => {
                 const orgDecs = decisions.filter(d => d.role === orgRole);
-                const orgLatest = orgDecs.length > 0 ? orgDecs[orgDecs.length - 1] : undefined;
-                const orgHasVisa = orgLatest?.decision === "VISA";
+                const orgHasVisa = orgDecs.some(d => d.decision === "VISA");
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
@@ -534,10 +531,10 @@ const MiseEnPlaceDetail = () => {
               <div className="text-center mb-3">
                 {tabHasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : tabAllResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : tabHasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
-                {tabHasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">✓ Visa apposé — Plus d'actions possibles</p>}
+                {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return <p className="text-green-700 font-medium text-xs mt-0.5">✓ Visa apposé — Plus d'actions possibles</p>; })()}
                 {tabAllResolved && !tabHasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets résolus — Peut viser</p>}
-                {!tabDecision && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
-                {tabHasVisa && tabDecision?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(tabDecision.dateDecision).toLocaleDateString("fr-FR")}</p>}
+                {!tabHasVisa && !tabHasRejets && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return vd?.dateDecision ? <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(vd.dateDecision).toLocaleDateString("fr-FR")}</p> : null; })()}
               </div>
 
               {/* Open rejets */}
