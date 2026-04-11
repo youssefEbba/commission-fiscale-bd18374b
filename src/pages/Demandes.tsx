@@ -671,13 +671,17 @@ const Demandes = () => {
                             const isPres = (role as string) === "PRESIDENT";
                             const blocked = !isCurrentDGD && !isPres && !dgdVisa;
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
+                            const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
                             const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
+                            const allRejetsResolved = hasRejet && openRejets.length === 0;
                             const myDecision = decs.find(dec => dec.role === role);
 
                             const badgeContent = blocked
                               ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">⏳ Visa DGD</Badge>
-                              : hasRejet
+                              : hasRejet && !allRejetsResolved
                               ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">Rejet en cours</Badge>
+                              : allRejetsResolved && !myDecision?.decision
+                              ? <Badge className="bg-emerald-100 text-emerald-800 text-xs cursor-pointer">Rejets résolus</Badge>
                               : myDecision?.decision === "VISA"
                               ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">Visa apposé</Badge>
                               : <span className="text-muted-foreground text-xs">—</span>;
@@ -805,31 +809,48 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 mr-2" /> Détail
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
-                                    <FileText className="h-4 w-4 mr-2" /> Éditer
-                                  </DropdownMenuItem>
+                                  {!hasRole(["DGD", "DGI", "DGTCP", "DGB"]) && (
+                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
+                                      <FileText className="h-4 w-4 mr-2" /> Éditer
+                                    </DropdownMenuItem>
+                                  )}
                                   {(() => {
-                                    const dgdVisa = (d.decisions || []).some(dec => dec.role === "DGD" && dec.decision === "VISA");
-                                    const isCurrentDGD = (role as string) === "DGD";
-                                    const isPres = (role as string) === "PRESIDENT";
-                                    const blocked = !isCurrentDGD && !isPres && !dgdVisa;
-                                    const myDecision = (d.decisions || []).find(dec => dec.role === role);
+                                    const myRoleDecs = (d.decisions || []).filter(dec => dec.role === role);
+                                    const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
+                                    const myOpenRejets = myRoleDecs.filter(dec => dec.decision === "REJET_TEMP" && dec.rejetTempStatus !== "RESOLU");
                                     const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
 
-                                    const actionItems = transitions
-                                      .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale)
-                                      .filter(t => !(t.to === "REJETEE" && myDecision?.decision === "REJET_TEMP"))
-                                      .map((t, idx) => (
+                                    const visaTransitions = transitions
+                                      .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.isVisa)
+                                      .filter(() => !myHasVisa && myOpenRejets.length === 0);
+
+                                    const rejetTransitions = transitions
+                                      .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.to === "REJETEE")
+                                      .filter(() => !myHasVisa);
+
+                                    const actionItems = [
+                                      ...visaTransitions.map((t, idx) => (
                                         <DropdownMenuItem
-                                          key={idx}
-                                          className={t.to === "REJETEE" ? "text-destructive focus:text-destructive" : ""}
+                                          key={`v-${idx}`}
                                           disabled={actionLoading === d.id}
-                                          onClick={() => t.to === "REJETEE" ? openRejectDialog(d.id) : checkAndHandleVisa(d.id)}
+                                          onClick={() => checkAndHandleVisa(d.id)}
                                         >
                                           <t.icon className="h-4 w-4 mr-2" />
                                           {t.label}
                                         </DropdownMenuItem>
-                                      ));
+                                      )),
+                                      ...rejetTransitions.map((t, idx) => (
+                                        <DropdownMenuItem
+                                          key={`r-${idx}`}
+                                          className="text-destructive focus:text-destructive"
+                                          disabled={actionLoading === d.id}
+                                          onClick={() => openRejectDialog(d.id)}
+                                        >
+                                          <t.icon className="h-4 w-4 mr-2" />
+                                          {myRoleDecs.some(dec => dec.decision === "REJET_TEMP") ? "Nouveau rejet temporaire" : t.label}
+                                        </DropdownMenuItem>
+                                      )),
+                                    ];
 
                                     return (
                                       <>
@@ -876,8 +897,8 @@ const Demandes = () => {
                 <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
                 <SelectContent>
                   {(uploadAllowedTypes.length > 0
-                    ? DOCUMENT_TYPES_REQUIS.filter(t => uploadAllowedTypes.includes(t.value))
-                    : DOCUMENT_TYPES_REQUIS
+                    ? ALL_DOCUMENT_TYPES.filter(t => uploadAllowedTypes.includes(t.value))
+                    : ALL_DOCUMENT_TYPES
                   ).map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
