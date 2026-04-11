@@ -334,11 +334,13 @@ const CorrectionDouaniere = () => {
   const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE";
 
-  // Current user's latest decision
-  const myDecision = [...decisions]
-    .filter(d => d.role === userRole)
+  // Current user's decisions (multi-rejet support)
+  const myRoleDecs = decisions.filter(d => d.role === userRole);
+  const myDecision = [...myRoleDecs]
     .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0] || null;
   const hasAnyRejet = decisions.some(d => d.decision === "REJET_TEMP");
+  const myHasVisa = myRoleDecs.some(d => d.decision === "VISA");
+  const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
 
   // DGD must validate first — block others if DGD hasn't visa'd
   const dgdHasVisa = decisions.some(d => d.role === "DGD" && d.decision === "VISA");
