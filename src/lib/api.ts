@@ -543,6 +543,32 @@ export interface DecisionCorrectionDto {
   rejetTempResponses?: RejetTempResponseDto[];
 }
 
+// Réclamation DTO
+export type ReclamationStatut = "SOUMISE" | "ACCEPTEE" | "REJETEE";
+
+export interface ReclamationDemandeCorrectionDto {
+  id: number;
+  demandeCorrectionId: number;
+  statut: ReclamationStatut;
+  texte: string;
+  pieceJointeNomFichier?: string;
+  pieceJointeChemin?: string;
+  pieceJointeTaille?: number;
+  pieceJointeDateUpload?: string;
+  dateCreation?: string;
+  dateTraitement?: string;
+  auteurUserId?: number;
+  auteurNom?: string;
+  traiteParUserId?: number;
+  motifReponse?: string;
+}
+
+export const RECLAMATION_STATUT_LABELS: Record<ReclamationStatut, string> = {
+  SOUMISE: "Soumise",
+  ACCEPTEE: "Acceptée",
+  REJETEE: "Rejetée",
+};
+
 export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
   { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
   { value: "OFFRE_FINANCIERE", label: "Offre financière (table de calcul)" },
@@ -598,10 +624,27 @@ export const demandeCorrectionApi = {
       method: "POST",
       body: { message },
     }),
-  // Résoudre manuellement un rejet temporaire (acteur déclenchant)
+  // Résoudre manuellement un rejet temporaire
   resolveRejetTemp: (decisionId: number) =>
     apiFetch<DecisionCorrectionDto>(`/demandes-correction/decisions/${decisionId}/resolve`, {
       method: "PUT",
+    }),
+  // Réclamations
+  getReclamations: (demandeId: number) =>
+    apiFetch<ReclamationDemandeCorrectionDto[]>(`/demandes-correction/${demandeId}/reclamations`),
+  createReclamation: (demandeId: number, texte: string, file: File) => {
+    const formData = new FormData();
+    formData.append("texte", texte);
+    formData.append("file", file);
+    return apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations`, {
+      method: "POST",
+      rawBody: formData,
+    });
+  },
+  traiterReclamation: (demandeId: number, reclamationId: number, acceptee: boolean, motifReponse?: string) =>
+    apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}`, {
+      method: "PATCH",
+      body: { acceptee, ...(motifReponse ? { motifReponse } : {}) },
     }),
 };
 

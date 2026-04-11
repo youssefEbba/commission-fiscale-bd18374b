@@ -6,6 +6,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
   DecisionCorrectionDto, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
+  ReclamationDemandeCorrectionDto, RECLAMATION_STATUT_LABELS,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  FileText, ArrowLeft, Upload, Loader2,
+  FileText, ArrowLeft, Upload, Loader2, Plus,
   CheckCircle, XCircle, Download, ExternalLink,
   AlertTriangle, Lock, Unlock, History, Info,
 } from "lucide-react";
@@ -154,6 +155,24 @@ const DemandeDetail = () => {
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
 
+  // Adoption with lettre upload (President)
+  const [adoptionOpen, setAdoptionOpen] = useState(false);
+  const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
+  const [adoptionUploading, setAdoptionUploading] = useState(false);
+
+  // Réclamations
+  const [reclamations, setReclamations] = useState<ReclamationDemandeCorrectionDto[]>([]);
+  const [reclamationsLoading, setReclamationsLoading] = useState(false);
+  const [reclamationOpen, setReclamationOpen] = useState(false);
+  const [reclamationTexte, setReclamationTexte] = useState("");
+  const [reclamationFile, setReclamationFile] = useState<File | null>(null);
+  const [reclamationSubmitting, setReclamationSubmitting] = useState(false);
+  const [traiterReclamationId, setTraiterReclamationId] = useState<number | null>(null);
+  const [traiterAcceptee, setTraiterAcceptee] = useState(true);
+  const [traiterMotif, setTraiterMotif] = useState("");
+  const [traiterOpen, setTraiterOpen] = useState(false);
+  const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
     DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
   };
@@ -172,6 +191,13 @@ const DemandeDetail = () => {
         setDocs(documents);
       } catch {
         setDocs(full.documents || []);
+      }
+      // Fetch reclamations
+      if (["ADOPTEE", "NOTIFIEE", "RECUE", "EN_EVALUATION", "EN_VALIDATION"].includes(full.statut)) {
+        try {
+          const recs = await demandeCorrectionApi.getReclamations(Number(id));
+          setReclamations(recs);
+        } catch { setReclamations([]); }
       }
     } catch (e: any) {
       toast({ title: "Erreur", description: "Impossible de charger la demande", variant: "destructive" });
@@ -301,45 +327,61 @@ const DemandeDetail = () => {
     }
   };
 
-  const generateAdoptionLetter = (demande: DemandeCorrectionDto): string => {
-    const date = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-    const decisions = (demande.decisions || []).filter(d => d.decision === "VISA");
-    return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Lettre d'adoption</title></head><body>
-      <h1>LETTRE D'ADOPTION</h1>
-      <p>Référence : ${demande.numero || `DC-${demande.id}`}</p>
-      <p>Date : ${date}</p>
-      <p>Autorité : ${demande.autoriteContractanteNom || "—"}</p>
-      <p>Entreprise : ${demande.entrepriseRaisonSociale || "—"}</p>
-      <p>Demande ADOPTÉE.</p>
-      <table border="1"><tr><th>Organisme</th><th>Agent</th><th>Date</th></tr>
-      ${decisions.map(d => `<tr><td>${d.role}</td><td>${d.utilisateurNom || "—"}</td><td>${d.dateDecision ? new Date(d.dateDecision).toLocaleDateString("fr-FR") : "—"}</td></tr>`).join("")}
-      </table></body></html>`;
-  };
-
-  const handleAdoptWithLetter = async (demandeId: number) => {
-    setActionLoading(demandeId);
+  const handleAdoptWithLetter = async () => {
+    if (!selected || !adoptionFile) return;
+    setAdoptionUploading(true);
     try {
-      await demandeCorrectionApi.updateStatut(demandeId, "ADOPTEE", undefined, true);
-      const demande = selected!;
-      const letterContent = generateAdoptionLetter(demande);
-      const blob = new Blob([letterContent], { type: "text/html" });
-      const filename = `Lettre_Adoption_${demande.numero || demandeId}.html`;
-      try {
-        const file = new File([blob], filename, { type: "text/html" });
-        await demandeCorrectionApi.uploadDocument(demandeId, "LETTRE_ADOPTION", file);
-        toast({ title: "Succès", description: "Demande adoptée et lettre enregistrée" });
-      } catch {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-        toast({ title: "Adoptée", description: "Lettre téléchargée localement." });
-      }
+      // 1. Upload lettre d'adoption
+      await demandeCorrectionApi.uploadDocument(selected.id, "LETTRE_ADOPTION", adoptionFile);
+      // 2. Appliquer la décision finale
+      await demandeCorrectionApi.updateStatut(selected.id, "ADOPTEE", undefined, true);
+      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption enregistrée" });
+      setAdoptionOpen(false);
+      setAdoptionFile(null);
       fetchDetail();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
-      setActionLoading(null);
+      setAdoptionUploading(false);
+    }
+  };
+
+  // Réclamation handlers
+  const handleCreateReclamation = async () => {
+    if (!selected || !reclamationTexte.trim() || !reclamationFile) return;
+    setReclamationSubmitting(true);
+    try {
+      await demandeCorrectionApi.createReclamation(selected.id, reclamationTexte.trim(), reclamationFile);
+      toast({ title: "Succès", description: "Réclamation déposée avec succès" });
+      setReclamationOpen(false);
+      setReclamationTexte("");
+      setReclamationFile(null);
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReclamationSubmitting(false);
+    }
+  };
+
+  const handleTraiterReclamation = async () => {
+    if (!selected || !traiterReclamationId) return;
+    if (!traiterAcceptee && !traiterMotif.trim()) {
+      toast({ title: "Motif requis", description: "Le motif est obligatoire pour un rejet.", variant: "destructive" });
+      return;
+    }
+    setTraiterSubmitting(true);
+    try {
+      await demandeCorrectionApi.traiterReclamation(selected.id, traiterReclamationId, traiterAcceptee, traiterMotif.trim() || undefined);
+      toast({ title: "Succès", description: traiterAcceptee ? "Réclamation acceptée — la demande repasse au statut REÇUE" : "Réclamation rejetée" });
+      setTraiterOpen(false);
+      setTraiterReclamationId(null);
+      setTraiterMotif("");
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setTraiterSubmitting(false);
     }
   };
 
@@ -901,7 +943,7 @@ const DemandeDetail = () => {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {transitions.filter(t => t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
-                          <Button key={`final-${idx}`} variant={t.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : handleAdoptWithLetter(selected.id)}>
+                          <Button key={`final-${idx}`} variant={t.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : setAdoptionOpen(true)}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                             {t.label}
                           </Button>
@@ -911,6 +953,129 @@ const DemandeDetail = () => {
                   </div>
                 );
               })()}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Réclamations Section */}
+        {(selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE" || reclamations.length > 0) && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" /> Réclamations
+                </h3>
+                {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE"]) &&
+                  (selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE") &&
+                  !reclamations.some(r => r.statut === "SOUMISE") && (
+                  <Button size="sm" variant="outline" onClick={() => setReclamationOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" /> Déposer une réclamation
+                  </Button>
+                )}
+              </div>
+              {reclamations.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">Aucune réclamation déposée.</p>
+              ) : (
+                <div className="space-y-3">
+                  {reclamations.map((rec) => (
+                    <div key={rec.id} className={`rounded-lg border p-4 space-y-2 ${
+                      rec.statut === "SOUMISE" ? "border-amber-300 bg-amber-50" :
+                      rec.statut === "ACCEPTEE" ? "border-green-300 bg-green-50" :
+                      "border-red-300 bg-red-50"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge className={`text-xs ${
+                            rec.statut === "SOUMISE" ? "bg-amber-100 text-amber-800" :
+                            rec.statut === "ACCEPTEE" ? "bg-green-100 text-green-800" :
+                            "bg-red-100 text-red-800"
+                          }`}>
+                            {RECLAMATION_STATUT_LABELS[rec.statut]}
+                          </Badge>
+                          {rec.auteurNom && <span className="text-xs text-muted-foreground">Par : {rec.auteurNom}</span>}
+                        </div>
+                        {rec.dateCreation && <span className="text-xs text-muted-foreground">{new Date(rec.dateCreation).toLocaleDateString("fr-FR")}</span>}
+                      </div>
+                      <p className="text-sm">{rec.texte}</p>
+                      {rec.pieceJointeNomFichier && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>{rec.pieceJointeNomFichier}</span>
+                          {rec.pieceJointeChemin && (
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.pieceJointeChemin!)}>
+                              <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      {rec.statut === "REJETEE" && rec.motifReponse && (
+                        <div className="rounded border border-red-200 bg-red-100/50 p-2 text-xs">
+                          <span className="font-medium">Motif du rejet : </span>{rec.motifReponse}
+                        </div>
+                      )}
+                      {rec.statut === "ACCEPTEE" && (
+                        <div className="rounded border border-green-200 bg-green-100/50 p-2 text-xs">
+                          <span className="font-medium">✅ Acceptée</span> — La demande a été réinitialisée au statut REÇUE. Les documents (lettre d'adoption, offre corrigée) doivent être retéléversés.
+                          {rec.motifReponse && <p className="mt-1">{rec.motifReponse}</p>}
+                        </div>
+                      )}
+                      {/* Boutons de traitement */}
+                      {rec.statut === "SOUMISE" && (hasRole(["DGTCP"]) || hasRole(["PRESIDENT"])) && (
+                        <div className="flex gap-2 mt-2">
+                          {hasRole(["DGTCP"]) && (
+                            <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => {
+                              setTraiterReclamationId(rec.id);
+                              setTraiterAcceptee(true);
+                              setTraiterMotif("");
+                              setTraiterOpen(true);
+                            }}>
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" /> Accepter
+                            </Button>
+                          )}
+                          {hasRole(["PRESIDENT"]) && (
+                            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => {
+                              setTraiterReclamationId(rec.id);
+                              setTraiterAcceptee(false);
+                              setTraiterMotif("");
+                              setTraiterOpen(true);
+                            }}>
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bandeau re-upload après réclamation acceptée */}
+        {selected.statut === "RECUE" && reclamations.some(r => r.statut === "ACCEPTEE") && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm text-amber-800">Réclamation acceptée — Documents à retéléverser</p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Suite à l'acceptation de la réclamation, la <strong>lettre d'adoption</strong> et l'<strong>offre corrigée</strong> doivent être retéléversées.
+                    Les anciennes versions sont archivées dans l'historique.
+                  </p>
+                  {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" variant="outline" onClick={() => { setUploadAllowedTypes([]); setUploadType("LETTRE_ADOPTION"); setUploadFile(null); setUploadMessage(""); setUploadOpen(true); }}>
+                        <Upload className="h-3.5 w-3.5 mr-1" /> Lettre d'adoption
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setUploadAllowedTypes([]); setUploadType("OFFRE_FISCALE_CORRIGEE"); setUploadFile(null); setUploadMessage(""); setUploadOpen(true); }}>
+                        <Upload className="h-3.5 w-3.5 mr-1" /> Offre corrigée
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -1070,6 +1235,101 @@ const DemandeDetail = () => {
           ) : (
             <p className="text-center text-muted-foreground py-4">Aucune information disponible</p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Adoption Dialog — President uploads lettre */}
+      <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) setAdoptionFile(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adopter la demande</DialogTitle>
+            <DialogDescription>
+              Uploadez la lettre d'adoption avant de confirmer l'adoption de cette demande.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Lettre d'adoption <span className="text-destructive">*</span></Label>
+              <Input type="file" onChange={(e) => setAdoptionFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAdoptionOpen(false); setAdoptionFile(null); }}>Annuler</Button>
+            <Button onClick={handleAdoptWithLetter} disabled={adoptionUploading || !adoptionFile}>
+              {adoptionUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+              Adopter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Réclamation Dialog */}
+      <Dialog open={reclamationOpen} onOpenChange={(v) => { setReclamationOpen(v); if (!v) { setReclamationTexte(""); setReclamationFile(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Déposer une réclamation</DialogTitle>
+            <DialogDescription>
+              Décrivez votre réclamation et joignez un document justificatif.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Motif de la réclamation <span className="text-destructive">*</span></Label>
+              <Textarea placeholder="Décrivez votre réclamation..." value={reclamationTexte} onChange={(e) => setReclamationTexte(e.target.value)} rows={4} maxLength={4000} />
+              <p className="text-xs text-muted-foreground text-right">{reclamationTexte.length}/4000</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Pièce justificative <span className="text-destructive">*</span></Label>
+              <Input type="file" onChange={(e) => setReclamationFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null); }}>Annuler</Button>
+            <Button onClick={handleCreateReclamation} disabled={reclamationSubmitting || !reclamationTexte.trim() || !reclamationFile}>
+              {reclamationSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+              Déposer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Traiter Réclamation Dialog */}
+      <Dialog open={traiterOpen} onOpenChange={(v) => { setTraiterOpen(v); if (!v) { setTraiterReclamationId(null); setTraiterMotif(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{traiterAcceptee ? "Accepter la réclamation" : "Rejeter la réclamation"}</DialogTitle>
+            <DialogDescription>
+              {traiterAcceptee
+                ? "L'acceptation remettra la demande au statut REÇUE et réinitialisera les visas."
+                : "Indiquez le motif du rejet de cette réclamation."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>
+                {traiterAcceptee ? "Commentaire (optionnel)" : "Motif du rejet"} {!traiterAcceptee && <span className="text-destructive">*</span>}
+              </Label>
+              <Textarea placeholder={traiterAcceptee ? "Commentaire interne..." : "Motif obligatoire..."} value={traiterMotif} onChange={(e) => setTraiterMotif(e.target.value)} rows={3} />
+            </div>
+            {traiterAcceptee && (
+              <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                <p className="font-medium">⚠️ Conséquences de l'acceptation :</p>
+                <ul className="list-disc ml-4 mt-1 space-y-0.5">
+                  <li>La demande repasse au statut <strong>REÇUE</strong></li>
+                  <li>Tous les visas sont réinitialisés</li>
+                  <li>La lettre d'adoption et l'offre corrigée sont archivées</li>
+                  <li>L'AC devra retéléverser ces documents</li>
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); }}>Annuler</Button>
+            <Button variant={traiterAcceptee ? "default" : "destructive"} onClick={handleTraiterReclamation} disabled={traiterSubmitting || (!traiterAcceptee && !traiterMotif.trim())}>
+              {traiterSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : traiterAcceptee ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              {traiterAcceptee ? "Confirmer l'acceptation" : "Confirmer le rejet"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
