@@ -1047,6 +1047,31 @@ const Demandes = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Adoption Dialog — President uploads lettre */}
+      <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) { setAdoptionFile(null); setAdoptionTargetId(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adopter la demande</DialogTitle>
+            <DialogDescription>
+              Uploadez la lettre d'adoption avant de confirmer l'adoption de cette demande.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Lettre d'adoption <span className="text-destructive">*</span></Label>
+              <Input type="file" onChange={(e) => setAdoptionFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAdoptionOpen(false); setAdoptionFile(null); setAdoptionTargetId(null); }}>Annuler</Button>
+            <Button onClick={handleAdoptWithLetter} disabled={adoptionUploading || !adoptionFile}>
+              {adoptionUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+              Adopter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
