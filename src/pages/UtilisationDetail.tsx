@@ -269,7 +269,8 @@ const UtilisationDetail = () => {
   const canDGTCPReVerifyTVA = role === "DGTCP" && isTVA && u.statut === "A_RECONTROLER";
 
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-  const resolvedDecisions = decisions.filter(d => d.rejetTempStatus === "RESOLU" || d.decision === "VISA");
+  const resolvedRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
+  const visaDecisions = decisions.filter(d => d.decision === "VISA");
 
   return (
     <DashboardLayout>
