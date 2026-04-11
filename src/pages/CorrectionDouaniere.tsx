@@ -859,13 +859,13 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading || blockedByDgd}>
+                    <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                      {myDecision?.decision === "VISA" ? "Confirmer visa" : myDecision ? "Changer en Visa" : "Apposer visa"}
+                      {myHasVisa ? "Visa apposé ✓" : myOpenRejets.length > 0 ? "Résoudre les rejets d'abord" : "Apposer visa"}
                     </Button>
-                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd}>
+                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd || myHasVisa}>
                       <XCircle className="h-4 w-4 mr-2" />
-                      {myDecision?.decision === "REJET_TEMP" ? "Modifier rejet" : myDecision ? "Changer en Rejet" : "Rejeter temporairement"}
+                      {myHasVisa ? "Visa déjà apposé" : myRoleDecs.some(d => d.decision === "REJET_TEMP") ? "Nouveau rejet temporaire" : "Rejeter temporairement"}
                     </Button>
                   </CardContent>
                 </Card>
