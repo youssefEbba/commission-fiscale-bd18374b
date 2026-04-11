@@ -1072,21 +1072,12 @@ const DemandeDetail = () => {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-semibold text-sm text-amber-800">Réclamation acceptée — Documents à retéléverser</p>
+                  <p className="font-semibold text-sm text-amber-800">Réclamation acceptée — Nouveau cycle d'évaluation</p>
                   <p className="text-xs text-amber-700 mt-1">
-                    Suite à l'acceptation de la réclamation, la <strong>lettre d'adoption</strong> et l'<strong>offre corrigée</strong> doivent être retéléversées.
+                    Suite à l'acceptation de la réclamation, le processus d'évaluation reprend depuis le début.
+                    Le <strong>DGD</strong> doit téléverser la nouvelle <strong>offre corrigée</strong> et le <strong>Président</strong> la nouvelle <strong>lettre d'adoption</strong> lors de l'adoption.
                     Les anciennes versions sont archivées dans l'historique.
                   </p>
-                  {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                    <div className="flex gap-2 mt-3">
-                      <Button size="sm" variant="outline" onClick={() => { setUploadAllowedTypes([]); setUploadType("LETTRE_ADOPTION"); setUploadFile(null); setUploadMessage(""); setUploadOpen(true); }}>
-                        <Upload className="h-3.5 w-3.5 mr-1" /> Lettre d'adoption
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setUploadAllowedTypes([]); setUploadType("OFFRE_FISCALE_CORRIGEE"); setUploadFile(null); setUploadMessage(""); setUploadOpen(true); }}>
-                        <Upload className="h-3.5 w-3.5 mr-1" /> Offre corrigée
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -1331,7 +1322,7 @@ const DemandeDetail = () => {
                   <li>La demande repasse au statut <strong>REÇUE</strong></li>
                   <li>Tous les visas sont réinitialisés</li>
                   <li>La lettre d'adoption et l'offre corrigée sont archivées</li>
-                  <li>L'AC devra retéléverser ces documents</li>
+                  <li>Le DGD et le Président devront retéléverser l'offre corrigée et la lettre d'adoption</li>
                 </ul>
               </div>
             )}
