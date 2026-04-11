@@ -965,13 +965,26 @@ const DemandeDetail = () => {
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" /> Réclamations
                 </h3>
-                {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE"]) &&
-                  (selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE") &&
-                  !reclamations.some(r => r.statut === "SOUMISE") && (
-                  <Button size="sm" variant="outline" onClick={() => setReclamationOpen(true)}>
-                    <Plus className="h-4 w-4 mr-1" /> Déposer une réclamation
-                  </Button>
-                )}
+                {(() => {
+                  if (!hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE"])) return null;
+                  if (selected.statut !== "ADOPTEE" && selected.statut !== "NOTIFIEE") return null;
+                  if (reclamations.some(r => r.statut === "SOUMISE")) return null;
+                  // Chercher la date d'adoption via le visa du PRESIDENT (décision finale)
+                  const adoptionDecision = selected.decisions
+                    ?.filter(d => d.role === "PRESIDENT" && d.decision === "VISA")
+                    .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0];
+                  const adoptionDate = adoptionDecision?.dateDecision ? new Date(adoptionDecision.dateDecision) : null;
+                  const now = new Date();
+                  const delai48h = adoptionDate ? (now.getTime() - adoptionDate.getTime()) > 48 * 60 * 60 * 1000 : false;
+                  if (delai48h) {
+                    return <span className="text-xs text-muted-foreground italic">Délai de réclamation expiré (48h)</span>;
+                  }
+                  return (
+                    <Button size="sm" variant="outline" onClick={() => setReclamationOpen(true)}>
+                      <Plus className="h-4 w-4 mr-1" /> Déposer une réclamation
+                    </Button>
+                  );
+                })()}
               </div>
               {reclamations.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">Aucune réclamation déposée.</p>
