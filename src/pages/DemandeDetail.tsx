@@ -1322,7 +1322,7 @@ const DemandeDetail = () => {
                   <li>La demande repasse au statut <strong>REÇUE</strong></li>
                   <li>Tous les visas sont réinitialisés</li>
                   <li>La lettre d'adoption et l'offre corrigée sont archivées</li>
-                  <li>L'AC devra retéléverser ces documents</li>
+                  <li>Le DGD et le Président devront retéléverser l'offre corrigée et la lettre d'adoption</li>
                 </ul>
               </div>
             )}
