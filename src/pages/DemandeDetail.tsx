@@ -17,7 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  FileText, ArrowLeft, Upload, Loader2,
+  FileText, ArrowLeft, Upload, Loader2, Plus,
   CheckCircle, XCircle, Download, ExternalLink,
   AlertTriangle, Lock, Unlock, History, Info,
 } from "lucide-react";
