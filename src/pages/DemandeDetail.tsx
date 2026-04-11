@@ -327,45 +327,61 @@ const DemandeDetail = () => {
     }
   };
 
-  const generateAdoptionLetter = (demande: DemandeCorrectionDto): string => {
-    const date = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-    const decisions = (demande.decisions || []).filter(d => d.decision === "VISA");
-    return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Lettre d'adoption</title></head><body>
-      <h1>LETTRE D'ADOPTION</h1>
-      <p>Référence : ${demande.numero || `DC-${demande.id}`}</p>
-      <p>Date : ${date}</p>
-      <p>Autorité : ${demande.autoriteContractanteNom || "—"}</p>
-      <p>Entreprise : ${demande.entrepriseRaisonSociale || "—"}</p>
-      <p>Demande ADOPTÉE.</p>
-      <table border="1"><tr><th>Organisme</th><th>Agent</th><th>Date</th></tr>
-      ${decisions.map(d => `<tr><td>${d.role}</td><td>${d.utilisateurNom || "—"}</td><td>${d.dateDecision ? new Date(d.dateDecision).toLocaleDateString("fr-FR") : "—"}</td></tr>`).join("")}
-      </table></body></html>`;
-  };
-
-  const handleAdoptWithLetter = async (demandeId: number) => {
-    setActionLoading(demandeId);
+  const handleAdoptWithLetter = async () => {
+    if (!selected || !adoptionFile) return;
+    setAdoptionUploading(true);
     try {
-      await demandeCorrectionApi.updateStatut(demandeId, "ADOPTEE", undefined, true);
-      const demande = selected!;
-      const letterContent = generateAdoptionLetter(demande);
-      const blob = new Blob([letterContent], { type: "text/html" });
-      const filename = `Lettre_Adoption_${demande.numero || demandeId}.html`;
-      try {
-        const file = new File([blob], filename, { type: "text/html" });
-        await demandeCorrectionApi.uploadDocument(demandeId, "LETTRE_ADOPTION", file);
-        toast({ title: "Succès", description: "Demande adoptée et lettre enregistrée" });
-      } catch {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-        toast({ title: "Adoptée", description: "Lettre téléchargée localement." });
-      }
+      // 1. Upload lettre d'adoption
+      await demandeCorrectionApi.uploadDocument(selected.id, "LETTRE_ADOPTION", adoptionFile);
+      // 2. Appliquer la décision finale
+      await demandeCorrectionApi.updateStatut(selected.id, "ADOPTEE", undefined, true);
+      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption enregistrée" });
+      setAdoptionOpen(false);
+      setAdoptionFile(null);
       fetchDetail();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
-      setActionLoading(null);
+      setAdoptionUploading(false);
+    }
+  };
+
+  // Réclamation handlers
+  const handleCreateReclamation = async () => {
+    if (!selected || !reclamationTexte.trim() || !reclamationFile) return;
+    setReclamationSubmitting(true);
+    try {
+      await demandeCorrectionApi.createReclamation(selected.id, reclamationTexte.trim(), reclamationFile);
+      toast({ title: "Succès", description: "Réclamation déposée avec succès" });
+      setReclamationOpen(false);
+      setReclamationTexte("");
+      setReclamationFile(null);
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReclamationSubmitting(false);
+    }
+  };
+
+  const handleTraiterReclamation = async () => {
+    if (!selected || !traiterReclamationId) return;
+    if (!traiterAcceptee && !traiterMotif.trim()) {
+      toast({ title: "Motif requis", description: "Le motif est obligatoire pour un rejet.", variant: "destructive" });
+      return;
+    }
+    setTraiterSubmitting(true);
+    try {
+      await demandeCorrectionApi.traiterReclamation(selected.id, traiterReclamationId, traiterAcceptee, traiterMotif.trim() || undefined);
+      toast({ title: "Succès", description: traiterAcceptee ? "Réclamation acceptée — la demande repasse au statut REÇUE" : "Réclamation rejetée" });
+      setTraiterOpen(false);
+      setTraiterReclamationId(null);
+      setTraiterMotif("");
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setTraiterSubmitting(false);
     }
   };
 
