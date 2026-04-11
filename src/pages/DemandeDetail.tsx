@@ -440,13 +440,15 @@ const DemandeDetail = () => {
 
   const r = activeOrg;
   const roleDecs = decs.filter(d => d.role === r);
-  const latestDec = roleDecs.length > 0 ? roleDecs[roleDecs.length - 1] : undefined;
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
   const resolvedRejets = allRejets.filter(d => d.rejetTempStatus === "RESOLU");
-  const hasVisa = latestDec?.decision === "VISA";
+  const visaDec = roleDecs.find(d => d.decision === "VISA");
+  const hasVisa = !!visaDec;
   const hasRejets = allRejets.length > 0;
   const isMyRole = (role as string) === r;
+  const canVisa = isMyRole && !hasVisa && openRejets.length === 0;
+  const canNewRejet = isMyRole && !hasVisa;
 
   return (
     <DashboardLayout>
@@ -503,8 +505,7 @@ const DemandeDetail = () => {
             <div className="flex border-b border-border mb-3 gap-0">
               {DECISION_ROLES_LIST.map((orgRole) => {
                 const orgDecs = decs.filter(d => d.role === orgRole);
-                const orgLatest = orgDecs.length > 0 ? orgDecs[orgDecs.length - 1] : undefined;
-                const orgHasVisa = orgLatest?.decision === "VISA";
+                const orgHasVisa = orgDecs.some(d => d.decision === "VISA");
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
@@ -534,9 +535,9 @@ const DemandeDetail = () => {
                 {hasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : allResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : hasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r]}</p>
                 {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">Visa apposé</p>}
-                {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">✅ Tous les rejets ont été résolus</p>}
-                {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
-                {hasVisa && latestDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>}
+                {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">✅ Tous les rejets ont été résolus — Peut viser</p>}
+                {!hasVisa && !hasRejets && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                {hasVisa && visaDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(visaDec.dateDecision).toLocaleDateString("fr-FR")}</p>}
               </div>
               {hasRejets && (
                 <div className="space-y-3">
@@ -623,14 +624,21 @@ const DemandeDetail = () => {
                     </div>
                   ))}
                   {/* Actions for own role */}
-                  {isMyRole && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
+                  {isMyRole && !hasVisa && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
                     <div className="flex gap-2 mt-2 justify-center">
-                      <Button variant="outline" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => checkAndHandleVisa(selected.id)}>
-                        Annuler le rejet (Apposer visa)
-                      </Button>
-                      <Button variant="destructive" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => openRejectDialog(selected.id)}>
-                        Nouveau rejet
-                      </Button>
+                      {canVisa && (
+                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => checkAndHandleVisa(selected.id)}>
+                          Apposer visa
+                        </Button>
+                      )}
+                      {openRejets.length > 0 && (
+                        <p className="text-amber-700 text-[10px] self-center">Résolvez tous les rejets ouverts avant de pouvoir viser</p>
+                      )}
+                      {canNewRejet && (
+                        <Button variant="destructive" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => openRejectDialog(selected.id)}>
+                          Nouveau rejet
+                        </Button>
+                      )}
                     </div>
                   )}
                   {/* Historique pliable */}
@@ -832,16 +840,22 @@ const DemandeDetail = () => {
           <Card>
             <CardContent className="p-6 space-y-3">
               {(() => {
-                const myDec = decs.find(d => d.role === role);
+                const myHasVisa = decs.some(d => d.role === role && d.decision === "VISA");
+                const myOpenRejets = decs.filter(d => d.role === role && d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
                 const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
                 const isCurrentDGD = (role as string) === "DGD";
                 const isPres = (role as string) === "PRESIDENT";
                 const blocked = !isCurrentDGD && !isPres && !dgdVisa;
                 return (
                   <div className="space-y-2">
-                    {myDec && (
-                      <div className={`text-xs rounded px-2 py-1 inline-block ${myDec.decision === "VISA" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                        Votre décision actuelle : {myDec.decision === "VISA" ? "Visa" : "Rejet"}
+                    {myHasVisa && (
+                      <div className="text-xs rounded px-2 py-1 inline-block bg-green-100 text-green-800">
+                        Votre visa est apposé
+                      </div>
+                    )}
+                    {!myHasVisa && myOpenRejets.length > 0 && (
+                      <div className="text-xs rounded px-2 py-1 inline-block bg-amber-100 text-amber-800">
+                        {myOpenRejets.length} rejet{myOpenRejets.length > 1 ? "s" : ""} ouvert{myOpenRejets.length > 1 ? "s" : ""} — Résolvez-les avant de viser
                       </div>
                     )}
                     {blocked ? (
@@ -851,12 +865,20 @@ const DemandeDetail = () => {
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
-                        {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
-                          <Button key={idx} variant={t.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}>
+                        {transitions.filter(t => !t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => {
+                          const isVisaAction = t.isVisa || t.to !== "REJETEE";
+                          const isRejetAction = t.to === "REJETEE";
+                          // Block visa if already has visa or open rejets exist
+                          if (isVisaAction && (myHasVisa || myOpenRejets.length > 0)) return null;
+                          // Block new rejet if already has visa
+                          if (isRejetAction && myHasVisa) return null;
+                          return (
+                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
-                            {myDec ? (t.isVisa ? "Re-valider" : "Rejeter à nouveau") : t.label}
+                            {t.label}
                           </Button>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -867,8 +889,8 @@ const DemandeDetail = () => {
                 const hasFinalTransitions = transitions.some(t => t.isDecisionFinale && t.from.includes(selected.statut));
                 if (!hasFinalTransitions) return null;
                 const REQUIRED_ROLES = ["DGD", "DGTCP", "DGI", "DGB"];
-                const allValidated = REQUIRED_ROLES.every(r => decs.find(d => d.role === r)?.decision === "VISA");
-                const missingRoles = REQUIRED_ROLES.filter(r => decs.find(d => d.role === r)?.decision !== "VISA");
+                const allValidated = REQUIRED_ROLES.every(r => decs.some(d => d.role === r && d.decision === "VISA"));
+                const missingRoles = REQUIRED_ROLES.filter(r => !decs.some(d => d.role === r && d.decision === "VISA"));
                 return (
                   <div className="pt-2 border-t border-dashed border-border space-y-2">
                     <span className="text-xs font-semibold text-muted-foreground">Décision finale :</span>
