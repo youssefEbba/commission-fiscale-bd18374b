@@ -153,6 +153,11 @@ const Demandes = () => {
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
   const [activeOrg, setActiveOrg] = useState("DGD");
+  // Adoption with lettre upload (President)
+  const [adoptionOpen, setAdoptionOpen] = useState(false);
+  const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
+  const [adoptionUploading, setAdoptionUploading] = useState(false);
+  const [adoptionTargetId, setAdoptionTargetId] = useState<number | null>(null);
 
   const openEntrepriseDetail = async (entrepriseId: number) => {
     setEntrepriseDialogOpen(true);
