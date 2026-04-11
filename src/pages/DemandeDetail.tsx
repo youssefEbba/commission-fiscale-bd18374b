@@ -969,8 +969,10 @@ const DemandeDetail = () => {
                   if (!hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE"])) return null;
                   if (selected.statut !== "ADOPTEE" && selected.statut !== "NOTIFIEE") return null;
                   if (reclamations.some(r => r.statut === "SOUMISE")) return null;
-                  // Vérifier le délai de 48h après adoption
-                  const adoptionDecision = selected.decisions?.filter(d => d.decision === "DECISION_FINALE_ADOPTER").sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0];
+                  // Chercher la date d'adoption via le visa du PRESIDENT (décision finale)
+                  const adoptionDecision = selected.decisions
+                    ?.filter(d => d.role === "PRESIDENT" && d.decision === "VISA")
+                    .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0];
                   const adoptionDate = adoptionDecision?.dateDecision ? new Date(adoptionDecision.dateDecision) : null;
                   const now = new Date();
                   const delai48h = adoptionDate ? (now.getTime() - adoptionDate.getTime()) > 48 * 60 * 60 * 1000 : false;
