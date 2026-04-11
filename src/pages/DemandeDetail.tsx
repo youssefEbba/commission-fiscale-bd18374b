@@ -965,7 +965,29 @@ const DemandeDetail = () => {
             <DialogTitle>Répondre au rejet temporaire</DialogTitle>
             <DialogDescription>Envoyez un message sans upload.</DialogDescription>
           </DialogHeader>
-          <Textarea placeholder="Saisissez votre réponse..." value={responseMessage} onChange={(e) => setResponseMessage(e.target.value)} rows={3} />
+          <div className="space-y-3">
+            {/* Afficher les documents demandés par ce rejet */}
+            {(() => {
+              const rejetDec = decs.find(d => d.id === responseDecisionId);
+              if (!rejetDec?.documentsDemandes?.length) return null;
+              return (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-xs font-medium text-amber-800 mb-1.5">📋 Documents demandés par ce rejet :</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rejetDec.documentsDemandes.map((dt: string) => (
+                      <Badge key={dt} variant="outline" className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
+                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                      </Badge>
+                    ))}
+                  </div>
+                  {rejetDec.motifRejet && (
+                    <p className="text-xs text-amber-700 italic mt-2">Motif : {rejetDec.motifRejet}</p>
+                  )}
+                </div>
+              );
+            })()}
+            <Textarea placeholder="Saisissez votre réponse..." value={responseMessage} onChange={(e) => setResponseMessage(e.target.value)} rows={3} />
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setResponseOpen(false); setResponseDecisionId(null); setResponseMessage(""); }}>Annuler</Button>
             <Button onClick={handleRejetTempResponse} disabled={responseSending || !responseMessage.trim()}>
