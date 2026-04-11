@@ -417,91 +417,27 @@ const Demandes = () => {
     }
   };
 
-  // Adopter avec génération de lettre d'adoption
-  const handleAdoptWithLetter = async (id: number) => {
-    setActionLoading(id);
+  const handleAdoptWithLetter = async () => {
+    if (!adoptionTargetId || !adoptionFile) return;
+    setAdoptionUploading(true);
     try {
-      // 1. Appliquer la décision finale
-      const updated = await demandeCorrectionApi.updateStatut(id, "ADOPTEE", undefined, true);
-
-      // 2. Générer la lettre d'adoption — tenter l'upload, sinon télécharger localement
-      const demande = selected || updated;
-      const letterContent = generateAdoptionLetter(demande);
-      const blob = new Blob([letterContent], { type: "text/html" });
-      const filename = `Lettre_Adoption_${demande.numero || id}.html`;
-
-      try {
-        const file = new File([blob], filename, { type: "text/html" });
-        await demandeCorrectionApi.uploadDocument(id, "LETTRE_ADOPTION", file);
-        toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption enregistrée" });
-      } catch {
-        // Fallback: téléchargement local si l'upload est refusé (permissions)
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast({ title: "Adoptée", description: "Demande adoptée. La lettre a été téléchargée sur votre ordinateur." });
-      }
-
+      await demandeCorrectionApi.uploadDocument(adoptionTargetId, "LETTRE_ADOPTION", adoptionFile);
+      const updated = await demandeCorrectionApi.updateStatut(adoptionTargetId, "ADOPTEE", undefined, true);
+      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption enregistrée" });
+      setAdoptionOpen(false);
+      setAdoptionFile(null);
       fetchDemandes();
-      if (selected?.id === id) {
-        const full = await demandeCorrectionApi.getById(id);
-        setSelected(full);
-        const documents = await demandeCorrectionApi.getDocuments(id);
+      if (selected?.id === adoptionTargetId) {
+        setSelected(updated);
+        const documents = await demandeCorrectionApi.getDocuments(adoptionTargetId);
         setDocs(documents);
       }
+      setAdoptionTargetId(null);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
-      setActionLoading(null);
+      setAdoptionUploading(false);
     }
-  };
-
-  const generateAdoptionLetter = (demande: DemandeCorrectionDto): string => {
-    const date = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-    const decisions = (demande.decisions || []).filter(d => d.decision === "VISA");
-    return `<!DOCTYPE html>
-<html lang="fr">
-<head><meta charset="UTF-8"><title>Lettre d'adoption</title>
-<style>
-  body { font-family: 'Times New Roman', serif; margin: 40px 60px; line-height: 1.6; color: #333; }
-  h1 { text-align: center; font-size: 18px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-  .header { text-align: center; margin-bottom: 30px; }
-  .ref { margin: 20px 0; }
-  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-  td, th { border: 1px solid #999; padding: 8px; text-align: left; }
-  th { background: #f0f0f0; }
-  .signature { margin-top: 60px; text-align: right; }
-</style></head>
-<body>
-  <div class="header">
-    <h1>LETTRE D'ADOPTION</h1>
-    <p>Commission Nationale des Exonérations Fiscales</p>
-  </div>
-  <div class="ref">
-    <p><strong>Référence :</strong> ${demande.numero || `DC-${demande.id}`}</p>
-    <p><strong>Date :</strong> ${date}</p>
-    <p><strong>Autorité Contractante :</strong> ${demande.autoriteContractanteNom || "—"}</p>
-    <p><strong>Entreprise :</strong> ${demande.entrepriseRaisonSociale || "—"}</p>
-  </div>
-  <p>Par la présente, la Commission Nationale des Exonérations Fiscales certifie que la demande de correction de l'offre fiscale référencée ci-dessus a été examinée et <strong>ADOPTÉE</strong> à l'unanimité par l'ensemble des organismes compétents.</p>
-
-  <h3>Visas obtenus :</h3>
-  <table>
-    <tr><th>Organisme</th><th>Agent</th><th>Date du visa</th></tr>
-    ${decisions.map(d => `<tr><td>${d.role}</td><td>${d.utilisateurNom || "—"}</td><td>${d.dateDecision ? new Date(d.dateDecision).toLocaleDateString("fr-FR") : "—"}</td></tr>`).join("")}
-  </table>
-
-  <p>Cette décision est définitive et prend effet à compter de la date de signature de la présente lettre.</p>
-
-  <div class="signature">
-    <p>Fait à Nouakchott, le ${date}</p>
-    <br/><br/>
-    <p><strong>Le Président de la Commission</strong></p>
-  </div>
-</body></html>`;
   };
 
   const handleUpload = async () => {
