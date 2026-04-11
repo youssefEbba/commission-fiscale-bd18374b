@@ -1237,6 +1237,101 @@ const DemandeDetail = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Adoption Dialog — President uploads lettre */}
+      <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) setAdoptionFile(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adopter la demande</DialogTitle>
+            <DialogDescription>
+              Uploadez la lettre d'adoption avant de confirmer l'adoption de cette demande.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Lettre d'adoption <span className="text-destructive">*</span></Label>
+              <Input type="file" onChange={(e) => setAdoptionFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAdoptionOpen(false); setAdoptionFile(null); }}>Annuler</Button>
+            <Button onClick={handleAdoptWithLetter} disabled={adoptionUploading || !adoptionFile}>
+              {adoptionUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+              Adopter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Réclamation Dialog */}
+      <Dialog open={reclamationOpen} onOpenChange={(v) => { setReclamationOpen(v); if (!v) { setReclamationTexte(""); setReclamationFile(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Déposer une réclamation</DialogTitle>
+            <DialogDescription>
+              Décrivez votre réclamation et joignez un document justificatif.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Motif de la réclamation <span className="text-destructive">*</span></Label>
+              <Textarea placeholder="Décrivez votre réclamation..." value={reclamationTexte} onChange={(e) => setReclamationTexte(e.target.value)} rows={4} maxLength={4000} />
+              <p className="text-xs text-muted-foreground text-right">{reclamationTexte.length}/4000</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Pièce justificative <span className="text-destructive">*</span></Label>
+              <Input type="file" onChange={(e) => setReclamationFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null); }}>Annuler</Button>
+            <Button onClick={handleCreateReclamation} disabled={reclamationSubmitting || !reclamationTexte.trim() || !reclamationFile}>
+              {reclamationSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+              Déposer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Traiter Réclamation Dialog */}
+      <Dialog open={traiterOpen} onOpenChange={(v) => { setTraiterOpen(v); if (!v) { setTraiterReclamationId(null); setTraiterMotif(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{traiterAcceptee ? "Accepter la réclamation" : "Rejeter la réclamation"}</DialogTitle>
+            <DialogDescription>
+              {traiterAcceptee
+                ? "L'acceptation remettra la demande au statut REÇUE et réinitialisera les visas."
+                : "Indiquez le motif du rejet de cette réclamation."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>
+                {traiterAcceptee ? "Commentaire (optionnel)" : "Motif du rejet"} {!traiterAcceptee && <span className="text-destructive">*</span>}
+              </Label>
+              <Textarea placeholder={traiterAcceptee ? "Commentaire interne..." : "Motif obligatoire..."} value={traiterMotif} onChange={(e) => setTraiterMotif(e.target.value)} rows={3} />
+            </div>
+            {traiterAcceptee && (
+              <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                <p className="font-medium">⚠️ Conséquences de l'acceptation :</p>
+                <ul className="list-disc ml-4 mt-1 space-y-0.5">
+                  <li>La demande repasse au statut <strong>REÇUE</strong></li>
+                  <li>Tous les visas sont réinitialisés</li>
+                  <li>La lettre d'adoption et l'offre corrigée sont archivées</li>
+                  <li>L'AC devra retéléverser ces documents</li>
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); }}>Annuler</Button>
+            <Button variant={traiterAcceptee ? "default" : "destructive"} onClick={handleTraiterReclamation} disabled={traiterSubmitting || (!traiterAcceptee && !traiterMotif.trim())}>
+              {traiterSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : traiterAcceptee ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+              {traiterAcceptee ? "Confirmer l'acceptation" : "Confirmer le rejet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
