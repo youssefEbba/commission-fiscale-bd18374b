@@ -51,8 +51,6 @@ const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatu
   DGTCP: [
     { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
     { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
-    { from: ALL_STATUTS, to: "ADOPTEE", label: "Décision finale : Adopter", icon: CheckCircle, isDecisionFinale: true },
-    { from: ALL_STATUTS, to: "REJETEE", label: "Décision finale : Rejeter", icon: XCircle, isDecisionFinale: true },
   ],
   DGI: [
     { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
