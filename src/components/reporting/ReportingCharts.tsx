@@ -189,19 +189,19 @@ const ReportingCharts = ({ summary, timeseries, role }: ReportingChartsProps) =>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Montant Cordon</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.montantCordon)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.sumMontantCordon)}</p>
                 </div>
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Montant TVA Int.</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.montantTVAInterieure)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.sumMontantTvaInterieure)}</p>
                 </div>
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Solde Cordon</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.soldeCordon)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.sumSoldeCordon)}</p>
                 </div>
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-xs text-muted-foreground">Solde TVA</p>
-                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.soldeTVA)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(summary.certificatFinancials.sumSoldeTva)}</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground text-center">{summary.certificatFinancials.certificatCount} certificat(s) dans le périmètre</p>

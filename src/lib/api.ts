@@ -1454,10 +1454,10 @@ export interface ReportingAuditStatsDto {
 }
 
 export interface CertificatFinancialTotalsDto {
-  montantCordon: number;
-  montantTVAInterieure: number;
-  soldeCordon: number;
-  soldeTVA: number;
+  sumMontantCordon: number;
+  sumMontantTvaInterieure: number;
+  sumSoldeCordon: number;
+  sumSoldeTva: number;
   certificatCount: number;
 }
 
