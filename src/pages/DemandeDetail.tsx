@@ -943,7 +943,7 @@ const DemandeDetail = () => {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {transitions.filter(t => t.isDecisionFinale && t.from.includes(selected.statut)).map((t, idx) => (
-                          <Button key={`final-${idx}`} variant={t.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : handleAdoptWithLetter(selected.id)}>
+                          <Button key={`final-${idx}`} variant={t.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => t.to === "REJETEE" ? openRejectDialog(selected.id, true) : setAdoptionOpen(true)}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <t.icon className="h-4 w-4 mr-1" />}
                             {t.label}
                           </Button>
