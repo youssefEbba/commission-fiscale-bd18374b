@@ -746,7 +746,7 @@ const CorrectionDouaniere = () => {
                     return (
                       <div className="space-y-2">
                         {Object.entries(groupedByType).map(([type, versions]) => {
-                          const dt = DOCUMENT_TYPES_REQUIS.find(t => t.value === type);
+                          const dt = ALL_DOCUMENT_TYPES.find(t => t.value === type);
                           const label = dt?.label || type;
                           const sorted = [...versions].sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
                           const activeDoc = sorted.find(d => d.actif !== false) || sorted[0];
