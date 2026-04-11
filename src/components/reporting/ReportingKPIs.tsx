@@ -93,7 +93,7 @@ const ReportingKPIs = ({ summary, role }: ReportingKPIsProps) => {
               <span className="text-sm text-muted-foreground">Solde Cordon</span>
             </div>
             <p className="mt-2 text-xl font-bold text-foreground">
-              {formatCurrency(summary.certificatFinancials.soldeCordon)}
+              {formatCurrency(summary.certificatFinancials.sumSoldeCordon)}
             </p>
           </CardContent>
         </Card>
@@ -104,7 +104,7 @@ const ReportingKPIs = ({ summary, role }: ReportingKPIsProps) => {
               <span className="text-sm text-muted-foreground">Solde TVA</span>
             </div>
             <p className="mt-2 text-xl font-bold text-foreground">
-              {formatCurrency(summary.certificatFinancials.soldeTVA)}
+              {formatCurrency(summary.certificatFinancials.sumSoldeTva)}
             </p>
           </CardContent>
         </Card>
