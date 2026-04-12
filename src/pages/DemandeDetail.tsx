@@ -1062,6 +1062,7 @@ const DemandeDetail = () => {
                               setTraiterReclamationId(rec.id);
                               setTraiterAcceptee(true);
                               setTraiterMotif("");
+                              setTraiterFile(null);
                               setTraiterOpen(true);
                             }}>
                               <CheckCircle className="h-3.5 w-3.5 mr-1" /> Accepter
