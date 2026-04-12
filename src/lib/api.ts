@@ -544,7 +544,7 @@ export interface DecisionCorrectionDto {
 }
 
 // Réclamation DTO
-export type ReclamationStatut = "SOUMISE" | "ACCEPTEE" | "REJETEE";
+export type ReclamationStatut = "SOUMISE" | "ACCEPTEE" | "REJETEE" | "ANNULEE";
 
 export interface ReclamationDemandeCorrectionDto {
   id: number;
@@ -567,6 +567,7 @@ export const RECLAMATION_STATUT_LABELS: Record<ReclamationStatut, string> = {
   SOUMISE: "Soumise",
   ACCEPTEE: "Acceptée",
   REJETEE: "Rejetée",
+  ANNULEE: "Annulée",
 };
 
 export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
