@@ -443,36 +443,9 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title="Voir détail">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {getTransitions(role, u.type).map((t) =>
-                            t.from.includes(u.statut) ? (
-                              <Button
-                                key={t.to}
-                                variant={t.to === "REJETEE" ? "destructive" : "default"}
-                                size="sm"
-                                disabled={actionLoading === u.id}
-                                onClick={() => {
-                                  // Douane + LIQUIDEE → open dedicated dialog
-                                   if (u.type === "DOUANIER" && t.to === "LIQUIDEE") {
-                                    setLiquidationTarget(u);
-                                    setLiqDroits("");
-                                    setLiqTVA("");
-                                  } else if (u.type === "TVA_INTERIEURE" && t.to === "APUREE") {
-                                    setApurementTarget(u);
-                                    setApurMontant("");
-                                  } else {
-                                    handleStatut(u.id, t.to);
-                                  }
-                                }}
-                              >
-                                {actionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                {t.label}
-                              </Button>
-                            ) : null
-                          )}
-                          {/* REJET_TEMP button (DGD/DGTCP) */}
-                          {((role === "DGD" && u.type === "DOUANIER") || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE"].includes(u.statut) && (
-                            <Button variant="outline" size="sm" className="text-amber-600 border-amber-300" onClick={() => { setShowRejetTemp(u); setRejetTempMotif(""); setRejetTempDocs([]); }}>
-                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temp.
+                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut) && (
+                            <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
+                              Traiter
                             </Button>
                           )}
                         </div>
