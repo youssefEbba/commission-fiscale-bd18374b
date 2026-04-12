@@ -324,6 +324,7 @@ const Utilisations = () => {
   const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI";
 
   const pageTitle: Record<string, string> = {
+    AUTORITE_CONTRACTANTE: "Utilisations – Suivi des certificats",
     ENTREPRISE: "Mes utilisations de crédit",
     SOUS_TRAITANT: "Mes utilisations (sous-traitant)",
     DGD: "Utilisations Douane – Vérification",
