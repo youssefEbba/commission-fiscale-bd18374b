@@ -165,11 +165,75 @@ const CorrectionDouaniere = () => {
     }
   };
 
+  const fetchReclamations = async () => {
+    if (!id) return;
+    try {
+      const recs = await demandeCorrectionApi.getReclamations(Number(id));
+      setReclamations(recs);
+    } catch { setReclamations([]); }
+  };
+
   useEffect(() => {
     fetchDemande();
     fetchDocs();
     fetchDecisions();
+    fetchReclamations();
   }, [id]);
+
+  const handleCreateReclamation = async () => {
+    if (!demande || !reclamationTexte.trim() || !reclamationFile) return;
+    setReclamationSubmitting(true);
+    try {
+      await demandeCorrectionApi.createReclamation(demande.id, reclamationTexte.trim(), reclamationFile);
+      toast({ title: "Succès", description: "Réclamation déposée avec succès" });
+      setReclamationOpen(false);
+      setReclamationTexte("");
+      setReclamationFile(null);
+      fetchDemande();
+      fetchReclamations();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setReclamationSubmitting(false);
+    }
+  };
+
+  const handleTraiterReclamation = async () => {
+    if (!demande || !traiterReclamationId) return;
+    if (!traiterAcceptee && !traiterMotif.trim()) {
+      toast({ title: "Motif requis", description: "Le motif est obligatoire pour un rejet.", variant: "destructive" });
+      return;
+    }
+    setTraiterSubmitting(true);
+    try {
+      await demandeCorrectionApi.traiterReclamation(demande.id, traiterReclamationId, traiterAcceptee, traiterMotif.trim() || undefined);
+      toast({ title: "Succès", description: traiterAcceptee ? "Réclamation acceptée — la demande repasse au statut REÇUE" : "Réclamation rejetée" });
+      setTraiterOpen(false);
+      setTraiterReclamationId(null);
+      setTraiterMotif("");
+      fetchDemande();
+      fetchDecisions();
+      fetchReclamations();
+      fetchDocs();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setTraiterSubmitting(false);
+    }
+  };
+
+  const handleAnnulerReclamation = async (reclamationId: number) => {
+    if (!demande) return;
+    try {
+      await demandeCorrectionApi.annulerReclamation(demande.id, reclamationId);
+      toast({ title: "Succès", description: "Réclamation annulée" });
+      fetchDemande();
+      fetchReclamations();
+      fetchDecisions();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
 
   const openEntrepriseDetail = async (entrepriseId: number) => {
     setEntrepriseDialogOpen(true);
