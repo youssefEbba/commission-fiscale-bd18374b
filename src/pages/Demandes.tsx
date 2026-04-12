@@ -750,7 +750,7 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 mr-2" /> Détail
                                   </DropdownMenuItem>
-                                  {!hasRole(["DGD", "DGI", "DGTCP", "DGB"]) && (
+                                  {!hasRole(["DGD", "DGI", "DGTCP", "DGB"]) && d.statut === "RECUE" && (
                                     <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
                                       <FileText className="h-4 w-4 mr-2" /> Éditer
                                     </DropdownMenuItem>
