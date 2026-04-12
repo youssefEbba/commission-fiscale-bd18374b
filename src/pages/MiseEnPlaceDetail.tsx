@@ -210,11 +210,9 @@ const MiseEnPlaceDetail = () => {
   const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
 
-  // President validates and opens directly
-  const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT";
-
-  // President generates certificate when OUVERT
-  const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
+  // President: check if certificate document already uploaded
+  const hasCertDoc = docs.some(d => d.type === "CERTIFICAT_CREDIT_IMPOTS");
+  const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (hasCertDoc || certFile !== null);
 
   const handleStatut = async (statut: CertificatStatut) => {
     setActionLoading(true);
