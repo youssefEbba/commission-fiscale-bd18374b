@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, DollarSign, FileDown, MessageSquare, Send,
+  AlertTriangle, History, DollarSign, Upload, MessageSquare, Send,
 } from "lucide-react";
 
 import { API_BASE } from "@/lib/apiConfig";
