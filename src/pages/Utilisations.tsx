@@ -321,7 +321,7 @@ const Utilisations = () => {
     return ms && matchStatut && matchTab;
   });
 
-  const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI";
+  const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI";
 
   const pageTitle: Record<string, string> = {
     AUTORITE_CONTRACTANTE: "Utilisations – Suivi des certificats",
