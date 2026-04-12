@@ -383,6 +383,17 @@ const DemandeDetail = () => {
     }
   };
 
+  const handleAnnulerReclamation = async (reclamationId: number) => {
+    if (!selected) return;
+    try {
+      await demandeCorrectionApi.annulerReclamation(selected.id, reclamationId);
+      toast({ title: "Succès", description: "Réclamation annulée" });
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
   const openRejectDialog = (demandeId: number, decisionFinale?: boolean) => {
     setRejectTargetId(demandeId);
     setRejectMotif("");
