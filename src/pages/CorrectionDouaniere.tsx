@@ -1075,8 +1075,19 @@ const CorrectionDouaniere = () => {
                               </div>
                             )}
                             {rec.statut === "REJETEE" && rec.motifReponse && (
-                              <div className="rounded border border-red-200 bg-red-100/50 p-2 text-xs">
-                                <span className="font-medium">Motif du rejet : </span>{rec.motifReponse}
+                              <div className="rounded border border-red-200 bg-red-100/50 p-2 text-xs space-y-1">
+                                <div><span className="font-medium">Motif du rejet : </span>{rec.motifReponse}</div>
+                                {rec.reponseRejetNomFichier && (
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-3 w-3 text-red-600" />
+                                    <span className="font-medium">{rec.reponseRejetNomFichier}</span>
+                                    {rec.reponseRejetChemin && (
+                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.reponseRejetChemin!)}>
+                                        <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             )}
                             {rec.statut === "ACCEPTEE" && (
