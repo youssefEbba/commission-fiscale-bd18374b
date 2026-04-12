@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -119,8 +119,6 @@ const DemandesMiseEnPlace = () => {
   // Decisions state
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
 
-  // Certificate generation state (DGTCP)
-  const [generatingCert, setGeneratingCert] = useState<number | null>(null);
 
   // Organism tabs state
   const [activeOrg, setActiveOrg] = useState("DGI");
@@ -276,57 +274,6 @@ const DemandesMiseEnPlace = () => {
     } finally { setRejetTempLoading(false); }
   };
 
-  const handleGenerateCertificate = async (c: CertificatCreditDto) => {
-    setGeneratingCert(c.id);
-    try {
-      // Générer le PDF côté client
-      const doc = new jsPDF();
-      const entrepriseName = entrepriseCache[c.entrepriseId ?? 0]?.raisonSociale || c.entrepriseNom || `Entreprise #${c.entrepriseId}`;
-      const correctionRef = c.demandeCorrectionNumero || (c.demandeCorrectionId ? `#${c.demandeCorrectionId}` : "—");
-
-      doc.setFontSize(18);
-      doc.text("CERTIFICAT DE CRÉDIT D'IMPÔT", 105, 30, { align: "center" });
-
-      doc.setFontSize(12);
-      doc.text(`Référence : #${c.id}`, 20, 55);
-      doc.text(`Entreprise : ${entrepriseName}`, 20, 65);
-      doc.text(`Correction douanière : ${correctionRef}`, 20, 75);
-      if (c.marcheIntitule) doc.text(`Marché : ${c.marcheIntitule}`, 20, 85);
-
-      let y = c.marcheIntitule ? 100 : 95;
-      doc.setFontSize(14);
-      doc.text("Montants", 20, y);
-      doc.setFontSize(12);
-      y += 12;
-      if (c.montantCordon != null) doc.text(`Cordon / Douane : ${c.montantCordon.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 10;
-      if (c.montantTVAInterieure != null) doc.text(`TVA Intérieure : ${c.montantTVAInterieure.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 10;
-      if (c.soldeCordon != null) doc.text(`Solde Cordon : ${c.soldeCordon.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 10;
-      if (c.soldeTVA != null) doc.text(`Solde TVA : ${c.soldeTVA.toLocaleString("fr-FR")} FCFA`, 25, y);
-
-      y += 25;
-      doc.text(`Statut : ${CERTIFICAT_STATUT_LABELS[c.statut] || c.statut}`, 20, y);
-      y += 10;
-      doc.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 20, y);
-
-      y += 30;
-      doc.text("Le Président de la Commission Fiscale", 105, y, { align: "center" });
-      y += 20;
-      doc.text("____________________________", 105, y, { align: "center" });
-
-      // Convertir en fichier et uploader
-      const pdfBlob = doc.output("blob");
-      const pdfFile = new File([pdfBlob], `certificat-credit-${c.id}.pdf`, { type: "application/pdf" });
-      await certificatCreditApi.uploadDocument(c.id, "CERTIFICAT_CREDIT_IMPOTS", pdfFile);
-
-      toast({ title: "Succès", description: "Certificat généré et attaché au crédit" });
-      fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setGeneratingCert(null); }
-  };
 
   const openDetail = async (c: CertificatCreditDto) => {
     setSelected(c);
