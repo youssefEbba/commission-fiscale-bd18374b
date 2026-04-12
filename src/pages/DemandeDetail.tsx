@@ -878,7 +878,7 @@ const DemandeDetail = () => {
         </Card>
 
         {/* Workflow Actions */}
-        {transitions.length > 0 && (
+        {transitions.length > 0 && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
           <Card>
             <CardContent className="p-6 space-y-3">
               {(() => {
