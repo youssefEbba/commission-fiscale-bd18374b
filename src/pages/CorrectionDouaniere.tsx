@@ -1082,7 +1082,7 @@ const CorrectionDouaniere = () => {
                                     <FileText className="h-3 w-3 text-red-600" />
                                     <span className="font-medium">{rec.reponseRejetNomFichier}</span>
                                     {rec.reponseRejetChemin && (
-                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.reponseRejetChemin!)}>
+                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => window.open(rec.reponseRejetChemin!, "_blank")}>
                                         <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
                                       </Button>
                                     )}
