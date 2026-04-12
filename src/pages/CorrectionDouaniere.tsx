@@ -126,6 +126,7 @@ const CorrectionDouaniere = () => {
   const [traiterReclamationId, setTraiterReclamationId] = useState<number | null>(null);
   const [traiterAcceptee, setTraiterAcceptee] = useState(true);
   const [traiterMotif, setTraiterMotif] = useState("");
+  const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
 
@@ -204,13 +205,18 @@ const CorrectionDouaniere = () => {
       toast({ title: "Motif requis", description: "Le motif est obligatoire pour un rejet.", variant: "destructive" });
       return;
     }
+    if (!traiterAcceptee && !traiterFile) {
+      toast({ title: "Document requis", description: "Un document de réponse est obligatoire pour un rejet.", variant: "destructive" });
+      return;
+    }
     setTraiterSubmitting(true);
     try {
-      await demandeCorrectionApi.traiterReclamation(demande.id, traiterReclamationId, traiterAcceptee, traiterMotif.trim() || undefined);
+      await demandeCorrectionApi.traiterReclamation(demande.id, traiterReclamationId, traiterAcceptee, traiterMotif.trim() || undefined, traiterFile || undefined);
       toast({ title: "Succès", description: traiterAcceptee ? "Réclamation acceptée — la demande repasse au statut REÇUE" : "Réclamation rejetée" });
       setTraiterOpen(false);
       setTraiterReclamationId(null);
       setTraiterMotif("");
+      setTraiterFile(null);
       fetchDemande();
       fetchDecisions();
       fetchReclamations();
@@ -1416,14 +1422,14 @@ const CorrectionDouaniere = () => {
       </Dialog>
 
       {/* Traiter Réclamation Dialog */}
-      <Dialog open={traiterOpen} onOpenChange={(v) => { setTraiterOpen(v); if (!v) { setTraiterReclamationId(null); setTraiterMotif(""); } }}>
+      <Dialog open={traiterOpen} onOpenChange={(v) => { setTraiterOpen(v); if (!v) { setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{traiterAcceptee ? "Accepter la réclamation" : "Rejeter la réclamation"}</DialogTitle>
             <DialogDescription>
               {traiterAcceptee
                 ? "L'acceptation remettra la demande au statut REÇUE et réinitialisera les visas."
-                : "Indiquez le motif du rejet de cette réclamation."}
+                : "Indiquez le motif et joignez un document de réponse pour rejeter cette réclamation."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1431,8 +1437,30 @@ const CorrectionDouaniere = () => {
               <Label>
                 {traiterAcceptee ? "Commentaire (optionnel)" : "Motif du rejet"} {!traiterAcceptee && <span className="text-destructive">*</span>}
               </Label>
-              <Textarea placeholder={traiterAcceptee ? "Commentaire interne..." : "Motif obligatoire..."} value={traiterMotif} onChange={(e) => setTraiterMotif(e.target.value)} rows={3} />
+              <Textarea
+                placeholder={traiterAcceptee ? "Commentaire interne..." : "Motif obligatoire (max 2000 caractères)..."}
+                value={traiterMotif}
+                onChange={(e) => setTraiterMotif(e.target.value.slice(0, 2000))}
+                rows={3}
+                maxLength={2000}
+              />
+              {!traiterAcceptee && (
+                <p className="text-[10px] text-muted-foreground text-right">{traiterMotif.length}/2000</p>
+              )}
             </div>
+            {!traiterAcceptee && (
+              <div className="space-y-2">
+                <Label>Document de réponse <span className="text-destructive">*</span></Label>
+                <Input
+                  type="file"
+                  onChange={(e) => setTraiterFile(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                />
+                {traiterFile && (
+                  <p className="text-xs text-muted-foreground">{traiterFile.name} ({(traiterFile.size / 1024).toFixed(0)} Ko)</p>
+                )}
+              </div>
+            )}
             {traiterAcceptee && (
               <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                 <p className="font-medium">⚠️ Conséquences de l'acceptation :</p>
@@ -1446,8 +1474,8 @@ const CorrectionDouaniere = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); }}>Annuler</Button>
-            <Button variant={traiterAcceptee ? "default" : "destructive"} onClick={handleTraiterReclamation} disabled={traiterSubmitting || (!traiterAcceptee && !traiterMotif.trim())}>
+            <Button variant="outline" onClick={() => { setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null); }}>Annuler</Button>
+            <Button variant={traiterAcceptee ? "default" : "destructive"} onClick={handleTraiterReclamation} disabled={traiterSubmitting || (!traiterAcceptee && (!traiterMotif.trim() || !traiterFile))}>
               {traiterSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : traiterAcceptee ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
               {traiterAcceptee ? "Confirmer l'acceptation" : "Confirmer le rejet"}
             </Button>

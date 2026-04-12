@@ -561,6 +561,10 @@ export interface ReclamationDemandeCorrectionDto {
   auteurNom?: string;
   traiteParUserId?: number;
   motifReponse?: string;
+  reponseRejetChemin?: string;
+  reponseRejetNomFichier?: string;
+  reponseRejetTaille?: number;
+  reponseRejetDateUpload?: string;
 }
 
 export const RECLAMATION_STATUT_LABELS: Record<ReclamationStatut, string> = {
@@ -642,11 +646,16 @@ export const demandeCorrectionApi = {
       rawBody: formData,
     });
   },
-  traiterReclamation: (demandeId: number, reclamationId: number, acceptee: boolean, motifReponse?: string) =>
-    apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}`, {
+  traiterReclamation: (demandeId: number, reclamationId: number, acceptee: boolean, motifReponse?: string, file?: File) => {
+    const formData = new FormData();
+    formData.append("acceptee", acceptee ? "true" : "false");
+    if (motifReponse) formData.append("motifReponse", motifReponse);
+    if (file) formData.append("file", file);
+    return apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}`, {
       method: "PATCH",
-      body: { acceptee, ...(motifReponse ? { motifReponse } : {}) },
-    }),
+      rawBody: formData,
+    });
+  },
   annulerReclamation: (demandeId: number, reclamationId: number) =>
     apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}/annuler`, {
       method: "POST",
