@@ -41,7 +41,7 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
 };
 
 // Visa/rejet actions: no status change on backend (decisionFinale=false)
-// Decision finale: only DGTCP & PRESIDENT can adopt/reject with decisionFinale=true
+// Decision finale: only PRESIDENT can adopt/reject with decisionFinale=true
 const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
 
 const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean }[]> = {
