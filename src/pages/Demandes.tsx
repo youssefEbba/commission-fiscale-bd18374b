@@ -759,7 +759,7 @@ const Demandes = () => {
                                     const myRoleDecs = (d.decisions || []).filter(dec => dec.role === role);
                                     const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
                                     const myOpenRejets = myRoleDecs.filter(dec => dec.decision === "REJET_TEMP" && dec.rejetTempStatus !== "RESOLU");
-                                    const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(d.statut);
+                                    const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && d.statut === "RECUE";
                                     const canReactivate = hasRole(["AUTORITE_CONTRACTANTE"]) && d.statut === "ANNULEE" && hasPermission("correction.demande.reactivate");
 
                                     const visaTransitions = transitions
