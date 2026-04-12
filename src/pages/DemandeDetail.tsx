@@ -383,6 +383,17 @@ const DemandeDetail = () => {
     }
   };
 
+  const handleAnnulerReclamation = async (reclamationId: number) => {
+    if (!selected) return;
+    try {
+      await demandeCorrectionApi.annulerReclamation(selected.id, reclamationId);
+      toast({ title: "Succès", description: "Réclamation annulée" });
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
   const openRejectDialog = (demandeId: number, decisionFinale?: boolean) => {
     setRejectTargetId(demandeId);
     setRejectMotif("");
@@ -992,6 +1003,7 @@ const DemandeDetail = () => {
                     <div key={rec.id} className={`rounded-lg border p-4 space-y-2 ${
                       rec.statut === "SOUMISE" ? "border-amber-300 bg-amber-50" :
                       rec.statut === "ACCEPTEE" ? "border-green-300 bg-green-50" :
+                      rec.statut === "ANNULEE" ? "border-muted bg-muted/30" :
                       "border-red-300 bg-red-50"
                     }`}>
                       <div className="flex items-center justify-between">
@@ -999,6 +1011,7 @@ const DemandeDetail = () => {
                           <Badge className={`text-xs ${
                             rec.statut === "SOUMISE" ? "bg-amber-100 text-amber-800" :
                             rec.statut === "ACCEPTEE" ? "bg-green-100 text-green-800" :
+                            rec.statut === "ANNULEE" ? "bg-muted text-muted-foreground" :
                             "bg-red-100 text-red-800"
                           }`}>
                             {RECLAMATION_STATUT_LABELS[rec.statut]}
@@ -1030,7 +1043,12 @@ const DemandeDetail = () => {
                           {rec.motifReponse && <p className="mt-1">{rec.motifReponse}</p>}
                         </div>
                       )}
-                      {/* Boutons de traitement */}
+                      {rec.statut === "ANNULEE" && (
+                        <div className="rounded border border-muted p-2 text-xs text-muted-foreground italic">
+                          Réclamation annulée
+                        </div>
+                      )}
+                      {/* Boutons de traitement (DGTCP accepte, PRESIDENT rejette) */}
                       {rec.statut === "SOUMISE" && (hasRole(["DGTCP"]) || hasRole(["PRESIDENT"])) && (
                         <div className="flex gap-2 mt-2">
                           {hasRole(["DGTCP"]) && (
@@ -1054,6 +1072,14 @@ const DemandeDetail = () => {
                             </Button>
                           )}
                         </div>
+                      )}
+                      {/* Bouton annulation (auteur ou AC) */}
+                      {rec.statut === "SOUMISE" && (
+                        (rec.auteurUserId === user?.userId) || hasRole(["AUTORITE_CONTRACTANTE"])
+                      ) && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs mt-1" onClick={() => handleAnnulerReclamation(rec.id)}>
+                          <XCircle className="h-3.5 w-3.5 mr-1" /> Annuler la réclamation
+                        </Button>
                       )}
                     </div>
                   ))}

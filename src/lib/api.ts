@@ -544,7 +544,7 @@ export interface DecisionCorrectionDto {
 }
 
 // Réclamation DTO
-export type ReclamationStatut = "SOUMISE" | "ACCEPTEE" | "REJETEE";
+export type ReclamationStatut = "SOUMISE" | "ACCEPTEE" | "REJETEE" | "ANNULEE";
 
 export interface ReclamationDemandeCorrectionDto {
   id: number;
@@ -567,6 +567,7 @@ export const RECLAMATION_STATUT_LABELS: Record<ReclamationStatut, string> = {
   SOUMISE: "Soumise",
   ACCEPTEE: "Acceptée",
   REJETEE: "Rejetée",
+  ANNULEE: "Annulée",
 };
 
 export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
@@ -645,6 +646,10 @@ export const demandeCorrectionApi = {
     apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}`, {
       method: "PATCH",
       body: { acceptee, ...(motifReponse ? { motifReponse } : {}) },
+    }),
+  annulerReclamation: (demandeId: number, reclamationId: number) =>
+    apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}/annuler`, {
+      method: "POST",
     }),
 };
 
