@@ -647,6 +647,10 @@ export const demandeCorrectionApi = {
       method: "PATCH",
       body: { acceptee, ...(motifReponse ? { motifReponse } : {}) },
     }),
+  annulerReclamation: (demandeId: number, reclamationId: number) =>
+    apiFetch<ReclamationDemandeCorrectionDto>(`/demandes-correction/${demandeId}/reclamations/${reclamationId}/annuler`, {
+      method: "POST",
+    }),
 };
 
 // Marchés
