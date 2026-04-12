@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -95,7 +95,9 @@ const MiseEnPlaceDetail = () => {
   // Action states
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [generatingCert, setGeneratingCert] = useState(false);
+  // President: upload certificat file before opening
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [uploadingCert, setUploadingCert] = useState(false);
 
   // Rejet temp dialog
   const [showRejetTemp, setShowRejetTemp] = useState(false);
