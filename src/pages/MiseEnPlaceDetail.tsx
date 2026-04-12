@@ -446,20 +446,42 @@ const MiseEnPlaceDetail = () => {
                 </Button>
               )}
 
-              {/* President: validate and open directly */}
-              {canValiderPresident && (
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={actionLoading} onClick={() => handleStatut("OUVERT")}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider et ouvrir le certificat
-                </Button>
-              )}
-
-              {/* President: generate certificate */}
-              {canGenerateCert && (
-                <Button disabled={generatingCert} onClick={handleGenerateCertificate}>
-                  {generatingCert ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-                  Générer certificat
-                </Button>
+              {/* President: upload certificat + validate */}
+              {role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (
+                <div className="w-full space-y-3">
+                  {!hasCertDoc && (
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                          onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                        />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded border border-dashed border-muted-foreground/40 hover:border-primary text-sm text-muted-foreground hover:text-primary transition-colors">
+                          <Upload className="h-4 w-4" />
+                          {certFile ? certFile.name : "Uploader le certificat signé"}
+                        </div>
+                      </label>
+                      {!certFile && (
+                        <p className="text-xs text-amber-600">⚠️ Vous devez uploader le certificat avant de pouvoir ouvrir</p>
+                      )}
+                    </div>
+                  )}
+                  {hasCertDoc && !certFile && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600">
+                      <CheckCircle className="h-4 w-4" /> Certificat déjà uploadé
+                    </div>
+                  )}
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={uploadingCert || (!hasCertDoc && !certFile)}
+                    onClick={handleUploadAndValidate}
+                  >
+                    {uploadingCert && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                    <ShieldCheck className="h-4 w-4 mr-1" /> Valider et ouvrir le certificat
+                  </Button>
+                </div>
               )}
 
               {/* Annulation */}
@@ -469,7 +491,7 @@ const MiseEnPlaceDetail = () => {
                   Annuler
                 </Button>
               )}
-              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canMontants && !canGenerateCert && (
+              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canMontants && !(role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT") && (
                 <p className="text-sm text-muted-foreground">Aucune action disponible pour votre rôle.</p>
               )}
             </div>
