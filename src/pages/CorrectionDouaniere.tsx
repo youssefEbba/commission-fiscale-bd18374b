@@ -71,7 +71,7 @@ const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string; label: string }> 
 const CorrectionDouaniere = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { toast } = useToast();
 
   const [demande, setDemande] = useState<DemandeCorrectionDto | null>(null);
