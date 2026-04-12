@@ -1386,7 +1386,6 @@ const CorrectionDouaniere = () => {
           )}
         </DialogContent>
       </Dialog>
-      </Dialog>
 
       {/* Réclamation Deposit Dialog */}
       <Dialog open={reclamationOpen} onOpenChange={(v) => { setReclamationOpen(v); if (!v) { setReclamationTexte(""); setReclamationFile(null); } }}>
