@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import {
   FileText, ArrowLeft, Loader2, CheckCircle, XCircle,
   Download, ExternalLink, Bot, Upload, History, RefreshCw,
-  FileDown, ShieldCheck, AlertTriangle,
+  FileDown, ShieldCheck, AlertTriangle, Plus,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
