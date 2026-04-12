@@ -1014,6 +1014,134 @@ const CorrectionDouaniere = () => {
                 </Card>
               )}
 
+              {/* Réclamations Section */}
+              {(demande.statut === "ADOPTEE" || demande.statut === "NOTIFIEE" || reclamations.length > 0) && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-500" /> Réclamations
+                      </h3>
+                      {/* Bouton dépôt : AC/UPM/UEP/Entreprise sur ADOPTEE/NOTIFIEE, pas de SOUMISE en cours */}
+                      {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE"]) &&
+                        (demande.statut === "ADOPTEE" || demande.statut === "NOTIFIEE") &&
+                        !reclamations.some(r => r.statut === "SOUMISE") && (
+                        <Button size="sm" variant="outline" onClick={() => setReclamationOpen(true)}>
+                          <Plus className="h-4 w-4 mr-1" /> Déposer une réclamation
+                        </Button>
+                      )}
+                    </div>
+                    {reclamations.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">Aucune réclamation déposée.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {reclamations.map((rec) => (
+                          <div key={rec.id} className={`rounded-lg border p-3 space-y-2 ${
+                            rec.statut === "SOUMISE" ? "border-amber-300 bg-amber-50" :
+                            rec.statut === "ACCEPTEE" ? "border-green-300 bg-green-50" :
+                            rec.statut === "ANNULEE" ? "border-muted bg-muted/30" :
+                            "border-red-300 bg-red-50"
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge className={`text-xs ${
+                                  rec.statut === "SOUMISE" ? "bg-amber-100 text-amber-800" :
+                                  rec.statut === "ACCEPTEE" ? "bg-green-100 text-green-800" :
+                                  rec.statut === "ANNULEE" ? "bg-muted text-muted-foreground" :
+                                  "bg-red-100 text-red-800"
+                                }`}>
+                                  {RECLAMATION_STATUT_LABELS[rec.statut]}
+                                </Badge>
+                                {rec.auteurNom && <span className="text-xs text-muted-foreground">Par : {rec.auteurNom}</span>}
+                              </div>
+                              {rec.dateCreation && <span className="text-xs text-muted-foreground">{new Date(rec.dateCreation).toLocaleDateString("fr-FR")}</span>}
+                            </div>
+                            <p className="text-sm">{rec.texte}</p>
+                            {rec.pieceJointeNomFichier && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <FileText className="h-3.5 w-3.5" />
+                                <span>{rec.pieceJointeNomFichier}</span>
+                                {rec.pieceJointeChemin && (
+                                  <a href={rec.pieceJointeChemin} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                                    <ExternalLink className="h-3 w-3" /> Ouvrir
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            {rec.statut === "REJETEE" && rec.motifReponse && (
+                              <div className="rounded border border-red-200 bg-red-100/50 p-2 text-xs">
+                                <span className="font-medium">Motif du rejet : </span>{rec.motifReponse}
+                              </div>
+                            )}
+                            {rec.statut === "ACCEPTEE" && (
+                              <div className="rounded border border-green-200 bg-green-100/50 p-2 text-xs">
+                                <span className="font-medium">✅ Acceptée</span> — La demande a été réinitialisée au statut REÇUE.
+                                {rec.motifReponse && <p className="mt-1">{rec.motifReponse}</p>}
+                              </div>
+                            )}
+                            {rec.statut === "ANNULEE" && (
+                              <div className="rounded border border-muted p-2 text-xs text-muted-foreground italic">
+                                Réclamation annulée
+                              </div>
+                            )}
+                            {/* Traitement : DGTCP accepte, PRESIDENT rejette */}
+                            {rec.statut === "SOUMISE" && (hasRole(["DGTCP"]) || hasRole(["PRESIDENT"])) && (
+                              <div className="flex gap-2 mt-2">
+                                {hasRole(["DGTCP"]) && (
+                                  <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => {
+                                    setTraiterReclamationId(rec.id);
+                                    setTraiterAcceptee(true);
+                                    setTraiterMotif("");
+                                    setTraiterOpen(true);
+                                  }}>
+                                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Accepter
+                                  </Button>
+                                )}
+                                {hasRole(["PRESIDENT"]) && (
+                                  <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => {
+                                    setTraiterReclamationId(rec.id);
+                                    setTraiterAcceptee(false);
+                                    setTraiterMotif("");
+                                    setTraiterOpen(true);
+                                  }}>
+                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                            {/* Annulation par auteur ou AC */}
+                            {rec.statut === "SOUMISE" && (
+                              (rec.auteurUserId === user?.userId) || hasRole(["AUTORITE_CONTRACTANTE"])
+                            ) && (
+                              <Button size="sm" variant="outline" className="h-7 text-xs mt-1" onClick={() => handleAnnulerReclamation(rec.id)}>
+                                <XCircle className="h-3.5 w-3.5 mr-1" /> Annuler la réclamation
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Bandeau re-upload après réclamation acceptée */}
+              {demande.statut === "RECUE" && reclamations.some(r => r.statut === "ACCEPTEE") && (
+                <Card className="border-amber-300 bg-amber-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-sm text-amber-800">Réclamation acceptée — Nouveau cycle d'évaluation</p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          Le processus d'évaluation reprend. Le <strong>DGD</strong> doit téléverser la nouvelle <strong>offre corrigée</strong> et le <strong>Président</strong> la nouvelle <strong>lettre d'adoption</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* AI Assistance Link */}
               <Card className="border-primary/30">
                 <CardHeader>
