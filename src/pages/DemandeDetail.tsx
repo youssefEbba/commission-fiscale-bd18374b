@@ -1073,6 +1073,7 @@ const DemandeDetail = () => {
                               setTraiterReclamationId(rec.id);
                               setTraiterAcceptee(false);
                               setTraiterMotif("");
+                              setTraiterFile(null);
                               setTraiterOpen(true);
                             }}>
                               <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
