@@ -100,7 +100,7 @@ async function downloadDocAuthenticated(url: string, filename: string) {
 }
 
 const Demandes = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const navigate = useNavigate();
   const { toast } = useToast();
