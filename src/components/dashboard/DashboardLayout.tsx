@@ -50,7 +50,7 @@ const NAV_ENTRIES: NavEntry[] = [
   // P3 (Certificat) : suivi des certificats ouverts
   { label: "Certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   // P4 (Douane) : ENT soumet, DGD contrôle, DGTCP impute | P5 (Intérieur) : ENT soumet, DGTCP valide, DGI consulte
-  { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
+  { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
   // Simulation : Entreprise uniquement
   { label: "Simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
   { label: "Reporting", href: "/dashboard/reporting", icon: PieChart },
