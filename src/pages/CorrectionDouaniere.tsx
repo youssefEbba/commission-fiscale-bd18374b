@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DocumentDto, DecisionCorrectionDto,
   DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
+  ReclamationDemandeCorrectionDto, RECLAMATION_STATUT_LABELS,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
