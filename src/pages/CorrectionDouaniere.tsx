@@ -332,7 +332,7 @@ const CorrectionDouaniere = () => {
   const isDirection = userRole && DECISION_ROLES.includes(userRole);
   const canFinalDecision = userRole === "PRESIDENT";
   const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
-  const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE";
+  const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE" || demande?.statut === "ANNULEE";
 
   // Current user's decisions (multi-rejet support)
   const myRoleDecs = decisions.filter(d => d.role === userRole);
