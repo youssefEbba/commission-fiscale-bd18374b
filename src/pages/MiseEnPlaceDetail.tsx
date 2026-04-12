@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, DollarSign, FileDown, MessageSquare, Send,
+  AlertTriangle, History, DollarSign, Upload, MessageSquare, Send,
 } from "lucide-react";
 
 import { API_BASE } from "@/lib/apiConfig";
@@ -95,7 +95,9 @@ const MiseEnPlaceDetail = () => {
   // Action states
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [generatingCert, setGeneratingCert] = useState(false);
+  // President: upload certificat file before opening
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [uploadingCert, setUploadingCert] = useState(false);
 
   // Rejet temp dialog
   const [showRejetTemp, setShowRejetTemp] = useState(false);
@@ -208,11 +210,9 @@ const MiseEnPlaceDetail = () => {
   const canAnnuler = hasPermission("mise_en_place.annuler")
     && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
 
-  // President validates and opens directly
-  const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT";
-
-  // President generates certificate when OUVERT
-  const canGenerateCert = role === "PRESIDENT" && c.statut === "OUVERT";
+  // President: check if certificate document already uploaded
+  const hasCertDoc = docs.some(d => d.type === "CERTIFICAT_CREDIT_IMPOTS");
+  const canValiderPresident = role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (hasCertDoc || certFile !== null);
 
   const handleStatut = async (statut: CertificatStatut) => {
     setActionLoading(true);
@@ -297,46 +297,21 @@ const MiseEnPlaceDetail = () => {
     } finally { setRejecting(false); }
   };
 
-  const handleGenerateCertificate = async () => {
-    setGeneratingCert(true);
+  // Handle upload cert then validate
+  const handleUploadAndValidate = async () => {
+    if (!certFile && !hasCertDoc) return;
+    setUploadingCert(true);
     try {
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text("CERTIFICAT DE CRÉDIT D'IMPÔT", 105, 30, { align: "center" });
-      doc.setFontSize(12);
-      doc.text(`Référence : ${c.reference || `#${c.id}`}`, 20, 55);
-      doc.text(`Entreprise : ${entrepriseName}`, 20, 65);
-      doc.text(`Correction douanière : ${correctionRef}`, 20, 75);
-      if (marcheRef !== "—") doc.text(`Marché : ${marcheRef}`, 20, 85);
-      let y = marcheRef !== "—" ? 100 : 95;
-      doc.setFontSize(14);
-      doc.text("Montants", 20, y);
-      doc.setFontSize(12);
-      y += 12;
-      if (c.montantCordon != null) doc.text(`Cordon / Douane : ${c.montantCordon.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 10;
-      if (c.montantTVAInterieure != null) doc.text(`TVA Intérieure : ${c.montantTVAInterieure.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 10;
-      if (c.soldeCordon != null) doc.text(`Solde Cordon : ${c.soldeCordon.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 10;
-      if (c.soldeTVA != null) doc.text(`Solde TVA : ${c.soldeTVA.toLocaleString("fr-FR")} FCFA`, 25, y);
-      y += 25;
-      doc.text(`Statut : ${CERTIFICAT_STATUT_LABELS[c.statut] || c.statut}`, 20, y);
-      y += 10;
-      doc.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, 20, y);
-      y += 30;
-      doc.text("Le Président de la Commission Fiscale", 105, y, { align: "center" });
-      y += 20;
-      doc.text("____________________________", 105, y, { align: "center" });
-
-      const pdfBlob = doc.output("blob");
-      const pdfFile = new File([pdfBlob], `certificat-credit-${c.id}.pdf`, { type: "application/pdf" });
-      await certificatCreditApi.uploadDocument(c.id, "CERTIFICAT_CREDIT_IMPOTS", pdfFile);
-      toast({ title: "Succès", description: "Certificat généré et attaché" });
+      if (certFile) {
+        await certificatCreditApi.uploadDocument(c.id, "CERTIFICAT_CREDIT_IMPOTS", certFile);
+      }
+      await certificatCreditApi.updateStatut(c.id, "OUVERT");
+      toast({ title: "Succès", description: "Certificat uploadé et ouvert" });
+      setCertFile(null);
       fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setGeneratingCert(false); }
+    } finally { setUploadingCert(false); }
   };
 
   // ===== Organism tab content =====
@@ -471,20 +446,42 @@ const MiseEnPlaceDetail = () => {
                 </Button>
               )}
 
-              {/* President: validate and open directly */}
-              {canValiderPresident && (
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={actionLoading} onClick={() => handleStatut("OUVERT")}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                  <ShieldCheck className="h-4 w-4 mr-1" /> Valider et ouvrir le certificat
-                </Button>
-              )}
-
-              {/* President: generate certificate */}
-              {canGenerateCert && (
-                <Button disabled={generatingCert} onClick={handleGenerateCertificate}>
-                  {generatingCert ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-                  Générer certificat
-                </Button>
+              {/* President: upload certificat + validate */}
+              {role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (
+                <div className="w-full space-y-3">
+                  {!hasCertDoc && (
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                          onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                        />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded border border-dashed border-muted-foreground/40 hover:border-primary text-sm text-muted-foreground hover:text-primary transition-colors">
+                          <Upload className="h-4 w-4" />
+                          {certFile ? certFile.name : "Uploader le certificat signé"}
+                        </div>
+                      </label>
+                      {!certFile && (
+                        <p className="text-xs text-amber-600">⚠️ Vous devez uploader le certificat avant de pouvoir ouvrir</p>
+                      )}
+                    </div>
+                  )}
+                  {hasCertDoc && !certFile && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600">
+                      <CheckCircle className="h-4 w-4" /> Certificat déjà uploadé
+                    </div>
+                  )}
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={uploadingCert || (!hasCertDoc && !certFile)}
+                    onClick={handleUploadAndValidate}
+                  >
+                    {uploadingCert && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                    <ShieldCheck className="h-4 w-4 mr-1" /> Valider et ouvrir le certificat
+                  </Button>
+                </div>
               )}
 
               {/* Annulation */}
@@ -494,7 +491,7 @@ const MiseEnPlaceDetail = () => {
                   Annuler
                 </Button>
               )}
-              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canMontants && !canGenerateCert && (
+              {!isDecisionRole && !isACOrEntreprise && !canAnnuler && !canMontants && !(role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT") && (
                 <p className="text-sm text-muted-foreground">Aucune action disponible pour votre rôle.</p>
               )}
             </div>
