@@ -807,6 +807,26 @@ const Demandes = () => {
                                             <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
                                           </DropdownMenuItem>
                                         )}
+                                        {canReactivate && <DropdownMenuSeparator />}
+                                        {canReactivate && (
+                                          <DropdownMenuItem
+                                            disabled={actionLoading === d.id}
+                                            onClick={async () => {
+                                              setActionLoading(d.id);
+                                              try {
+                                                await demandeCorrectionApi.updateStatut(d.id, "RECUE");
+                                                toast({ title: "Demande réactivée", description: "La demande est de nouveau au statut Reçue." });
+                                                fetchDemandes();
+                                              } catch (e: any) {
+                                                toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                              } finally {
+                                                setActionLoading(null);
+                                              }
+                                            }}
+                                          >
+                                            <RefreshCw className="h-4 w-4 mr-2" /> Réactiver
+                                          </DropdownMenuItem>
+                                        )}
                                       </>
                                     );
                                   })()}
