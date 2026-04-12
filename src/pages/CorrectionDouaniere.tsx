@@ -117,6 +117,18 @@ const CorrectionDouaniere = () => {
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
 
+  // Réclamations
+  const [reclamations, setReclamations] = useState<ReclamationDemandeCorrectionDto[]>([]);
+  const [reclamationOpen, setReclamationOpen] = useState(false);
+  const [reclamationTexte, setReclamationTexte] = useState("");
+  const [reclamationFile, setReclamationFile] = useState<File | null>(null);
+  const [reclamationSubmitting, setReclamationSubmitting] = useState(false);
+  const [traiterReclamationId, setTraiterReclamationId] = useState<number | null>(null);
+  const [traiterAcceptee, setTraiterAcceptee] = useState(true);
+  const [traiterMotif, setTraiterMotif] = useState("");
+  const [traiterOpen, setTraiterOpen] = useState(false);
+  const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+
   const fetchDemande = async () => {
     if (!id) return;
     setLoading(true);
