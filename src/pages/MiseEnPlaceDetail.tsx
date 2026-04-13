@@ -526,7 +526,7 @@ const MiseEnPlaceDetail = () => {
             </div>
             <div className={`rounded-lg border p-4 min-h-[120px] ${cardStyle}`}>
               <div className="text-center mb-3">
-                {tabHasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : tabAllResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : tabHasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
+                {tabHasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : (r === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut)) ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : tabAllResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : tabHasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
                 {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return <p className="text-green-700 font-medium text-xs mt-0.5">✓ Visa apposé — Plus d'actions possibles</p>; })()}
                 {tabAllResolved && !tabHasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets résolus — Peut viser</p>}
