@@ -331,7 +331,8 @@ const MiseEnPlaceDetail = () => {
   const tabCanRejetTemp = isMyTab && isControlTab && isInControle && !tabHasVisa;
   const tabCanResolve = isMyTab && openRejets.length > 0;
 
-  const cardStyle = tabHasVisa
+  const presidentValidated = r === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut);
+  const cardStyle = (tabHasVisa || presidentValidated)
     ? "border-green-300 bg-green-50"
     : tabAllResolved
     ? "border-emerald-300 bg-emerald-50"
