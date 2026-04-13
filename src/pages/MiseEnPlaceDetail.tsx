@@ -518,7 +518,7 @@ const MiseEnPlaceDetail = () => {
                       isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                     }`}
                   >
-                    {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
+                    {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : (orgRole === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut)) ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
                     <span>{DECISION_ROLE_LABELS[orgRole] || orgRole}</span>
                   </button>
                 );
