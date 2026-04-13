@@ -331,7 +331,8 @@ const MiseEnPlaceDetail = () => {
   const tabCanRejetTemp = isMyTab && isControlTab && isInControle && !tabHasVisa;
   const tabCanResolve = isMyTab && openRejets.length > 0;
 
-  const cardStyle = tabHasVisa
+  const presidentValidated = r === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut);
+  const cardStyle = (tabHasVisa || presidentValidated)
     ? "border-green-300 bg-green-50"
     : tabAllResolved
     ? "border-emerald-300 bg-emerald-50"
@@ -518,7 +519,7 @@ const MiseEnPlaceDetail = () => {
                       isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                     }`}
                   >
-                    {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
+                    {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : (orgRole === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut)) ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
                     <span>{DECISION_ROLE_LABELS[orgRole] || orgRole}</span>
                   </button>
                 );
@@ -526,11 +527,12 @@ const MiseEnPlaceDetail = () => {
             </div>
             <div className={`rounded-lg border p-4 min-h-[120px] ${cardStyle}`}>
               <div className="text-center mb-3">
-                {tabHasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : tabAllResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : tabHasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
+                {tabHasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : (r === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut)) ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : tabAllResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : tabHasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
                 {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return <p className="text-green-700 font-medium text-xs mt-0.5">✓ Visa apposé — Plus d'actions possibles</p>; })()}
                 {tabAllResolved && !tabHasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets résolus — Peut viser</p>}
-                {!tabHasVisa && !tabHasRejets && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                {r === "PRESIDENT" && !tabHasVisa && !tabHasRejets && ["OUVERT", "CLOTURE"].includes(c.statut) && <p className="text-green-700 font-medium text-xs mt-0.5">✓ Certificat validé et ouvert</p>}
+                {!(r === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut)) && !tabHasVisa && !tabHasRejets && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
                 {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return vd?.dateDecision ? <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(vd.dateDecision).toLocaleDateString("fr-FR")}</p> : null; })()}
               </div>
 
