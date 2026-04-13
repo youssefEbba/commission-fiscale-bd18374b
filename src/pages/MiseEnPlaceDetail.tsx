@@ -530,7 +530,8 @@ const MiseEnPlaceDetail = () => {
                 <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
                 {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return <p className="text-green-700 font-medium text-xs mt-0.5">✓ Visa apposé — Plus d'actions possibles</p>; })()}
                 {tabAllResolved && !tabHasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets résolus — Peut viser</p>}
-                {!tabHasVisa && !tabHasRejets && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
+                {r === "PRESIDENT" && !tabHasVisa && !tabHasRejets && ["OUVERT", "CLOTURE"].includes(c.statut) && <p className="text-green-700 font-medium text-xs mt-0.5">✓ Certificat validé et ouvert</p>}
+                {!(r === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut)) && !tabHasVisa && !tabHasRejets && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
                 {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return vd?.dateDecision ? <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(vd.dateDecision).toLocaleDateString("fr-FR")}</p> : null; })()}
               </div>
 
