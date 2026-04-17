@@ -179,9 +179,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   useEffect(() => {
     if (open) {
       setStep(0);
-      setEntrepriseId("");
-      setConventionId("");
-      setMarcheId("");
+      // Ne PAS écraser entrepriseId / conventionId / marcheId : ils sont restaurés
+      // depuis sessionStorage via usePersistedState pour ne pas perdre la saisie
+      // quand l'utilisateur quitte temporairement le navigateur sur mobile.
       setDocFiles({});
       setImportations([emptyImportation()]);
       setDqeLignes([emptyDqeLigne()]);
@@ -513,10 +513,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       }
 
       toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
+      // Nettoyer les valeurs persistées après succès
+      clearEntrepriseId();
+      clearConventionId();
+      clearMarcheId();
       onOpenChange(false);
       onCreated();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: formatApiErrorMessage(e, "Échec de la création"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
