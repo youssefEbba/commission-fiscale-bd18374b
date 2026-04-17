@@ -119,7 +119,7 @@ const Marches = () => {
       const d = await delegueApi.getAll();
       setDelegues(d.filter(x => x.actif));
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les délégués", variant: "destructive" });
+      toast({ title: "Erreur", description: "Impossible de charger les représentants", variant: "destructive" });
     }
   };
 
@@ -131,7 +131,7 @@ const Marches = () => {
     setCreatingDelegue(true);
     try {
       const created = await delegueApi.create(delegueForm);
-      toast({ title: "Succès", description: "Délégué créé" });
+      toast({ title: "Succès", description: "Représentant créé" });
       setDelegueForm({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
       setShowCreateDelegue(false);
       // Refresh list and auto-select
@@ -150,7 +150,7 @@ const Marches = () => {
     setAssigning(true);
     try {
       await marcheApi.addDelegue(assignMarche.id, parseInt(selectedDelegue));
-      toast({ title: "Succès", description: "Délégué ajouté au marché" });
+      toast({ title: "Succès", description: "Représentant ajouté au marché" });
       setSelectedDelegue("");
       fetchMarches();
       // Refresh assignMarche
@@ -167,7 +167,7 @@ const Marches = () => {
     if (!assignMarche) return;
     try {
       await marcheApi.removeDelegue(assignMarche.id, delegueId);
-      toast({ title: "Succès", description: "Délégué retiré du marché" });
+      toast({ title: "Succès", description: "Représentant retiré du marché" });
       fetchMarches();
       const updated = await marcheApi.getById(assignMarche.id);
       setAssignMarche(updated);

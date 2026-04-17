@@ -42,7 +42,7 @@ const DelegueEditDialog = ({ delegue, open, onOpenChange, onUpdated }: Props) =>
       const payload: UpdateDelegueRequest = { nomComplet: form.nomComplet, email: form.email || undefined };
       if (form.newPassword?.trim()) payload.newPassword = form.newPassword;
       await delegueApi.update(delegue.id, payload);
-      toast({ title: "Succès", description: "Délégué mis à jour" });
+      toast({ title: "Succès", description: "Représentant mis à jour" });
       onOpenChange(false);
       onUpdated();
     } catch (e: any) {
@@ -56,8 +56,8 @@ const DelegueEditDialog = ({ delegue, open, onOpenChange, onUpdated }: Props) =>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Modifier le délégué</DialogTitle>
-          <DialogDescription>Mettez à jour les informations du délégué #{delegue?.id}</DialogDescription>
+          <DialogTitle>Modifier le représentant</DialogTitle>
+          <DialogDescription>Mettez à jour les informations du représentant #{delegue?.id}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">

@@ -29,13 +29,13 @@ const DelegueMarchesDialog = ({ delegue, open, onOpenChange }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             Marchés de {delegue?.nomComplet}
           </DialogTitle>
-          <DialogDescription>Liste des marchés auxquels ce délégué est rattaché</DialogDescription>
+          <DialogDescription>Liste des marchés auxquels ce représentant est rattaché</DialogDescription>
         </DialogHeader>
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
