@@ -545,7 +545,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         <DialogHeader>
           <DialogTitle>Nouvelle demande de correction</DialogTitle>
         </DialogHeader>
-        <div className="md:hidden flex items-start gap-2 rounded-md border border-amber-300/40 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700/40 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+        <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
             <strong>Astuce mobile :</strong> votre saisie est sauvegardée automatiquement. Toutefois, si vous quittez l'application puis revenez, vous devrez <em>re-sélectionner</em> les fichiers PDF (limitation des navigateurs mobiles).
