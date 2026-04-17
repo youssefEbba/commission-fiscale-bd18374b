@@ -585,96 +585,92 @@ const Conventions = () => {
             {loading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
-              <Table>
-                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Référence</TableHead>
-                    <TableHead>Intitulé</TableHead>
-                    <TableHead>Bailleur</TableHead>
-                    <TableHead>Montant Devise</TableHead>
-                    <TableHead>Montant MRU</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                   <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        Aucune convention trouvée
-                      </TableCell>
+                      <TableHead>Référence</TableHead>
+                      <TableHead>Intitulé</TableHead>
+                      <TableHead>Bailleur</TableHead>
+                      <TableHead>Montant Devise</TableHead>
+                      <TableHead>Montant MRU</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{c.intitule || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{c.bailleur || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {c.montantDevise ? `${c.montantDevise.toLocaleString("fr-FR")} ${c.deviseOrigine || ""}` : "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {c.montantMru ? `${c.montantMru.toLocaleString("fr-FR")} MRU` : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
-                            {CONVENTION_STATUT_LABELS[c.statut]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {c.dateCreation ? new Date(c.dateCreation).toLocaleDateString("fr-FR") : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {/* Voir détails — tous */}
-                              <DropdownMenuItem onClick={() => openDetail(c)}>
-                                <Eye className="h-4 w-4 mr-2" /> Voir les détails
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem onClick={() => openDocuments(c)}>
-                                <Paperclip className="h-4 w-4 mr-2" /> Documents
-                              </DropdownMenuItem>
-
-                              {/* DGB / DGI : Valider + Rejeter */}
-                              {(isDGB || isDGI) && c.statut === "EN_ATTENTE" && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleStatutChange(c.id, "VALIDE")}>
-                                    <ShieldCheck className="h-4 w-4 mr-2 text-green-600" /> Valider
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openReject(c)}>
-                                    <ShieldX className="h-4 w-4 mr-2 text-destructive" /> Rejeter
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                              {/* AC : Modifier, Gérer fichiers, Annuler */}
-                              {(isAC || isAdmin) && c.statut !== "VALIDE" && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => openEdit(c)}>
-                                    <Edit className="h-4 w-4 mr-2" /> Modifier
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
-                                    <Ban className="h-4 w-4 mr-2" /> Annuler la convention
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          Aucune convention trouvée
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filtered.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium whitespace-nowrap">{c.reference || `#${c.id}`}</TableCell>
+                          <TableCell className="max-w-[220px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleur || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">
+                            {c.montantDevise ? `${c.montantDevise.toLocaleString("fr-FR")} ${c.deviseOrigine || ""}` : "—"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">
+                            {c.montantMru ? `${c.montantMru.toLocaleString("fr-FR")} MRU` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
+                              {CONVENTION_STATUT_LABELS[c.statut]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                            {c.dateCreation ? new Date(c.dateCreation).toLocaleDateString("fr-FR") : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openDetail(c)}>
+                                  <Eye className="h-4 w-4 mr-2" /> Voir les détails
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openDocuments(c)}>
+                                  <Paperclip className="h-4 w-4 mr-2" /> Documents
+                                </DropdownMenuItem>
+                                {(isDGB || isDGI) && c.statut === "EN_ATTENTE" && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleStatutChange(c.id, "VALIDE")}>
+                                      <ShieldCheck className="h-4 w-4 mr-2 text-green-600" /> Valider
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openReject(c)}>
+                                      <ShieldX className="h-4 w-4 mr-2 text-destructive" /> Rejeter
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {(isAC || isAdmin) && c.statut !== "VALIDE" && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => openEdit(c)}>
+                                      <Edit className="h-4 w-4 mr-2" /> Modifier
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
+                                      <Ban className="h-4 w-4 mr-2" /> Annuler la convention
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
