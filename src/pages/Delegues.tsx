@@ -37,7 +37,7 @@ const Delegues = () => {
     try {
       setDelegues(await delegueApi.getAll());
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les délégués", variant: "destructive" });
+      toast({ title: "Erreur", description: "Impossible de charger les représentants", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ const Delegues = () => {
     setCreating(true);
     try {
       await delegueApi.create(form);
-      toast({ title: "Succès", description: "Délégué créé" });
+      toast({ title: "Succès", description: "Représentant créé" });
       setCreateOpen(false);
       setForm({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
       fetchDelegues();
@@ -68,7 +68,7 @@ const Delegues = () => {
     setToggling(d.id);
     try {
       await delegueApi.setActif(d.id, !d.actif);
-      toast({ title: "Succès", description: `Délégué ${d.actif ? "désactivé" : "activé"}` });
+      toast({ title: "Succès", description: `Représentant ${d.actif ? "désactivé" : "activé"}` });
       fetchDelegues();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -89,13 +89,13 @@ const Delegues = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Users className="h-6 w-6 text-primary" />
-              Délégués (UPM / UEP)
+              Représentants (UPM / UEP)
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Gérez les délégués rattachés à votre autorité contractante</p>
+            <p className="text-muted-foreground text-sm mt-1">Gérez les représentants rattachés à votre autorité contractante</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Nouveau délégué
+              <Plus className="h-4 w-4 mr-2" /> Nouveau représentant
             </Button>
             <Button variant="outline" onClick={fetchDelegues} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
@@ -105,7 +105,7 @@ const Delegues = () => {
 
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher un délégué..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher un représentant..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
 
         <Card>
@@ -128,7 +128,7 @@ const Delegues = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun délégué</TableCell>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun représentant</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map(d => (
@@ -185,8 +185,8 @@ const Delegues = () => {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nouveau délégué</DialogTitle>
-            <DialogDescription>Créez un compte délégué UPM ou UEP rattaché à votre autorité.</DialogDescription>
+            <DialogTitle>Nouveau représentant</DialogTitle>
+            <DialogDescription>Créez un compte représentant UPM ou UEP rattaché à votre autorité.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
