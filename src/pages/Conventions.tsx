@@ -127,10 +127,10 @@ const Conventions = () => {
   const isDGI = hasRole(["DGI"]);
   const isAdmin = hasRole(["ADMIN_SI", "PRESIDENT"]);
 
-  const fetchConventions = async () => {
+  const fetchConventions = async (q?: string) => {
     setLoading(true);
     try {
-      const data = await conventionApi.getAll();
+      const data = await conventionApi.getAll(q);
       setConventions(data);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les conventions", variant: "destructive" });
