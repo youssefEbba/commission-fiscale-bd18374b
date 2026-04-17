@@ -164,6 +164,13 @@ const Conventions = () => {
 
   useEffect(() => { fetchConventions(); }, []);
 
+  // Recherche côté serveur (debounce 300 ms) — back filtre sur référence / intitulé / projectReference
+  useEffect(() => {
+    const t = setTimeout(() => { fetchConventions(search.trim() || undefined); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   // Load references + GED requirements when create dialog opens
   useEffect(() => {
     if (createOpen) {
@@ -518,10 +525,13 @@ const Conventions = () => {
   };
 
   const filtered = conventions.filter((c) => {
-    const matchSearch =
-      (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.intitule || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.bailleur || "").toLowerCase().includes(search.toLowerCase());
+    const s = search.toLowerCase();
+    const matchSearch = !s || (
+      (c.reference || "").toLowerCase().includes(s) ||
+      (c.projectReference || "").toLowerCase().includes(s) ||
+      (c.intitule || "").toLowerCase().includes(s) ||
+      (c.bailleur || "").toLowerCase().includes(s)
+    );
     const matchStatut = filterStatut === "ALL" || c.statut === filterStatut;
     return matchSearch && matchStatut;
   });
@@ -540,7 +550,7 @@ const Conventions = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchConventions} disabled={loading}>
+            <Button variant="outline" onClick={() => fetchConventions(search.trim() || undefined)} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
             {(isAC || isAdmin) && (
@@ -554,7 +564,7 @@ const Conventions = () => {
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Rechercher (réf., intitulé, projet, bailleur)..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48">
