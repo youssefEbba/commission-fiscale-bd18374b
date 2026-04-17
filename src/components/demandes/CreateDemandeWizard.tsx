@@ -176,29 +176,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   }, [toast, isDelegate, user?.userId]);
 
+  // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
+  // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
     if (open) {
-      setStep(0);
-      // Ne PAS écraser entrepriseId / conventionId / marcheId : ils sont restaurés
-      // depuis sessionStorage via usePersistedState pour ne pas perdre la saisie
-      // quand l'utilisateur quitte temporairement le navigateur sur mobile.
-      setDocFiles({});
-      setImportations([emptyImportation()]);
-      setDqeLignes([emptyDqeLigne()]);
-      setReferenceDossier("");
-      setShowCreateEntreprise(false);
-      setNewEntreprise({ raisonSociale: "", nif: "" });
-      setShowCreateConvention(false);
-      setNewConvForm({
-        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
-        dateSignature: "", dateFin: "",
-        montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
-      });
-      setConvCreateDocs([]);
-      setConvGedReqs([]);
-      setShowCreateMarche(false);
-      setNewMarche({ numeroMarche: "" });
+      const isFreshOpen = !wasOpenRef.current;
+      wasOpenRef.current = true;
+      if (isFreshOpen) {
+        // Au premier rendu, ne PAS écraser les états persistés (entrepriseId, conventionId,
+        // marcheId, importations, dqe, fiscalite, etc.) — l'utilisateur peut être de retour
+        // après une bascule mobile et on veut restaurer sa saisie.
+        setStep(0);
+        setDocFiles({});
+        setShowCreateEntreprise(false);
+        setNewEntreprise({ raisonSociale: "", nif: "" });
+        setShowCreateConvention(false);
+        setShowCreateMarche(false);
+      }
       loadInitialData();
+    } else {
+      wasOpenRef.current = false;
     }
   }, [open, loadInitialData]);
 
