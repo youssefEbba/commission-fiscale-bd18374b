@@ -130,22 +130,22 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   // Drag and drop state
   const [dragOverType, setDragOverType] = useState<string | null>(null);
 
-  // Step 1: Modèle fiscal
-  const [typeProjet, setTypeProjet] = useState("BTP");
-  const [referenceDossier, setReferenceDossier] = useState("");
+  // Step 1: Modèle fiscal — persistés pour résister à la mise en arrière-plan mobile
+  const [typeProjet, setTypeProjet] = usePersistedState<string>("demande:typeProjet", "BTP");
+  const [referenceDossier, setReferenceDossier] = usePersistedState<string>("demande:refDossier", "");
   const [showNomenclature, setShowNomenclature] = useState(false);
-  const [importations, setImportations] = useState<ImportationLigne[]>([emptyImportation()]);
-  const [fiscalite, setFiscalite] = useState<FiscaliteInterieure>({
+  const [importations, setImportations] = usePersistedState<ImportationLigne[]>("demande:importations", [emptyImportation()]);
+  const [fiscalite, setFiscalite] = usePersistedState<FiscaliteInterieure>("demande:fiscalite", {
     montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0,
     tvaDeductible: 0, tvaNette: 0, creditInterieur: 0,
   });
 
-  // Step 2: DQE
-  const [dqeNumero, setDqeNumero] = useState("");
-  const [dqeProjet, setDqeProjet] = useState("");
-  const [dqeLot, setDqeLot] = useState("");
-  const [dqeTauxTVA, setDqeTauxTVA] = useState(16);
-  const [dqeLignes, setDqeLignes] = useState<DqeLigne[]>([emptyDqeLigne()]);
+  // Step 2: DQE — persistés
+  const [dqeNumero, setDqeNumero] = usePersistedState<string>("demande:dqeNumero", "");
+  const [dqeProjet, setDqeProjet] = usePersistedState<string>("demande:dqeProjet", "");
+  const [dqeLot, setDqeLot] = usePersistedState<string>("demande:dqeLot", "");
+  const [dqeTauxTVA, setDqeTauxTVA] = usePersistedState<number>("demande:dqeTauxTVA", 16);
+  const [dqeLignes, setDqeLignes] = usePersistedState<DqeLigne[]>("demande:dqeLignes", [emptyDqeLigne()]);
 
   // Load data on open
   const isDelegate = user?.role === "AUTORITE_UPM" || user?.role === "AUTORITE_UEP";
