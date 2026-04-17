@@ -233,14 +233,17 @@ const Marches = () => {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
       return;
     }
-    if (!editing && !form.conventionId) {
-      toast({ title: "Erreur", description: "La convention est obligatoire", variant: "destructive" });
-      return;
+    // Préparer payload : envoyer montantContratHt (alias TTC accepté côté back)
+    const payload: CreateMarcheRequest = { ...form };
+    if (payload.montantContratHt == null) {
+      delete payload.montantContratHt;
+      delete payload.montantContratTtc;
+    } else {
+      // alias rétro-compat
+      payload.montantContratTtc = payload.montantContratHt;
     }
-    // Send montant only if provided
-    const payload = { ...form };
-    if (!payload.montantContratTtc && payload.montantContratTtc !== 0) {
-      delete (payload as any).montantContratTtc;
+    if (!payload.conventionId) {
+      delete payload.conventionId;
     }
     setSubmitting(true);
     try {
@@ -253,17 +256,22 @@ const Marches = () => {
       }
       setDialogOpen(false);
       fetchMarches();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: formatApiErrorMessage(e, "Échec de l'opération"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const filtered = marches.filter(m =>
-    (m.numeroMarche || "").toLowerCase().includes(search.toLowerCase()) ||
-    String(m.id).includes(search)
-  );
+  const filtered = marches.filter(m => {
+    const s = search.toLowerCase();
+    if (!s) return true;
+    return (
+      (m.numeroMarche || "").toLowerCase().includes(s) ||
+      (m.intitule || "").toLowerCase().includes(s) ||
+      String(m.id).includes(s)
+    );
+  });
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
@@ -285,7 +293,7 @@ const Marches = () => {
                 <Plus className="h-4 w-4 mr-2" /> Nouvelle attribution
               </Button>
             )}
-            <Button variant="outline" onClick={fetchMarches} disabled={loading}>
+            <Button variant="outline" onClick={() => fetchMarches(search.trim() || undefined)} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
           </div>
@@ -293,7 +301,7 @@ const Marches = () => {
 
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher un marché..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher (n° ou intitulé)..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
 
         <Card>
@@ -301,75 +309,79 @@ const Marches = () => {
             {loading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>N° Attribution / Marché</TableHead>
-                    <TableHead>Date signature</TableHead>
-                    <TableHead>Montant TTC</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Délégué</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
+                      <TableHead>ID</TableHead>
+                      <TableHead>N° Attribution / Marché</TableHead>
+                      <TableHead>Intitulé</TableHead>
+                      <TableHead>Date signature</TableHead>
+                      <TableHead>Montant HT</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Représentant</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map(m => (
-                      <TableRow key={m.id}>
-                        <TableCell className="font-medium">#{m.id}</TableCell>
-                        <TableCell>{m.numeroMarche || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {m.dateSignature ? new Date(m.dateSignature).toLocaleDateString("fr-FR") : "—"}
-                        </TableCell>
-                        <TableCell>{m.montantContratTtc?.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) || "—"}</TableCell>
-                        <TableCell>
-                          <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
-                            {MARCHE_STATUT_LABELS[m.statut]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {m.demandeCorrectionId ? (
-                            <Badge className="text-xs bg-green-100 text-green-800">Marché / Contrat</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">Attribution / Adjudication</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {m.delegueIds && m.delegueIds.length > 0
-                            ? m.delegueIds.map(id => `#${id}`).join(", ")
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
-                              <FileText className="h-4 w-4 mr-1" /> GED
-                            </Button>
-                            {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
-                              <>
-                                <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
-                                  <Edit className="h-4 w-4 mr-1" /> Modifier
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => openAssign(m)}>
-                                  <UserPlus className="h-4 w-4 mr-1" /> Affecter
-                                </Button>
-                                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => openCancelMarche(m)}>
-                                  <Ban className="h-4 w-4 mr-1" /> Annuler
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filtered.map(m => (
+                        <TableRow key={m.id}>
+                          <TableCell className="font-medium">#{m.id}</TableCell>
+                          <TableCell className="whitespace-nowrap">{m.numeroMarche || "—"}</TableCell>
+                          <TableCell className="max-w-[220px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">
+                            {m.dateSignature ? new Date(m.dateSignature).toLocaleDateString("fr-FR") : "—"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{(m.montantContratHt ?? m.montantContratTtc)?.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) || "—"}</TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
+                              {MARCHE_STATUT_LABELS[m.statut]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {m.demandeCorrectionId ? (
+                              <Badge className="text-xs bg-green-100 text-green-800">Marché / Contrat</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">Attribution / Adjudication</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                            {m.delegueIds && m.delegueIds.length > 0
+                              ? m.delegueIds.map(id => `#${id}`).join(", ")
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end flex-wrap">
+                              <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
+                                <FileText className="h-4 w-4 mr-1" /> GED
+                              </Button>
+                              {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
+                                <>
+                                  <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
+                                    <Edit className="h-4 w-4 mr-1" /> Modifier
+                                  </Button>
+                                  <Button variant="outline" size="sm" onClick={() => openAssign(m)}>
+                                    <UserPlus className="h-4 w-4 mr-1" /> Affecter
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => openCancelMarche(m)}>
+                                    <Ban className="h-4 w-4 mr-1" /> Annuler
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -387,9 +399,9 @@ const Marches = () => {
           <div className="space-y-4">
             {!editing && (
               <div className="space-y-2">
-                <Label>Convention *</Label>
+                <Label>Convention <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
                 <Select value={form.conventionId ? String(form.conventionId) : ""} onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Aucune convention rattachée" /></SelectTrigger>
                   <SelectContent>
                     {conventions.map(c => (
                       <SelectItem key={c.id} value={String(c.id)}>
@@ -405,12 +417,16 @@ const Marches = () => {
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
             </div>
             <div className="space-y-2">
-              <Label>Date de signature</Label>
-              <Input type="date" value={form.dateSignature} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+              <Label>Intitulé du marché</Label>
+              <Input value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Ex : Construction d'une école..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Date de signature <span className="text-muted-foreground text-xs">(optionnelle)</span></Label>
+              <Input type="date" value={form.dateSignature || ""} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
             </div>
              <div className="space-y-2">
-              <Label>Montant contrat TTC <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
-              <Input type="number" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined as any }))} placeholder="Laisser vide si non applicable" />
+              <Label>Montant contrat HT <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
+              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder="Laisser vide si non applicable" />
             </div>
             <div className="space-y-2">
               <Label>Statut</Label>
