@@ -74,9 +74,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [marches, setMarches] = useState<MarcheDto[]>([]);
-  const [entrepriseId, setEntrepriseId] = useState("");
-  const [conventionId, setConventionId] = useState("");
-  const [marcheId, setMarcheId] = useState("");
+  // Persistance pour ne pas perdre la saisie sur mobile (bascule WhatsApp, etc.)
+  const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
+  const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
+  const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
+  // docFiles ne sont PAS persistés (les File objects ne sont pas sérialisables) — l'utilisateur devra les re-sélectionner.
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [loadingData, setLoadingData] = useState(false);
 
