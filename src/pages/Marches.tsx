@@ -454,16 +454,16 @@ const Marches = () => {
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Gérer les délégués</DialogTitle>
+            <DialogTitle>Gérer les représentants</DialogTitle>
             <DialogDescription>
-              Ajoutez ou retirez des délégués du marché #{assignMarche?.id}.
+              Ajoutez ou retirez des représentants du marché #{assignMarche?.id}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Current delegates */}
             {assignMarche?.delegueIds && assignMarche.delegueIds.length > 0 && (
               <div className="space-y-2">
-                <Label>Délégués affectés</Label>
+                <Label>Représentants affectés</Label>
                 <div className="flex flex-wrap gap-2">
                   {assignMarche.delegueIds.map(dId => {
                     const d = delegues.find(x => x.id === dId);
@@ -483,9 +483,9 @@ const Marches = () => {
             {!showCreateDelegue ? (
               <>
                 <div className="space-y-2">
-                  <Label>Ajouter un délégué</Label>
+                  <Label>Ajouter un représentant</Label>
                   <Select value={selectedDelegue} onValueChange={setSelectedDelegue}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner un délégué" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner un représentant" /></SelectTrigger>
                     <SelectContent>
                       {delegues
                         .filter(d => !(assignMarche?.delegueIds || []).includes(d.id))
@@ -498,15 +498,15 @@ const Marches = () => {
                   </Select>
                 </div>
                 {delegues.filter(d => !(assignMarche?.delegueIds || []).includes(d.id)).length === 0 && (
-                  <p className="text-sm text-muted-foreground">Tous les délégués sont déjà affectés.</p>
+                  <p className="text-sm text-muted-foreground">Tous les représentants sont déjà affectés.</p>
                 )}
                 <Button variant="outline" size="sm" className="w-full" onClick={() => setShowCreateDelegue(true)}>
-                  <UserRoundPlus className="h-4 w-4 mr-2" /> Créer un nouveau délégué
+                  <UserRoundPlus className="h-4 w-4 mr-2" /> Créer un nouveau représentant
                 </Button>
               </>
             ) : (
               <div className="space-y-3 border rounded-lg p-4">
-                <p className="text-sm font-medium">Nouveau délégué</p>
+                <p className="text-sm font-medium">Nouveau représentant</p>
                 <div className="space-y-2">
                   <Label>Nom complet *</Label>
                   <Input value={delegueForm.nomComplet} onChange={e => setDelegueForm(f => ({ ...f, nomComplet: e.target.value }))} placeholder="Nom Prénom" />
