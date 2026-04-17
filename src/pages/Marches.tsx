@@ -6,6 +6,7 @@ import {
   delegueApi, DelegueDto,
   conventionApi, ConventionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
+  formatApiErrorMessage,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
