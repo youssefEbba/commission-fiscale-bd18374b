@@ -512,10 +512,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       }
 
       toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
-      // Nettoyer les valeurs persistées après succès
-      clearEntrepriseId();
-      clearConventionId();
-      clearMarcheId();
+      // Nettoyer toutes les valeurs persistées du wizard après succès
+      try {
+        const keys = [
+          "demande:entrepriseId", "demande:conventionId", "demande:marcheId",
+          "demande:typeProjet", "demande:refDossier",
+          "demande:importations", "demande:fiscalite",
+          "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
+          "demande:dqeTauxTVA", "demande:dqeLignes",
+        ];
+        keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
+      } catch { /* noop */ }
       onOpenChange(false);
       onCreated();
     } catch (e: unknown) {
