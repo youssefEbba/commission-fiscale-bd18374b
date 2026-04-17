@@ -48,7 +48,33 @@ export const ApiErrorCode = {
   EXTERNAL_EXCHANGE_SERVICE_UNAVAILABLE: "EXTERNAL_EXCHANGE_SERVICE_UNAVAILABLE",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   FILE_TOO_LARGE: "FILE_TOO_LARGE",
+  // Codes métier marché / correction
+  MARCHE_HORS_PERIMETRE_AC: "MARCHE_HORS_PERIMETRE_AC",
+  MARCHE_DEJA_LIE_CORRECTION: "MARCHE_DEJA_LIE_CORRECTION",
+  MARCHE_DEMANDE_ACTIVE: "MARCHE_DEMANDE_ACTIVE",
 } as const;
+
+/** Extrait un code métier depuis details.code (fallback sur err.code). */
+export function getApiErrorBusinessCode(err: unknown): string | undefined {
+  if (!isApiError(err)) return undefined;
+  const detailsCode = (err.details && typeof err.details === "object" && (err.details as any).code) || undefined;
+  return detailsCode || err.code;
+}
+
+/** Construit un message utilisateur lisible à partir d'une erreur API. */
+export function formatApiErrorMessage(err: unknown, fallback = "Une erreur est survenue"): string {
+  if (!isApiError(err)) return (err as Error)?.message || fallback;
+  const code = getApiErrorBusinessCode(err);
+  switch (code) {
+    case "MARCHE_HORS_PERIMETRE_AC":
+      return "Ce marché n'appartient pas à votre Autorité Contractante.";
+    case "MARCHE_DEJA_LIE_CORRECTION":
+    case "MARCHE_DEMANDE_ACTIVE":
+      return "Ce marché est déjà associé à une demande de correction active.";
+    default:
+      return err.message || fallback;
+  }
+}
 
 export function isApiError(err: unknown): err is ApiRequestError {
   return err instanceof ApiRequestError;
@@ -313,6 +339,8 @@ export type ConventionStatut = "EN_ATTENTE" | "VALIDE" | "REJETE" | "ANNULEE";
 export interface ConventionDto {
   id: number;
   reference?: string;
+  /** Référence projet (distincte de `reference`). */
+  projectReference?: string;
   intitule?: string;
   bailleur?: string;
   bailleurDetails?: string;
@@ -327,6 +355,8 @@ export interface ConventionDto {
   dateCreation?: string;
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
+  creeParAutoriteContractanteId?: number;
+  creeParAutoriteContractanteNom?: string;
   valideParUserId?: number;
   dateValidation?: string;
   motifRejet?: string;
@@ -334,6 +364,7 @@ export interface ConventionDto {
 
 export interface CreateConventionRequest {
   reference?: string;
+  projectReference?: string;
   intitule?: string;
   bailleur?: string;
   bailleurDetails?: string;
@@ -368,7 +399,8 @@ export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: 
 ];
 
 export const conventionApi = {
-  getAll: () => apiFetch<ConventionDto[]>("/conventions"),
+  /** Liste avec recherche optionnelle. `q` = recherche sur référence / intitulé / projectReference. */
+  getAll: (q?: string) => apiFetch<ConventionDto[]>(`/conventions${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
@@ -670,17 +702,24 @@ export interface MarcheDto {
   conventionId?: number;
   demandeCorrectionId?: number;
   numeroMarche?: string;
+  intitule?: string;
   dateSignature?: string;
+  /** Montant HT (nom canonique côté back). */
+  montantContratHt?: number;
+  /** Alias rétro-compatible (entrée acceptée par le back). */
   montantContratTtc?: number;
   statut: StatutMarche;
   delegueIds?: number[];
 }
 
 export interface CreateMarcheRequest {
-  conventionId: number;
+  conventionId?: number;
   demandeCorrectionId?: number;
   numeroMarche?: string;
+  intitule?: string;
   dateSignature?: string;
+  /** Préférer montantContratHt en envoi ; montantContratTtc reste accepté en alias. */
+  montantContratHt?: number;
   montantContratTtc?: number;
   statut?: StatutMarche;
 }
@@ -706,7 +745,8 @@ export const MARCHE_DOCUMENT_TYPES: { value: TypeDocumentMarche; label: string }
 ];
 
 export const marcheApi = {
-  getAll: () => apiFetch<MarcheDto[]>("/marches"),
+  /** Liste paginée. `q` = recherche sur numéro de marché et intitulé. */
+  getAll: (q?: string) => apiFetch<MarcheDto[]>(`/marches${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   getById: (id: number) => apiFetch<MarcheDto>(`/marches/${id}`),
   getByCorrection: (demandeCorrectionId: number) => apiFetch<MarcheDto>(`/marches/by-correction/${demandeCorrectionId}`),
   create: (data: CreateMarcheRequest) => apiFetch<MarcheDto>("/marches", { method: "POST", body: data }),

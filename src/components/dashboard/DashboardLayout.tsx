@@ -45,8 +45,8 @@ const NAV_ENTRIES: NavEntry[] = [
   },
   // Marchés : AC crée, délégués et admin consultent
   { label: "Attributions / Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI", "PRESIDENT"] },
-  // Délégués : AC gère ses UPM/UEP
-  { label: "Délégués", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
+  // Représentants : AC gère ses UPM/UEP
+  { label: "Représentants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
   // P3 (Certificat) : suivi des certificats ouverts
   { label: "Certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   // P4 (Douane) : ENT soumet, DGD contrôle, DGTCP impute | P5 (Intérieur) : ENT soumet, DGTCP valide, DGI consulte

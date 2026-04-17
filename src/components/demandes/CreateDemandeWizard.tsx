@@ -13,7 +13,9 @@ import {
   deviseApi, DeviseDto, CreateDeviseRequest,
   forexApi,
   documentRequirementApi, DocumentRequirementDto,
+  formatApiErrorMessage,
 } from "@/lib/api";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,9 +74,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [marches, setMarches] = useState<MarcheDto[]>([]);
-  const [entrepriseId, setEntrepriseId] = useState("");
-  const [conventionId, setConventionId] = useState("");
-  const [marcheId, setMarcheId] = useState("");
+  // Persistance pour ne pas perdre la saisie sur mobile (bascule WhatsApp, etc.)
+  const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
+  const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
+  const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
+  // docFiles ne sont PAS persistés (les File objects ne sont pas sérialisables) — l'utilisateur devra les re-sélectionner.
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [loadingData, setLoadingData] = useState(false);
 
@@ -175,9 +179,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   useEffect(() => {
     if (open) {
       setStep(0);
-      setEntrepriseId("");
-      setConventionId("");
-      setMarcheId("");
+      // Ne PAS écraser entrepriseId / conventionId / marcheId : ils sont restaurés
+      // depuis sessionStorage via usePersistedState pour ne pas perdre la saisie
+      // quand l'utilisateur quitte temporairement le navigateur sur mobile.
       setDocFiles({});
       setImportations([emptyImportation()]);
       setDqeLignes([emptyDqeLigne()]);
@@ -509,10 +513,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       }
 
       toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
+      // Nettoyer les valeurs persistées après succès
+      clearEntrepriseId();
+      clearConventionId();
+      clearMarcheId();
       onOpenChange(false);
       onCreated();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: formatApiErrorMessage(e, "Échec de la création"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
