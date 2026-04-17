@@ -16,6 +16,7 @@ import {
   formatApiErrorMessage,
 } from "@/lib/api";
 import { usePersistedState } from "@/hooks/usePersistedState";
+import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,8 +79,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
   const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
   const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
-  // docFiles ne sont PAS persistés (les File objects ne sont pas sérialisables) — l'utilisateur devra les re-sélectionner.
-  const [docFiles, setDocFiles] = useState<Record<string, File>>({});
+  // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
+  const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
   const [loadingData, setLoadingData] = useState(false);
 
   // Entreprise search combobox
@@ -186,10 +187,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       wasOpenRef.current = true;
       if (isFreshOpen) {
         // Au premier rendu, ne PAS écraser les états persistés (entrepriseId, conventionId,
-        // marcheId, importations, dqe, fiscalite, etc.) — l'utilisateur peut être de retour
-        // après une bascule mobile et on veut restaurer sa saisie.
+        // marcheId, importations, dqe, fiscalite, docFiles, etc.) — l'utilisateur peut être
+        // de retour après une bascule mobile et on veut restaurer sa saisie.
         setStep(0);
-        setDocFiles({});
         setShowCreateEntreprise(false);
         setNewEntreprise({ raisonSociale: "", nif: "" });
         setShowCreateConvention(false);
@@ -523,6 +523,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         ];
         keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
       } catch { /* noop */ }
+      clearDocFiles();
       onOpenChange(false);
       onCreated();
     } catch (e: unknown) {
@@ -548,7 +549,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
-            <strong>Astuce mobile :</strong> votre saisie est sauvegardée automatiquement. Toutefois, si vous quittez l'application puis revenez, vous devrez <em>re-sélectionner</em> les fichiers PDF (limitation des navigateurs mobiles).
+            <strong>Astuce mobile :</strong> votre saisie <em>et vos fichiers</em> sont sauvegardés automatiquement. Vous pouvez quitter l'application (WhatsApp, appel, etc.) et revenir : tout sera restauré.
           </div>
         </div>
 
