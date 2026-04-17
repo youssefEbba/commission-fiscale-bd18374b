@@ -39,7 +39,7 @@ const Marches = () => {
   // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
-  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: undefined as any, statut: "EN_COURS" });
+  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
   // Assign delegate dialog
@@ -65,11 +65,11 @@ const Marches = () => {
   const [cancelMarche, setCancelMarche] = useState<MarcheDto | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  const fetchMarches = async () => {
+  const fetchMarches = async (q?: string) => {
     setLoading(true);
     try {
       const results = await Promise.allSettled([
-        marcheApi.getAll(),
+        marcheApi.getAll(q),
         conventionApi.getAll(),
       ]);
       setMarches(results[0].status === "fulfilled" ? results[0].value : []);
@@ -82,11 +82,18 @@ const Marches = () => {
     }
   };
 
+  // Recherche serveur (debounce léger) — la recherche locale reste comme filet
+  useEffect(() => {
+    const t = setTimeout(() => { fetchMarches(search.trim() || undefined); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   useEffect(() => { fetchMarches(); }, []);
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, numeroMarche: "", dateSignature: "", montantContratTtc: undefined as any, statut: "EN_COURS" });
+    setForm({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
@@ -95,8 +102,9 @@ const Marches = () => {
     setForm({
       conventionId: m.conventionId || 0,
       numeroMarche: m.numeroMarche || "",
+      intitule: m.intitule || "",
       dateSignature: m.dateSignature || "",
-      montantContratTtc: m.montantContratTtc || 0,
+      montantContratHt: m.montantContratHt ?? m.montantContratTtc,
       statut: m.statut,
     });
     setDialogOpen(true);
