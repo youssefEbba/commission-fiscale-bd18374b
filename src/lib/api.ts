@@ -48,7 +48,33 @@ export const ApiErrorCode = {
   EXTERNAL_EXCHANGE_SERVICE_UNAVAILABLE: "EXTERNAL_EXCHANGE_SERVICE_UNAVAILABLE",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   FILE_TOO_LARGE: "FILE_TOO_LARGE",
+  // Codes métier marché / correction
+  MARCHE_HORS_PERIMETRE_AC: "MARCHE_HORS_PERIMETRE_AC",
+  MARCHE_DEJA_LIE_CORRECTION: "MARCHE_DEJA_LIE_CORRECTION",
+  MARCHE_DEMANDE_ACTIVE: "MARCHE_DEMANDE_ACTIVE",
 } as const;
+
+/** Extrait un code métier depuis details.code (fallback sur err.code). */
+export function getApiErrorBusinessCode(err: unknown): string | undefined {
+  if (!isApiError(err)) return undefined;
+  const detailsCode = (err.details && typeof err.details === "object" && (err.details as any).code) || undefined;
+  return detailsCode || err.code;
+}
+
+/** Construit un message utilisateur lisible à partir d'une erreur API. */
+export function formatApiErrorMessage(err: unknown, fallback = "Une erreur est survenue"): string {
+  if (!isApiError(err)) return (err as Error)?.message || fallback;
+  const code = getApiErrorBusinessCode(err);
+  switch (code) {
+    case "MARCHE_HORS_PERIMETRE_AC":
+      return "Ce marché n'appartient pas à votre Autorité Contractante.";
+    case "MARCHE_DEJA_LIE_CORRECTION":
+    case "MARCHE_DEMANDE_ACTIVE":
+      return "Ce marché est déjà associé à une demande de correction active.";
+    default:
+      return err.message || fallback;
+  }
+}
 
 export function isApiError(err: unknown): err is ApiRequestError {
   return err instanceof ApiRequestError;
