@@ -130,22 +130,22 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   // Drag and drop state
   const [dragOverType, setDragOverType] = useState<string | null>(null);
 
-  // Step 1: Modèle fiscal
-  const [typeProjet, setTypeProjet] = useState("BTP");
-  const [referenceDossier, setReferenceDossier] = useState("");
+  // Step 1: Modèle fiscal — persistés pour résister à la mise en arrière-plan mobile
+  const [typeProjet, setTypeProjet] = usePersistedState<string>("demande:typeProjet", "BTP");
+  const [referenceDossier, setReferenceDossier] = usePersistedState<string>("demande:refDossier", "");
   const [showNomenclature, setShowNomenclature] = useState(false);
-  const [importations, setImportations] = useState<ImportationLigne[]>([emptyImportation()]);
-  const [fiscalite, setFiscalite] = useState<FiscaliteInterieure>({
+  const [importations, setImportations] = usePersistedState<ImportationLigne[]>("demande:importations", [emptyImportation()]);
+  const [fiscalite, setFiscalite] = usePersistedState<FiscaliteInterieure>("demande:fiscalite", {
     montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0,
     tvaDeductible: 0, tvaNette: 0, creditInterieur: 0,
   });
 
-  // Step 2: DQE
-  const [dqeNumero, setDqeNumero] = useState("");
-  const [dqeProjet, setDqeProjet] = useState("");
-  const [dqeLot, setDqeLot] = useState("");
-  const [dqeTauxTVA, setDqeTauxTVA] = useState(16);
-  const [dqeLignes, setDqeLignes] = useState<DqeLigne[]>([emptyDqeLigne()]);
+  // Step 2: DQE — persistés
+  const [dqeNumero, setDqeNumero] = usePersistedState<string>("demande:dqeNumero", "");
+  const [dqeProjet, setDqeProjet] = usePersistedState<string>("demande:dqeProjet", "");
+  const [dqeLot, setDqeLot] = usePersistedState<string>("demande:dqeLot", "");
+  const [dqeTauxTVA, setDqeTauxTVA] = usePersistedState<number>("demande:dqeTauxTVA", 16);
+  const [dqeLignes, setDqeLignes] = usePersistedState<DqeLigne[]>("demande:dqeLignes", [emptyDqeLigne()]);
 
   // Load data on open
   const isDelegate = user?.role === "AUTORITE_UPM" || user?.role === "AUTORITE_UEP";
@@ -176,29 +176,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     }
   }, [toast, isDelegate, user?.userId]);
 
+  // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
+  // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
     if (open) {
-      setStep(0);
-      // Ne PAS écraser entrepriseId / conventionId / marcheId : ils sont restaurés
-      // depuis sessionStorage via usePersistedState pour ne pas perdre la saisie
-      // quand l'utilisateur quitte temporairement le navigateur sur mobile.
-      setDocFiles({});
-      setImportations([emptyImportation()]);
-      setDqeLignes([emptyDqeLigne()]);
-      setReferenceDossier("");
-      setShowCreateEntreprise(false);
-      setNewEntreprise({ raisonSociale: "", nif: "" });
-      setShowCreateConvention(false);
-      setNewConvForm({
-        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
-        dateSignature: "", dateFin: "",
-        montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
-      });
-      setConvCreateDocs([]);
-      setConvGedReqs([]);
-      setShowCreateMarche(false);
-      setNewMarche({ numeroMarche: "" });
+      const isFreshOpen = !wasOpenRef.current;
+      wasOpenRef.current = true;
+      if (isFreshOpen) {
+        // Au premier rendu, ne PAS écraser les états persistés (entrepriseId, conventionId,
+        // marcheId, importations, dqe, fiscalite, etc.) — l'utilisateur peut être de retour
+        // après une bascule mobile et on veut restaurer sa saisie.
+        setStep(0);
+        setDocFiles({});
+        setShowCreateEntreprise(false);
+        setNewEntreprise({ raisonSociale: "", nif: "" });
+        setShowCreateConvention(false);
+        setShowCreateMarche(false);
+      }
       loadInitialData();
+    } else {
+      wasOpenRef.current = false;
     }
   }, [open, loadInitialData]);
 
@@ -513,10 +512,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       }
 
       toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
-      // Nettoyer les valeurs persistées après succès
-      clearEntrepriseId();
-      clearConventionId();
-      clearMarcheId();
+      // Nettoyer toutes les valeurs persistées du wizard après succès
+      try {
+        const keys = [
+          "demande:entrepriseId", "demande:conventionId", "demande:marcheId",
+          "demande:typeProjet", "demande:refDossier",
+          "demande:importations", "demande:fiscalite",
+          "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
+          "demande:dqeTauxTVA", "demande:dqeLignes",
+        ];
+        keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
+      } catch { /* noop */ }
       onOpenChange(false);
       onCreated();
     } catch (e: unknown) {
@@ -539,6 +545,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         <DialogHeader>
           <DialogTitle>Nouvelle demande de correction</DialogTitle>
         </DialogHeader>
+        <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
+          <div>
+            <strong>Astuce mobile :</strong> votre saisie est sauvegardée automatiquement. Toutefois, si vous quittez l'application puis revenez, vous devrez <em>re-sélectionner</em> les fichiers PDF (limitation des navigateurs mobiles).
+          </div>
+        </div>
 
         {/* Stepper */}
         <div className="flex items-center gap-2 mb-4">
