@@ -27,6 +27,7 @@ import {
 import { API_BASE } from "@/lib/apiConfig";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
+  BROUILLON: "bg-slate-100 text-slate-700",
   DEMANDE: "bg-blue-100 text-blue-800",
   EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",

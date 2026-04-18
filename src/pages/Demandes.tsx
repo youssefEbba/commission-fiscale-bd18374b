@@ -29,6 +29,7 @@ import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
+  BROUILLON: "bg-slate-100 text-slate-700",
   RECUE: "bg-blue-100 text-blue-800",
   INCOMPLETE: "bg-yellow-100 text-yellow-800",
   RECEVABLE: "bg-emerald-100 text-emerald-800",
