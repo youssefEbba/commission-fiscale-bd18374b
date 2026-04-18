@@ -446,6 +446,16 @@ export interface DemandeCorrectionDto {
   autoriteContractanteNom?: string;
   entrepriseId?: number;
   entrepriseRaisonSociale?: string;
+  conventionId?: number;
+  conventionReference?: string;
+  conventionIntitule?: string;
+  marcheId?: number;
+  marcheNumero?: string;
+  marcheIntitule?: string;
+  /** Trace : id du marché original conservé après une annulation (détachement). */
+  marcheIdTrace?: number;
+  modeleFiscal?: ModeleFiscal;
+  dqe?: Dqe;
   documents?: DocumentDto[];
   // Validation parallèle
   validationDgd?: boolean;
