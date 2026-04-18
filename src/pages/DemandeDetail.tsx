@@ -550,6 +550,36 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">Date de dépôt</span>
                 <p>{selected.dateDepot ? new Date(selected.dateDepot).toLocaleDateString("fr-FR") : "—"}</p>
               </div>
+              <div>
+                <span className="text-muted-foreground">Convention</span>
+                {selected.conventionId ? (
+                  <button
+                    className="font-medium text-primary hover:underline cursor-pointer text-left block"
+                    onClick={() => navigate(`/dashboard/conventions`)}
+                  >
+                    {selected.conventionReference || selected.conventionIntitule || `Convention #${selected.conventionId}`}
+                  </button>
+                ) : (
+                  <p className="font-medium text-muted-foreground">—</p>
+                )}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Marché</span>
+                {selected.marcheId ? (
+                  <button
+                    className="font-medium text-primary hover:underline cursor-pointer text-left block"
+                    onClick={() => navigate(`/dashboard/marches`)}
+                  >
+                    {selected.marcheNumero || selected.marcheIntitule || `Marché #${selected.marcheId}`}
+                  </button>
+                ) : selected.marcheIdTrace ? (
+                  <p className="font-medium text-muted-foreground italic">
+                    Marché #{selected.marcheIdTrace} (détaché)
+                  </p>
+                ) : (
+                  <p className="font-medium text-muted-foreground">—</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
