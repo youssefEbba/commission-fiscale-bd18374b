@@ -673,14 +673,23 @@ const Utilisations = () => {
       </Dialog>
 
       {/* Create dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(o) => { setShowCreate(o); if (!o) setEditingId(null); }}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Nouvelle utilisation de crédit</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editingId != null ? `Modifier l'utilisation #${editingId}` : "Nouvelle utilisation de crédit"}
+            </DialogTitle>
+            {editingId != null && (
+              <p className="text-xs text-muted-foreground">
+                Le type d'utilisation ne peut pas être modifié.
+              </p>
+            )}
+          </DialogHeader>
           <div className="space-y-4">
-            <Tabs value={createType} onValueChange={(v) => handleCreateTypeChange(v as UtilisationType)}>
+            <Tabs value={createType} onValueChange={(v) => editingId == null && handleCreateTypeChange(v as UtilisationType)}>
               <TabsList className="w-full">
-                <TabsTrigger value="DOUANIER" className="flex-1">Douane (SYDONIA)</TabsTrigger>
-                <TabsTrigger value="TVA_INTERIEURE" className="flex-1">TVA Intérieure</TabsTrigger>
+                <TabsTrigger value="DOUANIER" className="flex-1" disabled={editingId != null && createType !== "DOUANIER"}>Douane (SYDONIA)</TabsTrigger>
+                <TabsTrigger value="TVA_INTERIEURE" className="flex-1" disabled={editingId != null && createType !== "TVA_INTERIEURE"}>TVA Intérieure</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -690,9 +699,12 @@ const Utilisations = () => {
                 <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
                   <SelectContent>
-                    {certificats.filter(c => c.statut === "OUVERT").map(c => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
-                    ))}
+                    {certificats
+                      // Brouillon : tous certificats acceptés. Sinon (création directe ou édition d'une demandée) : OUVERT requis.
+                      .filter(c => editingId != null || c.statut === "OUVERT")
+                      .map(c => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
