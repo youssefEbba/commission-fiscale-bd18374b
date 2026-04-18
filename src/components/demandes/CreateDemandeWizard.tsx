@@ -134,6 +134,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // GED document requirements
   const [gedDocTypes, setGedDocTypes] = useState<DocumentRequirementDto[]>([]);
 
+  // Documents déjà téléversés (en mode édition)
+  const [existingDocs, setExistingDocs] = useState<Record<string, { id: number; nomFichier: string }>>({});
+
   // Drag and drop state
   const [dragOverType, setDragOverType] = useState<string | null>(null);
 
