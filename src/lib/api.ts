@@ -52,6 +52,8 @@ export const ApiErrorCode = {
   MARCHE_HORS_PERIMETRE_AC: "MARCHE_HORS_PERIMETRE_AC",
   MARCHE_DEJA_LIE_CORRECTION: "MARCHE_DEJA_LIE_CORRECTION",
   MARCHE_DEMANDE_ACTIVE: "MARCHE_DEMANDE_ACTIVE",
+  // Brouillon / édition
+  DEMANDE_NON_EDITABLE: "DEMANDE_NON_EDITABLE",
 } as const;
 
 /** Extrait un code métier depuis details.code (fallback sur err.code). */
@@ -428,7 +430,7 @@ export const conventionApi = {
 };
 
 // Demandes de correction (P2)
-export type DemandeStatut = "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
+export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {
   id: number;
@@ -533,6 +535,8 @@ export interface CreateDemandeCorrectionRequest {
   marcheId?: number;
   modeleFiscal?: ModeleFiscal;
   dqe?: Dqe;
+  /** Si true, la demande reste au statut BROUILLON sans notifier les services. */
+  brouillon?: boolean;
 }
 
 export interface DocumentDto {
@@ -633,6 +637,12 @@ export const demandeCorrectionApi = {
   getByEntreprise: (entrepriseId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-entreprise/${entrepriseId}`),
   getByDelegue: (userId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-delegue/${userId}`),
   create: (data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>("/demandes-correction", { method: "POST", body: data }),
+  /** Édition d'une demande (autorisée si BROUILLON / RECUE / INCOMPLETE et aucun visa). */
+  update: (id: number, data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`, { method: "PUT", body: data }),
+  /** Soumission d'un brouillon : passe en RECUE et notifie les services. */
+  soumettre: (id: number) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/soumettre`, { method: "POST" }),
+  /** Suppression définitive — réservée au statut BROUILLON. */
+  remove: (id: number) => apiFetch<void>(`/demandes-correction/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}${decisionFinale ? `&decisionFinale=true` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`),
   uploadDocument: (id: number, type: string, file: File, message?: string) => {
@@ -818,7 +828,7 @@ export const delegueApi = {
 };
 
 // Certificats de crédit (P3)
-export type CertificatStatut = "DEMANDE" | "EN_CONTROLE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+export type CertificatStatut = "BROUILLON" | "DEMANDE" | "EN_CONTROLE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
 export interface CertificatCreditDto {
   id: number;
@@ -857,6 +867,8 @@ export interface CreateCertificatCreditRequest {
   soldeTVA?: number;
   montantDouane?: number;
   montantInterieur?: number;
+  /** Si true, le certificat reste au statut BROUILLON sans contrôles ni notifications. */
+  brouillon?: boolean;
 }
 
 export const certificatCreditApi = {
@@ -865,6 +877,12 @@ export const certificatCreditApi = {
   getByStatut: (statut: CertificatStatut) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-statut?statut=${statut}`),
   getByEntreprise: (entrepriseId: number) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-entreprise/${entrepriseId}`),
   create: (data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>("/certificats-credit", { method: "POST", body: data }),
+  /** Édition d'un certificat — uniquement au statut BROUILLON. */
+  update: (id: number, data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`, { method: "PUT", body: data }),
+  /** Soumission d'un brouillon : passe en EN_CONTROLE. */
+  soumettre: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/soumettre`, { method: "POST" }),
+  /** Suppression définitive — réservée au statut BROUILLON. */
+  remove: (id: number) => apiFetch<void>(`/certificats-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: CertificatStatut) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
   updateMontants: (id: number, montantCordon: number, montantTVAInterieure: number) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
@@ -907,7 +925,7 @@ export const certificatCreditApi = {
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
+export type UtilisationStatut = "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface TvaDeductibleStockDto {
@@ -983,6 +1001,8 @@ export interface CreateUtilisationCreditRequest {
   dateFacture?: string;
   montantTVAInterieure?: number;
   numeroDecompte?: string;
+  /** Si true, l'utilisation reste au statut BROUILLON sans notification ni contrôle d'ouverture du certificat. */
+  brouillon?: boolean;
 }
 
 export type TypeDocumentUtilisation =
@@ -1035,6 +1055,12 @@ export const utilisationCreditApi = {
   getById: (id: number) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`),
   getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
   create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
+  /** Édition d'une utilisation (statut BROUILLON ou DEMANDEE). Le type ne peut pas changer. */
+  update: (id: number, data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`, { method: "PUT", body: data }),
+  /** Soumission d'un brouillon : passe en DEMANDEE. */
+  soumettre: (id: number) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/soumettre`, { method: "POST" }),
+  /** Suppression définitive — réservée au statut BROUILLON. */
+  remove: (id: number) => apiFetch<void>(`/utilisations-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
   liquiderDouane: (id: number, montantDroits: number, montantTVA: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
@@ -1133,12 +1159,14 @@ export const auditLogApi = {
 
 // Statut labels
 export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
+  BROUILLON: "Brouillon",
   RECUE: "Reçue", INCOMPLETE: "Incomplète", RECEVABLE: "Recevable",
   EN_EVALUATION: "En évaluation", EN_VALIDATION: "En validation",
   ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée", ANNULEE: "Annulée",
 };
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
+  BROUILLON: "Brouillon",
   DEMANDE: "Demandé",
   EN_CONTROLE: "En contrôle",
   INCOMPLETE: "Incomplète",
@@ -1152,6 +1180,7 @@ export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
 };
 
 export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
+  BROUILLON: "Brouillon",
   DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", A_RECONTROLER: "À recontrôler",
   EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
