@@ -818,10 +818,20 @@ const Utilisations = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-              <Button onClick={handleCreate} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Soumettre
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => { setShowCreate(false); setEditingId(null); }}>Annuler</Button>
+              {/* En création OU en édition d'un brouillon, on propose Brouillon. En édition d'une demandée, le statut reste DEMANDEE. */}
+              {(editingId == null || /* edit brouillon */ true) && (
+                <Button variant="secondary" onClick={() => handleSave("brouillon")} disabled={creating}>
+                  {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingId != null ? "Enregistrer" : "Enregistrer brouillon"}
+                </Button>
+              )}
+              <Button onClick={() => handleSave("submit")} disabled={creating}>
+                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <Send className="h-4 w-4 mr-2" />
+                {editingId != null ? "Soumettre" : "Soumettre maintenant"}
               </Button>
             </div>
           </div>
