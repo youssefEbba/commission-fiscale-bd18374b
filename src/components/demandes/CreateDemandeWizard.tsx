@@ -234,8 +234,33 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       if (dqe.tauxTVA != null) setDqeTauxTVA(dqe.tauxTVA);
       if (dqe.lignes?.length) setDqeLignes(dqe.lignes);
     }
+
+    // Charger les documents déjà téléversés pour les afficher comme "déjà fournis"
+    demandeCorrectionApi.getDocuments(editingDemande.id)
+      .then(docs => {
+        const map: Record<string, { id: number; nomFichier: string }> = {};
+        for (const d of docs) {
+          const t = (d as any).type || (d as any).typeDocument;
+          if (t && (d as any).actif !== false) {
+            map[t] = { id: d.id, nomFichier: d.nomFichier };
+          }
+        }
+        setExistingDocs(map);
+      })
+      .catch(() => setExistingDocs({}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editingDemande?.id]);
+
+  // Race condition : si la liste des marchés se charge APRÈS le préremplissage,
+  // ou si le délégué n'a pas le marché dans sa liste filtrée, on l'ajoute à la main.
+  useEffect(() => {
+    if (!open || !editingDemande?.marcheId) return;
+    const targetId = String(editingDemande.marcheId);
+    if (marches.some(m => String(m.id) === targetId)) return;
+    marcheApi.getById(editingDemande.marcheId)
+      .then(m => setMarches(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m]))
+      .catch(() => { /* silent */ });
+  }, [open, editingDemande?.marcheId, marches]);
 
   // Create enterprise inline
   const handleCreateEntreprise = async () => {
