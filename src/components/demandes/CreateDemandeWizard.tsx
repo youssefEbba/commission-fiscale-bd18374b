@@ -1433,15 +1433,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               </Button>
             ) : (
               <>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleSubmit(true)}
-                  disabled={savingDraft || submitting || !entrepriseId}
-                  title="Enregistrer sans notifier les services"
-                >
-                  {savingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
-                  Enregistrer brouillon
-                </Button>
+                {editingDemande?.statut !== "RECUE" && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleSubmit(true)}
+                    disabled={savingDraft || submitting || !entrepriseId}
+                    title="Enregistrer sans notifier les services"
+                  >
+                    {savingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
+                    Enregistrer brouillon
+                  </Button>
+                )}
                 <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                   {isEditing ? "Soumettre" : "Soumettre la demande"}
