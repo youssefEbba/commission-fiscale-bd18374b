@@ -215,8 +215,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // éviter qu'un brouillon précédent n'écrase les valeurs de la demande éditée.
   useEffect(() => {
     if (!open || !editingDemande) return;
+    console.log("[Wizard][edit] préremplissage demande", {
+      id: editingDemande.id,
+      entrepriseId: editingDemande.entrepriseId,
+      conventionId: editingDemande.conventionId,
+      marcheId: editingDemande.marcheId,
+      marcheNumero: editingDemande.marcheNumero,
+    });
     setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
+    // Si marcheId est absent mais marcheNumero présent, on tentera la résolution dans l'effet ci-dessous.
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     const mf = editingDemande.modeleFiscal;
     if (mf) {
@@ -253,14 +261,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Race condition : si la liste des marchés se charge APRÈS le préremplissage,
   // ou si le délégué n'a pas le marché dans sa liste filtrée, on l'ajoute à la main.
+  // Fallback supplémentaire : si l'API ne renvoie pas marcheId mais renvoie marcheNumero,
+  // on tente de retrouver le marché par son numéro pour fixer la sélection.
   useEffect(() => {
-    if (!open || !editingDemande?.marcheId) return;
-    const targetId = String(editingDemande.marcheId);
-    if (marches.some(m => String(m.id) === targetId)) return;
-    marcheApi.getById(editingDemande.marcheId)
-      .then(m => setMarches(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m]))
-      .catch(() => { /* silent */ });
-  }, [open, editingDemande?.marcheId, marches]);
+    if (!open || !editingDemande) return;
+    const targetId = editingDemande.marcheId ? String(editingDemande.marcheId) : null;
+
+    if (targetId) {
+      if (marcheId !== targetId) setMarcheId(targetId);
+      if (marches.some(m => String(m.id) === targetId)) return;
+      marcheApi.getById(editingDemande.marcheId!)
+        .then(m => setMarches(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m]))
+        .catch(() => { /* silent */ });
+      return;
+    }
+
+    // Pas de marcheId mais peut-être un numéro → résolution par numéro
+    const numero = editingDemande.marcheNumero;
+    if (numero && !marcheId) {
+      const found = marches.find(m => m.numeroMarche === numero);
+      if (found) setMarcheId(String(found.id));
+    }
+  }, [open, editingDemande?.id, editingDemande?.marcheId, editingDemande?.marcheNumero, marches, marcheId, setMarcheId]);
 
   // Create enterprise inline
   const handleCreateEntreprise = async () => {
