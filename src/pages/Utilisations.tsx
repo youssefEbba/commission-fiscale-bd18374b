@@ -149,10 +149,7 @@ const Utilisations = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = async () => {
-    setCreateType("DOUANIER");
-    setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
-    setCreateDocFiles({});
+  const loadCertificatsAndRequirements = async () => {
     try {
       const [certs, extReqs, intReqs] = await Promise.all([
         role === "ENTREPRISE" && (user as any)?.entrepriseId
@@ -164,10 +161,8 @@ const Utilisations = () => {
       setCertificats(certs);
       // Use backend requirements if available, otherwise build fallback from doc type constants
       if (extReqs.length > 0 || intReqs.length > 0) {
-        // Merge backend data: ensure processus field is normalized
         const allReqs = [...extReqs, ...intReqs].map(r => ({
           ...r,
-          // Normalize: if backend returns generic "UTILISATION_CI", map based on doc type
           processus: r.processus === "UTILISATION_CI"
             ? (UTILISATION_DOC_TYPES_TVA.some(dt => dt.value === r.typeDocument && !UTILISATION_DOC_TYPES_DOUANE.some(dd => dd.value === r.typeDocument))
               ? "UTILISATION_CI_INTERIEUR" as const
@@ -176,7 +171,6 @@ const Utilisations = () => {
         }));
         setGedRequirements(allReqs);
       } else {
-        // Fallback: build from hardcoded doc type constants
         const fallbackExt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_DOUANE.map((dt, i) => ({
           id: -(i + 1),
           processus: "UTILISATION_CI_EXTERIEUR" as const,
@@ -198,6 +192,42 @@ const Utilisations = () => {
         setGedRequirements([...fallbackExt, ...fallbackInt]);
       }
     } catch { /* ignore */ }
+  };
+
+  const openCreate = async () => {
+    setEditingId(null);
+    setCreateType("DOUANIER");
+    setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
+    setCreateDocFiles({});
+    await loadCertificatsAndRequirements();
+    setShowCreate(true);
+  };
+
+  const openEditBrouillon = async (u: UtilisationCreditDto) => {
+    setEditingId(u.id);
+    setCreateType(u.type);
+    // Pré-remplir le formulaire à partir du DTO existant
+    setForm({
+      type: u.type,
+      certificatCreditId: u.certificatCreditId,
+      entrepriseId: u.entrepriseId,
+      montant: u.montant,
+      // Douane
+      numeroDeclaration: u.numeroDeclaration,
+      numeroBulletin: u.numeroBulletin,
+      dateDeclaration: u.dateDeclaration ? u.dateDeclaration.substring(0, 10) : "",
+      montantDroits: u.montantDroits,
+      montantTVA: u.montantTVADouane,
+      enregistreeSYDONIA: u.enregistreeSYDONIA ?? false,
+      // TVA
+      typeAchat: u.typeAchat,
+      numeroFacture: u.numeroFacture,
+      dateFacture: u.dateFacture ? u.dateFacture.substring(0, 10) : "",
+      montantTVAInterieure: u.montantTVAInterieure,
+      numeroDecompte: u.numeroDecompte,
+    });
+    setCreateDocFiles({});
+    await loadCertificatsAndRequirements();
     setShowCreate(true);
   };
 
