@@ -251,9 +251,29 @@ const DemandesMiseEnPlace = () => {
     } finally { setActionLoading(null); }
   };
 
-  const handleReject = async () => {
-    if (!showReject || !motifRejet.trim()) return;
-    setRejecting(true);
+  const handleSoumettreBrouillon = async (id: number) => {
+    setSubmittingId(id);
+    try {
+      await certificatCreditApi.soumettre(id);
+      toast({ title: "Succès", description: "Certificat soumis (EN_CONTROLE)" });
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setSubmittingId(null); }
+  };
+
+  const handleDeleteBrouillon = async () => {
+    if (!deletingTarget) return;
+    setDeletingLoading(true);
+    try {
+      await certificatCreditApi.remove(deletingTarget.id);
+      toast({ title: "Succès", description: "Brouillon supprimé" });
+      setDeletingTarget(null);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setDeletingLoading(false); }
+  };
     try {
       await certificatCreditApi.reject(showReject.id, motifRejet.trim());
       toast({ title: "Succès", description: "Demande rejetée" });
