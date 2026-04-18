@@ -79,6 +79,9 @@ const DemandesMiseEnPlace = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<CertificatCreditDto | null>(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
 
   // Creation dialog state
