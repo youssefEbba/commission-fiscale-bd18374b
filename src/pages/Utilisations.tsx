@@ -531,14 +531,47 @@ const Utilisations = () => {
                       <TableCell>{f(u.montant)} MRU</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{UTILISATION_STATUT_LABELS[u.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end flex-wrap">
+                        <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title="Voir détail">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut) && (
+                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["BROUILLON", "LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut) && (
                             <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                               Traiter
                             </Button>
+                          )}
+                          {/* Actions brouillon : disponibles au déposant (entreprise/sous-traitant) ou ADMIN_SI */}
+                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" title="Actions brouillon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEditBrouillon(u)}>
+                                  <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={submittingId === u.id}
+                                  onClick={() => handleSoumettreFromList(u.id)}
+                                >
+                                  {submittingId === u.id ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Send className="h-4 w-4 mr-2" />
+                                  )}
+                                  Soumettre
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setDeletingTarget(u)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>
