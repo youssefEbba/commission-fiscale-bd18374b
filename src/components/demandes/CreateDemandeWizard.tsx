@@ -215,16 +215,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // éviter qu'un brouillon précédent n'écrase les valeurs de la demande éditée.
   useEffect(() => {
     if (!open || !editingDemande) return;
-    console.log("[Wizard][edit] préremplissage demande", {
-      id: editingDemande.id,
-      entrepriseId: editingDemande.entrepriseId,
-      conventionId: editingDemande.conventionId,
-      marcheId: editingDemande.marcheId,
-      marcheNumero: editingDemande.marcheNumero,
-    });
     setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
-    // Si marcheId est absent mais marcheNumero présent, on tentera la résolution dans l'effet ci-dessous.
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     const mf = editingDemande.modeleFiscal;
     if (mf) {
