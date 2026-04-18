@@ -100,7 +100,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // Create convention inline – full form matching Conventions page
   const [showCreateConvention, setShowCreateConvention] = useState(false);
   const [newConvForm, setNewConvForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -349,7 +349,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setConventionId(String(created.id));
       setShowCreateConvention(false);
       setNewConvForm({
-        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+        reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
         dateSignature: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
@@ -806,7 +806,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 <SelectContent>
                                   {conventions.map(c => (
                                     <SelectItem key={c.id} value={String(c.id)}>
-                                      {c.reference || `#${c.id}`} — {c.intitule || c.bailleur || ""}
+                                      {c.reference || `#${c.id}`} — {c.intitule || c.bailleurNom || c.bailleur || ""}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -833,11 +833,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                     </Button>
                                   </Label>
                                   {!showCreateBailleur ? (
-                                    <Select value={newConvForm.bailleur || ""} onValueChange={v => setNewConvForm(prev => ({ ...prev, bailleur: v }))}>
+                                    <Select
+                                      value={newConvForm.bailleurId != null ? String(newConvForm.bailleurId) : ""}
+                                      onValueChange={v => setNewConvForm(prev => ({ ...prev, bailleurId: v ? Number(v) : undefined }))}
+                                    >
                                       <SelectTrigger><SelectValue placeholder="Sélectionnez un bailleur" /></SelectTrigger>
                                       <SelectContent>
                                         {bailleurs.map(b => (
-                                          <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                                          <SelectItem key={b.id} value={String(b.id)}>{b.nom}</SelectItem>
                                         ))}
                                       </SelectContent>
                                     </Select>
@@ -849,7 +852,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         try {
                                           const created = await bailleurApi.create({ nom: newBailleurNom });
                                           setBailleurs(prev => [...prev, created]);
-                                          setNewConvForm(prev => ({ ...prev, bailleur: created.nom }));
+                                          setNewConvForm(prev => ({ ...prev, bailleurId: created.id }));
                                           setNewBailleurNom("");
                                           setShowCreateBailleur(false);
                                           toast({ title: "Succès", description: "Bailleur ajouté" });

@@ -344,6 +344,11 @@ export interface ConventionDto {
   /** Référence projet (distincte de `reference`). */
   projectReference?: string;
   intitule?: string;
+  /** ID du bailleur lié (relation @ManyToOne). */
+  bailleurId?: number;
+  /** Nom du bailleur lié (lecture seule, fourni par le back). */
+  bailleurNom?: string;
+  /** @deprecated remplacé par `bailleurId` + `bailleurNom`. Conservé pour compat ascendante. */
   bailleur?: string;
   bailleurDetails?: string;
   dateSignature?: string;
@@ -368,7 +373,8 @@ export interface CreateConventionRequest {
   reference?: string;
   projectReference?: string;
   intitule?: string;
-  bailleur?: string;
+  /** ID du bailleur (issu de GET /api/bailleurs). */
+  bailleurId?: number | null;
   bailleurDetails?: string;
   dateSignature?: string;
   dateFin?: string;
@@ -1246,6 +1252,8 @@ export interface CreateBailleurRequest { nom: string; details?: string; }
 export const bailleurApi = {
   getAll: () => apiFetch<BailleurDto[]>("/bailleurs"),
   create: (data: CreateBailleurRequest) => apiFetch<BailleurDto>("/bailleurs", { method: "POST", body: data }),
+  /** Liste des conventions liées à un bailleur (droits convention.view ou convention.view.all). */
+  getConventions: (id: number) => apiFetch<ConventionDto[]>(`/bailleurs/${id}/conventions`),
 };
 
 // Devises (référentiel)
