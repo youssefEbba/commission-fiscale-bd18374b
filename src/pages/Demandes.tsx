@@ -844,8 +844,6 @@ const Demandes = () => {
                                           </DropdownMenuItem>
                                         )}
                                       </>
-
-                                      </>
                                     );
                                   })()}
                                 </DropdownMenuContent>
