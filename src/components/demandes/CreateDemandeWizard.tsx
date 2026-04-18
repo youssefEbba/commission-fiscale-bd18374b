@@ -599,7 +599,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouvelle demande de correction</DialogTitle>
+          <DialogTitle>{isEditing ? `Modifier la demande ${editingDemande?.numero || `#${editingId}`}` : "Nouvelle demande de correction"}</DialogTitle>
         </DialogHeader>
         <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
@@ -1390,17 +1390,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                Soumettre la demande
-              </Button>
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleSubmit(true)}
+                  disabled={savingDraft || submitting || !entrepriseId}
+                  title="Enregistrer sans notifier les services"
+                >
+                  {savingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
+                  Enregistrer brouillon
+                </Button>
+                <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                  {isEditing ? "Soumettre" : "Soumettre la demande"}
+                </Button>
+              </>
             )}
           </div>
         </DialogFooter>
