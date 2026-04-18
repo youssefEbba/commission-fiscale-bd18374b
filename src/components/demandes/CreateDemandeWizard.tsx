@@ -208,25 +208,26 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   }, [open, loadInitialData]);
 
   // Préremplissage en mode édition (BROUILLON / RECUE / INCOMPLETE).
+  // Important : on force l'écrasement de l'état persisté (localStorage) pour
+  // éviter qu'un brouillon précédent n'écrase les valeurs de la demande éditée.
   useEffect(() => {
     if (!open || !editingDemande) return;
-    if (editingDemande.entrepriseId) setEntrepriseId(String(editingDemande.entrepriseId));
-    const anyD = editingDemande as unknown as { conventionId?: number; marcheId?: number; modeleFiscal?: ModeleFiscal; dqe?: Dqe };
-    if (anyD.conventionId) setConventionId(String(anyD.conventionId));
-    if (anyD.marcheId) setMarcheId(String(anyD.marcheId));
-    const mf = anyD.modeleFiscal;
+    setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
+    setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
+    setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
+    const mf = editingDemande.modeleFiscal;
     if (mf) {
       if (mf.typeProjet) setTypeProjet(mf.typeProjet);
-      if (mf.referenceDossier) setReferenceDossier(mf.referenceDossier);
+      if (mf.referenceDossier !== undefined) setReferenceDossier(mf.referenceDossier || "");
       if (mf.afficherNomenclature != null) setShowNomenclature(!!mf.afficherNomenclature);
       if (mf.importations?.length) setImportations(mf.importations);
       if (mf.fiscaliteInterieure) setFiscalite(mf.fiscaliteInterieure);
     }
-    const dqe = anyD.dqe;
+    const dqe = editingDemande.dqe;
     if (dqe) {
-      if (dqe.numeroAAOI) setDqeNumero(dqe.numeroAAOI);
-      if (dqe.projet) setDqeProjet(dqe.projet);
-      if (dqe.lot) setDqeLot(dqe.lot);
+      setDqeNumero(dqe.numeroAAOI || "");
+      setDqeProjet(dqe.projet || "");
+      setDqeLot(dqe.lot || "");
       if (dqe.tauxTVA != null) setDqeTauxTVA(dqe.tauxTVA);
       if (dqe.lignes?.length) setDqeLignes(dqe.lignes);
     }
