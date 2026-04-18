@@ -4,10 +4,10 @@
 // ══════════════════════════════════════════════════════════════
 
 /** Backend principal (Spring Boot) */
-export const API_BASE = "https://preelectric-helena-unbrazenly.ngrok-free.dev/api";
+export const API_BASE = "https://e229-197-231-5-128.ngrok-free.app/api";
 
 /** WebSocket backend */
-export const WS_BASE = "https://preelectric-helena-unbrazenly.ngrok-free.dev/ws";
+export const WS_BASE = "https://e229-197-231-5-128.ngrok-free.app/ws";
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
