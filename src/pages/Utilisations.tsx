@@ -1081,6 +1081,30 @@ const Utilisations = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Suppression définitive d'un brouillon (DELETE /utilisations-credit/{id}) */}
+      <AlertDialog open={!!deletingTarget} onOpenChange={(o) => !o && setDeletingTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le brouillon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprime définitivement le brouillon
+              {deletingTarget ? ` #${deletingTarget.id}` : ""} et ses données. Elle ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingLoading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletingLoading}
+              onClick={(e) => { e.preventDefault(); handleDeleteBrouillon(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
