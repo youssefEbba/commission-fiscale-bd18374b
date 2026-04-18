@@ -6,7 +6,7 @@ import {
   entrepriseApi, EntrepriseDto,
   conventionApi, ConventionDto, CreateConventionRequest,
   TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
-  demandeCorrectionApi,
+  demandeCorrectionApi, DemandeCorrectionDto,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
   marcheApi, MarcheDto,
   bailleurApi, BailleurDto,
