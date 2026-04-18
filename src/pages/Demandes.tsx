@@ -785,9 +785,9 @@ const Demandes = () => {
                                       <DropdownMenuSeparator />
                                     </>
                                   )}
-                                  {!hasRole(["DGD", "DGI", "DGTCP", "DGB"]) && d.statut === "RECUE" && (
-                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
-                                      <FileText className="h-4 w-4 mr-2" /> Éditer
+                                  {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (d.statut === "RECUE" || d.statut === "INCOMPLETE") && (
+                                    <DropdownMenuItem onClick={() => setEditingDemande(d)}>
+                                      <FileText className="h-4 w-4 mr-2" /> Modifier
                                     </DropdownMenuItem>
                                   )}
                                   {(() => {
