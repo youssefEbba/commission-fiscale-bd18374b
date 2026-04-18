@@ -261,14 +261,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Race condition : si la liste des marchés se charge APRÈS le préremplissage,
   // ou si le délégué n'a pas le marché dans sa liste filtrée, on l'ajoute à la main.
+  // Fallback supplémentaire : si l'API ne renvoie pas marcheId mais renvoie marcheNumero,
+  // on tente de retrouver le marché par son numéro pour fixer la sélection.
   useEffect(() => {
-    if (!open || !editingDemande?.marcheId) return;
-    const targetId = String(editingDemande.marcheId);
-    if (marches.some(m => String(m.id) === targetId)) return;
-    marcheApi.getById(editingDemande.marcheId)
-      .then(m => setMarches(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m]))
-      .catch(() => { /* silent */ });
-  }, [open, editingDemande?.marcheId, marches]);
+    if (!open || !editingDemande) return;
+    const targetId = editingDemande.marcheId ? String(editingDemande.marcheId) : null;
+
+    if (targetId) {
+      if (marcheId !== targetId) setMarcheId(targetId);
+      if (marches.some(m => String(m.id) === targetId)) return;
+      marcheApi.getById(editingDemande.marcheId!)
+        .then(m => setMarches(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m]))
+        .catch(() => { /* silent */ });
+      return;
+    }
+
+    // Pas de marcheId mais peut-être un numéro → résolution par numéro
+    const numero = editingDemande.marcheNumero;
+    if (numero && !marcheId) {
+      const found = marches.find(m => m.numeroMarche === numero);
+      if (found) setMarcheId(String(found.id));
+    }
+  }, [open, editingDemande?.id, editingDemande?.marcheId, editingDemande?.marcheNumero, marches, marcheId, setMarcheId]);
 
   // Create enterprise inline
   const handleCreateEntreprise = async () => {
