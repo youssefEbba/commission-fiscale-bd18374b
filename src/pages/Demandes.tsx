@@ -140,6 +140,27 @@ const Demandes = () => {
   // Create / Edit wizard
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
+  const [loadingEditId, setLoadingEditId] = useState<number | null>(null);
+
+  // Charge la version COMPLETE (modeleFiscal, dqe, marcheId, conventionId, entrepriseId)
+  // avant d'ouvrir le wizard en mode édition. La liste `getAll` peut omettre ces champs.
+  const openEditWizard = async (d: DemandeCorrectionDto) => {
+    setLoadingEditId(d.id);
+    try {
+      const full = await demandeCorrectionApi.getById(d.id);
+      setEditingDemande(full);
+    } catch (e: any) {
+      toast({
+        title: "Erreur",
+        description: e?.message || "Impossible de charger la demande complète",
+        variant: "destructive",
+      });
+      // Fallback : ouvrir avec ce qu'on a
+      setEditingDemande(d);
+    } finally {
+      setLoadingEditId(null);
+    }
+  };
 
   // Delete brouillon
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -759,8 +780,14 @@ const Demandes = () => {
                                   {/* Actions Brouillon (entreprise / AC dépositaire) */}
                                   {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
                                     <>
-                                      <DropdownMenuItem onClick={() => setEditingDemande(d)}>
-                                        <FileText className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                      <DropdownMenuItem
+                                        disabled={loadingEditId === d.id}
+                                        onClick={() => openEditWizard(d)}
+                                      >
+                                        {loadingEditId === d.id
+                                          ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                          : <FileText className="h-4 w-4 mr-2" />}
+                                        Modifier le brouillon
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         disabled={actionLoading === d.id}
@@ -787,8 +814,14 @@ const Demandes = () => {
                                     </>
                                   )}
                                   {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && d.statut === "RECUE" && (
-                                    <DropdownMenuItem onClick={() => setEditingDemande(d)}>
-                                      <FileText className="h-4 w-4 mr-2" /> Modifier
+                                    <DropdownMenuItem
+                                      disabled={loadingEditId === d.id}
+                                      onClick={() => openEditWizard(d)}
+                                    >
+                                      {loadingEditId === d.id
+                                        ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        : <FileText className="h-4 w-4 mr-2" />}
+                                      Modifier
                                     </DropdownMenuItem>
                                   )}
                                   {(() => {
