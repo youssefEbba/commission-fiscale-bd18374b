@@ -910,10 +910,15 @@ export const certificatCreditApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/certificats-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: CertificatStatut) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
-  updateMontants: (id: number, montantCordon: number, montantTVAInterieure: number) =>
+  updateMontants: (
+    id: number,
+    montantCordon: number,
+    montantTVAInterieure: number,
+    recap?: CertificatRecapFiscal,
+  ) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
       method: "PATCH",
-      body: { montantCordon, montantTVAInterieure },
+      body: { montantCordon, montantTVAInterieure, ...(recap ?? {}) } satisfies UpdateCertificatCreditMontantsRequest,
     }),
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
