@@ -1128,10 +1128,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         >
                           {docFiles[dt.typeDocument] ? (
                             <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                          ) : existingDocs[dt.typeDocument] ? (
+                            <CheckCircle className="h-4 w-4 text-primary shrink-0" />
                           ) : (
                             <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
-                          <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
+                          <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
                             {dt.typeDocument.replace(/_/g, " ")}
                             {dt.obligatoire && <span className="text-destructive ml-1">*</span>}
                             {dt.description && (
@@ -1145,10 +1147,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               </Tooltip>
                             )}
                           </span>
-                          {docFiles[dt.typeDocument] && (
+                          {docFiles[dt.typeDocument] ? (
                             <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.typeDocument].name}</span>
-                          )}
-                          {!docFiles[dt.typeDocument] && (
+                          ) : existingDocs[dt.typeDocument] ? (
+                            <span className="text-xs text-primary truncate max-w-[180px]" title={existingDocs[dt.typeDocument].nomFichier}>
+                              Déjà fourni — {existingDocs[dt.typeDocument].nomFichier}
+                            </span>
+                          ) : (
                             <span className="text-[11px] text-muted-foreground hidden sm:inline">
                               Glissez un fichier ici ou
                             </span>
@@ -1163,7 +1168,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 if (f) setDocFiles(prev => ({ ...prev, [dt.typeDocument]: f }));
                               }}
                             />
-                            <span className="text-xs text-primary hover:underline">{docFiles[dt.typeDocument] ? "Changer" : "Parcourir"}</span>
+                            <span className="text-xs text-primary hover:underline">
+                              {docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? "Remplacer" : "Parcourir"}
+                            </span>
                           </label>
                         </div>
                       ))}
