@@ -274,6 +274,10 @@ const DemandesMiseEnPlace = () => {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setDeletingLoading(false); }
   };
+
+  const handleReject = async () => {
+    if (!showReject || !motifRejet.trim()) return;
+    setRejecting(true);
     try {
       await certificatCreditApi.reject(showReject.id, motifRejet.trim());
       toast({ title: "Succès", description: "Demande rejetée" });
