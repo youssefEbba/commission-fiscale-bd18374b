@@ -136,9 +136,13 @@ const Demandes = () => {
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
 
-  // Create wizard
+  // Create / Edit wizard
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
 
+  // Delete brouillon
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   // Rejection modal
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
