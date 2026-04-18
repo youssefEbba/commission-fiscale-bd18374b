@@ -94,12 +94,16 @@ const Utilisations = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [tab, setTab] = useState("all");
 
-  // Create dialog
+  // Create / edit dialog (brouillon ou soumission)
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [createType, setCreateType] = useState<UtilisationType>("DOUANIER");
   const [form, setForm] = useState<Partial<CreateUtilisationCreditRequest>>({ ...emptyDouane });
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [creating, setCreating] = useState(false);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<UtilisationCreditDto | null>(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
 
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
