@@ -20,11 +20,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle } from "lucide-react";
+import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -92,12 +94,16 @@ const Utilisations = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [tab, setTab] = useState("all");
 
-  // Create dialog
+  // Create / edit dialog (brouillon ou soumission)
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [createType, setCreateType] = useState<UtilisationType>("DOUANIER");
   const [form, setForm] = useState<Partial<CreateUtilisationCreditRequest>>({ ...emptyDouane });
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [creating, setCreating] = useState(false);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<UtilisationCreditDto | null>(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
 
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
@@ -143,10 +149,7 @@ const Utilisations = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = async () => {
-    setCreateType("DOUANIER");
-    setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
-    setCreateDocFiles({});
+  const loadCertificatsAndRequirements = async () => {
     try {
       const [certs, extReqs, intReqs] = await Promise.all([
         role === "ENTREPRISE" && (user as any)?.entrepriseId
@@ -158,10 +161,8 @@ const Utilisations = () => {
       setCertificats(certs);
       // Use backend requirements if available, otherwise build fallback from doc type constants
       if (extReqs.length > 0 || intReqs.length > 0) {
-        // Merge backend data: ensure processus field is normalized
         const allReqs = [...extReqs, ...intReqs].map(r => ({
           ...r,
-          // Normalize: if backend returns generic "UTILISATION_CI", map based on doc type
           processus: r.processus === "UTILISATION_CI"
             ? (UTILISATION_DOC_TYPES_TVA.some(dt => dt.value === r.typeDocument && !UTILISATION_DOC_TYPES_DOUANE.some(dd => dd.value === r.typeDocument))
               ? "UTILISATION_CI_INTERIEUR" as const
@@ -170,7 +171,6 @@ const Utilisations = () => {
         }));
         setGedRequirements(allReqs);
       } else {
-        // Fallback: build from hardcoded doc type constants
         const fallbackExt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_DOUANE.map((dt, i) => ({
           id: -(i + 1),
           processus: "UTILISATION_CI_EXTERIEUR" as const,
@@ -192,6 +192,42 @@ const Utilisations = () => {
         setGedRequirements([...fallbackExt, ...fallbackInt]);
       }
     } catch { /* ignore */ }
+  };
+
+  const openCreate = async () => {
+    setEditingId(null);
+    setCreateType("DOUANIER");
+    setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
+    setCreateDocFiles({});
+    await loadCertificatsAndRequirements();
+    setShowCreate(true);
+  };
+
+  const openEditBrouillon = async (u: UtilisationCreditDto) => {
+    setEditingId(u.id);
+    setCreateType(u.type);
+    // Pré-remplir le formulaire à partir du DTO existant
+    setForm({
+      type: u.type,
+      certificatCreditId: u.certificatCreditId,
+      entrepriseId: u.entrepriseId,
+      montant: u.montant,
+      // Douane
+      numeroDeclaration: u.numeroDeclaration,
+      numeroBulletin: u.numeroBulletin,
+      dateDeclaration: u.dateDeclaration ? u.dateDeclaration.substring(0, 10) : "",
+      montantDroits: u.montantDroits,
+      montantTVA: u.montantTVADouane,
+      enregistreeSYDONIA: u.enregistreeSYDONIA ?? false,
+      // TVA
+      typeAchat: u.typeAchat,
+      numeroFacture: u.numeroFacture,
+      dateFacture: u.dateFacture ? u.dateFacture.substring(0, 10) : "",
+      montantTVAInterieure: u.montantTVAInterieure,
+      numeroDecompte: u.numeroDecompte,
+    });
+    setCreateDocFiles({});
+    await loadCertificatsAndRequirements();
     setShowCreate(true);
   };
 
@@ -215,48 +251,103 @@ const Utilisations = () => {
     return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };
 
-  const handleCreate = async () => {
+  /**
+   * @param mode "brouillon" => sauvegarde sans contrôles ;
+   *             "submit" => création/édition + soumission immédiate (DEMANDEE).
+   */
+  const handleSave = async (mode: "brouillon" | "submit") => {
     if (!form.certificatCreditId) {
       toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
-    const missing = getMissingObligatoryDocs();
-    if (missing.length > 0) {
-      toast({
-        title: "Documents manquants",
-        description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
-        variant: "destructive",
-      });
-      return;
+    if (mode === "submit") {
+      const missing = getMissingObligatoryDocs();
+      if (missing.length > 0) {
+        toast({
+          title: "Documents manquants",
+          description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     setCreating(true);
     try {
-      // Sanitize: replace empty strings with null, convert date fields to Instant format
       const dateFields = ["dateDeclaration", "dateFacture"];
       const sanitized: Record<string, any> = {};
       for (const [k, v] of Object.entries(form)) {
-        if (v === "") {
-          sanitized[k] = null;
-        } else if (dateFields.includes(k) && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
-          sanitized[k] = `${v}T00:00:00Z`;
-        } else {
-          sanitized[k] = v;
-        }
+        if (v === "") sanitized[k] = null;
+        else if (dateFields.includes(k) && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) sanitized[k] = `${v}T00:00:00Z`;
+        else sanitized[k] = v;
       }
-      const created = await utilisationCreditApi.create(sanitized as CreateUtilisationCreditRequest);
-      // Upload all attached documents
+
+      let target: UtilisationCreditDto;
+      if (editingId != null) {
+        // Édition d'un existant (brouillon ou DEMANDEE) — type immutable côté back
+        target = await utilisationCreditApi.update(editingId, sanitized as CreateUtilisationCreditRequest);
+      } else {
+        const payload: CreateUtilisationCreditRequest = {
+          ...(sanitized as CreateUtilisationCreditRequest),
+          ...(mode === "brouillon" ? { brouillon: true } : {}),
+        };
+        target = await utilisationCreditApi.create(payload);
+      }
+
       const uploadEntries = Object.entries(createDocFiles);
-      if (uploadEntries.length > 0) {
-        for (const [type, file] of uploadEntries) {
-          await utilisationCreditApi.uploadDocument(created.id, type as TypeDocumentUtilisation, file);
-        }
+      for (const [type, file] of uploadEntries) {
+        await utilisationCreditApi.uploadDocument(target.id, type as TypeDocumentUtilisation, file);
       }
-      toast({ title: "Succès", description: `Utilisation créée avec ${uploadEntries.length} document(s)` });
+
+      // Si édition d'un brouillon + clic « Soumettre » => soumettre maintenant
+      if (mode === "submit" && editingId != null && target.statut === "BROUILLON") {
+        await utilisationCreditApi.soumettre(target.id);
+      }
+
+      toast({
+        title: "Succès",
+        description:
+          mode === "brouillon"
+            ? "Brouillon enregistré"
+            : editingId != null
+              ? "Utilisation soumise"
+              : `Utilisation créée${uploadEntries.length ? ` avec ${uploadEntries.length} document(s)` : ""}`,
+      });
       setShowCreate(false);
+      setEditingId(null);
       fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleSoumettreFromList = async (id: number) => {
+    setSubmittingId(id);
+    try {
+      await utilisationCreditApi.soumettre(id);
+      toast({ title: "Succès", description: "Utilisation soumise" });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const handleDeleteBrouillon = async () => {
+    if (!deletingTarget) return;
+    setDeletingLoading(true);
+    try {
+      await utilisationCreditApi.remove(deletingTarget.id);
+      toast({ title: "Succès", description: "Brouillon supprimé" });
+      setDeletingTarget(null);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setDeletingLoading(false);
+    }
   };
 
   const handleStatut = async (id: number, statut: UtilisationStatut) => {
@@ -440,14 +531,47 @@ const Utilisations = () => {
                       <TableCell>{f(u.montant)} MRU</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{UTILISATION_STATUT_LABELS[u.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end flex-wrap">
+                        <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title="Voir détail">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut) && (
+                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["BROUILLON", "LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut) && (
                             <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                               Traiter
                             </Button>
+                          )}
+                          {/* Actions brouillon : disponibles au déposant (entreprise/sous-traitant) ou ADMIN_SI */}
+                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" title="Actions brouillon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEditBrouillon(u)}>
+                                  <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={submittingId === u.id}
+                                  onClick={() => handleSoumettreFromList(u.id)}
+                                >
+                                  {submittingId === u.id ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Send className="h-4 w-4 mr-2" />
+                                  )}
+                                  Soumettre
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setDeletingTarget(u)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>
@@ -549,14 +673,23 @@ const Utilisations = () => {
       </Dialog>
 
       {/* Create dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(o) => { setShowCreate(o); if (!o) setEditingId(null); }}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Nouvelle utilisation de crédit</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editingId != null ? `Modifier l'utilisation #${editingId}` : "Nouvelle utilisation de crédit"}
+            </DialogTitle>
+            {editingId != null && (
+              <p className="text-xs text-muted-foreground">
+                Le type d'utilisation ne peut pas être modifié.
+              </p>
+            )}
+          </DialogHeader>
           <div className="space-y-4">
-            <Tabs value={createType} onValueChange={(v) => handleCreateTypeChange(v as UtilisationType)}>
+            <Tabs value={createType} onValueChange={(v) => editingId == null && handleCreateTypeChange(v as UtilisationType)}>
               <TabsList className="w-full">
-                <TabsTrigger value="DOUANIER" className="flex-1">Douane (SYDONIA)</TabsTrigger>
-                <TabsTrigger value="TVA_INTERIEURE" className="flex-1">TVA Intérieure</TabsTrigger>
+                <TabsTrigger value="DOUANIER" className="flex-1" disabled={editingId != null && createType !== "DOUANIER"}>Douane (SYDONIA)</TabsTrigger>
+                <TabsTrigger value="TVA_INTERIEURE" className="flex-1" disabled={editingId != null && createType !== "TVA_INTERIEURE"}>TVA Intérieure</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -566,9 +699,12 @@ const Utilisations = () => {
                 <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
                   <SelectContent>
-                    {certificats.filter(c => c.statut === "OUVERT").map(c => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
-                    ))}
+                    {certificats
+                      // Brouillon : tous certificats acceptés. Sinon (création directe ou édition d'une demandée) : OUVERT requis.
+                      .filter(c => editingId != null || c.statut === "OUVERT")
+                      .map(c => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -682,10 +818,20 @@ const Utilisations = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-              <Button onClick={handleCreate} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Soumettre
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => { setShowCreate(false); setEditingId(null); }}>Annuler</Button>
+              {/* En création OU en édition d'un brouillon, on propose Brouillon. En édition d'une demandée, le statut reste DEMANDEE. */}
+              {(editingId == null || /* edit brouillon */ true) && (
+                <Button variant="secondary" onClick={() => handleSave("brouillon")} disabled={creating}>
+                  {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingId != null ? "Enregistrer" : "Enregistrer brouillon"}
+                </Button>
+              )}
+              <Button onClick={() => handleSave("submit")} disabled={creating}>
+                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <Send className="h-4 w-4 mr-2" />
+                {editingId != null ? "Soumettre" : "Soumettre maintenant"}
               </Button>
             </div>
           </div>
@@ -935,6 +1081,30 @@ const Utilisations = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Suppression définitive d'un brouillon (DELETE /utilisations-credit/{id}) */}
+      <AlertDialog open={!!deletingTarget} onOpenChange={(o) => !o && setDeletingTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le brouillon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprime définitivement le brouillon
+              {deletingTarget ? ` #${deletingTarget.id}` : ""} et ses données. Elle ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingLoading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletingLoading}
+              onClick={(e) => { e.preventDefault(); handleDeleteBrouillon(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

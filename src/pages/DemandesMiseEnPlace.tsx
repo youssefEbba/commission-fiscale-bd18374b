@@ -19,10 +19,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, Lock, Unlock, AlertTriangle, History } from "lucide-react";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, Lock, Unlock, AlertTriangle, History, MoreHorizontal, Send, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { API_BASE } from "@/lib/apiConfig";
@@ -77,6 +79,9 @@ const DemandesMiseEnPlace = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<CertificatCreditDto | null>(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
 
   // Creation dialog state
@@ -246,6 +251,30 @@ const DemandesMiseEnPlace = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleSoumettreBrouillon = async (id: number) => {
+    setSubmittingId(id);
+    try {
+      await certificatCreditApi.soumettre(id);
+      toast({ title: "Succès", description: "Certificat soumis (EN_CONTROLE)" });
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setSubmittingId(null); }
+  };
+
+  const handleDeleteBrouillon = async () => {
+    if (!deletingTarget) return;
+    setDeletingLoading(true);
+    try {
+      await certificatCreditApi.remove(deletingTarget.id);
+      toast({ title: "Succès", description: "Brouillon supprimé" });
+      setDeletingTarget(null);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setDeletingLoading(false); }
+  };
+
   const handleReject = async () => {
     if (!showReject || !motifRejet.trim()) return;
     setRejecting(true);
@@ -372,10 +401,35 @@ const DemandesMiseEnPlace = () => {
                       <TableCell>{getMarcheName(c)}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end flex-wrap">
+                        <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
                           </Button>
+                          {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE") && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" title="Actions brouillon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  disabled={submittingId === c.id}
+                                  onClick={() => handleSoumettreBrouillon(c.id)}
+                                >
+                                  {submittingId === c.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                                  Soumettre
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setDeletingTarget(c)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -912,6 +966,30 @@ const DemandesMiseEnPlace = () => {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Suppression définitive d'un brouillon (DELETE /certificats-credit/{id}) */}
+      <AlertDialog open={!!deletingTarget} onOpenChange={(o) => !o && setDeletingTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le brouillon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprime définitivement le brouillon
+              {deletingTarget ? ` ${deletingTarget.reference || `#${deletingTarget.id}`}` : ""}. Elle ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingLoading}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletingLoading}
+              onClick={(e) => { e.preventDefault(); handleDeleteBrouillon(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

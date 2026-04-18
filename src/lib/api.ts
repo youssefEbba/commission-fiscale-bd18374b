@@ -830,7 +830,21 @@ export const delegueApi = {
 // Certificats de crédit (P3)
 export type CertificatStatut = "BROUILLON" | "DEMANDE" | "EN_CONTROLE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
-export interface CertificatCreditDto {
+/** Récapitulatif fiscal optionnel d'un certificat de crédit (pour saisie ou lecture). */
+export interface CertificatRecapFiscal {
+  /** (a) Valeur en douane des fournitures importées */
+  valeurDouaneFournitures?: number;
+  /** (b) Droits et taxes à l'importation hors TVA */
+  droitsEtTaxesDouaneHorsTva?: number;
+  /** (d) TVA d'importation à la douane */
+  tvaImportationDouane?: number;
+  /** (f) Montant du marché HT */
+  montantMarcheHt?: number;
+  /** (g) TVA collectée sur les travaux */
+  tvaCollecteeTravaux?: number;
+}
+
+export interface CertificatCreditDto extends CertificatRecapFiscal {
   id: number;
   reference?: string;
   numero?: string;
@@ -854,9 +868,15 @@ export interface CertificatCreditDto {
   demandeCorrectionNumero?: string;
   marcheId?: number;
   marcheIntitule?: string;
+  /** (e) = b + d, calculé côté back si b et d présents */
+  creditExterieurRecap?: number;
+  /** (h) = g − d, calculé côté back si g et d présents */
+  creditInterieurNetRecap?: number;
+  /** Total = e + h, calculé côté back si les deux sont calculables */
+  totalCreditImpotRecap?: number;
 }
 
-export interface CreateCertificatCreditRequest {
+export interface CreateCertificatCreditRequest extends CertificatRecapFiscal {
   entrepriseId: number;
   lettreCorrectionId?: number;
   demandeCorrectionId?: number;
@@ -869,6 +889,12 @@ export interface CreateCertificatCreditRequest {
   montantInterieur?: number;
   /** Si true, le certificat reste au statut BROUILLON sans contrôles ni notifications. */
   brouillon?: boolean;
+}
+
+/** Corps de PATCH /certificats-credit/{id}/montants. Récap fiscal optionnel. */
+export interface UpdateCertificatCreditMontantsRequest extends CertificatRecapFiscal {
+  montantCordon: number;
+  montantTVAInterieure: number;
 }
 
 export const certificatCreditApi = {
@@ -884,10 +910,15 @@ export const certificatCreditApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/certificats-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: CertificatStatut) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
-  updateMontants: (id: number, montantCordon: number, montantTVAInterieure: number) =>
+  updateMontants: (
+    id: number,
+    montantCordon: number,
+    montantTVAInterieure: number,
+    recap?: CertificatRecapFiscal,
+  ) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
       method: "PATCH",
-      body: { montantCordon, montantTVAInterieure },
+      body: { montantCordon, montantTVAInterieure, ...(recap ?? {}) } satisfies UpdateCertificatCreditMontantsRequest,
     }),
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),

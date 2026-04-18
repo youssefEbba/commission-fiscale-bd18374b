@@ -311,7 +311,39 @@ const CertificatDetail = () => {
           </Card>
         </div>
 
-        {/* Info supplémentaires */}
+        {/* Récapitulatif fiscal (a, b, d, e=b+d, f, g, h=g-d, total) — affiché si au moins un champ saisi */}
+        {(c.valeurDouaneFournitures != null || c.droitsEtTaxesDouaneHorsTva != null || c.tvaImportationDouane != null
+          || c.montantMarcheHt != null || c.tvaCollecteeTravaux != null
+          || c.creditExterieurRecap != null || c.creditInterieurNetRecap != null || c.totalCreditImpotRecap != null) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Info className="h-5 w-5 text-primary" /> Récapitulatif fiscal
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Réf.</TableHead>
+                    <TableHead>Libellé</TableHead>
+                    <TableHead className="text-right">Montant (MRU)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow><TableCell className="font-mono">a</TableCell><TableCell>Valeur en douane des fournitures</TableCell><TableCell className="text-right">{c.valeurDouaneFournitures?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">b</TableCell><TableCell>Droits et taxes douane (hors TVA)</TableCell><TableCell className="text-right">{c.droitsEtTaxesDouaneHorsTva?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">d</TableCell><TableCell>TVA d'importation (douane)</TableCell><TableCell className="text-right">{c.tvaImportationDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">e</TableCell><TableCell className="font-semibold">Crédit extérieur (b + d)</TableCell><TableCell className="text-right font-bold">{c.creditExterieurRecap?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">f</TableCell><TableCell>Montant du marché HT</TableCell><TableCell className="text-right">{c.montantMarcheHt?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">g</TableCell><TableCell>TVA collectée travaux</TableCell><TableCell className="text-right">{c.tvaCollecteeTravaux?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">h</TableCell><TableCell className="font-semibold">Crédit intérieur net (g − d)</TableCell><TableCell className="text-right font-bold">{c.creditInterieurNetRecap?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow className="bg-primary/5"><TableCell className="font-mono font-bold">Σ</TableCell><TableCell className="font-bold text-primary">Total crédit d'impôt (e + h)</TableCell><TableCell className="text-right font-bold text-primary">{c.totalCreditImpotRecap?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Informations complémentaires</CardTitle>
