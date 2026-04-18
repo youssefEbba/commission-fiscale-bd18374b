@@ -58,7 +58,7 @@ const Conventions = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editConvention, setEditConvention] = useState<ConventionDto | null>(null);
   const [editForm, setEditForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -77,7 +77,7 @@ const Conventions = () => {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -226,7 +226,7 @@ const Conventions = () => {
     try {
       const created = await bailleurApi.create(newBailleur);
       setBailleurs(prev => [...prev, created]);
-      setForm(f => ({ ...f, bailleur: created.nom }));
+      setForm(f => ({ ...f, bailleurId: created.id }));
       setAddBailleurOpen(false);
       setNewBailleur({ nom: "", details: "" });
       toast({ title: "Succès", description: "Bailleur ajouté" });
@@ -355,7 +355,7 @@ const Conventions = () => {
       toast({ title: "Succès", description: `Convention créée${createDocs.length ? ` avec ${createDocs.length} document(s)` : ""}` });
       setCreateOpen(false);
       setForm({
-        reference: "", intitule: "", bailleur: "", bailleurDetails: "",
+        reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
         dateSignature: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
@@ -393,7 +393,7 @@ const Conventions = () => {
     setEditForm({
       reference: conv.reference || "",
       intitule: conv.intitule || "",
-      bailleur: conv.bailleur || "",
+      bailleurId: conv.bailleurId,
       bailleurDetails: conv.bailleurDetails || "",
       dateSignature: conv.dateSignature || "",
       dateFin: conv.dateFin || "",
@@ -530,7 +530,7 @@ const Conventions = () => {
       (c.reference || "").toLowerCase().includes(s) ||
       (c.projectReference || "").toLowerCase().includes(s) ||
       (c.intitule || "").toLowerCase().includes(s) ||
-      (c.bailleur || "").toLowerCase().includes(s)
+      (c.bailleurNom || c.bailleur || "").toLowerCase().includes(s)
     );
     const matchStatut = filterStatut === "ALL" || c.statut === filterStatut;
     return matchSearch && matchStatut;
@@ -611,7 +611,7 @@ const Conventions = () => {
                         <TableRow key={c.id}>
                           <TableCell className="font-medium whitespace-nowrap">{c.reference || `#${c.id}`}</TableCell>
                           <TableCell className="max-w-[220px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleur || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleurNom || c.bailleur || "—"}</TableCell>
                           <TableCell className="text-muted-foreground whitespace-nowrap">
                             {c.montantDevise ? `${c.montantDevise.toLocaleString("fr-FR")} ${c.deviseOrigine || ""}` : "—"}
                           </TableCell>
@@ -696,13 +696,16 @@ const Conventions = () => {
             <div className="space-y-2">
               <Label>Bailleur de fonds *</Label>
               <div className="flex gap-2">
-                <Select value={form.bailleur || ""} onValueChange={(v) => setForm(f => ({ ...f, bailleur: v }))}>
+                <Select
+                  value={form.bailleurId != null ? String(form.bailleurId) : ""}
+                  onValueChange={(v) => setForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
+                >
                   <SelectTrigger className="flex-1">
                     {bailleursLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner un bailleur" />}
                   </SelectTrigger>
                   <SelectContent>
                     {bailleurs.map((b) => (
-                      <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                      <SelectItem key={b.id} value={String(b.id)}>{b.nom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1083,7 +1086,7 @@ const Conventions = () => {
                 <div><span className="text-muted-foreground">Statut :</span> <Badge className={`text-xs ml-1 ${STATUT_COLORS[detailConvention.statut] || ""}`}>{CONVENTION_STATUT_LABELS[detailConvention.statut] || detailConvention.statut}</Badge></div>
               </div>
               <div><span className="text-muted-foreground">Intitulé :</span> <span className="font-medium">{detailConvention.intitule || "—"}</span></div>
-              <div><span className="text-muted-foreground">Bailleur :</span> {detailConvention.bailleur || "—"}</div>
+              <div><span className="text-muted-foreground">Bailleur :</span> {detailConvention.bailleurNom || detailConvention.bailleur || "—"}</div>
               <div><span className="text-muted-foreground">Descriptif :</span> {detailConvention.bailleurDetails || "—"}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Date signature :</span> {detailConvention.dateSignature ? new Date(detailConvention.dateSignature).toLocaleDateString("fr-FR") : "—"}</div>
@@ -1125,13 +1128,16 @@ const Conventions = () => {
             </div>
             <div className="space-y-2">
               <Label>Bailleur</Label>
-              <Select value={editForm.bailleur || ""} onValueChange={(v) => setEditForm(f => ({ ...f, bailleur: v }))}>
+              <Select
+                value={editForm.bailleurId != null ? String(editForm.bailleurId) : ""}
+                onValueChange={(v) => setEditForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
+              >
                 <SelectTrigger>
                   {bailleursLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner" />}
                 </SelectTrigger>
                 <SelectContent>
                   {bailleurs.map((b) => (
-                    <SelectItem key={b.id} value={b.nom}>{b.nom}</SelectItem>
+                    <SelectItem key={b.id} value={String(b.id)}>{b.nom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -486,7 +486,7 @@ const ReferentielProjets = () => {
                     </div>
                     <p className="text-muted-foreground">{conv.intitule}</p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/50">
-                      <p><span className="text-muted-foreground">Bailleur:</span> {conv.bailleur || "—"}</p>
+                      <p><span className="text-muted-foreground">Bailleur:</span> {conv.bailleurNom || conv.bailleur || "—"}</p>
                       <p><span className="text-muted-foreground">Devise:</span> {conv.deviseOrigine || "—"}</p>
                       {conv.montantDevise != null && <p><span className="text-muted-foreground">Montant:</span> {conv.montantDevise.toLocaleString("fr-FR")} {conv.deviseOrigine}</p>}
                       {conv.montantMru != null && <p><span className="text-muted-foreground">MRU:</span> {conv.montantMru.toLocaleString("fr-FR")}</p>}
