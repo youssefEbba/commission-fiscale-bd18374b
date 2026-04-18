@@ -63,13 +63,19 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated: () => void;
+  /** Si fourni, le wizard édite une demande existante (BROUILLON / RECUE / INCOMPLETE). */
+  editingId?: number | null;
+  /** Demande pré-chargée (utilisée pour préremplir le formulaire en mode édition). */
+  editingDemande?: DemandeCorrectionDto | null;
 }
 
-export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: Props) {
+export default function CreateDemandeWizard({ open, onOpenChange, onCreated, editingId, editingDemande }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const isEditing = !!editingId;
 
   // Step 0: Entreprise + Convention + Documents
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
