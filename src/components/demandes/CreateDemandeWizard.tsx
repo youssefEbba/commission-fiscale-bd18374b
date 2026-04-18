@@ -470,7 +470,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   };
 
   // ── Submit ──
-  const handleSubmit = async () => {
+  // brouillon=true → POST avec brouillon:true (ou PUT en édition) ; reste en BROUILLON.
+  // brouillon=false → POST normal puis (en édition) déclenche soumettre().
+  const handleSubmit = async (asBrouillon: boolean) => {
     if ((user?.role === "AUTORITE_CONTRACTANTE" || isDelegate) && !user?.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.", variant: "destructive" });
       return;
@@ -479,7 +481,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
       return;
     }
-    if (!conventionId && !marcheId) {
+    // En soumission ferme, conv/marché obligatoire ; en brouillon on est plus tolérant.
+    if (!asBrouillon && !conventionId && !marcheId) {
       toast({ title: "Erreur", description: "Veuillez sélectionner une convention ou un marché", variant: "destructive" });
       return;
     }
@@ -487,9 +490,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
 
-    setSubmitting(true);
+    if (asBrouillon) setSavingDraft(true); else setSubmitting(true);
     try {
-      const demande = await demandeCorrectionApi.create({
+      const payload = {
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
         entrepriseId: Number(entrepriseId),
         conventionId: finalConventionId,
@@ -512,7 +515,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           totalTTC: dqeTotalTTC,
           lignes: dqeLignes,
         },
-      });
+      };
+
+      let demande: DemandeCorrectionDto;
+      if (isEditing && editingId) {
+        // Édition : PUT, puis soumettre si demandé.
+        demande = await demandeCorrectionApi.update(editingId, payload);
+        if (!asBrouillon && demande.statut === "BROUILLON") {
+          demande = await demandeCorrectionApi.soumettre(editingId);
+        }
+      } else {
+        // Création : POST avec flag brouillon.
+        demande = await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
+      }
 
       const docEntries = Object.entries(docFiles);
       for (const [type, file] of docEntries) {
@@ -543,7 +558,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         console.warn("AI context upload failed (non-blocking):", e);
       }
 
-      toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
+      toast({
+        title: "Succès",
+        description: asBrouillon
+          ? `Brouillon ${demande.numero || "#" + demande.id} enregistré`
+          : isEditing
+          ? `Demande ${demande.numero || "#" + demande.id} soumise`
+          : `Demande ${demande.numero || "#" + demande.id} créée`,
+      });
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
@@ -559,8 +581,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       onOpenChange(false);
       onCreated();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: formatApiErrorMessage(e, "Échec de la création"), variant: "destructive" });
+      toast({ title: "Erreur", description: formatApiErrorMessage(e, asBrouillon ? "Échec de l'enregistrement" : "Échec de la soumission"), variant: "destructive" });
     } finally {
+      setSavingDraft(false);
       setSubmitting(false);
     }
   };
