@@ -345,32 +345,15 @@ const Demandes = () => {
     }
   };
 
-  const REQUIRED_VISA_ROLES = ["DGD", "DGI", "DGTCP", "DGB"];
-
-  // After a visa/reject, update demande status accordingly
-  const updateDemandeStatusAfterDecision = async (id: number) => {
-    try {
-      // Use getById instead of getDecisions (which may be access-restricted)
-      const demande = await demandeCorrectionApi.getById(id);
-      const decisions = demande.decisions || [];
-      const visaRoles = decisions
-        .filter((d: any) => d.decision === "VISA")
-        .map((d: any) => d.role);
-      const allVisas = REQUIRED_VISA_ROLES.every(r => visaRoles.includes(r));
-      const newStatut = allVisas ? "EN_VALIDATION" : "EN_EVALUATION";
-      await demandeCorrectionApi.updateStatut(id, newStatut);
-    } catch (e: any) {
-      console.error("Could not update demande status after decision", e);
-      toast({ title: "Erreur statut", description: e?.message || "Impossible de mettre à jour le statut", variant: "destructive" });
-    }
-  };
+  // Note: la transition de statut (RECUE/RECEVABLE -> EN_EVALUATION, et -> EN_VALIDATION
+  // après les 4 visas DGD/DGTCP/DGI/DGB) est gérée automatiquement côté backend
+  // dans DecisionCorrectionService.saveDecision. Le front se contente de recharger la demande.
 
   // Temporary decision (VISA / REJET_TEMP) via POST /decisions
   const handleTempVisa = async (id: number) => {
     setActionLoading(id);
     try {
       await demandeCorrectionApi.postDecision(id, "VISA");
-      await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Visa temporaire apposé" });
       fetchDemandes();
       if (selected) {
@@ -388,7 +371,6 @@ const Demandes = () => {
     setActionLoading(id);
     try {
       await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif, documentsDemandes);
-      await updateDemandeStatusAfterDecision(id);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDemandes();
       if (selected) {

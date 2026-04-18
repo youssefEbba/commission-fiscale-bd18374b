@@ -236,24 +236,14 @@ const DemandeDetail = () => {
     }
   };
 
-  const updateDemandeStatusAfterDecision = async (demandeId: number) => {
-    try {
-      const demande = await demandeCorrectionApi.getById(demandeId);
-      const decisions = demande.decisions || [];
-      const visaRoles = decisions.filter((d: any) => d.decision === "VISA").map((d: any) => d.role);
-      const allVisas = REQUIRED_VISA_ROLES.every(r => visaRoles.includes(r));
-      const newStatut = allVisas ? "EN_VALIDATION" : "EN_EVALUATION";
-      await demandeCorrectionApi.updateStatut(demandeId, newStatut);
-    } catch (e: any) {
-      console.error("Could not update demande status after decision", e);
-    }
-  };
+  // Note: la transition de statut (RECUE/RECEVABLE -> EN_EVALUATION, et -> EN_VALIDATION
+  // après les 4 visas DGD/DGTCP/DGI/DGB) est gérée automatiquement côté backend
+  // dans DecisionCorrectionService.saveDecision. Le front se contente de recharger la demande.
 
   const handleTempVisa = async (demandeId: number) => {
     setActionLoading(demandeId);
     try {
       await demandeCorrectionApi.postDecision(demandeId, "VISA");
-      await updateDemandeStatusAfterDecision(demandeId);
       toast({ title: "Succès", description: "Visa temporaire apposé" });
       fetchDetail();
     } catch (e: any) {
@@ -267,7 +257,6 @@ const DemandeDetail = () => {
     setActionLoading(demandeId);
     try {
       await demandeCorrectionApi.postDecision(demandeId, "REJET_TEMP", motif, documentsDemandes);
-      await updateDemandeStatusAfterDecision(demandeId);
       toast({ title: "Succès", description: "Rejet temporaire enregistré" });
       fetchDetail();
     } catch (e: any) {
