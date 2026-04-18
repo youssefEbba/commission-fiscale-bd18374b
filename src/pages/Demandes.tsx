@@ -843,41 +843,8 @@ const Demandes = () => {
                                             <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
                                           </DropdownMenuItem>
                                         )}
-                                        {canReactivate && <DropdownMenuSeparator />}
-                                        {canReactivate && (() => {
-                                          const blocked = d.marcheReactivable === false;
-                                          const item = (
-                                            <DropdownMenuItem
-                                              disabled={actionLoading === d.id || blocked}
-                                              onSelect={(e) => { if (blocked) e.preventDefault(); }}
-                                              onClick={async () => {
-                                                if (blocked) return;
-                                                setActionLoading(d.id);
-                                                try {
-                                                  await demandeCorrectionApi.updateStatut(d.id, "RECUE");
-                                                  toast({ title: "Demande réactivée", description: "La demande est de nouveau au statut Reçue." });
-                                                  fetchDemandes();
-                                                } catch (e: any) {
-                                                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                                                } finally {
-                                                  setActionLoading(null);
-                                                }
-                                              }}
-                                            >
-                                              <RefreshCw className="h-4 w-4 mr-2" /> Réactiver
-                                            </DropdownMenuItem>
-                                          );
-                                          return blocked ? (
-                                            <TooltipProvider>
-                                              <Tooltip>
-                                                <TooltipTrigger asChild><div>{item}</div></TooltipTrigger>
-                                                <TooltipContent side="left">
-                                                  Le marché est déjà rattaché à une autre demande active.
-                                                </TooltipContent>
-                                              </Tooltip>
-                                            </TooltipProvider>
-                                          ) : item;
-                                        })()}
+                                      </>
+
                                       </>
                                     );
                                   })()}
