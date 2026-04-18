@@ -251,48 +251,103 @@ const Utilisations = () => {
     return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };
 
-  const handleCreate = async () => {
+  /**
+   * @param mode "brouillon" => sauvegarde sans contrôles ;
+   *             "submit" => création/édition + soumission immédiate (DEMANDEE).
+   */
+  const handleSave = async (mode: "brouillon" | "submit") => {
     if (!form.certificatCreditId) {
       toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
-    const missing = getMissingObligatoryDocs();
-    if (missing.length > 0) {
-      toast({
-        title: "Documents manquants",
-        description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
-        variant: "destructive",
-      });
-      return;
+    if (mode === "submit") {
+      const missing = getMissingObligatoryDocs();
+      if (missing.length > 0) {
+        toast({
+          title: "Documents manquants",
+          description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     setCreating(true);
     try {
-      // Sanitize: replace empty strings with null, convert date fields to Instant format
       const dateFields = ["dateDeclaration", "dateFacture"];
       const sanitized: Record<string, any> = {};
       for (const [k, v] of Object.entries(form)) {
-        if (v === "") {
-          sanitized[k] = null;
-        } else if (dateFields.includes(k) && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
-          sanitized[k] = `${v}T00:00:00Z`;
-        } else {
-          sanitized[k] = v;
-        }
+        if (v === "") sanitized[k] = null;
+        else if (dateFields.includes(k) && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) sanitized[k] = `${v}T00:00:00Z`;
+        else sanitized[k] = v;
       }
-      const created = await utilisationCreditApi.create(sanitized as CreateUtilisationCreditRequest);
-      // Upload all attached documents
+
+      let target: UtilisationCreditDto;
+      if (editingId != null) {
+        // Édition d'un existant (brouillon ou DEMANDEE) — type immutable côté back
+        target = await utilisationCreditApi.update(editingId, sanitized as CreateUtilisationCreditRequest);
+      } else {
+        const payload: CreateUtilisationCreditRequest = {
+          ...(sanitized as CreateUtilisationCreditRequest),
+          ...(mode === "brouillon" ? { brouillon: true } : {}),
+        };
+        target = await utilisationCreditApi.create(payload);
+      }
+
       const uploadEntries = Object.entries(createDocFiles);
-      if (uploadEntries.length > 0) {
-        for (const [type, file] of uploadEntries) {
-          await utilisationCreditApi.uploadDocument(created.id, type as TypeDocumentUtilisation, file);
-        }
+      for (const [type, file] of uploadEntries) {
+        await utilisationCreditApi.uploadDocument(target.id, type as TypeDocumentUtilisation, file);
       }
-      toast({ title: "Succès", description: `Utilisation créée avec ${uploadEntries.length} document(s)` });
+
+      // Si édition d'un brouillon + clic « Soumettre » => soumettre maintenant
+      if (mode === "submit" && editingId != null && target.statut === "BROUILLON") {
+        await utilisationCreditApi.soumettre(target.id);
+      }
+
+      toast({
+        title: "Succès",
+        description:
+          mode === "brouillon"
+            ? "Brouillon enregistré"
+            : editingId != null
+              ? "Utilisation soumise"
+              : `Utilisation créée${uploadEntries.length ? ` avec ${uploadEntries.length} document(s)` : ""}`,
+      });
       setShowCreate(false);
+      setEditingId(null);
       fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleSoumettreFromList = async (id: number) => {
+    setSubmittingId(id);
+    try {
+      await utilisationCreditApi.soumettre(id);
+      toast({ title: "Succès", description: "Utilisation soumise" });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const handleDeleteBrouillon = async () => {
+    if (!deletingTarget) return;
+    setDeletingLoading(true);
+    try {
+      await utilisationCreditApi.remove(deletingTarget.id);
+      toast({ title: "Succès", description: "Brouillon supprimé" });
+      setDeletingTarget(null);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setDeletingLoading(false);
+    }
   };
 
   const handleStatut = async (id: number, statut: UtilisationStatut) => {
