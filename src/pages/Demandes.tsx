@@ -755,6 +755,36 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 mr-2" /> Détail
                                   </DropdownMenuItem>
+                                  {/* Actions Brouillon (entreprise / AC dépositaire) */}
+                                  {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => setEditingDemande(d)}>
+                                        <FileText className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        disabled={actionLoading === d.id}
+                                        onClick={async () => {
+                                          setActionLoading(d.id);
+                                          try {
+                                            await demandeCorrectionApi.soumettre(d.id);
+                                            toast({ title: "Brouillon soumis", description: "La demande est passée en Reçue." });
+                                            fetchDemandes();
+                                          } catch (e: any) {
+                                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                          } finally { setActionLoading(null); }
+                                        }}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-2" /> Soumettre
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() => setDeleteTargetId(d.id)}
+                                      >
+                                        <XCircle className="h-4 w-4 mr-2" /> Supprimer
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                    </>
+                                  )}
                                   {!hasRole(["DGD", "DGI", "DGTCP", "DGB"]) && d.statut === "RECUE" && (
                                     <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
                                       <FileText className="h-4 w-4 mr-2" /> Éditer
