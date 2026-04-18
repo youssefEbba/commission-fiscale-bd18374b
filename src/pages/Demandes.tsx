@@ -29,6 +29,7 @@ import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
+  BROUILLON: "bg-slate-100 text-slate-700",
   RECUE: "bg-blue-100 text-blue-800",
   INCOMPLETE: "bg-yellow-100 text-yellow-800",
   RECEVABLE: "bg-emerald-100 text-emerald-800",
@@ -135,9 +136,13 @@ const Demandes = () => {
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
 
-  // Create wizard
+  // Create / Edit wizard
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
 
+  // Delete brouillon
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   // Rejection modal
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
@@ -750,6 +755,36 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 mr-2" /> Détail
                                   </DropdownMenuItem>
+                                  {/* Actions Brouillon (entreprise / AC dépositaire) */}
+                                  {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => setEditingDemande(d)}>
+                                        <FileText className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        disabled={actionLoading === d.id}
+                                        onClick={async () => {
+                                          setActionLoading(d.id);
+                                          try {
+                                            await demandeCorrectionApi.soumettre(d.id);
+                                            toast({ title: "Brouillon soumis", description: "La demande est passée en Reçue." });
+                                            fetchDemandes();
+                                          } catch (e: any) {
+                                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                          } finally { setActionLoading(null); }
+                                        }}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-2" /> Soumettre
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() => setDeleteTargetId(d.id)}
+                                      >
+                                        <XCircle className="h-4 w-4 mr-2" /> Supprimer
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                    </>
+                                  )}
                                   {!hasRole(["DGD", "DGI", "DGTCP", "DGB"]) && d.statut === "RECUE" && (
                                     <DropdownMenuItem onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
                                       <FileText className="h-4 w-4 mr-2" /> Éditer
@@ -926,8 +961,50 @@ const Demandes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Wizard */}
-      <CreateDemandeWizard open={createOpen} onOpenChange={setCreateOpen} onCreated={fetchDemandes} />
+      {/* Create / Edit Wizard */}
+      <CreateDemandeWizard
+        open={createOpen || !!editingDemande}
+        onOpenChange={(v) => { if (!v) { setCreateOpen(false); setEditingDemande(null); } }}
+        onCreated={fetchDemandes}
+        editingId={editingDemande?.id ?? null}
+        editingDemande={editingDemande}
+      />
+
+      {/* Confirm delete brouillon */}
+      <Dialog open={deleteTargetId !== null} onOpenChange={(v) => { if (!v) setDeleteTargetId(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Supprimer le brouillon ?</DialogTitle>
+            <DialogDescription>
+              Cette action est définitive et ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTargetId(null)}>Annuler</Button>
+            <Button
+              variant="destructive"
+              disabled={deleteLoading}
+              onClick={async () => {
+                if (!deleteTargetId) return;
+                setDeleteLoading(true);
+                try {
+                  await demandeCorrectionApi.remove(deleteTargetId);
+                  toast({ title: "Brouillon supprimé" });
+                  setDeleteTargetId(null);
+                  fetchDemandes();
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                } finally {
+                  setDeleteLoading(false);
+                }
+              }}
+            >
+              {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Entreprise Detail Dialog */}
       <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>

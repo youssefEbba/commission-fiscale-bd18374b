@@ -6,7 +6,7 @@ import {
   entrepriseApi, EntrepriseDto,
   conventionApi, ConventionDto, CreateConventionRequest,
   TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
-  demandeCorrectionApi,
+  demandeCorrectionApi, DemandeCorrectionDto, ModeleFiscal, Dqe,
   ImportationLigne, FiscaliteInterieure, DqeLigne,
   marcheApi, MarcheDto,
   bailleurApi, BailleurDto,
@@ -63,13 +63,19 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated: () => void;
+  /** Si fourni, le wizard édite une demande existante (BROUILLON / RECUE / INCOMPLETE). */
+  editingId?: number | null;
+  /** Demande pré-chargée (utilisée pour préremplir le formulaire en mode édition). */
+  editingDemande?: DemandeCorrectionDto | null;
 }
 
-export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: Props) {
+export default function CreateDemandeWizard({ open, onOpenChange, onCreated, editingId, editingDemande }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const isEditing = !!editingId;
 
   // Step 0: Entreprise + Convention + Documents
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
@@ -200,6 +206,32 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       wasOpenRef.current = false;
     }
   }, [open, loadInitialData]);
+
+  // Préremplissage en mode édition (BROUILLON / RECUE / INCOMPLETE).
+  useEffect(() => {
+    if (!open || !editingDemande) return;
+    if (editingDemande.entrepriseId) setEntrepriseId(String(editingDemande.entrepriseId));
+    const anyD = editingDemande as unknown as { conventionId?: number; marcheId?: number; modeleFiscal?: ModeleFiscal; dqe?: Dqe };
+    if (anyD.conventionId) setConventionId(String(anyD.conventionId));
+    if (anyD.marcheId) setMarcheId(String(anyD.marcheId));
+    const mf = anyD.modeleFiscal;
+    if (mf) {
+      if (mf.typeProjet) setTypeProjet(mf.typeProjet);
+      if (mf.referenceDossier) setReferenceDossier(mf.referenceDossier);
+      if (mf.afficherNomenclature != null) setShowNomenclature(!!mf.afficherNomenclature);
+      if (mf.importations?.length) setImportations(mf.importations);
+      if (mf.fiscaliteInterieure) setFiscalite(mf.fiscaliteInterieure);
+    }
+    const dqe = anyD.dqe;
+    if (dqe) {
+      if (dqe.numeroAAOI) setDqeNumero(dqe.numeroAAOI);
+      if (dqe.projet) setDqeProjet(dqe.projet);
+      if (dqe.lot) setDqeLot(dqe.lot);
+      if (dqe.tauxTVA != null) setDqeTauxTVA(dqe.tauxTVA);
+      if (dqe.lignes?.length) setDqeLignes(dqe.lignes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editingDemande?.id]);
 
   // Create enterprise inline
   const handleCreateEntreprise = async () => {
@@ -438,7 +470,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
   };
 
   // ── Submit ──
-  const handleSubmit = async () => {
+  // brouillon=true → POST avec brouillon:true (ou PUT en édition) ; reste en BROUILLON.
+  // brouillon=false → POST normal puis (en édition) déclenche soumettre().
+  const handleSubmit = async (asBrouillon: boolean) => {
     if ((user?.role === "AUTORITE_CONTRACTANTE" || isDelegate) && !user?.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.", variant: "destructive" });
       return;
@@ -447,7 +481,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
       return;
     }
-    if (!conventionId && !marcheId) {
+    // En soumission ferme, conv/marché obligatoire ; en brouillon on est plus tolérant.
+    if (!asBrouillon && !conventionId && !marcheId) {
       toast({ title: "Erreur", description: "Veuillez sélectionner une convention ou un marché", variant: "destructive" });
       return;
     }
@@ -455,9 +490,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
 
-    setSubmitting(true);
+    if (asBrouillon) setSavingDraft(true); else setSubmitting(true);
     try {
-      const demande = await demandeCorrectionApi.create({
+      const payload = {
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
         entrepriseId: Number(entrepriseId),
         conventionId: finalConventionId,
@@ -480,7 +515,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
           totalTTC: dqeTotalTTC,
           lignes: dqeLignes,
         },
-      });
+      };
+
+      let demande: DemandeCorrectionDto;
+      if (isEditing && editingId) {
+        // Édition : PUT, puis soumettre si demandé.
+        demande = await demandeCorrectionApi.update(editingId, payload);
+        if (!asBrouillon && demande.statut === "BROUILLON") {
+          demande = await demandeCorrectionApi.soumettre(editingId);
+        }
+      } else {
+        // Création : POST avec flag brouillon.
+        demande = await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
+      }
 
       const docEntries = Object.entries(docFiles);
       for (const [type, file] of docEntries) {
@@ -511,7 +558,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
         console.warn("AI context upload failed (non-blocking):", e);
       }
 
-      toast({ title: "Succès", description: `Demande ${demande.numero || "#" + demande.id} créée` });
+      toast({
+        title: "Succès",
+        description: asBrouillon
+          ? `Brouillon ${demande.numero || "#" + demande.id} enregistré`
+          : isEditing
+          ? `Demande ${demande.numero || "#" + demande.id} soumise`
+          : `Demande ${demande.numero || "#" + demande.id} créée`,
+      });
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
@@ -527,8 +581,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
       onOpenChange(false);
       onCreated();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: formatApiErrorMessage(e, "Échec de la création"), variant: "destructive" });
+      toast({ title: "Erreur", description: formatApiErrorMessage(e, asBrouillon ? "Échec de l'enregistrement" : "Échec de la soumission"), variant: "destructive" });
     } finally {
+      setSavingDraft(false);
       setSubmitting(false);
     }
   };
@@ -544,7 +599,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouvelle demande de correction</DialogTitle>
+          <DialogTitle>{isEditing ? `Modifier la demande ${editingDemande?.numero || `#${editingId}`}` : "Nouvelle demande de correction"}</DialogTitle>
         </DialogHeader>
         <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
@@ -1335,17 +1390,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated }: P
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting || !entrepriseId}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                Soumettre la demande
-              </Button>
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleSubmit(true)}
+                  disabled={savingDraft || submitting || !entrepriseId}
+                  title="Enregistrer sans notifier les services"
+                >
+                  {savingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
+                  Enregistrer brouillon
+                </Button>
+                <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                  {isEditing ? "Soumettre" : "Soumettre la demande"}
+                </Button>
+              </>
             )}
           </div>
         </DialogFooter>

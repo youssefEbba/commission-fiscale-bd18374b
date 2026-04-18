@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
+  BROUILLON: "bg-slate-100 text-slate-700",
   DEMANDEE: "bg-blue-100 text-blue-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
   A_RECONTROLER: "bg-cyan-100 text-cyan-800",

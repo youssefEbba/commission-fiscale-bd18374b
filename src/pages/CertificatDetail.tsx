@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, Ship, TrendingUp, TrendingDown, CheckCircle2, XCircle, Info } from "lucide-react";
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
+  BROUILLON: "bg-slate-100 text-slate-700",
   DEMANDE: "bg-blue-100 text-blue-800",
   EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
@@ -32,6 +33,7 @@ const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
 };
 
 const STATUT_COLORS_UTIL: Record<UtilisationStatut, string> = {
+  BROUILLON: "bg-slate-100 text-slate-700",
   DEMANDEE: "bg-blue-100 text-blue-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
   A_RECONTROLER: "bg-cyan-100 text-cyan-800",
