@@ -454,6 +454,13 @@ export interface DemandeCorrectionDto {
   marcheIntitule?: string;
   /** Trace : id du marché original conservé après une annulation (détachement). */
   marcheIdTrace?: number;
+  /**
+   * Indique si la demande ANNULEE peut être réactivée :
+   * - null : statut non concerné (différent de ANNULEE)
+   * - true : marché tracé libre, réactivation autorisée
+   * - false : marché tracé déjà rattaché à une autre demande active → réactivation bloquée
+   */
+  marcheReactivable?: boolean | null;
   modeleFiscal?: ModeleFiscal;
   dqe?: Dqe;
   documents?: DocumentDto[];
