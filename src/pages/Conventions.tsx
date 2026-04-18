@@ -58,7 +58,7 @@ const Conventions = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editConvention, setEditConvention] = useState<ConventionDto | null>(null);
   const [editForm, setEditForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined,
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -77,7 +77,7 @@ const Conventions = () => {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined,
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -355,7 +355,7 @@ const Conventions = () => {
       toast({ title: "Succès", description: `Convention créée${createDocs.length ? ` avec ${createDocs.length} document(s)` : ""}` });
       setCreateOpen(false);
       setForm({
-        reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+        reference: "", intitule: "", bailleurId: undefined,
         dateSignature: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });

@@ -373,9 +373,8 @@ export interface CreateConventionRequest {
   reference?: string;
   projectReference?: string;
   intitule?: string;
-  /** ID du bailleur (issu de GET /api/bailleurs). */
+  /** ID du bailleur (issu de GET /api/bailleurs). Le descriptif provient désormais du bailleur lui-même. */
   bailleurId?: number | null;
-  bailleurDetails?: string;
   dateSignature?: string;
   dateFin?: string;
   montantDevise?: number;
