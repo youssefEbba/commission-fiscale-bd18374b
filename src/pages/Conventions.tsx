@@ -58,7 +58,7 @@ const Conventions = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editConvention, setEditConvention] = useState<ConventionDto | null>(null);
   const [editForm, setEditForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined,
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -77,7 +77,7 @@ const Conventions = () => {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined,
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -355,7 +355,7 @@ const Conventions = () => {
       toast({ title: "Succès", description: `Convention créée${createDocs.length ? ` avec ${createDocs.length} document(s)` : ""}` });
       setCreateOpen(false);
       setForm({
-        reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+        reference: "", intitule: "", bailleurId: undefined,
         dateSignature: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
@@ -394,7 +394,6 @@ const Conventions = () => {
       reference: conv.reference || "",
       intitule: conv.intitule || "",
       bailleurId: conv.bailleurId,
-      bailleurDetails: conv.bailleurDetails || "",
       dateSignature: conv.dateSignature || "",
       dateFin: conv.dateFin || "",
       montantDevise: conv.montantDevise,
@@ -715,10 +714,7 @@ const Conventions = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Descriptif de projets</Label>
-              <Input value={form.bailleurDetails} onChange={(e) => setForm(f => ({ ...f, bailleurDetails: e.target.value }))} placeholder="Description du projet financé..." />
-            </div>
+            {/* Le descriptif provient désormais du bailleur sélectionné. */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Date signature</Label>
@@ -1142,10 +1138,7 @@ const Conventions = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Descriptif</Label>
-              <Input value={editForm.bailleurDetails} onChange={(e) => setEditForm(f => ({ ...f, bailleurDetails: e.target.value }))} />
-            </div>
+            {/* Le descriptif provient désormais du bailleur sélectionné. */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Date signature</Label>

@@ -100,7 +100,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // Create convention inline – full form matching Conventions page
   const [showCreateConvention, setShowCreateConvention] = useState(false);
   const [newConvForm, setNewConvForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+    reference: "", intitule: "", bailleurId: undefined,
     dateSignature: "", dateFin: "",
     montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
   });
@@ -349,7 +349,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setConventionId(String(created.id));
       setShowCreateConvention(false);
       setNewConvForm({
-        reference: "", intitule: "", bailleurId: undefined, bailleurDetails: "",
+        reference: "", intitule: "", bailleurId: undefined,
         dateSignature: "", dateFin: "",
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
@@ -865,11 +865,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                     </div>
                                   )}
                                 </div>
-                                <Input
-                                  placeholder="Descriptif de projets"
-                                  value={newConvForm.bailleurDetails}
-                                  onChange={e => setNewConvForm(prev => ({ ...prev, bailleurDetails: e.target.value }))}
-                                />
+                                {/* Le descriptif provient désormais du bailleur sélectionné. */}
                                 {/* Dates */}
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="space-y-1">
