@@ -931,8 +931,50 @@ const Demandes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Wizard */}
-      <CreateDemandeWizard open={createOpen} onOpenChange={setCreateOpen} onCreated={fetchDemandes} />
+      {/* Create / Edit Wizard */}
+      <CreateDemandeWizard
+        open={createOpen || !!editingDemande}
+        onOpenChange={(v) => { if (!v) { setCreateOpen(false); setEditingDemande(null); } }}
+        onCreated={fetchDemandes}
+        editingId={editingDemande?.id ?? null}
+        editingDemande={editingDemande}
+      />
+
+      {/* Confirm delete brouillon */}
+      <Dialog open={deleteTargetId !== null} onOpenChange={(v) => { if (!v) setDeleteTargetId(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Supprimer le brouillon ?</DialogTitle>
+            <DialogDescription>
+              Cette action est définitive et ne peut pas être annulée.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTargetId(null)}>Annuler</Button>
+            <Button
+              variant="destructive"
+              disabled={deleteLoading}
+              onClick={async () => {
+                if (!deleteTargetId) return;
+                setDeleteLoading(true);
+                try {
+                  await demandeCorrectionApi.remove(deleteTargetId);
+                  toast({ title: "Brouillon supprimé" });
+                  setDeleteTargetId(null);
+                  fetchDemandes();
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                } finally {
+                  setDeleteLoading(false);
+                }
+              }}
+            >
+              {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Entreprise Detail Dialog */}
       <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>
