@@ -857,11 +857,16 @@ const DemandesMiseEnPlace = () => {
                 <SelectContent>
                   {corrections.length === 0 ? (
                     <SelectItem value="__none" disabled>Aucune correction disponible</SelectItem>
-                  ) : corrections.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
+                  ) : corrections.map((c) => {
+                    // En édition, autoriser la correction déjà liée à ce brouillon.
+                    const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
+                    return (
+                      <SelectItem key={c.id} value={String(c.id)} disabled={locked}>
+                        {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
+                        {locked && " (mise en place déjà en cours)"}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
