@@ -885,7 +885,7 @@ const DemandesMiseEnPlace = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              Modifier le brouillon {editingBrouillon?.reference || `#${editingBrouillon?.id}`}
+              {editingBrouillon?.statut === "BROUILLON" ? "Modifier le brouillon" : "Modifier la demande"} {editingBrouillon?.reference || `#${editingBrouillon?.id}`}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -974,11 +974,13 @@ const DemandesMiseEnPlace = () => {
               {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Enregistrer
             </Button>
-            <Button onClick={() => handleUpdateBrouillon(true)} disabled={editingLoading || uploadingDocs}>
-              {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <Send className="h-4 w-4 mr-1" />
-              Enregistrer & Soumettre
-            </Button>
+            {editingBrouillon?.statut === "BROUILLON" && (
+              <Button onClick={() => handleUpdateBrouillon(true)} disabled={editingLoading || uploadingDocs}>
+                {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <Send className="h-4 w-4 mr-1" />
+                Enregistrer & Soumettre
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
