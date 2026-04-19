@@ -87,6 +87,10 @@ const DemandesMiseEnPlace = () => {
   // Creation dialog state
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [savingBrouillon, setSavingBrouillon] = useState(false);
+  // Edit brouillon state
+  const [editingBrouillon, setEditingBrouillon] = useState<CertificatCreditDto | null>(null);
+  const [editingLoading, setEditingLoading] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
