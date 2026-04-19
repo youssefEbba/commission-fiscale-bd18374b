@@ -470,7 +470,16 @@ const MiseEnPlaceDetail = () => {
 
               {/* DGTCP: enter montants before visa */}
               {canMontants && (
-                <Button variant="outline" onClick={() => { setShowMontants(true); setMontantCordon(""); setMontantTVAInt(""); }}>
+              <Button variant="outline" onClick={() => {
+                setShowMontants(true);
+                setMontantCordon(c.montantCordon != null ? String(c.montantCordon) : "");
+                setMontantTVAInt(c.montantTVAInterieure != null ? String(c.montantTVAInterieure) : "");
+                setRecapA(c.valeurDouaneFournitures != null ? String(c.valeurDouaneFournitures) : "");
+                setRecapB(c.droitsEtTaxesDouaneHorsTva != null ? String(c.droitsEtTaxesDouaneHorsTva) : "");
+                setRecapC(c.montantMarcheHt != null ? String(c.montantMarcheHt) : "");
+                setRecapD(c.tvaImportationDouane != null ? String(c.tvaImportationDouane) : "");
+                setRecapG(c.tvaCollecteeTravaux != null ? String(c.tvaCollecteeTravaux) : "");
+              }}>
                   <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                 </Button>
               )}
