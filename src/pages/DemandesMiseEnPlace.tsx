@@ -188,7 +188,30 @@ const DemandesMiseEnPlace = () => {
     }
   };
 
-  const handleCreate = async () => {
+  const uploadDocsFor = async (certId: number) => {
+    if (Object.keys(docFiles).length === 0) return;
+    setUploadingDocs(true);
+    for (const [type, file] of Object.entries(docFiles)) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const token = localStorage.getItem("auth_token");
+        await fetch(`${API_BASE}/certificats-credit/${certId}/documents?type=${encodeURIComponent(type)}`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: formData,
+        });
+      } catch {
+        toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
+      }
+    }
+    setUploadingDocs(false);
+  };
+
+  const handleCreate = async (asBrouillon: boolean) => {
     if (!selectedCorrectionId) {
       toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
       return;
@@ -199,49 +222,86 @@ const DemandesMiseEnPlace = () => {
       return;
     }
 
-    setCreating(true);
+    if (asBrouillon) setSavingBrouillon(true); else setCreating(true);
     try {
       const request: CreateCertificatCreditRequest = {
         entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
+        brouillon: asBrouillon,
       };
       const created = await certificatCreditApi.create(request);
 
-      if (Object.keys(docFiles).length > 0) {
-        setUploadingDocs(true);
-        for (const [type, file] of Object.entries(docFiles)) {
-          try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const token = localStorage.getItem("auth_token");
-            await fetch(`${API_BASE}/certificats-credit/${created.id}/documents?type=${encodeURIComponent(type)}`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "true",
-              },
-              body: formData,
-            });
-          } catch {
-            toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
-          }
+      await uploadDocsFor(created.id);
+
+      if (!asBrouillon) {
+        try {
+          await certificatCreditApi.soumettre(created.id);
+        } catch {
+          // Si la soumission échoue, le certificat reste créé en BROUILLON
         }
-        setUploadingDocs(false);
       }
 
-      // Auto-submit to EN_CONTROLE
-      try {
-        await certificatCreditApi.updateStatut(created.id, "EN_CONTROLE");
-      } catch {
-        // If auto-submit fails, the demand is still created
-      }
-
-      toast({ title: "Succès", description: "Demande soumise au contrôle avec succès" });
+      toast({
+        title: "Succès",
+        description: asBrouillon ? "Brouillon enregistré" : "Demande soumise au contrôle",
+      });
       setShowCreate(false);
       fetchCertificats();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message || "Impossible de créer la demande", variant: "destructive" });
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+      setSavingBrouillon(false);
+    }
+  };
+
+  const openEditBrouillon = async (c: CertificatCreditDto) => {
+    setEditingBrouillon(c);
+    setSelectedCorrectionId(c.demandeCorrectionId ? String(c.demandeCorrectionId) : "");
+    setDocFiles({});
+    try {
+      const [corrs, reqs] = await Promise.all([
+        user?.autoriteContractanteId
+          ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
+          : demandeCorrectionApi.getAll(),
+        documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+      ]);
+      setCorrections(corrs.filter(co => co.statut === "NOTIFIEE" || co.statut === "ADOPTEE" || co.id === c.demandeCorrectionId));
+      setDocRequirements(reqs);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+    }
+  };
+
+  const handleUpdateBrouillon = async (alsoSubmit: boolean) => {
+    if (!editingBrouillon || !selectedCorrectionId) return;
+    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+    if (!correction?.entrepriseId) {
+      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
+      return;
+    }
+    setEditingLoading(true);
+    try {
+      await certificatCreditApi.update(editingBrouillon.id, {
+        entrepriseId: correction.entrepriseId,
+        demandeCorrectionId: Number(selectedCorrectionId),
+        brouillon: true,
+      });
+      await uploadDocsFor(editingBrouillon.id);
+      if (alsoSubmit) {
+        await certificatCreditApi.soumettre(editingBrouillon.id);
+      }
+      toast({
+        title: "Succès",
+        description: alsoSubmit ? "Brouillon soumis" : "Brouillon mis à jour",
+      });
+      setEditingBrouillon(null);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message || "Échec mise à jour", variant: "destructive" });
+    } finally {
+      setEditingLoading(false);
+    }
   };
 
   const handleStatut = async (id: number, statut: CertificatStatut) => {
