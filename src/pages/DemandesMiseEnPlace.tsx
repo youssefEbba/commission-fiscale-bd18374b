@@ -104,6 +104,8 @@ const DemandesMiseEnPlace = () => {
   // Edit brouillon state
   const [editingBrouillon, setEditingBrouillon] = useState<CertificatCreditDto | null>(null);
   const [editingLoading, setEditingLoading] = useState(false);
+  const [editingExistingDocs, setEditingExistingDocs] = useState<DocumentDto[]>([]);
+  const [loadingExistingDocs, setLoadingExistingDocs] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
