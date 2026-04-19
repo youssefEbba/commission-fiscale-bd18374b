@@ -9,8 +9,20 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
-  DecisionCorrectionDto, DecisionType,
+  DecisionCorrectionDto, DecisionType, isApiError,
 } from "@/lib/api";
+
+// Extracts a user-friendly error message, with special handling for 409 / CONFLICT.
+function describeApiError(e: unknown, fallback: string): string {
+  if (isApiError(e)) {
+    if (e.status === 409 || e.code === "CONFLICT") {
+      return e.message || "Un certificat de crédit actif existe déjà pour cette demande de correction.";
+    }
+    return e.message || fallback;
+  }
+  if (e instanceof Error) return e.message || fallback;
+  return fallback;
+}
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
