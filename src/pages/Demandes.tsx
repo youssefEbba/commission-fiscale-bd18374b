@@ -45,6 +45,9 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
 // Visa/rejet actions: no status change on backend (decisionFinale=false)
 // Decision finale: only PRESIDENT can adopt/reject with decisionFinale=true
 const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
+// Statuts terminaux : aucune action possible, lecture seule
+const TERMINAL_STATUTS: DemandeStatut[] = ["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"];
+const isTerminalStatut = (s?: DemandeStatut) => !!s && TERMINAL_STATUTS.includes(s);
 
 const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean }[]> = {
   DGD: [
