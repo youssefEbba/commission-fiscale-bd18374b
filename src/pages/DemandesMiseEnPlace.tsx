@@ -274,17 +274,23 @@ const DemandesMiseEnPlace = () => {
     setEditingBrouillon(c);
     setSelectedCorrectionId(c.demandeCorrectionId ? String(c.demandeCorrectionId) : "");
     setDocFiles({});
+    setEditingExistingDocs([]);
+    setLoadingExistingDocs(true);
     try {
-      const [corrs, reqs] = await Promise.all([
+      const [corrs, reqs, existingDocs] = await Promise.all([
         user?.autoriteContractanteId
           ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
           : demandeCorrectionApi.getAll(),
         documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+        certificatCreditApi.getDocuments(c.id).catch(() => [] as DocumentDto[]),
       ]);
       setCorrections(corrs.filter(co => co.statut === "NOTIFIEE" || co.statut === "ADOPTEE" || co.id === c.demandeCorrectionId));
       setDocRequirements(reqs);
+      setEditingExistingDocs(existingDocs);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+    } finally {
+      setLoadingExistingDocs(false);
     }
   };
 
