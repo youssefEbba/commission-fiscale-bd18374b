@@ -413,6 +413,16 @@ const DemandesMiseEnPlace = () => {
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
 
+  // Demandes de correction qui ont déjà un certificat actif (non ANNULE).
+  // Sert à désactiver/empêcher la création d'un doublon (le backend renvoie 409).
+  const lockedCorrectionIds = new Set<number>(
+    certificats
+      .filter(c => c.statut !== "ANNULE" && c.demandeCorrectionId)
+      .map(c => c.demandeCorrectionId as number)
+  );
+  // En édition d'un brouillon, autoriser sa propre demande liée (cas où on remet la même).
+  const editingOwnCorrectionId = editingBrouillon?.demandeCorrectionId ?? null;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
