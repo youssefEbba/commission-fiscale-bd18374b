@@ -9,8 +9,20 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
-  DecisionCorrectionDto, DecisionType,
+  DecisionCorrectionDto, DecisionType, isApiError,
 } from "@/lib/api";
+
+// Extracts a user-friendly error message, with special handling for 409 / CONFLICT.
+function describeApiError(e: unknown, fallback: string): string {
+  if (isApiError(e)) {
+    if (e.status === 409 || e.code === "CONFLICT") {
+      return e.message || "Un certificat de crédit actif existe déjà pour cette demande de correction.";
+    }
+    return e.message || fallback;
+  }
+  if (e instanceof Error) return e.message || fallback;
+  return fallback;
+}
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -247,8 +259,8 @@ const DemandesMiseEnPlace = () => {
       });
       setShowCreate(false);
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Impossible de créer la demande", variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Impossible de créer la demande"), variant: "destructive" });
     } finally {
       setCreating(false);
       setSavingBrouillon(false);
@@ -297,8 +309,8 @@ const DemandesMiseEnPlace = () => {
       });
       setEditingBrouillon(null);
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Échec mise à jour", variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Échec mise à jour"), variant: "destructive" });
     } finally {
       setEditingLoading(false);
     }
@@ -321,8 +333,8 @@ const DemandesMiseEnPlace = () => {
       await certificatCreditApi.soumettre(id);
       toast({ title: "Succès", description: "Certificat soumis (EN_CONTROLE)" });
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Échec de la soumission"), variant: "destructive" });
     } finally { setSubmittingId(null); }
   };
 
@@ -400,6 +412,16 @@ const DemandesMiseEnPlace = () => {
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
+
+  // Demandes de correction qui ont déjà un certificat actif (non ANNULE).
+  // Sert à désactiver/empêcher la création d'un doublon (le backend renvoie 409).
+  const lockedCorrectionIds = new Set<number>(
+    certificats
+      .filter(c => c.statut !== "ANNULE" && c.demandeCorrectionId)
+      .map(c => c.demandeCorrectionId as number)
+  );
+  // En édition d'un brouillon, autoriser sa propre demande liée (cas où on remet la même).
+  const editingOwnCorrectionId = editingBrouillon?.demandeCorrectionId ?? null;
 
   return (
     <DashboardLayout>
@@ -719,13 +741,23 @@ const DemandesMiseEnPlace = () => {
                 <SelectContent>
                   {corrections.length === 0 ? (
                     <SelectItem value="__none" disabled>Aucune correction adoptée disponible</SelectItem>
-                  ) : corrections.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
+                  ) : corrections.map((c) => {
+                    const locked = lockedCorrectionIds.has(c.id);
+                    return (
+                      <SelectItem key={c.id} value={String(c.id)} disabled={locked}>
+                        {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
+                        {locked && " (mise en place déjà en cours)"}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
+              {selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)) && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Une mise en place active existe déjà pour cette correction.
+                </p>
+              )}
             </div>
 
             {selectedCorrection && (
@@ -796,11 +828,18 @@ const DemandesMiseEnPlace = () => {
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => setShowCreate(false)} className="sm:mr-auto">Annuler</Button>
-            <Button variant="secondary" onClick={() => handleCreate(true)} disabled={creating || savingBrouillon || uploadingDocs}>
+            <Button
+              variant="secondary"
+              onClick={() => handleCreate(true)}
+              disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}
+            >
               {savingBrouillon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Enregistrer le brouillon
             </Button>
-            <Button onClick={() => handleCreate(false)} disabled={creating || savingBrouillon || uploadingDocs}>
+            <Button
+              onClick={() => handleCreate(false)}
+              disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}
+            >
               {(creating || (uploadingDocs && !savingBrouillon)) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Soumettre la demande
             </Button>
@@ -825,11 +864,16 @@ const DemandesMiseEnPlace = () => {
                 <SelectContent>
                   {corrections.length === 0 ? (
                     <SelectItem value="__none" disabled>Aucune correction disponible</SelectItem>
-                  ) : corrections.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
+                  ) : corrections.map((c) => {
+                    // En édition, autoriser la correction déjà liée à ce brouillon.
+                    const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
+                    return (
+                      <SelectItem key={c.id} value={String(c.id)} disabled={locked}>
+                        {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
+                        {locked && " (mise en place déjà en cours)"}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
