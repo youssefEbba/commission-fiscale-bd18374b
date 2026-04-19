@@ -505,6 +505,18 @@ const DemandesMiseEnPlace = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
                           </Button>
+                          {/* Prise en charge (ENVOYEE → EN_CONTROLE) pour DGI/DGD/DGTCP */}
+                          {c.statut === "ENVOYEE" && ["DGI", "DGD", "DGTCP"].includes(role as string) && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              disabled={actionLoading === c.id}
+                              onClick={() => handlePrendreEnCharge(c.id)}
+                            >
+                              {actionLoading === c.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                              Prendre en charge
+                            </Button>
+                          )}
                           {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -532,6 +544,12 @@ const DemandesMiseEnPlace = () => {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
+                          )}
+                          {/* Édition possible aussi en ENVOYEE (PUT autorisé tant que EN_CONTROLE n'a pas commencé) */}
+                          {c.statut === "ENVOYEE" && (role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI") && (
+                            <Button variant="ghost" size="sm" title="Modifier" onClick={() => openEditBrouillon(c)}>
+                              <FileText className="h-4 w-4 mr-1" /> Modifier
+                            </Button>
                           )}
                         </div>
                       </TableCell>
