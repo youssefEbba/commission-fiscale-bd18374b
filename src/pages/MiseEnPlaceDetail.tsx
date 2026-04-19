@@ -111,6 +111,12 @@ const MiseEnPlaceDetail = () => {
   const [showMontants, setShowMontants] = useState(false);
   const [montantCordon, setMontantCordon] = useState("");
   const [montantTVAInt, setMontantTVAInt] = useState("");
+  // Récap fiscal optionnel (a, b, c, d, f, g) — d, b, g servent aux contrôles de cohérence
+  const [recapA, setRecapA] = useState(""); // (a) Valeur en douane des fournitures
+  const [recapB, setRecapB] = useState(""); // (b) Droits & taxes douane hors TVA
+  const [recapC, setRecapC] = useState(""); // (f) Montant marché HT
+  const [recapD, setRecapD] = useState(""); // (d) TVA d'importation à la douane
+  const [recapG, setRecapG] = useState(""); // (g) TVA collectée sur travaux
   const [savingMontants, setSavingMontants] = useState(false);
 
   // Reject dialog (DGTCP)
