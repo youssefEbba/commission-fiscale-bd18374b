@@ -43,6 +43,7 @@ import { API_BASE } from "@/lib/apiConfig";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
+  ENVOYEE: "bg-sky-100 text-sky-800",
   DEMANDE: "bg-blue-100 text-blue-800",
   EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
@@ -292,20 +293,22 @@ const DemandesMiseEnPlace = () => {
       toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
       return;
     }
+    const wasBrouillon = editingBrouillon.statut === "BROUILLON";
     setEditingLoading(true);
     try {
       await certificatCreditApi.update(editingBrouillon.id, {
         entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
-        brouillon: true,
+        // Préserver le statut côté back : on ne renvoie brouillon=true que si on était en BROUILLON.
+        brouillon: wasBrouillon,
       });
       await uploadDocsFor(editingBrouillon.id);
-      if (alsoSubmit) {
+      if (alsoSubmit && wasBrouillon) {
         await certificatCreditApi.soumettre(editingBrouillon.id);
       }
       toast({
         title: "Succès",
-        description: alsoSubmit ? "Brouillon soumis" : "Brouillon mis à jour",
+        description: alsoSubmit && wasBrouillon ? "Brouillon soumis" : "Demande mise à jour",
       });
       setEditingBrouillon(null);
       fetchCertificats();
@@ -314,6 +317,17 @@ const DemandesMiseEnPlace = () => {
     } finally {
       setEditingLoading(false);
     }
+  };
+
+  const handlePrendreEnCharge = async (id: number) => {
+    setActionLoading(id);
+    try {
+      await certificatCreditApi.prendreEnCharge(id);
+      toast({ title: "Succès", description: "Demande prise en charge (EN_CONTROLE)" });
+      fetchCertificats();
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Échec de la prise en charge"), variant: "destructive" });
+    } finally { setActionLoading(null); }
   };
 
   const handleStatut = async (id: number, statut: CertificatStatut) => {
@@ -491,6 +505,18 @@ const DemandesMiseEnPlace = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
                           </Button>
+                          {/* Prise en charge (ENVOYEE → EN_CONTROLE) pour DGI/DGD/DGTCP */}
+                          {c.statut === "ENVOYEE" && ["DGI", "DGD", "DGTCP"].includes(role as string) && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              disabled={actionLoading === c.id}
+                              onClick={() => handlePrendreEnCharge(c.id)}
+                            >
+                              {actionLoading === c.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                              Prendre en charge
+                            </Button>
+                          )}
                           {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -518,6 +544,12 @@ const DemandesMiseEnPlace = () => {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
+                          )}
+                          {/* Édition possible aussi en ENVOYEE (PUT autorisé tant que EN_CONTROLE n'a pas commencé) */}
+                          {c.statut === "ENVOYEE" && (role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI") && (
+                            <Button variant="ghost" size="sm" title="Modifier" onClick={() => openEditBrouillon(c)}>
+                              <FileText className="h-4 w-4 mr-1" /> Modifier
+                            </Button>
                           )}
                         </div>
                       </TableCell>
@@ -853,7 +885,7 @@ const DemandesMiseEnPlace = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              Modifier le brouillon {editingBrouillon?.reference || `#${editingBrouillon?.id}`}
+              {editingBrouillon?.statut === "BROUILLON" ? "Modifier le brouillon" : "Modifier la demande"} {editingBrouillon?.reference || `#${editingBrouillon?.id}`}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -942,11 +974,13 @@ const DemandesMiseEnPlace = () => {
               {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Enregistrer
             </Button>
-            <Button onClick={() => handleUpdateBrouillon(true)} disabled={editingLoading || uploadingDocs}>
-              {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <Send className="h-4 w-4 mr-1" />
-              Enregistrer & Soumettre
-            </Button>
+            {editingBrouillon?.statut === "BROUILLON" && (
+              <Button onClick={() => handleUpdateBrouillon(true)} disabled={editingLoading || uploadingDocs}>
+                {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <Send className="h-4 w-4 mr-1" />
+                Enregistrer & Soumettre
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

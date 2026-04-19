@@ -28,6 +28,7 @@ import { API_BASE } from "@/lib/apiConfig";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
+  ENVOYEE: "bg-sky-100 text-sky-800",
   DEMANDE: "bg-blue-100 text-blue-800",
   EN_CONTROLE: "bg-teal-100 text-teal-800",
   INCOMPLETE: "bg-amber-100 text-amber-800",
@@ -408,6 +409,26 @@ const MiseEnPlaceDetail = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">Actions disponibles</h3>
             <div className="flex flex-wrap gap-2">
+              {/* Prise en charge: ENVOYEE → EN_CONTROLE par DGI/DGD/DGTCP */}
+              {c.statut === "ENVOYEE" && isControlRole && (
+                <Button
+                  variant="default"
+                  disabled={actionLoading}
+                  onClick={async () => {
+                    setActionLoading(true);
+                    try {
+                      await certificatCreditApi.prendreEnCharge(c.id);
+                      toast({ title: "Succès", description: "Demande prise en charge (EN_CONTROLE)" });
+                      fetchData();
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                    } finally { setActionLoading(false); }
+                  }}
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                  Prendre en charge
+                </Button>
+              )}
               {/* Workflow info messages */}
               {isControlRole && isInControle && myHasVisa && (
                 <div className="w-full flex items-center gap-2 p-2 rounded bg-green-50 border border-green-200 text-green-800 text-sm mb-2">
