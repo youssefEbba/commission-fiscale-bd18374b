@@ -828,11 +828,18 @@ const DemandesMiseEnPlace = () => {
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => setShowCreate(false)} className="sm:mr-auto">Annuler</Button>
-            <Button variant="secondary" onClick={() => handleCreate(true)} disabled={creating || savingBrouillon || uploadingDocs}>
+            <Button
+              variant="secondary"
+              onClick={() => handleCreate(true)}
+              disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}
+            >
               {savingBrouillon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Enregistrer le brouillon
             </Button>
-            <Button onClick={() => handleCreate(false)} disabled={creating || savingBrouillon || uploadingDocs}>
+            <Button
+              onClick={() => handleCreate(false)}
+              disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}
+            >
               {(creating || (uploadingDocs && !savingBrouillon)) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Soumettre la demande
             </Button>
