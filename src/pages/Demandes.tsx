@@ -819,11 +819,11 @@ const Demandes = () => {
 
                                     const visaTransitions = transitions
                                       .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.isVisa)
-                                      .filter(() => !myHasVisa && myOpenRejets.length === 0);
+                                      .filter(() => !myHasVisa && myOpenRejets.length === 0 && !isTerminalStatut(d.statut));
 
                                     const rejetTransitions = transitions
                                       .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.to === "REJETEE")
-                                      .filter(() => !myHasVisa);
+                                      .filter(() => !myHasVisa && !isTerminalStatut(d.statut));
 
                                     const actionItems = [
                                       ...visaTransitions.map((t, idx) => (
