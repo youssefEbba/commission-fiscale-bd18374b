@@ -399,7 +399,7 @@ const DemandesMiseEnPlace = () => {
   const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
-  const canCreate = role === "AUTORITE_CONTRACTANTE";
+  const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
 
   return (
     <DashboardLayout>
@@ -469,7 +469,7 @@ const DemandesMiseEnPlace = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
                           </Button>
-                          {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE") && (
+                          {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" title="Actions brouillon">
@@ -477,6 +477,9 @@ const DemandesMiseEnPlace = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEditBrouillon(c)}>
+                                  <FileText className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={submittingId === c.id}
                                   onClick={() => handleSoumettreBrouillon(c.id)}
@@ -791,10 +794,14 @@ const DemandesMiseEnPlace = () => {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || uploadingDocs}>
-              {(creating || uploadingDocs) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setShowCreate(false)} className="sm:mr-auto">Annuler</Button>
+            <Button variant="secondary" onClick={() => handleCreate(true)} disabled={creating || savingBrouillon || uploadingDocs}>
+              {savingBrouillon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Enregistrer le brouillon
+            </Button>
+            <Button onClick={() => handleCreate(false)} disabled={creating || savingBrouillon || uploadingDocs}>
+              {(creating || (uploadingDocs && !savingBrouillon)) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Soumettre la demande
             </Button>
           </DialogFooter>
