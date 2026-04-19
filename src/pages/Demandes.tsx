@@ -45,6 +45,9 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
 // Visa/rejet actions: no status change on backend (decisionFinale=false)
 // Decision finale: only PRESIDENT can adopt/reject with decisionFinale=true
 const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
+// Statuts terminaux : aucune action possible, lecture seule
+const TERMINAL_STATUTS: DemandeStatut[] = ["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"];
+const isTerminalStatut = (s?: DemandeStatut) => !!s && TERMINAL_STATUTS.includes(s);
 
 const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean }[]> = {
   DGD: [
@@ -745,7 +748,7 @@ const Demandes = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end items-center">
-                            {role === "DGD" ? (
+                            {role === "DGD" && !isTerminalStatut(d.statut) ? (
                               <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
                                 <ArrowRight className="h-4 w-4 mr-1" /> Correction douanière
                               </Button>
@@ -816,11 +819,11 @@ const Demandes = () => {
 
                                     const visaTransitions = transitions
                                       .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.isVisa)
-                                      .filter(() => !myHasVisa && myOpenRejets.length === 0);
+                                      .filter(() => !myHasVisa && myOpenRejets.length === 0 && !isTerminalStatut(d.statut));
 
                                     const rejetTransitions = transitions
                                       .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.to === "REJETEE")
-                                      .filter(() => !myHasVisa);
+                                      .filter(() => !myHasVisa && !isTerminalStatut(d.statut));
 
                                     const actionItems = [
                                       ...visaTransitions.map((t, idx) => (
