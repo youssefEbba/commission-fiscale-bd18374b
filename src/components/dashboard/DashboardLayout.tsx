@@ -32,7 +32,7 @@ const NAV_ENTRIES: NavEntry[] = [
   // Tous les rôles voient le tableau de bord
   { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
   // Conventions (= Projets) : AC crée, DGB valide
-  { label: "Conventions / Projets", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGB", "PRESIDENT", "ADMIN_SI"] },
+  { label: "Conventions / Projets", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
   // Demandes groupées : Correction et Mise en place
   {
     label: "Demandes",
@@ -44,7 +44,7 @@ const NAV_ENTRIES: NavEntry[] = [
     ],
   },
   // Marchés : AC crée, délégués et admin consultent
-  { label: "Attributions / Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI", "PRESIDENT"] },
+  { label: "Attributions / Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
   // Représentants : AC gère ses UPM/UEP
   { label: "Représentants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
   // P3 (Certificat) : suivi des certificats ouverts
