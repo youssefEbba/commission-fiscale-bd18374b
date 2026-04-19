@@ -111,6 +111,12 @@ const MiseEnPlaceDetail = () => {
   const [showMontants, setShowMontants] = useState(false);
   const [montantCordon, setMontantCordon] = useState("");
   const [montantTVAInt, setMontantTVAInt] = useState("");
+  // Récap fiscal optionnel (a, b, c, d, f, g) — d, b, g servent aux contrôles de cohérence
+  const [recapA, setRecapA] = useState(""); // (a) Valeur en douane des fournitures
+  const [recapB, setRecapB] = useState(""); // (b) Droits & taxes douane hors TVA
+  const [recapC, setRecapC] = useState(""); // (f) Montant marché HT
+  const [recapD, setRecapD] = useState(""); // (d) TVA d'importation à la douane
+  const [recapG, setRecapG] = useState(""); // (g) TVA collectée sur travaux
   const [savingMontants, setSavingMontants] = useState(false);
 
   // Reject dialog (DGTCP)
@@ -464,7 +470,16 @@ const MiseEnPlaceDetail = () => {
 
               {/* DGTCP: enter montants before visa */}
               {canMontants && (
-                <Button variant="outline" onClick={() => { setShowMontants(true); setMontantCordon(""); setMontantTVAInt(""); }}>
+              <Button variant="outline" onClick={() => {
+                setShowMontants(true);
+                setMontantCordon(c.montantCordon != null ? String(c.montantCordon) : "");
+                setMontantTVAInt(c.montantTVAInterieure != null ? String(c.montantTVAInterieure) : "");
+                setRecapA(c.valeurDouaneFournitures != null ? String(c.valeurDouaneFournitures) : "");
+                setRecapB(c.droitsEtTaxesDouaneHorsTva != null ? String(c.droitsEtTaxesDouaneHorsTva) : "");
+                setRecapC(c.montantMarcheHt != null ? String(c.montantMarcheHt) : "");
+                setRecapD(c.tvaImportationDouane != null ? String(c.tvaImportationDouane) : "");
+                setRecapG(c.tvaCollecteeTravaux != null ? String(c.tvaCollecteeTravaux) : "");
+              }}>
                   <DollarSign className="h-4 w-4 mr-1" /> Renseigner montants
                 </Button>
               )}
@@ -758,59 +773,126 @@ const MiseEnPlaceDetail = () => {
 
       {/* Montants Dialog (DGTCP) */}
       <Dialog open={showMontants} onOpenChange={setShowMontants}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-primary" />
-              Renseigner les montants
+              Renseigner les montants (DGTCP)
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant Cordon (Douane) *</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} className="pl-9 text-base font-medium" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant TVA Intérieure *</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} className="pl-9 text-base font-medium" />
-              </div>
-            </div>
-          </div>
-          {montantCordon && montantTVAInt && Number(montantCordon) > 0 && Number(montantTVAInt) > 0 && (
-            <div className="rounded-lg bg-muted/50 border p-3 text-sm">
-              <p className="text-muted-foreground mb-1">Récapitulatif</p>
-              <div className="flex justify-between">
-                <span>Total crédit</span>
-                <span className="font-bold text-foreground">{(Number(montantCordon) + Number(montantTVAInt)).toLocaleString("fr-FR")} MRU</span>
-              </div>
-            </div>
-          )}
-          <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-2">
-            <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:mr-auto">Annuler</Button>
-            <Button
-              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
-              onClick={async () => {
-                setSavingMontants(true);
-                try {
-                  await certificatCreditApi.updateMontants(c.id, Number(montantCordon), Number(montantTVAInt));
-                  toast({ title: "Succès", description: "Montants enregistrés. Le Président peut maintenant valider et ouvrir le certificat." });
-                  setShowMontants(false);
-                  fetchData();
-                } catch (e: any) {
-                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                } finally { setSavingMontants(false); }
-              }}
-            >
-              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <DollarSign className="h-4 w-4 mr-1" />
-              Enregistrer les montants
-            </Button>
-          </DialogFooter>
+
+          {(() => {
+            const cordonNum = Number(montantCordon);
+            const tvaNum = Number(montantTVAInt);
+            const a = recapA === "" ? null : Number(recapA);
+            const b = recapB === "" ? null : Number(recapB);
+            const cVal = recapC === "" ? null : Number(recapC);
+            const d = recapD === "" ? null : Number(recapD);
+            const g = recapG === "" ? null : Number(recapG);
+            const tol = 1; // 1 MRU
+            const cordonExpected = b != null && d != null ? b + d : null;
+            const tvaExpected = g != null && d != null ? g - d : null;
+            const cordonMismatch = cordonExpected != null && Number.isFinite(cordonNum) && Math.abs(cordonNum - cordonExpected) > tol;
+            const tvaMismatch = tvaExpected != null && Number.isFinite(tvaNum) && Math.abs(tvaNum - tvaExpected) > tol;
+            const baseValid = montantCordon !== "" && montantTVAInt !== "" && cordonNum >= 0 && tvaNum >= 0;
+            const canSave = baseValid && !cordonMismatch && !tvaMismatch && !savingMontants;
+
+            return (
+              <>
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant Cordon (Douane) *</Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} className="pl-9 text-base font-medium" />
+                      </div>
+                      {cordonMismatch && (
+                        <p className="text-xs text-destructive">Doit être ≈ b + d = {cordonExpected!.toLocaleString("fr-FR")} (tolérance 1 MRU)</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant TVA Intérieure *</Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} className="pl-9 text-base font-medium" />
+                      </div>
+                      {tvaMismatch && (
+                        <p className="text-xs text-destructive">Doit être ≈ g − d = {tvaExpected!.toLocaleString("fr-FR")} (tolérance 1 MRU)</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">Récapitulatif fiscal (optionnel)</p>
+                      <p className="text-[11px] text-muted-foreground">Sert aux contrôles de cohérence</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">(a) Valeur en douane des fournitures</Label>
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapA} onChange={(e) => setRecapA(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">(b) Droits & taxes douane hors TVA</Label>
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapB} onChange={(e) => setRecapB(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">(d) TVA d'importation à la douane</Label>
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapD} onChange={(e) => setRecapD(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">(f) Montant marché HT</Label>
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapC} onChange={(e) => setRecapC(e.target.value)} />
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <Label className="text-xs text-muted-foreground">(g) TVA collectée sur travaux</Label>
+                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapG} onChange={(e) => setRecapG(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {baseValid && (
+                    <div className="rounded-lg bg-muted/50 border p-3 text-sm">
+                      <p className="text-muted-foreground mb-1">Total crédit</p>
+                      <div className="flex justify-between">
+                        <span>Cordon + TVA Intérieure</span>
+                        <span className="font-bold text-foreground">{(cordonNum + tvaNum).toLocaleString("fr-FR")} MRU</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-3">
+                  <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:mr-auto">Annuler</Button>
+                  <Button
+                    disabled={!canSave}
+                    onClick={async () => {
+                      setSavingMontants(true);
+                      try {
+                        const recap: Record<string, number> = {};
+                        if (a != null && Number.isFinite(a)) recap.valeurDouaneFournitures = a;
+                        if (b != null && Number.isFinite(b)) recap.droitsEtTaxesDouaneHorsTva = b;
+                        if (d != null && Number.isFinite(d)) recap.tvaImportationDouane = d;
+                        if (cVal != null && Number.isFinite(cVal)) recap.montantMarcheHt = cVal;
+                        if (g != null && Number.isFinite(g)) recap.tvaCollecteeTravaux = g;
+                        await certificatCreditApi.updateMontants(c.id, cordonNum, tvaNum, Object.keys(recap).length ? recap : undefined);
+                        toast({ title: "Succès", description: "Montants enregistrés. Le Président peut maintenant valider et ouvrir le certificat." });
+                        setShowMontants(false);
+                        fetchData();
+                      } catch (e: any) {
+                        toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                      } finally { setSavingMontants(false); }
+                    }}
+                  >
+                    {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Enregistrer les montants
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
