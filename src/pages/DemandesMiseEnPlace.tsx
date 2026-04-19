@@ -309,8 +309,8 @@ const DemandesMiseEnPlace = () => {
       });
       setEditingBrouillon(null);
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Échec mise à jour", variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Échec mise à jour"), variant: "destructive" });
     } finally {
       setEditingLoading(false);
     }
@@ -333,8 +333,8 @@ const DemandesMiseEnPlace = () => {
       await certificatCreditApi.soumettre(id);
       toast({ title: "Succès", description: "Certificat soumis (EN_CONTROLE)" });
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Échec de la soumission"), variant: "destructive" });
     } finally { setSubmittingId(null); }
   };
 
