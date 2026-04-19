@@ -87,6 +87,10 @@ const DemandesMiseEnPlace = () => {
   // Creation dialog state
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [savingBrouillon, setSavingBrouillon] = useState(false);
+  // Edit brouillon state
+  const [editingBrouillon, setEditingBrouillon] = useState<CertificatCreditDto | null>(null);
+  const [editingLoading, setEditingLoading] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
@@ -184,7 +188,30 @@ const DemandesMiseEnPlace = () => {
     }
   };
 
-  const handleCreate = async () => {
+  const uploadDocsFor = async (certId: number) => {
+    if (Object.keys(docFiles).length === 0) return;
+    setUploadingDocs(true);
+    for (const [type, file] of Object.entries(docFiles)) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const token = localStorage.getItem("auth_token");
+        await fetch(`${API_BASE}/certificats-credit/${certId}/documents?type=${encodeURIComponent(type)}`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: formData,
+        });
+      } catch {
+        toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
+      }
+    }
+    setUploadingDocs(false);
+  };
+
+  const handleCreate = async (asBrouillon: boolean) => {
     if (!selectedCorrectionId) {
       toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
       return;
@@ -195,49 +222,86 @@ const DemandesMiseEnPlace = () => {
       return;
     }
 
-    setCreating(true);
+    if (asBrouillon) setSavingBrouillon(true); else setCreating(true);
     try {
       const request: CreateCertificatCreditRequest = {
         entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
+        brouillon: asBrouillon,
       };
       const created = await certificatCreditApi.create(request);
 
-      if (Object.keys(docFiles).length > 0) {
-        setUploadingDocs(true);
-        for (const [type, file] of Object.entries(docFiles)) {
-          try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const token = localStorage.getItem("auth_token");
-            await fetch(`${API_BASE}/certificats-credit/${created.id}/documents?type=${encodeURIComponent(type)}`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "true",
-              },
-              body: formData,
-            });
-          } catch {
-            toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
-          }
+      await uploadDocsFor(created.id);
+
+      if (!asBrouillon) {
+        try {
+          await certificatCreditApi.soumettre(created.id);
+        } catch {
+          // Si la soumission échoue, le certificat reste créé en BROUILLON
         }
-        setUploadingDocs(false);
       }
 
-      // Auto-submit to EN_CONTROLE
-      try {
-        await certificatCreditApi.updateStatut(created.id, "EN_CONTROLE");
-      } catch {
-        // If auto-submit fails, the demand is still created
-      }
-
-      toast({ title: "Succès", description: "Demande soumise au contrôle avec succès" });
+      toast({
+        title: "Succès",
+        description: asBrouillon ? "Brouillon enregistré" : "Demande soumise au contrôle",
+      });
       setShowCreate(false);
       fetchCertificats();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message || "Impossible de créer la demande", variant: "destructive" });
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+      setSavingBrouillon(false);
+    }
+  };
+
+  const openEditBrouillon = async (c: CertificatCreditDto) => {
+    setEditingBrouillon(c);
+    setSelectedCorrectionId(c.demandeCorrectionId ? String(c.demandeCorrectionId) : "");
+    setDocFiles({});
+    try {
+      const [corrs, reqs] = await Promise.all([
+        user?.autoriteContractanteId
+          ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
+          : demandeCorrectionApi.getAll(),
+        documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+      ]);
+      setCorrections(corrs.filter(co => co.statut === "NOTIFIEE" || co.statut === "ADOPTEE" || co.id === c.demandeCorrectionId));
+      setDocRequirements(reqs);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+    }
+  };
+
+  const handleUpdateBrouillon = async (alsoSubmit: boolean) => {
+    if (!editingBrouillon || !selectedCorrectionId) return;
+    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+    if (!correction?.entrepriseId) {
+      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
+      return;
+    }
+    setEditingLoading(true);
+    try {
+      await certificatCreditApi.update(editingBrouillon.id, {
+        entrepriseId: correction.entrepriseId,
+        demandeCorrectionId: Number(selectedCorrectionId),
+        brouillon: true,
+      });
+      await uploadDocsFor(editingBrouillon.id);
+      if (alsoSubmit) {
+        await certificatCreditApi.soumettre(editingBrouillon.id);
+      }
+      toast({
+        title: "Succès",
+        description: alsoSubmit ? "Brouillon soumis" : "Brouillon mis à jour",
+      });
+      setEditingBrouillon(null);
+      fetchCertificats();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message || "Échec mise à jour", variant: "destructive" });
+    } finally {
+      setEditingLoading(false);
+    }
   };
 
   const handleStatut = async (id: number, statut: CertificatStatut) => {
@@ -335,7 +399,7 @@ const DemandesMiseEnPlace = () => {
   const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
-  const canCreate = role === "AUTORITE_CONTRACTANTE";
+  const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
 
   return (
     <DashboardLayout>
@@ -405,7 +469,7 @@ const DemandesMiseEnPlace = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
                           </Button>
-                          {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE") && (
+                          {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" title="Actions brouillon">
@@ -413,6 +477,9 @@ const DemandesMiseEnPlace = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEditBrouillon(c)}>
+                                  <FileText className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={submittingId === c.id}
                                   onClick={() => handleSoumettreBrouillon(c.id)}
@@ -727,15 +794,119 @@ const DemandesMiseEnPlace = () => {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || uploadingDocs}>
-              {(creating || uploadingDocs) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setShowCreate(false)} className="sm:mr-auto">Annuler</Button>
+            <Button variant="secondary" onClick={() => handleCreate(true)} disabled={creating || savingBrouillon || uploadingDocs}>
+              {savingBrouillon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Enregistrer le brouillon
+            </Button>
+            <Button onClick={() => handleCreate(false)} disabled={creating || savingBrouillon || uploadingDocs}>
+              {(creating || (uploadingDocs && !savingBrouillon)) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Soumettre la demande
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Brouillon Dialog */}
+      <Dialog open={!!editingBrouillon} onOpenChange={(o) => !o && setEditingBrouillon(null)}>
+        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Modifier le brouillon {editingBrouillon?.reference || `#${editingBrouillon?.id}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Demande de correction *</Label>
+              <Select value={selectedCorrectionId} onValueChange={setSelectedCorrectionId}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
+                <SelectContent>
+                  {corrections.length === 0 ? (
+                    <SelectItem value="__none" disabled>Aucune correction disponible</SelectItem>
+                  ) : corrections.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedCorrection && (
+              <Card className="bg-muted/30">
+                <CardContent className="p-3 text-sm">
+                  <p className="font-semibold mb-1">Correction sélectionnée</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="text-muted-foreground">N°</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">Entreprise</span> {selectedCorrection.entrepriseRaisonSociale}</div>
+                    <div><span className="text-muted-foreground">Statut</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">AC</span> {selectedCorrection.autoriteContractanteNom}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Ajouter / remplacer des pièces</Label>
+              {docRequirements.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Aucun document configuré</p>
+              ) : (
+                <div className="space-y-2">
+                  {docRequirements.map((req) => {
+                    const hasFile = !!docFiles[req.typeDocument];
+                    return (
+                      <div key={req.id} className="flex items-center gap-3 p-2 rounded border bg-background">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {req.typeDocument.replace(/_/g, " ")}
+                            {req.obligatoire && <span className="text-destructive ml-1">*</span>}
+                          </p>
+                          {hasFile && (
+                            <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
+                              <CheckCircle className="h-3 w-3" /> {docFiles[req.typeDocument].name}
+                            </p>
+                          )}
+                        </div>
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) setDocFiles(prev => ({ ...prev, [req.typeDocument]: file }));
+                            }}
+                          />
+                          <div className="flex items-center gap-1 text-xs text-primary hover:underline">
+                            <Upload className="h-3 w-3" />
+                            {hasFile ? "Remplacer" : "Choisir"}
+                          </div>
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground">Les documents déjà rattachés au dossier restent en place ; vous pouvez en ajouter ou en remplacer ici.</p>
+            </div>
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setEditingBrouillon(null)} className="sm:mr-auto" disabled={editingLoading || uploadingDocs}>Annuler</Button>
+            <Button variant="secondary" onClick={() => handleUpdateBrouillon(false)} disabled={editingLoading || uploadingDocs}>
+              {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Enregistrer
+            </Button>
+            <Button onClick={() => handleUpdateBrouillon(true)} disabled={editingLoading || uploadingDocs}>
+              {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              <Send className="h-4 w-4 mr-1" />
+              Enregistrer & Soumettre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Montants Dialog (DGTCP) */}
       <Dialog open={!!showMontants} onOpenChange={() => setShowMontants(null)}>
         <DialogContent className="sm:max-w-lg">
