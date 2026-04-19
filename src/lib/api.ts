@@ -850,7 +850,7 @@ export const delegueApi = {
 };
 
 // Certificats de crédit (P3)
-export type CertificatStatut = "BROUILLON" | "DEMANDE" | "EN_CONTROLE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
+export type CertificatStatut = "BROUILLON" | "ENVOYEE" | "DEMANDE" | "EN_CONTROLE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION_DGI" | "EN_VALIDATION_PRESIDENT" | "VALIDE_PRESIDENT" | "EN_OUVERTURE_DGTCP" | "OUVERT" | "MODIFIE" | "CLOTURE" | "ANNULE";
 
 /** Récapitulatif fiscal optionnel d'un certificat de crédit (pour saisie ou lecture). */
 export interface CertificatRecapFiscal {
@@ -927,8 +927,10 @@ export const certificatCreditApi = {
   create: (data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>("/certificats-credit", { method: "POST", body: data }),
   /** Édition d'un certificat — uniquement au statut BROUILLON. */
   update: (id: number, data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`, { method: "PUT", body: data }),
-  /** Soumission d'un brouillon : passe en EN_CONTROLE. */
+  /** Soumission d'un brouillon : passe en ENVOYEE (puis prise en charge → EN_CONTROLE). */
   soumettre: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/soumettre`, { method: "POST" }),
+  /** Prise en charge par un acteur (DGI/DGD/DGTCP) : passe ENVOYEE → EN_CONTROLE. */
+  prendreEnCharge: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/prendre-en-charge`, { method: "POST" }),
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/certificats-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: CertificatStatut) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
@@ -1220,6 +1222,7 @@ export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
 
 export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
   BROUILLON: "Brouillon",
+  ENVOYEE: "Envoyée",
   DEMANDE: "Demandé",
   EN_CONTROLE: "En contrôle",
   INCOMPLETE: "Incomplète",
