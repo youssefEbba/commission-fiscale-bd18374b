@@ -1,22 +1,13 @@
 
 
-## Plan : Donner accès aux Utilisations pour l'Autorité Contractante (AC)
+## Analyse
 
-### Problème
-Le rôle `AUTORITE_CONTRACTANTE` n'est pas inclus dans la liste des rôles ayant accès au menu "Utilisations" dans le sidebar. L'AC ne peut donc pas consulter les utilisations effectuées par les entreprises ou sous-traitants sur les certificats qui la concernent.
+Le backend expose maintenant un récapitulatif fiscal complet avec deux blocs (cordon douanier et TVA intérieure) et trois champs dérivés en lecture sur `CertificatCreditDto` :
+- `creditExterieurRecap` ≈ b + d
+- `creditInterieurNetRecap` ≈ g − d
+- `totalCreditImpotRecap` ≈ e + h
 
-### Modifications
+Côté front, la saisie DGTCP a déjà été enrichie (a, b, c=f, d, g) dans le précédent message. Il reste à **afficher** le récapitulatif complet et lisible dans la **page détail du certificat de crédit** (`/dashboard/certificats/:id`), où l'utilisateur se trouve actuellement, ainsi que dans **la page détail de mise en place** (`/dashboard/mise-en-place/:id`).
 
-**1. `src/components/dashboard/DashboardLayout.tsx`**
-- Ajouter `"AUTORITE_CONTRACTANTE"` dans le tableau `roles` du lien "Utilisations" (ligne 53)
-
-**2. `src/pages/Utilisations.tsx`**
-- L'AC a déjà un accès partiel (ligne 324 : `canCreate` inclut `AUTORITE_CONTRACTANTE`)
-- Vérifier que l'affichage en lecture seule fonctionne correctement pour l'AC (pas de boutons d'action de workflow, uniquement consultation + détail)
-
-### Comportement attendu
-- L'AC voit le menu "Utilisations" dans le sidebar
-- L'AC peut consulter la liste des utilisations liées à ses certificats (filtrage côté backend via son `autoriteContractanteId`)
-- L'AC n'a **pas** de boutons de changement de statut (pas de transitions workflow)
-- L'AC peut voir le détail d'une utilisation (bouton "Détail" / Eye)
+Je vais lire les fichiers concernés pour cadrer précisément le plan.
 
