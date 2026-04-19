@@ -858,8 +858,10 @@ export interface CertificatRecapFiscal {
   valeurDouaneFournitures?: number;
   /** (b) Droits et taxes à l'importation hors TVA */
   droitsEtTaxesDouaneHorsTva?: number;
-  /** (d) TVA d'importation à la douane */
+  /** (d) TVA d'importation à la douane — restant (diminue à chaque liquidation douanière). */
   tvaImportationDouane?: number;
+  /** (d) TVA d'importation à la douane — accord initial (figé, sert aux formules récap). Lecture seule côté DTO. */
+  tvaImportationDouaneAccordee?: number;
   /** (f) Montant du marché HT */
   montantMarcheHt?: number;
   /** (g) TVA collectée sur les travaux */
