@@ -741,13 +741,23 @@ const DemandesMiseEnPlace = () => {
                 <SelectContent>
                   {corrections.length === 0 ? (
                     <SelectItem value="__none" disabled>Aucune correction adoptée disponible</SelectItem>
-                  ) : corrections.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                    </SelectItem>
-                  ))}
+                  ) : corrections.map((c) => {
+                    const locked = lockedCorrectionIds.has(c.id);
+                    return (
+                      <SelectItem key={c.id} value={String(c.id)} disabled={locked}>
+                        {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
+                        {locked && " (mise en place déjà en cours)"}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
+              {selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)) && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Une mise en place active existe déjà pour cette correction.
+                </p>
+              )}
             </div>
 
             {selectedCorrection && (
