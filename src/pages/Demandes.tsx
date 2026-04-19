@@ -748,7 +748,7 @@ const Demandes = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end items-center">
-                            {role === "DGD" ? (
+                            {role === "DGD" && !isTerminalStatut(d.statut) ? (
                               <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
                                 <ArrowRight className="h-4 w-4 mr-1" /> Correction douanière
                               </Button>
