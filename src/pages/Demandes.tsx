@@ -237,10 +237,7 @@ const Demandes = () => {
       } else {
         data = await demandeCorrectionApi.getAll();
       }
-      // Les brouillons ne doivent pas être visibles par les contrôleurs (DG*) ni par le Président
-      if (["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"].includes(role)) {
-        data = data.filter((d) => d.statut !== "BROUILLON");
-      }
+      // Filtrage des brouillons géré côté backend (visibles uniquement par l'AC propriétaire)
       setDemandes(data);
     } catch (e: any) {
       const message = String(e?.message || "");
