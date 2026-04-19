@@ -293,20 +293,22 @@ const DemandesMiseEnPlace = () => {
       toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
       return;
     }
+    const wasBrouillon = editingBrouillon.statut === "BROUILLON";
     setEditingLoading(true);
     try {
       await certificatCreditApi.update(editingBrouillon.id, {
         entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
-        brouillon: true,
+        // Préserver le statut côté back : on ne renvoie brouillon=true que si on était en BROUILLON.
+        brouillon: wasBrouillon,
       });
       await uploadDocsFor(editingBrouillon.id);
-      if (alsoSubmit) {
+      if (alsoSubmit && wasBrouillon) {
         await certificatCreditApi.soumettre(editingBrouillon.id);
       }
       toast({
         title: "Succès",
-        description: alsoSubmit ? "Brouillon soumis" : "Brouillon mis à jour",
+        description: alsoSubmit && wasBrouillon ? "Brouillon soumis" : "Demande mise à jour",
       });
       setEditingBrouillon(null);
       fetchCertificats();
@@ -315,6 +317,17 @@ const DemandesMiseEnPlace = () => {
     } finally {
       setEditingLoading(false);
     }
+  };
+
+  const handlePrendreEnCharge = async (id: number) => {
+    setActionLoading(id);
+    try {
+      await certificatCreditApi.prendreEnCharge(id);
+      toast({ title: "Succès", description: "Demande prise en charge (EN_CONTROLE)" });
+      fetchCertificats();
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Échec de la prise en charge"), variant: "destructive" });
+    } finally { setActionLoading(null); }
   };
 
   const handleStatut = async (id: number, statut: CertificatStatut) => {
