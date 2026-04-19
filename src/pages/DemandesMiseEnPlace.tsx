@@ -104,6 +104,8 @@ const DemandesMiseEnPlace = () => {
   // Edit brouillon state
   const [editingBrouillon, setEditingBrouillon] = useState<CertificatCreditDto | null>(null);
   const [editingLoading, setEditingLoading] = useState(false);
+  const [editingExistingDocs, setEditingExistingDocs] = useState<DocumentDto[]>([]);
+  const [loadingExistingDocs, setLoadingExistingDocs] = useState(false);
   const [corrections, setCorrections] = useState<DemandeCorrectionDto[]>([]);
   const [docRequirements, setDocRequirements] = useState<DocumentRequirementDto[]>([]);
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
@@ -272,17 +274,23 @@ const DemandesMiseEnPlace = () => {
     setEditingBrouillon(c);
     setSelectedCorrectionId(c.demandeCorrectionId ? String(c.demandeCorrectionId) : "");
     setDocFiles({});
+    setEditingExistingDocs([]);
+    setLoadingExistingDocs(true);
     try {
-      const [corrs, reqs] = await Promise.all([
+      const [corrs, reqs, existingDocs] = await Promise.all([
         user?.autoriteContractanteId
           ? demandeCorrectionApi.getByAutorite(user.autoriteContractanteId)
           : demandeCorrectionApi.getAll(),
         documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+        certificatCreditApi.getDocuments(c.id).catch(() => [] as DocumentDto[]),
       ]);
       setCorrections(corrs.filter(co => co.statut === "NOTIFIEE" || co.statut === "ADOPTEE" || co.id === c.demandeCorrectionId));
       setDocRequirements(reqs);
+      setEditingExistingDocs(existingDocs);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+    } finally {
+      setLoadingExistingDocs(false);
     }
   };
 
@@ -925,6 +933,35 @@ const DemandesMiseEnPlace = () => {
             )}
 
             <div className="space-y-3">
+              <Label className="text-base font-semibold">Pièces déjà rattachées</Label>
+              {loadingExistingDocs ? (
+                <p className="text-xs text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Chargement…</p>
+              ) : editingExistingDocs.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Aucune pièce déjà chargée</p>
+              ) : (
+                <div className="space-y-2">
+                  {editingExistingDocs.map((doc) => (
+                    <div key={doc.id} className="flex items-center gap-3 p-2 rounded border bg-muted/20">
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{(doc.type || "").replace(/_/g, " ") || "Document"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doc.nomFichier || doc.chemin || `#${doc.id}`}</p>
+                      </div>
+                      <a
+                        href={getDocFileUrl(doc)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0"
+                      >
+                        <Eye className="h-3 w-3" /> Ouvrir
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
               <Label className="text-base font-semibold">Ajouter / remplacer des pièces</Label>
               {docRequirements.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Aucun document configuré</p>
@@ -932,6 +969,7 @@ const DemandesMiseEnPlace = () => {
                 <div className="space-y-2">
                   {docRequirements.map((req) => {
                     const hasFile = !!docFiles[req.typeDocument];
+                    const existing = editingExistingDocs.find(d => d.type === req.typeDocument);
                     return (
                       <div key={req.id} className="flex items-center gap-3 p-2 rounded border bg-background">
                         <div className="flex-1">
@@ -939,6 +977,9 @@ const DemandesMiseEnPlace = () => {
                             {req.typeDocument.replace(/_/g, " ")}
                             {req.obligatoire && <span className="text-destructive ml-1">*</span>}
                           </p>
+                          {existing && !hasFile && (
+                            <p className="text-xs text-muted-foreground mt-0.5">Déjà chargé : {existing.nomFichier || `#${existing.id}`}</p>
+                          )}
                           {hasFile && (
                             <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
                               <CheckCircle className="h-3 w-3" /> {docFiles[req.typeDocument].name}
@@ -957,7 +998,7 @@ const DemandesMiseEnPlace = () => {
                           />
                           <div className="flex items-center gap-1 text-xs text-primary hover:underline">
                             <Upload className="h-3 w-3" />
-                            {hasFile ? "Remplacer" : "Choisir"}
+                            {hasFile ? "Remplacer" : existing ? "Remplacer" : "Choisir"}
                           </div>
                         </label>
                       </div>
@@ -967,6 +1008,7 @@ const DemandesMiseEnPlace = () => {
               )}
               <p className="text-[11px] text-muted-foreground">Les documents déjà rattachés au dossier restent en place ; vous pouvez en ajouter ou en remplacer ici.</p>
             </div>
+
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => setEditingBrouillon(null)} className="sm:mr-auto" disabled={editingLoading || uploadingDocs}>Annuler</Button>
