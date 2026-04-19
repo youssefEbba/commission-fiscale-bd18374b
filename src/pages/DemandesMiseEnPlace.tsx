@@ -259,8 +259,8 @@ const DemandesMiseEnPlace = () => {
       });
       setShowCreate(false);
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Impossible de créer la demande", variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Erreur", description: describeApiError(e, "Impossible de créer la demande"), variant: "destructive" });
     } finally {
       setCreating(false);
       setSavingBrouillon(false);
