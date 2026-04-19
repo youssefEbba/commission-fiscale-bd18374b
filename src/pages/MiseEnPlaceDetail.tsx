@@ -409,6 +409,26 @@ const MiseEnPlaceDetail = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">Actions disponibles</h3>
             <div className="flex flex-wrap gap-2">
+              {/* Prise en charge: ENVOYEE → EN_CONTROLE par DGI/DGD/DGTCP */}
+              {c.statut === "ENVOYEE" && isControlRole && (
+                <Button
+                  variant="default"
+                  disabled={actionLoading}
+                  onClick={async () => {
+                    setActionLoading(true);
+                    try {
+                      await certificatCreditApi.prendreEnCharge(c.id);
+                      toast({ title: "Succès", description: "Demande prise en charge (EN_CONTROLE)" });
+                      fetchData();
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                    } finally { setActionLoading(false); }
+                  }}
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                  Prendre en charge
+                </Button>
+              )}
               {/* Workflow info messages */}
               {isControlRole && isInControle && myHasVisa && (
                 <div className="w-full flex items-center gap-2 p-2 rounded bg-green-50 border border-green-200 text-green-800 text-sm mb-2">
