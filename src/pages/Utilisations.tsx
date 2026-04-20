@@ -576,28 +576,36 @@ const Utilisations = () => {
                             </Button>
                           )}
                           {/* Actions brouillon : disponibles au déposant (entreprise/sous-traitant) ou ADMIN_SI */}
-                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" title="Actions brouillon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEditBrouillon(u)}>
-                                  <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={submittingId === u.id}
-                                  onClick={() => handleSoumettreFromList(u.id)}
-                                >
-                                  {submittingId === u.id ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <Send className="h-4 w-4 mr-2" />
+                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (() => {
+                            const blockedByTransfert = u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId);
+                            return (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" title={blockedByTransfert ? "Transfert exécuté : utilisations douanières bloquées" : "Actions brouillon"}>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    {blockedByTransfert && <AlertTriangle className="h-3.5 w-3.5 ml-1 text-amber-600" />}
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {blockedByTransfert && (
+                                    <div className="px-2 py-1.5 text-[11px] text-amber-700 bg-amber-50 border-b border-amber-200">
+                                      Transfert exécuté sur ce certificat — modification & soumission douanières bloquées.
+                                    </div>
                                   )}
-                                  Soumettre
-                                </DropdownMenuItem>
+                                  <DropdownMenuItem disabled={blockedByTransfert} onClick={() => openEditBrouillon(u)}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    disabled={submittingId === u.id || blockedByTransfert}
+                                    onClick={() => handleSoumettreFromList(u)}
+                                  >
+                                    {submittingId === u.id ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Send className="h-4 w-4 mr-2" />
+                                    )}
+                                    Soumettre
+                                  </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
