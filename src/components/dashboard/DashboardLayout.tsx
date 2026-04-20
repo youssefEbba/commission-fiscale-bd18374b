@@ -250,12 +250,15 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           </div>
         </header>
         {isImpersonating && (
-          <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
+          <div
+            className="border-b px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 shrink-0"
+            style={{ backgroundColor: "hsl(45 95% 92%)", borderColor: "hsl(45 80% 70%)", color: "hsl(30 70% 25%)" }}
+          >
             <div className="flex items-center gap-2 text-sm">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>
                 Vous agissez en tant que <span className="font-semibold">{user?.actingTargetLabel ?? "entité externe"}</span>
-                <span className="ml-1 text-amber-800/80">
+                <span className="ml-1 opacity-80">
                   (mode {user?.role === "ENTREPRISE" ? "Entreprise" : "Autorité Contractante"} — session 4 h)
                 </span>
               </span>
@@ -263,7 +266,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <Button
               size="sm"
               variant="outline"
-              className="border-amber-400 text-amber-900 hover:bg-amber-100 h-8"
+              className="h-8"
               onClick={handleRelease}
               disabled={releasing}
             >
