@@ -141,6 +141,9 @@ const Utilisations = () => {
   // Decisions state (detail)
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
 
+  // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
+  const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
+
   const fetchData = async () => {
     setLoading(true);
     try { setData(await utilisationCreditApi.getAll()); }
@@ -148,7 +151,19 @@ const Utilisations = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchTransfertsExecutes = async () => {
+    try {
+      const all = await transfertCreditApi.getAll();
+      const ids = new Set(
+        all.filter((t) => t.statut === "TRANSFERE").map((t) => t.certificatCreditId)
+      );
+      setTransferredCertIds(ids);
+    } catch {
+      // silencieux : on garde la set vide, le back protège in fine
+    }
+  };
+
+  useEffect(() => { fetchData(); fetchTransfertsExecutes(); }, []);
 
   const loadCertificatsAndRequirements = async () => {
     try {
