@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { LoginResponse } from "@/lib/api";
 
-export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT";
+export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT" | "COMMISSION_RELAIS";
 
 // Permissions granulaires par rôle
 const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
@@ -16,25 +16,45 @@ const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
   AUTORITE_UPM: [],
   AUTORITE_UEP: [],
   SOUS_TRAITANT: [],
+  COMMISSION_RELAIS: [
+    "commission.relais.list.entreprises",
+    "commission.relais.list.autorites",
+    "commission.relais.impersonate.entreprise",
+    "commission.relais.impersonate.autorite",
+    "commission.relais.release",
+  ],
 };
 
 interface AuthUser {
   token: string;
   userId: number;
   username: string;
+  /** Rôle effectif tel que vu par les contrôles métier (ex: ENTREPRISE en impersonation). */
   role: AppRole;
+  /** Rôle natif du compte en base (utile pour COMMISSION_RELAIS qui change de role effectif). */
+  nativeRole: AppRole;
   nomComplet: string;
   autoriteContractanteId?: number;
   entrepriseId?: number;
   permissions?: string[];
+  /** True quand l'utilisateur agit en mode commission relais sur une autre entité. */
+  impersonating?: boolean;
+  actingEntrepriseId?: number;
+  actingAutoriteContractanteId?: number;
+  /** Libellé de la cible (rempli côté front lors du choix). */
+  actingTargetLabel?: string;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   login: (data: LoginResponse) => void;
+  /** Remplace le token courant après impersonate ou release. */
+  applyImpersonation: (data: LoginResponse, targetLabel?: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isCommissionRelais: boolean;
+  isImpersonating: boolean;
   hasRole: (roles: AppRole[]) => boolean;
   hasPermission: (permission: string) => boolean;
 }
@@ -57,28 +77,50 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(getStoredUser);
 
-  const login = (data: LoginResponse) => {
-    // Extract permissions from JWT payload if not in response
+  const decodeJwt = (token: string): Record<string, unknown> | null => {
+    try { return JSON.parse(atob(token.split(".")[1])); } catch { return null; }
+  };
+
+  const buildUser = (data: LoginResponse, previous?: AuthUser | null, targetLabel?: string): AuthUser => {
+    const payload = decodeJwt(data.token) ?? {};
     let permissions = data.permissions;
-    if (!permissions) {
-      try {
-        const payload = JSON.parse(atob(data.token.split(".")[1]));
-        if (Array.isArray(payload.permissions)) permissions = payload.permissions;
-      } catch { /* ignore */ }
+    if (!permissions && Array.isArray((payload as any).permissions)) {
+      permissions = (payload as any).permissions as string[];
     }
-    const authUser: AuthUser = {
+    const impersonating = Boolean((data as any).impersonating ?? (payload as any).impersonating);
+    const actingEntrepriseId = (data as any).actingEntrepriseId ?? (payload as any).actingEntrepriseId;
+    const actingAutoriteContractanteId = (data as any).actingAutoriteContractanteId ?? (payload as any).actingAutoriteContractanteId;
+    // nativeRole: priority to existing native role (preserved across impersonations), else current role
+    const nativeRole = (previous?.nativeRole as AppRole) || (data.role as AppRole);
+    return {
       token: data.token,
       userId: data.userId,
       username: data.username,
       role: data.role as AppRole,
+      nativeRole,
       nomComplet: data.nomComplet,
       autoriteContractanteId: data.autoriteContractanteId,
       entrepriseId: data.entrepriseId,
       permissions,
+      impersonating,
+      actingEntrepriseId,
+      actingAutoriteContractanteId,
+      actingTargetLabel: impersonating ? (targetLabel ?? previous?.actingTargetLabel) : undefined,
     };
-    localStorage.setItem("auth_token", data.token);
+  };
+
+  const persist = (authUser: AuthUser) => {
+    localStorage.setItem("auth_token", authUser.token);
     localStorage.setItem("auth_user", JSON.stringify(authUser));
     setUser(authUser);
+  };
+
+  const login = (data: LoginResponse) => {
+    persist(buildUser(data, null));
+  };
+
+  const applyImpersonation = (data: LoginResponse, targetLabel?: string) => {
+    persist(buildUser(data, user, targetLabel));
   };
 
   const logout = () => {
@@ -87,7 +129,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
-  const isAdmin = !!user && ADMIN_ROLES.includes(user.role);
+  const isAdmin = !!user && ADMIN_ROLES.includes(user.nativeRole ?? user.role);
+  const isCommissionRelais = !!user && (user.nativeRole ?? user.role) === "COMMISSION_RELAIS";
+  const isImpersonating = !!user?.impersonating;
   const hasRole = (roles: AppRole[]) => !!user && roles.includes(user.role);
   const hasPermission = (permission: string) => {
     if (!user) return false;
@@ -101,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isAdmin, hasRole, hasPermission }}>
+    <AuthContext.Provider value={{ user, login, applyImpersonation, logout, isAuthenticated: !!user, isAdmin, isCommissionRelais, isImpersonating, hasRole, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

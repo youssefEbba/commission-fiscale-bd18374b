@@ -1,12 +1,14 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart } from "lucide-react";
+import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { commissionRelaisApi, formatApiErrorMessage } from "@/lib/api";
+import { toast } from "sonner";
 
 interface NavItem {
   label: string;
@@ -87,12 +89,27 @@ const NAV_ENTRIES: NavEntry[] = [
 ];
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasRole, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [releasing, setReleasing] = useState(false);
 
   const handleLogout = () => { logout(); navigate("/"); };
+
+  const handleRelease = async () => {
+    setReleasing(true);
+    try {
+      const res = await commissionRelaisApi.release();
+      applyImpersonation(res);
+      toast.success("Vous êtes revenu sur votre compte Commission relais");
+      navigate("/dashboard/relais");
+    } catch (err) {
+      toast.error(formatApiErrorMessage(err, "Échec de la sortie d'impersonation"));
+    } finally {
+      setReleasing(false);
+    }
+  };
 
   const linkClass = (href: string) => {
     const active = location.pathname === href;
@@ -232,6 +249,39 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </DropdownMenu>
           </div>
         </header>
+        {isImpersonating && (
+          <div
+            className="border-b px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 shrink-0"
+            style={{ backgroundColor: "hsl(45 95% 92%)", borderColor: "hsl(45 80% 70%)", color: "hsl(30 70% 25%)" }}
+          >
+            <div className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>
+                Vous agissez en tant que <span className="font-semibold">{user?.actingTargetLabel ?? "entité externe"}</span>
+                <span className="ml-1 opacity-80">
+                  (mode {user?.role === "ENTREPRISE" ? "Entreprise" : "Autorité Contractante"} — session 4 h)
+                </span>
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              onClick={handleRelease}
+              disabled={releasing}
+            >
+              {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
+              Quitter le relais
+            </Button>
+          </div>
+        )}
+        {isCommissionRelais && !isImpersonating && location.pathname !== "/dashboard/relais" && (
+          <div className="bg-muted border-b border-border px-4 md:px-6 py-2.5 text-sm shrink-0">
+            <Link to="/dashboard/relais" className="text-primary font-medium hover:underline">
+              Choisir une entité à prendre en charge →
+            </Link>
+          </div>
+        )}
         <div className="flex-1 overflow-auto p-6 md:p-8">{children}</div>
       </main>
     </div>
