@@ -146,7 +146,28 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 // Auth
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; autoriteContractanteId?: number; }
-export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; }
+export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
+
+// Commission Relais (impersonation)
+export interface PageResponse<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number; }
+export interface RelaisEntrepriseDto { id: number; raisonSociale: string; nif?: string; actif?: boolean; }
+export interface RelaisAutoriteDto { id: number; nom: string; sigle?: string; actif?: boolean; }
+
+export const commissionRelaisApi = {
+  listEntreprises: (page = 0, size = 20, q = "") =>
+    apiFetch<PageResponse<RelaisEntrepriseDto> | RelaisEntrepriseDto[]>(
+      `/commission-relais/entreprises?page=${page}&size=${size}${q ? `&q=${encodeURIComponent(q)}` : ""}`
+    ),
+  listAutorites: (page = 0, size = 20, q = "") =>
+    apiFetch<PageResponse<RelaisAutoriteDto> | RelaisAutoriteDto[]>(
+      `/commission-relais/autorites-contractantes?page=${page}&size=${size}${q ? `&q=${encodeURIComponent(q)}` : ""}`
+    ),
+  impersonateEntreprise: (entrepriseId: number) =>
+    apiFetch<LoginResponse>("/commission-relais/impersonate/entreprise", { method: "POST", body: { entrepriseId } }),
+  impersonateAutorite: (autoriteContractanteId: number) =>
+    apiFetch<LoginResponse>("/commission-relais/impersonate/autorite-contractante", { method: "POST", body: { autoriteContractanteId } }),
+  release: () => apiFetch<LoginResponse>("/commission-relais/release", { method: "POST" }),
+};
 
 export interface UtilisateurDto { id: number; username: string; role: string; nomComplet: string; email: string; actif: boolean; entrepriseId?: number; }
 
@@ -174,6 +195,7 @@ export const ROLE_LABELS: Record<string, string> = {
   AUTORITE_UPM: "Autorité UPM",
   AUTORITE_UEP: "Autorité UEP",
   ENTREPRISE: "Entreprise",
+  COMMISSION_RELAIS: "Commission relais",
 };
 
 export const authApi = {
