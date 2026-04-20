@@ -249,6 +249,36 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </DropdownMenu>
           </div>
         </header>
+        {isImpersonating && (
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>
+                Vous agissez en tant que <span className="font-semibold">{user?.actingTargetLabel ?? "entité externe"}</span>
+                <span className="ml-1 text-amber-800/80">
+                  (mode {user?.role === "ENTREPRISE" ? "Entreprise" : "Autorité Contractante"} — session 4 h)
+                </span>
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-amber-400 text-amber-900 hover:bg-amber-100 h-8"
+              onClick={handleRelease}
+              disabled={releasing}
+            >
+              {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
+              Quitter le relais
+            </Button>
+          </div>
+        )}
+        {isCommissionRelais && !isImpersonating && location.pathname !== "/dashboard/relais" && (
+          <div className="bg-muted border-b border-border px-4 md:px-6 py-2.5 text-sm shrink-0">
+            <Link to="/dashboard/relais" className="text-primary font-medium hover:underline">
+              Choisir une entité à prendre en charge →
+            </Link>
+          </div>
+        )}
         <div className="flex-1 overflow-auto p-6 md:p-8">{children}</div>
       </main>
     </div>
