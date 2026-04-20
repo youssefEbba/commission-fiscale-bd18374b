@@ -357,7 +357,7 @@ const Transferts = () => {
                   <SelectContent>
                     {certificats.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
-                        {c.numero || `Cert #${c.id}`} — Cordon: {f(c.soldeCordon)} | TVA: {f(c.soldeTVA)}
+                        {c.numero || `Cert #${c.id}`} — d′ restant: {f(c.tvaImportationDouane)} MRU
                       </SelectItem>
                     ))}
                   </SelectContent>
