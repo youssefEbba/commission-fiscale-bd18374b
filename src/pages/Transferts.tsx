@@ -368,13 +368,28 @@ const Transferts = () => {
               <div className="p-3 rounded-md bg-muted/50 border border-border text-xs space-y-1">
                 <div className="flex justify-between"><span className="text-muted-foreground">Solde Cordon (douane)</span><span className="font-medium">{f(selectedCert.soldeCordon)} MRU</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Solde TVA (intérieur)</span><span className="font-medium">{f(selectedCert.soldeTVA)} MRU</span></div>
+                <div className="flex justify-between border-t border-border pt-1 mt-1">
+                  <span className="text-muted-foreground">TVA déductible cordon restante (d′)</span>
+                  <span className="font-medium">{f(selectedCert.tvaImportationDouane)} MRU</span>
+                </div>
+              </div>
+            )}
+            {resubmitTarget && resubmitCert && (
+              <div className="p-3 rounded-md bg-muted/50 border border-border text-xs space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">Solde Cordon (douane)</span><span className="font-medium">{f(resubmitCert.soldeCordon)} MRU</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">TVA déductible cordon restante (d′)</span><span className="font-medium">{f(resubmitCert.tvaImportationDouane)} MRU</span></div>
               </div>
             )}
             <div>
               <Label>Montant à transférer (Cordon → TVA)</Label>
-              <Input type="number" min={1} max={selectedCert?.soldeCordon ?? undefined} value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
-              {!resubmitTarget && selectedCert && form.montant && form.montant > (selectedCert.soldeCordon ?? 0) && (
-                <p className="text-xs text-destructive mt-1">Le montant dépasse le solde Cordon disponible ({f(selectedCert.soldeCordon)} MRU)</p>
+              <div className="mt-1 px-3 py-2 rounded-md border border-border bg-muted/30 text-sm font-semibold">
+                {selectedCert ? `${f(montantAuto)} MRU` : "—"}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Renonciation totale : la totalité de la TVA déductible cordon restante (d′) est transférée vers la TVA intérieure.
+              </p>
+              {selectedCert && montantAuto <= 0 && (
+                <p className="text-xs text-destructive mt-1">Aucune TVA déductible cordon restante à transférer.</p>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -384,7 +399,7 @@ const Transferts = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees}>
+            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {resubmitTarget ? "Renvoyer la demande" : "Soumettre la renonciation"}
             </Button>
