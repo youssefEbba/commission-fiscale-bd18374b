@@ -1,12 +1,14 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart } from "lucide-react";
+import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { commissionRelaisApi, formatApiErrorMessage } from "@/lib/api";
+import { toast } from "sonner";
 
 interface NavItem {
   label: string;
@@ -87,12 +89,27 @@ const NAV_ENTRIES: NavEntry[] = [
 ];
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasRole, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [releasing, setReleasing] = useState(false);
 
   const handleLogout = () => { logout(); navigate("/"); };
+
+  const handleRelease = async () => {
+    setReleasing(true);
+    try {
+      const res = await commissionRelaisApi.release();
+      applyImpersonation(res);
+      toast.success("Vous êtes revenu sur votre compte Commission relais");
+      navigate("/dashboard/relais");
+    } catch (err) {
+      toast.error(formatApiErrorMessage(err, "Échec de la sortie d'impersonation"));
+    } finally {
+      setReleasing(false);
+    }
+  };
 
   const linkClass = (href: string) => {
     const active = location.pathname === href;
