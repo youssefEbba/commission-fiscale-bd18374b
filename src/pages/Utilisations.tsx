@@ -606,16 +606,17 @@ const Utilisations = () => {
                                     )}
                                     Soumettre
                                   </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => setDeletingTarget(u)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setDeletingTarget(u)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            );
+                          })()}
                         </div>
                       </TableCell>
                     </TableRow>
