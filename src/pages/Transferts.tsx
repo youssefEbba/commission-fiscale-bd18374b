@@ -65,9 +65,22 @@ const Transferts = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Re-submit cert detail (to know remaining TVA déductible cordon = d')
+  const [resubmitCert, setResubmitCert] = useState<CertificatCreditDto | null>(null);
+
+  /** Montant transféré = totalité du reste de TVA déductible sur cordon douanier (d' = tvaImportationDouane) */
+  const getMontantRenonciation = (c: CertificatCreditDto | null | undefined): number => {
+    if (!c) return 0;
+    // d' = restant de TVA importation (diminue à chaque liquidation douanière)
+    const reste = c.tvaImportationDouane ?? 0;
+    // Borné par le solde Cordon disponible (sécurité)
+    return Math.min(reste, c.soldeCordon ?? reste);
+  };
+
   // ---------- Create new ----------
   const openCreate = async () => {
     setResubmitTarget(null);
+    setResubmitCert(null);
     setForm({ operationsDouaneCloturees: true });
     try {
       const certs = role === "ENTREPRISE" && user?.entrepriseId
@@ -83,34 +96,39 @@ const Transferts = () => {
   };
 
   // ---------- Re-submit after REJETE ----------
-  const openResubmit = (t: TransfertCreditDto) => {
+  const openResubmit = async (t: TransfertCreditDto) => {
     setResubmitTarget(t);
     setForm({
       certificatCreditId: t.certificatCreditId,
-      montant: undefined,
       operationsDouaneCloturees: true,
     });
-    setCertificats([]); // not needed, cert is fixed
+    setCertificats([]);
+    setResubmitCert(null);
+    try {
+      const cert = await certificatCreditApi.getById(t.certificatCreditId);
+      setResubmitCert(cert);
+    } catch { /* ignore */ }
     setShowCreate(true);
   };
 
-  const selectedCert = certificats.find(c => c.id === form.certificatCreditId);
+  const selectedCert = resubmitTarget ? resubmitCert : certificats.find(c => c.id === form.certificatCreditId);
+  const montantAuto = getMontantRenonciation(selectedCert);
 
   const handleCreate = async () => {
     const certId = resubmitTarget ? resubmitTarget.certificatCreditId : form.certificatCreditId;
-    if (!certId || !form.montant) {
-      toast({ title: "Erreur", description: "Certificat et montant sont requis", variant: "destructive" });
+    if (!certId) {
+      toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
-    if (!resubmitTarget && selectedCert && form.montant > (selectedCert.soldeCordon ?? 0)) {
-      toast({ title: "Erreur", description: "Le montant dépasse le solde Cordon disponible", variant: "destructive" });
+    if (!selectedCert || montantAuto <= 0) {
+      toast({ title: "Erreur", description: "Aucune TVA déductible cordon restante à transférer", variant: "destructive" });
       return;
     }
     setCreating(true);
     try {
       await transfertCreditApi.create({
         certificatCreditId: certId,
-        montant: form.montant,
+        montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
       toast({
@@ -339,7 +357,7 @@ const Transferts = () => {
                   <SelectContent>
                     {certificats.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
-                        {c.numero || `Cert #${c.id}`} — Cordon: {f(c.soldeCordon)} | TVA: {f(c.soldeTVA)}
+                        {c.numero || `Cert #${c.id}`} — d′ restant: {f(c.tvaImportationDouane)} MRU
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -350,13 +368,28 @@ const Transferts = () => {
               <div className="p-3 rounded-md bg-muted/50 border border-border text-xs space-y-1">
                 <div className="flex justify-between"><span className="text-muted-foreground">Solde Cordon (douane)</span><span className="font-medium">{f(selectedCert.soldeCordon)} MRU</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Solde TVA (intérieur)</span><span className="font-medium">{f(selectedCert.soldeTVA)} MRU</span></div>
+                <div className="flex justify-between border-t border-border pt-1 mt-1">
+                  <span className="text-muted-foreground">TVA déductible cordon restante (d′)</span>
+                  <span className="font-medium">{f(selectedCert.tvaImportationDouane)} MRU</span>
+                </div>
+              </div>
+            )}
+            {resubmitTarget && resubmitCert && (
+              <div className="p-3 rounded-md bg-muted/50 border border-border text-xs space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">Solde Cordon (douane)</span><span className="font-medium">{f(resubmitCert.soldeCordon)} MRU</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">TVA déductible cordon restante (d′)</span><span className="font-medium">{f(resubmitCert.tvaImportationDouane)} MRU</span></div>
               </div>
             )}
             <div>
               <Label>Montant à transférer (Cordon → TVA)</Label>
-              <Input type="number" min={1} max={selectedCert?.soldeCordon ?? undefined} value={form.montant ?? ""} onChange={(e) => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })} />
-              {!resubmitTarget && selectedCert && form.montant && form.montant > (selectedCert.soldeCordon ?? 0) && (
-                <p className="text-xs text-destructive mt-1">Le montant dépasse le solde Cordon disponible ({f(selectedCert.soldeCordon)} MRU)</p>
+              <div className="mt-1 px-3 py-2 rounded-md border border-border bg-muted/30 text-sm font-semibold">
+                {selectedCert ? `${f(montantAuto)} MRU` : "—"}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Renonciation totale : la totalité de la TVA déductible cordon restante (d′) est transférée vers la TVA intérieure.
+              </p>
+              {selectedCert && montantAuto <= 0 && (
+                <p className="text-xs text-destructive mt-1">Aucune TVA déductible cordon restante à transférer.</p>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -366,7 +399,7 @@ const Transferts = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees}>
+            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {resubmitTarget ? "Renvoyer la demande" : "Soumettre la renonciation"}
             </Button>
