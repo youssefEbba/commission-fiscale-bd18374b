@@ -348,10 +348,19 @@ const Utilisations = () => {
     }
   };
 
-  const handleSoumettreFromList = async (id: number) => {
-    setSubmittingId(id);
+  const handleSoumettreFromList = async (u: UtilisationCreditDto) => {
+    if (u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId)) {
+      toast({
+        title: "Soumission bloquée",
+        description:
+          "Un transfert a déjà été exécuté sur ce certificat. Aucune utilisation douanière ne peut plus être soumise.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSubmittingId(u.id);
     try {
-      await utilisationCreditApi.soumettre(id);
+      await utilisationCreditApi.soumettre(u.id);
       toast({ title: "Succès", description: "Utilisation soumise" });
       fetchData();
     } catch (e: any) {
