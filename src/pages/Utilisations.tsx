@@ -10,6 +10,7 @@ import {
   TypeDocumentUtilisation, DocumentDto,
   documentRequirementApi, DocumentRequirementDto,
   DecisionCorrectionDto, DecisionType,
+  transfertCreditApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,9 @@ const Utilisations = () => {
   // Decisions state (detail)
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
 
+  // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
+  const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
+
   const fetchData = async () => {
     setLoading(true);
     try { setData(await utilisationCreditApi.getAll()); }
@@ -147,7 +151,19 @@ const Utilisations = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchTransfertsExecutes = async () => {
+    try {
+      const all = await transfertCreditApi.getAll();
+      const ids = new Set(
+        all.filter((t) => t.statut === "TRANSFERE").map((t) => t.certificatCreditId)
+      );
+      setTransferredCertIds(ids);
+    } catch {
+      // silencieux : on garde la set vide, le back protège in fine
+    }
+  };
+
+  useEffect(() => { fetchData(); fetchTransfertsExecutes(); }, []);
 
   const loadCertificatsAndRequirements = async () => {
     try {
@@ -260,6 +276,16 @@ const Utilisations = () => {
       toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
+    // Garde-fou : utilisations DOUANIERES interdites après transfert exécuté
+    if (createType === "DOUANIER" && transferredCertIds.has(form.certificatCreditId)) {
+      toast({
+        title: "Action bloquée",
+        description:
+          "Un transfert a déjà été exécuté sur ce certificat. Aucune nouvelle utilisation douanière (ni création ni soumission de brouillon) n'est possible. Les utilisations TVA intérieure restent autorisées.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (mode === "submit") {
       const missing = getMissingObligatoryDocs();
       if (missing.length > 0) {
@@ -322,10 +348,19 @@ const Utilisations = () => {
     }
   };
 
-  const handleSoumettreFromList = async (id: number) => {
-    setSubmittingId(id);
+  const handleSoumettreFromList = async (u: UtilisationCreditDto) => {
+    if (u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId)) {
+      toast({
+        title: "Soumission bloquée",
+        description:
+          "Un transfert a déjà été exécuté sur ce certificat. Aucune utilisation douanière ne peut plus être soumise.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSubmittingId(u.id);
     try {
-      await utilisationCreditApi.soumettre(id);
+      await utilisationCreditApi.soumettre(u.id);
       toast({ title: "Succès", description: "Utilisation soumise" });
       fetchData();
     } catch (e: any) {
@@ -541,38 +576,47 @@ const Utilisations = () => {
                             </Button>
                           )}
                           {/* Actions brouillon : disponibles au déposant (entreprise/sous-traitant) ou ADMIN_SI */}
-                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" title="Actions brouillon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEditBrouillon(u)}>
-                                  <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={submittingId === u.id}
-                                  onClick={() => handleSoumettreFromList(u.id)}
-                                >
-                                  {submittingId === u.id ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <Send className="h-4 w-4 mr-2" />
+                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (() => {
+                            const blockedByTransfert = u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId);
+                            return (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" title={blockedByTransfert ? "Transfert exécuté : utilisations douanières bloquées" : "Actions brouillon"}>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    {blockedByTransfert && <AlertTriangle className="h-3.5 w-3.5 ml-1 text-amber-600" />}
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {blockedByTransfert && (
+                                    <div className="px-2 py-1.5 text-[11px] text-amber-700 bg-amber-50 border-b border-amber-200">
+                                      Transfert exécuté sur ce certificat — modification & soumission douanières bloquées.
+                                    </div>
                                   )}
-                                  Soumettre
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => setDeletingTarget(u)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                  <DropdownMenuItem disabled={blockedByTransfert} onClick={() => openEditBrouillon(u)}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    disabled={submittingId === u.id || blockedByTransfert}
+                                    onClick={() => handleSoumettreFromList(u)}
+                                  >
+                                    {submittingId === u.id ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Send className="h-4 w-4 mr-2" />
+                                    )}
+                                    Soumettre
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setDeletingTarget(u)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            );
+                          })()}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -702,11 +746,25 @@ const Utilisations = () => {
                     {certificats
                       // Brouillon : tous certificats acceptés. Sinon (création directe ou édition d'une demandée) : OUVERT requis.
                       .filter(c => editingId != null || c.statut === "OUVERT")
-                      .map(c => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
-                      ))}
+                      .map(c => {
+                        const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
+                        return (
+                          <SelectItem key={c.id} value={String(c.id)} disabled={blockedDouane}>
+                            {c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}
+                            {blockedDouane && <span className="ml-2 text-[10px] text-amber-700">(transfert exécuté — douane bloquée)</span>}
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
+                {createType === "DOUANIER" && form.certificatCreditId && transferredCertIds.has(form.certificatCreditId) && (
+                  <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Transfert exécuté sur ce certificat.</strong> Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {createType === "DOUANIER" && (
