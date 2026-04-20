@@ -65,9 +65,22 @@ const Transferts = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Re-submit cert detail (to know remaining TVA déductible cordon = d')
+  const [resubmitCert, setResubmitCert] = useState<CertificatCreditDto | null>(null);
+
+  /** Montant transféré = totalité du reste de TVA déductible sur cordon douanier (d' = tvaImportationDouane) */
+  const getMontantRenonciation = (c: CertificatCreditDto | null | undefined): number => {
+    if (!c) return 0;
+    // d' = restant de TVA importation (diminue à chaque liquidation douanière)
+    const reste = c.tvaImportationDouane ?? 0;
+    // Borné par le solde Cordon disponible (sécurité)
+    return Math.min(reste, c.soldeCordon ?? reste);
+  };
+
   // ---------- Create new ----------
   const openCreate = async () => {
     setResubmitTarget(null);
+    setResubmitCert(null);
     setForm({ operationsDouaneCloturees: true });
     try {
       const certs = role === "ENTREPRISE" && user?.entrepriseId
@@ -83,34 +96,39 @@ const Transferts = () => {
   };
 
   // ---------- Re-submit after REJETE ----------
-  const openResubmit = (t: TransfertCreditDto) => {
+  const openResubmit = async (t: TransfertCreditDto) => {
     setResubmitTarget(t);
     setForm({
       certificatCreditId: t.certificatCreditId,
-      montant: undefined,
       operationsDouaneCloturees: true,
     });
-    setCertificats([]); // not needed, cert is fixed
+    setCertificats([]);
+    setResubmitCert(null);
+    try {
+      const cert = await certificatCreditApi.getById(t.certificatCreditId);
+      setResubmitCert(cert);
+    } catch { /* ignore */ }
     setShowCreate(true);
   };
 
-  const selectedCert = certificats.find(c => c.id === form.certificatCreditId);
+  const selectedCert = resubmitTarget ? resubmitCert : certificats.find(c => c.id === form.certificatCreditId);
+  const montantAuto = getMontantRenonciation(selectedCert);
 
   const handleCreate = async () => {
     const certId = resubmitTarget ? resubmitTarget.certificatCreditId : form.certificatCreditId;
-    if (!certId || !form.montant) {
-      toast({ title: "Erreur", description: "Certificat et montant sont requis", variant: "destructive" });
+    if (!certId) {
+      toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
-    if (!resubmitTarget && selectedCert && form.montant > (selectedCert.soldeCordon ?? 0)) {
-      toast({ title: "Erreur", description: "Le montant dépasse le solde Cordon disponible", variant: "destructive" });
+    if (!selectedCert || montantAuto <= 0) {
+      toast({ title: "Erreur", description: "Aucune TVA déductible cordon restante à transférer", variant: "destructive" });
       return;
     }
     setCreating(true);
     try {
       await transfertCreditApi.create({
         certificatCreditId: certId,
-        montant: form.montant,
+        montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
       toast({
