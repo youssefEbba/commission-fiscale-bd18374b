@@ -746,11 +746,25 @@ const Utilisations = () => {
                     {certificats
                       // Brouillon : tous certificats acceptés. Sinon (création directe ou édition d'une demandée) : OUVERT requis.
                       .filter(c => editingId != null || c.statut === "OUVERT")
-                      .map(c => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}</SelectItem>
-                      ))}
+                      .map(c => {
+                        const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
+                        return (
+                          <SelectItem key={c.id} value={String(c.id)} disabled={blockedDouane}>
+                            {c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}
+                            {blockedDouane && <span className="ml-2 text-[10px] text-amber-700">(transfert exécuté — douane bloquée)</span>}
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
+                {createType === "DOUANIER" && form.certificatCreditId && transferredCertIds.has(form.certificatCreditId) && (
+                  <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Transfert exécuté sur ce certificat.</strong> Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {createType === "DOUANIER" && (
