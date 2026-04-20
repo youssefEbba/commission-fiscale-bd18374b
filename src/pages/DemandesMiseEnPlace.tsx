@@ -421,7 +421,11 @@ const DemandesMiseEnPlace = () => {
 
   const transitions = ROLE_TRANSITIONS[role] || [];
 
+  // Une mise en place "ouverte" (OUVERT/MODIFIE/CLOTURE) bascule dans le module Certificats
+  // et n'apparaît plus dans la liste des demandes de mise en place.
+  const HIDDEN_STATUTS: CertificatStatut[] = ["OUVERT", "MODIFIE", "CLOTURE"];
   const filtered = certificats.filter((c) => {
+    if (HIDDEN_STATUTS.includes(c.statut)) return false;
     const ms = (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
       (c.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
       String(c.id).includes(search);
