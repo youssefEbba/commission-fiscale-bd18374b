@@ -104,7 +104,18 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       applyImpersonation(res);
       toast.success("Vous êtes revenu sur votre compte Commission relais");
       navigate("/dashboard/relais");
-    } catch (err) {
+    } catch (err: any) {
+      // Le back exige la permission `commission.relais.release` qui n'est pas
+      // dans le JWT d'impersonation (porte les permissions ENTREPRISE / AC).
+      // Fallback : on déconnecte proprement et on renvoie sur /login afin que
+      // l'agent se reconnecte avec son compte natif COMMISSION_RELAIS.
+      const status = err?.status ?? err?.response?.status;
+      if (status === 403) {
+        toast.message("Session de relais terminée. Veuillez vous reconnecter.");
+        logout();
+        navigate("/login");
+        return;
+      }
       toast.error(formatApiErrorMessage(err, "Échec de la sortie d'impersonation"));
     } finally {
       setReleasing(false);
