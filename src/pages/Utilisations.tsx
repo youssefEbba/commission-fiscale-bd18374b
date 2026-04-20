@@ -276,6 +276,16 @@ const Utilisations = () => {
       toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
       return;
     }
+    // Garde-fou : utilisations DOUANIERES interdites après transfert exécuté
+    if (createType === "DOUANIER" && transferredCertIds.has(form.certificatCreditId)) {
+      toast({
+        title: "Action bloquée",
+        description:
+          "Un transfert a déjà été exécuté sur ce certificat. Aucune nouvelle utilisation douanière (ni création ni soumission de brouillon) n'est possible. Les utilisations TVA intérieure restent autorisées.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (mode === "submit") {
       const missing = getMissingObligatoryDocs();
       if (missing.length > 0) {
