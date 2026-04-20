@@ -38,6 +38,7 @@ import Modifications from "./pages/Modifications";
 import DemandeDetail from "./pages/DemandeDetail";
 import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
+import CommissionRelais from "./pages/CommissionRelais";
 
 const queryClient = new QueryClient();
 
@@ -167,6 +168,11 @@ const App = () => (
             <Route path="/dashboard/chatbot-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ChatbotDGD />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/relais" element={
+              <ProtectedRoute allowedRoles={["COMMISSION_RELAIS"]}>
+                <CommissionRelais />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
