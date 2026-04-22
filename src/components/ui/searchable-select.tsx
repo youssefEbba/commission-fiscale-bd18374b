@@ -132,9 +132,17 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
                     value={opt.value}
                     disabled={opt.disabled}
                     onSelect={(currentValue) => {
+                      // Garde-fou : cmdk peut ignorer la prop disabled selon les versions.
+                      // On bloque explicitement la sélection des options désactivées.
+                      if (opt.disabled) return;
                       onValueChange(currentValue);
                       setOpen(false);
                     }}
+                    className={cn(
+                      opt.disabled &&
+                        "opacity-50 cursor-not-allowed pointer-events-none data-[selected=true]:bg-transparent",
+                    )}
+                    aria-disabled={opt.disabled || undefined}
                   >
                     <Check
                       className={cn(
