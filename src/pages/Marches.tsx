@@ -39,7 +39,7 @@ const Marches = () => {
   // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
-  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
+  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
   // Assign delegate dialog
@@ -93,7 +93,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
+    setForm({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
@@ -103,7 +103,6 @@ const Marches = () => {
       conventionId: m.conventionId || 0,
       numeroMarche: m.numeroMarche || "",
       intitule: m.intitule || "",
-      dateSignature: m.dateSignature || "",
       montantContratHt: m.montantContratHt ?? m.montantContratTtc,
       statut: m.statut,
     });
@@ -417,16 +416,12 @@ const Marches = () => {
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
             </div>
             <div className="space-y-2">
-              <Label>Intitulé du marché</Label>
-              <Input value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Ex : Construction d'une école..." />
-            </div>
-            <div className="space-y-2">
-              <Label>Date de signature <span className="text-muted-foreground text-xs">(optionnelle)</span></Label>
-              <Input type="date" value={form.dateSignature || ""} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+              <Label>Intitulé du marché <span className="text-muted-foreground text-xs">(optionnel, max 500 car.)</span></Label>
+              <Input maxLength={500} value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Ex : Construction d'une école..." />
             </div>
              <div className="space-y-2">
-              <Label>Montant contrat HT <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
-              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder="Laisser vide si non applicable" />
+              <Label>Montant contrat HT *</Label>
+              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder="Montant en MRU" />
             </div>
             <div className="space-y-2">
               <Label>Statut</Label>
