@@ -233,47 +233,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     return () => { cancelled = true; };
   }, [open, entrepriseId, editingId]);
 
-  // Vérification "à la sélection" : avant de passer à l'étape suivante, on contrôle
-  // que le marché choisi n'est pas déjà associé à une demande de correction active.
-  const [checkingMarche, setCheckingMarche] = useState(false);
-  const handleNextStep = useCallback(async () => {
-    if (step === 0 && marcheId) {
-      const mId = Number(marcheId);
-      if (Number.isFinite(mId) && mId > 0) {
-        setCheckingMarche(true);
-        try {
-          const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
-          // On privilégie la vérification "par entreprise" (accessible aussi en
-          // impersonation COMMISSION_RELAIS / rôle ENTREPRISE).
-          let demandes: DemandeCorrectionDto[] = [];
-          const entId = Number(entrepriseId);
-          if (Number.isFinite(entId) && entId > 0) {
-            demandes = await demandeCorrectionApi.getByEntreprise(entId).catch(() => []);
-          }
-          if (demandes.length === 0) {
-            demandes = await demandeCorrectionApi.getAll().catch(() => []);
-          }
-          const conflict = demandes.find(
-            d => d.marcheId === mId && !TERMINAL.has(d.statut) && (!editingId || d.id !== editingId),
-          );
-          if (conflict) {
-            const ref = (conflict as any).numeroDemande || `#${conflict.id}`;
-            toast({
-              title: "Marché indisponible",
-              description: `Ce marché est déjà associé à une demande de correction active (${ref}, statut : ${conflict.statut}). Veuillez en choisir un autre ou clôturer la demande existante.`,
-              variant: "destructive",
-            });
-            setBusyMarcheIds(prev => new Set(prev).add(mId));
-            return;
-          }
-        } finally {
-          setCheckingMarche(false);
-        }
-      }
-    }
-    setStep(s => s + 1);
-  }, [step, marcheId, entrepriseId, editingId, toast]);
-
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
   const wasOpenRef = useRef(false);
@@ -907,11 +866,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         onValueChange={setMarcheId}
                         placeholder="Sélectionnez"
                         searchPlaceholder="Rechercher un marché..."
-                        options={marches.map(m => ({
-                          value: String(m.id),
-                          label: `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`,
-                          keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
-                        }))}
+                        options={marches.map(m => {
+                          const isBusy = busyMarcheIds.has(m.id);
+                          const baseLabel = `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`;
+                          return {
+                            value: String(m.id),
+                            label: isBusy ? `${baseLabel} (déjà associé à une demande active)` : baseLabel,
+                            description: isBusy ? "Marché indisponible : une demande de correction est déjà en cours pour ce marché." : undefined,
+                            keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
+                            disabled: isBusy,
+                          };
+                        })}
                       />
                     ) : (
                       <Card className="border-primary/30">
@@ -1534,8 +1499,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < steps.length - 1 ? (
-              <Button onClick={handleNextStep} disabled={(step === 0 && !entrepriseId) || checkingMarche}>
-                {checkingMarche ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
