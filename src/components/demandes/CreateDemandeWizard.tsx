@@ -191,12 +191,25 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Statuts terminaux : la demande est close → le marché redevient sélectionnable
       const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
       const busy = new Set<number>();
+      // Source 1 : liste globale des demandes (rôles contrôleurs)
+      const demandeIdsTerminales = new Set<number>();
       for (const d of demandes) {
+        if (d.id && TERMINAL.has(d.statut)) demandeIdsTerminales.add(d.id);
         if (!d.marcheId) continue;
         if (TERMINAL.has(d.statut)) continue;
-        // En mode édition, ne pas se bloquer soi-même
         if (editingId && d.id === editingId) continue;
         busy.add(d.marcheId);
+      }
+      // Source 2 : la liste des marchés elle-même porte demandeCorrectionId.
+      // Utile en mode ENTREPRISE / COMMISSION_RELAIS (getAll demandes = 403).
+      // On ne peut pas connaître le statut de la demande liée → on la considère active
+      // par défaut, sauf si elle figure parmi les demandes terminales déjà connues
+      // ou s'il s'agit de la demande en cours d'édition.
+      for (const m of marc) {
+        if (!m.demandeCorrectionId) continue;
+        if (editingId && m.demandeCorrectionId === editingId) continue;
+        if (demandeIdsTerminales.has(m.demandeCorrectionId)) continue;
+        busy.add(m.id);
       }
       setBusyMarcheIds(busy);
     } catch {
