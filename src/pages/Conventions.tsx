@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -699,19 +700,14 @@ const Conventions = () => {
             <div className="space-y-2">
               <Label>Bailleur de fonds *</Label>
               <div className="flex gap-2">
-                <Select
+                <SearchableSelect
                   value={form.bailleurId != null ? String(form.bailleurId) : ""}
                   onValueChange={(v) => setForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
-                >
-                  <SelectTrigger className="flex-1">
-                    {bailleursLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner un bailleur" />}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bailleurs.map((b) => (
-                      <SelectItem key={b.id} value={String(b.id)}>{b.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={bailleursLoading ? "Chargement..." : "Sélectionner un bailleur"}
+                  searchPlaceholder="Rechercher un bailleur..."
+                  triggerClassName="flex-1"
+                  options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
+                />
                 <Button type="button" variant="outline" size="icon" onClick={() => setAddBailleurOpen(true)} title="Ajouter un bailleur">
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -734,16 +730,18 @@ const Conventions = () => {
             <div className="space-y-2">
               <Label>Devise d'origine</Label>
               <div className="flex gap-2">
-                <Select value={form.deviseOrigine || ""} onValueChange={handleDeviseChange}>
-                  <SelectTrigger className="flex-1">
-                    {devisesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner une devise" />}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {devises.map((d) => (
-                      <SelectItem key={d.id} value={d.code}>{d.code} — {d.libelle} {d.symbole ? `(${d.symbole})` : ""}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.deviseOrigine || ""}
+                  onValueChange={handleDeviseChange}
+                  placeholder={devisesLoading ? "Chargement..." : "Sélectionner une devise"}
+                  searchPlaceholder="Rechercher une devise..."
+                  triggerClassName="flex-1"
+                  options={devises.map((d) => ({
+                    value: d.code,
+                    label: `${d.code} — ${d.libelle}${d.symbole ? ` (${d.symbole})` : ""}`,
+                    keywords: `${d.code} ${d.libelle}`,
+                  }))}
+                />
                 <Button type="button" variant="outline" size="icon" onClick={() => setAddDeviseOpen(true)} title="Ajouter une devise">
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -1128,19 +1126,13 @@ const Conventions = () => {
             </div>
             <div className="space-y-2">
               <Label>Bailleur</Label>
-              <Select
+              <SearchableSelect
                 value={editForm.bailleurId != null ? String(editForm.bailleurId) : ""}
                 onValueChange={(v) => setEditForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
-              >
-                <SelectTrigger>
-                  {bailleursLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Sélectionner" />}
-                </SelectTrigger>
-                <SelectContent>
-                  {bailleurs.map((b) => (
-                    <SelectItem key={b.id} value={String(b.id)}>{b.nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={bailleursLoading ? "Chargement..." : "Sélectionner"}
+                searchPlaceholder="Rechercher un bailleur..."
+                options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
+              />
             </div>
             {/* Le descriptif provient désormais du bailleur sélectionné. */}
             <div className="grid grid-cols-2 gap-3">

@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
@@ -403,16 +404,17 @@ const Marches = () => {
             {!editing && (
               <div className="space-y-2">
                 <Label>Convention <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
-                <Select value={form.conventionId ? String(form.conventionId) : ""} onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}>
-                  <SelectTrigger><SelectValue placeholder="Aucune convention rattachée" /></SelectTrigger>
-                  <SelectContent>
-                    {conventions.map(c => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.reference || `#${c.id}`} — {c.intitule || ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.conventionId ? String(form.conventionId) : ""}
+                  onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}
+                  placeholder="Aucune convention rattachée"
+                  searchPlaceholder="Rechercher une convention..."
+                  options={conventions.map(c => ({
+                    value: String(c.id),
+                    label: `${c.reference || `#${c.id}`} — ${c.intitule || ""}`,
+                    keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
+                  }))}
+                />
               </div>
             )}
             <div className="space-y-2">

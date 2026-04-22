@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FolderOpen, Search, RefreshCw, Plus, Eye, Upload, Loader2,
@@ -421,14 +422,17 @@ const ReferentielProjets = () => {
               ) : (
                 <div className="space-y-1.5">
                   <Label className="text-xs">Autorité Contractante *</Label>
-                  <Select value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""} onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner une autorité" /></SelectTrigger>
-                    <SelectContent>
-                      {autorites.map((a) => (
-                        <SelectItem key={a.id} value={String(a.id!)}>{a.nom}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={form.autoriteContractanteId ? String(form.autoriteContractanteId) : ""}
+                    onValueChange={(v) => setForm({ autoriteContractanteId: Number(v) })}
+                    placeholder="Sélectionner une autorité"
+                    searchPlaceholder="Rechercher une autorité..."
+                    options={autorites.map((a) => ({
+                      value: String(a.id!),
+                      label: a.nom,
+                      keywords: `${a.nom} ${a.sigle || ""}`,
+                    }))}
+                  />
                 </div>
               )}
             </div>
@@ -455,20 +459,18 @@ const ReferentielProjets = () => {
               <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">3. Convention associée</h3>
               <div className="space-y-1.5">
                 <Label className="text-xs">Convention validée *</Label>
-                <Select value={selectedConventionId} onValueChange={setSelectedConventionId}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner une convention validée" /></SelectTrigger>
-                  <SelectContent>
-                    {validConventions.length === 0 ? (
-                      <SelectItem value="_none" disabled>Aucune convention validée disponible</SelectItem>
-                    ) : (
-                      validConventions.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.reference} — {c.intitule}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={selectedConventionId}
+                  onValueChange={setSelectedConventionId}
+                  placeholder="Sélectionner une convention validée"
+                  searchPlaceholder="Rechercher une convention..."
+                  emptyMessage={validConventions.length === 0 ? "Aucune convention validée disponible" : "Aucun résultat."}
+                  options={validConventions.map((c) => ({
+                    value: String(c.id),
+                    label: `${c.reference} — ${c.intitule}`,
+                    keywords: `${c.reference || ""} ${c.intitule || ""}`,
+                  }))}
+                />
                 {validConventions.length === 0 && (
                   <p className="text-xs text-destructive">Aucune convention validée. Créez et faites valider une convention d'abord.</p>
                 )}
