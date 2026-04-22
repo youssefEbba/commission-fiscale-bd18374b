@@ -232,6 +232,10 @@ const Marches = () => {
       toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
       return;
     }
+    if (form.montantContratHt == null || isNaN(form.montantContratHt)) {
+      toast({ title: "Erreur", description: "Le montant contrat HT est obligatoire", variant: "destructive" });
+      return;
+    }
     // Préparer payload : envoyer montantContratHt (alias TTC accepté côté back)
     const payload: CreateMarcheRequest = { ...form };
     if (payload.montantContratHt == null) {
