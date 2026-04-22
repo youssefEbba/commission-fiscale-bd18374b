@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -740,23 +741,23 @@ const Utilisations = () => {
             <div className="space-y-3">
               <div>
                 <Label>Certificat de crédit *</Label>
-                <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
-                  <SelectContent>
-                    {certificats
-                      // Brouillon : tous certificats acceptés. Sinon (création directe ou édition d'une demandée) : OUVERT requis.
-                      .filter(c => editingId != null || c.statut === "OUVERT")
-                      .map(c => {
-                        const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
-                        return (
-                          <SelectItem key={c.id} value={String(c.id)} disabled={blockedDouane}>
-                            {c.reference || c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || c.entrepriseNom}
-                            {blockedDouane && <span className="ml-2 text-[10px] text-amber-700">(transfert exécuté — douane bloquée)</span>}
-                          </SelectItem>
-                        );
-                      })}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.certificatCreditId ? String(form.certificatCreditId) : ""}
+                  onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
+                  placeholder="Sélectionner un certificat"
+                  searchPlaceholder="Rechercher (réf., entreprise)..."
+                  options={certificats
+                    .filter(c => editingId != null || c.statut === "OUVERT")
+                    .map(c => {
+                      const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
+                      return {
+                        value: String(c.id),
+                        label: `${c.reference || c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? " (transfert exécuté — douane bloquée)" : ""}`,
+                        keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""} ${c.entrepriseNom || ""}`,
+                        disabled: blockedDouane,
+                      };
+                    })}
+                />
                 {createType === "DOUANIER" && form.certificatCreditId && transferredCertIds.has(form.certificatCreditId) && (
                   <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />

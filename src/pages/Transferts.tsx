@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, FileText, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
@@ -352,16 +353,17 @@ const Transferts = () => {
             {!resubmitTarget && (
               <div>
                 <Label>Certificat (OUVERT)</Label>
-                <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
-                  <SelectContent>
-                    {certificats.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.numero || `Cert #${c.id}`} — d′ restant: {f(c.tvaImportationDouane)} MRU
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.certificatCreditId ? String(form.certificatCreditId) : ""}
+                  onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
+                  placeholder="Sélectionner un certificat"
+                  searchPlaceholder="Rechercher un certificat..."
+                  options={certificats.map((c) => ({
+                    value: String(c.id),
+                    label: `${c.numero || `Cert #${c.id}`} — d′ restant: ${f(c.tvaImportationDouane)} MRU`,
+                    keywords: `${c.numero || ""}`,
+                  }))}
+                />
               </div>
             )}
             {!resubmitTarget && selectedCert && (

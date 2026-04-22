@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -814,16 +815,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     </Label>
 
                     {!showCreateMarche ? (
-                      <Select value={marcheId} onValueChange={setMarcheId}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger>
-                        <SelectContent>
-                          {marches.map(m => (
-                            <SelectItem key={m.id} value={String(m.id)}>
-                              {m.numeroMarche || `#${m.id}`} — {m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={marcheId}
+                        onValueChange={setMarcheId}
+                        placeholder="Sélectionnez"
+                        searchPlaceholder="Rechercher un marché..."
+                        options={marches.map(m => ({
+                          value: String(m.id),
+                          label: `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`,
+                          keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
+                        }))}
+                      />
                     ) : (
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-3">
@@ -848,16 +850,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               </Button>
                             </Label>
                             {!showCreateConvention ? (
-                              <Select value={conventionId} onValueChange={v => { setConventionId(v); }}>
-                                <SelectTrigger><SelectValue placeholder="Sélectionnez une convention" /></SelectTrigger>
-                                <SelectContent>
-                                  {conventions.map(c => (
-                                    <SelectItem key={c.id} value={String(c.id)}>
-                                      {c.reference || `#${c.id}`} — {c.intitule || c.bailleurNom || c.bailleur || ""}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <SearchableSelect
+                                value={conventionId}
+                                onValueChange={v => { setConventionId(v); }}
+                                placeholder="Sélectionnez une convention"
+                                searchPlaceholder="Rechercher une convention..."
+                                options={conventions.map(c => ({
+                                  value: String(c.id),
+                                  label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
+                                  keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
+                                }))}
+                              />
                             ) : (
                               <div className="space-y-3 border border-dashed border-border rounded-md p-3 max-h-[50vh] overflow-y-auto">
                                 <Input
@@ -880,17 +883,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                     </Button>
                                   </Label>
                                   {!showCreateBailleur ? (
-                                    <Select
+                                    <SearchableSelect
                                       value={newConvForm.bailleurId != null ? String(newConvForm.bailleurId) : ""}
                                       onValueChange={v => setNewConvForm(prev => ({ ...prev, bailleurId: v ? Number(v) : undefined }))}
-                                    >
-                                      <SelectTrigger><SelectValue placeholder="Sélectionnez un bailleur" /></SelectTrigger>
-                                      <SelectContent>
-                                        {bailleurs.map(b => (
-                                          <SelectItem key={b.id} value={String(b.id)}>{b.nom}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                      placeholder="Sélectionnez un bailleur"
+                                      searchPlaceholder="Rechercher un bailleur..."
+                                      options={bailleurs.map(b => ({ value: String(b.id), label: b.nom }))}
+                                    />
                                   ) : (
                                     <div className="flex gap-1">
                                       <Input placeholder="Nom du bailleur" value={newBailleurNom} onChange={e => setNewBailleurNom(e.target.value)} className="text-sm" />
@@ -928,16 +927,18 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 <div className="space-y-1">
                                   <Label className="text-xs text-muted-foreground">Devise d'origine</Label>
                                   <div className="flex gap-1">
-                                    <Select value={newConvForm.deviseOrigine || ""} onValueChange={code => setNewConvForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }))}>
-                                      <SelectTrigger className="flex-1">
-                                        {devisesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Devise" />}
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {devises.map(d => (
-                                          <SelectItem key={d.id} value={d.code}>{d.code} — {d.libelle}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                    <SearchableSelect
+                                      value={newConvForm.deviseOrigine || ""}
+                                      onValueChange={code => setNewConvForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }))}
+                                      placeholder={devisesLoading ? "Chargement..." : "Devise"}
+                                      searchPlaceholder="Rechercher une devise..."
+                                      triggerClassName="flex-1"
+                                      options={devises.map(d => ({
+                                        value: d.code,
+                                        label: `${d.code} — ${d.libelle}`,
+                                        keywords: `${d.code} ${d.libelle}`,
+                                      }))}
+                                    />
                                     <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setShowAddDevise(true)} title="Ajouter devise">
                                       <Plus className="h-3 w-3" />
                                     </Button>

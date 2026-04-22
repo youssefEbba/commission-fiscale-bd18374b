@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Handshake, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle, UserPlus, Building2 } from "lucide-react";
@@ -365,16 +366,17 @@ const SousTraitance = () => {
             {/* Certificat */}
             <div>
               <Label>Certificat source (OUVERT) *</Label>
-              <Select value={form.certificatCreditId ? String(form.certificatCreditId) : ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
-                <SelectContent>
-                  {certificats.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.reference || c.numero || `Cert #${c.id}`} — Solde: {f(c.soldeCordon)} MRU
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.certificatCreditId ? String(form.certificatCreditId) : ""}
+                onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
+                placeholder="Sélectionner un certificat"
+                searchPlaceholder="Rechercher un certificat..."
+                options={certificats.map((c) => ({
+                  value: String(c.id),
+                  label: `${c.reference || c.numero || `Cert #${c.id}`} — Solde: ${f(c.soldeCordon)} MRU`,
+                  keywords: `${c.reference || ""} ${c.numero || ""}`,
+                }))}
+              />
             </div>
 
             {/* Entreprise sous-traitante */}
@@ -405,16 +407,18 @@ const SousTraitance = () => {
                 <div className="space-y-3">
                   <div>
                     <Label>Sélectionner une entreprise existante *</Label>
-                    <Select value={selectedEntrepriseId ? String(selectedEntrepriseId) : ""} onValueChange={(v) => handleSelectEntreprise(Number(v))}>
-                      <SelectTrigger><SelectValue placeholder="Choisir une entreprise" /></SelectTrigger>
-                      <SelectContent>
-                        {entreprises.map((e) => (
-                          <SelectItem key={e.id} value={String(e.id!)}>
-                            {e.raisonSociale} — NIF: {e.nif}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={selectedEntrepriseId ? String(selectedEntrepriseId) : ""}
+                      onValueChange={(v) => handleSelectEntreprise(Number(v))}
+                      placeholder="Choisir une entreprise"
+                      searchPlaceholder="Rechercher (nom, NIF)..."
+                      options={entreprises.map((e) => ({
+                        value: String(e.id!),
+                        label: e.raisonSociale,
+                        description: `NIF: ${e.nif}`,
+                        keywords: `${e.raisonSociale} ${e.nif}`,
+                      }))}
+                    />
                   </div>
                 </div>
               ) : (

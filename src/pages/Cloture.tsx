@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -276,16 +277,16 @@ const Cloture = () => {
             <div className="space-y-4">
               <div>
                 <Label>Certificat</Label>
-                <Select value={form.certificatCreditId?.toString() || ""} onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un certificat" /></SelectTrigger>
-                  <SelectContent>
-                    {eligibleCerts.map((c) => (
-                      <SelectItem key={c.id} value={c.id.toString()}>
-                        {c.numero || `Certificat #${c.id}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.certificatCreditId?.toString() || ""}
+                  onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
+                  placeholder="Sélectionner un certificat"
+                  searchPlaceholder="Rechercher un certificat..."
+                  options={eligibleCerts.map((c) => ({
+                    value: c.id.toString(),
+                    label: c.numero || `Certificat #${c.id}`,
+                  }))}
+                />
               </div>
               <div>
                 <Label>Type d'opération</Label>

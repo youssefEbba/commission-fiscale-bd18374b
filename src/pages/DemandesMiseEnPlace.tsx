@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, Lock, Unlock, AlertTriangle, History, MoreHorizontal, Send, Trash2 } from "lucide-react";
@@ -780,22 +781,22 @@ const DemandesMiseEnPlace = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Demande de correction (adoptée/notifiée) *</Label>
-              <Select value={selectedCorrectionId} onValueChange={setSelectedCorrectionId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner une correction..." /></SelectTrigger>
-                <SelectContent>
-                  {corrections.length === 0 ? (
-                    <SelectItem value="__none" disabled>Aucune correction adoptée disponible</SelectItem>
-                  ) : corrections.map((c) => {
-                    const locked = lockedCorrectionIds.has(c.id);
-                    return (
-                      <SelectItem key={c.id} value={String(c.id)} disabled={locked}>
-                        {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                        {locked && " (mise en place déjà en cours)"}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={selectedCorrectionId}
+                onValueChange={setSelectedCorrectionId}
+                placeholder="Sélectionner une correction..."
+                searchPlaceholder="Rechercher (n°, entreprise)..."
+                emptyMessage={corrections.length === 0 ? "Aucune correction adoptée disponible" : "Aucun résultat."}
+                options={corrections.map((c) => {
+                  const locked = lockedCorrectionIds.has(c.id);
+                  return {
+                    value: String(c.id),
+                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || "Entreprise"}${locked ? " (mise en place déjà en cours)" : ""}`,
+                    keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
+                    disabled: locked,
+                  };
+                })}
+              />
               {selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)) && (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
@@ -903,23 +904,22 @@ const DemandesMiseEnPlace = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Demande de correction *</Label>
-              <Select value={selectedCorrectionId} onValueChange={setSelectedCorrectionId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
-                <SelectContent>
-                  {corrections.length === 0 ? (
-                    <SelectItem value="__none" disabled>Aucune correction disponible</SelectItem>
-                  ) : corrections.map((c) => {
-                    // En édition, autoriser la correction déjà liée à ce brouillon.
-                    const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
-                    return (
-                      <SelectItem key={c.id} value={String(c.id)} disabled={locked}>
-                        {c.numero || `#${c.id}`} — {c.entrepriseRaisonSociale || "Entreprise"}
-                        {locked && " (mise en place déjà en cours)"}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={selectedCorrectionId}
+                onValueChange={setSelectedCorrectionId}
+                placeholder="Sélectionner..."
+                searchPlaceholder="Rechercher (n°, entreprise)..."
+                emptyMessage={corrections.length === 0 ? "Aucune correction disponible" : "Aucun résultat."}
+                options={corrections.map((c) => {
+                  const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
+                  return {
+                    value: String(c.id),
+                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || "Entreprise"}${locked ? " (mise en place déjà en cours)" : ""}`,
+                    keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
+                    disabled: locked,
+                  };
+                })}
+              />
             </div>
 
             {selectedCorrection && (
