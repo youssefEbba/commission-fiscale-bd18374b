@@ -866,17 +866,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         onValueChange={setMarcheId}
                         placeholder="Sélectionnez"
                         searchPlaceholder="Rechercher un marché..."
-                        options={marches.map(m => {
-                          const isBusy = busyMarcheIds.has(m.id);
-                          const baseLabel = `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`;
-                          return {
-                            value: String(m.id),
-                            label: isBusy ? `${baseLabel} (déjà associé à une demande active)` : baseLabel,
-                            description: isBusy ? "Marché indisponible : une demande de correction est déjà en cours pour ce marché." : undefined,
-                            keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
-                            disabled: isBusy,
-                          };
-                        })}
+                        options={marches.map(m => ({
+                          value: String(m.id),
+                          label: `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`,
+                          keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
+                        }))}
                       />
                     ) : (
                       <Card className="border-primary/30">
