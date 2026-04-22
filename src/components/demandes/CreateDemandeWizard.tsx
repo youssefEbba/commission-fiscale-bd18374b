@@ -161,15 +161,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // Load data on open
   const isDelegate = user?.role === "AUTORITE_UPM" || user?.role === "AUTORITE_UEP";
 
+  // Marchés déjà associés à une demande de correction "active" (non terminale)
+  // → doivent apparaître mais désactivés à la sélection.
+  const [busyMarcheIds, setBusyMarcheIds] = useState<Set<number>>(new Set());
+
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [ent, conv, marc, bail, gedReqs] = await Promise.all([
+      const [ent, conv, marc, bail, gedReqs, demandes] = await Promise.all([
         entrepriseApi.getAll(),
         conventionApi.getAll(),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
         bailleurApi.getAll().catch(() => [] as BailleurDto[]),
         documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE").catch(() => [] as DocumentRequirementDto[]),
+        demandeCorrectionApi.getAll().catch(() => [] as DemandeCorrectionDto[]),
       ]);
       setEntreprises(ent);
       setConventions(conv);
@@ -180,12 +185,24 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       }
       setBailleurs(bail);
       setGedDocTypes(gedReqs.sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0)));
+
+      // Statuts terminaux : la demande est close → le marché redevient sélectionnable
+      const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
+      const busy = new Set<number>();
+      for (const d of demandes) {
+        if (!d.marcheId) continue;
+        if (TERMINAL.has(d.statut)) continue;
+        // En mode édition, ne pas se bloquer soi-même
+        if (editingId && d.id === editingId) continue;
+        busy.add(d.marcheId);
+      }
+      setBusyMarcheIds(busy);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
     } finally {
       setLoadingData(false);
     }
-  }, [toast, isDelegate, user?.userId]);
+  }, [toast, isDelegate, user?.userId, editingId]);
 
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
@@ -820,11 +837,17 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         onValueChange={setMarcheId}
                         placeholder="Sélectionnez"
                         searchPlaceholder="Rechercher un marché..."
-                        options={marches.map(m => ({
-                          value: String(m.id),
-                          label: `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`,
-                          keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
-                        }))}
+                        options={marches.map(m => {
+                          const isBusy = busyMarcheIds.has(m.id);
+                          const baseLabel = `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`;
+                          return {
+                            value: String(m.id),
+                            label: isBusy ? `${baseLabel} (déjà associé à une demande active)` : baseLabel,
+                            description: isBusy ? "Marché indisponible : une demande de correction est déjà en cours pour ce marché." : undefined,
+                            keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
+                            disabled: isBusy,
+                          };
+                        })}
                       />
                     ) : (
                       <Card className="border-primary/30">
