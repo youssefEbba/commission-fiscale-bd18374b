@@ -174,6 +174,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
         bailleurApi.getAll().catch(() => [] as BailleurDto[]),
         documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE").catch(() => [] as DocumentRequirementDto[]),
+        // getAll peut renvoyer 403 (rôles contrôleurs uniquement). En mode ENTREPRISE
+        // / COMMISSION_RELAIS impersonnant, on retombera sur getByEntreprise dans l'effet ci-dessous.
         demandeCorrectionApi.getAll().catch(() => [] as DemandeCorrectionDto[]),
       ]);
       setEntreprises(ent);
@@ -203,6 +205,33 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setLoadingData(false);
     }
   }, [toast, isDelegate, user?.userId, editingId]);
+
+  // Fallback / complément : quand une entreprise est sélectionnée (cas typique
+  // ENTREPRISE ou COMMISSION_RELAIS impersonnant), on récupère ses demandes via
+  // /by-entreprise — endpoint accessible même quand getAll est interdit (403).
+  useEffect(() => {
+    if (!open) return;
+    const entId = Number(entrepriseId);
+    if (!Number.isFinite(entId) || entId <= 0) return;
+    let cancelled = false;
+    demandeCorrectionApi.getByEntreprise(entId)
+      .then(list => {
+        if (cancelled) return;
+        const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
+        setBusyMarcheIds(prev => {
+          const next = new Set(prev);
+          for (const d of list) {
+            if (!d.marcheId) continue;
+            if (TERMINAL.has(d.statut)) continue;
+            if (editingId && d.id === editingId) continue;
+            next.add(d.marcheId);
+          }
+          return next;
+        });
+      })
+      .catch(() => { /* silencieux : on garde les marchés issus du getAll */ });
+    return () => { cancelled = true; };
+  }, [open, entrepriseId, editingId]);
 
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
