@@ -308,6 +308,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const defaultDevises: DeviseDto[] = [
         { id: -1, code: "EUR", libelle: "Euro", symbole: "€" },
         { id: -2, code: "USD", libelle: "Dollar américain", symbole: "$" },
+        { id: -3, code: "CNY", libelle: "Yuan chinois", symbole: "¥" },
+        { id: -4, code: "SAR", libelle: "Riyal saoudien", symbole: "﷼" },
+        { id: -5, code: "AED", libelle: "Dirham des Émirats", symbole: "د.إ" },
+        { id: -6, code: "QAR", libelle: "Riyal qatari", symbole: "﷼" },
       ];
       deviseApi.getAll()
         .then(fetched => {
