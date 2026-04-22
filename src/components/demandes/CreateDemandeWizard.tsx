@@ -1534,7 +1534,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             {step < steps.length - 1 ? (
-              <Button onClick={handleNextStep} disabled={step === 0 && !entrepriseId}>
+              <Button onClick={handleNextStep} disabled={(step === 0 && !entrepriseId) || checkingMarche}>
+                {checkingMarche ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                 Suivant <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
