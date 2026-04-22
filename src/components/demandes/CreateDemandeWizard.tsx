@@ -233,6 +233,47 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     return () => { cancelled = true; };
   }, [open, entrepriseId, editingId]);
 
+  // Vérification "à la sélection" : avant de passer à l'étape suivante, on contrôle
+  // que le marché choisi n'est pas déjà associé à une demande de correction active.
+  const [checkingMarche, setCheckingMarche] = useState(false);
+  const handleNextStep = useCallback(async () => {
+    if (step === 0 && marcheId) {
+      const mId = Number(marcheId);
+      if (Number.isFinite(mId) && mId > 0) {
+        setCheckingMarche(true);
+        try {
+          const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
+          // On privilégie la vérification "par entreprise" (accessible aussi en
+          // impersonation COMMISSION_RELAIS / rôle ENTREPRISE).
+          let demandes: DemandeCorrectionDto[] = [];
+          const entId = Number(entrepriseId);
+          if (Number.isFinite(entId) && entId > 0) {
+            demandes = await demandeCorrectionApi.getByEntreprise(entId).catch(() => []);
+          }
+          if (demandes.length === 0) {
+            demandes = await demandeCorrectionApi.getAll().catch(() => []);
+          }
+          const conflict = demandes.find(
+            d => d.marcheId === mId && !TERMINAL.has(d.statut) && (!editingId || d.id !== editingId),
+          );
+          if (conflict) {
+            const ref = conflict.numeroDemande || `#${conflict.id}`;
+            toast({
+              title: "Marché indisponible",
+              description: `Ce marché est déjà associé à une demande de correction active (${ref}, statut : ${conflict.statut}). Veuillez en choisir un autre ou clôturer la demande existante.`,
+              variant: "destructive",
+            });
+            setBusyMarcheIds(prev => new Set(prev).add(mId));
+            return;
+          }
+        } finally {
+          setCheckingMarche(false);
+        }
+      }
+    }
+    setStep(s => s + 1);
+  }, [step, marcheId, entrepriseId, editingId, toast]);
+
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
   const wasOpenRef = useRef(false);
