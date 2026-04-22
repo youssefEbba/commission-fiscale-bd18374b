@@ -257,7 +257,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
             d => d.marcheId === mId && !TERMINAL.has(d.statut) && (!editingId || d.id !== editingId),
           );
           if (conflict) {
-            const ref = conflict.numeroDemande || `#${conflict.id}`;
+            const ref = (conflict as any).numeroDemande || `#${conflict.id}`;
             toast({
               title: "Marché indisponible",
               description: `Ce marché est déjà associé à une demande de correction active (${ref}, statut : ${conflict.statut}). Veuillez en choisir un autre ou clôturer la demande existante.`,
