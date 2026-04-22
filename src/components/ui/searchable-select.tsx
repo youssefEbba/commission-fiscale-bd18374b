@@ -73,16 +73,17 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal",
+              "w-full min-w-0 max-w-full justify-between font-normal h-auto min-h-10 py-2",
               !selected && "text-muted-foreground",
               triggerClassName,
               className,
             )}
+            title={selected?.label}
           >
-            <span className="truncate text-left">
+            <span className="truncate text-left flex-1 min-w-0">
               {selected ? selected.label : placeholder}
             </span>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 ml-2">
               {clearable && selected && !disabled && (
                 <span
                   role="button"
@@ -109,12 +110,12 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="p-0 w-[--radix-popover-trigger-width] min-w-[260px]"
+          className="p-0 w-[--radix-popover-trigger-width] min-w-[min(260px,calc(100vw-2rem))] max-w-[calc(100vw-1rem)]"
           align="start"
+          collisionPadding={8}
         >
           <Command
             filter={(value, search) => {
-              // value contient l'option.value ; on retrouve son label/keywords
               const opt = options.find((o) => o.value === value);
               if (!opt) return 0;
               const haystack = `${opt.label} ${opt.description ?? ""} ${opt.keywords ?? ""}`.toLowerCase();
@@ -122,7 +123,7 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
             }}
           >
             <CommandInput placeholder={searchPlaceholder} />
-            <CommandList>
+            <CommandList className="max-h-[min(60vh,320px)]">
               <CommandEmpty>{emptyMessage}</CommandEmpty>
               <CommandGroup>
                 {options.map((opt) => (
@@ -141,10 +142,12 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
                         value === opt.value ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate">{opt.label}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="break-words whitespace-normal text-sm leading-snug">
+                        {opt.label}
+                      </span>
                       {opt.description && (
-                        <span className="text-xs text-muted-foreground truncate">
+                        <span className="text-xs text-muted-foreground break-words whitespace-normal">
                           {opt.description}
                         </span>
                       )}
@@ -161,3 +164,4 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
 );
 
 SearchableSelect.displayName = "SearchableSelect";
+
