@@ -73,14 +73,14 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full min-w-0 max-w-full justify-between font-normal h-auto min-h-10 py-2",
+              "flex w-full min-w-0 max-w-full justify-between font-normal h-10 px-3 overflow-hidden",
               !selected && "text-muted-foreground",
               triggerClassName,
               className,
             )}
             title={selected?.label}
           >
-            <span className="truncate text-left flex-1 min-w-0">
+            <span className="truncate text-left flex-1 min-w-0 block">
               {selected ? selected.label : placeholder}
             </span>
             <div className="flex items-center gap-1 shrink-0 ml-2">
