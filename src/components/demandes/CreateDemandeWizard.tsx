@@ -876,7 +876,32 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     {!showCreateMarche ? (
                       <SearchableSelect
                         value={marcheId}
-                        onValueChange={setMarcheId}
+                        onValueChange={(v) => {
+                          setMarcheId(v);
+                          const idNum = Number(v);
+                          if (!Number.isFinite(idNum) || idNum <= 0) return;
+                          // Vérification serveur : le marché a-t-il une demande de correction active ?
+                          marcheApi.getDemandeCorrectionActive(idNum)
+                            .then((res) => {
+                              if (!res?.hasActiveDemandeCorrection) return;
+                              // En mode édition, on ignore la propre demande en cours.
+                              if (editingId && res.demandeCorrectionId === editingId) return;
+                              setBusyMarcheIds(prev => {
+                                if (prev.has(idNum)) return prev;
+                                const next = new Set(prev);
+                                next.add(idNum);
+                                return next;
+                              });
+                              toast({
+                                title: "Marché indisponible",
+                                description: `Ce marché est déjà associé à une demande de correction active${res.demandeCorrectionStatut ? ` (statut : ${res.demandeCorrectionStatut})` : ""}. Veuillez en choisir un autre.`,
+                                variant: "destructive",
+                              });
+                              // On désélectionne pour forcer un nouveau choix
+                              setMarcheId("");
+                            })
+                            .catch(() => { /* silencieux : fallback sur busyMarcheIds existants */ });
+                        }}
                         placeholder="Sélectionnez"
                         searchPlaceholder="Rechercher un marché..."
                         options={marches.map(m => {
