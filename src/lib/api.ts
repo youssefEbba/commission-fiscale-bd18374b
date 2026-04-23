@@ -803,6 +803,13 @@ export const marcheApi = {
   getAll: (q?: string) => apiFetch<MarcheDto[]>(`/marches${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   getById: (id: number) => apiFetch<MarcheDto>(`/marches/${id}`),
   getByCorrection: (demandeCorrectionId: number) => apiFetch<MarcheDto>(`/marches/by-correction/${demandeCorrectionId}`),
+  /** Vérifie si un marché a déjà une demande de correction active (non ANNULEE). */
+  getDemandeCorrectionActive: (id: number) => apiFetch<{
+    marcheId: number;
+    hasActiveDemandeCorrection: boolean;
+    demandeCorrectionId: number | null;
+    demandeCorrectionStatut: string | null;
+  }>(`/marches/${id}/demande-correction-active`),
   create: (data: CreateMarcheRequest) => apiFetch<MarcheDto>("/marches", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateMarcheRequest>) => apiFetch<MarcheDto>(`/marches/${id}`, { method: "PUT", body: data }),
   assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign`, { method: "PATCH", body: { delegueId } }),
