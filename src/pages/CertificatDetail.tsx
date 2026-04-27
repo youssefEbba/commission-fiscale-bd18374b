@@ -495,7 +495,7 @@ const CertificatDetail = () => {
                       </TableCell>
                       <TableCell>
                         <Badge className={`text-xs ${STATUT_COLORS_UTIL[u.statut]}`}>
-                          {UTILISATION_STATUT_LABELS[u.statut]}
+                          {utilisationStatutLabel(u.statut, u.type)}
                         </Badge>
                       </TableCell>
                       <TableCell>

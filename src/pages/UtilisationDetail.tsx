@@ -300,7 +300,7 @@ const UtilisationDetail = () => {
             )}
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[u.statut]}`}>
-            {UTILISATION_STATUT_LABELS[u.statut]}
+            {utilisationStatutLabel(u.statut, u.type)}
           </Badge>
         </div>
 

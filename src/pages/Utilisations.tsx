@@ -566,7 +566,7 @@ const Utilisations = () => {
                         {u.type === "DOUANIER" ? (u.numeroDeclaration || u.numeroBulletin || "—") : (u.numeroFacture || u.numeroDecompte || "—")}
                       </TableCell>
                       <TableCell>{f(u.montant)} MRU</TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{UTILISATION_STATUT_LABELS[u.statut]}</Badge></TableCell>
+                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{utilisationStatutLabel(u.statut, u.type)}</Badge></TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title="Voir détail">
@@ -638,7 +638,7 @@ const Utilisations = () => {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Type</span><p className="font-medium">{selected.type === "DOUANIER" ? "Crédit Douanier (SYDONIA)" : "TVA Intérieure"}</p></div>
-                <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{UTILISATION_STATUT_LABELS[selected.statut]}</Badge></p></div>
+                <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{utilisationStatutLabel(selected.statut, selected.type)}</Badge></p></div>
                 <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatReference || `#${selected.certificatCreditId}`}</p></div>
                 <div><span className="text-muted-foreground">Montant</span><p className="font-bold text-primary">{f(selected.montant)} MRU</p></div>
                 {selected.entrepriseNom && <div><span className="text-muted-foreground">Demandeur</span><p>{selected.entrepriseNom}{selected.demandeurEstSousTraitant && <Badge variant="outline" className="ml-1.5 text-[10px] border-orange-300 text-orange-700 bg-orange-50">Sous-traité</Badge>}</p></div>}
