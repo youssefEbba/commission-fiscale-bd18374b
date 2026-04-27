@@ -394,7 +394,7 @@ const SousTraitance = () => {
                     if (!createNewEntreprise) {
                       setSelectedEntrepriseId(null);
                     } else {
-                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined });
+                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined, sousTraitantEntrepriseNomCommercial: undefined, sousTraitantEntrepriseActivite: undefined, sousTraitantEntrepriseAutre: undefined });
                     }
                   }}
                 >
@@ -445,6 +445,18 @@ const SousTraitance = () => {
                           <SelectItem value="NON_REGULIERE">Non régulière</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label>Nom commercial</Label>
+                      <Input value={form.sousTraitantEntrepriseNomCommercial ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseNomCommercial: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Activité</Label>
+                      <Input value={form.sousTraitantEntrepriseActivite ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseActivite: e.target.value })} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Autre</Label>
+                      <Input value={form.sousTraitantEntrepriseAutre ?? ""} onChange={(e) => setForm({ ...form, sousTraitantEntrepriseAutre: e.target.value })} maxLength={2000} placeholder="Informations complémentaires (max 2000 car.)" />
                     </div>
                   </div>
 
