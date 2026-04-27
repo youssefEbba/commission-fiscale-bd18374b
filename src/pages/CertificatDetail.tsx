@@ -44,6 +44,7 @@ const STATUT_COLORS_UTIL: Record<UtilisationStatut, string> = {
   LIQUIDEE: "bg-green-100 text-green-800",
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
+  CLOTUREE: "bg-slate-200 text-slate-800",
 };
 
 const CertificatDetail = () => {
@@ -386,7 +387,7 @@ const CertificatDetail = () => {
                   <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Stock TVA déductible</p><p className="text-2xl font-bold text-blue-600">{totalStock.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
                   <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Paiement cash cumulé</p><p className="text-2xl font-bold text-amber-600">{totalCash.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
                   <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Reports à nouveau</p><p className="text-2xl font-bold text-emerald-600">{totalReport.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Utilisations en cours</p><p className="text-2xl font-bold">{utilisations.filter(u => !["LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut)).length}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Utilisations en cours</p><p className="text-2xl font-bold">{utilisations.filter(u => !["LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut)).length}</p></CardContent></Card>
                 </>
               );
             })()}
