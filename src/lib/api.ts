@@ -1384,7 +1384,8 @@ export interface TransfertCreditDto {
 
 export interface CreateTransfertCreditRequest {
   certificatCreditId: number;
-  montant: number;
+  /** Optionnel : si absent, le back utilise le restant TVA importation cordon (d) actuel comme indicatif. */
+  montant?: number;
   operationsDouaneCloturees?: boolean;
 }
 

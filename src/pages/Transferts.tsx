@@ -149,7 +149,7 @@ const Transferts = () => {
     setActionLoading(id);
     try {
       await transfertCreditApi.valider(id);
-      toast({ title: "Succès", description: "Transfert validé — soldes mis à jour (Cordon → TVA)" });
+      toast({ title: "Succès", description: "Transfert validé — TVA importation transférée vers le solde TVA intérieure ; utilisations douanières en cours clôturées" });
       fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
