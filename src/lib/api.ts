@@ -1469,6 +1469,9 @@ export interface SousTraitanceOnboardingRequest {
   sousTraitantEntrepriseNif: string;
   sousTraitantEntrepriseAdresse?: string;
   sousTraitantEntrepriseSituationFiscale?: string;
+  sousTraitantEntrepriseNomCommercial?: string;
+  sousTraitantEntrepriseActivite?: string;
+  sousTraitantEntrepriseAutre?: string;
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
