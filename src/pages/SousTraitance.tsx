@@ -394,7 +394,7 @@ const SousTraitance = () => {
                     if (!createNewEntreprise) {
                       setSelectedEntrepriseId(null);
                     } else {
-                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined });
+                      setForm({ ...form, sousTraitantEntrepriseRaisonSociale: undefined, sousTraitantEntrepriseNif: undefined, sousTraitantEntrepriseAdresse: undefined, sousTraitantEntrepriseSituationFiscale: undefined, sousTraitantEntrepriseNomCommercial: undefined, sousTraitantEntrepriseActivite: undefined, sousTraitantEntrepriseAutre: undefined });
                     }
                   }}
                 >
