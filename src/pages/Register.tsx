@@ -35,10 +35,13 @@ const Register = () => {
   const [phoneError, setPhoneError] = useState("");
   const [newEntreprise, setNewEntreprise] = useState({
     raisonSociale: "",
+    nomCommercial: "",
     nif: "",
     adresse: "",
     telephone: "",
     email: "",
+    activite: "",
+    autre: "",
   });
 
   // New AC fields
@@ -97,6 +100,9 @@ const Register = () => {
         registerData.entrepriseNif = newEntreprise.nif;
         registerData.entrepriseAdresse = newEntreprise.adresse;
         registerData.entrepriseSituationFiscale = "";
+        if (newEntreprise.nomCommercial) registerData.entrepriseNomCommercial = newEntreprise.nomCommercial;
+        if (newEntreprise.activite) registerData.entrepriseActivite = newEntreprise.activite;
+        if (newEntreprise.autre) registerData.entrepriseAutre = newEntreprise.autre;
       }
 
       if (form.role === "AUTORITE_CONTRACTANTE") {
