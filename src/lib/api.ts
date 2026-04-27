@@ -145,7 +145,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
 // Auth
 export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; autoriteContractanteId?: number; }
+export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; entrepriseNomCommercial?: string; entrepriseActivite?: string; entrepriseAutre?: string; autoriteContractanteId?: number; }
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
 
 // Commission Relais (impersonation)
@@ -233,7 +233,7 @@ export const permissionApi = {
 };
 
 // Entreprises
-export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; situationFiscale?: string; }
+export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; situationFiscale?: string; nomCommercial?: string; activite?: string; autre?: string; }
 
 export const entrepriseApi = {
   getAll: () => apiFetch<EntrepriseDto[]>("/entreprises"),
