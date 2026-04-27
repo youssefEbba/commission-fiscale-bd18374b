@@ -5,7 +5,7 @@ import DocumentGED from "@/components/ged/DocumentGED";
 import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
 import {
   certificatCreditApi, CertificatCreditDto, CERTIFICAT_STATUT_LABELS, CertificatStatut,
-  utilisationCreditApi, UtilisationCreditDto, UTILISATION_STATUT_LABELS, UtilisationStatut,
+  utilisationCreditApi, UtilisationCreditDto, UTILISATION_STATUT_LABELS, utilisationStatutLabel, UtilisationStatut,
   documentRequirementApi, DocumentRequirementDto, DocumentDto, TvaDeductibleStockDto,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -495,7 +495,7 @@ const CertificatDetail = () => {
                       </TableCell>
                       <TableCell>
                         <Badge className={`text-xs ${STATUT_COLORS_UTIL[u.statut]}`}>
-                          {UTILISATION_STATUT_LABELS[u.statut]}
+                          {utilisationStatutLabel(u.statut, u.type)}
                         </Badge>
                       </TableCell>
                       <TableCell>

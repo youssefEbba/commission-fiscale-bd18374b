@@ -1274,6 +1274,12 @@ export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
   CLOTUREE: "Clôturée",
 };
 
+/** Libellé contextuel : pour une utilisation DOUANIER clôturée, on précise l'origine (transfert (d)→TVA intérieure). */
+export const utilisationStatutLabel = (statut: UtilisationStatut, type?: UtilisationType): string => {
+  if (statut === "CLOTUREE" && type === "DOUANIER") return "Clôturée (transfert)";
+  return UTILISATION_STATUT_LABELS[statut];
+};
+
 // Notifications
 export type NotificationType = "CORRECTION_STATUT_CHANGE" | "CORRECTION_DECISION" | "REFERENTIEL_STATUT_CHANGE" | "CONVENTION_STATUT_CHANGE" | "CERTIFICAT_STATUT_CHANGE" | "UTILISATION_STATUT_CHANGE";
 
