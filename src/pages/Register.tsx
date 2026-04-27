@@ -204,8 +204,16 @@ const Register = () => {
                     <Input value={newEntreprise.raisonSociale} onChange={(e) => updateEntreprise("raisonSociale", e.target.value)} placeholder="Nom de l'entreprise" required />
                   </div>
                   <div className="space-y-1">
+                    <Label className="text-xs">Nom commercial</Label>
+                    <Input value={newEntreprise.nomCommercial} onChange={(e) => updateEntreprise("nomCommercial", e.target.value)} placeholder="Nom commercial (optionnel)" />
+                  </div>
+                  <div className="space-y-1">
                     <Label className="text-xs">NIF *</Label>
                     <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder="Numéro d'identification fiscale" required />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Activité</Label>
+                    <Input value={newEntreprise.activite} onChange={(e) => updateEntreprise("activite", e.target.value)} placeholder="Secteur d'activité" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Adresse</Label>
@@ -221,6 +229,10 @@ const Register = () => {
                       <Label className="text-xs">Email entreprise</Label>
                       <Input type="email" value={newEntreprise.email} onChange={(e) => updateEntreprise("email", e.target.value)} placeholder="contact@..." />
                     </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Autre (informations complémentaires)</Label>
+                    <Input value={newEntreprise.autre} onChange={(e) => updateEntreprise("autre", e.target.value)} placeholder="Précisions (max 2000 car.)" maxLength={2000} />
                   </div>
                 </div>
               </div>
