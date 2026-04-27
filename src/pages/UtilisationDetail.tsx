@@ -38,6 +38,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   LIQUIDEE: "bg-green-100 text-green-800",
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
+  CLOTUREE: "bg-slate-200 text-slate-800",
 };
 
 const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";

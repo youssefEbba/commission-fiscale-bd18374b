@@ -1011,7 +1011,7 @@ export const certificatCreditApi = {
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE";
+export type UtilisationStatut = "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE" | "CLOTUREE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface TvaDeductibleStockDto {
@@ -1271,6 +1271,7 @@ export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
   DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", A_RECONTROLER: "À recontrôler",
   EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
+  CLOTUREE: "Clôturée",
 };
 
 // Notifications

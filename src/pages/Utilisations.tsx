@@ -43,6 +43,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   LIQUIDEE: "bg-green-100 text-green-800",
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
+  CLOTUREE: "bg-slate-200 text-slate-800",
 };
 
 // Type-aware transitions: DGD handles Douane, DGTCP handles TVA + Douane final steps
@@ -571,7 +572,7 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title="Voir détail">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["BROUILLON", "LIQUIDEE", "APUREE", "REJETEE"].includes(u.statut) && (
+                          {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["BROUILLON", "LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut) && (
                             <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                               Traiter
                             </Button>
