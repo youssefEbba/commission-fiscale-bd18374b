@@ -84,8 +84,11 @@ function getDocFileUrl(doc: DocumentDto): string {
 }
 
 const DemandesMiseEnPlace = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
+  const [annulTarget, setAnnulTarget] = useState<CertificatCreditDto | null>(null);
+  const [annulMotif, setAnnulMotif] = useState("");
+  const [annulLoading, setAnnulLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
