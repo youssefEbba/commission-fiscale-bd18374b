@@ -764,7 +764,10 @@ const MiseEnPlaceDetail = () => {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">{doc.nomFichier}</p>
-                        <p className="text-xs text-muted-foreground">{doc.type?.replace(/_/g, " ")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.type?.replace(/_/g, " ")}
+                          {(doc as any)._source && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{(doc as any)._source}</span>}
+                        </p>
                       </div>
                     </div>
                     <a href={getDocFileUrl(doc)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Télécharger</a>
