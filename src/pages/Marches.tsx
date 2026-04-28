@@ -421,7 +421,8 @@ const Marches = () => {
                   }))}
                 />
               </div>
-            )}
+              );
+            })()}
             <div className="space-y-2">
               <Label>Numéro d'attribution *</Label>
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
