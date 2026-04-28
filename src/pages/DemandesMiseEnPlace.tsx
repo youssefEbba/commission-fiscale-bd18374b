@@ -1298,6 +1298,55 @@ const DemandesMiseEnPlace = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Annulation d'une demande envoyée (PATCH statut=ANNULE&motif=...) */}
+      <Dialog open={!!annulTarget} onOpenChange={(o) => !o && setAnnulTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Annuler la demande</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Vous êtes sur le point d'annuler la demande
+              {annulTarget ? ` ${annulTarget.reference || `#${annulTarget.id}`}` : ""}.
+              Cette action est irréversible.
+            </p>
+            <div className="space-y-1">
+              <Label htmlFor="annul-motif">Motif d'annulation <span className="text-destructive">*</span></Label>
+              <Textarea
+                id="annul-motif"
+                value={annulMotif}
+                onChange={(e) => setAnnulMotif(e.target.value)}
+                placeholder="Expliquez le motif d'annulation..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAnnulTarget(null)} disabled={annulLoading}>Retour</Button>
+            <Button
+              variant="destructive"
+              disabled={annulLoading || !annulMotif.trim()}
+              onClick={async () => {
+                if (!annulTarget) return;
+                setAnnulLoading(true);
+                try {
+                  await certificatCreditApi.reject(annulTarget.id, annulMotif.trim());
+                  toast({ title: "Succès", description: "Demande annulée" });
+                  setAnnulTarget(null);
+                  setAnnulMotif("");
+                  fetchCertificats();
+                } catch (e: any) {
+                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                } finally { setAnnulLoading(false); }
+              }}
+            >
+              {annulLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer l'annulation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
