@@ -140,11 +140,23 @@ const MiseEnPlaceDetail = () => {
       const cert = await certificatCreditApi.getById(Number(id));
       setCertificat(cert);
 
-      const [docsRes, decisionsRes] = await Promise.all([
-        certificatCreditApi.getDocuments(cert.id),
+      const [certDocsRes, decisionsRes, demandeDocsRes, marcheDocsRes] = await Promise.all([
+        certificatCreditApi.getDocuments(cert.id).catch(() => [] as DocumentDto[]),
         certificatCreditApi.getDecisions(cert.id).catch(() => []),
+        cert.demandeCorrectionId
+          ? demandeCorrectionApi.getDocuments(cert.demandeCorrectionId).catch(() => [] as DocumentDto[])
+          : Promise.resolve([] as DocumentDto[]),
+        cert.marcheId
+          ? marcheApi.getDocuments(cert.marcheId).catch(() => [] as DocumentDto[])
+          : Promise.resolve([] as DocumentDto[]),
       ]);
-      setDocs(docsRes);
+      // Agrégation : documents du certificat + de la demande de correction + du marché
+      const tagged: DocumentDto[] = [
+        ...certDocsRes.map((d) => ({ ...d, _source: "Certificat" } as any)),
+        ...demandeDocsRes.map((d) => ({ ...d, _source: "Demande de correction" } as any)),
+        ...marcheDocsRes.map((d) => ({ ...d, _source: "Marché" } as any)),
+      ];
+      setDocs(tagged);
       setDecisions(decisionsRes);
 
       // Fetch related data
@@ -752,7 +764,10 @@ const MiseEnPlaceDetail = () => {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">{doc.nomFichier}</p>
-                        <p className="text-xs text-muted-foreground">{doc.type?.replace(/_/g, " ")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.type?.replace(/_/g, " ")}
+                          {(doc as any)._source && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{(doc as any)._source}</span>}
+                        </p>
                       </div>
                     </div>
                     <a href={getDocFileUrl(doc)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Télécharger</a>
