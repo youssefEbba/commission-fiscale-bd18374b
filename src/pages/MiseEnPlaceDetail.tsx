@@ -140,11 +140,23 @@ const MiseEnPlaceDetail = () => {
       const cert = await certificatCreditApi.getById(Number(id));
       setCertificat(cert);
 
-      const [docsRes, decisionsRes] = await Promise.all([
-        certificatCreditApi.getDocuments(cert.id),
+      const [certDocsRes, decisionsRes, demandeDocsRes, marcheDocsRes] = await Promise.all([
+        certificatCreditApi.getDocuments(cert.id).catch(() => [] as DocumentDto[]),
         certificatCreditApi.getDecisions(cert.id).catch(() => []),
+        cert.demandeCorrectionId
+          ? demandeCorrectionApi.getDocuments(cert.demandeCorrectionId).catch(() => [] as DocumentDto[])
+          : Promise.resolve([] as DocumentDto[]),
+        cert.marcheId
+          ? marcheApi.getDocuments(cert.marcheId).catch(() => [] as DocumentDto[])
+          : Promise.resolve([] as DocumentDto[]),
       ]);
-      setDocs(docsRes);
+      // Agrégation : documents du certificat + de la demande de correction + du marché
+      const tagged: DocumentDto[] = [
+        ...certDocsRes.map((d) => ({ ...d, _source: "Certificat" } as any)),
+        ...demandeDocsRes.map((d) => ({ ...d, _source: "Demande de correction" } as any)),
+        ...marcheDocsRes.map((d) => ({ ...d, _source: "Marché" } as any)),
+      ];
+      setDocs(tagged);
       setDecisions(decisionsRes);
 
       // Fetch related data
