@@ -207,24 +207,22 @@ const DemandesMiseEnPlace = () => {
   const uploadDocsFor = async (certId: number) => {
     if (Object.keys(docFiles).length === 0) return;
     setUploadingDocs(true);
+    const failures: string[] = [];
     for (const [type, file] of Object.entries(docFiles)) {
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-        const token = localStorage.getItem("auth_token");
-        await fetch(`${API_BASE}/certificats-credit/${certId}/documents?type=${encodeURIComponent(type)}`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "true",
-          },
-          body: formData,
-        });
-      } catch {
-        toast({ title: "Avertissement", description: `Échec upload: ${type}`, variant: "destructive" });
+        await certificatCreditApi.uploadDocument(certId, type, file);
+      } catch (e) {
+        failures.push(type);
       }
     }
     setUploadingDocs(false);
+    if (failures.length > 0) {
+      toast({
+        title: "Avertissement",
+        description: `Échec upload: ${failures.join(", ")}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCreate = async (asBrouillon: boolean) => {
