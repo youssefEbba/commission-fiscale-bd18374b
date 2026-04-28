@@ -401,15 +401,20 @@ const Marches = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {!editing && (
+            {!editing && (() => {
+              const effectiveAcId = user?.actingAutoriteContractanteId ?? user?.autoriteContractanteId;
+              const visibleConventions = effectiveAcId
+                ? conventions.filter(c => c.autoriteContractanteId === effectiveAcId || c.creeParAutoriteContractanteId === effectiveAcId)
+                : conventions;
+              return (
               <div className="space-y-2">
-                <Label>Convention <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
+                <Label>Convention <span className="text-muted-foreground text-xs">(périmètre de votre AC)</span></Label>
                 <SearchableSelect
                   value={form.conventionId ? String(form.conventionId) : ""}
                   onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}
-                  placeholder="Aucune convention rattachée"
+                  placeholder={visibleConventions.length === 0 ? "Aucune convention dans votre périmètre" : "Aucune convention rattachée"}
                   searchPlaceholder="Rechercher une convention..."
-                  options={conventions.map(c => ({
+                  options={visibleConventions.map(c => ({
                     value: String(c.id),
                     label: `${c.reference || `#${c.id}`} — ${c.intitule || ""}`,
                     keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
