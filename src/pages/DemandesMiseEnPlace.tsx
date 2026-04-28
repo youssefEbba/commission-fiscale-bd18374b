@@ -565,6 +565,18 @@ const DemandesMiseEnPlace = () => {
                               <FileText className="h-4 w-4 mr-1" /> Modifier
                             </Button>
                           )}
+                          {/* Annulation d'une demande envoyée (avant ouverture/clôture) */}
+                          {hasPermission("mise_en_place.annuler") && !["BROUILLON", "OUVERT", "CLOTURE", "ANNULE"].includes(c.statut) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Annuler la demande"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => { setAnnulTarget(c); setAnnulMotif(""); }}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" /> Annuler
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
