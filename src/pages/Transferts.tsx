@@ -421,11 +421,11 @@ const Transferts = () => {
       </div>
 
       {/* Detail dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setSelectedDecisions([]); } }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Transfert #{selected?.id} — Douane → Intérieur</DialogTitle></DialogHeader>
           {selected && (
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
                 <div><span className="text-muted-foreground">Montant (Cordon → TVA)</span><p className="font-medium">{f(selected.montant)} MRU</p></div>
@@ -435,21 +435,178 @@ const Transferts = () => {
               </div>
               {selected.statut === "EN_COURS" && (
                 <div className="p-3 rounded-md bg-muted/50 border border-border text-xs text-muted-foreground">
-                  📄 Dossier en cours de constitution — au moins une pièce a été déposée. Déposez les 3 documents obligatoires pour permettre la validation.
+                  Dossier en cours de constitution — au moins une pièce a été déposée. Déposez les 3 documents obligatoires pour permettre la validation.
+                </div>
+              )}
+              {selected.statut === "INCOMPLETE" && (
+                <div className="p-3 rounded-md bg-amber-50 border border-amber-300 text-xs text-amber-900">
+                  Rejet temporaire ouvert — l'entreprise doit répondre via message et/ou déposer les pièces demandées (un message est obligatoire à l'upload sous rejet temporaire).
+                </div>
+              )}
+              {selected.statut === "A_RECONTROLER" && (
+                <div className="p-3 rounded-md bg-cyan-50 border border-cyan-300 text-xs text-cyan-900">
+                  Tous les rejets temporaires ont été résolus — le dossier peut être validé ou recevoir une nouvelle décision.
                 </div>
               )}
               {selected.statut === "TRANSFERE" && (
                 <div className="p-3 rounded-md bg-muted/50 border border-border text-xs text-muted-foreground">
-                  ✅ Transfert exécuté : {f(selected.montant)} MRU débité du solde Cordon et crédité au solde TVA intérieure du même certificat.
+                  Transfert exécuté : {f(selected.montant)} MRU débité du solde Cordon et crédité au solde TVA intérieure du même certificat.
                 </div>
               )}
               {selected.statut === "REJETE" && (
                 <div className="p-3 rounded-md bg-destructive/10 border border-destructive/30 text-xs text-destructive">
-                  ❌ Demande rejetée par la DGTCP. Vous pouvez renvoyer une nouvelle demande avec un montant corrigé — les anciennes pièces seront désactivées.
+                  Demande rejetée définitivement. Vous pouvez renvoyer une nouvelle demande — les anciennes pièces seront désactivées.
                 </div>
               )}
+              {selected.statut === "ANNULEE" && (
+                <div className="p-3 rounded-md bg-slate-100 border border-slate-300 text-xs text-slate-700">
+                  Demande annulée par l'entreprise. Une nouvelle demande peut être créée sur le même certificat.
+                </div>
+              )}
+
+              {/* Décisions */}
+              <div className="border-t border-border pt-3">
+                <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  Décisions ({selectedDecisions.length})
+                </h3>
+                {decisionsLoading ? (
+                  <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+                ) : selectedDecisions.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Aucune décision enregistrée.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedDecisions.map((d) => (
+                      <div key={d.id} className="border border-border rounded-md p-3 bg-muted/20">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="text-xs">{d.role}</Badge>
+                              <Badge className="text-xs bg-amber-100 text-amber-800">Rejet temporaire</Badge>
+                              {d.rejetTempStatus && (
+                                <Badge className={`text-xs ${d.rejetTempStatus === "OUVERT" ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"}`}>
+                                  {d.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                                </Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground">{d.dateDecision ? new Date(d.dateDecision).toLocaleDateString("fr-FR") : ""}</span>
+                            </div>
+                            {d.motifRejet && <p className="text-xs mt-2"><span className="text-muted-foreground">Motif :</span> {d.motifRejet}</p>}
+                            {d.documentsDemandes && d.documentsDemandes.length > 0 && (
+                              <p className="text-xs mt-1"><span className="text-muted-foreground">Pièces demandées :</span> {d.documentsDemandes.join(", ")}</p>
+                            )}
+                            {d.rejetTempResponses && d.rejetTempResponses.length > 0 && (
+                              <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
+                                {d.rejetTempResponses.map((r) => (
+                                  <div key={r.id} className="text-xs">
+                                    <span className="font-medium">{r.auteurNom || r.utilisateurNom || "—"} :</span> {r.message}
+                                    {r.documentType && <span className="text-muted-foreground"> ({r.documentType})</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-2 justify-end">
+                          {canRespondRejet && d.rejetTempStatus === "OUVERT" && (
+                            <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setResponseMsg(""); }}>
+                              Répondre
+                            </Button>
+                          )}
+                          {d.rejetTempStatus === "OUVERT" && (canValider || hasPermission("transfert.president.validate")) && (
+                            <Button size="sm" onClick={() => handleResolve(d.id)}>
+                              Marquer résolu
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel confirm dialog */}
+      <Dialog open={!!cancelTarget} onOpenChange={(o) => { if (!o) setCancelTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Annuler la demande de transfert</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Confirmez l'annulation du transfert <strong>#{cancelTarget?.id}</strong> sur le certificat{" "}
+            <strong>{cancelTarget?.certificatNumero || `#${cancelTarget?.certificatCreditId}`}</strong>.
+            Vous pourrez créer une nouvelle demande sur le même certificat après l'annulation.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>Retour</Button>
+            <Button variant="destructive" onClick={handleAnnuler} disabled={actionLoading === cancelTarget?.id}>
+              {actionLoading === cancelTarget?.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer l'annulation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejet temporaire dialog (DGTCP / Président) */}
+      <Dialog open={!!rejetTarget} onOpenChange={(o) => { if (!o) setRejetTarget(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>Rejet temporaire — Transfert #{rejetTarget?.id}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Motif du rejet temporaire <span className="text-destructive">*</span></Label>
+              <Textarea value={rejetMotif} onChange={(e) => setRejetMotif(e.target.value)} placeholder="Précisez ce qu'il manque ou ce qui doit être corrigé" rows={3} />
+            </div>
+            <div>
+              <Label>Pièces à fournir <span className="text-destructive">*</span></Label>
+              <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
+                {TRANSFERT_DOCUMENT_TYPES.map((d) => (
+                  <div key={d.value} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`rt-${d.value}`}
+                      checked={rejetDocs.includes(d.value)}
+                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d.value] : prev.filter(x => x !== d.value))}
+                    />
+                    <label htmlFor={`rt-${d.value}`} className="text-sm cursor-pointer">{d.label}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejetTarget(null)}>Annuler</Button>
+            <Button onClick={handleRejetTemp} disabled={rejetLoading || !rejetMotif.trim() || rejetDocs.length === 0}>
+              {rejetLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Envoyer le rejet temporaire
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Réponse entreprise au rejet temp */}
+      <Dialog open={!!respondDecision} onOpenChange={(o) => { if (!o) { setRespondDecision(null); setResponseMsg(""); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>Répondre au rejet temporaire</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            {respondDecision?.motifRejet && (
+              <div className="p-3 rounded-md bg-muted/50 border border-border text-xs">
+                <span className="text-muted-foreground">Motif :</span> {respondDecision.motifRejet}
+              </div>
+            )}
+            <div>
+              <Label>Message <span className="text-destructive">*</span></Label>
+              <Textarea value={responseMsg} onChange={(e) => setResponseMsg(e.target.value)} rows={4} placeholder="Votre réponse à l'administration" />
+              <p className="text-xs text-muted-foreground mt-1">
+                Pour joindre des pièces, utilisez l'icône Documents sur la ligne concernée — un message sera demandé à l'upload sous rejet temporaire ouvert.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRespondDecision(null)}>Annuler</Button>
+            <Button onClick={handleRespond} disabled={responding || !responseMsg.trim()}>
+              {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Envoyer la réponse
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
