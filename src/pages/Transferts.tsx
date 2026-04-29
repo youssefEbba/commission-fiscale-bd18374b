@@ -678,7 +678,7 @@ const Transferts = () => {
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
             <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {resubmitTarget ? "Renvoyer la demande" : "Soumettre la renonciation"}
+              {resubmitTarget ? "Créer & déposer les pièces" : "Créer & déposer les pièces"}
             </Button>
           </DialogFooter>
         </DialogContent>
