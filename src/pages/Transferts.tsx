@@ -158,19 +158,19 @@ const Transferts = () => {
     }
     setCreating(true);
     try {
-      await transfertCreditApi.create({
+      const created = await transfertCreditApi.create({
         certificatCreditId: certId,
         montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
       toast({
-        title: "Succès",
-        description: resubmitTarget
-          ? "Demande renvoyée — les anciennes pièces sont désactivées, veuillez re-déposer les 3 documents"
-          : "Demande de renonciation créée",
+        title: "Demande créée",
+        description: "Veuillez à présent déposer les pièces justificatives obligatoires pour finaliser l'envoi.",
       });
       setShowCreate(false);
-      fetchData();
+      await fetchData();
+      // Ouvrir automatiquement le GED pour uploader les pièces requises avant que le dossier ne progresse
+      openDocs(created);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setCreating(false); }
@@ -464,6 +464,42 @@ const Transferts = () => {
                 </div>
               )}
 
+              {/* Actions DGTCP / Président depuis le détail */}
+              {selected && !TERMINAL_STATUTS.includes(selected.statut) && (canValider || canRejetTemp || canRejeter) && (
+                <div className="border-t border-border pt-3">
+                  <h3 className="font-semibold text-sm mb-2">Décisions à prendre</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {VALIDATE_STATUTS.includes(selected.statut) && canValider && (
+                      <Button
+                        size="sm"
+                        disabled={actionLoading === selected.id || hasOpenRejetTemp(selectedDecisions)}
+                        onClick={() => handleValider(selected.id)}
+                        title={hasOpenRejetTemp(selectedDecisions) ? "Un rejet temporaire est encore ouvert — résolvez-le d'abord" : ""}
+                      >
+                        {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                        Valider le transfert
+                      </Button>
+                    )}
+                    {selected.statut !== "INCOMPLETE" && canRejetTemp && (
+                      <Button variant="outline" size="sm" onClick={() => { setRejetTarget(selected); setRejetMotif(""); setRejetDocs([]); }}>
+                        <AlertTriangle className="h-4 w-4 mr-1" /> Émettre un rejet temporaire
+                      </Button>
+                    )}
+                    {canRejeter && (
+                      <Button variant="destructive" size="sm" disabled={actionLoading === selected.id} onClick={() => handleRejeter(selected.id)}>
+                        {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+                        Rejeter définitivement
+                      </Button>
+                    )}
+                  </div>
+                  {hasOpenRejetTemp(selectedDecisions) && (
+                    <p className="text-xs text-amber-700 mt-2">
+                      Au moins un rejet temporaire est encore ouvert : la validation est bloquée tant qu'il n'est pas marqué comme résolu.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Décisions */}
               <div className="border-t border-border pt-3">
                 <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
@@ -620,6 +656,9 @@ const Transferts = () => {
                 ? `Certificat ${resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}`} — les anciennes pièces seront désactivées, vous devrez re-déposer les 3 documents.`
                 : "Transférer un montant du solde Cordon (douane) vers le solde TVA intérieure du même certificat."}
             </p>
+            <div className="mt-2 p-2 rounded-md bg-amber-50 border border-amber-300 text-xs text-amber-900">
+              Étape 1/2 — Création de la demande. Après validation, la fenêtre des pièces justificatives s'ouvrira automatiquement : vous devrez y déposer les 3 documents requis pour que le dossier soit instruit.
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             {!resubmitTarget && (
@@ -675,7 +714,7 @@ const Transferts = () => {
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
             <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {resubmitTarget ? "Renvoyer la demande" : "Soumettre la renonciation"}
+              {resubmitTarget ? "Créer & déposer les pièces" : "Créer & déposer les pièces"}
             </Button>
           </DialogFooter>
         </DialogContent>
