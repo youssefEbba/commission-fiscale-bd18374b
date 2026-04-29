@@ -377,30 +377,37 @@ const Transferts = () => {
                       <TableCell className="text-xs text-muted-foreground">{t.dateDemande ? new Date(t.dateDemande).toLocaleDateString("fr-FR") : "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => setSelected(t)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => openSelected(t)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(t)}><FileText className="h-4 w-4" /></Button>
-                          {/* Re-submit after REJETE */}
-                          {canCreate && t.statut === "REJETE" && (
+                          {/* Re-submit after REJETE / ANNULEE */}
+                          {canCreate && (t.statut === "REJETE" || t.statut === "ANNULEE") && (
                             <Button variant="outline" size="sm" onClick={() => openResubmit(t)}>
                               <RotateCcw className="h-4 w-4 mr-1" /> Renvoyer
                             </Button>
                           )}
-                          {/* DGTCP / Président validate/reject */}
-                          {(canValider || canRejeter) && (t.statut === "DEMANDE" || t.statut === "EN_COURS") && (
-                            <>
-                              {canValider && (
-                                <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
-                                  {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                                  Valider
-                                </Button>
-                              )}
-                              {canRejeter && (
-                                <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
-                                  {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
-                                  Rejeter
-                                </Button>
-                              )}
-                            </>
+                          {/* Annulation entreprise (tant que non terminal) */}
+                          {canAnnuler && !TERMINAL_STATUTS.includes(t.statut) && (
+                            <Button variant="outline" size="sm" disabled={actionLoading === t.id} onClick={() => setCancelTarget(t)}>
+                              <Ban className="h-4 w-4 mr-1" /> Annuler
+                            </Button>
+                          )}
+                          {/* DGTCP / Président : valider / rejet temp / rejet définitif */}
+                          {VALIDATE_STATUTS.includes(t.statut) && canValider && (
+                            <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
+                              {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                              Valider
+                            </Button>
+                          )}
+                          {!TERMINAL_STATUTS.includes(t.statut) && t.statut !== "INCOMPLETE" && canRejetTemp && (
+                            <Button variant="outline" size="sm" onClick={() => { setRejetTarget(t); setRejetMotif(""); setRejetDocs([]); }}>
+                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temp.
+                            </Button>
+                          )}
+                          {!TERMINAL_STATUTS.includes(t.statut) && canRejeter && (
+                            <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
+                              {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                              Rejeter
+                            </Button>
                           )}
                         </div>
                       </TableCell>
