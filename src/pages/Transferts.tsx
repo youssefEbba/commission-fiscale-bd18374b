@@ -292,11 +292,21 @@ const Transferts = () => {
   const canCreate = role === "ENTREPRISE";
   const canValider = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.validate");
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
+  /** Décision finale (REJET_TEMP) : DGTCP ou Président. */
+  const canRejetTemp = hasPermission("transfert.dgtcp.update")
+    || hasPermission("transfert.president.validate")
+    || hasPermission("transfert.president.reject");
+  const canRespondRejet = role === "ENTREPRISE" && hasPermission("transfert.entreprise.rejet.repondre");
+  const canAnnuler = role === "ENTREPRISE" && hasPermission("transfert.annuler");
   const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
 
-  /** Upload allowed only in DEMANDE or EN_COURS */
+  /** Upload allowed in non-terminal states. */
   const canUploadDocs = (t: TransfertCreditDto) =>
-    role === "ENTREPRISE" && (t.statut === "DEMANDE" || t.statut === "EN_COURS");
+    role === "ENTREPRISE" && UPLOAD_STATUTS.includes(t.statut);
+
+  /** Au moins un rejet temp encore OUVERT pour ce transfert (depuis la liste de décisions chargée). */
+  const hasOpenRejetTemp = (decisions: DecisionCorrectionDto[]) =>
+    decisions.some(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
 
   return (
     <DashboardLayout>
