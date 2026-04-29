@@ -464,6 +464,42 @@ const Transferts = () => {
                 </div>
               )}
 
+              {/* Actions DGTCP / Président depuis le détail */}
+              {selected && !TERMINAL_STATUTS.includes(selected.statut) && (canValider || canRejetTemp || canRejeter) && (
+                <div className="border-t border-border pt-3">
+                  <h3 className="font-semibold text-sm mb-2">Décisions à prendre</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    {VALIDATE_STATUTS.includes(selected.statut) && canValider && (
+                      <Button
+                        size="sm"
+                        disabled={actionLoading === selected.id || hasOpenRejetTemp(selectedDecisions)}
+                        onClick={() => handleValider(selected.id)}
+                        title={hasOpenRejetTemp(selectedDecisions) ? "Un rejet temporaire est encore ouvert — résolvez-le d'abord" : ""}
+                      >
+                        {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                        Valider le transfert
+                      </Button>
+                    )}
+                    {selected.statut !== "INCOMPLETE" && canRejetTemp && (
+                      <Button variant="outline" size="sm" onClick={() => { setRejetTarget(selected); setRejetMotif(""); setRejetDocs([]); }}>
+                        <AlertTriangle className="h-4 w-4 mr-1" /> Émettre un rejet temporaire
+                      </Button>
+                    )}
+                    {canRejeter && (
+                      <Button variant="destructive" size="sm" disabled={actionLoading === selected.id} onClick={() => handleRejeter(selected.id)}>
+                        {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
+                        Rejeter définitivement
+                      </Button>
+                    )}
+                  </div>
+                  {hasOpenRejetTemp(selectedDecisions) && (
+                    <p className="text-xs text-amber-700 mt-2">
+                      Au moins un rejet temporaire est encore ouvert : la validation est bloquée tant qu'il n'est pas marqué comme résolu.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Décisions */}
               <div className="border-t border-border pt-3">
                 <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
