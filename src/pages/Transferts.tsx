@@ -6,31 +6,46 @@ import {
   CreateTransfertCreditRequest, TRANSFERT_STATUT_LABELS,
   TRANSFERT_DOCUMENT_TYPES, TypeDocumentTransfert, DocumentTransfertCreditDto,
   certificatCreditApi, CertificatCreditDto,
+  DecisionCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, FileText, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, FileText, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
   EN_COURS: "bg-yellow-100 text-yellow-800",
   VALIDE: "bg-emerald-100 text-emerald-800",
+  INCOMPLETE: "bg-amber-100 text-amber-800",
+  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
   TRANSFERE: "bg-green-100 text-green-800",
   REJETE: "bg-red-100 text-red-800",
+  ANNULEE: "bg-slate-200 text-slate-700",
 };
 
 /** Visible statuses in filter dropdown (VALIDE is not used by backend) */
-const VISIBLE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "TRANSFERE", "REJETE"];
+const VISIBLE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "INCOMPLETE", "A_RECONTROLER", "TRANSFERE", "REJETE", "ANNULEE"];
+
+/** Statuts terminaux : aucune action métier possible. */
+const TERMINAL_STATUTS: StatutTransfert[] = ["TRANSFERE", "REJETE", "ANNULEE"];
+
+/** Statuts qui acceptent encore le dépôt de pièces. */
+const UPLOAD_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "INCOMPLETE", "A_RECONTROLER"];
+
+/** Statuts qui autorisent la validation finale (DGTCP / Président). */
+const VALIDATE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "A_RECONTROLER"];
 
 const Transferts = () => {
   const { user, hasPermission } = useAuth();
