@@ -1375,7 +1375,7 @@ export const documentRequirementApi = {
 };
 
 // Transferts de crédit (P9)
-export type StatutTransfert = "DEMANDE" | "EN_COURS" | "VALIDE" | "TRANSFERE" | "REJETE";
+export type StatutTransfert = "DEMANDE" | "EN_COURS" | "VALIDE" | "INCOMPLETE" | "A_RECONTROLER" | "TRANSFERE" | "REJETE" | "ANNULEE";
 
 export interface TransfertCreditDto {
   id: number;
@@ -1418,8 +1418,11 @@ export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
   DEMANDE: "Demandé",
   EN_COURS: "En cours (pièces déposées)",
   VALIDE: "Ancien / réservé",
+  INCOMPLETE: "Incomplète (rejet temp.)",
+  A_RECONTROLER: "À recontrôler",
   TRANSFERE: "Transféré",
   REJETE: "Rejeté",
+  ANNULEE: "Annulée",
 };
 
 export const transfertCreditApi = {
@@ -1433,16 +1436,57 @@ export const transfertCreditApi = {
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/valider`, { method: "POST" }),
   rejeter: (id: number) =>
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/rejeter`, { method: "POST" }),
+  /** Annulation par l'entreprise titulaire (avant exécution). */
+  annuler: (id: number) =>
+    apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/annuler`, { method: "POST" }),
   getDocuments: (id: number) =>
     apiFetch<DocumentTransfertCreditDto[]>(`/transferts-credit/${id}/documents`),
-  uploadDocument: (id: number, type: TypeDocumentTransfert, file: File) => {
+  /**
+   * Upload d'une pièce. `message` est obligatoire si la pièce est exigée
+   * par un rejet temporaire OUVERT (traçabilité côté décisions).
+   */
+  uploadDocument: (id: number, type: TypeDocumentTransfert, file: File, message?: string) => {
     const formData = new FormData();
     formData.append("file", file);
+    if (message) formData.append("message", message);
     return apiFetch<DocumentTransfertCreditDto>(
       `/transferts-credit/${id}/documents?type=${encodeURIComponent(type)}`,
       { method: "POST", rawBody: formData }
     );
   },
+  // Décisions (REJET_TEMP uniquement pour ce module — la validation reste POST .../valider)
+  getDecisions: (id: number) =>
+    apiFetch<DecisionCorrectionDto[]>(`/transferts-credit/${id}/decisions`),
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+    apiFetch<DecisionCorrectionDto>(`/transferts-credit/${id}/decisions`, {
+      method: "POST",
+      body: {
+        decision,
+        ...(motifRejet ? { motifRejet } : {}),
+        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
+      },
+    }),
+  postRejetTempResponse: (decisionId: number, message: string, file?: File, typeDocument?: string) => {
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("message", message);
+      if (typeDocument) formData.append("typeDocument", typeDocument);
+      return apiFetch<RejetTempResponseDto>(`/transferts-credit/decisions/${decisionId}/rejet-temp/reponses`, {
+        method: "POST",
+        rawBody: formData,
+      });
+    }
+    return apiFetch<RejetTempResponseDto>(`/transferts-credit/decisions/${decisionId}/rejet-temp/reponses`, {
+      method: "POST",
+      body: { message },
+    });
+  },
+  /** Résoudre un rejet temporaire — même rôle que celui qui l'a posé (DGTCP ou Président). */
+  resolveRejetTemp: (decisionId: number) =>
+    apiFetch<DecisionCorrectionDto>(`/transferts-credit/decisions/${decisionId}/resolve`, {
+      method: "PUT",
+    }),
 };
 
 // Sous-traitance (P8)
