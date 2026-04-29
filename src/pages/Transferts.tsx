@@ -620,6 +620,9 @@ const Transferts = () => {
                 ? `Certificat ${resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}`} — les anciennes pièces seront désactivées, vous devrez re-déposer les 3 documents.`
                 : "Transférer un montant du solde Cordon (douane) vers le solde TVA intérieure du même certificat."}
             </p>
+            <div className="mt-2 p-2 rounded-md bg-amber-50 border border-amber-300 text-xs text-amber-900">
+              Étape 1/2 — Création de la demande. Après validation, la fenêtre des pièces justificatives s'ouvrira automatiquement : vous devrez y déposer les 3 documents requis pour que le dossier soit instruit.
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             {!resubmitTarget && (
