@@ -118,9 +118,9 @@ const Transferts = () => {
       const certs = role === "ENTREPRISE" && user?.entrepriseId
         ? await certificatCreditApi.getByEntreprise(user.entrepriseId)
         : await certificatCreditApi.getAll();
-      // Filter out certs that already have an active (non-REJETE) transfert
+      // Exclure les certificats avec une demande encore en cours (non-terminale).
       const activeCertIds = new Set(
-        data.filter(t => t.statut !== "REJETE").map(t => t.certificatCreditId)
+        data.filter(t => !TERMINAL_STATUTS.includes(t.statut)).map(t => t.certificatCreditId)
       );
       setCertificats(certs.filter(c => c.statut === "OUVERT" && !activeCertIds.has(c.id)));
     } catch { /* ignore */ }
