@@ -198,6 +198,73 @@ const Transferts = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleAnnuler = async () => {
+    if (!cancelTarget) return;
+    setActionLoading(cancelTarget.id);
+    try {
+      await transfertCreditApi.annuler(cancelTarget.id);
+      toast({ title: "Succès", description: "Demande annulée" });
+      setCancelTarget(null);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setActionLoading(null); }
+  };
+
+  const handleRejetTemp = async () => {
+    if (!rejetTarget || !rejetMotif.trim() || rejetDocs.length === 0) return;
+    setRejetLoading(true);
+    try {
+      await transfertCreditApi.postDecision(rejetTarget.id, "REJET_TEMP", rejetMotif.trim(), rejetDocs);
+      toast({ title: "Succès", description: "Rejet temporaire envoyé — la demande passe en INCOMPLETE" });
+      setRejetTarget(null);
+      setRejetMotif("");
+      setRejetDocs([]);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRejetLoading(false); }
+  };
+
+  const handleRespond = async () => {
+    if (!respondDecision || !responseMsg.trim()) return;
+    setResponding(true);
+    try {
+      await transfertCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim());
+      toast({ title: "Succès", description: "Réponse envoyée" });
+      setRespondDecision(null);
+      setResponseMsg("");
+      if (selected) loadDecisions(selected.id);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setResponding(false); }
+  };
+
+  const handleResolve = async (decisionId: number) => {
+    try {
+      await transfertCreditApi.resolveRejetTemp(decisionId);
+      toast({ title: "Succès", description: "Rejet temporaire résolu" });
+      if (selected) loadDecisions(selected.id);
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const loadDecisions = async (id: number) => {
+    setDecisionsLoading(true);
+    try { setSelectedDecisions(await transfertCreditApi.getDecisions(id)); }
+    catch { setSelectedDecisions([]); }
+    finally { setDecisionsLoading(false); }
+  };
+
+  const openSelected = (t: TransfertCreditDto) => {
+    setSelected(t);
+    setSelectedDecisions([]);
+    loadDecisions(t.id);
+  };
+
   const openDocs = async (t: TransfertCreditDto) => {
     setDocDialog(t);
     setDocsLoading(true);
