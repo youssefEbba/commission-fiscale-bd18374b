@@ -66,6 +66,22 @@ const Transferts = () => {
 
   // Detail dialog
   const [selected, setSelected] = useState<TransfertCreditDto | null>(null);
+  const [selectedDecisions, setSelectedDecisions] = useState<DecisionCorrectionDto[]>([]);
+  const [decisionsLoading, setDecisionsLoading] = useState(false);
+
+  // Cancel confirm
+  const [cancelTarget, setCancelTarget] = useState<TransfertCreditDto | null>(null);
+
+  // Rejet temp dialog (DGTCP / Président)
+  const [rejetTarget, setRejetTarget] = useState<TransfertCreditDto | null>(null);
+  const [rejetMotif, setRejetMotif] = useState("");
+  const [rejetDocs, setRejetDocs] = useState<string[]>([]);
+  const [rejetLoading, setRejetLoading] = useState(false);
+
+  // Réponse entreprise à un rejet temporaire
+  const [respondDecision, setRespondDecision] = useState<DecisionCorrectionDto | null>(null);
+  const [responseMsg, setResponseMsg] = useState("");
+  const [responding, setResponding] = useState(false);
 
   // Document dialog
   const [docDialog, setDocDialog] = useState<TransfertCreditDto | null>(null);
