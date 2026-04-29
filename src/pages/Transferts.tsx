@@ -158,19 +158,19 @@ const Transferts = () => {
     }
     setCreating(true);
     try {
-      await transfertCreditApi.create({
+      const created = await transfertCreditApi.create({
         certificatCreditId: certId,
         montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
       toast({
-        title: "Succès",
-        description: resubmitTarget
-          ? "Demande renvoyée — les anciennes pièces sont désactivées, veuillez re-déposer les 3 documents"
-          : "Demande de renonciation créée",
+        title: "Demande créée",
+        description: "Veuillez à présent déposer les pièces justificatives obligatoires pour finaliser l'envoi.",
       });
       setShowCreate(false);
-      fetchData();
+      await fetchData();
+      // Ouvrir automatiquement le GED pour uploader les pièces requises avant que le dossier ne progresse
+      openDocs(created);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setCreating(false); }
