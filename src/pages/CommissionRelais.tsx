@@ -216,6 +216,32 @@ const CommissionRelais = () => {
                   </TableBody>
                 </Table>
               </div>
+
+              {totalElements > 0 && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div>
+                    {totalElements} résultat{totalElements > 1 ? "s" : ""} — Page {page + 1} / {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 0 || loading}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages - 1 || loading}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    >
+                      Suivant <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
