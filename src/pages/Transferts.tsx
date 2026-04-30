@@ -163,14 +163,9 @@ const Transferts = () => {
         montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
-      toast({
-        title: "Demande créée",
-        description: "Veuillez à présent déposer les pièces justificatives obligatoires pour finaliser l'envoi.",
-      });
+      toast({ title: "Succès", description: "Demande de transfert créée" });
       setShowCreate(false);
       await fetchData();
-      // Ouvrir automatiquement le GED pour uploader les pièces requises avant que le dossier ne progresse
-      openDocs(created);
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setCreating(false); }
@@ -656,9 +651,6 @@ const Transferts = () => {
                 ? `Certificat ${resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}`} — les anciennes pièces seront désactivées, vous devrez re-déposer les 3 documents.`
                 : "Transférer un montant du solde Cordon (douane) vers le solde TVA intérieure du même certificat."}
             </p>
-            <div className="mt-2 p-2 rounded-md bg-amber-50 border border-amber-300 text-xs text-amber-900">
-              Étape 1/2 — Création de la demande. Après validation, la fenêtre des pièces justificatives s'ouvrira automatiquement : vous devrez y déposer les 3 documents requis pour que le dossier soit instruit.
-            </div>
           </DialogHeader>
           <div className="space-y-4">
             {!resubmitTarget && (
@@ -714,7 +706,7 @@ const Transferts = () => {
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
             <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {resubmitTarget ? "Créer & déposer les pièces" : "Créer & déposer les pièces"}
+              {resubmitTarget ? "Renvoyer la demande" : "Créer la demande"}
             </Button>
           </DialogFooter>
         </DialogContent>
