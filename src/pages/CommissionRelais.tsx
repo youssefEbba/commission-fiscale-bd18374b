@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck } from "lucide-react";
+import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,15 @@ import { toast } from "sonner";
 
 type Mode = "ENTREPRISE" | "AUTORITE_CONTRACTANTE";
 
-function unwrap<T>(payload: PageResponse<T> | T[]): T[] {
-  if (Array.isArray(payload)) return payload;
-  return payload?.content ?? [];
+const PAGE_SIZE = 10;
+
+function unwrap<T>(payload: PageResponse<T> | T[]): { items: T[]; totalPages: number; totalElements: number } {
+  if (Array.isArray(payload)) return { items: payload, totalPages: 1, totalElements: payload.length };
+  return {
+    items: payload?.content ?? [],
+    totalPages: payload?.totalPages ?? 1,
+    totalElements: payload?.totalElements ?? (payload?.content?.length ?? 0),
+  };
 }
 
 const CommissionRelais = () => {
@@ -29,28 +35,38 @@ const CommissionRelais = () => {
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
 
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
+
+  // Reset page when mode or search changes
+  useEffect(() => { setPage(0); }, [mode, debounced]);
 
   useEffect(() => {
     if (!mode) return;
     let cancel = false;
     setLoading(true);
     const req = mode === "ENTREPRISE"
-      ? commissionRelaisApi.listEntreprises(0, 50, debounced)
-      : commissionRelaisApi.listAutorites(0, 50, debounced);
+      ? commissionRelaisApi.listEntreprises(page, PAGE_SIZE, debounced)
+      : commissionRelaisApi.listAutorites(page, PAGE_SIZE, debounced);
     req
       .then((res) => {
         if (cancel) return;
-        if (mode === "ENTREPRISE") setEntreprises(unwrap(res as any));
-        else setAutorites(unwrap(res as any));
+        const u = unwrap(res as any);
+        if (mode === "ENTREPRISE") setEntreprises(u.items as RelaisEntrepriseDto[]);
+        else setAutorites(u.items as RelaisAutoriteDto[]);
+        setTotalPages(Math.max(1, u.totalPages));
+        setTotalElements(u.totalElements);
       })
       .catch((err) => toast.error(formatApiErrorMessage(err, "Échec du chargement")))
       .finally(() => { if (!cancel) setLoading(false); });
     return () => { cancel = true; };
-  }, [mode, debounced]);
+  }, [mode, debounced, page]);
 
   const handleImpersonate = async (target: { id: number; label: string }) => {
     setSubmittingId(target.id);
@@ -200,6 +216,32 @@ const CommissionRelais = () => {
                   </TableBody>
                 </Table>
               </div>
+
+              {totalElements > 0 && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div>
+                    {totalElements} résultat{totalElements > 1 ? "s" : ""} — Page {page + 1} / {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 0 || loading}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages - 1 || loading}
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    >
+                      Suivant <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
