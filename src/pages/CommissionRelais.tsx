@@ -35,28 +35,38 @@ const CommissionRelais = () => {
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
 
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
+
+  // Reset page when mode or search changes
+  useEffect(() => { setPage(0); }, [mode, debounced]);
 
   useEffect(() => {
     if (!mode) return;
     let cancel = false;
     setLoading(true);
     const req = mode === "ENTREPRISE"
-      ? commissionRelaisApi.listEntreprises(0, 50, debounced)
-      : commissionRelaisApi.listAutorites(0, 50, debounced);
+      ? commissionRelaisApi.listEntreprises(page, PAGE_SIZE, debounced)
+      : commissionRelaisApi.listAutorites(page, PAGE_SIZE, debounced);
     req
       .then((res) => {
         if (cancel) return;
-        if (mode === "ENTREPRISE") setEntreprises(unwrap(res as any));
-        else setAutorites(unwrap(res as any));
+        const u = unwrap(res as any);
+        if (mode === "ENTREPRISE") setEntreprises(u.items as RelaisEntrepriseDto[]);
+        else setAutorites(u.items as RelaisAutoriteDto[]);
+        setTotalPages(Math.max(1, u.totalPages));
+        setTotalElements(u.totalElements);
       })
       .catch((err) => toast.error(formatApiErrorMessage(err, "Échec du chargement")))
       .finally(() => { if (!cancel) setLoading(false); });
     return () => { cancel = true; };
-  }, [mode, debounced]);
+  }, [mode, debounced, page]);
 
   const handleImpersonate = async (target: { id: number; label: string }) => {
     setSubmittingId(target.id);
