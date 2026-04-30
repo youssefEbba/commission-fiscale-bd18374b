@@ -13,9 +13,15 @@ import { toast } from "sonner";
 
 type Mode = "ENTREPRISE" | "AUTORITE_CONTRACTANTE";
 
-function unwrap<T>(payload: PageResponse<T> | T[]): T[] {
-  if (Array.isArray(payload)) return payload;
-  return payload?.content ?? [];
+const PAGE_SIZE = 10;
+
+function unwrap<T>(payload: PageResponse<T> | T[]): { items: T[]; totalPages: number; totalElements: number } {
+  if (Array.isArray(payload)) return { items: payload, totalPages: 1, totalElements: payload.length };
+  return {
+    items: payload?.content ?? [],
+    totalPages: payload?.totalPages ?? 1,
+    totalElements: payload?.totalElements ?? (payload?.content?.length ?? 0),
+  };
 }
 
 const CommissionRelais = () => {
