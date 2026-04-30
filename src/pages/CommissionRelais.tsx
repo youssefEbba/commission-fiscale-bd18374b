@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck } from "lucide-react";
+import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
