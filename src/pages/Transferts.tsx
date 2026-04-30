@@ -172,15 +172,24 @@ const Transferts = () => {
         montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
-      // Upload des pièces justificatives
-      const uploadResults = await Promise.allSettled(
-        TRANSFERT_DOCUMENT_TYPES.map(d =>
-          transfertCreditApi.uploadDocument(created.id, d.value, createFiles[d.value]!)
-        )
-      );
-      const failed = uploadResults.filter(r => r.status === "rejected").length;
-      if (failed > 0) {
-        toast({ title: "Demande créée — pièces partiellement déposées", description: `${failed} document(s) en échec. Réessayez via l'icône documents.`, variant: "destructive" });
+      // Upload séquentiel des pièces justificatives (évite les conflits MinIO/transition de statut côté backend)
+      const failures: string[] = [];
+      for (const d of TRANSFERT_DOCUMENT_TYPES) {
+        const file = createFiles[d.value];
+        if (!file) continue;
+        try {
+          await transfertCreditApi.uploadDocument(created.id, d.value, file);
+        } catch (e: any) {
+          console.error(`[Transfert #${created.id}] Upload ${d.value} failed:`, e);
+          failures.push(`${d.label} : ${e?.message || "erreur inconnue"}`);
+        }
+      }
+      if (failures.length > 0) {
+        toast({
+          title: "Demande créée — pièces partiellement déposées",
+          description: failures.join(" • "),
+          variant: "destructive",
+        });
       } else {
         toast({ title: "Succès", description: "Demande de transfert créée avec ses pièces justificatives" });
       }
