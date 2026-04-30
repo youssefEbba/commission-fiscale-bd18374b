@@ -722,6 +722,25 @@ const Transferts = () => {
               <Switch checked={form.operationsDouaneCloturees ?? false} onCheckedChange={(v) => setForm({ ...form, operationsDouaneCloturees: v })} />
               <Label>Opérations douanières clôturées</Label>
             </div>
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div>
+                <Label className="text-sm font-semibold">Pièces justificatives requises</Label>
+                <p className="text-xs text-muted-foreground mt-1">Tous les documents ci-dessous sont obligatoires pour soumettre la demande.</p>
+              </div>
+              {TRANSFERT_DOCUMENT_TYPES.map((d) => (
+                <div key={d.value} className="space-y-1">
+                  <Label className="text-xs">{d.label} <span className="text-destructive">*</span></Label>
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setCreateFiles({ ...createFiles, [d.value]: e.target.files?.[0] || null })}
+                  />
+                  {createFiles[d.value] && (
+                    <p className="text-xs text-emerald-700 truncate">{createFiles[d.value]!.name}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Annuler</Button>
