@@ -62,6 +62,7 @@ const Transferts = () => {
   const [resubmitTarget, setResubmitTarget] = useState<TransfertCreditDto | null>(null);
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [form, setForm] = useState<Partial<CreateTransfertCreditRequest>>({});
+  const [createFiles, setCreateFiles] = useState<Record<string, File | null>>({});
   const [creating, setCreating] = useState(false);
 
   // Detail dialog
@@ -114,6 +115,7 @@ const Transferts = () => {
     setResubmitTarget(null);
     setResubmitCert(null);
     setForm({ operationsDouaneCloturees: true });
+    setCreateFiles({});
     try {
       const certs = role === "ENTREPRISE" && user?.entrepriseId
         ? await certificatCreditApi.getByEntreprise(user.entrepriseId)
@@ -134,6 +136,7 @@ const Transferts = () => {
       certificatCreditId: t.certificatCreditId,
       operationsDouaneCloturees: true,
     });
+    setCreateFiles({});
     setCertificats([]);
     setResubmitCert(null);
     try {
@@ -156,6 +159,12 @@ const Transferts = () => {
       toast({ title: "Erreur", description: "Aucune TVA déductible cordon restante à transférer", variant: "destructive" });
       return;
     }
+    // Validation : tous les documents requis doivent être fournis
+    const missing = TRANSFERT_DOCUMENT_TYPES.filter(d => !createFiles[d.value]);
+    if (missing.length > 0) {
+      toast({ title: "Documents requis", description: `Veuillez fournir : ${missing.map(m => m.label).join(", ")}`, variant: "destructive" });
+      return;
+    }
     setCreating(true);
     try {
       const created = await transfertCreditApi.create({
@@ -163,8 +172,20 @@ const Transferts = () => {
         montant: montantAuto,
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
-      toast({ title: "Succès", description: "Demande de transfert créée" });
+      // Upload des pièces justificatives
+      const uploadResults = await Promise.allSettled(
+        TRANSFERT_DOCUMENT_TYPES.map(d =>
+          transfertCreditApi.uploadDocument(created.id, d.value, createFiles[d.value]!)
+        )
+      );
+      const failed = uploadResults.filter(r => r.status === "rejected").length;
+      if (failed > 0) {
+        toast({ title: "Demande créée — pièces partiellement déposées", description: `${failed} document(s) en échec. Réessayez via l'icône documents.`, variant: "destructive" });
+      } else {
+        toast({ title: "Succès", description: "Demande de transfert créée avec ses pièces justificatives" });
+      }
       setShowCreate(false);
+      setCreateFiles({});
       await fetchData();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
