@@ -254,7 +254,7 @@ const Utilisations = () => {
       numeroBulletin: u.numeroBulletin,
       dateDeclaration: u.dateDeclaration ? u.dateDeclaration.substring(0, 10) : "",
       lignes: (u.lignes && u.lignes.length > 0)
-        ? u.lignes.map(l => ({ id: l.id, code: l.code, libelle: l.libelle, type: l.type, valeur: l.valeur, ordre: l.ordre }))
+        ? u.lignes.map(l => ({ id: l.id, codeTaxe: l.code, denominationTaxe: l.libelle, typeLigne: l.type, valeurTaxe: l.valeur, ordre: l.ordre }))
         : [],
       enregistreeSYDONIA: u.enregistreeSYDONIA ?? false,
       // TVA
