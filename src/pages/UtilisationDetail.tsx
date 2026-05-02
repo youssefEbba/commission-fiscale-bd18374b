@@ -95,11 +95,28 @@ const UtilisationDetail = () => {
     setLoading(true);
     try {
       const u = await utilisationCreditApi.getById(utilId);
-      setUtil(u);
-      const [d, dec] = await Promise.all([
+      const [d, dec, lignesFallback] = await Promise.all([
         utilisationCreditApi.getDocuments(utilId).catch(() => []),
         utilisationCreditApi.getDecisions(utilId).catch(() => []),
+        (!u.lignes || u.lignes.length === 0) && u.type === "DOUANIER"
+          ? utilisationCreditApi.getLignesBulletin(utilId).catch(() => [])
+          : Promise.resolve(null),
       ]);
+      // Compléter les lignes si le DTO principal ne les contient pas (selon le rôle backend)
+      if (lignesFallback && Array.isArray(lignesFallback) && lignesFallback.length > 0) {
+        u.lignes = lignesFallback;
+        if (u.totalPrisEnCharge == null) {
+          u.totalPrisEnCharge = lignesFallback
+            .filter(l => l.affectation === "AU_CI")
+            .reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+        }
+        if (u.totalAPayer == null) {
+          u.totalAPayer = lignesFallback
+            .filter(l => l.affectation === "A_PAYER")
+            .reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+        }
+      }
+      setUtil(u);
       setDocs(d);
       setDecisions(dec);
       // Load cert and TVA stock
