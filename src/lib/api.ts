@@ -1025,6 +1025,36 @@ export interface TvaDeductibleStockDto {
   epuise: boolean;
 }
 
+// === Bulletin de liquidation : lignes & décisions DGTCP ===
+export type TypeLigneTaxe = "GLOBALE" | "ARTICLE";
+export type AffectationTaxe = "AU_CI" | "A_PAYER";
+
+export interface LigneBulletinDto {
+  id: number;
+  utilisationId?: number;
+  code: string;
+  libelle: string;
+  type: TypeLigneTaxe;
+  valeur: number;
+  affectation?: AffectationTaxe | null;
+  ordre?: number;
+}
+
+export interface LigneBulletinRequest {
+  /** Optionnel — fourni en update pour conserver l'identité de la ligne. */
+  id?: number;
+  code: string;
+  libelle: string;
+  type: TypeLigneTaxe;
+  valeur: number;
+  ordre?: number;
+}
+
+export interface DecisionLigneRequest {
+  ligneId: number;
+  affectation: AffectationTaxe;
+}
+
 export interface UtilisationCreditDto {
   id: number;
   certificatCreditId: number;
@@ -1042,9 +1072,15 @@ export interface UtilisationCreditDto {
   numeroDeclaration?: string;
   numeroBulletin?: string;
   dateDeclaration?: string;
+  /** @deprecated Conservé pour compat / lecture historique — utiliser `lignes` + totaux. */
   montantDroits?: number;
+  /** @deprecated Conservé pour compat / lecture historique — utiliser `lignes` + totaux. */
   montantTVADouane?: number;
   enregistreeSYDONIA?: boolean;
+  // Bulletin de liquidation (nouveau modèle)
+  lignes?: LigneBulletinDto[];
+  totalPrisEnCharge?: number;
+  totalAPayer?: number;
   // Douane liquidation trace
   soldeCordonAvant?: number;
   soldeCordonApres?: number;
@@ -1078,8 +1114,8 @@ export interface CreateUtilisationCreditRequest {
   numeroDeclaration?: string;
   numeroBulletin?: string;
   dateDeclaration?: string;
-  montantDroits?: number;
-  montantTVA?: number;
+  /** Bulletin de liquidation : lignes (code, libellé, type, valeur). Obligatoire pour DOUANIER. */
+  lignes?: LigneBulletinRequest[];
   enregistreeSYDONIA?: boolean;
   // TVA intérieure
   typeAchat?: string;
@@ -1148,11 +1184,15 @@ export const utilisationCreditApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/utilisations-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
-  liquiderDouane: (id: number, montantDroits: number, montantTVA: number) =>
+  /** Liquidation DGTCP — une décision (`AU_CI` | `A_PAYER`) par ligne du bulletin. */
+  liquiderDouane: (id: number, decisions: DecisionLigneRequest[]) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
       method: "POST",
-      body: { montantDroits, montantTVA },
+      body: { decisions },
     }),
+  /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
+  getLignesBulletin: (id: number) =>
+    apiFetch<LigneBulletinDto[]>(`/utilisations-credit/${id}/lignes-bulletin`),
   apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",

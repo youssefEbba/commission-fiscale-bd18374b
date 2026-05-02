@@ -8,6 +8,7 @@ import {
   UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
+  LigneBulletinDto, AffectationTaxe,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -58,10 +59,9 @@ const UtilisationDetail = () => {
   const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Liquidation dialog
+  // Liquidation dialog (décision par ligne du bulletin)
   const [showLiq, setShowLiq] = useState(false);
-  const [liqDroits, setLiqDroits] = useState("");
-  const [liqTVA, setLiqTVA] = useState("");
+  const [liqDecisions, setLiqDecisions] = useState<Record<number, AffectationTaxe>>({});
   const [liqLoading, setLiqLoading] = useState(false);
 
   // Apurement dialog
@@ -130,11 +130,20 @@ const UtilisationDetail = () => {
   };
 
   const handleLiquidation = async () => {
+    if (!util) return;
+    const lignes = util.lignes || [];
+    const missing = lignes.filter(l => !liqDecisions[l.id]);
+    if (missing.length > 0) {
+      toast({ title: "Décisions incomplètes", description: `Affectez chaque ligne (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
+      return;
+    }
     setLiqLoading(true);
     try {
-      await utilisationCreditApi.liquiderDouane(utilId, Number(liqDroits), Number(liqTVA));
-      toast({ title: "Succès", description: "Utilisation liquidée — solde cordon mis à jour" });
+      const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
+      await utilisationCreditApi.liquiderDouane(utilId, decisions);
+      toast({ title: "Succès", description: "Liquidation enregistrée — totaux mis à jour" });
       setShowLiq(false);
+      setLiqDecisions({});
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -322,14 +331,14 @@ const UtilisationDetail = () => {
             <>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">Droits de douane</p>
-                  <p className="text-lg font-bold">{f(u.montantDroits)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">Total pris en charge (CI)</p>
+                  <p className="text-lg font-bold text-primary">{f(u.totalPrisEnCharge)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">TVA Douane (import)</p>
-                  <p className="text-lg font-bold">{f(u.montantTVADouane)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">Total à payer (entreprise)</p>
+                  <p className="text-lg font-bold text-amber-700">{f(u.totalAPayer)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
                 </CardContent>
               </Card>
             </>
@@ -383,6 +392,59 @@ const UtilisationDetail = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Bulletin de liquidation — lignes saisies par l'entreprise + affectation DGTCP */}
+        {isDouane && u.lignes && u.lignes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" /> Bulletin de liquidation ({u.lignes.length} ligne{u.lignes.length > 1 ? "s" : ""})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">Code</TableHead>
+                    <TableHead>Libellé</TableHead>
+                    <TableHead className="w-24">Type</TableHead>
+                    <TableHead className="text-right w-32">Valeur (MRU)</TableHead>
+                    <TableHead className="w-36">Affectation</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {u.lignes.map(l => (
+                    <TableRow key={l.id}>
+                      <TableCell className="font-mono text-xs">{l.code}</TableCell>
+                      <TableCell className="text-sm">{l.libelle}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px]">{l.type}</Badge></TableCell>
+                      <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                      <TableCell>
+                        {l.affectation === "AU_CI" ? (
+                          <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">AU CI</Badge>
+                        ) : l.affectation === "A_PAYER" ? (
+                          <Badge className="bg-amber-100 text-amber-800 text-[10px]">À PAYER</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">En attente</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/40 font-medium">
+                    <TableCell colSpan={3} className="text-right">Totaux</TableCell>
+                    <TableCell className="text-right">
+                      {f(u.lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0))}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div className="text-emerald-700">CI : {f(u.totalPrisEnCharge)}</div>
+                      <div className="text-amber-700">Payer : {f(u.totalAPayer)}</div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Traçabilité Liquidation Douane */}
         {isDouane && u.statut === "LIQUIDEE" && u.soldeCordonAvant != null && (
@@ -593,7 +655,13 @@ const UtilisationDetail = () => {
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setShowLiq(true); setLiqDroits(String(u.montantDroits ?? "")); setLiqTVA(String(u.montantTVADouane ?? "")); }}><Landmark className="h-4 w-4 mr-2" /> Liquider (imputation)</Button>}
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                  // Pré-remplir : ARTICLE → AU_CI par défaut, GLOBALE → laissé vide pour forcer un choix
+                  const init: Record<number, AffectationTaxe> = {};
+                  (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
+                  setLiqDecisions(init);
+                  setShowLiq(true);
+                }}><Landmark className="h-4 w-4 mr-2" /> Liquider (décision par ligne)</Button>}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
@@ -603,27 +671,67 @@ const UtilisationDetail = () => {
         )}
       </div>
 
-      {/* Liquidation Dialog */}
+      {/* Liquidation Dialog — décision par ligne du bulletin */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Liquidation Douane — Utilisation #{u.id}</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Liquidation — Bulletin #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Saisissez les montants d'imputation. Le solde cordon sera automatiquement débité et une tranche FIFO sera créée.</p>
-            <div className="space-y-3">
-              <div><Label>Montant Droits (MRU) *</Label><Input type="number" min="0" value={liqDroits} onChange={e => setLiqDroits(e.target.value)} /></div>
-              <div><Label>Montant TVA Douane (MRU) *</Label><Input type="number" min="0" value={liqTVA} onChange={e => setLiqTVA(e.target.value)} /></div>
-              {liqDroits && liqTVA && (
+            <p className="text-sm text-muted-foreground">
+              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (imputée sur le certificat) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler par l'entreprise). Les totaux sont calculés automatiquement par le serveur.
+            </p>
+            {(!u.lignes || u.lignes.length === 0) ? (
+              <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                Aucune ligne de bulletin n'a été saisie pour cette utilisation. Demandez à l'entreprise de compléter le bulletin avant la liquidation.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">Code</TableHead>
+                    <TableHead>Libellé</TableHead>
+                    <TableHead className="w-24">Type</TableHead>
+                    <TableHead className="text-right w-32">Valeur (MRU)</TableHead>
+                    <TableHead className="w-44">Affectation *</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {u.lignes.map((l: LigneBulletinDto) => (
+                    <TableRow key={l.id}>
+                      <TableCell className="font-mono text-xs">{l.code}</TableCell>
+                      <TableCell className="text-sm">{l.libelle}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px]">{l.type}</Badge></TableCell>
+                      <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                      <TableCell>
+                        <Select value={liqDecisions[l.id] || ""} onValueChange={(v) => setLiqDecisions(prev => ({ ...prev, [l.id]: v as AffectationTaxe }))}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="AU_CI">AU CI (imputer)</SelectItem>
+                            <SelectItem value="A_PAYER">À PAYER (entreprise)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            {u.lignes && u.lignes.length > 0 && (() => {
+              const totalAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const totalAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const restant = u.lignes.filter(l => !liqDecisions[l.id]).length;
+              return (
                 <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
-                  <div className="flex justify-between"><span>Total imputation :</span><span className="font-bold text-primary">{f(Number(liqDroits) + Number(liqTVA))} MRU</span></div>
-                  {cert && <div className="flex justify-between"><span>Solde Cordon actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
-                  {cert && <div className="flex justify-between"><span>Solde après :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - Number(liqDroits) - Number(liqTVA))} MRU</span></div>}
-                  <div className="border-t pt-1"><span className="text-blue-600">→ Tranche FIFO créée : {f(Number(liqTVA))} MRU de TVA déductible</span></div>
+                  <div className="flex justify-between"><span>Total pris en charge (CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
+                  <div className="flex justify-between"><span>Total à payer (entreprise) :</span><span className="font-bold text-amber-700">{f(totalAPayer)} MRU</span></div>
+                  {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
+                  {cert && <div className="flex justify-between"><span>Solde Cordon après :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - totalAuCi)} MRU</span></div>}
+                  {restant > 0 && <div className="text-amber-700 text-xs pt-1">⚠ {restant} ligne(s) sans affectation.</div>}
                 </div>
-              )}
-            </div>
+              );
+            })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
-              <Button disabled={liqLoading || !liqDroits || !liqTVA} onClick={handleLiquidation}>
+              <Button disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleLiquidation}>
                 {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer la liquidation
               </Button>
             </DialogFooter>
