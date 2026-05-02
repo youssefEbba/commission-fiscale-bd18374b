@@ -677,18 +677,16 @@ const UtilisationDetail = () => {
                     (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
                     setLiqDecisions(init);
                     setShowLiq(true);
-                  }}><Landmark className="h-4 w-4 mr-2" /> Affecter les lignes (AU CI / À PAYER)</Button>
+                  }}><Landmark className="h-4 w-4 mr-2" /> Préciser les affectations (AU CI / À PAYER)</Button>
                 )}
                 {canDGDVisa && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VISE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Apposer le visa</Button>}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
-                  const init: Record<number, AffectationTaxe> = {};
-                  (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
-                  setLiqDecisions(init);
-                  setShowLiq(true);
-                }}><Landmark className="h-4 w-4 mr-2" /> Liquider (décision par ligne)</Button>}
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleStatut("LIQUIDEE")} disabled={actionLoading}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Landmark className="h-4 w-4 mr-2" /> Liquider (imputer le crédit)
+                </Button>}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
