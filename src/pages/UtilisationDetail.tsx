@@ -331,14 +331,14 @@ const UtilisationDetail = () => {
             <>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">Droits de douane</p>
-                  <p className="text-lg font-bold">{f(u.montantDroits)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">Total pris en charge (CI)</p>
+                  <p className="text-lg font-bold text-primary">{f(u.totalPrisEnCharge)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">TVA Douane (import)</p>
-                  <p className="text-lg font-bold">{f(u.montantTVADouane)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">Total à payer (entreprise)</p>
+                  <p className="text-lg font-bold text-amber-700">{f(u.totalAPayer)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
                 </CardContent>
               </Card>
             </>
