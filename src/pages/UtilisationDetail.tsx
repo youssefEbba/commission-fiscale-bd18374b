@@ -286,7 +286,9 @@ const UtilisationDetail = () => {
   const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
   const canDGDDecideLignes = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0;
   const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && lignesAffectees;
-  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
+  // DGTCP douanier : d'abord valider (VISE -> VALIDEE), puis liquider (VALIDEE -> LIQUIDEE)
+  const canDGTCPValideDouane = role === "DGTCP" && isDouane && u.statut === "VISE";
+  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VALIDEE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
@@ -294,7 +296,7 @@ const UtilisationDetail = () => {
   const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
   const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
-    (role === "DGTCP" && isDouane && u.statut === "VISE");
+    (role === "DGTCP" && isDouane && ["VISE", "VALIDEE"].includes(u.statut));
 
   // A_RECONTROLER transitions
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
@@ -664,7 +666,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDDecideLignes || canDGDVisa || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
+        {(canDGDVerify || canDGDDecideLignes || canDGDVisa || canDGTCPValideDouane || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
           <Card>
             <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
             <CardContent>
@@ -683,6 +685,7 @@ const UtilisationDetail = () => {
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
+                {canDGTCPValideDouane && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider la liquidation</Button>}
                 {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleStatut("LIQUIDEE")} disabled={actionLoading}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   <Landmark className="h-4 w-4 mr-2" /> Liquider (imputer le crédit)
