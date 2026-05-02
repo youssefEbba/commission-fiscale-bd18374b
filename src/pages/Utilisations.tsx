@@ -86,10 +86,25 @@ const emptyTVA: Partial<CreateUtilisationCreditRequest> = {
   dateFacture: "", montantTVAInterieure: undefined, numeroDecompte: "",
 };
 
+// Catalogue des codes de taxes du bulletin de liquidation (Douanes MR)
+// Sélectionner un code pré-remplit le libellé ; tout reste éditable.
+const TAX_CODES_CATALOG: { code: string; libelle: string; type: TypeLigneTaxe }[] = [
+  // Taxes globales
+  { code: "TTI", libelle: "Taxe sur Tonnage Importé", type: "GLOBALE" },
+  { code: "RIF", libelle: "Redevance informatique", type: "GLOBALE" },
+  // Taxes article
+  { code: "DD",  libelle: "Droit de Douane", type: "ARTICLE" },
+  { code: "PSC", libelle: "Promotion Sports et Culture", type: "ARTICLE" },
+  { code: "RS",  libelle: "Redevance Statistique", type: "ARTICLE" },
+  { code: "PC",  libelle: "Prélèvement Communautaire", type: "ARTICLE" },
+  { code: "IMF", libelle: "Impôt minimum forfaitaire", type: "ARTICLE" },
+  { code: "TVA", libelle: "Taxe sur valeur ajoutée", type: "ARTICLE" },
+];
+
 // Lignes par défaut suggérées pour un bulletin de liquidation douanier
 const DEFAULT_BULLETIN_LIGNES: LigneBulletinRequest[] = [
-  { code: "DD", libelle: "Droits de douane", type: "GLOBALE", valeur: 0, ordre: 1 },
-  { code: "TVA", libelle: "TVA importation", type: "GLOBALE", valeur: 0, ordre: 2 },
+  { code: "DD", libelle: "Droit de Douane", type: "ARTICLE", valeur: 0, ordre: 1 },
+  { code: "TVA", libelle: "Taxe sur valeur ajoutée", type: "ARTICLE", valeur: 0, ordre: 2 },
 ];
 
 const Utilisations = () => {
