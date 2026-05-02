@@ -59,10 +59,9 @@ const UtilisationDetail = () => {
   const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Liquidation dialog
+  // Liquidation dialog (décision par ligne du bulletin)
   const [showLiq, setShowLiq] = useState(false);
-  const [liqDroits, setLiqDroits] = useState("");
-  const [liqTVA, setLiqTVA] = useState("");
+  const [liqDecisions, setLiqDecisions] = useState<Record<number, AffectationTaxe>>({});
   const [liqLoading, setLiqLoading] = useState(false);
 
   // Apurement dialog
@@ -131,11 +130,20 @@ const UtilisationDetail = () => {
   };
 
   const handleLiquidation = async () => {
+    if (!util) return;
+    const lignes = util.lignes || [];
+    const missing = lignes.filter(l => !liqDecisions[l.id]);
+    if (missing.length > 0) {
+      toast({ title: "Décisions incomplètes", description: `Affectez chaque ligne (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
+      return;
+    }
     setLiqLoading(true);
     try {
-      await utilisationCreditApi.liquiderDouane(utilId, Number(liqDroits), Number(liqTVA));
-      toast({ title: "Succès", description: "Utilisation liquidée — solde cordon mis à jour" });
+      const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
+      await utilisationCreditApi.liquiderDouane(utilId, decisions);
+      toast({ title: "Succès", description: "Liquidation enregistrée — totaux mis à jour" });
       setShowLiq(false);
+      setLiqDecisions({});
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
