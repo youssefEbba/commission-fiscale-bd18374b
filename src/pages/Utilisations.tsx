@@ -821,9 +821,36 @@ const Utilisations = () => {
                       <div className="space-y-1.5">
                         {form.lignes.map((ligne, idx) => (
                           <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
-                            <Input className="col-span-2 h-8 text-xs" placeholder="Code" value={ligne.code} onChange={e => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], code: e.target.value }; setForm({ ...form, lignes: next });
-                            }} />
+                            <Input
+                              className="col-span-2 h-8 text-xs uppercase"
+                              placeholder="Code"
+                              list={`tax-codes-list-${idx}`}
+                              value={ligne.code}
+                              onChange={e => {
+                                const raw = e.target.value;
+                                const codeUpper = raw.toUpperCase();
+                                const match = TAX_CODES_CATALOG.find(c => c.code === codeUpper);
+                                const next = [...(form.lignes || [])];
+                                const current = next[idx];
+                                // Auto-remplit le libellé/type uniquement si le libellé est vide
+                                // ou correspondait au libellé d'un autre code connu (l'utilisateur n'a rien tapé manuellement).
+                                const libelleEstAutoRempli =
+                                  !current.libelle ||
+                                  TAX_CODES_CATALOG.some(c => c.libelle === current.libelle);
+                                next[idx] = {
+                                  ...current,
+                                  code: codeUpper,
+                                  libelle: match && libelleEstAutoRempli ? match.libelle : current.libelle,
+                                  type: match && libelleEstAutoRempli ? match.type : current.type,
+                                };
+                                setForm({ ...form, lignes: next });
+                              }}
+                            />
+                            <datalist id={`tax-codes-list-${idx}`}>
+                              {TAX_CODES_CATALOG.map(c => (
+                                <option key={c.code} value={c.code}>{c.libelle}</option>
+                              ))}
+                            </datalist>
                             <Input className="col-span-4 h-8 text-xs" placeholder="Libellé" value={ligne.libelle} onChange={e => {
                               const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], libelle: e.target.value }; setForm({ ...form, lignes: next });
                             }} />
