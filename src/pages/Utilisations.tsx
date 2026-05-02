@@ -11,6 +11,7 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   DecisionCorrectionDto, DecisionType,
   transfertCreditApi,
+  LigneBulletinRequest, TypeLigneTaxe,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -77,13 +78,19 @@ const getTransitions = (role: string, type?: UtilisationType): { from: Utilisati
 
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
   type: "DOUANIER", montant: undefined, numeroDeclaration: "", numeroBulletin: "",
-  dateDeclaration: "", montantDroits: undefined, montantTVA: undefined, enregistreeSYDONIA: false,
+  dateDeclaration: "", lignes: [], enregistreeSYDONIA: false,
 };
 
 const emptyTVA: Partial<CreateUtilisationCreditRequest> = {
   type: "TVA_INTERIEURE", montant: undefined, typeAchat: "", numeroFacture: "",
   dateFacture: "", montantTVAInterieure: undefined, numeroDecompte: "",
 };
+
+// Lignes par défaut suggérées pour un bulletin de liquidation douanier
+const DEFAULT_BULLETIN_LIGNES: LigneBulletinRequest[] = [
+  { code: "DD", libelle: "Droits de douane", type: "GLOBALE", valeur: 0, ordre: 1 },
+  { code: "TVA", libelle: "TVA importation", type: "GLOBALE", valeur: 0, ordre: 2 },
+];
 
 const Utilisations = () => {
   const { user } = useAuth();
