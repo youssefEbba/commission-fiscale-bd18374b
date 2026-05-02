@@ -666,7 +666,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDDecideLignes || canDGDVisa || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
+        {(canDGDVerify || canDGDDecideLignes || canDGDVisa || canDGTCPValideDouane || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
           <Card>
             <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
             <CardContent>
