@@ -118,11 +118,8 @@ const Utilisations = () => {
   // Detail dialog
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
 
-  // Liquidation Douane dialog
-  const [liquidationTarget, setLiquidationTarget] = useState<UtilisationCreditDto | null>(null);
-  const [liqDroits, setLiqDroits] = useState("");
-  const [liqTVA, setLiqTVA] = useState("");
-  const [liqLoading, setLiqLoading] = useState(false);
+  // (Liquidation Douane est désormais gérée dans la page Détail — décision par ligne)
+
 
   // Apurement TVA dialog
   const [apurementTarget, setApurementTarget] = useState<UtilisationCreditDto | null>(null);
