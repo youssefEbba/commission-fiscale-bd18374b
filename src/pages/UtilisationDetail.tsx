@@ -282,7 +282,10 @@ const UtilisationDetail = () => {
 
   // Determine available actions
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
-  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION";
+  // Le DGD doit affecter chaque ligne (AU CI / À PAYER) avant d'apposer son visa
+  const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
+  const canDGDDecideLignes = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0;
+  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && lignesAffectees;
   const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
