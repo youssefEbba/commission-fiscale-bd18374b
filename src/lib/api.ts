@@ -1184,11 +1184,15 @@ export const utilisationCreditApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/utilisations-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
-  liquiderDouane: (id: number, montantDroits: number, montantTVA: number) =>
+  /** Liquidation DGTCP — une décision (`AU_CI` | `A_PAYER`) par ligne du bulletin. */
+  liquiderDouane: (id: number, decisions: DecisionLigneRequest[]) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
       method: "POST",
-      body: { montantDroits, montantTVA },
+      body: { decisions },
     }),
+  /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
+  getLignesBulletin: (id: number) =>
+    apiFetch<LigneBulletinDto[]>(`/utilisations-credit/${id}/lignes-bulletin`),
   apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",
