@@ -158,7 +158,7 @@ const UtilisationDetail = () => {
     try {
       const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
       await utilisationCreditApi.liquiderDouane(utilId, decisions);
-      toast({ title: "Succès", description: "Liquidation enregistrée — totaux mis à jour" });
+      toast({ title: "Succès", description: role === "DGD" ? "Affectations enregistrées — vous pouvez maintenant apposer le visa" : "Liquidation enregistrée — totaux mis à jour" });
       setShowLiq(false);
       setLiqDecisions({});
       fetchAll();
@@ -677,18 +677,16 @@ const UtilisationDetail = () => {
                     (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
                     setLiqDecisions(init);
                     setShowLiq(true);
-                  }}><Landmark className="h-4 w-4 mr-2" /> Affecter les lignes (AU CI / À PAYER)</Button>
+                  }}><Landmark className="h-4 w-4 mr-2" /> Préciser les affectations (AU CI / À PAYER)</Button>
                 )}
                 {canDGDVisa && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VISE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Apposer le visa</Button>}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
-                  const init: Record<number, AffectationTaxe> = {};
-                  (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
-                  setLiqDecisions(init);
-                  setShowLiq(true);
-                }}><Landmark className="h-4 w-4 mr-2" /> Liquider (décision par ligne)</Button>}
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleStatut("LIQUIDEE")} disabled={actionLoading}>
+                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Landmark className="h-4 w-4 mr-2" /> Liquider (imputer le crédit)
+                </Button>}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
@@ -707,10 +705,10 @@ const UtilisationDetail = () => {
       {/* Liquidation Dialog — décision par ligne du bulletin */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Liquidation — Bulletin #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{role === "DGD" ? "Affectation des lignes" : "Liquidation"} — Bulletin #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (imputée sur le certificat) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler par l'entreprise). Les totaux sont calculés automatiquement par le serveur.
+              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (à imputer sur le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler par l'entreprise).{role === "DGD" ? " La liquidation effective sera réalisée par le DGTCP après votre visa." : " L'imputation du crédit sera effectuée à la confirmation."}
             </p>
             {(!u.lignes || u.lignes.length === 0) ? (
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
@@ -765,7 +763,7 @@ const UtilisationDetail = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
               <Button disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleLiquidation}>
-                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer la liquidation
+                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {role === "DGD" ? "Enregistrer les affectations" : "Confirmer la liquidation"}
               </Button>
             </DialogFooter>
           </div>
