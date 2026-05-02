@@ -763,7 +763,7 @@ const UtilisationDetail = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
               <Button disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleLiquidation}>
-                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer la liquidation
+                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {role === "DGD" ? "Enregistrer les affectations" : "Confirmer la liquidation"}
               </Button>
             </DialogFooter>
           </div>
