@@ -103,8 +103,8 @@ const TAX_CODES_CATALOG: { code: string; libelle: string; type: TypeLigneTaxe }[
 
 // Lignes par défaut suggérées pour un bulletin de liquidation douanier
 const DEFAULT_BULLETIN_LIGNES: LigneBulletinRequest[] = [
-  { code: "DD", libelle: "Droit de Douane", type: "ARTICLE", valeur: 0, ordre: 1 },
-  { code: "TVA", libelle: "Taxe sur valeur ajoutée", type: "ARTICLE", valeur: 0, ordre: 2 },
+  { codeTaxe: "DD", denominationTaxe: "Droit de Douane", typeLigne: "ARTICLE", valeurTaxe: 0, ordre: 1 },
+  { codeTaxe: "TVA", denominationTaxe: "Taxe sur valeur ajoutée", typeLigne: "ARTICLE", valeurTaxe: 0, ordre: 2 },
 ];
 
 const Utilisations = () => {
