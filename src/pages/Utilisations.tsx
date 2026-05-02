@@ -752,42 +752,46 @@ const Utilisations = () => {
             )}
           </DialogHeader>
           <div className="space-y-4">
-            <Tabs value={createType} onValueChange={(v) => editingId == null && handleCreateTypeChange(v as UtilisationType)}>
-              <TabsList className="w-full">
-                <TabsTrigger value="DOUANIER" className="flex-1" disabled={editingId != null && createType !== "DOUANIER"}>Douane (SYDONIA)</TabsTrigger>
-                <TabsTrigger value="TVA_INTERIEURE" className="flex-1" disabled={editingId != null && createType !== "TVA_INTERIEURE"}>TVA Intérieure</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div>
+              <Label>Certificat de crédit *</Label>
+              <SearchableSelect
+                value={form.certificatCreditId ? String(form.certificatCreditId) : ""}
+                onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
+                placeholder="Sélectionner un certificat"
+                searchPlaceholder="Rechercher (réf., entreprise)..."
+                options={certificats
+                  .filter(c => editingId != null || c.statut === "OUVERT")
+                  .map(c => {
+                    const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
+                    return {
+                      value: String(c.id),
+                      label: `${c.reference || c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? " (transfert exécuté — douane bloquée)" : ""}`,
+                      keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""} ${c.entrepriseNom || ""}`,
+                      disabled: blockedDouane,
+                    };
+                  })}
+              />
+              {createType === "DOUANIER" && form.certificatCreditId && transferredCertIds.has(form.certificatCreditId) && (
+                <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <strong>Transfert exécuté sur ce certificat.</strong> Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Type d'utilisation</Label>
+              <Tabs value={createType} onValueChange={(v) => editingId == null && handleCreateTypeChange(v as UtilisationType)}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="DOUANIER" className="flex-1" disabled={editingId != null && createType !== "DOUANIER"}>Douane (SYDONIA)</TabsTrigger>
+                  <TabsTrigger value="TVA_INTERIEURE" className="flex-1" disabled={editingId != null && createType !== "TVA_INTERIEURE"}>TVA Intérieure</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
             <div className="space-y-3">
-              <div>
-                <Label>Certificat de crédit *</Label>
-                <SearchableSelect
-                  value={form.certificatCreditId ? String(form.certificatCreditId) : ""}
-                  onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
-                  placeholder="Sélectionner un certificat"
-                  searchPlaceholder="Rechercher (réf., entreprise)..."
-                  options={certificats
-                    .filter(c => editingId != null || c.statut === "OUVERT")
-                    .map(c => {
-                      const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
-                      return {
-                        value: String(c.id),
-                        label: `${c.reference || c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? " (transfert exécuté — douane bloquée)" : ""}`,
-                        keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""} ${c.entrepriseNom || ""}`,
-                        disabled: blockedDouane,
-                      };
-                    })}
-                />
-                {createType === "DOUANIER" && form.certificatCreditId && transferredCertIds.has(form.certificatCreditId) && (
-                  <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <div>
-                      <strong>Transfert exécuté sur ce certificat.</strong> Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {createType === "DOUANIER" && (
                 <>
