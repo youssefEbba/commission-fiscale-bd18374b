@@ -1032,12 +1032,35 @@ export type AffectationTaxe = "AU_CI" | "A_PAYER";
 export interface LigneBulletinDto {
   id: number;
   utilisationId?: number;
+  /** Code de la taxe (alias backend: codeTaxe) */
   code: string;
+  /** Libellé de la taxe (alias backend: denominationTaxe) */
   libelle: string;
+  /** Type de ligne (alias backend: typeLigne) */
   type: TypeLigneTaxe;
+  /** Valeur en MRU (alias backend: valeurTaxe) */
   valeur: number;
   affectation?: AffectationTaxe | null;
   ordre?: number;
+  // Champs bruts backend (au cas où)
+  codeTaxe?: string;
+  denominationTaxe?: string;
+  typeLigne?: TypeLigneTaxe;
+  valeurTaxe?: number;
+}
+
+/** Normalise une ligne du backend (codeTaxe/denominationTaxe/...) vers le format UI (code/libelle/...). */
+export function normalizeLigneBulletin(l: any): LigneBulletinDto {
+  return {
+    id: l.id,
+    utilisationId: l.utilisationId,
+    code: l.code ?? l.codeTaxe ?? "",
+    libelle: l.libelle ?? l.denominationTaxe ?? "",
+    type: l.type ?? l.typeLigne,
+    valeur: Number(l.valeur ?? l.valeurTaxe ?? 0),
+    affectation: l.affectation ?? null,
+    ordre: l.ordre,
+  };
 }
 
 export interface LigneBulletinRequest {
@@ -1170,12 +1193,20 @@ export const UTILISATION_DOCUMENT_TYPES: { value: TypeDocumentUtilisation; label
 ];
 
 export const utilisationCreditApi = {
-  getAll: (params?: { demandeurSousTraitantOnly?: boolean }) => {
+  getAll: async (params?: { demandeurSousTraitantOnly?: boolean }) => {
     const qs = params?.demandeurSousTraitantOnly ? "?demandeurSousTraitantOnly=true" : "";
-    return apiFetch<UtilisationCreditDto[]>(`/utilisations-credit${qs}`);
+    const list = await apiFetch<UtilisationCreditDto[]>(`/utilisations-credit${qs}`);
+    return (list || []).map(u => ({ ...u, lignes: u.lignes ? u.lignes.map(normalizeLigneBulletin) : u.lignes }));
   },
-  getById: (id: number) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`),
-  getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
+  getById: async (id: number) => {
+    const u = await apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`);
+    if (u && u.lignes) u.lignes = u.lignes.map(normalizeLigneBulletin);
+    return u;
+  },
+  getByCertificat: async (certId: number) => {
+    const list = await apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`);
+    return (list || []).map(u => ({ ...u, lignes: u.lignes ? u.lignes.map(normalizeLigneBulletin) : u.lignes }));
+  },
   create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
   /** Édition d'une utilisation (statut BROUILLON ou DEMANDEE). Le type ne peut pas changer. */
   update: (id: number, data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`, { method: "PUT", body: data }),
@@ -1191,8 +1222,10 @@ export const utilisationCreditApi = {
       body: { decisions },
     }),
   /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
-  getLignesBulletin: (id: number) =>
-    apiFetch<LigneBulletinDto[]>(`/utilisations-credit/${id}/lignes-bulletin`),
+  getLignesBulletin: async (id: number) => {
+    const raw = await apiFetch<any[]>(`/utilisations-credit/${id}/lignes-bulletin`);
+    return (raw || []).map(normalizeLigneBulletin);
+  },
   apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",
