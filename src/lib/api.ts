@@ -1193,12 +1193,20 @@ export const UTILISATION_DOCUMENT_TYPES: { value: TypeDocumentUtilisation; label
 ];
 
 export const utilisationCreditApi = {
-  getAll: (params?: { demandeurSousTraitantOnly?: boolean }) => {
+  getAll: async (params?: { demandeurSousTraitantOnly?: boolean }) => {
     const qs = params?.demandeurSousTraitantOnly ? "?demandeurSousTraitantOnly=true" : "";
-    return apiFetch<UtilisationCreditDto[]>(`/utilisations-credit${qs}`);
+    const list = await apiFetch<UtilisationCreditDto[]>(`/utilisations-credit${qs}`);
+    return (list || []).map(u => ({ ...u, lignes: u.lignes ? u.lignes.map(normalizeLigneBulletin) : u.lignes }));
   },
-  getById: (id: number) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`),
-  getByCertificat: (certId: number) => apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`),
+  getById: async (id: number) => {
+    const u = await apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`);
+    if (u && u.lignes) u.lignes = u.lignes.map(normalizeLigneBulletin);
+    return u;
+  },
+  getByCertificat: async (certId: number) => {
+    const list = await apiFetch<UtilisationCreditDto[]>(`/utilisations-credit/by-certificat/${certId}`);
+    return (list || []).map(u => ({ ...u, lignes: u.lignes ? u.lignes.map(normalizeLigneBulletin) : u.lignes }));
+  },
   create: (data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>("/utilisations-credit", { method: "POST", body: data }),
   /** Édition d'une utilisation (statut BROUILLON ou DEMANDEE). Le type ne peut pas changer. */
   update: (id: number, data: CreateUtilisationCreditRequest) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}`, { method: "PUT", body: data }),
