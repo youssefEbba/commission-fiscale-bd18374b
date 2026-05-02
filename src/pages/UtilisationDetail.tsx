@@ -158,7 +158,7 @@ const UtilisationDetail = () => {
     try {
       const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
       await utilisationCreditApi.liquiderDouane(utilId, decisions);
-      toast({ title: "Succès", description: "Liquidation enregistrée — totaux mis à jour" });
+      toast({ title: "Succès", description: role === "DGD" ? "Affectations enregistrées — vous pouvez maintenant apposer le visa" : "Liquidation enregistrée — totaux mis à jour" });
       setShowLiq(false);
       setLiqDecisions({});
       fetchAll();
