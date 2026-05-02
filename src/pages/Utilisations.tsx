@@ -784,13 +784,63 @@ const Utilisations = () => {
                     <div><Label>N° Bulletin *</Label><Input placeholder="BUL-2024-001" value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
                   </div>
                   <div><Label>Date déclaration</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Montant Droits (MRU) *</Label><Input type="number" min="0" placeholder="0" value={form.montantDroits ?? ""} onChange={e => setForm({ ...form, montantDroits: e.target.value ? Number(e.target.value) : undefined })} /></div>
-                    <div><Label>Montant TVA import (MRU) *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVA ?? ""} onChange={e => setForm({ ...form, montantTVA: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                  {/* Bulletin de liquidation : lignes saisies par l'entreprise */}
+                  <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm">Lignes du bulletin de liquidation *</Label>
+                        <p className="text-[11px] text-muted-foreground">Saisissez chaque taxe (DD, TVA, RS, etc.). La DGTCP affectera ensuite chaque ligne au CI ou à payer.</p>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => {
+                        const next = [...(form.lignes || []), { code: "", libelle: "", type: "GLOBALE" as TypeLigneTaxe, valeur: 0, ordre: (form.lignes?.length || 0) + 1 }];
+                        setForm({ ...form, lignes: next });
+                      }}>
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
+                      </Button>
+                    </div>
+                    {(!form.lignes || form.lignes.length === 0) ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground italic">Aucune ligne. Vous pouvez partir des lignes par défaut (DD + TVA).</p>
+                        <Button type="button" size="sm" variant="secondary" onClick={() => setForm({ ...form, lignes: DEFAULT_BULLETIN_LIGNES.map(l => ({ ...l })) })}>
+                          Pré-remplir DD + TVA
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {form.lignes.map((ligne, idx) => (
+                          <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
+                            <Input className="col-span-2 h-8 text-xs" placeholder="Code" value={ligne.code} onChange={e => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], code: e.target.value }; setForm({ ...form, lignes: next });
+                            }} />
+                            <Input className="col-span-4 h-8 text-xs" placeholder="Libellé" value={ligne.libelle} onChange={e => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], libelle: e.target.value }; setForm({ ...form, lignes: next });
+                            }} />
+                            <Select value={ligne.type} onValueChange={(v) => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], type: v as TypeLigneTaxe }; setForm({ ...form, lignes: next });
+                            }}>
+                              <SelectTrigger className="col-span-2 h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="GLOBALE">Globale</SelectItem>
+                                <SelectItem value="ARTICLE">Article</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input className="col-span-3 h-8 text-xs" type="number" min="0" placeholder="Valeur" value={ligne.valeur ?? 0} onChange={e => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], valeur: e.target.value ? Number(e.target.value) : 0 }; setForm({ ...form, lignes: next });
+                            }} />
+                            <Button type="button" variant="ghost" size="sm" className="col-span-1 h-8 p-0 text-destructive" onClick={() => {
+                              const next = (form.lignes || []).filter((_, i) => i !== idx); setForm({ ...form, lignes: next });
+                            }}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="text-right text-xs pt-1 border-t">
+                          Total bulletin : <strong>{(form.lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0)).toLocaleString("fr-FR")} MRU</strong>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {form.montantDroits != null && form.montantTVA != null && (
-                    <div className="p-2 rounded bg-muted text-sm">Montant total : <strong>{((form.montantDroits || 0) + (form.montantTVA || 0)).toLocaleString("fr-FR")} MRU</strong> (auto-calculé)</div>
-                  )}
+
                   <div className="flex items-center gap-2">
                     <Switch checked={form.enregistreeSYDONIA || false} onCheckedChange={v => setForm({ ...form, enregistreeSYDONIA: v })} />
                     <Label>Enregistrée dans SYDONIA</Label>
