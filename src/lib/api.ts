@@ -1032,12 +1032,35 @@ export type AffectationTaxe = "AU_CI" | "A_PAYER";
 export interface LigneBulletinDto {
   id: number;
   utilisationId?: number;
+  /** Code de la taxe (alias backend: codeTaxe) */
   code: string;
+  /** Libellé de la taxe (alias backend: denominationTaxe) */
   libelle: string;
+  /** Type de ligne (alias backend: typeLigne) */
   type: TypeLigneTaxe;
+  /** Valeur en MRU (alias backend: valeurTaxe) */
   valeur: number;
   affectation?: AffectationTaxe | null;
   ordre?: number;
+  // Champs bruts backend (au cas où)
+  codeTaxe?: string;
+  denominationTaxe?: string;
+  typeLigne?: TypeLigneTaxe;
+  valeurTaxe?: number;
+}
+
+/** Normalise une ligne du backend (codeTaxe/denominationTaxe/...) vers le format UI (code/libelle/...). */
+export function normalizeLigneBulletin(l: any): LigneBulletinDto {
+  return {
+    id: l.id,
+    utilisationId: l.utilisationId,
+    code: l.code ?? l.codeTaxe ?? "",
+    libelle: l.libelle ?? l.denominationTaxe ?? "",
+    type: l.type ?? l.typeLigne,
+    valeur: Number(l.valeur ?? l.valeurTaxe ?? 0),
+    affectation: l.affectation ?? null,
+    ordre: l.ordre,
+  };
 }
 
 export interface LigneBulletinRequest {
