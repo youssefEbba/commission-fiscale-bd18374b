@@ -149,16 +149,28 @@ const UtilisationDetail = () => {
   const handleLiquidation = async () => {
     if (!util) return;
     const lignes = util.lignes || [];
-    const missing = lignes.filter(l => !liqDecisions[l.id]);
-    if (missing.length > 0) {
-      toast({ title: "Décisions incomplètes", description: `Affectez chaque ligne (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
-      return;
+    // Côté DGD : enregistrement libre (même partiel) — le statut ne change pas tant que le visa n'est pas apposé.
+    // Côté DGTCP : toutes les lignes doivent être affectées avant la liquidation effective.
+    if (role !== "DGD") {
+      const missing = lignes.filter(l => !liqDecisions[l.id]);
+      if (missing.length > 0) {
+        toast({ title: "Décisions incomplètes", description: `Affectez chaque ligne (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
+        return;
+      }
     }
     setLiqLoading(true);
     try {
-      const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
+      // N'envoyer que les lignes effectivement affectées (évite d'écraser avec null)
+      const decisions = lignes
+        .filter(l => !!liqDecisions[l.id])
+        .map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
+      if (decisions.length === 0) {
+        toast({ title: "Aucune affectation", description: "Sélectionnez au moins une ligne avant d'enregistrer.", variant: "destructive" });
+        setLiqLoading(false);
+        return;
+      }
       await utilisationCreditApi.liquiderDouane(utilId, decisions);
-      toast({ title: "Succès", description: role === "DGD" ? "Affectations enregistrées — vous pouvez maintenant apposer le visa" : "Liquidation enregistrée — totaux mis à jour" });
+      toast({ title: "Succès", description: role === "DGD" ? "Affectations enregistrées — le statut reste inchangé jusqu'au visa" : "Liquidation enregistrée — totaux mis à jour" });
       setShowLiq(false);
       setLiqDecisions({});
       fetchAll();
