@@ -685,6 +685,7 @@ const UtilisationDetail = () => {
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
+                {canDGTCPValideDouane && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider la liquidation</Button>}
                 {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleStatut("LIQUIDEE")} disabled={actionLoading}>
                   {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   <Landmark className="h-4 w-4 mr-2" /> Liquider (imputer le crédit)
