@@ -103,8 +103,8 @@ const TAX_CODES_CATALOG: { code: string; libelle: string; type: TypeLigneTaxe }[
 
 // Lignes par défaut suggérées pour un bulletin de liquidation douanier
 const DEFAULT_BULLETIN_LIGNES: LigneBulletinRequest[] = [
-  { code: "DD", libelle: "Droit de Douane", type: "ARTICLE", valeur: 0, ordre: 1 },
-  { code: "TVA", libelle: "Taxe sur valeur ajoutée", type: "ARTICLE", valeur: 0, ordre: 2 },
+  { codeTaxe: "DD", denominationTaxe: "Droit de Douane", typeLigne: "ARTICLE", valeurTaxe: 0, ordre: 1 },
+  { codeTaxe: "TVA", denominationTaxe: "Taxe sur valeur ajoutée", typeLigne: "ARTICLE", valeurTaxe: 0, ordre: 2 },
 ];
 
 const Utilisations = () => {
@@ -254,7 +254,7 @@ const Utilisations = () => {
       numeroBulletin: u.numeroBulletin,
       dateDeclaration: u.dateDeclaration ? u.dateDeclaration.substring(0, 10) : "",
       lignes: (u.lignes && u.lignes.length > 0)
-        ? u.lignes.map(l => ({ id: l.id, code: l.code, libelle: l.libelle, type: l.type, valeur: l.valeur, ordre: l.ordre }))
+        ? u.lignes.map(l => ({ id: l.id, codeTaxe: l.code, denominationTaxe: l.libelle, typeLigne: l.type, valeurTaxe: l.valeur, ordre: l.ordre }))
         : [],
       enregistreeSYDONIA: u.enregistreeSYDONIA ?? false,
       // TVA
@@ -808,7 +808,7 @@ const Utilisations = () => {
                         <p className="text-[11px] text-muted-foreground">Saisissez chaque taxe (DD, TVA, RS, etc.). La DGTCP affectera ensuite chaque ligne au CI ou à payer.</p>
                       </div>
                       <Button type="button" variant="outline" size="sm" onClick={() => {
-                        const next = [...(form.lignes || []), { code: "", libelle: "", type: "GLOBALE" as TypeLigneTaxe, valeur: 0, ordre: (form.lignes?.length || 0) + 1 }];
+                        const next = [...(form.lignes || []), { codeTaxe: "", denominationTaxe: "", typeLigne: "GLOBALE" as TypeLigneTaxe, valeurTaxe: 0, ordre: (form.lignes?.length || 0) + 1 }];
                         setForm({ ...form, lignes: next });
                       }}>
                         <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
@@ -829,23 +829,21 @@ const Utilisations = () => {
                               className="col-span-2 h-8 text-xs uppercase"
                               placeholder="Code"
                               list={`tax-codes-list-${idx}`}
-                              value={ligne.code}
+                              value={ligne.codeTaxe}
                               onChange={e => {
                                 const raw = e.target.value;
                                 const codeUpper = raw.toUpperCase();
                                 const match = TAX_CODES_CATALOG.find(c => c.code === codeUpper);
                                 const next = [...(form.lignes || [])];
                                 const current = next[idx];
-                                // Auto-remplit le libellé/type uniquement si le libellé est vide
-                                // ou correspondait au libellé d'un autre code connu (l'utilisateur n'a rien tapé manuellement).
                                 const libelleEstAutoRempli =
-                                  !current.libelle ||
-                                  TAX_CODES_CATALOG.some(c => c.libelle === current.libelle);
+                                  !current.denominationTaxe ||
+                                  TAX_CODES_CATALOG.some(c => c.libelle === current.denominationTaxe);
                                 next[idx] = {
                                   ...current,
-                                  code: codeUpper,
-                                  libelle: match && libelleEstAutoRempli ? match.libelle : current.libelle,
-                                  type: match && libelleEstAutoRempli ? match.type : current.type,
+                                  codeTaxe: codeUpper,
+                                  denominationTaxe: match && libelleEstAutoRempli ? match.libelle : current.denominationTaxe,
+                                  typeLigne: match && libelleEstAutoRempli ? match.type : current.typeLigne,
                                 };
                                 setForm({ ...form, lignes: next });
                               }}
@@ -855,11 +853,11 @@ const Utilisations = () => {
                                 <option key={c.code} value={c.code}>{c.libelle}</option>
                               ))}
                             </datalist>
-                            <Input className="col-span-4 h-8 text-xs" placeholder="Libellé" value={ligne.libelle} onChange={e => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], libelle: e.target.value }; setForm({ ...form, lignes: next });
+                            <Input className="col-span-4 h-8 text-xs" placeholder="Libellé" value={ligne.denominationTaxe} onChange={e => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], denominationTaxe: e.target.value }; setForm({ ...form, lignes: next });
                             }} />
-                            <Select value={ligne.type} onValueChange={(v) => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], type: v as TypeLigneTaxe }; setForm({ ...form, lignes: next });
+                            <Select value={ligne.typeLigne} onValueChange={(v) => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], typeLigne: v as TypeLigneTaxe }; setForm({ ...form, lignes: next });
                             }}>
                               <SelectTrigger className="col-span-2 h-8 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
@@ -867,8 +865,8 @@ const Utilisations = () => {
                                 <SelectItem value="ARTICLE">Article</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Input className="col-span-3 h-8 text-xs" type="number" min="0" placeholder="Valeur" value={ligne.valeur ?? 0} onChange={e => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], valeur: e.target.value ? Number(e.target.value) : 0 }; setForm({ ...form, lignes: next });
+                            <Input className="col-span-3 h-8 text-xs" type="number" min="0" placeholder="Valeur" value={ligne.valeurTaxe ?? 0} onChange={e => {
+                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], valeurTaxe: e.target.value ? Number(e.target.value) : 0 }; setForm({ ...form, lignes: next });
                             }} />
                             <Button type="button" variant="ghost" size="sm" className="col-span-1 h-8 p-0 text-destructive" onClick={() => {
                               const next = (form.lignes || []).filter((_, i) => i !== idx); setForm({ ...form, lignes: next });
@@ -878,7 +876,7 @@ const Utilisations = () => {
                           </div>
                         ))}
                         <div className="text-right text-xs pt-1 border-t">
-                          Total bulletin : <strong>{(form.lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0)).toLocaleString("fr-FR")} MRU</strong>
+                          Total bulletin : <strong>{(form.lignes.reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0)).toLocaleString("fr-FR")} MRU</strong>
                         </div>
                       </div>
                     )}

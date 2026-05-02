@@ -1043,10 +1043,10 @@ export interface LigneBulletinDto {
 export interface LigneBulletinRequest {
   /** Optionnel — fourni en update pour conserver l'identité de la ligne. */
   id?: number;
-  code: string;
-  libelle: string;
-  type: TypeLigneTaxe;
-  valeur: number;
+  codeTaxe: string;
+  denominationTaxe: string;
+  typeLigne: TypeLigneTaxe;
+  valeurTaxe: number;
   ordre?: number;
 }
 
