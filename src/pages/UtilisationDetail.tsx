@@ -282,7 +282,10 @@ const UtilisationDetail = () => {
 
   // Determine available actions
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
-  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION";
+  // Le DGD doit affecter chaque ligne (AU CI / À PAYER) avant d'apposer son visa
+  const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
+  const canDGDDecideLignes = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0;
+  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && lignesAffectees;
   const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
@@ -661,19 +664,26 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDVisa || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
+        {(canDGDVerify || canDGDDecideLignes || canDGDVisa || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
           <Card>
             <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
                 {canDGDVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGDReVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
+                {canDGDDecideLignes && (
+                  <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                    const init: Record<number, AffectationTaxe> = {};
+                    (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
+                    setLiqDecisions(init);
+                    setShowLiq(true);
+                  }}><Landmark className="h-4 w-4 mr-2" /> Affecter les lignes (AU CI / À PAYER)</Button>
+                )}
                 {canDGDVisa && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VISE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Apposer le visa</Button>}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
                 {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
-                  // Pré-remplir : ARTICLE → AU_CI par défaut, GLOBALE → laissé vide pour forcer un choix
                   const init: Record<number, AffectationTaxe> = {};
                   (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
                   setLiqDecisions(init);
@@ -683,6 +693,12 @@ const UtilisationDetail = () => {
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
               </div>
+              {role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && !lignesAffectees && (
+                <p className="text-xs text-amber-700 mt-3">⚠ Affectez chaque ligne du bulletin avant d'apposer le visa.</p>
+              )}
+              {role === "DGD" && isDouane && (u.lignes?.length || 0) === 0 && (
+                <p className="text-xs text-amber-700 mt-3">⚠ Aucune ligne n'a été saisie par l'entreprise. Demandez via rejet temporaire la complétion du bulletin.</p>
+              )}
             </CardContent>
           </Card>
         )}
