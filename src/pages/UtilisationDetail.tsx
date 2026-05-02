@@ -393,6 +393,59 @@ const UtilisationDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Bulletin de liquidation — lignes saisies par l'entreprise + affectation DGTCP */}
+        {isDouane && u.lignes && u.lignes.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" /> Bulletin de liquidation ({u.lignes.length} ligne{u.lignes.length > 1 ? "s" : ""})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">Code</TableHead>
+                    <TableHead>Libellé</TableHead>
+                    <TableHead className="w-24">Type</TableHead>
+                    <TableHead className="text-right w-32">Valeur (MRU)</TableHead>
+                    <TableHead className="w-36">Affectation</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {u.lignes.map(l => (
+                    <TableRow key={l.id}>
+                      <TableCell className="font-mono text-xs">{l.code}</TableCell>
+                      <TableCell className="text-sm">{l.libelle}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px]">{l.type}</Badge></TableCell>
+                      <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                      <TableCell>
+                        {l.affectation === "AU_CI" ? (
+                          <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">AU CI</Badge>
+                        ) : l.affectation === "A_PAYER" ? (
+                          <Badge className="bg-amber-100 text-amber-800 text-[10px]">À PAYER</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">En attente</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/40 font-medium">
+                    <TableCell colSpan={3} className="text-right">Totaux</TableCell>
+                    <TableCell className="text-right">
+                      {f(u.lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0))}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div className="text-emerald-700">CI : {f(u.totalPrisEnCharge)}</div>
+                      <div className="text-amber-700">Payer : {f(u.totalAPayer)}</div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Traçabilité Liquidation Douane */}
         {isDouane && u.statut === "LIQUIDEE" && u.soldeCordonAvant != null && (
           <Card className="border-l-4 border-l-blue-500">
