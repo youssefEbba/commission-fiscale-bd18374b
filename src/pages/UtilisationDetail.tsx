@@ -393,8 +393,9 @@ const UtilisationDetail = () => {
               <CardContent className="pt-6">
                 <p className="text-xs text-muted-foreground">Soldes certificat</p>
                 <div className="text-sm space-y-1 mt-1">
-                  <div className="flex justify-between"><span>Cordon:</span><span className="font-semibold">{f(cert.soldeCordon)} MRU</span></div>
-                  <div className="flex justify-between"><span>TVA:</span><span className="font-semibold">{f(cert.soldeTVA)} MRU</span></div>
+                  <div className="flex justify-between"><span>Solde Cordon (droits):</span><span className="font-semibold">{f(cert.soldeCordon)} MRU</span></div>
+                  <div className="flex justify-between"><span>TVA importation restante:</span><span className="font-semibold">{f(cert.tvaImportationDouane)} MRU</span></div>
+                  <div className="flex justify-between"><span>Solde TVA intérieure:</span><span className="font-semibold">{f(cert.soldeTVA)} MRU</span></div>
                 </div>
               </CardContent>
             </Card>
