@@ -1215,11 +1215,16 @@ export const utilisationCreditApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/utilisations-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
-  /** Liquidation DGTCP — une décision (`AU_CI` | `A_PAYER`) par ligne du bulletin. */
-  liquiderDouane: (id: number, decisions: DecisionLigneRequest[]) =>
-    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
+  /** Visa DGD — annotation (AU_CI / A_PAYER) de chaque ligne + visa (statut → VISE). Toutes les lignes doivent être couvertes. */
+  visaDgd: (id: number, decisions: DecisionLigneRequest[]) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/visa-dgd`, {
       method: "POST",
       body: { decisions },
+    }),
+  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock FIFO. Aucun body. Prérequis : statut VISE. */
+  liquiderDouane: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
+      method: "POST",
     }),
   /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
   getLignesBulletin: async (id: number) => {
