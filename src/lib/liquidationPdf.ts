@@ -15,7 +15,7 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
   doc.text("Bulletin de liquidation - DGTCP", pageW / 2, y, { align: "center" });
   y += 18;
   doc.setFontSize(10).setFont("helvetica", "normal");
-  doc.text(`Référence : ${u.reference || `#${u.id}`}`, pageW / 2, y, { align: "center" });
+  doc.text(`Référence : ${u.certificatReference ? `${u.certificatReference} - #${u.id}` : `#${u.id}`}`, pageW / 2, y, { align: "center" });
   y += 12;
   doc.text(`Date de liquidation : ${dt(u.dateLiquidation)}`, pageW / 2, y, { align: "center" });
   y += 20;
