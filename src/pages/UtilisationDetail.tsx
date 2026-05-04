@@ -25,8 +25,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Loader2, Landmark, Ship, Building2, FileText, Upload, Info,
   AlertTriangle, CheckCircle2, Clock, CreditCard, XCircle, CircleDollarSign,
-  TrendingDown, TrendingUp, Minus
+  TrendingDown, TrendingUp, Minus, Download
 } from "lucide-react";
+import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -175,6 +176,18 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.liquiderDouane(utilId);
       toast({ title: "Liquidation effectuée", description: "Solde cordon débité, quota TVA décrémenté, stock TVA déductible alimenté." });
       setShowLiq(false);
+      // Récupère l'état à jour puis génère le PDF récapitulatif
+      const u2 = await utilisationCreditApi.getById(utilId);
+      const cert2 = u2.certificatCreditId
+        ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null)
+        : null;
+      setUtil(u2);
+      if (cert2) setCert(cert2);
+      try {
+        generateLiquidationPdf(u2, cert2);
+      } catch (err) {
+        console.error("PDF generation failed", err);
+      }
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -485,7 +498,12 @@ const UtilisationDetail = () => {
         {/* Traçabilité Liquidation Douane */}
         {isDouane && u.statut === "LIQUIDEE" && u.soldeCordonAvant != null && (
           <Card className="border-l-4 border-l-blue-500">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> Traçabilité liquidation</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> Traçabilité liquidation</CardTitle>
+              <Button size="sm" variant="outline" onClick={() => generateLiquidationPdf(u, cert)}>
+                <Download className="h-4 w-4 mr-2" /> Télécharger PDF
+              </Button>
+            </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div><p className="text-muted-foreground">Solde Cordon avant</p><p className="font-bold">{f(u.soldeCordonAvant)} MRU</p></div>
