@@ -227,7 +227,7 @@ const Certificats = () => {
                      <TableHead>Entreprise</TableHead>
                      <TableHead>Cordon (Douane)</TableHead>
                      <TableHead>TVA Int.</TableHead>
-                     <TableHead>Solde Cordon</TableHead>
+                     <TableHead>Solde Cordon (droits)</TableHead>
                      <TableHead>Solde TVA</TableHead>
                      <TableHead>Statut</TableHead>
                      <TableHead className="text-right">Actions</TableHead>
@@ -281,9 +281,9 @@ const Certificats = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseRaisonSociale || selected.entrepriseNom || "—"}</p></div>
                 <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
-                <div><span className="text-muted-foreground">Montant Cordon (Douane)</span><p className="font-medium">{selected.montantCordon?.toLocaleString("fr-FR") ?? selected.montantDouane?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
+                <div><span className="text-muted-foreground">Montant Cordon (Douane) — enveloppe</span><p className="font-medium">{selected.montantCordon?.toLocaleString("fr-FR") ?? selected.montantDouane?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
                 <div><span className="text-muted-foreground">Montant TVA Intérieure</span><p className="font-medium">{selected.montantTVAInterieure?.toLocaleString("fr-FR") ?? selected.montantInterieur?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Solde Cordon</span><p className="font-bold">{selected.soldeCordon?.toLocaleString("fr-FR") ?? "—"} MRU</p></div>
+                <div><span className="text-muted-foreground">Solde Cordon (droits)</span><p className="font-bold">{selected.soldeCordon?.toLocaleString("fr-FR") ?? "—"} MRU<br/><span className="text-[10px] font-normal text-muted-foreground">+ TVA restante {selected.tvaImportationDouane?.toLocaleString("fr-FR") ?? "0"} = {((selected.soldeCordon ?? 0) + (selected.tvaImportationDouane ?? 0)).toLocaleString("fr-FR")} MRU</span></p></div>
                 <div><span className="text-muted-foreground">Solde TVA</span><p className="font-bold">{selected.soldeTVA?.toLocaleString("fr-FR") ?? "—"} MRU</p></div>
                 <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal?.toLocaleString("fr-FR") || "0"} MRU</p></div>
                 <div><span className="text-muted-foreground">Date</span><p>{(selected.dateEmission || selected.dateCreation) ? new Date(selected.dateEmission || selected.dateCreation!).toLocaleDateString("fr-FR") : "—"}</p></div>

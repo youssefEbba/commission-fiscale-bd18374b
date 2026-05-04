@@ -163,7 +163,7 @@ const Cloture = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Numéro</TableHead>
-                      <TableHead>Solde Cordon</TableHead>
+                      <TableHead>Solde Cordon (droits)</TableHead>
                       <TableHead>Solde TVA</TableHead>
                       <TableHead>Date validité</TableHead>
                       <TableHead className="text-right">Action</TableHead>

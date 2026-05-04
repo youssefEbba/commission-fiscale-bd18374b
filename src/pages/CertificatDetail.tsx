@@ -289,8 +289,9 @@ const CertificatDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500">
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Montant Cordon (Douane)</p>
+              <p className="text-xs text-muted-foreground">Montant Cordon (Douane) — enveloppe (b+d)</p>
               <p className="text-xl font-bold">{(c.montantCordon ?? c.montantDouane ?? 0).toLocaleString("fr-FR")} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+              <p className="text-[10px] text-muted-foreground mt-1">Valeur fixe — affichage</p>
             </CardContent>
           </Card>
           <Card className="border-l-4 border-l-indigo-500">
@@ -301,8 +302,11 @@ const CertificatDetail = () => {
           </Card>
           <Card className="border-l-4 border-l-emerald-500">
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Solde Cordon</p>
+              <p className="text-xs text-muted-foreground">Solde Cordon (droits)</p>
               <p className="text-xl font-bold text-emerald-600">{(c.soldeCordon ?? 0).toLocaleString("fr-FR")} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                + TVA restante : <span className="font-semibold">{(c.tvaImportationDouane ?? 0).toLocaleString("fr-FR")}</span> = <span className="font-semibold">{((c.soldeCordon ?? 0) + (c.tvaImportationDouane ?? 0)).toLocaleString("fr-FR")}</span> MRU restant
+              </p>
             </CardContent>
           </Card>
           <Card className="border-l-4 border-l-green-500">

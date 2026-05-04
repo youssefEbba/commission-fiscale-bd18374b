@@ -414,9 +414,9 @@ const MiseEnPlaceDetail = () => {
             <CardContent className="p-4">
               <h3 className="font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Montants</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Cordon</span><p className="font-bold">{c.montantCordon?.toLocaleString("fr-FR") || "—"} MRU</p></div>
+                <div><span className="text-muted-foreground">Cordon (enveloppe b+d)</span><p className="font-bold">{c.montantCordon?.toLocaleString("fr-FR") || "—"} MRU</p></div>
                 <div><span className="text-muted-foreground">TVA Intérieure</span><p className="font-bold">{c.montantTVAInterieure?.toLocaleString("fr-FR") || "—"} MRU</p></div>
-                <div><span className="text-muted-foreground">Solde Cordon</span><p className="font-bold">{c.soldeCordon?.toLocaleString("fr-FR") || "—"} MRU</p></div>
+                <div><span className="text-muted-foreground">Solde Cordon (droits)</span><p className="font-bold">{c.soldeCordon?.toLocaleString("fr-FR") || "—"} MRU<br/><span className="text-[10px] font-normal text-muted-foreground">+ TVA restante {c.tvaImportationDouane?.toLocaleString("fr-FR") ?? "0"} = {((c.soldeCordon ?? 0) + (c.tvaImportationDouane ?? 0)).toLocaleString("fr-FR")} MRU</span></p></div>
                 <div><span className="text-muted-foreground">Solde TVA</span><p className="font-bold">{c.soldeTVA?.toLocaleString("fr-FR") || "—"} MRU</p></div>
               </div>
             </CardContent>
