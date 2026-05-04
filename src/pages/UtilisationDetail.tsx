@@ -775,8 +775,10 @@ const UtilisationDetail = () => {
                   <div className="flex justify-between text-xs pl-3"><span>— dont TVA (stock déductible) :</span><span>{f(tvaAuCi)} MRU</span></div>
                   <div className="flex justify-between text-xs pl-3"><span>— dont hors TVA (solde cordon) :</span><span>{f(horsTvaAuCi)} MRU</span></div>
                   <div className="flex justify-between"><span>Total à payer (entreprise) :</span><span className="font-bold text-amber-700">{f(totalAPayer)} MRU</span></div>
-                  {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
+                  {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon (droits) actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
                   {cert && <div className="flex justify-between"><span>Solde Cordon après liquidation DGTCP :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - horsTvaAuCi)} MRU</span></div>}
+                  {cert && <div className="flex justify-between"><span>TVA importation actuelle :</span><span>{f(cert.tvaImportationDouane)} MRU</span></div>}
+                  {cert && <div className="flex justify-between"><span>TVA importation après liquidation :</span><span className="font-bold">{f((cert.tvaImportationDouane ?? 0) - tvaAuCi)} MRU</span></div>}
                   {restant > 0 && <div className="text-amber-700 text-xs pt-1">{restant} ligne(s) sans affectation — toutes les lignes doivent être renseignées.</div>}
                 </div>
               );
