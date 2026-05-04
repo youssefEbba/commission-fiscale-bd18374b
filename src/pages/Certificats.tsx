@@ -227,7 +227,7 @@ const Certificats = () => {
                      <TableHead>Entreprise</TableHead>
                      <TableHead>Cordon (Douane)</TableHead>
                      <TableHead>TVA Int.</TableHead>
-                     <TableHead>Solde Cordon</TableHead>
+                     <TableHead>Solde Cordon (droits)</TableHead>
                      <TableHead>Solde TVA</TableHead>
                      <TableHead>Statut</TableHead>
                      <TableHead className="text-right">Actions</TableHead>
