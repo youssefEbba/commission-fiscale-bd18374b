@@ -136,5 +136,5 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
   doc.text("Document généré automatiquement - DGTCP", 40, y);
   doc.text(`Édité le ${new Date().toLocaleString("fr-FR")}`, pageW - 40, y, { align: "right" });
 
-  doc.save(`liquidation-${u.reference || u.id}.pdf`);
+  doc.save(`liquidation-${u.certificatReference || u.id}.pdf`);
 }
