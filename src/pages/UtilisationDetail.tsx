@@ -795,7 +795,7 @@ const UtilisationDetail = () => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Apurement TVA — Utilisation #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Saisissez la TVA déductible à utiliser. Le système consommera le stock FIFO et calculera la TVA nette.</p>
+            <p className="text-sm text-muted-foreground">Saisissez la TVA déductible à utiliser. Le système consommera le stock TVA déductible et calculera la TVA nette.</p>
             {tvaStock.length > 0 && (
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
                 <p className="font-semibold text-blue-800 mb-1">Stock TVA déductible disponible : {f(totalStockDisponible)} MRU</p>
