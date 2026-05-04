@@ -26,11 +26,11 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
     theme: "plain",
     styles: { fontSize: 9, cellPadding: 2 },
     body: [
-      ["Entreprise", u.entrepriseRaisonSociale || "—", "Type", u.type || "—"],
-      ["Marché", u.marcheReference || "—", "Statut", u.statut],
+      ["Entreprise", u.entrepriseNom || "—", "Type", u.type || "—"],
+      ["Certificat", u.certificatReference || "—", "Statut", u.statut],
       ["N° Déclaration", u.numeroDeclaration || "—", "N° Bulletin", u.numeroBulletin || "—"],
       ["Date déclaration", dt(u.dateDeclaration), "SYDONIA", u.enregistreeSYDONIA ? "Oui" : "Non"],
-      ["Certificat", cert?.numero || u.certificatNumero || "—", "Montant total", `${fmt(u.montant)} MRU`],
+      ["Montant total", `${fmt(u.montant)} MRU`, "Date création", dt(u.dateCreation)],
     ],
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 100 },
