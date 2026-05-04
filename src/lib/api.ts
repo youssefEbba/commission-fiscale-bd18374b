@@ -984,7 +984,7 @@ export const certificatCreditApi = {
     formData.append("file", file);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
-  // TVA Stock FIFO
+  // Stock TVA déductible
   getTvaStock: (id: number) => apiFetch<TvaDeductibleStockDto[]>(`/certificats-credit/${id}/tva-stock`),
   // Decisions (REJET_TEMP + VISA)
   getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/certificats-credit/${id}/decisions`),
@@ -1221,7 +1221,7 @@ export const utilisationCreditApi = {
       method: "POST",
       body: { decisions },
     }),
-  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock FIFO. Aucun body. Prérequis : statut VISE. */
+  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock TVA déductible. Aucun body. Prérequis : statut VISE. */
   liquiderDouane: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
       method: "POST",

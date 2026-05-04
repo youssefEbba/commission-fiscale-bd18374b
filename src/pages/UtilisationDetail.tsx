@@ -173,7 +173,7 @@ const UtilisationDetail = () => {
     setLiqLoading(true);
     try {
       await utilisationCreditApi.liquiderDouane(utilId);
-      toast({ title: "Liquidation effectuée", description: "Solde cordon débité, quota TVA décrémenté, stock FIFO alimenté." });
+      toast({ title: "Liquidation effectuée", description: "Solde cordon débité, quota TVA décrémenté, stock TVA déductible alimenté." });
       setShowLiq(false);
       fetchAll();
     } catch (e: any) {
@@ -490,7 +490,7 @@ const UtilisationDetail = () => {
                 <div><p className="text-muted-foreground">Solde Cordon avant</p><p className="font-bold">{f(u.soldeCordonAvant)} MRU</p></div>
                 <div><p className="text-muted-foreground">Montant imputé</p><p className="font-bold text-destructive">- {f(u.montant)} MRU</p></div>
                 <div><p className="text-muted-foreground">Solde Cordon après</p><p className="font-bold text-emerald-600">{f(u.soldeCordonApres)} MRU</p></div>
-                <div><p className="text-muted-foreground">TVA → Stock FIFO</p><p className="font-bold text-blue-600">+ {f(u.montantTVADouane)} MRU</p></div>
+                <div><p className="text-muted-foreground">TVA → Stock déductible</p><p className="font-bold text-blue-600">+ {f(u.montantTVADouane)} MRU</p></div>
               </div>
             </CardContent>
           </Card>
@@ -533,10 +533,10 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {/* TVA Stock FIFO (for DGTCP when preparing apurement) */}
+        {/* Stock TVA déductible (for DGTCP when preparing apurement) */}
         {isTVA && (role === "DGTCP" || role === "ADMIN_SI") && tvaStock.length > 0 && u.statut !== "APUREE" && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Stock TVA déductible disponible (FIFO) — Total : {f(totalStockDisponible)} MRU</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Stock TVA déductible disponible — Total : {f(totalStockDisponible)} MRU</CardTitle></CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -707,7 +707,7 @@ const UtilisationDetail = () => {
               </div>
               {canDGTCPLiquider && (
                 <p className="text-xs text-muted-foreground mt-3">
-                  La liquidation va débiter le solde cordon de <strong>{f((u.totalPrisEnCharge ?? 0) - (u.montantTVADouane ?? 0))} MRU</strong> (hors TVA), décrémenter le quota TVA importation de <strong>{f(u.montantTVADouane)} MRU</strong> et alimenter le stock FIFO TVA déductible.
+                  La liquidation va débiter le solde cordon de <strong>{f((u.totalPrisEnCharge ?? 0) - (u.montantTVADouane ?? 0))} MRU</strong> (hors TVA), décrémenter le quota TVA importation de <strong>{f(u.montantTVADouane)} MRU</strong> et alimenter le stock TVA déductible.
                 </p>
               )}
               {role === "DGD" && isDouane && (u.lignes?.length || 0) === 0 && (
@@ -771,7 +771,7 @@ const UtilisationDetail = () => {
               return (
                 <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
                   <div className="flex justify-between"><span>Total pris en charge (AU CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
-                  <div className="flex justify-between text-xs pl-3"><span>— dont TVA (stock FIFO) :</span><span>{f(tvaAuCi)} MRU</span></div>
+                  <div className="flex justify-between text-xs pl-3"><span>— dont TVA (stock déductible) :</span><span>{f(tvaAuCi)} MRU</span></div>
                   <div className="flex justify-between text-xs pl-3"><span>— dont hors TVA (solde cordon) :</span><span>{f(horsTvaAuCi)} MRU</span></div>
                   <div className="flex justify-between"><span>Total à payer (entreprise) :</span><span className="font-bold text-amber-700">{f(totalAPayer)} MRU</span></div>
                   {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}

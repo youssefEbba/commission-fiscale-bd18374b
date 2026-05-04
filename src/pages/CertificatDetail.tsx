@@ -394,13 +394,13 @@ const CertificatDetail = () => {
           </div>
         )}
 
-        {/* Stock TVA déductible FIFO */}
+        {/* Stock TVA déductible */}
         {tvaStock.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Info className="h-5 w-5 text-primary" />
-                Stock TVA déductible (FIFO) — Total disponible : {tvaStock.reduce((s, t) => s + t.montantRestant, 0).toLocaleString("fr-FR")} MRU
+                Stock TVA déductible — Total disponible : {tvaStock.reduce((s, t) => s + t.montantRestant, 0).toLocaleString("fr-FR")} MRU
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
