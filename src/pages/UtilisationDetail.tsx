@@ -176,6 +176,18 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.liquiderDouane(utilId);
       toast({ title: "Liquidation effectuée", description: "Solde cordon débité, quota TVA décrémenté, stock TVA déductible alimenté." });
       setShowLiq(false);
+      // Récupère l'état à jour puis génère le PDF récapitulatif
+      const u2 = await utilisationCreditApi.getById(utilId);
+      const cert2 = u2.certificatCreditId
+        ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null)
+        : null;
+      setUtil(u2);
+      if (cert2) setCert(cert2);
+      try {
+        generateLiquidationPdf(u2, cert2);
+      } catch (err) {
+        console.error("PDF generation failed", err);
+      }
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
