@@ -146,33 +146,35 @@ const UtilisationDetail = () => {
     } finally { setActionLoading(false); }
   };
 
-  const handleLiquidation = async () => {
+  // DGD : annote chaque ligne + appose le visa en une seule action (POST /visa-dgd → statut VISE)
+  const handleVisaDgd = async () => {
     if (!util) return;
     const lignes = util.lignes || [];
-    // Côté DGD : enregistrement libre (même partiel) — le statut ne change pas tant que le visa n'est pas apposé.
-    // Côté DGTCP : toutes les lignes doivent être affectées avant la liquidation effective.
-    if (role !== "DGD") {
-      const missing = lignes.filter(l => !liqDecisions[l.id]);
-      if (missing.length > 0) {
-        toast({ title: "Décisions incomplètes", description: `Affectez chaque ligne (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
-        return;
-      }
+    const missing = lignes.filter(l => !liqDecisions[l.id]);
+    if (missing.length > 0) {
+      toast({ title: "Décisions incomplètes", description: `Toutes les lignes doivent être affectées (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
+      return;
     }
     setLiqLoading(true);
     try {
-      // N'envoyer que les lignes effectivement affectées (évite d'écraser avec null)
-      const decisions = lignes
-        .filter(l => !!liqDecisions[l.id])
-        .map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
-      if (decisions.length === 0) {
-        toast({ title: "Aucune affectation", description: "Sélectionnez au moins une ligne avant d'enregistrer.", variant: "destructive" });
-        setLiqLoading(false);
-        return;
-      }
-      await utilisationCreditApi.liquiderDouane(utilId, decisions);
-      toast({ title: "Succès", description: role === "DGD" ? "Affectations enregistrées — le statut reste inchangé jusqu'au visa" : "Liquidation enregistrée — totaux mis à jour" });
+      const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
+      await utilisationCreditApi.visaDgd(utilId, decisions);
+      toast({ title: "Visa apposé", description: "Le bulletin est annoté et visé. En attente de la liquidation DGTCP." });
       setShowLiq(false);
       setLiqDecisions({});
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setLiqLoading(false); }
+  };
+
+  // DGTCP : exécute la liquidation financière (POST /liquidation-douane, sans body → statut LIQUIDEE)
+  const handleLiquidationDgtcp = async () => {
+    setLiqLoading(true);
+    try {
+      await utilisationCreditApi.liquiderDouane(utilId);
+      toast({ title: "Liquidation effectuée", description: "Solde cordon débité, quota TVA décrémenté, stock FIFO alimenté." });
+      setShowLiq(false);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -294,21 +296,20 @@ const UtilisationDetail = () => {
 
   // Determine available actions
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
-  // Le DGD doit affecter chaque ligne (AU CI / À PAYER) avant d'apposer son visa
+  // Le DGD annote chaque ligne (AU CI / À PAYER) et appose son visa en une seule action.
+  // Possible depuis DEMANDEE, EN_VERIFICATION ou A_RECONTROLER.
   const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
-  const canDGDDecideLignes = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0;
-  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && lignesAffectees;
-  // DGTCP douanier : d'abord valider (VISE -> VALIDEE), puis liquider (VALIDEE -> LIQUIDEE)
-  const canDGTCPValideDouane = role === "DGTCP" && isDouane && u.statut === "VISE";
-  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VALIDEE";
+  const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
+  // DGTCP douanier : liquide directement depuis VISE (pas d'étape VALIDEE intermédiaire — backend simplifié)
+  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
   const myHasVisa = decisions.some(d => d.role === role && d.decision === "VISA");
   const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
-  const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION"].includes(u.statut)) ||
+  const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
-    (role === "DGTCP" && isDouane && ["VISE", "VALIDEE"].includes(u.statut));
+    (role === "DGTCP" && isDouane && u.statut === "VISE");
 
   // A_RECONTROLER transitions
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
@@ -678,39 +679,39 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDDecideLignes || canDGDVisa || canDGTCPValideDouane || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
+        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
           <Card>
             <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                {canDGDVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
+                {canDGDVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Prendre en charge</Button>}
                 {canDGDReVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
-                {canDGDDecideLignes && (
-                  <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                {canDGDAnnoterEtViser && (
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
                     const init: Record<number, AffectationTaxe> = {};
                     (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
                     setLiqDecisions(init);
                     setShowLiq(true);
-                  }}><Landmark className="h-4 w-4 mr-2" /> Préciser les affectations (AU CI / À PAYER)</Button>
+                  }}><Landmark className="h-4 w-4 mr-2" /> Annoter le bulletin & viser</Button>
                 )}
-                {canDGDVisa && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VISE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Apposer le visa</Button>}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
-                {canDGTCPValideDouane && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider la liquidation</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleStatut("LIQUIDEE")} disabled={actionLoading}>
-                  {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  <Landmark className="h-4 w-4 mr-2" /> Liquider (imputer le crédit)
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
+                  {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Landmark className="h-4 w-4 mr-2" /> Exécuter la liquidation
                 </Button>}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
               </div>
-              {role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && !lignesAffectees && (
-                <p className="text-xs text-amber-700 mt-3">⚠ Affectez chaque ligne du bulletin avant d'apposer le visa.</p>
+              {canDGTCPLiquider && (
+                <p className="text-xs text-muted-foreground mt-3">
+                  La liquidation va débiter le solde cordon de <strong>{f((u.totalPrisEnCharge ?? 0) - (u.montantTVADouane ?? 0))} MRU</strong> (hors TVA), décrémenter le quota TVA importation de <strong>{f(u.montantTVADouane)} MRU</strong> et alimenter le stock FIFO TVA déductible.
+                </p>
               )}
               {role === "DGD" && isDouane && (u.lignes?.length || 0) === 0 && (
-                <p className="text-xs text-amber-700 mt-3">⚠ Aucune ligne n'a été saisie par l'entreprise. Demandez via rejet temporaire la complétion du bulletin.</p>
+                <p className="text-xs text-amber-700 mt-3">Aucune ligne n'a été saisie par l'entreprise. Demandez via rejet temporaire la complétion du bulletin.</p>
               )}
             </CardContent>
           </Card>
@@ -720,14 +721,14 @@ const UtilisationDetail = () => {
       {/* Liquidation Dialog — décision par ligne du bulletin */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{role === "DGD" ? "Affectation des lignes" : "Liquidation"} — Bulletin #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Annotation du bulletin & visa DGD — #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (à imputer sur le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler par l'entreprise).{role === "DGD" ? " La liquidation effective sera réalisée par le DGTCP après votre visa." : " L'imputation du crédit sera effectuée à la confirmation."}
+              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (pris en charge par le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler comptant par l'entreprise). À la confirmation, le statut passe à <strong>VISÉ</strong> ; la liquidation financière sera ensuite exécutée par le DGTCP.
             </p>
             {(!u.lignes || u.lignes.length === 0) ? (
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-                Aucune ligne de bulletin n'a été saisie pour cette utilisation. Demandez à l'entreprise de compléter le bulletin avant la liquidation.
+                Aucune ligne de bulletin n'a été saisie pour cette utilisation. Demandez à l'entreprise de compléter le bulletin avant le visa.
               </div>
             ) : (
               <Table>
@@ -751,7 +752,7 @@ const UtilisationDetail = () => {
                         <Select value={liqDecisions[l.id] || ""} onValueChange={(v) => setLiqDecisions(prev => ({ ...prev, [l.id]: v as AffectationTaxe }))}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choisir..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="AU_CI">AU CI (imputer)</SelectItem>
+                            <SelectItem value="AU_CI">AU CI (crédit extérieur)</SelectItem>
                             <SelectItem value="A_PAYER">À PAYER (entreprise)</SelectItem>
                           </SelectContent>
                         </Select>
@@ -763,22 +764,26 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
               const totalAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const tvaAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI" && (l.code || "").toUpperCase() === "TVA").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const horsTvaAuCi = totalAuCi - tvaAuCi;
               const totalAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
               const restant = u.lignes.filter(l => !liqDecisions[l.id]).length;
               return (
                 <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
-                  <div className="flex justify-between"><span>Total pris en charge (CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
+                  <div className="flex justify-between"><span>Total pris en charge (AU CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
+                  <div className="flex justify-between text-xs pl-3"><span>— dont TVA (stock FIFO) :</span><span>{f(tvaAuCi)} MRU</span></div>
+                  <div className="flex justify-between text-xs pl-3"><span>— dont hors TVA (solde cordon) :</span><span>{f(horsTvaAuCi)} MRU</span></div>
                   <div className="flex justify-between"><span>Total à payer (entreprise) :</span><span className="font-bold text-amber-700">{f(totalAPayer)} MRU</span></div>
                   {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
-                  {cert && <div className="flex justify-between"><span>Solde Cordon après :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - totalAuCi)} MRU</span></div>}
-                  {restant > 0 && <div className="text-amber-700 text-xs pt-1">⚠ {restant} ligne(s) sans affectation.</div>}
+                  {cert && <div className="flex justify-between"><span>Solde Cordon après liquidation DGTCP :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - horsTvaAuCi)} MRU</span></div>}
+                  {restant > 0 && <div className="text-amber-700 text-xs pt-1">{restant} ligne(s) sans affectation — toutes les lignes doivent être renseignées.</div>}
                 </div>
               );
             })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
-              <Button disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleLiquidation}>
-                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {role === "DGD" ? "Enregistrer les affectations" : "Confirmer la liquidation"}
+              <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleVisaDgd}>
+                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer le visa
               </Button>
             </DialogFooter>
           </div>
