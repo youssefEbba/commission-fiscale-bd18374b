@@ -25,8 +25,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Loader2, Landmark, Ship, Building2, FileText, Upload, Info,
   AlertTriangle, CheckCircle2, Clock, CreditCard, XCircle, CircleDollarSign,
-  TrendingDown, TrendingUp, Minus
+  TrendingDown, TrendingUp, Minus, Download
 } from "lucide-react";
+import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
