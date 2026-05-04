@@ -721,7 +721,7 @@ const UtilisationDetail = () => {
       {/* Liquidation Dialog — décision par ligne du bulletin */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{role === "DGD" ? "Affectation des lignes" : "Liquidation"} — Bulletin #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Annotation du bulletin & visa DGD — #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (à imputer sur le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler par l'entreprise).{role === "DGD" ? " La liquidation effective sera réalisée par le DGTCP après votre visa." : " L'imputation du crédit sera effectuée à la confirmation."}
