@@ -724,11 +724,11 @@ const UtilisationDetail = () => {
           <DialogHeader><DialogTitle>Annotation du bulletin & visa DGD — #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (à imputer sur le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler par l'entreprise).{role === "DGD" ? " La liquidation effective sera réalisée par le DGTCP après votre visa." : " L'imputation du crédit sera effectuée à la confirmation."}
+              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (pris en charge par le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler comptant par l'entreprise). À la confirmation, le statut passe à <strong>VISÉ</strong> ; la liquidation financière sera ensuite exécutée par le DGTCP.
             </p>
             {(!u.lignes || u.lignes.length === 0) ? (
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-                Aucune ligne de bulletin n'a été saisie pour cette utilisation. Demandez à l'entreprise de compléter le bulletin avant la liquidation.
+                Aucune ligne de bulletin n'a été saisie pour cette utilisation. Demandez à l'entreprise de compléter le bulletin avant le visa.
               </div>
             ) : (
               <Table>
@@ -752,7 +752,7 @@ const UtilisationDetail = () => {
                         <Select value={liqDecisions[l.id] || ""} onValueChange={(v) => setLiqDecisions(prev => ({ ...prev, [l.id]: v as AffectationTaxe }))}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choisir..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="AU_CI">AU CI (imputer)</SelectItem>
+                            <SelectItem value="AU_CI">AU CI (crédit extérieur)</SelectItem>
                             <SelectItem value="A_PAYER">À PAYER (entreprise)</SelectItem>
                           </SelectContent>
                         </Select>
@@ -764,22 +764,26 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
               const totalAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const tvaAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI" && (l.code || "").toUpperCase() === "TVA").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const horsTvaAuCi = totalAuCi - tvaAuCi;
               const totalAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
               const restant = u.lignes.filter(l => !liqDecisions[l.id]).length;
               return (
                 <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
-                  <div className="flex justify-between"><span>Total pris en charge (CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
+                  <div className="flex justify-between"><span>Total pris en charge (AU CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
+                  <div className="flex justify-between text-xs pl-3"><span>— dont TVA (stock FIFO) :</span><span>{f(tvaAuCi)} MRU</span></div>
+                  <div className="flex justify-between text-xs pl-3"><span>— dont hors TVA (solde cordon) :</span><span>{f(horsTvaAuCi)} MRU</span></div>
                   <div className="flex justify-between"><span>Total à payer (entreprise) :</span><span className="font-bold text-amber-700">{f(totalAPayer)} MRU</span></div>
                   {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
-                  {cert && <div className="flex justify-between"><span>Solde Cordon après :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - totalAuCi)} MRU</span></div>}
-                  {restant > 0 && <div className="text-amber-700 text-xs pt-1">⚠ {restant} ligne(s) sans affectation.</div>}
+                  {cert && <div className="flex justify-between"><span>Solde Cordon après liquidation DGTCP :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - horsTvaAuCi)} MRU</span></div>}
+                  {restant > 0 && <div className="text-amber-700 text-xs pt-1">{restant} ligne(s) sans affectation — toutes les lignes doivent être renseignées.</div>}
                 </div>
               );
             })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
-              <Button disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleLiquidation}>
-                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {role === "DGD" ? "Enregistrer les affectations" : "Confirmer la liquidation"}
+              <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleVisaDgd}>
+                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer le visa
               </Button>
             </DialogFooter>
           </div>
