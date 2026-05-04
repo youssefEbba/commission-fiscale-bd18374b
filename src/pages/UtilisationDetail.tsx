@@ -296,21 +296,20 @@ const UtilisationDetail = () => {
 
   // Determine available actions
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
-  // Le DGD doit affecter chaque ligne (AU CI / À PAYER) avant d'apposer son visa
+  // Le DGD annote chaque ligne (AU CI / À PAYER) et appose son visa en une seule action.
+  // Possible depuis DEMANDEE, EN_VERIFICATION ou A_RECONTROLER.
   const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
-  const canDGDDecideLignes = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0;
-  const canDGDVisa = role === "DGD" && isDouane && u.statut === "EN_VERIFICATION" && (u.lignes?.length || 0) > 0 && lignesAffectees;
-  // DGTCP douanier : d'abord valider (VISE -> VALIDEE), puis liquider (VALIDEE -> LIQUIDEE)
-  const canDGTCPValideDouane = role === "DGTCP" && isDouane && u.statut === "VISE";
-  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VALIDEE";
+  const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
+  // DGTCP douanier : liquide directement depuis VISE (pas d'étape VALIDEE intermédiaire — backend simplifié)
+  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
   const myHasVisa = decisions.some(d => d.role === role && d.decision === "VISA");
   const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
-  const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION"].includes(u.statut)) ||
+  const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
-    (role === "DGTCP" && isDouane && ["VISE", "VALIDEE"].includes(u.statut));
+    (role === "DGTCP" && isDouane && u.statut === "VISE");
 
   // A_RECONTROLER transitions
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
