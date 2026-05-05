@@ -900,7 +900,8 @@ const Utilisations = () => {
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
-                        ))}
+                        ));
+                        })()}
                         <div className="text-right text-xs pt-1 border-t">
                           Total bulletin : <strong>{(form.lignes.reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0)).toLocaleString("fr-FR")} MRU</strong>
                         </div>
