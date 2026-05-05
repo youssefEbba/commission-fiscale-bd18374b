@@ -8,7 +8,7 @@ import {
   UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
-  LigneBulletinDto, AffectationTaxe,
+  LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
