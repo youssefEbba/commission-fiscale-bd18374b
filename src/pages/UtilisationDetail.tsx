@@ -8,7 +8,7 @@ import {
   UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
-  LigneBulletinDto, AffectationTaxe,
+  LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,10 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
   CLOTUREE: "bg-slate-200 text-slate-800",
+  EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
+  CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
+  ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
+  QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
 };
 
 const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
@@ -69,6 +73,21 @@ const UtilisationDetail = () => {
   const [showApur, setShowApur] = useState(false);
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
+
+  // Chèque dialog (entreprise)
+  const [showCheque, setShowCheque] = useState(false);
+  const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+  const [chequeLoading, setChequeLoading] = useState(false);
+
+  // Quittances dialog (DGTCP)
+  const [showQuittances, setShowQuittances] = useState(false);
+  const [quittancesForm, setQuittancesForm] = useState<QuittanceTresorDto[]>([]);
+  const [quittancesLoading, setQuittancesLoading] = useState(false);
+
+  // Envoyer Trésor confirm
+  const [envoiLoading, setEnvoiLoading] = useState(false);
+  // Accusé réception
+  const [receptionLoading, setReceptionLoading] = useState(false);
 
   // Rejet temp dialog
   const [showRejet, setShowRejet] = useState(false);
@@ -194,6 +213,73 @@ const UtilisationDetail = () => {
     } finally { setLiqLoading(false); }
   };
 
+  // Entreprise : saisir le chèque certifié couvrant la part À PAYER
+  const handleSaisirCheque = async () => {
+    if (!chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque) return;
+    setChequeLoading(true);
+    try {
+      await utilisationCreditApi.saisirCheque(utilId, {
+        banqueNom: chequeForm.banqueNom.trim(),
+        numeroCheque: chequeForm.numeroCheque.trim(),
+        montantCheque: Number(chequeForm.montantCheque),
+        dateCheque: chequeForm.dateCheque ? new Date(chequeForm.dateCheque).toISOString() : undefined,
+      });
+      toast({ title: "Chèque enregistré", description: "Le dossier passe en attente d'envoi au Trésor." });
+      setShowCheque(false);
+      setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setChequeLoading(false); }
+  };
+
+  // DGTCP : envoi au Trésor
+  const handleEnvoyerTresor = async () => {
+    setEnvoiLoading(true);
+    try {
+      await utilisationCreditApi.envoyerAuTresor(utilId);
+      toast({ title: "Envoyé", description: "Dossier envoyé au Trésor." });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setEnvoiLoading(false); }
+  };
+
+  // DGTCP : enregistrer / mettre à jour les quittances
+  const handleSaisirQuittances = async () => {
+    const valid = quittancesForm.filter(q => q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0);
+    if (valid.length === 0) {
+      toast({ title: "Aucune quittance valide", description: "Renseignez au moins une quittance.", variant: "destructive" });
+      return;
+    }
+    setQuittancesLoading(true);
+    try {
+      await utilisationCreditApi.saisirQuittances(utilId, valid.map(q => ({
+        numeroQuittance: q.numeroQuittance.trim(),
+        dateQuittance: new Date(q.dateQuittance).toISOString(),
+        montant: Number(q.montant),
+        referencePaiement: q.referencePaiement?.trim() || undefined,
+      })));
+      toast({ title: "Quittances enregistrées", description: `${valid.length} quittance(s) enregistrée(s).` });
+      setShowQuittances(false);
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setQuittancesLoading(false); }
+  };
+
+  // Entreprise : accusé de réception du certificat d'utilisation
+  const handleClotureReception = async () => {
+    setReceptionLoading(true);
+    try {
+      await utilisationCreditApi.cloturerReception(utilId);
+      toast({ title: "Réception confirmée", description: "Dossier clôturé et archivé." });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setReceptionLoading(false); }
+  };
+
   const handleApurement = async () => {
     setApurLoading(true);
     try {
@@ -313,16 +399,26 @@ const UtilisationDetail = () => {
   // Possible depuis DEMANDEE, EN_VERIFICATION ou A_RECONTROLER.
   const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
   const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
-  // DGTCP douanier : liquide directement depuis VISE (pas d'étape VALIDEE intermédiaire — backend simplifié)
-  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
+  // Nouveau workflow douanier
+  // Entreprise — saisie du chèque certifié après visa DGD
+  const isEntreprise = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS";
+  const canEntrepriseCheque = isEntreprise && isDouane && (u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE");
+  // DGTCP — envoi au Trésor (uniquement après chèque saisi)
+  const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
+  // DGTCP — saisie/édition des quittances Trésor
+  const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
+  // DGTCP — liquidation finale (débit financier) : nouveau workflow = QUITTANCES_ENREGISTREES, ancien = VISE
+  const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
+  // Entreprise — accusé de réception après liquidation
+  const canEntrepriseReception = isEntreprise && isDouane && u.statut === "LIQUIDEE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
   const myHasVisa = decisions.some(d => d.role === role && d.decision === "VISA");
-  const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
+  const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "EN_CONTROLE_DGD", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
   const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
-    (role === "DGTCP" && isDouane && u.statut === "VISE");
+    (role === "DGTCP" && isDouane && ["VISE", "EN_CONTROLE_DGD", "CHEQUE_SAISI", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES"].includes(u.statut));
 
   // A_RECONTROLER transitions
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
@@ -488,6 +584,59 @@ const UtilisationDetail = () => {
                       <div className="text-emerald-700">CI : {f(u.totalPrisEnCharge)}</div>
                       <div className="text-amber-700">Payer : {f(u.totalAPayer)}</div>
                     </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Chèque certifié saisi par l'entreprise */}
+        {isDouane && u.numeroCheque && (
+          <Card className="border-l-4 border-l-indigo-500">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> Chèque certifié</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><p className="text-muted-foreground">Banque</p><p className="font-medium">{u.banqueNom || "—"}</p></div>
+                <div><p className="text-muted-foreground">N° chèque</p><p className="font-mono font-medium">{u.numeroCheque}</p></div>
+                <div><p className="text-muted-foreground">Montant</p><p className="font-bold">{f(u.montantCheque)} MRU</p></div>
+                <div><p className="text-muted-foreground">Date</p><p className="font-medium">{u.dateCheque ? new Date(u.dateCheque).toLocaleDateString("fr-FR") : "—"}</p></div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quittances Trésor */}
+        {isDouane && u.quittances && u.quittances.length > 0 && (
+          <Card className="border-l-4 border-l-teal-500">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-teal-500" /> Quittances Trésor ({u.quittances.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° quittance</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Montant (MRU)</TableHead>
+                    <TableHead>Référence paiement</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {u.quittances.map((q, i) => (
+                    <TableRow key={q.id ?? i}>
+                      <TableCell className="font-mono">{q.numeroQuittance}</TableCell>
+                      <TableCell>{q.dateQuittance ? new Date(q.dateQuittance).toLocaleDateString("fr-FR") : "—"}</TableCell>
+                      <TableCell className="text-right font-medium">{f(q.montant)}</TableCell>
+                      <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/40 font-medium">
+                    <TableCell colSpan={2} className="text-right">Total</TableCell>
+                    <TableCell className="text-right">{f(u.quittances.reduce((s, q) => s + Number(q.montant || 0), 0))}</TableCell>
+                    <TableCell />
                   </TableRow>
                 </TableBody>
               </Table>
@@ -698,7 +847,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
+        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception) && (
           <Card>
             <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
             <CardContent>
@@ -713,13 +862,51 @@ const UtilisationDetail = () => {
                     setShowLiq(true);
                   }}><Landmark className="h-4 w-4 mr-2" /> Annoter le bulletin & viser</Button>
                 )}
+                {canEntrepriseCheque && (
+                  <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
+                    setChequeForm({
+                      banqueNom: u.banqueNom || "",
+                      numeroCheque: u.numeroCheque || "",
+                      montantCheque: u.montantCheque != null ? String(u.montantCheque) : (u.totalAPayer != null ? String(u.totalAPayer) : ""),
+                      dateCheque: "",
+                    });
+                    setShowCheque(true);
+                  }}><CreditCard className="h-4 w-4 mr-2" /> Saisir le chèque certifié</Button>
+                )}
+                {canDGTCPEnvoyerTresor && (
+                  <Button className="bg-sky-600 hover:bg-sky-700" onClick={handleEnvoyerTresor} disabled={envoiLoading}>
+                    {envoiLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    <Ship className="h-4 w-4 mr-2" /> Envoyer au Trésor
+                  </Button>
+                )}
+                {canDGTCPQuittances && (
+                  <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => {
+                    setQuittancesForm(
+                      (u.quittances && u.quittances.length > 0)
+                        ? u.quittances.map(q => ({
+                            numeroQuittance: q.numeroQuittance,
+                            dateQuittance: q.dateQuittance ? q.dateQuittance.slice(0, 10) : "",
+                            montant: q.montant,
+                            referencePaiement: q.referencePaiement,
+                          }))
+                        : [{ numeroQuittance: "", dateQuittance: "", montant: u.totalAPayer || 0, referencePaiement: "" }]
+                    );
+                    setShowQuittances(true);
+                  }}><FileText className="h-4 w-4 mr-2" /> {u.quittances && u.quittances.length > 0 ? "Modifier les quittances" : "Saisir les quittances"}</Button>
+                )}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
                 {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
                   {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  <Landmark className="h-4 w-4 mr-2" /> Exécuter la liquidation
+                  <Landmark className="h-4 w-4 mr-2" /> Générer le certificat & liquider
                 </Button>}
+                {canEntrepriseReception && (
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleClotureReception} disabled={receptionLoading}>
+                    {receptionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Accuser réception & clôturer
+                  </Button>
+                )}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
@@ -808,6 +995,69 @@ const UtilisationDetail = () => {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chèque Dialog (entreprise) */}
+      <Dialog open={showCheque} onOpenChange={setShowCheque}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> Saisir le chèque certifié — #{u.id}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Renseignez les informations du chèque certifié couvrant la part <strong>À PAYER</strong> du bulletin
+              {u.totalAPayer != null && <> (<span className="font-semibold text-amber-700">{f(u.totalAPayer)} MRU</span>)</>}.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2"><Label>Banque émettrice *</Label><Input value={chequeForm.banqueNom} onChange={e => setChequeForm(p => ({ ...p, banqueNom: e.target.value }))} placeholder="Banque Nationale de Mauritanie" /></div>
+              <div><Label>N° du chèque *</Label><Input value={chequeForm.numeroCheque} onChange={e => setChequeForm(p => ({ ...p, numeroCheque: e.target.value }))} placeholder="CHQ-2026-0042" /></div>
+              <div><Label>Montant (MRU) *</Label><Input type="number" min="0" step="0.01" value={chequeForm.montantCheque} onChange={e => setChequeForm(p => ({ ...p, montantCheque: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>Date du chèque (optionnel)</Label><Input type="date" value={chequeForm.dateCheque} onChange={e => setChequeForm(p => ({ ...p, dateCheque: e.target.value }))} /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCheque(false)}>Annuler</Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700" disabled={chequeLoading || !chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque} onClick={handleSaisirCheque}>
+              {chequeLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quittances Dialog (DGTCP) */}
+      <Dialog open={showQuittances} onOpenChange={setShowQuittances}>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> Quittances Trésor — #{u.id}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Saisie des quittances émises par le Trésor. La liste remplace toujours les précédentes (idempotent).
+              {u.totalAPayer != null && <> Montant attendu : <strong>{f(u.totalAPayer)} MRU</strong>.</>}
+            </p>
+            {quittancesForm.map((q, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 items-end p-2 rounded border">
+                <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
+                <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
+                <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
+                <div className="col-span-1">
+                  <Button variant="ghost" size="sm" onClick={() => setQuittancesForm(arr => arr.filter((_, i) => i !== idx))} disabled={quittancesForm.length <= 1}>
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-1">
+              <Button size="sm" variant="outline" onClick={() => setQuittancesForm(arr => [...arr, { numeroQuittance: "", dateQuittance: "", montant: 0, referencePaiement: "" }])}>
+                + Ajouter une quittance
+              </Button>
+              <p className="text-sm">Total saisi : <span className="font-bold">{f(quittancesForm.reduce((s, q) => s + Number(q.montant || 0), 0))} MRU</span></p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQuittances(false)}>Annuler</Button>
+            <Button className="bg-teal-600 hover:bg-teal-700" disabled={quittancesLoading || quittancesForm.every(q => !q.numeroQuittance.trim() || !q.dateQuittance || !(Number(q.montant) > 0))} onClick={handleSaisirQuittances}>
+              {quittancesLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Enregistrer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

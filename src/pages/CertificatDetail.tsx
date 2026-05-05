@@ -45,6 +45,10 @@ const STATUT_COLORS_UTIL: Record<UtilisationStatut, string> = {
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
   CLOTUREE: "bg-slate-200 text-slate-800",
+  EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
+  CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
+  ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
+  QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
 };
 
 const CertificatDetail = () => {

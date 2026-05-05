@@ -1011,7 +1011,11 @@ export const certificatCreditApi = {
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE" | "CLOTUREE";
+export type UtilisationStatut =
+  | "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION"
+  | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE" | "CLOTUREE"
+  // Nouveau workflow douanier
+  | "EN_CONTROLE_DGD" | "CHEQUE_SAISI" | "ENVOYEE_AU_TRESOR" | "QUITTANCES_ENREGISTREES";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface TvaDeductibleStockDto {
@@ -1107,6 +1111,13 @@ export interface UtilisationCreditDto {
   // Douane liquidation trace
   soldeCordonAvant?: number;
   soldeCordonApres?: number;
+  // Chèque certifié (entreprise)
+  banqueNom?: string;
+  numeroCheque?: string;
+  montantCheque?: number;
+  dateCheque?: string;
+  // Quittances Trésor (DGTCP)
+  quittances?: QuittanceTresorDto[];
   // TVA intérieure fields
   typeAchat?: string;
   numeroFacture?: string;
@@ -1125,6 +1136,15 @@ export interface UtilisationCreditDto {
   certificatTitulaireEntrepriseId?: number;
   certificatTitulaireRaisonSociale?: string;
   demandeurEstSousTraitant?: boolean;
+}
+
+export interface QuittanceTresorDto {
+  id?: number;
+  numeroQuittance: string;
+  dateQuittance: string;
+  montant: number;
+  referencePaiement?: string;
+  utilisationDouaneId?: number;
 }
 
 export interface CreateUtilisationCreditRequest {
@@ -1221,9 +1241,33 @@ export const utilisationCreditApi = {
       method: "POST",
       body: { decisions },
     }),
-  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock TVA déductible. Aucun body. Prérequis : statut VISE. */
+  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock TVA déductible. Aucun body. Prérequis : statut QUITTANCES_ENREGISTREES (ou VISE en compat ancien workflow). */
   liquiderDouane: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
+      method: "POST",
+    }),
+  /** Entreprise — saisie du chèque certifié couvrant la part À PAYER. Statut → CHEQUE_SAISI. */
+  saisirCheque: (id: number, data: { banqueNom: string; numeroCheque: string; montantCheque: number; dateCheque?: string }) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cheque`, {
+      method: "POST",
+      body: data,
+    }),
+  /** DGTCP — envoi du dossier au Trésor. Statut → ENVOYEE_AU_TRESOR. Aucun body. */
+  envoyerAuTresor: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/envoyer-au-tresor`, {
+      method: "POST",
+    }),
+  /** DGTCP — saisie / mise à jour des quittances Trésor (idempotent : remplace les précédentes). Statut → QUITTANCES_ENREGISTREES. */
+  saisirQuittances: (id: number, quittances: QuittanceTresorDto[]) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/quittances`, {
+      method: "POST",
+      body: { quittances },
+    }),
+  /** Lecture seule des quittances Trésor d'une utilisation douanière. */
+  getQuittances: (id: number) => apiFetch<QuittanceTresorDto[]>(`/utilisations-credit/${id}/quittances`),
+  /** Entreprise — accusé de réception du certificat d'utilisation. Statut → CLOTUREE. */
+  cloturerReception: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cloturer-reception`, {
       method: "POST",
     }),
   /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
@@ -1350,6 +1394,10 @@ export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
   EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
   CLOTUREE: "Clôturée",
+  EN_CONTROLE_DGD: "Contrôlée par DGD",
+  CHEQUE_SAISI: "Chèque fourni",
+  ENVOYEE_AU_TRESOR: "Envoyée au Trésor",
+  QUITTANCES_ENREGISTREES: "Quittances enregistrées",
 };
 
 /** Libellé contextuel : pour une utilisation DOUANIER clôturée, on précise l'origine (transfert (d)→TVA intérieure). */
