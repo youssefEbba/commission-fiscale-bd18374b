@@ -1270,6 +1270,11 @@ export const utilisationCreditApi = {
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cloturer-reception`, {
       method: "POST",
     }),
+  /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
+  getLignesBulletin: async (id: number) => {
+    const raw = await apiFetch<any[]>(`/utilisations-credit/${id}/lignes-bulletin`);
+    return (raw || []).map(normalizeLigneBulletin);
+  },
   apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",
