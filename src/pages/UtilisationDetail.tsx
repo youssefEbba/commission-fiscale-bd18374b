@@ -279,6 +279,8 @@ const UtilisationDetail = () => {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setReceptionLoading(false); }
   };
+
+  const handleApurement = async () => {
     setApurLoading(true);
     try {
       await utilisationCreditApi.apurerTVA(utilId, Number(apurMontant));
