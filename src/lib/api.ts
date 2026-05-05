@@ -1011,7 +1011,11 @@ export const certificatCreditApi = {
 };
 
 // Utilisations de crédit (P4/P5)
-export type UtilisationStatut = "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION" | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE" | "CLOTUREE";
+export type UtilisationStatut =
+  | "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION"
+  | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE" | "CLOTUREE"
+  // Nouveau workflow douanier
+  | "EN_CONTROLE_DGD" | "CHEQUE_SAISI" | "ENVOYEE_AU_TRESOR" | "QUITTANCES_ENREGISTREES";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export interface TvaDeductibleStockDto {
