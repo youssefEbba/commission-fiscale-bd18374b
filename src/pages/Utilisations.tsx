@@ -838,7 +838,18 @@ const Utilisations = () => {
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        {form.lignes.map((ligne, idx) => (
+                        {(() => {
+                          // Catalogue effectif : référentiel taxes (admin) si chargé, sinon fallback local
+                          const effectiveCatalog: { code: string; libelle: string; type: TypeLigneTaxe }[] =
+                            referentielTaxes.length > 0
+                              ? referentielTaxes.map(t => ({
+                                  code: t.codeTaxe,
+                                  libelle: t.denominationTaxe,
+                                  // Le référentiel n'expose pas de typeLigne — on garde ARTICLE par défaut, modifiable
+                                  type: "ARTICLE" as TypeLigneTaxe,
+                                }))
+                              : TAX_CODES_CATALOG;
+                          return form.lignes.map((ligne, idx) => (
                           <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
                             <Input
                               className="col-span-2 h-8 text-xs uppercase"
@@ -848,12 +859,12 @@ const Utilisations = () => {
                               onChange={e => {
                                 const raw = e.target.value;
                                 const codeUpper = raw.toUpperCase();
-                                const match = TAX_CODES_CATALOG.find(c => c.code === codeUpper);
+                                const match = effectiveCatalog.find(c => c.code === codeUpper);
                                 const next = [...(form.lignes || [])];
                                 const current = next[idx];
                                 const libelleEstAutoRempli =
                                   !current.denominationTaxe ||
-                                  TAX_CODES_CATALOG.some(c => c.libelle === current.denominationTaxe);
+                                  effectiveCatalog.some(c => c.libelle === current.denominationTaxe);
                                 next[idx] = {
                                   ...current,
                                   codeTaxe: codeUpper,
@@ -864,7 +875,7 @@ const Utilisations = () => {
                               }}
                             />
                             <datalist id={`tax-codes-list-${idx}`}>
-                              {TAX_CODES_CATALOG.map(c => (
+                              {effectiveCatalog.map(c => (
                                 <option key={c.code} value={c.code}>{c.libelle}</option>
                               ))}
                             </datalist>
