@@ -74,6 +74,21 @@ const UtilisationDetail = () => {
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
 
+  // Chèque dialog (entreprise)
+  const [showCheque, setShowCheque] = useState(false);
+  const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+  const [chequeLoading, setChequeLoading] = useState(false);
+
+  // Quittances dialog (DGTCP)
+  const [showQuittances, setShowQuittances] = useState(false);
+  const [quittancesForm, setQuittancesForm] = useState<QuittanceTresorDto[]>([]);
+  const [quittancesLoading, setQuittancesLoading] = useState(false);
+
+  // Envoyer Trésor confirm
+  const [envoiLoading, setEnvoiLoading] = useState(false);
+  // Accusé réception
+  const [receptionLoading, setReceptionLoading] = useState(false);
+
   // Rejet temp dialog
   const [showRejet, setShowRejet] = useState(false);
   const [rejetMotif, setRejetMotif] = useState("");
