@@ -998,6 +998,69 @@ const UtilisationDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Chèque Dialog (entreprise) */}
+      <Dialog open={showCheque} onOpenChange={setShowCheque}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> Saisir le chèque certifié — #{u.id}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Renseignez les informations du chèque certifié couvrant la part <strong>À PAYER</strong> du bulletin
+              {u.totalAPayer != null && <> (<span className="font-semibold text-amber-700">{f(u.totalAPayer)} MRU</span>)</>}.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2"><Label>Banque émettrice *</Label><Input value={chequeForm.banqueNom} onChange={e => setChequeForm(p => ({ ...p, banqueNom: e.target.value }))} placeholder="Banque Nationale de Mauritanie" /></div>
+              <div><Label>N° du chèque *</Label><Input value={chequeForm.numeroCheque} onChange={e => setChequeForm(p => ({ ...p, numeroCheque: e.target.value }))} placeholder="CHQ-2026-0042" /></div>
+              <div><Label>Montant (MRU) *</Label><Input type="number" min="0" step="0.01" value={chequeForm.montantCheque} onChange={e => setChequeForm(p => ({ ...p, montantCheque: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>Date du chèque (optionnel)</Label><Input type="date" value={chequeForm.dateCheque} onChange={e => setChequeForm(p => ({ ...p, dateCheque: e.target.value }))} /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCheque(false)}>Annuler</Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700" disabled={chequeLoading || !chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque} onClick={handleSaisirCheque}>
+              {chequeLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quittances Dialog (DGTCP) */}
+      <Dialog open={showQuittances} onOpenChange={setShowQuittances}>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> Quittances Trésor — #{u.id}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Saisie des quittances émises par le Trésor. La liste remplace toujours les précédentes (idempotent).
+              {u.totalAPayer != null && <> Montant attendu : <strong>{f(u.totalAPayer)} MRU</strong>.</>}
+            </p>
+            {quittancesForm.map((q, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 items-end p-2 rounded border">
+                <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
+                <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
+                <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
+                <div className="col-span-1">
+                  <Button variant="ghost" size="sm" onClick={() => setQuittancesForm(arr => arr.filter((_, i) => i !== idx))} disabled={quittancesForm.length <= 1}>
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-1">
+              <Button size="sm" variant="outline" onClick={() => setQuittancesForm(arr => [...arr, { numeroQuittance: "", dateQuittance: "", montant: 0, referencePaiement: "" }])}>
+                + Ajouter une quittance
+              </Button>
+              <p className="text-sm">Total saisi : <span className="font-bold">{f(quittancesForm.reduce((s, q) => s + Number(q.montant || 0), 0))} MRU</span></p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQuittances(false)}>Annuler</Button>
+            <Button className="bg-teal-600 hover:bg-teal-700" disabled={quittancesLoading || quittancesForm.every(q => !q.numeroQuittance.trim() || !q.dateQuittance || !(Number(q.montant) > 0))} onClick={handleSaisirQuittances}>
+              {quittancesLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Apurement Dialog */}
       <Dialog open={showApur} onOpenChange={setShowApur}>
         <DialogContent className="sm:max-w-lg">
