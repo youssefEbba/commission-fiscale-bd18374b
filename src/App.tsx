@@ -176,6 +176,11 @@ const App = () => (
                 <CommissionRelais />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/referentiel-taxes" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <ReferentielTaxes />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
