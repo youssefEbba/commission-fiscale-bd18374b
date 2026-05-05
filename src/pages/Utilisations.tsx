@@ -170,6 +170,16 @@ const Utilisations = () => {
   // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
   const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
 
+  // Référentiel des taxes (admin-managed) — utilisé pour pré-remplir les lignes du bulletin
+  const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
+  useEffect(() => {
+    referentielTaxeApi.getActives()
+      .then(list => setReferentielTaxes(
+        (list || []).slice().sort((a, b) => (a.ordreAffichage ?? 999) - (b.ordreAffichage ?? 999))
+      ))
+      .catch(() => { /* fallback silencieux : le formulaire reste utilisable en saisie libre */ });
+  }, []);
+
   const fetchData = async () => {
     setLoading(true);
     try { setData(await utilisationCreditApi.getAll()); }
