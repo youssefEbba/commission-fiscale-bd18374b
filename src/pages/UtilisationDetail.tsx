@@ -213,7 +213,72 @@ const UtilisationDetail = () => {
     } finally { setLiqLoading(false); }
   };
 
-  const handleApurement = async () => {
+  // Entreprise : saisir le chèque certifié couvrant la part À PAYER
+  const handleSaisirCheque = async () => {
+    if (!chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque) return;
+    setChequeLoading(true);
+    try {
+      await utilisationCreditApi.saisirCheque(utilId, {
+        banqueNom: chequeForm.banqueNom.trim(),
+        numeroCheque: chequeForm.numeroCheque.trim(),
+        montantCheque: Number(chequeForm.montantCheque),
+        dateCheque: chequeForm.dateCheque ? new Date(chequeForm.dateCheque).toISOString() : undefined,
+      });
+      toast({ title: "Chèque enregistré", description: "Le dossier passe en attente d'envoi au Trésor." });
+      setShowCheque(false);
+      setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setChequeLoading(false); }
+  };
+
+  // DGTCP : envoi au Trésor
+  const handleEnvoyerTresor = async () => {
+    setEnvoiLoading(true);
+    try {
+      await utilisationCreditApi.envoyerAuTresor(utilId);
+      toast({ title: "Envoyé", description: "Dossier envoyé au Trésor." });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setEnvoiLoading(false); }
+  };
+
+  // DGTCP : enregistrer / mettre à jour les quittances
+  const handleSaisirQuittances = async () => {
+    const valid = quittancesForm.filter(q => q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0);
+    if (valid.length === 0) {
+      toast({ title: "Aucune quittance valide", description: "Renseignez au moins une quittance.", variant: "destructive" });
+      return;
+    }
+    setQuittancesLoading(true);
+    try {
+      await utilisationCreditApi.saisirQuittances(utilId, valid.map(q => ({
+        numeroQuittance: q.numeroQuittance.trim(),
+        dateQuittance: new Date(q.dateQuittance).toISOString(),
+        montant: Number(q.montant),
+        referencePaiement: q.referencePaiement?.trim() || undefined,
+      })));
+      toast({ title: "Quittances enregistrées", description: `${valid.length} quittance(s) enregistrée(s).` });
+      setShowQuittances(false);
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setQuittancesLoading(false); }
+  };
+
+  // Entreprise : accusé de réception du certificat d'utilisation
+  const handleClotureReception = async () => {
+    setReceptionLoading(true);
+    try {
+      await utilisationCreditApi.cloturerReception(utilId);
+      toast({ title: "Réception confirmée", description: "Dossier clôturé et archivé." });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setReceptionLoading(false); }
+  };
     setApurLoading(true);
     try {
       await utilisationCreditApi.apurerTVA(utilId, Number(apurMontant));
