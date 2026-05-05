@@ -39,6 +39,7 @@ import DemandeDetail from "./pages/DemandeDetail";
 import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
+import ReferentielTaxes from "./pages/ReferentielTaxes";
 
 const queryClient = new QueryClient();
 
