@@ -591,6 +591,59 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
+        {/* Chèque certifié saisi par l'entreprise */}
+        {isDouane && u.numeroCheque && (
+          <Card className="border-l-4 border-l-indigo-500">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> Chèque certifié</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><p className="text-muted-foreground">Banque</p><p className="font-medium">{u.banqueNom || "—"}</p></div>
+                <div><p className="text-muted-foreground">N° chèque</p><p className="font-mono font-medium">{u.numeroCheque}</p></div>
+                <div><p className="text-muted-foreground">Montant</p><p className="font-bold">{f(u.montantCheque)} MRU</p></div>
+                <div><p className="text-muted-foreground">Date</p><p className="font-medium">{u.dateCheque ? new Date(u.dateCheque).toLocaleDateString("fr-FR") : "—"}</p></div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quittances Trésor */}
+        {isDouane && u.quittances && u.quittances.length > 0 && (
+          <Card className="border-l-4 border-l-teal-500">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-teal-500" /> Quittances Trésor ({u.quittances.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° quittance</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Montant (MRU)</TableHead>
+                    <TableHead>Référence paiement</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {u.quittances.map((q, i) => (
+                    <TableRow key={q.id ?? i}>
+                      <TableCell className="font-mono">{q.numeroQuittance}</TableCell>
+                      <TableCell>{q.dateQuittance ? new Date(q.dateQuittance).toLocaleDateString("fr-FR") : "—"}</TableCell>
+                      <TableCell className="text-right font-medium">{f(q.montant)}</TableCell>
+                      <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/40 font-medium">
+                    <TableCell colSpan={2} className="text-right">Total</TableCell>
+                    <TableCell className="text-right">{f(u.quittances.reduce((s, q) => s + Number(q.montant || 0), 0))}</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Traçabilité Liquidation Douane */}
         {isDouane && u.statut === "LIQUIDEE" && u.soldeCordonAvant != null && (
           <Card className="border-l-4 border-l-blue-500">
