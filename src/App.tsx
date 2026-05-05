@@ -39,6 +39,7 @@ import DemandeDetail from "./pages/DemandeDetail";
 import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
+import ReferentielTaxes from "./pages/ReferentielTaxes";
 
 const queryClient = new QueryClient();
 
@@ -173,6 +174,11 @@ const App = () => (
             <Route path="/dashboard/relais" element={
               <ProtectedRoute allowedRoles={["COMMISSION_RELAIS"]}>
                 <CommissionRelais />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/referentiel-taxes" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <ReferentielTaxes />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

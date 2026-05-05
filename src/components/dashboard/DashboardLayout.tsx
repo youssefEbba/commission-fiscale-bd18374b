@@ -83,6 +83,7 @@ const NAV_ENTRIES: NavEntry[] = [
     children: [
       { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
       { label: "Rôles & Permissions", href: "/dashboard/roles", icon: Tag },
+      { label: "Référentiel Taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
       { label: "Journal d'audit", href: "/dashboard/audit", icon: BarChart3 },
     ],
   },

@@ -1901,6 +1901,44 @@ export const reportingApi = {
 
 export { WS_BASE } from "./apiConfig";
 
+// ── Référentiel des Taxes (admin: ADMIN_SI) ──
+export interface ReferentielTaxeDto {
+  id: number;
+  codeTaxe: string;
+  denominationTaxe: string;
+  valeurTaxe?: number | null;
+  ordreAffichage?: number | null;
+  active: boolean;
+  dateCreation?: string;
+  dateModification?: string | null;
+}
+
+export interface ReferentielTaxeRequest {
+  codeTaxe: string;
+  denominationTaxe: string;
+  valeurTaxe?: number | null;
+  ordreAffichage?: number | null;
+  active?: boolean;
+}
+
+export const referentielTaxeApi = {
+  /** Taxes actives — pour remplir le formulaire du bulletin */
+  getActives: () => apiFetch<ReferentielTaxeDto[]>("/referentiel-taxes"),
+  getById: (id: number) => apiFetch<ReferentielTaxeDto>(`/referentiel-taxes/${id}`),
+  /** Toutes les taxes (actives + inactives) — admin */
+  getAll: () => apiFetch<ReferentielTaxeDto[]>("/referentiel-taxes/all"),
+  create: (data: ReferentielTaxeRequest) =>
+    apiFetch<ReferentielTaxeDto>("/referentiel-taxes", { method: "POST", body: data }),
+  update: (id: number, data: ReferentielTaxeRequest) =>
+    apiFetch<ReferentielTaxeDto>(`/referentiel-taxes/${id}`, { method: "PUT", body: data }),
+  desactiver: (id: number) =>
+    apiFetch<ReferentielTaxeDto>(`/referentiel-taxes/${id}/desactiver`, { method: "POST" }),
+  activer: (id: number) =>
+    apiFetch<ReferentielTaxeDto>(`/referentiel-taxes/${id}/activer`, { method: "POST" }),
+  remove: (id: number) =>
+    apiFetch<void>(`/referentiel-taxes/${id}`, { method: "DELETE" }),
+};
+
 // ── Dossiers GED ──
 
 export interface DossierEtapeGed {
