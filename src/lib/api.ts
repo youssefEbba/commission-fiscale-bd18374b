@@ -1354,6 +1354,10 @@ export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
   EN_VERIFICATION: "En vérification", VISE: "Visé",
   VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
   CLOTUREE: "Clôturée",
+  EN_CONTROLE_DGD: "Contrôlée par DGD",
+  CHEQUE_SAISI: "Chèque fourni",
+  ENVOYEE_AU_TRESOR: "Envoyée au Trésor",
+  QUITTANCES_ENREGISTREES: "Quittances enregistrées",
 };
 
 /** Libellé contextuel : pour une utilisation DOUANIER clôturée, on précise l'origine (transfert (d)→TVA intérieure). */
