@@ -794,7 +794,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA) && (
+        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception) && (
           <Card>
             <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
             <CardContent>
@@ -809,13 +809,51 @@ const UtilisationDetail = () => {
                     setShowLiq(true);
                   }}><Landmark className="h-4 w-4 mr-2" /> Annoter le bulletin & viser</Button>
                 )}
+                {canEntrepriseCheque && (
+                  <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
+                    setChequeForm({
+                      banqueNom: u.banqueNom || "",
+                      numeroCheque: u.numeroCheque || "",
+                      montantCheque: u.montantCheque != null ? String(u.montantCheque) : (u.totalAPayer != null ? String(u.totalAPayer) : ""),
+                      dateCheque: "",
+                    });
+                    setShowCheque(true);
+                  }}><CreditCard className="h-4 w-4 mr-2" /> Saisir le chèque certifié</Button>
+                )}
+                {canDGTCPEnvoyerTresor && (
+                  <Button className="bg-sky-600 hover:bg-sky-700" onClick={handleEnvoyerTresor} disabled={envoiLoading}>
+                    {envoiLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    <Ship className="h-4 w-4 mr-2" /> Envoyer au Trésor
+                  </Button>
+                )}
+                {canDGTCPQuittances && (
+                  <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => {
+                    setQuittancesForm(
+                      (u.quittances && u.quittances.length > 0)
+                        ? u.quittances.map(q => ({
+                            numeroQuittance: q.numeroQuittance,
+                            dateQuittance: q.dateQuittance ? q.dateQuittance.slice(0, 10) : "",
+                            montant: q.montant,
+                            referencePaiement: q.referencePaiement,
+                          }))
+                        : [{ numeroQuittance: "", dateQuittance: "", montant: u.totalAPayer || 0, referencePaiement: "" }]
+                    );
+                    setShowQuittances(true);
+                  }}><FileText className="h-4 w-4 mr-2" /> {u.quittances && u.quittances.length > 0 ? "Modifier les quittances" : "Saisir les quittances"}</Button>
+                )}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
                 {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
                 {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
                   {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  <Landmark className="h-4 w-4 mr-2" /> Exécuter la liquidation
+                  <Landmark className="h-4 w-4 mr-2" /> Générer le certificat & liquider
                 </Button>}
+                {canEntrepriseReception && (
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleClotureReception} disabled={receptionLoading}>
+                    {receptionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Accuser réception & clôturer
+                  </Button>
+                )}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
