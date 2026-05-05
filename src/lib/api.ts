@@ -1241,16 +1241,35 @@ export const utilisationCreditApi = {
       method: "POST",
       body: { decisions },
     }),
-  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock TVA déductible. Aucun body. Prérequis : statut VISE. */
+  /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock TVA déductible. Aucun body. Prérequis : statut QUITTANCES_ENREGISTREES (ou VISE en compat ancien workflow). */
   liquiderDouane: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
       method: "POST",
     }),
-  /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
-  getLignesBulletin: async (id: number) => {
-    const raw = await apiFetch<any[]>(`/utilisations-credit/${id}/lignes-bulletin`);
-    return (raw || []).map(normalizeLigneBulletin);
-  },
+  /** Entreprise — saisie du chèque certifié couvrant la part À PAYER. Statut → CHEQUE_SAISI. */
+  saisirCheque: (id: number, data: { banqueNom: string; numeroCheque: string; montantCheque: number; dateCheque?: string }) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cheque`, {
+      method: "POST",
+      body: data,
+    }),
+  /** DGTCP — envoi du dossier au Trésor. Statut → ENVOYEE_AU_TRESOR. Aucun body. */
+  envoyerAuTresor: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/envoyer-au-tresor`, {
+      method: "POST",
+    }),
+  /** DGTCP — saisie / mise à jour des quittances Trésor (idempotent : remplace les précédentes). Statut → QUITTANCES_ENREGISTREES. */
+  saisirQuittances: (id: number, quittances: QuittanceTresorDto[]) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/quittances`, {
+      method: "POST",
+      body: { quittances },
+    }),
+  /** Lecture seule des quittances Trésor d'une utilisation douanière. */
+  getQuittances: (id: number) => apiFetch<QuittanceTresorDto[]>(`/utilisations-credit/${id}/quittances`),
+  /** Entreprise — accusé de réception du certificat d'utilisation. Statut → CLOTUREE. */
+  cloturerReception: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cloturer-reception`, {
+      method: "POST",
+    }),
   apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",
