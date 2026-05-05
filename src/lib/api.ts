@@ -1111,6 +1111,13 @@ export interface UtilisationCreditDto {
   // Douane liquidation trace
   soldeCordonAvant?: number;
   soldeCordonApres?: number;
+  // Chèque certifié (entreprise)
+  banqueNom?: string;
+  numeroCheque?: string;
+  montantCheque?: number;
+  dateCheque?: string;
+  // Quittances Trésor (DGTCP)
+  quittances?: QuittanceTresorDto[];
   // TVA intérieure fields
   typeAchat?: string;
   numeroFacture?: string;
@@ -1129,6 +1136,15 @@ export interface UtilisationCreditDto {
   certificatTitulaireEntrepriseId?: number;
   certificatTitulaireRaisonSociale?: string;
   demandeurEstSousTraitant?: boolean;
+}
+
+export interface QuittanceTresorDto {
+  id?: number;
+  numeroQuittance: string;
+  dateQuittance: string;
+  montant: number;
+  referencePaiement?: string;
+  utilisationDouaneId?: number;
 }
 
 export interface CreateUtilisationCreditRequest {
