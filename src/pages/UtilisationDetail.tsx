@@ -399,16 +399,26 @@ const UtilisationDetail = () => {
   // Possible depuis DEMANDEE, EN_VERIFICATION ou A_RECONTROLER.
   const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
   const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
-  // DGTCP douanier : liquide directement depuis VISE (pas d'étape VALIDEE intermédiaire — backend simplifié)
-  const canDGTCPLiquider = role === "DGTCP" && isDouane && u.statut === "VISE";
+  // Nouveau workflow douanier
+  // Entreprise — saisie du chèque certifié après visa DGD
+  const isEntreprise = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS";
+  const canEntrepriseCheque = isEntreprise && isDouane && (u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE");
+  // DGTCP — envoi au Trésor (uniquement après chèque saisi)
+  const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
+  // DGTCP — saisie/édition des quittances Trésor
+  const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
+  // DGTCP — liquidation finale (débit financier) : nouveau workflow = QUITTANCES_ENREGISTREES, ancien = VISE
+  const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
+  // Entreprise — accusé de réception après liquidation
+  const canEntrepriseReception = isEntreprise && isDouane && u.statut === "LIQUIDEE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
   const myHasVisa = decisions.some(d => d.role === role && d.decision === "VISA");
-  const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
+  const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "EN_CONTROLE_DGD", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
   const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
-    (role === "DGTCP" && isDouane && u.statut === "VISE");
+    (role === "DGTCP" && isDouane && ["VISE", "EN_CONTROLE_DGD", "CHEQUE_SAISI", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES"].includes(u.statut));
 
   // A_RECONTROLER transitions
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
