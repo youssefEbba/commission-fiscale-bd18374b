@@ -231,11 +231,18 @@ const UtilisationDetail = () => {
     }
     setLiqLoading(true);
     try {
-      const decisions = lignes.filter(l => liqDecisions[l.id]).map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
-      await utilisationCreditApi.visaDgd(utilId, decisions);
+      const decisions = lignes.filter(l => liqDecisions[l.id]).map(l => {
+        const raw = liqValeurs[l.id];
+        const overrideNum = raw !== undefined && raw !== "" ? Number(raw) : NaN;
+        const hasOverride = !isNaN(overrideNum) && overrideNum !== Number(l.valeur);
+        return { ligneId: l.id, affectation: liqDecisions[l.id], ...(hasOverride ? { valeurTaxe: overrideNum } : {}) };
+      });
+      await utilisationCreditApi.visaDgd(utilId, decisions, liqBulletinFile);
       toast({ title: "Visa apposé", description: "Le bulletin est annoté et visé. En attente de la liquidation DGTCP." });
       setShowLiq(false);
       setLiqDecisions({});
+      setLiqValeurs({});
+      setLiqBulletinFile(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
