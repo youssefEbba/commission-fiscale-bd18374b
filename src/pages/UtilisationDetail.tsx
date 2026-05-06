@@ -634,16 +634,6 @@ const UtilisationDetail = () => {
                       </TableRow>
                     );
                   })}
-                  <TableRow className="bg-muted/40 font-medium">
-                    <TableCell colSpan={2} className="text-right">Totaux</TableCell>
-                    <TableCell className="text-right">
-                      {f(u.lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0))}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      <div className="text-emerald-700">CI : {f(u.totalPrisEnCharge)}</div>
-                      <div className="text-amber-700">Payer : {f(u.totalAPayer)}</div>
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
               {(() => {
