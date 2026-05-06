@@ -1057,7 +1057,8 @@ const UtilisationDetail = () => {
                   <TableRow>
                     <TableHead className="w-24">Code taxe</TableHead>
                     <TableHead>Dénomination taxe</TableHead>
-                    <TableHead className="text-right w-40">Valeur taxe (MRU)</TableHead>
+                    <TableHead className="text-right w-36">Valeur saisie</TableHead>
+                    <TableHead className="text-right w-40">Valeur DGD (override)</TableHead>
                     <TableHead className="w-48">Affectation</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1069,6 +1070,18 @@ const UtilisationDetail = () => {
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
                         <TableCell className="text-sm">{l.libelle}</TableCell>
                         <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="h-8 text-xs text-right"
+                            placeholder={isZero ? "—" : "Identique"}
+                            disabled={isZero}
+                            value={liqValeurs[l.id] ?? ""}
+                            onChange={(e) => setLiqValeurs(prev => ({ ...prev, [l.id]: e.target.value }))}
+                          />
+                        </TableCell>
                         <TableCell>
                           <Select
                             value={liqDecisions[l.id] || ""}
@@ -1089,6 +1102,17 @@ const UtilisationDetail = () => {
                   })}
                 </TableBody>
               </Table>
+            )}
+            {u.lignes && u.lignes.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm">Scan du bulletin annoté (optionnel)</Label>
+                <Input
+                  type="file"
+                  accept=".pdf,image/*"
+                  onChange={(e) => setLiqBulletinFile(e.target.files?.[0] || null)}
+                />
+                {liqBulletinFile && <p className="text-xs text-muted-foreground">Fichier : {liqBulletinFile.name}</p>}
+              </div>
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
               const lignesAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI");
