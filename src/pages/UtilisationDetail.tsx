@@ -125,6 +125,7 @@ const UtilisationDetail = () => {
   // Chèque dialog (entreprise)
   const [showCheque, setShowCheque] = useState(false);
   const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+  const [chequeFile, setChequeFile] = useState<File | null>(null);
   const [chequeLoading, setChequeLoading] = useState(false);
 
   // Quittances dialog (DGTCP)
