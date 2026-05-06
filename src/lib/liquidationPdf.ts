@@ -39,9 +39,9 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
-  // Bulletin lignes
+  // Bulletin lignes — reflète les valeurs finales (après éventuels overrides DGD)
   doc.setFontSize(11).setFont("helvetica", "bold");
-  doc.text("Détail du bulletin", 40, y);
+  doc.text("Détail du bulletin (valeurs finales après visa DGD)", 40, y);
   y += 6;
 
   const lignes = u.lignes || [];
@@ -53,7 +53,9 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
       l.libelle,
       l.type,
       fmt(l.valeur),
-      l.affectation === "AU_CI" ? "AU CI" : l.affectation === "A_PAYER" ? "À PAYER" : "—",
+      (Number(l.valeur) || 0) === 0
+        ? "Non requis"
+        : l.affectation === "AU_CI" ? "AU CI" : l.affectation === "A_PAYER" ? "À PAYER" : "—",
     ]),
     foot: [[
       { content: "Totaux", colSpan: 3, styles: { halign: "right", fontStyle: "bold" } },
@@ -66,6 +68,55 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
     columnStyles: { 3: { halign: "right" } },
   });
   y = (doc as any).lastAutoTable.finalY + 16;
+
+  // Chèque certifié
+  if (u.numeroCheque) {
+    doc.setFontSize(11).setFont("helvetica", "bold");
+    doc.text("Chèque certifié", 40, y);
+    y += 6;
+    autoTable(doc, {
+      startY: y,
+      theme: "grid",
+      styles: { fontSize: 9 },
+      body: [
+        ["Banque", u.banqueNom || "—", "N° chèque", u.numeroCheque || "—"],
+        ["Montant", `${fmt(u.montantCheque)} MRU`, "Date", dt(u.dateCheque)],
+      ],
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: 100 },
+        2: { fontStyle: "bold", cellWidth: 100 },
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 16;
+  }
+
+  // Quittances Trésor
+  const quittances = (u as any).quittances || [];
+  if (quittances.length > 0) {
+    doc.setFontSize(11).setFont("helvetica", "bold");
+    doc.text(`Quittances Trésor (${quittances.length})`, 40, y);
+    y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [["N° quittance", "Date", "Montant (MRU)", "Référence paiement"]],
+      body: quittances.map((q: any) => [
+        q.numeroQuittance || "—",
+        dt(q.dateQuittance),
+        fmt(q.montant),
+        q.referencePaiement || "—",
+      ]),
+      foot: [[
+        { content: "Total quittances", colSpan: 2, styles: { halign: "right", fontStyle: "bold" } },
+        { content: fmt(quittances.reduce((s: number, q: any) => s + (Number(q.montant) || 0), 0)), styles: { halign: "right", fontStyle: "bold" } },
+        { content: "", styles: {} },
+      ]],
+      headStyles: { fillColor: [22, 101, 52] },
+      footStyles: { fillColor: [240, 240, 240], textColor: 20 },
+      styles: { fontSize: 9 },
+      columnStyles: { 2: { halign: "right" } },
+    });
+    y = (doc as any).lastAutoTable.finalY + 16;
+  }
 
   // Synthèse liquidation
   doc.setFontSize(11).setFont("helvetica", "bold");
