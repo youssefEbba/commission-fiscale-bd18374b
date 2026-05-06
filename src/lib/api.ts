@@ -1246,12 +1246,19 @@ export const utilisationCreditApi = {
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
       method: "POST",
     }),
-  /** Entreprise — saisie du chèque certifié couvrant la part À PAYER. Statut → CHEQUE_SAISI. */
-  saisirCheque: (id: number, data: { banqueNom: string; numeroCheque: string; montantCheque: number; dateCheque?: string }) =>
-    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cheque`, {
+  /** Entreprise — saisie du chèque certifié couvrant la part À PAYER. Statut → CHEQUE_SAISI. multipart/form-data avec scan obligatoire. */
+  saisirCheque: (id: number, data: { banqueNom: string; numeroCheque: string; montantCheque: number; dateCheque?: string; file: File }) => {
+    const fd = new FormData();
+    fd.append("banqueNom", data.banqueNom);
+    fd.append("numeroCheque", data.numeroCheque);
+    fd.append("montantCheque", String(data.montantCheque));
+    if (data.dateCheque) fd.append("dateCheque", data.dateCheque);
+    fd.append("file", data.file);
+    return apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cheque`, {
       method: "POST",
-      body: data,
-    }),
+      rawBody: fd,
+    });
+  },
   /** DGTCP — envoi du dossier au Trésor. Statut → ENVOYEE_AU_TRESOR. Aucun body. */
   envoyerAuTresor: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/envoyer-au-tresor`, {
