@@ -125,6 +125,7 @@ const UtilisationDetail = () => {
   // Chèque dialog (entreprise)
   const [showCheque, setShowCheque] = useState(false);
   const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+  const [chequeFile, setChequeFile] = useState<File | null>(null);
   const [chequeLoading, setChequeLoading] = useState(false);
 
   // Quittances dialog (DGTCP)
@@ -265,6 +266,10 @@ const UtilisationDetail = () => {
   // Entreprise : saisir le chèque certifié couvrant la part À PAYER
   const handleSaisirCheque = async () => {
     if (!chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque) return;
+    if (!chequeFile) {
+      toast({ title: "Scan requis", description: "Veuillez joindre le scan du chèque certifié.", variant: "destructive" });
+      return;
+    }
     setChequeLoading(true);
     try {
       await utilisationCreditApi.saisirCheque(utilId, {
@@ -272,10 +277,12 @@ const UtilisationDetail = () => {
         numeroCheque: chequeForm.numeroCheque.trim(),
         montantCheque: Number(chequeForm.montantCheque),
         dateCheque: chequeForm.dateCheque ? new Date(chequeForm.dateCheque).toISOString() : undefined,
+        file: chequeFile,
       });
       toast({ title: "Chèque enregistré", description: "Le dossier passe en attente d'envoi au Trésor." });
       setShowCheque(false);
       setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+      setChequeFile(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -1089,11 +1096,16 @@ const UtilisationDetail = () => {
               <div><Label>N° du chèque *</Label><Input value={chequeForm.numeroCheque} onChange={e => setChequeForm(p => ({ ...p, numeroCheque: e.target.value }))} placeholder="CHQ-2026-0042" /></div>
               <div><Label>Montant (MRU) *</Label><Input type="number" min="0" step="0.01" value={chequeForm.montantCheque} onChange={e => setChequeForm(p => ({ ...p, montantCheque: e.target.value }))} /></div>
               <div className="col-span-2"><Label>Date du chèque (optionnel)</Label><Input type="date" value={chequeForm.dateCheque} onChange={e => setChequeForm(p => ({ ...p, dateCheque: e.target.value }))} /></div>
+              <div className="col-span-2">
+                <Label>Scan du chèque certifié * <span className="text-xs text-muted-foreground">(PDF ou image)</span></Label>
+                <Input type="file" accept="application/pdf,image/*" onChange={e => setChequeFile(e.target.files?.[0] || null)} />
+                {chequeFile && <p className="text-xs text-muted-foreground mt-1">{chequeFile.name} — {(chequeFile.size / 1024).toFixed(1)} Ko</p>}
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCheque(false)}>Annuler</Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700" disabled={chequeLoading || !chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque} onClick={handleSaisirCheque}>
+            <Button variant="outline" onClick={() => { setShowCheque(false); setChequeFile(null); }}>Annuler</Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700" disabled={chequeLoading || !chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque || !chequeFile} onClick={handleSaisirCheque}>
               {chequeLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer
             </Button>
           </DialogFooter>
