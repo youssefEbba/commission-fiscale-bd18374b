@@ -106,6 +106,25 @@ const DocumentGED = ({
     }
   };
 
+  const openFile = async (doc: GEDDocument) => {
+    if (!doc.chemin) return;
+    try {
+      const res = await fetch(doc.chemin, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: "Impossible d'ouvrir le fichier", variant: "destructive" });
+    }
+  };
+
   const handleReplaceDoc = async () => {
     if (!dossierId || !replaceDocId || !replaceFile || !onReplaceDocument) return;
     setReplacing(true);
@@ -153,14 +172,13 @@ const DocumentGED = ({
               <div className="flex items-center gap-2">
                 {getFileIcon(d.nomFichier)}
                 {d.chemin ? (
-                  <a
-                    href={d.chemin}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline text-xs hover:text-primary/80 transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => openFile(d)}
+                    className="text-primary underline text-xs hover:text-primary/80 transition-colors text-left"
                   >
                     {d.nomFichier}
-                  </a>
+                  </button>
                 ) : (
                   <span className="text-xs">{d.nomFichier}</span>
                 )}
