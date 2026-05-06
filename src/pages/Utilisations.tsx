@@ -348,7 +348,9 @@ const Utilisations = () => {
 
   const handleCreateTypeChange = (t: UtilisationType) => {
     setCreateType(t);
-    setForm({ ...(t === "DOUANIER" ? emptyDouane : emptyTVA), certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
+    const base = t === "DOUANIER" ? emptyDouane : emptyTVA;
+    const lignes = t === "DOUANIER" ? buildDefaultLignesFromReferentiel(referentielTaxes) : [];
+    setForm({ ...base, lignes, certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
     setCreateDocFiles({});
   };
 
@@ -877,6 +879,17 @@ const Utilisations = () => {
                     <div><Label>N° Bulletin *</Label><Input placeholder="BUL-2024-001" value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
                   </div>
                   <div><Label>Date déclaration</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
+                  <div>
+                    <Label>Montant total déclaré (MRU) *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Montant total saisi par l'utilisateur"
+                      value={form.montant ?? ""}
+                      onChange={e => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })}
+                      className={form.montant === undefined || form.montant === null ? "border-destructive focus-visible:ring-destructive" : ""}
+                    />
+                  </div>
                   {/* Bulletin de liquidation : lignes issues du référentiel des taxes */}
                   <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
                     <div className="flex items-center justify-between">
@@ -892,24 +905,48 @@ const Utilisations = () => {
                       <p className="text-xs text-muted-foreground italic">Chargement du référentiel des taxes…</p>
                     ) : (!form.lignes || form.lignes.length === 0) ? (
                       <p className="text-xs text-muted-foreground italic">Aucune taxe disponible dans le référentiel.</p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {form.lignes.map((ligne, idx) => (
-                          <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
-                            <Input className="col-span-2 h-8 text-xs uppercase bg-muted/40" value={ligne.codeTaxe} readOnly />
-                            <Input className="col-span-6 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
-                            <Input className="col-span-4 h-8 text-xs" type="number" min="0" placeholder="Valeur" value={ligne.valeurTaxe ?? 0} onChange={e => {
-                              const next = [...(form.lignes || [])];
-                              next[idx] = { ...next[idx], valeurTaxe: e.target.value ? Number(e.target.value) : 0 };
-                              setForm({ ...form, lignes: next });
-                            }} />
+                    ) : (() => {
+                      const totalLignes = (form.lignes || []).reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0);
+                      const montantSaisi = Number(form.montant) || 0;
+                      const mismatch = form.montant !== undefined && form.montant !== null && Math.abs(totalLignes - montantSaisi) > 0.001;
+                      return (
+                        <div className="space-y-1.5">
+                          {form.lignes.map((ligne, idx) => {
+                            const isEmpty = ligne.valeurTaxe === undefined || ligne.valeurTaxe === null || (ligne.valeurTaxe as any) === "";
+                            return (
+                              <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
+                                <Input className="col-span-2 h-8 text-xs uppercase bg-muted/40" value={ligne.codeTaxe} readOnly />
+                                <Input className="col-span-6 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
+                                <Input
+                                  className={`col-span-4 h-8 text-xs ${isEmpty ? "border-destructive focus-visible:ring-destructive bg-destructive/5" : ""}`}
+                                  type="number"
+                                  min="0"
+                                  placeholder="Valeur requise"
+                                  value={ligne.valeurTaxe ?? ""}
+                                  onChange={e => {
+                                    const next = [...(form.lignes || [])];
+                                    next[idx] = { ...next[idx], valeurTaxe: e.target.value === "" ? (undefined as any) : Number(e.target.value) };
+                                    setForm({ ...form, lignes: next });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                          <div className={`text-right text-xs pt-1 border-t ${mismatch ? "text-destructive font-semibold" : ""}`}>
+                            Total bulletin : <strong>{totalLignes.toLocaleString("fr-FR")} MRU</strong>
+                            {form.montant !== undefined && form.montant !== null && (
+                              <> &nbsp;|&nbsp; Montant saisi : <strong>{montantSaisi.toLocaleString("fr-FR")} MRU</strong></>
+                            )}
                           </div>
-                        ))}
-                        <div className="text-right text-xs pt-1 border-t">
-                          Total bulletin : <strong>{(form.lignes.reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0)).toLocaleString("fr-FR")} MRU</strong>
+                          {mismatch && (
+                            <div className="flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10 text-xs text-destructive">
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                              <span>La somme des valeurs des taxes ({totalLignes.toLocaleString("fr-FR")} MRU) ne correspond pas au montant total saisi ({montantSaisi.toLocaleString("fr-FR")} MRU).</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </>
               )}
