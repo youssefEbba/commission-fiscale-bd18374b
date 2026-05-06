@@ -817,7 +817,7 @@ const Utilisations = () => {
 
       {/* Create dialog */}
       <Dialog open={showCreate} onOpenChange={(o) => { setShowCreate(o); if (!o) setEditingId(null); }}>
-        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingId != null ? `Modifier l'utilisation #${editingId}` : "Nouvelle utilisation de crédit"}
