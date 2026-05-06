@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
