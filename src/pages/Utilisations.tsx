@@ -857,9 +857,15 @@ const Utilisations = () => {
                     </div>
                     {(!form.lignes || form.lignes.length === 0) ? (
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-muted-foreground italic">Aucune ligne. Vous pouvez partir des lignes par défaut (DD + TVA).</p>
-                        <Button type="button" size="sm" variant="secondary" onClick={() => setForm({ ...form, lignes: DEFAULT_BULLETIN_LIGNES.map(l => ({ ...l })) })}>
-                          Pré-remplir DD + TVA
+                        <p className="text-xs text-muted-foreground italic">
+                          {referentielTaxesLoading
+                            ? "Chargement du référentiel des taxes…"
+                            : referentielTaxes.length > 0
+                              ? `Aucune ligne. Pré-remplir depuis le référentiel (${referentielTaxes.length} taxes).`
+                              : "Aucune ligne. Référentiel indisponible — pré-remplissage local (DD + TVA)."}
+                        </p>
+                        <Button type="button" size="sm" variant="secondary" disabled={referentielTaxesLoading} onClick={() => setForm({ ...form, lignes: buildDefaultLignesFromReferentiel(referentielTaxes) })}>
+                          {referentielTaxes.length > 0 ? "Pré-remplir depuis référentiel" : "Pré-remplir DD + TVA"}
                         </Button>
                       </div>
                     ) : (
