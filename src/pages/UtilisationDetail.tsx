@@ -975,11 +975,11 @@ const UtilisationDetail = () => {
 
       {/* Liquidation Dialog — décision par ligne du bulletin */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Annotation du bulletin & visa DGD — #{u.id}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (pris en charge par le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler comptant par l'entreprise). À la confirmation, le statut passe à <strong>VISÉ</strong> ; la liquidation financière sera ensuite exécutée par le DGTCP.
+              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (pris en charge par le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler comptant par l'entreprise). Les lignes à <strong>0 MRU</strong> n'exigent pas d'affectation.
             </p>
             {(!u.lignes || u.lignes.length === 0) ? (
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
@@ -989,57 +989,82 @@ const UtilisationDetail = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-20">Code</TableHead>
-                    <TableHead>Libellé</TableHead>
-                    <TableHead className="w-24">Type</TableHead>
-                    <TableHead className="text-right w-32">Valeur (MRU)</TableHead>
-                    <TableHead className="w-44">Affectation *</TableHead>
+                    <TableHead className="w-24">Code taxe</TableHead>
+                    <TableHead>Dénomination taxe</TableHead>
+                    <TableHead className="text-right w-40">Valeur taxe (MRU)</TableHead>
+                    <TableHead className="w-48">Affectation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {u.lignes.map((l: LigneBulletinDto) => (
-                    <TableRow key={l.id}>
-                      <TableCell className="font-mono text-xs">{l.code}</TableCell>
-                      <TableCell className="text-sm">{l.libelle}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px]">{l.type}</Badge></TableCell>
-                      <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
-                      <TableCell>
-                        <Select value={liqDecisions[l.id] || ""} onValueChange={(v) => setLiqDecisions(prev => ({ ...prev, [l.id]: v as AffectationTaxe }))}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="AU_CI">AU CI (crédit extérieur)</SelectItem>
-                            <SelectItem value="A_PAYER">À PAYER (entreprise)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {u.lignes.map((l: LigneBulletinDto) => {
+                    const isZero = (Number(l.valeur) || 0) === 0;
+                    return (
+                      <TableRow key={l.id}>
+                        <TableCell className="font-mono text-xs">{l.code}</TableCell>
+                        <TableCell className="text-sm">{l.libelle}</TableCell>
+                        <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={liqDecisions[l.id] || ""}
+                            disabled={isZero}
+                            onValueChange={(v) => setLiqDecisions(prev => ({ ...prev, [l.id]: v as AffectationTaxe }))}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder={isZero ? "Non requis (0 MRU)" : "Choisir..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="AU_CI">AU CI (crédit extérieur)</SelectItem>
+                              <SelectItem value="A_PAYER">À PAYER (entreprise)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
-              const totalAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
-              const tvaAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI" && (l.code || "").toUpperCase() === "TVA").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
-              const horsTvaAuCi = totalAuCi - tvaAuCi;
-              const totalAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER").reduce((s, l) => s + (Number(l.valeur) || 0), 0);
-              const restant = u.lignes.filter(l => !liqDecisions[l.id]).length;
+              const lignesAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI");
+              const lignesAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER");
+              const totalAuCi = lignesAuCi.reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const totalAPayer = lignesAPayer.reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const restant = u.lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]).length;
+              const codesAPayer = lignesAPayer.map(l => l.code).join(" + ");
+              const codesAuCi = lignesAuCi.map(l => l.code).join(" + ");
+              const today = new Date().toLocaleDateString("fr-FR");
               return (
-                <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
-                  <div className="flex justify-between"><span>Total pris en charge (AU CI) :</span><span className="font-bold text-primary">{f(totalAuCi)} MRU</span></div>
-                  <div className="flex justify-between text-xs pl-3"><span>— dont TVA (stock déductible) :</span><span>{f(tvaAuCi)} MRU</span></div>
-                  <div className="flex justify-between text-xs pl-3"><span>— dont hors TVA (solde cordon) :</span><span>{f(horsTvaAuCi)} MRU</span></div>
-                  <div className="flex justify-between"><span>Total à payer (entreprise) :</span><span className="font-bold text-amber-700">{f(totalAPayer)} MRU</span></div>
-                  {cert && <div className="flex justify-between border-t pt-1"><span>Solde Cordon (droits) actuel :</span><span>{f(cert.soldeCordon)} MRU</span></div>}
-                  {cert && <div className="flex justify-between"><span>Solde Cordon après liquidation DGTCP :</span><span className="font-bold">{f((cert.soldeCordon ?? 0) - horsTvaAuCi)} MRU</span></div>}
-                  {cert && <div className="flex justify-between"><span>TVA importation actuelle :</span><span>{f(cert.tvaImportationDouane)} MRU</span></div>}
-                  {cert && <div className="flex justify-between"><span>TVA importation après liquidation :</span><span className="font-bold">{f((cert.tvaImportationDouane ?? 0) - tvaAuCi)} MRU</span></div>}
-                  {restant > 0 && <div className="text-amber-700 text-xs pt-1">{restant} ligne(s) sans affectation — toutes les lignes doivent être renseignées.</div>}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4">
+                      <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">À payer (entreprise)</p>
+                      <p className="text-2xl font-bold text-amber-800 mt-1">{f(totalAPayer)} MRU</p>
+                    </div>
+                    <div className="rounded-lg border-2 border-primary bg-primary/5 p-4">
+                      <p className="text-xs uppercase tracking-wide text-primary font-semibold">Pris en charge (AU CI)</p>
+                      <p className="text-2xl font-bold text-primary mt-1">{f(totalAuCi)} MRU</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-4 space-y-2 font-serif">
+                    <p className="text-sm"><span className="font-semibold">Le {today}</span></p>
+                    {totalAPayer > 0 && (
+                      <p className="text-sm">
+                        <span className="underline font-semibold">À payer</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em>{numberToFrenchWords(totalAPayer)}</em>
+                      </p>
+                    )}
+                    {totalAuCi > 0 && (
+                      <p className="text-sm">
+                        <span className="underline font-semibold">Au CI</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em>{numberToFrenchWords(totalAuCi)}</em>
+                      </p>
+                    )}
+                  </div>
+                  {restant > 0 && <div className="text-amber-700 text-xs">{restant} ligne(s) avec un montant &gt; 0 sans affectation.</div>}
                 </div>
               );
             })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => !liqDecisions[l.id])} onClick={handleVisaDgd}>
+              <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id])} onClick={handleVisaDgd}>
                 {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer le visa
               </Button>
             </DialogFooter>
