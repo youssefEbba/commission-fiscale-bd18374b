@@ -348,7 +348,9 @@ const Utilisations = () => {
 
   const handleCreateTypeChange = (t: UtilisationType) => {
     setCreateType(t);
-    setForm({ ...(t === "DOUANIER" ? emptyDouane : emptyTVA), certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
+    const base = t === "DOUANIER" ? emptyDouane : emptyTVA;
+    const lignes = t === "DOUANIER" ? buildDefaultLignesFromReferentiel(referentielTaxes) : [];
+    setForm({ ...base, lignes, certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
     setCreateDocFiles({});
   };
 
