@@ -178,7 +178,7 @@ const UtilisationDetail = () => {
     }
     setLiqLoading(true);
     try {
-      const decisions = lignes.map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
+      const decisions = lignes.filter(l => liqDecisions[l.id]).map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
       await utilisationCreditApi.visaDgd(utilId, decisions);
       toast({ title: "Visa apposé", description: "Le bulletin est annoté et visé. En attente de la liquidation DGTCP." });
       setShowLiq(false);
