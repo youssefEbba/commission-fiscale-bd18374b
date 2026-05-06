@@ -266,6 +266,10 @@ const UtilisationDetail = () => {
   // Entreprise : saisir le chèque certifié couvrant la part À PAYER
   const handleSaisirCheque = async () => {
     if (!chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque) return;
+    if (!chequeFile) {
+      toast({ title: "Scan requis", description: "Veuillez joindre le scan du chèque certifié.", variant: "destructive" });
+      return;
+    }
     setChequeLoading(true);
     try {
       await utilisationCreditApi.saisirCheque(utilId, {
@@ -273,10 +277,12 @@ const UtilisationDetail = () => {
         numeroCheque: chequeForm.numeroCheque.trim(),
         montantCheque: Number(chequeForm.montantCheque),
         dateCheque: chequeForm.dateCheque ? new Date(chequeForm.dateCheque).toISOString() : undefined,
+        file: chequeFile,
       });
       toast({ title: "Chèque enregistré", description: "Le dossier passe en attente d'envoi au Trésor." });
       setShowCheque(false);
       setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
+      setChequeFile(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
