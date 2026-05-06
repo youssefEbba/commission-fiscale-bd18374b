@@ -116,6 +116,8 @@ const UtilisationDetail = () => {
   // Liquidation dialog (décision par ligne du bulletin)
   const [showLiq, setShowLiq] = useState(false);
   const [liqDecisions, setLiqDecisions] = useState<Record<number, AffectationTaxe>>({});
+  const [liqValeurs, setLiqValeurs] = useState<Record<number, string>>({});
+  const [liqBulletinFile, setLiqBulletinFile] = useState<File | null>(null);
   const [liqLoading, setLiqLoading] = useState(false);
 
   // Apurement dialog
@@ -229,11 +231,18 @@ const UtilisationDetail = () => {
     }
     setLiqLoading(true);
     try {
-      const decisions = lignes.filter(l => liqDecisions[l.id]).map(l => ({ ligneId: l.id, affectation: liqDecisions[l.id] }));
-      await utilisationCreditApi.visaDgd(utilId, decisions);
+      const decisions = lignes.filter(l => liqDecisions[l.id]).map(l => {
+        const raw = liqValeurs[l.id];
+        const overrideNum = raw !== undefined && raw !== "" ? Number(raw) : NaN;
+        const hasOverride = !isNaN(overrideNum) && overrideNum !== Number(l.valeur);
+        return { ligneId: l.id, affectation: liqDecisions[l.id], ...(hasOverride ? { valeurTaxe: overrideNum } : {}) };
+      });
+      await utilisationCreditApi.visaDgd(utilId, decisions, liqBulletinFile);
       toast({ title: "Visa apposé", description: "Le bulletin est annoté et visé. En attente de la liquidation DGTCP." });
       setShowLiq(false);
       setLiqDecisions({});
+      setLiqValeurs({});
+      setLiqBulletinFile(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -1048,7 +1057,8 @@ const UtilisationDetail = () => {
                   <TableRow>
                     <TableHead className="w-24">Code taxe</TableHead>
                     <TableHead>Dénomination taxe</TableHead>
-                    <TableHead className="text-right w-40">Valeur taxe (MRU)</TableHead>
+                    <TableHead className="text-right w-36">Valeur saisie</TableHead>
+                    <TableHead className="text-right w-40">Valeur DGD (override)</TableHead>
                     <TableHead className="w-48">Affectation</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1060,6 +1070,18 @@ const UtilisationDetail = () => {
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
                         <TableCell className="text-sm">{l.libelle}</TableCell>
                         <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="h-8 text-xs text-right"
+                            placeholder={isZero ? "—" : "Identique"}
+                            disabled={isZero}
+                            value={liqValeurs[l.id] ?? ""}
+                            onChange={(e) => setLiqValeurs(prev => ({ ...prev, [l.id]: e.target.value }))}
+                          />
+                        </TableCell>
                         <TableCell>
                           <Select
                             value={liqDecisions[l.id] || ""}
@@ -1081,11 +1103,27 @@ const UtilisationDetail = () => {
                 </TableBody>
               </Table>
             )}
+            {u.lignes && u.lignes.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm">Scan du bulletin annoté (optionnel)</Label>
+                <Input
+                  type="file"
+                  accept=".pdf,image/*"
+                  onChange={(e) => setLiqBulletinFile(e.target.files?.[0] || null)}
+                />
+                {liqBulletinFile && <p className="text-xs text-muted-foreground">Fichier : {liqBulletinFile.name}</p>}
+              </div>
+            )}
             {u.lignes && u.lignes.length > 0 && (() => {
+              const effVal = (l: LigneBulletinDto) => {
+                const raw = liqValeurs[l.id];
+                const n = raw !== undefined && raw !== "" ? Number(raw) : NaN;
+                return !isNaN(n) ? n : (Number(l.valeur) || 0);
+              };
               const lignesAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI");
               const lignesAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER");
-              const totalAuCi = lignesAuCi.reduce((s, l) => s + (Number(l.valeur) || 0), 0);
-              const totalAPayer = lignesAPayer.reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const totalAuCi = lignesAuCi.reduce((s, l) => s + effVal(l), 0);
+              const totalAPayer = lignesAPayer.reduce((s, l) => s + effVal(l), 0);
               const restant = u.lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]).length;
               const codesAPayer = lignesAPayer.map(l => l.code).join(" + ");
               const codesAuCi = lignesAuCi.map(l => l.code).join(" + ");
