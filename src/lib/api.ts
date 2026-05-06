@@ -1238,12 +1238,16 @@ export const utilisationCreditApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/utilisations-credit/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: UtilisationStatut) => apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/statut?statut=${statut}`, { method: "PATCH" }),
-  /** Visa DGD — annotation (AU_CI / A_PAYER) de chaque ligne + visa (statut → VISE). Toutes les lignes doivent être couvertes. */
-  visaDgd: (id: number, decisions: DecisionLigneRequest[]) =>
-    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/visa-dgd`, {
+  /** Visa DGD — annotation (AU_CI / A_PAYER) de chaque ligne + visa (statut → VISE). multipart/form-data avec scan optionnel du bulletin annoté. */
+  visaDgd: (id: number, decisions: DecisionLigneRequest[], file?: File | null) => {
+    const fd = new FormData();
+    fd.append("decisions", JSON.stringify(decisions));
+    if (file) fd.append("file", file);
+    return apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/visa-dgd`, {
       method: "POST",
-      body: { decisions },
-    }),
+      rawBody: fd,
+    });
+  },
   /** Liquidation financière DGTCP — débite le solde cordon, le quota TVA et alimente le stock TVA déductible. Aucun body. Prérequis : statut QUITTANCES_ENREGISTREES (ou VISE en compat ancien workflow). */
   liquiderDouane: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/liquidation-douane`, {
