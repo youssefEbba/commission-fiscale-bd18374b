@@ -270,7 +270,12 @@ const Utilisations = () => {
   const openCreate = async () => {
     setEditingId(null);
     setCreateType("DOUANIER");
-    setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
+    const taxes = await loadReferentielTaxes();
+    setForm({
+      ...emptyDouane,
+      entrepriseId: (user as any)?.entrepriseId,
+      lignes: buildDefaultLignesFromReferentiel(taxes),
+    });
     setCreateDocFiles({});
     await loadCertificatsAndRequirements();
     setShowCreate(true);
