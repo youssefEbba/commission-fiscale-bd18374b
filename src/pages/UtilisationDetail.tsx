@@ -1115,10 +1115,15 @@ const UtilisationDetail = () => {
               </div>
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
+              const effVal = (l: LigneBulletinDto) => {
+                const raw = liqValeurs[l.id];
+                const n = raw !== undefined && raw !== "" ? Number(raw) : NaN;
+                return !isNaN(n) ? n : (Number(l.valeur) || 0);
+              };
               const lignesAuCi = u.lignes.filter(l => liqDecisions[l.id] === "AU_CI");
               const lignesAPayer = u.lignes.filter(l => liqDecisions[l.id] === "A_PAYER");
-              const totalAuCi = lignesAuCi.reduce((s, l) => s + (Number(l.valeur) || 0), 0);
-              const totalAPayer = lignesAPayer.reduce((s, l) => s + (Number(l.valeur) || 0), 0);
+              const totalAuCi = lignesAuCi.reduce((s, l) => s + effVal(l), 0);
+              const totalAPayer = lignesAPayer.reduce((s, l) => s + effVal(l), 0);
               const restant = u.lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]).length;
               const codesAPayer = lignesAPayer.map(l => l.code).join(" + ");
               const codesAuCi = lignesAuCi.map(l => l.code).join(" + ");
