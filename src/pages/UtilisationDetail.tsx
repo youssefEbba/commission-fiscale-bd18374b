@@ -170,9 +170,10 @@ const UtilisationDetail = () => {
   const handleVisaDgd = async () => {
     if (!util) return;
     const lignes = util.lignes || [];
-    const missing = lignes.filter(l => !liqDecisions[l.id]);
+    // Une affectation est requise uniquement pour les lignes dont la valeur est > 0
+    const missing = lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]);
     if (missing.length > 0) {
-      toast({ title: "Décisions incomplètes", description: `Toutes les lignes doivent être affectées (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
+      toast({ title: "Décisions incomplètes", description: `Les lignes avec un montant > 0 doivent être affectées (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
       return;
     }
     setLiqLoading(true);
