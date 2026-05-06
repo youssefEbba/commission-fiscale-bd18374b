@@ -194,6 +194,37 @@ const Utilisations = () => {
   };
   useEffect(() => { void loadReferentielTaxes(); }, []);
 
+  // Ajouter une nouvelle taxe au référentiel (back-end), puis rafraîchir le tableau
+  const handleAddTaxe = async () => {
+    const code = newTaxeCode.trim().toUpperCase();
+    const libelle = newTaxeLibelle.trim();
+    if (!code || !libelle) {
+      toast({ title: "Champs requis", description: "Code et libellé sont obligatoires", variant: "destructive" });
+      return;
+    }
+    setAddingTaxe(true);
+    try {
+      await referentielTaxeApi.create({ codeTaxe: code, denominationTaxe: libelle, active: true });
+      const taxes = await loadReferentielTaxes();
+      // Mettre à jour les lignes du formulaire avec le nouveau référentiel (préserver les valeurs saisies)
+      const currentValues = new Map((form.lignes || []).map(l => [l.codeTaxe, l.valeurTaxe]));
+      const nextLignes: LigneBulletinRequest[] = taxes.map((t, i) => ({
+        codeTaxe: t.codeTaxe,
+        denominationTaxe: t.denominationTaxe,
+        typeLigne: "ARTICLE" as TypeLigneTaxe,
+        valeurTaxe: currentValues.get(t.codeTaxe) ?? 0,
+        ordre: t.ordreAffichage ?? i + 1,
+      }));
+      setForm({ ...form, lignes: nextLignes });
+      toast({ title: "Succès", description: "Taxe ajoutée au référentiel" });
+      setShowAddTaxe(false);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message || "Impossible d'ajouter la taxe", variant: "destructive" });
+    } finally {
+      setAddingTaxe(false);
+    }
+  };
+
   // Construit les lignes par défaut à partir du référentiel chargé
   const buildDefaultLignesFromReferentiel = (taxes: ReferentielTaxeDto[]): LigneBulletinRequest[] => {
     if (!taxes || taxes.length === 0) return DEFAULT_BULLETIN_LIGNES.map(l => ({ ...l }));
