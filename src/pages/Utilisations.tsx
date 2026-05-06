@@ -880,13 +880,9 @@ const Utilisations = () => {
                       </div>
                     )}
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Switch checked={form.enregistreeSYDONIA || false} onCheckedChange={v => setForm({ ...form, enregistreeSYDONIA: v })} />
-                    <Label>Enregistrée dans SYDONIA</Label>
-                  </div>
                 </>
               )}
+
 
               {createType === "TVA_INTERIEURE" && (
                 <>
