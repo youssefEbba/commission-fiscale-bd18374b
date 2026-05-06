@@ -116,6 +116,8 @@ const UtilisationDetail = () => {
   // Liquidation dialog (décision par ligne du bulletin)
   const [showLiq, setShowLiq] = useState(false);
   const [liqDecisions, setLiqDecisions] = useState<Record<number, AffectationTaxe>>({});
+  const [liqValeurs, setLiqValeurs] = useState<Record<number, string>>({});
+  const [liqBulletinFile, setLiqBulletinFile] = useState<File | null>(null);
   const [liqLoading, setLiqLoading] = useState(false);
 
   // Apurement dialog
