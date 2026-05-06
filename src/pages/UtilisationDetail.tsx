@@ -647,7 +647,7 @@ const UtilisationDetail = () => {
                 </TableBody>
               </Table>
               {(() => {
-                const visaStatuts: UtilisationStatut[] = ["VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE"];
+                const visaStatuts: UtilisationStatut[] = ["EN_CONTROLE_DGD","VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE","CHEQUE_SAISI","ENVOYEE_AU_TRESOR","QUITTANCES_ENREGISTREES"];
                 if (!visaStatuts.includes(u.statut)) return null;
                 const lignesAuCi = (u.lignes || []).filter(l => l.affectation === "AU_CI" && (Number(l.valeur) || 0) > 0);
                 const lignesAPayer = (u.lignes || []).filter(l => l.affectation === "A_PAYER" && (Number(l.valeur) || 0) > 0);
