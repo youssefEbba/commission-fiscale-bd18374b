@@ -173,6 +173,11 @@ const Utilisations = () => {
   // Référentiel des taxes (admin-managed) — source de vérité pour les lignes du bulletin
   const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
   const [referentielTaxesLoading, setReferentielTaxesLoading] = useState(false);
+  // Dialog "Ajouter taxe au référentiel"
+  const [showAddTaxe, setShowAddTaxe] = useState(false);
+  const [newTaxeCode, setNewTaxeCode] = useState("");
+  const [newTaxeLibelle, setNewTaxeLibelle] = useState("");
+  const [addingTaxe, setAddingTaxe] = useState(false);
   const loadReferentielTaxes = async (): Promise<ReferentielTaxeDto[]> => {
     setReferentielTaxesLoading(true);
     try {
@@ -188,6 +193,37 @@ const Utilisations = () => {
     }
   };
   useEffect(() => { void loadReferentielTaxes(); }, []);
+
+  // Ajouter une nouvelle taxe au référentiel (back-end), puis rafraîchir le tableau
+  const handleAddTaxe = async () => {
+    const code = newTaxeCode.trim().toUpperCase();
+    const libelle = newTaxeLibelle.trim();
+    if (!code || !libelle) {
+      toast({ title: "Champs requis", description: "Code et libellé sont obligatoires", variant: "destructive" });
+      return;
+    }
+    setAddingTaxe(true);
+    try {
+      await referentielTaxeApi.create({ codeTaxe: code, denominationTaxe: libelle, active: true });
+      const taxes = await loadReferentielTaxes();
+      // Mettre à jour les lignes du formulaire avec le nouveau référentiel (préserver les valeurs saisies)
+      const currentValues = new Map((form.lignes || []).map(l => [l.codeTaxe, l.valeurTaxe]));
+      const nextLignes: LigneBulletinRequest[] = taxes.map((t, i) => ({
+        codeTaxe: t.codeTaxe,
+        denominationTaxe: t.denominationTaxe,
+        typeLigne: "ARTICLE" as TypeLigneTaxe,
+        valeurTaxe: currentValues.get(t.codeTaxe) ?? 0,
+        ordre: t.ordreAffichage ?? i + 1,
+      }));
+      setForm({ ...form, lignes: nextLignes });
+      toast({ title: "Succès", description: "Taxe ajoutée au référentiel" });
+      setShowAddTaxe(false);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message || "Impossible d'ajouter la taxe", variant: "destructive" });
+    } finally {
+      setAddingTaxe(false);
+    }
+  };
 
   // Construit les lignes par défaut à partir du référentiel chargé
   const buildDefaultLignesFromReferentiel = (taxes: ReferentielTaxeDto[]): LigneBulletinRequest[] => {
@@ -841,112 +877,43 @@ const Utilisations = () => {
                     <div><Label>N° Bulletin *</Label><Input placeholder="BUL-2024-001" value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
                   </div>
                   <div><Label>Date déclaration</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
-                  {/* Bulletin de liquidation : lignes saisies par l'entreprise */}
+                  {/* Bulletin de liquidation : lignes issues du référentiel des taxes */}
                   <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-sm">Lignes du bulletin de liquidation *</Label>
-                        <p className="text-[11px] text-muted-foreground">Saisissez chaque taxe (DD, TVA, RS, etc.). La DGTCP affectera ensuite chaque ligne au CI ou à payer.</p>
+                        <p className="text-[11px] text-muted-foreground">Saisissez la valeur pour chaque taxe. Le code et le libellé proviennent du référentiel.</p>
                       </div>
-                      <Button type="button" variant="outline" size="sm" onClick={() => {
-                        const next = [...(form.lignes || []), { codeTaxe: "", denominationTaxe: "", typeLigne: "GLOBALE" as TypeLigneTaxe, valeurTaxe: 0, ordre: (form.lignes?.length || 0) + 1 }];
-                        setForm({ ...form, lignes: next });
-                      }}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => { setNewTaxeCode(""); setNewTaxeLibelle(""); setShowAddTaxe(true); }}>
                         <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
                       </Button>
                     </div>
-                    {(!form.lignes || form.lignes.length === 0) ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-muted-foreground italic">
-                          {referentielTaxesLoading
-                            ? "Chargement du référentiel des taxes…"
-                            : referentielTaxes.length > 0
-                              ? `Aucune ligne. Pré-remplir depuis le référentiel (${referentielTaxes.length} taxes).`
-                              : "Aucune ligne. Référentiel indisponible — pré-remplissage local (DD + TVA)."}
-                        </p>
-                        <Button type="button" size="sm" variant="secondary" disabled={referentielTaxesLoading} onClick={() => setForm({ ...form, lignes: buildDefaultLignesFromReferentiel(referentielTaxes) })}>
-                          {referentielTaxes.length > 0 ? "Pré-remplir depuis référentiel" : "Pré-remplir DD + TVA"}
-                        </Button>
-                      </div>
+                    {referentielTaxesLoading ? (
+                      <p className="text-xs text-muted-foreground italic">Chargement du référentiel des taxes…</p>
+                    ) : (!form.lignes || form.lignes.length === 0) ? (
+                      <p className="text-xs text-muted-foreground italic">Aucune taxe disponible dans le référentiel.</p>
                     ) : (
                       <div className="space-y-1.5">
-                        {(() => {
-                          // Catalogue effectif : référentiel taxes (admin) si chargé, sinon fallback local
-                          const effectiveCatalog: { code: string; libelle: string; type: TypeLigneTaxe }[] =
-                            referentielTaxes.length > 0
-                              ? referentielTaxes.map(t => ({
-                                  code: t.codeTaxe,
-                                  libelle: t.denominationTaxe,
-                                  // Le référentiel n'expose pas de typeLigne — on garde ARTICLE par défaut, modifiable
-                                  type: "ARTICLE" as TypeLigneTaxe,
-                                }))
-                              : TAX_CODES_CATALOG;
-                          return form.lignes.map((ligne, idx) => (
+                        {form.lignes.map((ligne, idx) => (
                           <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
-                            <Input
-                              className="col-span-2 h-8 text-xs uppercase"
-                              placeholder="Code"
-                              list={`tax-codes-list-${idx}`}
-                              value={ligne.codeTaxe}
-                              onChange={e => {
-                                const raw = e.target.value;
-                                const codeUpper = raw.toUpperCase();
-                                const match = effectiveCatalog.find(c => c.code === codeUpper);
-                                const next = [...(form.lignes || [])];
-                                const current = next[idx];
-                                const libelleEstAutoRempli =
-                                  !current.denominationTaxe ||
-                                  effectiveCatalog.some(c => c.libelle === current.denominationTaxe);
-                                next[idx] = {
-                                  ...current,
-                                  codeTaxe: codeUpper,
-                                  denominationTaxe: match && libelleEstAutoRempli ? match.libelle : current.denominationTaxe,
-                                  typeLigne: match && libelleEstAutoRempli ? match.type : current.typeLigne,
-                                };
-                                setForm({ ...form, lignes: next });
-                              }}
-                            />
-                            <datalist id={`tax-codes-list-${idx}`}>
-                              {effectiveCatalog.map(c => (
-                                <option key={c.code} value={c.code}>{c.libelle}</option>
-                              ))}
-                            </datalist>
-                            <Input className="col-span-4 h-8 text-xs" placeholder="Libellé" value={ligne.denominationTaxe} onChange={e => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], denominationTaxe: e.target.value }; setForm({ ...form, lignes: next });
+                            <Input className="col-span-2 h-8 text-xs uppercase bg-muted/40" value={ligne.codeTaxe} readOnly />
+                            <Input className="col-span-6 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
+                            <Input className="col-span-4 h-8 text-xs" type="number" min="0" placeholder="Valeur" value={ligne.valeurTaxe ?? 0} onChange={e => {
+                              const next = [...(form.lignes || [])];
+                              next[idx] = { ...next[idx], valeurTaxe: e.target.value ? Number(e.target.value) : 0 };
+                              setForm({ ...form, lignes: next });
                             }} />
-                            <Select value={ligne.typeLigne} onValueChange={(v) => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], typeLigne: v as TypeLigneTaxe }; setForm({ ...form, lignes: next });
-                            }}>
-                              <SelectTrigger className="col-span-2 h-8 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="GLOBALE">Globale</SelectItem>
-                                <SelectItem value="ARTICLE">Article</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input className="col-span-3 h-8 text-xs" type="number" min="0" placeholder="Valeur" value={ligne.valeurTaxe ?? 0} onChange={e => {
-                              const next = [...(form.lignes || [])]; next[idx] = { ...next[idx], valeurTaxe: e.target.value ? Number(e.target.value) : 0 }; setForm({ ...form, lignes: next });
-                            }} />
-                            <Button type="button" variant="ghost" size="sm" className="col-span-1 h-8 p-0 text-destructive" onClick={() => {
-                              const next = (form.lignes || []).filter((_, i) => i !== idx); setForm({ ...form, lignes: next });
-                            }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
                           </div>
-                        ));
-                        })()}
+                        ))}
                         <div className="text-right text-xs pt-1 border-t">
                           Total bulletin : <strong>{(form.lignes.reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0)).toLocaleString("fr-FR")} MRU</strong>
                         </div>
                       </div>
                     )}
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Switch checked={form.enregistreeSYDONIA || false} onCheckedChange={v => setForm({ ...form, enregistreeSYDONIA: v })} />
-                    <Label>Enregistrée dans SYDONIA</Label>
-                  </div>
                 </>
               )}
+
 
               {createType === "TVA_INTERIEURE" && (
                 <>
@@ -1258,7 +1225,34 @@ const Utilisations = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog: Ajouter une taxe au référentiel */}
+      <Dialog open={showAddTaxe} onOpenChange={(o) => !addingTaxe && setShowAddTaxe(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter une taxe au référentiel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Code *</Label>
+              <Input className="uppercase" placeholder="ex: DD" value={newTaxeCode} onChange={e => setNewTaxeCode(e.target.value.toUpperCase())} />
+            </div>
+            <div>
+              <Label>Dénomination *</Label>
+              <Input placeholder="ex: Droit de Douane" value={newTaxeLibelle} onChange={e => setNewTaxeLibelle(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddTaxe(false)} disabled={addingTaxe}>Annuler</Button>
+            <Button onClick={handleAddTaxe} disabled={addingTaxe}>
+              {addingTaxe && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+
   );
 };
 
