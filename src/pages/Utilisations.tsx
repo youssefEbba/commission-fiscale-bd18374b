@@ -879,17 +879,6 @@ const Utilisations = () => {
                     <div><Label>N° Bulletin *</Label><Input placeholder="BUL-2024-001" value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
                   </div>
                   <div><Label>Date déclaration</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
-                  <div>
-                    <Label>Montant total déclaré (MRU) *</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="Montant total saisi par l'utilisateur"
-                      value={form.montant ?? ""}
-                      onChange={e => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })}
-                      className={form.montant === undefined || form.montant === null ? "border-destructive focus-visible:ring-destructive" : ""}
-                    />
-                  </div>
                   {/* Bulletin de liquidation : lignes issues du référentiel des taxes */}
                   <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
                     <div className="flex items-center justify-between">
@@ -911,6 +900,12 @@ const Utilisations = () => {
                       const mismatch = form.montant !== undefined && form.montant !== null && Math.abs(totalLignes - montantSaisi) > 0.001;
                       return (
                         <div className="space-y-1.5">
+                          {/* Header */}
+                          <div className="grid grid-cols-12 gap-1.5 items-center px-1">
+                            <span className="col-span-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Code</span>
+                            <span className="col-span-6 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Nom</span>
+                            <span className="col-span-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Valeur taxe</span>
+                          </div>
                           {form.lignes.map((ligne, idx) => {
                             const isEmpty = ligne.valeurTaxe === undefined || ligne.valeurTaxe === null || (ligne.valeurTaxe as any) === "";
                             return (
@@ -947,6 +942,18 @@ const Utilisations = () => {
                         </div>
                       );
                     })()}
+                  </div>
+                  {/* Montant total déclaré — sous le tableau */}
+                  <div>
+                    <Label>Montant total déclaré (MRU) *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Montant total saisi par l'utilisateur"
+                      value={form.montant ?? ""}
+                      onChange={e => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })}
+                      className={form.montant === undefined || form.montant === null ? "border-destructive focus-visible:ring-destructive" : ""}
+                    />
                   </div>
                 </>
               )}
