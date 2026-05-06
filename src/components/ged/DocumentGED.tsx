@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE } from "@/lib/apiConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -106,35 +107,19 @@ const DocumentGED = ({
     }
   };
 
-  const openFile = async (doc: GEDDocument) => {
+  const openFile = (doc: GEDDocument) => {
     if (!doc.chemin) return;
-    const isAbsolute = /^https?:\/\//i.test(doc.chemin);
-    // URL absolue (ex: lien présigné MinIO) → ouverture directe, pas de header Authorization (sinon CORS)
-    if (isAbsolute) {
-      // Ajoute ngrok-skip-browser-warning via query string si possible
-      const url = doc.chemin.includes("ngrok")
-        ? doc.chemin + (doc.chemin.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true"
-        : doc.chemin;
-      window.open(url, "_blank", "noopener,noreferrer");
-      return;
+    let url = doc.chemin;
+    // Si chemin relatif, préfixer avec l'origine du backend (sans /api)
+    if (!/^https?:\/\//i.test(url)) {
+      const apiOrigin = API_BASE.replace(/\/api\/?$/, "");
+      url = apiOrigin + (url.startsWith("/") ? "" : "/") + url;
     }
-    // Chemin relatif → fetch authentifié + blob
-    try {
-      const base = doc.chemin.startsWith("/") ? "" : "/";
-      const res = await fetch(base + doc.chemin, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}`,
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (e: any) {
-      toast({ title: "Erreur", description: "Impossible d'ouvrir le fichier", variant: "destructive" });
+    // Ajoute ngrok-skip-browser-warning pour bypasser la page d'avertissement ngrok
+    if (url.includes("ngrok")) {
+      url += (url.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true";
     }
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleReplaceDoc = async () => {
