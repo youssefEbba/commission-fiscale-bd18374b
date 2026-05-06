@@ -1168,15 +1168,47 @@ const UtilisationDetail = () => {
               {u.totalAPayer != null && <> Montant attendu : <strong>{f(u.totalAPayer)} MRU</strong>.</>}
             </p>
             {quittancesForm.map((q, idx) => (
-              <div key={idx} className="grid grid-cols-12 gap-2 items-end p-2 rounded border">
-                <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
-                <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
-                <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
-                <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
-                <div className="col-span-1">
-                  <Button variant="ghost" size="sm" onClick={() => setQuittancesForm(arr => arr.filter((_, i) => i !== idx))} disabled={quittancesForm.length <= 1}>
-                    <XCircle className="h-4 w-4 text-destructive" />
-                  </Button>
+              <div key={idx} className="space-y-2 p-2 rounded border">
+                <div className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
+                  <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
+                  <div className="col-span-1">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setQuittancesForm(arr => arr.filter((_, i) => i !== idx));
+                      setQuittancesFiles(prev => {
+                        const next: Record<number, File | null> = {};
+                        Object.entries(prev).forEach(([k, v]) => {
+                          const ki = Number(k);
+                          if (ki < idx) next[ki] = v;
+                          else if (ki > idx) next[ki - 1] = v;
+                        });
+                        return next;
+                      });
+                    }} disabled={quittancesForm.length <= 1}>
+                      <XCircle className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-12">
+                    <Label className="text-xs">Justificatif (PDF / image, optionnel)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept=".pdf,image/*"
+                        onChange={e => setQuittancesFiles(prev => ({ ...prev, [idx]: e.target.files?.[0] || null }))}
+                        className="text-xs"
+                      />
+                      {quittancesFiles[idx] && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">{quittancesFiles[idx]!.name}</span>
+                      )}
+                      {!quittancesFiles[idx] && q.documentNomFichier && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">Actuel : {q.documentNomFichier}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
