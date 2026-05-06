@@ -49,6 +49,54 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
 
 const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
 
+// Conversion d'un nombre en lettres (français) — usage bulletin de liquidation
+const _u = ["zéro","un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix","onze","douze","treize","quatorze","quinze","seize","dix-sept","dix-huit","dix-neuf"];
+const _t = ["","","vingt","trente","quarante","cinquante","soixante","soixante","quatre-vingt","quatre-vingt"];
+function _below1000(n: number): string {
+  if (n === 0) return "";
+  let s = "";
+  const c = Math.floor(n / 100), r = n % 100;
+  if (c > 0) s += (c > 1 ? _u[c] + " " : "") + "cent" + (c > 1 && r === 0 ? "s" : "");
+  if (r > 0) {
+    if (s) s += " ";
+    if (r < 20) s += _u[r];
+    else {
+      const d = Math.floor(r / 10), un = r % 10;
+      if (d === 7 || d === 9) {
+        s += _t[d] + (d === 7 && un === 1 ? " et " : "-") + _u[10 + un];
+      } else {
+        s += _t[d];
+        if (un === 1 && d !== 8) s += " et un";
+        else if (un > 0) s += "-" + _u[un];
+        else if (d === 8) s += "s";
+      }
+    }
+  }
+  return s;
+}
+function numberToFrenchWords(n: number): string {
+  if (!isFinite(n)) return "";
+  const entier = Math.floor(Math.abs(n));
+  const cents = Math.round((Math.abs(n) - entier) * 100);
+  if (entier === 0 && cents === 0) return "zéro Ouguiya";
+  let s = "";
+  const millions = Math.floor(entier / 1000000);
+  const milliers = Math.floor((entier % 1000000) / 1000);
+  const reste = entier % 1000;
+  if (millions > 0) s += (millions === 1 ? "un million" : _below1000(millions) + " millions");
+  if (milliers > 0) {
+    if (s) s += " ";
+    s += (milliers === 1 ? "mille" : _below1000(milliers) + " mille");
+  }
+  if (reste > 0) {
+    if (s) s += " ";
+    s += _below1000(reste);
+  }
+  s += " Ouguiya";
+  if (cents > 0) s += " et " + _below1000(cents) + " Khoums";
+  return s;
+}
+
 const UtilisationDetail = () => {
   const { user } = useAuth();
   const role = user?.role as AppRole;
