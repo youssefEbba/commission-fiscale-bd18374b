@@ -106,6 +106,25 @@ const DocumentGED = ({
     }
   };
 
+  const openFile = async (doc: GEDDocument) => {
+    if (!doc.chemin) return;
+    try {
+      const res = await fetch(doc.chemin, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: "Impossible d'ouvrir le fichier", variant: "destructive" });
+    }
+  };
+
   const handleReplaceDoc = async () => {
     if (!dossierId || !replaceDocId || !replaceFile || !onReplaceDocument) return;
     setReplacing(true);
