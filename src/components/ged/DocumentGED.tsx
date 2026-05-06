@@ -108,8 +108,20 @@ const DocumentGED = ({
 
   const openFile = async (doc: GEDDocument) => {
     if (!doc.chemin) return;
+    const isAbsolute = /^https?:\/\//i.test(doc.chemin);
+    // URL absolue (ex: lien présigné MinIO) → ouverture directe, pas de header Authorization (sinon CORS)
+    if (isAbsolute) {
+      // Ajoute ngrok-skip-browser-warning via query string si possible
+      const url = doc.chemin.includes("ngrok")
+        ? doc.chemin + (doc.chemin.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true"
+        : doc.chemin;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    // Chemin relatif → fetch authentifié + blob
     try {
-      const res = await fetch(doc.chemin, {
+      const base = doc.chemin.startsWith("/") ? "" : "/";
+      const res = await fetch(base + doc.chemin, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}`,
           "ngrok-skip-browser-warning": "true",
