@@ -719,6 +719,7 @@ const UtilisationDetail = () => {
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Montant (MRU)</TableHead>
                     <TableHead>Référence paiement</TableHead>
+                    <TableHead>Justificatif</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -728,12 +729,19 @@ const UtilisationDetail = () => {
                       <TableCell>{q.dateQuittance ? new Date(q.dateQuittance).toLocaleDateString("fr-FR") : "—"}</TableCell>
                       <TableCell className="text-right font-medium">{f(q.montant)}</TableCell>
                       <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
+                      <TableCell>
+                        {q.documentChemin ? (
+                          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => openFile({ chemin: q.documentChemin, nomFichier: q.documentNomFichier } as any)}>
+                            <FileText className="h-3.5 w-3.5 mr-1" /> {q.documentNomFichier || "Voir"}
+                          </Button>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/40 font-medium">
                     <TableCell colSpan={2} className="text-right">Total</TableCell>
                     <TableCell className="text-right">{f(u.quittances.reduce((s, q) => s + Number(q.montant || 0), 0))}</TableCell>
-                    <TableCell />
+                    <TableCell colSpan={2} />
                   </TableRow>
                 </TableBody>
               </Table>
