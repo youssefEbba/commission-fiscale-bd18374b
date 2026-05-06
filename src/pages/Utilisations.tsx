@@ -1225,7 +1225,34 @@ const Utilisations = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog: Ajouter une taxe au référentiel */}
+      <Dialog open={showAddTaxe} onOpenChange={(o) => !addingTaxe && setShowAddTaxe(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter une taxe au référentiel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Code *</Label>
+              <Input className="uppercase" placeholder="ex: DD" value={newTaxeCode} onChange={e => setNewTaxeCode(e.target.value.toUpperCase())} />
+            </div>
+            <div>
+              <Label>Dénomination *</Label>
+              <Input placeholder="ex: Droit de Douane" value={newTaxeLibelle} onChange={e => setNewTaxeLibelle(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddTaxe(false)} disabled={addingTaxe}>Annuler</Button>
+            <Button onClick={handleAddTaxe} disabled={addingTaxe}>
+              {addingTaxe && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+
   );
 };
 
