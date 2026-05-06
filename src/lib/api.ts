@@ -1145,6 +1145,8 @@ export interface QuittanceTresorDto {
   montant: number;
   referencePaiement?: string;
   utilisationDouaneId?: number;
+  documentChemin?: string;
+  documentNomFichier?: string;
 }
 
 export interface CreateUtilisationCreditRequest {
@@ -1264,12 +1266,21 @@ export const utilisationCreditApi = {
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/envoyer-au-tresor`, {
       method: "POST",
     }),
-  /** DGTCP — saisie / mise à jour des quittances Trésor (idempotent : remplace les précédentes). Statut → QUITTANCES_ENREGISTREES. */
-  saisirQuittances: (id: number, quittances: QuittanceTresorDto[]) =>
-    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/quittances`, {
+  /** DGTCP — saisie / mise à jour des quittances Trésor (idempotent : remplace les précédentes). Statut → QUITTANCES_ENREGISTREES.
+   * Multipart : champ "quittances" (JSON string) + champ "files" (un fichier par quittance, indexé par position). */
+  saisirQuittances: (id: number, quittances: QuittanceTresorDto[], files?: (File | null | undefined)[]) => {
+    const fd = new FormData();
+    fd.append("quittances", JSON.stringify(quittances));
+    if (files && files.length > 0) {
+      files.forEach((f) => {
+        if (f) fd.append("files", f);
+      });
+    }
+    return apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/quittances`, {
       method: "POST",
-      body: { quittances },
-    }),
+      rawBody: fd,
+    });
+  },
   /** Lecture seule des quittances Trésor d'une utilisation douanière. */
   getQuittances: (id: number) => apiFetch<QuittanceTresorDto[]>(`/utilisations-credit/${id}/quittances`),
   /** Entreprise — accusé de réception du certificat d'utilisation. Statut → CLOTUREE. */

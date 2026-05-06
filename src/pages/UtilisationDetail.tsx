@@ -132,6 +132,7 @@ const UtilisationDetail = () => {
   // Quittances dialog (DGTCP)
   const [showQuittances, setShowQuittances] = useState(false);
   const [quittancesForm, setQuittancesForm] = useState<QuittanceTresorDto[]>([]);
+  const [quittancesFiles, setQuittancesFiles] = useState<Record<number, File | null>>({});
   const [quittancesLoading, setQuittancesLoading] = useState(false);
 
   // Envoyer Trésor confirm
@@ -304,21 +305,30 @@ const UtilisationDetail = () => {
 
   // DGTCP : enregistrer / mettre à jour les quittances
   const handleSaisirQuittances = async () => {
-    const valid = quittancesForm.filter(q => q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0);
-    if (valid.length === 0) {
+    const validIdx: number[] = [];
+    quittancesForm.forEach((q, i) => {
+      if (q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0) validIdx.push(i);
+    });
+    if (validIdx.length === 0) {
       toast({ title: "Aucune quittance valide", description: "Renseignez au moins une quittance.", variant: "destructive" });
       return;
     }
     setQuittancesLoading(true);
     try {
-      await utilisationCreditApi.saisirQuittances(utilId, valid.map(q => ({
-        numeroQuittance: q.numeroQuittance.trim(),
-        dateQuittance: new Date(q.dateQuittance).toISOString(),
-        montant: Number(q.montant),
-        referencePaiement: q.referencePaiement?.trim() || undefined,
-      })));
+      const valid = validIdx.map(i => {
+        const q = quittancesForm[i];
+        return {
+          numeroQuittance: q.numeroQuittance.trim(),
+          dateQuittance: new Date(q.dateQuittance).toISOString(),
+          montant: Number(q.montant),
+          referencePaiement: q.referencePaiement?.trim() || undefined,
+        };
+      });
+      const files = validIdx.map(i => quittancesFiles[i] || null);
+      await utilisationCreditApi.saisirQuittances(utilId, valid, files);
       toast({ title: "Quittances enregistrées", description: `${valid.length} quittance(s) enregistrée(s).` });
       setShowQuittances(false);
+      setQuittancesFiles({});
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -709,6 +719,7 @@ const UtilisationDetail = () => {
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Montant (MRU)</TableHead>
                     <TableHead>Référence paiement</TableHead>
+                    <TableHead>Justificatif</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -718,12 +729,19 @@ const UtilisationDetail = () => {
                       <TableCell>{q.dateQuittance ? new Date(q.dateQuittance).toLocaleDateString("fr-FR") : "—"}</TableCell>
                       <TableCell className="text-right font-medium">{f(q.montant)}</TableCell>
                       <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
+                      <TableCell>
+                        {q.documentChemin ? (
+                          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => openFile({ chemin: q.documentChemin, nomFichier: q.documentNomFichier } as any)}>
+                            <FileText className="h-3.5 w-3.5 mr-1" /> {q.documentNomFichier || "Voir"}
+                          </Button>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/40 font-medium">
                     <TableCell colSpan={2} className="text-right">Total</TableCell>
                     <TableCell className="text-right">{f(u.quittances.reduce((s, q) => s + Number(q.montant || 0), 0))}</TableCell>
-                    <TableCell />
+                    <TableCell colSpan={2} />
                   </TableRow>
                 </TableBody>
               </Table>
@@ -978,6 +996,7 @@ const UtilisationDetail = () => {
                           }))
                         : [{ numeroQuittance: "", dateQuittance: "", montant: u.totalAPayer || 0, referencePaiement: "" }]
                     );
+                    setQuittancesFiles({});
                     setShowQuittances(true);
                   }}><FileText className="h-4 w-4 mr-2" /> {u.quittances && u.quittances.length > 0 ? "Modifier les quittances" : "Saisir les quittances"}</Button>
                 )}
@@ -1150,15 +1169,47 @@ const UtilisationDetail = () => {
               {u.totalAPayer != null && <> Montant attendu : <strong>{f(u.totalAPayer)} MRU</strong>.</>}
             </p>
             {quittancesForm.map((q, idx) => (
-              <div key={idx} className="grid grid-cols-12 gap-2 items-end p-2 rounded border">
-                <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
-                <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
-                <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
-                <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
-                <div className="col-span-1">
-                  <Button variant="ghost" size="sm" onClick={() => setQuittancesForm(arr => arr.filter((_, i) => i !== idx))} disabled={quittancesForm.length <= 1}>
-                    <XCircle className="h-4 w-4 text-destructive" />
-                  </Button>
+              <div key={idx} className="space-y-2 p-2 rounded border">
+                <div className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
+                  <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
+                  <div className="col-span-1">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setQuittancesForm(arr => arr.filter((_, i) => i !== idx));
+                      setQuittancesFiles(prev => {
+                        const next: Record<number, File | null> = {};
+                        Object.entries(prev).forEach(([k, v]) => {
+                          const ki = Number(k);
+                          if (ki < idx) next[ki] = v;
+                          else if (ki > idx) next[ki - 1] = v;
+                        });
+                        return next;
+                      });
+                    }} disabled={quittancesForm.length <= 1}>
+                      <XCircle className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-12">
+                    <Label className="text-xs">Justificatif (PDF / image, optionnel)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept=".pdf,image/*"
+                        onChange={e => setQuittancesFiles(prev => ({ ...prev, [idx]: e.target.files?.[0] || null }))}
+                        className="text-xs"
+                      />
+                      {quittancesFiles[idx] && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">{quittancesFiles[idx]!.name}</span>
+                      )}
+                      {!quittancesFiles[idx] && q.documentNomFichier && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">Actuel : {q.documentNomFichier}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
