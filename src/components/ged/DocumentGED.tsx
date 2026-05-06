@@ -172,14 +172,13 @@ const DocumentGED = ({
               <div className="flex items-center gap-2">
                 {getFileIcon(d.nomFichier)}
                 {d.chemin ? (
-                  <a
-                    href={d.chemin}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline text-xs hover:text-primary/80 transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => openFile(d)}
+                    className="text-primary underline text-xs hover:text-primary/80 transition-colors text-left"
                   >
                     {d.nomFichier}
-                  </a>
+                  </button>
                 ) : (
                   <span className="text-xs">{d.nomFichier}</span>
                 )}
