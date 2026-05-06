@@ -646,6 +646,46 @@ const UtilisationDetail = () => {
                   </TableRow>
                 </TableBody>
               </Table>
+              {(() => {
+                const visaStatuts: UtilisationStatut[] = ["VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE"];
+                if (!visaStatuts.includes(u.statut)) return null;
+                const lignesAuCi = (u.lignes || []).filter(l => l.affectation === "AU_CI" && (Number(l.valeur) || 0) > 0);
+                const lignesAPayer = (u.lignes || []).filter(l => l.affectation === "A_PAYER" && (Number(l.valeur) || 0) > 0);
+                const totalAuCi = lignesAuCi.reduce((s,l)=>s+(Number(l.valeur)||0),0);
+                const totalAPayer = lignesAPayer.reduce((s,l)=>s+(Number(l.valeur)||0),0);
+                const codesAPayer = lignesAPayer.map(l=>l.code).join(" + ");
+                const codesAuCi = lignesAuCi.map(l=>l.code).join(" + ");
+                const dateVisa = u.dateMiseAJour || u.dateCreation;
+                const dateStr = dateVisa ? new Date(dateVisa).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR");
+                return (
+                  <div className="border-t bg-muted/20 p-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-3">Annotation & visa DGD</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4">
+                        <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">À payer (entreprise)</p>
+                        <p className="text-2xl font-bold text-amber-800 mt-1">{f(totalAPayer)} MRU</p>
+                      </div>
+                      <div className="rounded-lg border-2 border-primary bg-primary/5 p-4">
+                        <p className="text-xs uppercase tracking-wide text-primary font-semibold">Pris en charge (AU CI)</p>
+                        <p className="text-2xl font-bold text-primary mt-1">{f(totalAuCi)} MRU</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border bg-background p-4 space-y-2 font-serif">
+                      <p className="text-sm"><span className="font-semibold">Le {dateStr}</span></p>
+                      {totalAPayer > 0 && (
+                        <p className="text-sm">
+                          <span className="underline font-semibold">À payer</span>{codesAPayer && <> : {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em>{numberToFrenchWords(totalAPayer)}</em>
+                        </p>
+                      )}
+                      {totalAuCi > 0 && (
+                        <p className="text-sm">
+                          <span className="underline font-semibold">Au CI</span>{codesAuCi && <> : {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em>{numberToFrenchWords(totalAuCi)}</em>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         )}
