@@ -996,6 +996,7 @@ const UtilisationDetail = () => {
                           }))
                         : [{ numeroQuittance: "", dateQuittance: "", montant: u.totalAPayer || 0, referencePaiement: "" }]
                     );
+                    setQuittancesFiles({});
                     setShowQuittances(true);
                   }}><FileText className="h-4 w-4 mr-2" /> {u.quittances && u.quittances.length > 0 ? "Modifier les quittances" : "Saisir les quittances"}</Button>
                 )}
