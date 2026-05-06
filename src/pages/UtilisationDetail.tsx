@@ -132,6 +132,7 @@ const UtilisationDetail = () => {
   // Quittances dialog (DGTCP)
   const [showQuittances, setShowQuittances] = useState(false);
   const [quittancesForm, setQuittancesForm] = useState<QuittanceTresorDto[]>([]);
+  const [quittancesFiles, setQuittancesFiles] = useState<Record<number, File | null>>({});
   const [quittancesLoading, setQuittancesLoading] = useState(false);
 
   // Envoyer Trésor confirm
@@ -304,21 +305,30 @@ const UtilisationDetail = () => {
 
   // DGTCP : enregistrer / mettre à jour les quittances
   const handleSaisirQuittances = async () => {
-    const valid = quittancesForm.filter(q => q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0);
-    if (valid.length === 0) {
+    const validIdx: number[] = [];
+    quittancesForm.forEach((q, i) => {
+      if (q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0) validIdx.push(i);
+    });
+    if (validIdx.length === 0) {
       toast({ title: "Aucune quittance valide", description: "Renseignez au moins une quittance.", variant: "destructive" });
       return;
     }
     setQuittancesLoading(true);
     try {
-      await utilisationCreditApi.saisirQuittances(utilId, valid.map(q => ({
-        numeroQuittance: q.numeroQuittance.trim(),
-        dateQuittance: new Date(q.dateQuittance).toISOString(),
-        montant: Number(q.montant),
-        referencePaiement: q.referencePaiement?.trim() || undefined,
-      })));
+      const valid = validIdx.map(i => {
+        const q = quittancesForm[i];
+        return {
+          numeroQuittance: q.numeroQuittance.trim(),
+          dateQuittance: new Date(q.dateQuittance).toISOString(),
+          montant: Number(q.montant),
+          referencePaiement: q.referencePaiement?.trim() || undefined,
+        };
+      });
+      const files = validIdx.map(i => quittancesFiles[i] || null);
+      await utilisationCreditApi.saisirQuittances(utilId, valid, files);
       toast({ title: "Quittances enregistrées", description: `${valid.length} quittance(s) enregistrée(s).` });
       setShowQuittances(false);
+      setQuittancesFiles({});
       fetchAll();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
