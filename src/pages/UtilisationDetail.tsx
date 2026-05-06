@@ -600,32 +600,35 @@ const UtilisationDetail = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-20">Code</TableHead>
-                    <TableHead>Libellé</TableHead>
-                    <TableHead className="w-24">Type</TableHead>
-                    <TableHead className="text-right w-32">Valeur (MRU)</TableHead>
+                    <TableHead>Nom</TableHead>
+                    <TableHead className="text-right w-40">Valeur taxe (MRU)</TableHead>
                     <TableHead className="w-36">Affectation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {u.lignes.map(l => (
-                    <TableRow key={l.id}>
-                      <TableCell className="font-mono text-xs">{l.code}</TableCell>
-                      <TableCell className="text-sm">{l.libelle}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px]">{l.type}</Badge></TableCell>
-                      <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
-                      <TableCell>
-                        {l.affectation === "AU_CI" ? (
-                          <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">AU CI</Badge>
-                        ) : l.affectation === "A_PAYER" ? (
-                          <Badge className="bg-amber-100 text-amber-800 text-[10px]">À PAYER</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px]">En attente</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {u.lignes.map(l => {
+                    const val = Number(l.valeur) || 0;
+                    return (
+                      <TableRow key={l.id}>
+                        <TableCell className="font-mono text-xs">{l.code}</TableCell>
+                        <TableCell className="text-sm">{l.libelle}</TableCell>
+                        <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                        <TableCell>
+                          {val === 0 ? (
+                            <span className="text-[10px] text-muted-foreground">Non requis</span>
+                          ) : l.affectation === "AU_CI" ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">AU CI</Badge>
+                          ) : l.affectation === "A_PAYER" ? (
+                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">À PAYER</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">En attente</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   <TableRow className="bg-muted/40 font-medium">
-                    <TableCell colSpan={3} className="text-right">Totaux</TableCell>
+                    <TableCell colSpan={2} className="text-right">Totaux</TableCell>
                     <TableCell className="text-right">
                       {f(u.lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0))}
                     </TableCell>
