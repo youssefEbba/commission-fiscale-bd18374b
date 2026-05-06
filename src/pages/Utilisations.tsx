@@ -170,15 +170,36 @@ const Utilisations = () => {
   // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
   const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
 
-  // Référentiel des taxes (admin-managed) — utilisé pour pré-remplir les lignes du bulletin
+  // Référentiel des taxes (admin-managed) — source de vérité pour les lignes du bulletin
   const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
-  useEffect(() => {
-    referentielTaxeApi.getActives()
-      .then(list => setReferentielTaxes(
-        (list || []).slice().sort((a, b) => (a.ordreAffichage ?? 999) - (b.ordreAffichage ?? 999))
-      ))
-      .catch(() => { /* fallback silencieux : le formulaire reste utilisable en saisie libre */ });
-  }, []);
+  const [referentielTaxesLoading, setReferentielTaxesLoading] = useState(false);
+  const loadReferentielTaxes = async (): Promise<ReferentielTaxeDto[]> => {
+    setReferentielTaxesLoading(true);
+    try {
+      const list = await referentielTaxeApi.getActives();
+      const sorted = (list || []).slice().sort((a, b) => (a.ordreAffichage ?? 999) - (b.ordreAffichage ?? 999));
+      setReferentielTaxes(sorted);
+      return sorted;
+    } catch {
+      // fallback silencieux : le formulaire reste utilisable en saisie libre
+      return [];
+    } finally {
+      setReferentielTaxesLoading(false);
+    }
+  };
+  useEffect(() => { void loadReferentielTaxes(); }, []);
+
+  // Construit les lignes par défaut à partir du référentiel chargé
+  const buildDefaultLignesFromReferentiel = (taxes: ReferentielTaxeDto[]): LigneBulletinRequest[] => {
+    if (!taxes || taxes.length === 0) return DEFAULT_BULLETIN_LIGNES.map(l => ({ ...l }));
+    return taxes.map((t, i) => ({
+      codeTaxe: t.codeTaxe,
+      denominationTaxe: t.denominationTaxe,
+      typeLigne: "ARTICLE" as TypeLigneTaxe,
+      valeurTaxe: 0,
+      ordre: t.ordreAffichage ?? i + 1,
+    }));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -249,7 +270,12 @@ const Utilisations = () => {
   const openCreate = async () => {
     setEditingId(null);
     setCreateType("DOUANIER");
-    setForm({ ...emptyDouane, entrepriseId: (user as any)?.entrepriseId });
+    const taxes = await loadReferentielTaxes();
+    setForm({
+      ...emptyDouane,
+      entrepriseId: (user as any)?.entrepriseId,
+      lignes: buildDefaultLignesFromReferentiel(taxes),
+    });
     setCreateDocFiles({});
     await loadCertificatsAndRequirements();
     setShowCreate(true);
@@ -831,9 +857,15 @@ const Utilisations = () => {
                     </div>
                     {(!form.lignes || form.lignes.length === 0) ? (
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-muted-foreground italic">Aucune ligne. Vous pouvez partir des lignes par défaut (DD + TVA).</p>
-                        <Button type="button" size="sm" variant="secondary" onClick={() => setForm({ ...form, lignes: DEFAULT_BULLETIN_LIGNES.map(l => ({ ...l })) })}>
-                          Pré-remplir DD + TVA
+                        <p className="text-xs text-muted-foreground italic">
+                          {referentielTaxesLoading
+                            ? "Chargement du référentiel des taxes…"
+                            : referentielTaxes.length > 0
+                              ? `Aucune ligne. Pré-remplir depuis le référentiel (${referentielTaxes.length} taxes).`
+                              : "Aucune ligne. Référentiel indisponible — pré-remplissage local (DD + TVA)."}
+                        </p>
+                        <Button type="button" size="sm" variant="secondary" disabled={referentielTaxesLoading} onClick={() => setForm({ ...form, lignes: buildDefaultLignesFromReferentiel(referentielTaxes) })}>
+                          {referentielTaxes.length > 0 ? "Pré-remplir depuis référentiel" : "Pré-remplir DD + TVA"}
                         </Button>
                       </div>
                     ) : (
