@@ -1080,6 +1080,7 @@ export interface LigneBulletinRequest {
 export interface DecisionLigneRequest {
   ligneId: number;
   affectation: AffectationTaxe;
+  valeurTaxe?: number | null;
 }
 
 export interface UtilisationCreditDto {
