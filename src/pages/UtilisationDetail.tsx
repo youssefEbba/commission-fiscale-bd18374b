@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -419,20 +420,17 @@ const UtilisationDetail = () => {
     }
   };
 
-  const openFile = async (doc: DocumentDto) => {
-    try {
-      const res = await fetch(doc.chemin!, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("auth_token")}`,
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-    } catch {
-      toast({ title: "Erreur", description: "Impossible d'ouvrir le fichier", variant: "destructive" });
+  const openFile = (doc: DocumentDto) => {
+    if (!doc.chemin) return;
+    let url = doc.chemin;
+    if (!/^https?:\/\//i.test(url)) {
+      const apiOrigin = API_BASE.replace(/\/api\/?$/, "");
+      url = apiOrigin + (url.startsWith("/") ? "" : "/") + url;
     }
+    if (url.includes("ngrok")) {
+      url += (url.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true";
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
