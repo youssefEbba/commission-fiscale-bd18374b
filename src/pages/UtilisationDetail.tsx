@@ -92,8 +92,8 @@ function numberToFrenchWords(n: number): string {
     if (s) s += " ";
     s += _below1000(reste);
   }
+  if (cents > 0) s += " virgule " + _below1000(cents);
   s += " Ouguiya";
-  if (cents > 0) s += " et " + _below1000(cents) + " Khoums";
   return s;
 }
 
