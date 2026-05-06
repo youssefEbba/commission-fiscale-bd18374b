@@ -173,6 +173,11 @@ const Utilisations = () => {
   // Référentiel des taxes (admin-managed) — source de vérité pour les lignes du bulletin
   const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
   const [referentielTaxesLoading, setReferentielTaxesLoading] = useState(false);
+  // Dialog "Ajouter taxe au référentiel"
+  const [showAddTaxe, setShowAddTaxe] = useState(false);
+  const [newTaxeCode, setNewTaxeCode] = useState("");
+  const [newTaxeLibelle, setNewTaxeLibelle] = useState("");
+  const [addingTaxe, setAddingTaxe] = useState(false);
   const loadReferentielTaxes = async (): Promise<ReferentielTaxeDto[]> => {
     setReferentielTaxesLoading(true);
     try {
