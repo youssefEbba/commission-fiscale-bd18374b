@@ -125,6 +125,12 @@ const UtilisationDetail = () => {
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
 
+  // Montants en lettres (éditables)
+  const [lettresAPayer, setLettresAPayer] = useState<string | null>(null);
+  const [lettresAuCi, setLettresAuCi] = useState<string | null>(null);
+  const [lettresAPayerLiq, setLettresAPayerLiq] = useState<string | null>(null);
+  const [lettresAuCiLiq, setLettresAuCiLiq] = useState<string | null>(null);
+
   // Chèque dialog (entreprise)
   const [showCheque, setShowCheque] = useState(false);
   const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
@@ -681,12 +687,24 @@ const UtilisationDetail = () => {
                       <p className="text-sm"><span className="font-semibold">Le {dateStr}</span></p>
                       {totalAPayer > 0 && (
                         <p className="text-sm">
-                          <span className="underline font-semibold">À payer</span>{codesAPayer && <> : {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em>{numberToFrenchWords(totalAPayer)}</em>
+                          <span className="underline font-semibold">À payer</span>{codesAPayer && <> : {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em
+                            contentEditable
+                            suppressContentEditableWarning
+                            onBlur={(e) => setLettresAPayer(e.currentTarget.textContent || "")}
+                            className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
+                            title="Cliquez pour modifier le montant en lettres"
+                          >{lettresAPayer ?? numberToFrenchWords(totalAPayer)}</em>
                         </p>
                       )}
                       {totalAuCi > 0 && (
                         <p className="text-sm">
-                          <span className="underline font-semibold">Au CI</span>{codesAuCi && <> : {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em>{numberToFrenchWords(totalAuCi)}</em>
+                          <span className="underline font-semibold">Au CI</span>{codesAuCi && <> : {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em
+                            contentEditable
+                            suppressContentEditableWarning
+                            onBlur={(e) => setLettresAuCi(e.currentTarget.textContent || "")}
+                            className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
+                            title="Cliquez pour modifier le montant en lettres"
+                          >{lettresAuCi ?? numberToFrenchWords(totalAuCi)}</em>
                         </p>
                       )}
                     </div>
@@ -1144,12 +1162,24 @@ const UtilisationDetail = () => {
                     <p className="text-sm"><span className="font-semibold">Le {today}</span></p>
                     {totalAPayer > 0 && (
                       <p className="text-sm">
-                        <span className="underline font-semibold">À payer</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em>{numberToFrenchWords(totalAPayer)}</em>
+                        <span className="underline font-semibold">À payer</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => setLettresAPayerLiq(e.currentTarget.textContent || "")}
+                          className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
+                          title="Cliquez pour modifier le montant en lettres"
+                        >{lettresAPayerLiq ?? numberToFrenchWords(totalAPayer)}</em>
                       </p>
                     )}
                     {totalAuCi > 0 && (
                       <p className="text-sm">
-                        <span className="underline font-semibold">Au CI</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em>{numberToFrenchWords(totalAuCi)}</em>
+                        <span className="underline font-semibold">Au CI</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => setLettresAuCiLiq(e.currentTarget.textContent || "")}
+                          className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
+                          title="Cliquez pour modifier le montant en lettres"
+                        >{lettresAuCiLiq ?? numberToFrenchWords(totalAuCi)}</em>
                       </p>
                     )}
                   </div>
