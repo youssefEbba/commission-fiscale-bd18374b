@@ -125,6 +125,12 @@ const UtilisationDetail = () => {
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
 
+  // Montants en lettres (éditables)
+  const [lettresAPayer, setLettresAPayer] = useState<string | null>(null);
+  const [lettresAuCi, setLettresAuCi] = useState<string | null>(null);
+  const [lettresAPayerLiq, setLettresAPayerLiq] = useState<string | null>(null);
+  const [lettresAuCiLiq, setLettresAuCiLiq] = useState<string | null>(null);
+
   // Chèque dialog (entreprise)
   const [showCheque, setShowCheque] = useState(false);
   const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
