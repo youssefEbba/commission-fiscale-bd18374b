@@ -1162,12 +1162,24 @@ const UtilisationDetail = () => {
                     <p className="text-sm"><span className="font-semibold">Le {today}</span></p>
                     {totalAPayer > 0 && (
                       <p className="text-sm">
-                        <span className="underline font-semibold">À payer</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em>{numberToFrenchWords(totalAPayer)}</em>
+                        <span className="underline font-semibold">À payer</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => setLettresAPayerLiq(e.currentTarget.textContent || "")}
+                          className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
+                          title="Cliquez pour modifier le montant en lettres"
+                        >{lettresAPayerLiq ?? numberToFrenchWords(totalAPayer)}</em>
                       </p>
                     )}
                     {totalAuCi > 0 && (
                       <p className="text-sm">
-                        <span className="underline font-semibold">Au CI</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em>{numberToFrenchWords(totalAuCi)}</em>
+                        <span className="underline font-semibold">Au CI</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => setLettresAuCiLiq(e.currentTarget.textContent || "")}
+                          className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
+                          title="Cliquez pour modifier le montant en lettres"
+                        >{lettresAuCiLiq ?? numberToFrenchWords(totalAuCi)}</em>
                       </p>
                     )}
                   </div>
