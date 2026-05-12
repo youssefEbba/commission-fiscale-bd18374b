@@ -315,7 +315,7 @@ const Marches = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[900px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
@@ -362,24 +362,32 @@ const Marches = () => {
                               : "—"}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex gap-1 justify-end flex-wrap">
-                              <Button variant="ghost" size="sm" onClick={() => openGed(m)}>
-                                <FileText className="h-4 w-4 mr-1" /> GED
-                              </Button>
-                              {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
-                                <>
-                                  <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
-                                    <Edit className="h-4 w-4 mr-1" /> Modifier
-                                  </Button>
-                                  <Button variant="outline" size="sm" onClick={() => openAssign(m)}>
-                                    <UserPlus className="h-4 w-4 mr-1" /> Affecter
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => openCancelMarche(m)}>
-                                    <Ban className="h-4 w-4 mr-1" /> Annuler
-                                  </Button>
-                                </>
-                              )}
-                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openGed(m)}>
+                                  <FileText className="h-4 w-4 mr-2" /> GED
+                                </DropdownMenuItem>
+                                {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => openEdit(m)}>
+                                      <Edit className="h-4 w-4 mr-2" /> Modifier
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openAssign(m)}>
+                                      <UserPlus className="h-4 w-4 mr-2" /> Affecter
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openCancelMarche(m)} className="text-destructive">
+                                      <Ban className="h-4 w-4 mr-2" /> Annuler
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
