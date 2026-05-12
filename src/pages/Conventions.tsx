@@ -590,7 +590,7 @@ const Conventions = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[900px]">
                    <TableHeader>
                     <TableRow>
                       <TableHead>Référence</TableHead>
