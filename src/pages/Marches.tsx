@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -18,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban, MoreHorizontal } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban, MoreHorizontal, Eye } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -33,6 +34,7 @@ const STATUT_COLORS: Record<StatutMarche, string> = {
 const Marches = () => {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [loading, setLoading] = useState(true);
