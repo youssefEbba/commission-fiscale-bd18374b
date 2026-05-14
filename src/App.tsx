@@ -40,6 +40,8 @@ import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
+import ConventionDetail from "./pages/ConventionDetail";
+import MarcheDetail from "./pages/MarcheDetail";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +63,11 @@ const App = () => (
                 <Conventions />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/conventions/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <ConventionDetail />
+              </ProtectedRoute>
+            } />
             {/* Référentiel Projet supprimé: convention = projet */}
             <Route path="/dashboard/demandes" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
@@ -70,6 +77,11 @@ const App = () => (
             <Route path="/dashboard/marches" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Marches />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/marches/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <MarcheDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/delegues" element={
