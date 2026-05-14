@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -18,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban, MoreHorizontal } from "lucide-react";
+import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban, MoreHorizontal, Eye } from "lucide-react";
 import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -33,6 +34,7 @@ const STATUT_COLORS: Record<StatutMarche, string> = {
 const Marches = () => {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -315,34 +317,27 @@ const Marches = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="min-w-[900px]">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
                       <TableHead>N° Attribution / Marché</TableHead>
                       <TableHead>Intitulé</TableHead>
-                      <TableHead>Date signature</TableHead>
                       <TableHead>Montant HT</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Représentant</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
                       </TableRow>
                     ) : (
                       filtered.map(m => (
                         <TableRow key={m.id}>
-                          <TableCell className="font-medium">#{m.id}</TableCell>
-                          <TableCell className="whitespace-nowrap">{m.numeroMarche || "—"}</TableCell>
-                          <TableCell className="max-w-[220px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground whitespace-nowrap">
-                            {m.dateSignature ? new Date(m.dateSignature).toLocaleDateString("fr-FR") : "—"}
-                          </TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{m.numeroMarche || `#${m.id}`}</TableCell>
+                          <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap">{(m.montantContratHt ?? m.montantContratTtc)?.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) || "—"}</TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
@@ -356,38 +351,43 @@ const Marches = () => {
                               <Badge variant="outline" className="text-xs">Attribution / Adjudication</Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                            {m.delegueIds && m.delegueIds.length > 0
-                              ? m.delegueIds.map(id => `#${id}`).join(", ")
-                              : "—"}
-                          </TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openGed(m)}>
-                                  <FileText className="h-4 w-4 mr-2" /> GED
-                                </DropdownMenuItem>
-                                {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => openEdit(m)}>
-                                      <Edit className="h-4 w-4 mr-2" /> Modifier
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openAssign(m)}>
-                                      <UserPlus className="h-4 w-4 mr-2" /> Affecter
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openCancelMarche(m)} className="text-destructive">
-                                      <Ban className="h-4 w-4 mr-2" /> Annuler
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => navigate(`/dashboard/marches/${m.id}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" /> Voir
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openGed(m)}>
+                                    <FileText className="h-4 w-4 mr-2" /> GED
+                                  </DropdownMenuItem>
+                                  {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => openEdit(m)}>
+                                        <Edit className="h-4 w-4 mr-2" /> Modifier
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => openAssign(m)}>
+                                        <UserPlus className="h-4 w-4 mr-2" /> Affecter
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => openCancelMarche(m)} className="text-destructive">
+                                        <Ban className="h-4 w-4 mr-2" /> Annuler
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

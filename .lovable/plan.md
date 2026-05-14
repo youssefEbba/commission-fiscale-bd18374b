@@ -1,96 +1,49 @@
+## Objectif
+Alléger l'affichage des listes **Conventions** et **Attributions / Marchés** en ne gardant que les champs clés, et rediriger vers une page de détail complète via un bouton **Voir**.
 
+## Problème actuel
+- Les tables affichent 8-9 colonnes (ID, référence, intitulé, date, montant, statut, type, représentant, actions). C'est dense et peu lisible sur mobile/tablette.
+- Aucune page de détail dédiée n'existe pour ces deux entités ; les informations complètes sont montrées dans des dialogs modales (détail, documents, édit, etc.) ce qui limite la lisibilité.
 
-## Contexte
+## Solution proposée
 
-Création d'un nouveau rôle **`COMMISSION_RELAIS`** (ou nom à valider) permettant à un agent de la Commission Fiscale de prendre le relais opérationnel d'une **Entreprise** ou d'une **Autorité Contractante** défaillante. L'agent choisit dynamiquement :
-1. Le **mode d'incarnation** (Entreprise ou Autorité Contractante)
-2. L'**entité cible** à gérer (quelle entreprise / quelle AC)
+### 1. Alléger les listes
+**Conventions** — colonnes conservées :
+- Référence
+- Intitulé (tronqué)
+- Bailleur
+- Montant (MRU)
+- Statut
+- Actions (Voir + menu actions)
 
-Une fois ce contexte choisi, il agit avec les **mêmes droits fonctionnels** que le rôle incarné, **sans pouvoir changer le mot de passe ni gérer les délégués** de l'entité.
+**Attributions / Marchés** — colonnes conservées :
+- N° Attribution / Marché
+- Intitulé (tronqué)
+- Montant HT
+- Statut
+- Type
+- Actions (Voir + menu actions)
 
-## Spécifications backend requises
+Les tables restent scrollables horizontalement (`overflow-x-auto`) si nécessaire, mais avec beaucoup moins de colonnes.
 
-### 1. Nouveau rôle et permissions
+### 2. Créer les pages de détail
+- `src/pages/ConventionDetail.tsx` — affiche toutes les informations de la convention (référence, projectReference, intitulé, bailleur, dates, montants, devise, taux, statut, autorité contractante, dates de validation, motif rejet) + documents GED + actions contextuelles (valider/rejeter/annuler selon rôle et statut).
+- `src/pages/MarcheDetail.tsx` — affiche toutes les informations du marché (numéro, intitulé, montant, convention liée, statut, type, délégués, dates) + documents GED + actions contextuelles.
 
-- Ajouter `COMMISSION_RELAIS` dans l'enum `AppRole` côté backend.
-- Permissions associées : superset technique des permissions `AUTORITE_CONTRACTANTE` + `ENTREPRISE`, **conditionnées** au contexte d'incarnation actif.
+### 3. Routage
+Ajouter dans `App.tsx` :
+- `/dashboard/conventions/:id` → `<ConventionDetail />`
+- `/dashboard/marches/:id` → `<MarcheDetail />`
 
-### 2. Endpoints de listing des cibles
+### 4. Navigation
+Dans chaque ligne des listes, ajouter un bouton **Voir** (icône `Eye`) qui fait un `navigate()` vers la page de détail. Les actions secondaires (Modifier, Affecter, GED, Annuler) restent dans le menu `MoreHorizontal`.
 
-- **`GET /api/commission-relais/entreprises`** — liste paginée `{id, raisonSociale, nif, actif}` de toutes les entreprises gérables.
-- **`GET /api/commission-relais/autorites-contractantes`** — liste paginée `{id, libelle, code, actif}` de toutes les AC gérables.
-- Filtres `q` (recherche texte) et `actif`.
+## Fichiers impactés
+- `src/pages/Conventions.tsx` — réduire colonnes, ajouter lien Voir
+- `src/pages/Marches.tsx` — réduire colonnes, ajouter lien Voir
+- `src/App.tsx` — ajouter routes détail
+- **Nouveau** `src/pages/ConventionDetail.tsx`
+- **Nouveau** `src/pages/MarcheDetail.tsx`
 
-### 3. Mécanisme d'incarnation (impersonation contrôlée)
-
-Deux options à trancher avec le back :
-
-**Option A — JWT enrichi à la sélection (recommandée)** :
-- **`POST /api/commission-relais/impersonate`** corps `{ "mode": "ENTREPRISE" | "AUTORITE_CONTRACTANTE", "targetId": <id> }` → renvoie un **nouveau JWT** contenant :
-  - `role`: rôle natif `COMMISSION_RELAIS`
-  - `actingAs`: `"ENTREPRISE" | "AUTORITE_CONTRACTANTE"`
-  - `actingEntrepriseId` ou `actingAutoriteContractanteId`
-  - `permissions`: celles du rôle incarné
-  - `originalUserId`: id de l'agent réel (pour audit)
-- **`POST /api/commission-relais/release`** → renvoie un JWT "neutre" (sans contexte d'incarnation).
-
-**Option B — Header `X-Acting-As` sur chaque requête** : moins sûr, plus complexe à propager.
-
-### 4. Application du contexte côté back
-
-Tous les endpoints existants (`/demandes`, `/certificats-credit`, `/utilisations-credit`, `/transferts-credit`, `/marches`, `/conventions`, etc.) doivent :
-- Lire `actingEntrepriseId` / `actingAutoriteContractanteId` du JWT **comme s'ils étaient** `entrepriseId` / `autoriteContractanteId` du user.
-- Utiliser ces ids pour les filtres de visibilité ET pour la création de ressources.
-
-### 5. Audit obligatoire
-
-- Chaque action effectuée en mode incarnation doit logger : `originalUserId`, `actingAs`, `targetId`, action, payload — visible dans `/dashboard/audit`.
-- Endpoint `GET /api/audit-logs?actingAs=true` pour filtrer.
-
-### 6. Restrictions de sécurité
-
-Le rôle `COMMISSION_RELAIS` ne doit **jamais** pouvoir :
-- Modifier le mot de passe ou activer/désactiver l'entité incarnée
-- Gérer les délégués de l'AC incarnée
-- S'auto-attribuer des permissions admin
-
-### 7. Erreurs attendues
-
-| Code | Contexte |
-|------|----------|
-| `403 ACCESS_DENIED` | Action sans contexte d'incarnation actif |
-| `404 RESOURCE_NOT_FOUND` | Cible inexistante |
-| `409 BUSINESS_RULE_VIOLATION` | Tentative d'action interdite (changement mdp, etc.) |
-
-## Implémentation front (à faire après livraison back)
-
-### Phase 1 — Plomberie auth
-- Ajouter `COMMISSION_RELAIS` dans `AppRole` (`src/contexts/AuthContext.tsx`).
-- Étendre `AuthUser` avec `actingAs`, `actingEntrepriseId`, `actingAutoriteContractanteId`, `originalUserId`.
-- Helper `getEffectiveRole()` retournant `actingAs` si défini, sinon `role`.
-- Adapter `hasRole()` et `ProtectedRoute` pour utiliser `getEffectiveRole()`.
-
-### Phase 2 — Écran de sélection
-- Nouvelle page **`/dashboard/relais`** (route protégée `COMMISSION_RELAIS` uniquement) :
-  - Étape 1 : choix mode (deux cartes : Entreprise / AC)
-  - Étape 2 : recherche + sélection de l'entité cible (table avec filtre)
-  - Bouton "Prendre le relais" → appelle `/impersonate`, met à jour le JWT, redirige vers `/dashboard`.
-- Redirection forcée vers `/dashboard/relais` si `COMMISSION_RELAIS` connecté sans contexte actif.
-
-### Phase 3 — Bandeau permanent
-- Bandeau ambré en haut du `DashboardLayout` quand `actingAs` est actif :
-  - "Vous agissez en tant que **[Entreprise XYZ]** (mode Entreprise)"
-  - Bouton "Quitter le relais" → appelle `/release`, retour à `/dashboard/relais`.
-
-### Phase 4 — Mémoire et documentation
-- Créer `mem://features/commission-relais` documentant la règle métier.
-- Mettre à jour `mem://auth/roles-permissions`.
-
-## Questions pour le back
-
-1. Quel **nom officiel** pour le rôle ? (`COMMISSION_RELAIS`, `RELAIS_COMMISSION`, `AGENT_RELAIS`...)
-2. **Option A ou B** pour l'incarnation ?
-3. Une session de relais doit-elle **expirer** au bout d'un délai (ex: 2h) ?
-4. Faut-il une **trace côté entité incarnée** ("Action effectuée par la Commission le ...") visible dans les écrans métier, ou uniquement dans l'audit ?
-5. Un agent relais peut-il avoir un **scope restreint** (ex: seulement certaines AC), ou accès à toutes ?
-
+## Estimation
+~2-3 fichiers à modifier + 2 pages à créer. Travail modéré mais bien cadré.
