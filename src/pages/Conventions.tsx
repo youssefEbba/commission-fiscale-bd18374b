@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { PDFDocument } from "pdf-lib";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -44,6 +45,7 @@ const Conventions = () => {
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [loading, setLoading] = useState(true);
