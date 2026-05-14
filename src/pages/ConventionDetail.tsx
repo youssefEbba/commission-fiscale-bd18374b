@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   conventionApi, ConventionDto, CONVENTION_STATUT_LABELS,
-  DocumentDto, MARCHE_DOCUMENT_TYPES, CONVENTION_DOCUMENT_TYPES, TypeDocumentConvention,
+  DocumentDto, CONVENTION_DOCUMENT_TYPES, TypeDocumentConvention,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
