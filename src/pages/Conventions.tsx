@@ -52,6 +52,8 @@ const Conventions = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   // Detail dialog
   const [detailOpen, setDetailOpen] = useState(false);
