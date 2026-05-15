@@ -600,33 +600,29 @@ const Conventions = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="min-w-[700px]">
+                <Table className="min-w-[600px] [&_th]:h-10 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2">
                    <TableHeader>
                     <TableRow>
                       <TableHead>Référence</TableHead>
                       <TableHead>Intitulé</TableHead>
                       <TableHead>Bailleur</TableHead>
-                      <TableHead>Montant MRU</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.length === 0 ? (
+                    {paginated.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           Aucune convention trouvée
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filtered.map((c) => (
+                      paginated.map((c) => (
                         <TableRow key={c.id}>
                           <TableCell className="font-medium whitespace-nowrap">{c.reference || `#${c.id}`}</TableCell>
-                          <TableCell className="max-w-[260px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>
+                          <TableCell className="max-w-[320px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>
                           <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleurNom || c.bailleur || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground whitespace-nowrap">
-                            {c.montantMru ? `${c.montantMru.toLocaleString("fr-FR")} MRU` : "—"}
-                          </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
                               {CONVENTION_STATUT_LABELS[c.statut]}
@@ -638,7 +634,7 @@ const Conventions = () => {
                                 variant="outline"
                                 size="sm"
                                 className="h-8"
-                                onClick={() => window.location.assign(`/dashboard/conventions/${c.id}`)}
+                                onClick={() => navigate(`/dashboard/conventions/${c.id}`)}
                               >
                                 <Eye className="h-4 w-4 mr-1" /> Voir
                               </Button>
@@ -683,6 +679,18 @@ const Conventions = () => {
                     )}
                   </TableBody>
                 </Table>
+                {filtered.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-t text-sm">
+                    <span className="text-muted-foreground">
+                      {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Précédent</Button>
+                      <span className="text-muted-foreground">Page {currentPage} / {totalPages}</span>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Suivant</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
