@@ -544,6 +544,12 @@ const Conventions = () => {
     return matchSearch && matchStatut;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search, filterStatut]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
