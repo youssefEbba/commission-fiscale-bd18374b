@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 import { API_BASE } from "@/lib/apiConfig";
 
@@ -22,7 +20,6 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation(["auth", "common"]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,31 +34,29 @@ const Login = () => {
 
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        let msg = "";
+        let msg = "Identifiants incorrects";
         try {
           const json = JSON.parse(body);
           if (json.error) msg = json.error;
           if (json.message) msg = json.message;
         } catch { /* use default */ }
 
+        // Detect "not validated" case
         const lower = msg.toLowerCase();
         if (lower.includes("valid") || lower.includes("activ") || lower.includes("approuv") || lower.includes("disabled")) {
-          setError(t("auth:login.errors.notValidated"));
+          setError("Votre compte n'est pas encore validé par un administrateur. Veuillez patienter.");
         } else {
-          setError(t("auth:login.errors.invalid"));
+          setError("Nom d'utilisateur ou mot de passe incorrect.");
         }
         return;
       }
 
       const data = await res.json();
       login(data);
-      toast({
-        title: t("auth:login.success.title"),
-        description: t("auth:login.success.welcome", { name: data.nomComplet || data.username }),
-      });
+      toast({ title: "Connexion réussie", description: `Bienvenue, ${data.nomComplet || data.username}` });
       navigate("/dashboard");
     } catch {
-      setError(t("auth:login.errors.network"));
+      setError("Impossible de contacter le serveur. Vérifiez votre connexion.");
     } finally {
       setLoading(false);
     }
@@ -72,27 +67,26 @@ const Login = () => {
       <div className="w-full max-w-md space-y-8">
         <div className="flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-            {t("common:nav.home")}
+            <ArrowLeft className="h-4 w-4" />
+            Accueil
           </Link>
-          <LanguageSwitcher variant="outline" />
         </div>
         {/* Logo */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <img src={logo} alt={t("common:brand.name")} className="h-12 w-12" />
-            <div className="text-start leading-tight">
-              <span className="block text-lg font-bold text-foreground">{t("common:brand.name")}</span>
-              <span className="block text-xs font-medium text-accent tracking-wider uppercase">{t("common:brand.country")}</span>
+            <img src={logo} alt="Commission Fiscale" className="h-12 w-12" />
+            <div className="text-left leading-tight">
+              <span className="block text-lg font-bold text-foreground">Commission Fiscale</span>
+              <span className="block text-xs font-medium text-accent tracking-wider uppercase">Mauritanie</span>
             </div>
           </Link>
         </div>
 
         {/* Card */}
         <div className="rounded-xl border border-border bg-card p-8 shadow-lg">
-          <h1 className="text-2xl font-bold text-foreground text-center mb-2">{t("auth:login.title")}</h1>
+          <h1 className="text-2xl font-bold text-foreground text-center mb-2">Connexion</h1>
           <p className="text-muted-foreground text-center text-sm mb-6">
-            {t("auth:login.subtitle")}
+            Accédez à votre espace de gestion des crédits d'impôt
           </p>
 
           {error && (
@@ -104,18 +98,18 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="username">{t("auth:login.username")}</Label>
+              <Label htmlFor="username">Nom d'utilisateur</Label>
               <Input
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={t("auth:login.usernamePh")}
+                placeholder="Votre identifiant"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">{t("auth:login.password")}</Label>
+              <Label htmlFor="password">Mot de passe</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -128,7 +122,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -136,15 +130,15 @@ const Login = () => {
             </div>
 
             <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
-              <LogIn className="h-4 w-4 me-2" />
-              {loading ? t("auth:login.submitting") : t("auth:login.submit")}
+              <LogIn className="h-4 w-4 mr-2" />
+              {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {t("auth:login.noAccount")}{" "}
+            Pas encore de compte ?{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">
-              {t("auth:login.register")}
+              S'inscrire
             </Link>
           </p>
         </div>

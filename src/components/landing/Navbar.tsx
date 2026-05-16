@@ -3,27 +3,24 @@ import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+
+const navLinks = [
+  { label: "Fonctionnalités", href: "#fonctionnalites" },
+  { label: "Comment ça marche", href: "#processus" },
+  { label: "Contact", href: "#contact" },
+];
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
-  const { t } = useTranslation(["common", "landing"]);
-
-  const navLinks = [
-    { label: t("common:nav.features"), href: "#fonctionnalites" },
-    { label: t("common:nav.process"), href: "#processus" },
-    { label: t("common:nav.contact"), href: "#contact" },
-  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-primary/10 bg-dark-green/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <a href="#" className="flex items-center gap-2">
-          <img src={logo} alt={t("common:brand.name")} className="h-8 w-8" />
+          <img src={logo} alt="Commission Fiscale" className="h-8 w-8" />
           <div className="leading-tight">
-            <span className="block text-sm font-bold text-primary-foreground">{t("common:brand.name")}</span>
-            <span className="block text-[10px] font-medium text-gold-light tracking-wider uppercase">{t("common:brand.country")}</span>
+            <span className="block text-sm font-bold text-primary-foreground">Commission Fiscale</span>
+            <span className="block text-[10px] font-medium text-gold-light tracking-wider uppercase">Mauritanie</span>
           </div>
         </a>
 
@@ -41,12 +38,11 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <LanguageSwitcher className="text-primary-foreground hover:bg-primary/20 hover:text-primary-foreground" />
           <Button variant="outline" className="border-gold text-gold hover:bg-gold/20 hover:text-gold" asChild>
-            <Link to="/register">{t("common:nav.register")}</Link>
+            <Link to="/register">S'inscrire</Link>
           </Button>
           <Button className="bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
-            <Link to="/login">{t("common:nav.login")}</Link>
+            <Link to="/login">Se connecter</Link>
           </Button>
         </div>
 
@@ -69,15 +65,12 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <div className="mt-4 flex items-center justify-between gap-2">
-            <LanguageSwitcher variant="outline" className="border-gold text-gold hover:bg-gold/20 hover:text-gold" />
-          </div>
           <div className="mt-4 flex flex-col gap-2">
             <Button variant="outline" className="w-full border-gold text-gold hover:bg-gold/20 hover:text-gold" asChild>
-              <Link to="/register">{t("common:nav.register")}</Link>
+              <Link to="/register">S'inscrire</Link>
             </Button>
             <Button className="w-full bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
-              <Link to="/login">{t("common:nav.login")}</Link>
+              <Link to="/login">Se connecter</Link>
             </Button>
           </div>
         </div>
