@@ -1,70 +1,81 @@
 import { MapPin, Mail, Phone } from "lucide-react";
 import logo from "@/assets/logo.svg";
+import { useTranslation } from "react-i18next";
 
-const Footer = () => (
-  <footer id="contact" className="border-t border-border bg-dark-green text-primary-foreground">
-    <div className="mx-auto max-w-7xl px-6 py-14">
-      <div className="grid gap-10 md:grid-cols-4">
-        {/* Brand */}
-        <div className="md:col-span-1">
-          <div className="mb-4 flex items-center gap-2">
-            <img src={logo} alt="Commission Fiscale" className="h-7 w-7" />
-            <span className="text-sm font-bold">Commission Fiscale</span>
+const Footer = () => {
+  const { t } = useTranslation(["landing", "common"]);
+  const productLinks = [
+    { label: t("landing:footer.links.features"), href: "#fonctionnalites" },
+    { label: t("landing:footer.links.process"), href: "#processus" },
+    { label: t("landing:footer.links.login"), href: "/login" },
+  ];
+  const resourceLinks = [
+    { label: t("landing:footer.links.help"), href: "#" },
+    { label: t("landing:footer.links.security"), href: "#" },
+    { label: t("landing:footer.links.faq"), href: "#" },
+  ];
+
+  return (
+    <footer id="contact" className="border-t border-border bg-dark-green text-primary-foreground">
+      <div className="mx-auto max-w-7xl px-6 py-14">
+        <div className="grid gap-10 md:grid-cols-4">
+          <div className="md:col-span-1">
+            <div className="mb-4 flex items-center gap-2">
+              <img src={logo} alt={t("common:brand.name")} className="h-7 w-7" />
+              <span className="text-sm font-bold">{t("common:brand.name")}</span>
+            </div>
+            <p className="text-xs leading-relaxed text-primary-foreground/60">
+              {t("common:brand.tagline")}
+              <br />
+              {t("common:brand.ministry")}
+            </p>
           </div>
-          <p className="text-xs leading-relaxed text-primary-foreground/60">
-            Système de Gestion des Crédits d'Impôt
-            <br />
-            Ministère des Finances — République Islamique de Mauritanie
-          </p>
-        </div>
 
-        {/* Produit */}
-        <div>
-          <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-gold">Produit</h4>
-          <ul className="space-y-2">
-            {["Fonctionnalités", "Processus", "Connexion"].map((l) => (
-              <li key={l}>
-                <a href="#" className="text-sm text-primary-foreground/60 transition-colors hover:text-primary-foreground">{l}</a>
+          <div>
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-gold">{t("landing:footer.product")}</h4>
+            <ul className="space-y-2">
+              {productLinks.map((l) => (
+                <li key={l.label}>
+                  <a href={l.href} className="text-sm text-primary-foreground/60 transition-colors hover:text-primary-foreground">{l.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-gold">{t("landing:footer.resources")}</h4>
+            <ul className="space-y-2">
+              {resourceLinks.map((l) => (
+                <li key={l.label}>
+                  <a href={l.href} className="text-sm text-primary-foreground/60 transition-colors hover:text-primary-foreground">{l.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-gold">{t("landing:footer.contact")}</h4>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> {t("landing:footer.address")}
               </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Ressources */}
-        <div>
-          <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-gold">Ressources</h4>
-          <ul className="space-y-2">
-            {["Centre d'aide", "Politique de sécurité", "FAQ"].map((l) => (
-              <li key={l}>
-                <a href="#" className="text-sm text-primary-foreground/60 transition-colors hover:text-primary-foreground">{l}</a>
+              <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> contact@commissionfiscale.mr
               </li>
-            ))}
-          </ul>
+              <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> +222 00 00 00 00
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Contact */}
-        <div>
-          <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-gold">Contact</h4>
-          <ul className="space-y-3">
-            <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> Nouakchott, Mauritanie
-            </li>
-            <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
-              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> contact@commissionfiscale.mr
-            </li>
-            <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
-              <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> +222 00 00 00 00
-            </li>
-          </ul>
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-primary-foreground/10 pt-8 md:flex-row">
+          <p className="text-xs text-primary-foreground/40">{t("landing:footer.copyright")}</p>
+          <p className="text-xs text-primary-foreground/30">{t("landing:footer.version")}</p>
         </div>
       </div>
-
-      <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-primary-foreground/10 pt-8 md:flex-row">
-        <p className="text-xs text-primary-foreground/40">© 2026 Commission Fiscale — Tous droits réservés</p>
-        <p className="text-xs text-primary-foreground/30">Version: 1.0.0</p>
-      </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 export default Footer;
