@@ -42,6 +42,7 @@ import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
+import { ErrorDialog } from "@/components/ErrorDialog";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
+        <ErrorDialog />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
