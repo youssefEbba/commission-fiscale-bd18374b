@@ -880,23 +880,31 @@ const UtilisationDetail = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {docs.filter(d => d.actif !== false).length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">Aucun document</p>
-            ) : (
-              <div className="space-y-2">
-                {docs.filter(d => d.actif !== false).map(d => (
-                  <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <p className="font-medium text-sm">{d.nomFichier}</p>
-                      <p className="text-xs text-muted-foreground">{d.type?.replace(/_/g, " ")} — v{d.version || 1}</p>
+            {(() => {
+              const allowedTvaTypes = isTVA ? new Set(tvaDocTypes.map(t => t.value)) : null;
+              const visibleDocs = docs.filter(d => {
+                if (d.actif === false) return false;
+                if (!isTVA) return true;
+                return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
+              });
+              return visibleDocs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">Aucun document</p>
+              ) : (
+                <div className="space-y-2">
+                  {visibleDocs.map(d => (
+                    <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <p className="font-medium text-sm">{d.nomFichier}</p>
+                        <p className="text-xs text-muted-foreground">{d.type?.replace(/_/g, " ")} — v{d.version || 1}</p>
+                      </div>
+                      {d.chemin && (
+                        <Button variant="ghost" size="sm" onClick={() => openFile(d)}>Ouvrir</Button>
+                      )}
                     </div>
-                    {d.chemin && (
-                      <Button variant="ghost" size="sm" onClick={() => openFile(d)}>Ouvrir</Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
