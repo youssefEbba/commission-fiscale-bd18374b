@@ -1,0 +1,29 @@
+{
+  "brand": {
+    "name": "Commission Fiscale",
+    "country": "Mauritanie",
+    "tagline": "Système de Gestion des Crédits d'Impôt",
+    "ministry": "Ministère des Finances — République Islamique de Mauritanie"
+  },
+  "nav": {
+    "features": "Fonctionnalités",
+    "process": "Comment ça marche",
+    "contact": "Contact",
+    "login": "Se connecter",
+    "register": "S'inscrire",
+    "home": "Accueil"
+  },
+  "language": {
+    "label": "Langue",
+    "fr": "Français",
+    "ar": "العربية"
+  },
+  "actions": {
+    "submit": "Soumettre",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent"
+  }
+}
