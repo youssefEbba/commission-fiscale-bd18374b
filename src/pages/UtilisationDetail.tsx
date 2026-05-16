@@ -1382,7 +1382,7 @@ const UtilisationDetail = () => {
             <Select value={docType} onValueChange={v => setDocType(v as TypeDocumentUtilisation)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).map(t => (
+                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(t => (
                   <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
               </SelectContent>
