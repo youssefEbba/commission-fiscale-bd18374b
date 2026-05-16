@@ -469,6 +469,7 @@ const UtilisationDetail = () => {
   const u = util;
   const isDouane = u.type === "DOUANIER";
   const isTVA = u.type === "TVA_INTERIEURE";
+  const tvaDocTypes = isTVA ? getUtilisationDocTypesTVA(u.typeAchat) : [];
   const canUploadDoc = role === "ENTREPRISE" || role === "ADMIN_SI";
   const totalStockDisponible = tvaStock.reduce((s, t) => s + t.montantRestant, 0);
 
