@@ -1202,6 +1202,17 @@ export const UTILISATION_DOC_TYPES_TVA: { value: TypeDocumentUtilisation; label:
   { value: "DECOMPTE", label: "Décompte" },
 ];
 
+export function getUtilisationDocTypesTVA(typeAchat?: string): { value: TypeDocumentUtilisation; label: string }[] {
+  const base = [...UTILISATION_DOC_TYPES_TVA];
+  if (typeAchat === "ACHAT_LOCAL") {
+    return base.filter(dt => dt.value !== "DECOMPTE");
+  }
+  if (typeAchat === "DECOMPTE") {
+    return base.filter(dt => dt.value !== "FACTURE");
+  }
+  return base;
+}
+
 export const UTILISATION_DOCUMENT_TYPES: { value: TypeDocumentUtilisation; label: string }[] = [
   { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
   { value: "ORDRE_TRANSIT", label: "Ordre de transit" },
