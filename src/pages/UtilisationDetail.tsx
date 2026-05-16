@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
-  UTILISATION_STATUT_LABELS, utilisationStatutLabel, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
+  UTILISATION_STATUT_LABELS, utilisationStatutLabel, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA,
   UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
@@ -469,6 +469,7 @@ const UtilisationDetail = () => {
   const u = util;
   const isDouane = u.type === "DOUANIER";
   const isTVA = u.type === "TVA_INTERIEURE";
+  const tvaDocTypes = isTVA ? getUtilisationDocTypesTVA(u.typeAchat) : [];
   const canUploadDoc = role === "ENTREPRISE" || role === "ADMIN_SI";
   const totalStockDisponible = tvaStock.reduce((s, t) => s + t.montantRestant, 0);
 
@@ -879,23 +880,31 @@ const UtilisationDetail = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {docs.filter(d => d.actif !== false).length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">Aucun document</p>
-            ) : (
-              <div className="space-y-2">
-                {docs.filter(d => d.actif !== false).map(d => (
-                  <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <p className="font-medium text-sm">{d.nomFichier}</p>
-                      <p className="text-xs text-muted-foreground">{d.type?.replace(/_/g, " ")} — v{d.version || 1}</p>
+            {(() => {
+              const allowedTvaTypes = isTVA ? new Set(tvaDocTypes.map(t => t.value)) : null;
+              const visibleDocs = docs.filter(d => {
+                if (d.actif === false) return false;
+                if (!isTVA) return true;
+                return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
+              });
+              return visibleDocs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">Aucun document</p>
+              ) : (
+                <div className="space-y-2">
+                  {visibleDocs.map(d => (
+                    <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <p className="font-medium text-sm">{d.nomFichier}</p>
+                        <p className="text-xs text-muted-foreground">{d.type?.replace(/_/g, " ")} — v{d.version || 1}</p>
+                      </div>
+                      {d.chemin && (
+                        <Button variant="ghost" size="sm" onClick={() => openFile(d)}>Ouvrir</Button>
+                      )}
                     </div>
-                    {d.chemin && (
-                      <Button variant="ghost" size="sm" onClick={() => openFile(d)}>Ouvrir</Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -1355,7 +1364,7 @@ const UtilisationDetail = () => {
             <div>
               <Label>Documents à corriger *</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto mt-2">
-                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).map(dt => (
+                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(dt => (
                   <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
                     <Checkbox checked={rejetDocs.includes(dt.value)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value))} />
                     <span className="text-sm">{dt.label}</span>
@@ -1381,7 +1390,7 @@ const UtilisationDetail = () => {
             <Select value={docType} onValueChange={v => setDocType(v as TypeDocumentUtilisation)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).map(t => (
+                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(t => (
                   <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
               </SelectContent>
