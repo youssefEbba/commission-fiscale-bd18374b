@@ -321,24 +321,80 @@ const TransfertDetail = () => {
           <CardContent>
             {docsLoading ? (
               <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-            ) : activeDocs.length === 0 ? (
+            ) : docs.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">Aucun document déposé.</p>
             ) : (
               <ul className="divide-y divide-border text-sm">
-                {activeDocs.map((d) => {
-                  const typeLabel = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type;
-                  return (
-                    <li key={d.id} className="py-2 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{typeLabel}</p>
-                        <p className="text-xs text-muted-foreground truncate">{d.nomFichier}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs shrink-0">
-                        {d.dateUpload ? new Date(d.dateUpload).toLocaleDateString("fr-FR") : "—"}
-                      </Badge>
-                    </li>
-                  );
-                })}
+                {(() => {
+                  // Regrouper par type, trier versions desc
+                  const groups = new Map<string, DocumentTransfertCreditDto[]>();
+                  docs.forEach(d => {
+                    const arr = groups.get(d.type) || [];
+                    arr.push(d);
+                    groups.set(d.type, arr);
+                  });
+                  const ordered = Array.from(groups.entries()).map(([type, arr]) => {
+                    const sorted = [...arr].sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
+                    const current = sorted.find(d => d.actif !== false) ?? sorted[0];
+                    const previous = sorted.filter(d => d.id !== current.id);
+                    return { type, current, previous };
+                  });
+                  return ordered.map(({ type, current, previous }) => {
+                    const typeLabel = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === type)?.label || type;
+                    const expanded = expandedVersions.has(type);
+                    return (
+                      <li key={type} className="py-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{typeLabel}</p>
+                              <Badge variant="secondary" className="text-xs shrink-0">
+                                v{current.version ?? 1} actuelle
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">{current.nomFichier}</p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="outline" className="text-xs">
+                              {current.dateUpload ? new Date(current.dateUpload).toLocaleDateString("fr-FR") : "—"}
+                            </Badge>
+                            {previous.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => {
+                                  setExpandedVersions(prev => {
+                                    const next = new Set(prev);
+                                    next.has(type) ? next.delete(type) : next.add(type);
+                                    return next;
+                                  });
+                                }}
+                              >
+                                {expanded ? "Masquer" : `Historique (${previous.length})`}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        {expanded && previous.length > 0 && (
+                          <ul className="mt-2 ml-4 pl-3 border-l border-border space-y-1.5">
+                            {previous.map(p => (
+                              <li key={p.id} className="flex items-center justify-between gap-3 text-xs">
+                                <div className="min-w-0 flex-1 flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] shrink-0">v{p.version ?? "—"}</Badge>
+                                  <span className="text-muted-foreground truncate">{p.nomFichier}</span>
+                                </div>
+                                <span className="text-muted-foreground shrink-0">
+                                  {p.dateUpload ? new Date(p.dateUpload).toLocaleDateString("fr-FR") : "—"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  });
+                })()}
               </ul>
             )}
           </CardContent>
