@@ -169,13 +169,26 @@ const TransfertDetail = () => {
 
   const handleRespond = async () => {
     if (!respondDecision || !responseMsg.trim()) return;
+    const demanded = respondDecision.documentsDemandes || [];
+    if (demanded.length > 0 && (!responseFile || !responseDocType)) {
+      toast({ title: "Pièce requise", description: "Veuillez joindre la pièce demandée et préciser son type.", variant: "destructive" });
+      return;
+    }
     setResponding(true);
     try {
-      await transfertCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim());
+      await transfertCreditApi.postRejetTempResponse(
+        respondDecision.id,
+        responseMsg.trim(),
+        responseFile || undefined,
+        responseDocType || undefined,
+      );
       toast({ title: "Succès", description: "Réponse envoyée" });
       setRespondDecision(null);
       setResponseMsg("");
+      setResponseFile(null);
+      setResponseDocType("");
       loadDecisions();
+      loadDocs();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally { setResponding(false); }
