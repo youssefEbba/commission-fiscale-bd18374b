@@ -64,6 +64,8 @@ const TransfertDetail = () => {
 
   const [respondDecision, setRespondDecision] = useState<DecisionCorrectionDto | null>(null);
   const [responseMsg, setResponseMsg] = useState("");
+  const [responseFile, setResponseFile] = useState<File | null>(null);
+  const [responseDocType, setResponseDocType] = useState<string>("");
   const [responding, setResponding] = useState(false);
 
   const [cancelOpen, setCancelOpen] = useState(false);
