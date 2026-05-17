@@ -1018,15 +1018,18 @@ export type UtilisationStatut =
   | "EN_CONTROLE_DGD" | "CHEQUE_SAISI" | "ENVOYEE_AU_TRESOR" | "QUITTANCES_ENREGISTREES";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
+export type TvaDeductibleStockSource = "UTILISATION_DOUANE" | "TRANSFERT_CREDIT";
+
 export interface TvaDeductibleStockDto {
   id: number;
-  utilisationDouaneId: number;
+  utilisationDouaneId?: number | null;
   numeroDeclaration?: string;
   montantInitial: number;
   montantRestant: number;
   montantConsomme: number;
   dateCreation?: string;
   epuise: boolean;
+  source?: TvaDeductibleStockSource;
 }
 
 // === Bulletin de liquidation : lignes & décisions DGTCP ===
