@@ -55,6 +55,7 @@ const TransfertDetail = () => {
 
   const [docs, setDocs] = useState<DocumentTransfertCreditDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [expandedVersions, setExpandedVersions] = useState<Set<string>>(new Set());
   const [gedOpen, setGedOpen] = useState(false);
 
   const [rejetOpen, setRejetOpen] = useState(false);
