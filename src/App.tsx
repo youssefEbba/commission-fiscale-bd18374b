@@ -29,6 +29,7 @@ import GedConfiguration from "./pages/GedConfiguration";
 import GedDossiers from "./pages/GedDossiers";
 import NotFound from "./pages/NotFound";
 import Transferts from "./pages/Transferts";
+import TransfertDetail from "./pages/TransfertDetail";
 import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
