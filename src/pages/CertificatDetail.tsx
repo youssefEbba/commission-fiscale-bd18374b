@@ -415,6 +415,7 @@ const CertificatDetail = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Origine</TableHead>
                     <TableHead>Déclaration</TableHead>
                     <TableHead>Montant initial</TableHead>
                     <TableHead>Consommé</TableHead>
@@ -424,16 +425,25 @@ const CertificatDetail = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tvaStock.map(t => (
+                  {tvaStock.map(t => {
+                    const source = t.source ?? (t.utilisationDouaneId ? "UTILISATION_DOUANE" : "TRANSFERT_CREDIT");
+                    const isTransfert = source === "TRANSFERT_CREDIT";
+                    return (
                     <TableRow key={t.id} className={t.epuise ? "opacity-50" : ""}>
-                      <TableCell className="font-medium">{t.numeroDeclaration || `Util #${t.utilisationDouaneId}`}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={isTransfert ? "border-amber-500 text-amber-700 bg-amber-50" : "border-blue-500 text-blue-700 bg-blue-50"}>
+                          {isTransfert ? "Transfert crédit" : "Utilisation douane"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{t.numeroDeclaration || (t.utilisationDouaneId ? `Util #${t.utilisationDouaneId}` : "—")}</TableCell>
                       <TableCell>{t.montantInitial.toLocaleString("fr-FR")} MRU</TableCell>
                       <TableCell>{t.montantConsomme.toLocaleString("fr-FR")} MRU</TableCell>
                       <TableCell className="font-bold">{t.montantRestant.toLocaleString("fr-FR")} MRU</TableCell>
                       <TableCell>{t.dateCreation ? new Date(t.dateCreation).toLocaleDateString("fr-FR") : "—"}</TableCell>
                       <TableCell>{t.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
