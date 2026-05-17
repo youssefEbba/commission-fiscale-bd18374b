@@ -9,6 +9,7 @@ import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { commissionRelaisApi, formatApiErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
+import { emitErrorDialog } from "@/components/ErrorDialog";
 
 interface NavItem {
   label: string;
@@ -117,7 +118,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         navigate("/login");
         return;
       }
-      toast.error(formatApiErrorMessage(err, "Échec de la sortie d'impersonation"));
+      emitErrorDialog({
+        title: "Échec de la sortie d'impersonation",
+        description: formatApiErrorMessage(err, "Échec de la sortie d'impersonation"),
+      });
     } finally {
       setReleasing(false);
     }
