@@ -50,6 +50,7 @@ const VALIDATE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "A
 
 const Transferts = () => {
   const { user, hasPermission } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [data, setData] = useState<TransfertCreditDto[]>([]);
