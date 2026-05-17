@@ -452,7 +452,7 @@ const TransfertDetail = () => {
       </Dialog>
 
       {/* Respond dialog */}
-      <Dialog open={!!respondDecision} onOpenChange={(o) => { if (!o) { setRespondDecision(null); setResponseMsg(""); } }}>
+      <Dialog open={!!respondDecision} onOpenChange={(o) => { if (!o) { setRespondDecision(null); setResponseMsg(""); setResponseFile(null); setResponseDocType(""); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Répondre au rejet temporaire</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -461,14 +461,48 @@ const TransfertDetail = () => {
                 <span className="text-muted-foreground">Motif :</span> {respondDecision.motifRejet}
               </div>
             )}
+            {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
+              <div className="p-3 rounded-md bg-amber-50 border border-amber-200 text-xs">
+                <span className="text-muted-foreground">Pièces demandées :</span>{" "}
+                <span className="font-medium">{respondDecision.documentsDemandes.join(", ")}</span>
+              </div>
+            )}
             <div>
               <Label>Message <span className="text-destructive">*</span></Label>
               <Textarea value={responseMsg} onChange={(e) => setResponseMsg(e.target.value)} rows={4} />
             </div>
+            {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
+              <>
+                <div>
+                  <Label>Type de pièce <span className="text-destructive">*</span></Label>
+                  <Select value={responseDocType} onValueChange={setResponseDocType}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner le type de pièce" /></SelectTrigger>
+                    <SelectContent>
+                      {(respondDecision.documentsDemandes || []).map((dt) => {
+                        const meta = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === dt);
+                        return <SelectItem key={dt} value={dt}>{meta?.label || dt}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Pièce justificative <span className="text-destructive">*</span></Label>
+                  <Input type="file" accept="application/pdf,image/*" onChange={(e) => setResponseFile(e.target.files?.[0] || null)} />
+                  {responseFile && <p className="text-xs text-muted-foreground mt-1">{responseFile.name}</p>}
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRespondDecision(null)}>Annuler</Button>
-            <Button onClick={handleRespond} disabled={responding || !responseMsg.trim()}>
+            <Button
+              onClick={handleRespond}
+              disabled={
+                responding ||
+                !responseMsg.trim() ||
+                ((respondDecision?.documentsDemandes?.length || 0) > 0 && (!responseFile || !responseDocType))
+              }
+            >
               {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Envoyer
             </Button>
