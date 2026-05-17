@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -49,6 +50,7 @@ const VALIDATE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "A
 
 const Transferts = () => {
   const { user, hasPermission } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [data, setData] = useState<TransfertCreditDto[]>([]);
@@ -342,7 +344,7 @@ const Transferts = () => {
               <ArrowRightLeft className="h-6 w-6 text-primary" />
               Transfert Douane → Intérieur
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Renonciation aux importations — transfert du solde Cordon vers TVA intérieure</p>
+            <p className="text-muted-foreground text-sm mt-1">Renonciation aux importations — transfert vers TVA déductible sur cordon douanier</p>
           </div>
           <div className="flex gap-2">
             {canCreate && (
@@ -402,7 +404,7 @@ const Transferts = () => {
                       <TableCell className="text-xs text-muted-foreground">{t.dateDemande ? new Date(t.dateDemande).toLocaleDateString("fr-FR") : "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => openSelected(t)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/transferts/${t.id}`)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(t)}><FileText className="h-4 w-4" /></Button>
                           {/* Re-submit after REJETE / ANNULEE */}
                           {canCreate && (t.statut === "REJETE" || t.statut === "ANNULEE") && (
