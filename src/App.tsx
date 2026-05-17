@@ -122,6 +122,11 @@ const App = () => (
                 <Transferts />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/transferts/:id" element={
+              <ProtectedRoute allowedRoles={["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <TransfertDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/sous-traitance" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <SousTraitance />
