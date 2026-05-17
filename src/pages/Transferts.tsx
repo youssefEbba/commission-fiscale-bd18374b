@@ -342,7 +342,7 @@ const Transferts = () => {
               <ArrowRightLeft className="h-6 w-6 text-primary" />
               Transfert Douane → Intérieur
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Renonciation aux importations — transfert du solde Cordon vers TVA intérieure</p>
+            <p className="text-muted-foreground text-sm mt-1">Renonciation aux importations — transfert vers TVA déductible sur cordon douanier</p>
           </div>
           <div className="flex gap-2">
             {canCreate && (
