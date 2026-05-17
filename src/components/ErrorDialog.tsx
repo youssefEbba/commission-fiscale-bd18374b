@@ -37,18 +37,18 @@ export function ErrorDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl md:max-w-4xl p-6 sm:p-8">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-destructive text-xl">
-            <AlertCircle className="h-6 w-6" />
+          <DialogTitle className="flex items-center gap-3 text-destructive text-2xl">
+            <AlertCircle className="h-8 w-8 shrink-0" />
             {payload.title}
           </DialogTitle>
-          <DialogDescription className="whitespace-pre-wrap break-words text-base text-foreground pt-2">
+          <DialogDescription className="whitespace-pre-wrap break-words text-lg leading-relaxed text-foreground pt-3">
             {payload.description}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" size="lg" onClick={() => setOpen(false)}>
             Fermer
           </Button>
         </DialogFooter>
