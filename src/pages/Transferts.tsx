@@ -720,11 +720,19 @@ const Transferts = () => {
               <div className="mt-1 px-3 py-2 rounded-md border border-border bg-muted/30 text-sm font-semibold">
                 {selectedCert ? `${f(montantAuto)} MRU` : "—"}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Renonciation totale : la totalité de la TVA déductible cordon restante (d′) est transférée vers la TVA intérieure.
-              </p>
+              {(!selectedCert || montantAuto > 0) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Renonciation totale : la totalité de la TVA déductible cordon restante (d′) est transférée vers la TVA intérieure.
+                </p>
+              )}
               {selectedCert && montantAuto <= 0 && (
-                <p className="text-xs text-destructive mt-1">Aucune TVA déductible cordon restante à transférer.</p>
+                <p className="text-xs text-destructive mt-1">
+                  {(selectedCert.tvaImportationDouane ?? 0) <= 0
+                    ? "Aucune TVA déductible cordon restante à transférer."
+                    : (selectedCert.soldeCordon ?? 0) <= 0
+                      ? "Solde Cordon (douane) épuisé : aucun montant ne peut être transféré."
+                      : "Aucun montant transférable."}
+                </p>
               )}
             </div>
             <div className="flex items-center gap-3">
