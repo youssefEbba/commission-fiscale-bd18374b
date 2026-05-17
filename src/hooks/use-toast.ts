@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { emitErrorDialog } from "@/components/ErrorDialog";
 
 const TOAST_LIMIT = 3;
 const TOAST_REMOVE_DELAY = 8000;
@@ -134,7 +135,28 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">;
 
+const nodeToText = (node: React.ReactNode): string => {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeToText).filter(Boolean).join(" ");
+  if (React.isValidElement(node)) return nodeToText(node.props.children);
+  return "";
+};
+
 function toast({ ...props }: Toast) {
+  if (props.variant === "destructive") {
+    emitErrorDialog({
+      title: nodeToText(props.title) || "Erreur",
+      description: nodeToText(props.description),
+    });
+
+    return {
+      id: "error-dialog",
+      dismiss: () => undefined,
+      update: () => undefined,
+    };
+  }
+
   const id = genId();
 
   const update = (props: ToasterToast) =>
