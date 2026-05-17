@@ -404,8 +404,9 @@ const Transferts = () => {
                       <TableCell className="text-xs text-muted-foreground">{t.dateDemande ? new Date(t.dateDemande).toLocaleDateString("fr-FR") : "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end flex-wrap">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/transferts/${t.id}`)}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="sm" onClick={() => openDocs(t)}><FileText className="h-4 w-4" /></Button>
+                          <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/transferts/${t.id}`)}>
+                            <Eye className="h-4 w-4 mr-1" /> Ouvrir
+                          </Button>
                           {/* Re-submit after REJETE / ANNULEE */}
                           {canCreate && (t.statut === "REJETE" || t.statut === "ANNULEE") && (
                             <Button variant="outline" size="sm" onClick={() => openResubmit(t)}>
@@ -418,24 +419,7 @@ const Transferts = () => {
                               <Ban className="h-4 w-4 mr-1" /> Annuler
                             </Button>
                           )}
-                          {/* DGTCP / Président : valider / rejet temp / rejet définitif */}
-                          {VALIDATE_STATUTS.includes(t.statut) && canValider && (
-                            <Button size="sm" disabled={actionLoading === t.id} onClick={() => handleValider(t.id)}>
-                              {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                              Valider
-                            </Button>
-                          )}
-                          {!TERMINAL_STATUTS.includes(t.statut) && t.statut !== "INCOMPLETE" && canRejetTemp && (
-                            <Button variant="outline" size="sm" onClick={() => { setRejetTarget(t); setRejetMotif(""); setRejetDocs([]); }}>
-                              <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temp.
-                            </Button>
-                          )}
-                          {!TERMINAL_STATUTS.includes(t.statut) && canRejeter && (
-                            <Button variant="destructive" size="sm" disabled={actionLoading === t.id} onClick={() => handleRejeter(t.id)}>
-                              {actionLoading === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
-                              Rejeter
-                            </Button>
-                          )}
+                          {/* Actions DGTCP / Président : disponibles depuis la page de détail */}
                         </div>
                       </TableCell>
                     </TableRow>
