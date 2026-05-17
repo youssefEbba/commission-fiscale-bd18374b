@@ -357,45 +357,97 @@ const TransfertDetail = () => {
             ) : decisions.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">Aucune opération enregistrée.</p>
             ) : (
-              <div className="space-y-3">
-                {decisions.map((d) => (
-                  <div key={d.id} className="border border-border rounded-md p-3 bg-muted/20">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-xs">{d.role}</Badge>
-                      <Badge className="text-xs bg-amber-100 text-amber-800">Rejet temporaire</Badge>
-                      {d.rejetTempStatus && (
-                        <Badge className={`text-xs ${d.rejetTempStatus === "OUVERT" ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"}`}>
-                          {d.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">{d.dateDecision ? new Date(d.dateDecision).toLocaleDateString("fr-FR") : ""}</span>
-                    </div>
-                    {d.motifRejet && <p className="text-xs mt-2"><span className="text-muted-foreground">Motif :</span> {d.motifRejet}</p>}
-                    {d.documentsDemandes && d.documentsDemandes.length > 0 && (
-                      <p className="text-xs mt-1"><span className="text-muted-foreground">Pièces demandées :</span> {d.documentsDemandes.join(", ")}</p>
-                    )}
-                    {d.rejetTempResponses && d.rejetTempResponses.length > 0 && (
-                      <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
-                        {d.rejetTempResponses.map((r) => (
-                          <div key={r.id} className="text-xs">
-                            <span className="font-medium">{r.auteurNom || r.utilisateurNom || "—"} :</span> {r.message}
-                            {r.documentType && <span className="text-muted-foreground"> ({r.documentType})</span>}
-                          </div>
-                        ))}
+              <div className="space-y-4">
+                {decisions.map((d) => {
+                  const isOuvert = d.rejetTempStatus === "OUVERT";
+                  const responses = d.rejetTempResponses || [];
+                  return (
+                    <div key={d.id} className={`relative border rounded-lg overflow-hidden bg-card ${isOuvert ? "border-amber-300" : "border-border"}`}>
+                      {/* Bandeau d'entête */}
+                      <div className={`flex items-center justify-between gap-2 px-4 py-2 border-b ${isOuvert ? "bg-amber-50 border-amber-200" : "bg-muted/40 border-border"}`}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <AlertTriangle className={`h-4 w-4 ${isOuvert ? "text-amber-600" : "text-muted-foreground"}`} />
+                          <span className="text-sm font-semibold">Rejet temporaire</span>
+                          <Badge variant="outline" className="text-[10px]">{d.role}</Badge>
+                          {d.rejetTempStatus && (
+                            <Badge className={`text-[10px] ${isOuvert ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"}`}>
+                              {isOuvert ? "Ouvert" : "Résolu"}
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {d.dateDecision ? new Date(d.dateDecision).toLocaleString("fr-FR") : ""}
+                        </span>
                       </div>
-                    )}
-                    <div className="flex gap-2 mt-2 justify-end">
-                      {canRespondRejet && d.rejetTempStatus === "OUVERT" && (
-                        <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setResponseMsg(""); }}>
-                          Répondre
-                        </Button>
-                      )}
-                      {d.rejetTempStatus === "OUVERT" && canValider && (
-                        <Button size="sm" onClick={() => handleResolve(d.id)}>Marquer résolu</Button>
+
+                      {/* Corps */}
+                      <div className="p-4 space-y-3">
+                        {d.motifRejet && (
+                          <div className="text-sm">
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Motif</div>
+                            <p className="text-foreground">{d.motifRejet}</p>
+                          </div>
+                        )}
+                        {d.documentsDemandes && d.documentsDemandes.length > 0 && (
+                          <div>
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Pièces demandées</div>
+                            <div className="flex flex-wrap gap-1">
+                              {d.documentsDemandes.map((doc) => (
+                                <Badge key={doc} variant="secondary" className="text-[10px]">{doc}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Réponses */}
+                        {responses.length > 0 && (
+                          <div>
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                              Réponses ({responses.length})
+                            </div>
+                            <div className="space-y-2">
+                              {responses.map((r) => (
+                                <div key={r.id} className="flex gap-3 p-3 rounded-md bg-muted/40 border border-border">
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                    {(r.auteurNom || r.utilisateurNom || "?").slice(0, 1).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-semibold">{r.auteurNom || r.utilisateurNom || "—"}</span>
+                                      {r.createdAt && (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {new Date(r.createdAt).toLocaleString("fr-FR")}
+                                        </span>
+                                      )}
+                                      {r.documentType && (
+                                        <Badge variant="outline" className="text-[10px]">{r.documentType}</Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-sm mt-1 break-words">{r.message}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      {isOuvert && (canRespondRejet || canValider) && (
+                        <div className="flex gap-2 px-4 py-2 border-t bg-muted/20 justify-end">
+                          {canRespondRejet && (
+                            <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setResponseMsg(""); }}>
+                              Répondre
+                            </Button>
+                          )}
+                          {canValider && (
+                            <Button size="sm" onClick={() => handleResolve(d.id)}>Marquer résolu</Button>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
