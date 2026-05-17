@@ -414,9 +414,9 @@ const TransfertDetail = () => {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-xs font-semibold">{r.auteurNom || r.utilisateurNom || "—"}</span>
-                                      {r.dateReponse && (
+                                      {r.createdAt && (
                                         <span className="text-[10px] text-muted-foreground">
-                                          {new Date(r.dateReponse).toLocaleString("fr-FR")}
+                                          {new Date(r.createdAt).toLocaleString("fr-FR")}
                                         </span>
                                       )}
                                       {r.documentType && (
