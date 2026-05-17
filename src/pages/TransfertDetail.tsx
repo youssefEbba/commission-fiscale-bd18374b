@@ -309,7 +309,7 @@ const TransfertDetail = () => {
             ) : (
               <ul className="divide-y divide-border text-sm">
                 {activeDocs.map((d) => {
-                  const typeLabel = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === d.typeDocument)?.label || d.typeDocument;
+                  const typeLabel = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === d.type)?.label || d.type;
                   return (
                     <li key={d.id} className="py-2 flex items-center justify-between gap-3">
                       <div className="min-w-0">
