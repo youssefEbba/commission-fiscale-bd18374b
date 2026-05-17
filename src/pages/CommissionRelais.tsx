@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { commissionRelaisApi, formatApiErrorMessage, RelaisAutoriteDto, RelaisEntrepriseDto, PageResponse } from "@/lib/api";
 import { toast } from "sonner";
+import { emitErrorDialog } from "@/components/ErrorDialog";
 
 type Mode = "ENTREPRISE" | "AUTORITE_CONTRACTANTE";
 
@@ -63,7 +64,7 @@ const CommissionRelais = () => {
         setTotalPages(Math.max(1, u.totalPages));
         setTotalElements(u.totalElements);
       })
-      .catch((err) => toast.error(formatApiErrorMessage(err, "Échec du chargement")))
+      .catch((err) => emitErrorDialog({ title: "Échec du chargement", description: formatApiErrorMessage(err, "Échec du chargement") }))
       .finally(() => { if (!cancel) setLoading(false); });
     return () => { cancel = true; };
   }, [mode, debounced, page]);
@@ -78,7 +79,7 @@ const CommissionRelais = () => {
       toast.success(`Vous agissez désormais en tant que ${target.label}`);
       navigate("/dashboard");
     } catch (err) {
-      toast.error(formatApiErrorMessage(err, "Échec de la prise de relais"));
+      emitErrorDialog({ title: "Échec de la prise de relais", description: formatApiErrorMessage(err, "Échec de la prise de relais") });
     } finally {
       setSubmittingId(null);
     }
