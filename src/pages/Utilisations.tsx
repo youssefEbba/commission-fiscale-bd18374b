@@ -547,6 +547,11 @@ const Utilisations = () => {
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
       (tab === "SOUS_TRAITANT" && u.demandeurEstSousTraitant === true);
     return ms && matchStatut && matchTab;
+  }).sort((a, b) => {
+    const ta = a.dateCreation ? new Date(a.dateCreation).getTime() : 0;
+    const tb = b.dateCreation ? new Date(b.dateCreation).getTime() : 0;
+    if (tb !== ta) return tb - ta;
+    return (b.id ?? 0) - (a.id ?? 0);
   });
 
   const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI";
