@@ -167,9 +167,13 @@ const Certificats = () => {
   const filtered = certificats.filter((c) => {
     // Ne pas afficher les certificats qui ne sont pas encore ouverts
     if (c.statut !== "OUVERT" && c.statut !== "MODIFIE" && c.statut !== "CLOTURE") return false;
-    const ms = (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
-      String(c.id).includes(search);
+    const q = search.trim().toLowerCase();
+    const ms = !q ||
+      (c.reference || "").toLowerCase().includes(q) ||
+      (c.numero || "").toLowerCase().includes(q) ||
+      (c.entrepriseRaisonSociale || "").toLowerCase().includes(q) ||
+      (c.entrepriseNom || "").toLowerCase().includes(q) ||
+      String(c.id).includes(q);
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
