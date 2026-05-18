@@ -1,16 +1,13 @@
 ## Objectif
-Rendre la recherche sur `/dashboard/certificats` explicite et couvrir à la fois la référence du certificat et le nom / raison sociale de l'entreprise.
+Trier la liste des utilisations dans `/dashboard/utilisations` par date de création décroissante (la plus récente en premier).
 
-## Modifications prévues
-Fichier concerné : `src/pages/Certificats.tsx`
+## Fichier concerné
+- `src/pages/Utilisations.tsx`
 
-1. **Placeholder du champ de recherche** : remplacer `"Rechercher..."` par `"Réf. certificat ou entreprise"` pour indiquer clairement les critères supportés.
-
-2. **Logique de filtrage** : étendre le `filter` existant (lignes 167-174) pour inclure `entrepriseRaisonSociale` en plus de `reference`, `entrepriseNom` et `id`. Cela garantit que la recherche fonctionne quel que soit le champ peuplé par le back-end.
+## Modification prévue
+- Après le `.filter()` qui produit `filtered` (ligne ~537), ajouter un `.sort()` qui compare `dateCreation` en ordre décroissant.
+- Les éléments sans `dateCreation` seront placés en fin de liste.
 
 ## Pas de changement d'architecture
-- Pas de sélecteur de critère séparé (choix utilisateur : placeholder explicite uniquement).
-- Pas d'appel API supplémentaire : le filtrage reste client-side sur la liste déjà chargée.
-
-## Vérification
-- S'assurer que `entrepriseRaisonSociale` est bien typé dans `CertificatCreditDto` (l'API l'utilise déjà dans le tableau, donc le champ est disponible).
+- Aucun appel API supplémentaire : le tri est client-side sur la liste déjà chargée.
+- Aucun impact sur la pagination ou les filtres existants (recherche, statut, onglets).
