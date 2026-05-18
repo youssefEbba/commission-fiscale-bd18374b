@@ -4,10 +4,10 @@
 // ══════════════════════════════════════════════════════════════
 
 /** Backend principal (Spring Boot) */
-export const API_BASE = "https://421d-197-231-7-21.ngrok-free.app/api";
+export const API_BASE = "https://e62a-197-231-3-152.ngrok-free.app/api";
 
 /** WebSocket backend */
-export const WS_BASE = "https://421d-197-231-7-21.ngrok-free.app/ws";
+export const WS_BASE = "https://e62a-197-231-3-152.ngrok-free.app/ws";
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
