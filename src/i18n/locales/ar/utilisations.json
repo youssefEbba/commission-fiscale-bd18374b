@@ -1,0 +1,29 @@
+{
+  "list": {
+    "title": "الاستخدامات",
+    "subtitle": "خصومات الجمارك والداخلية على الشهادات",
+    "tabs": {
+      "all": "الكل",
+      "douane": "الجمارك",
+      "interieure": "الضريبة الداخلية"
+    },
+    "search_placeholder": "بحث…",
+    "empty": "لا توجد استخدامات",
+    "columns": {
+      "reference": "المرجع",
+      "certificat": "الشهادة",
+      "type": "النوع",
+      "montant": "المبلغ",
+      "date": "التاريخ",
+      "statut": "الحالة",
+      "actions": "الإجراءات"
+    }
+  },
+  "detail": {
+    "title": "تفاصيل الاستخدام",
+    "type_utilisation": "نوع الاستخدام",
+    "imputation": "الخصم",
+    "documents": "الوثائق",
+    "apurement": "التسوية"
+  }
+}

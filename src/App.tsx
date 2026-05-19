@@ -44,12 +44,14 @@ import ReferentielTaxes from "./pages/ReferentielTaxes";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import { ErrorDialog } from "@/components/ErrorDialog";
+import { I18nBootstrap } from "@/i18n/bootstrap";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <I18nBootstrap>
       <AuthProvider>
         <Toaster />
         <Sonner />
@@ -205,6 +207,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </AuthProvider>
+      </I18nBootstrap>
     </TooltipProvider>
   </QueryClientProvider>
 );

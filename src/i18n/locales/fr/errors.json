@@ -1,0 +1,22 @@
+{
+  "default": "Une erreur est survenue",
+  "network": "Erreur réseau — vérifiez votre connexion",
+  "timeout": "Délai dépassé",
+  "unauthorized": "Vous devez être connecté",
+  "forbidden": "Action non autorisée",
+  "not_found": "Ressource introuvable",
+  "conflict": "Conflit de données",
+  "validation_failed": "Données invalides",
+  "server": "Erreur serveur",
+  "service_unavailable": "Service indisponible",
+  "storage_unavailable": "Stockage des documents indisponible",
+  "validation": {
+    "required": "Champ obligatoire",
+    "email_invalid": "Email invalide",
+    "min_length": "Au moins {{count}} caractères",
+    "max_length": "Au plus {{count}} caractères",
+    "number_invalid": "Nombre invalide",
+    "date_invalid": "Date invalide",
+    "positive": "Doit être positif"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Utilisateurs",
+    "subtitle": "Administration des utilisateurs",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Utilisateurs — Détail"
+  }
+}

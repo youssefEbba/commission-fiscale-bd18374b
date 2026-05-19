@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
@@ -10,16 +11,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { commissionRelaisApi, formatApiErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
 import { emitErrorDialog } from "@/components/ErrorDialog";
+import LanguageSwitcher from "@/i18n/LanguageSwitcher";
+import { tRole } from "@/i18n/enums";
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: React.ElementType;
   roles?: AppRole[];
 }
 
 interface NavGroup {
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
   roles?: AppRole[];
   children: NavItem[];
@@ -32,60 +35,52 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 }
 
 const NAV_ENTRIES: NavEntry[] = [
-  // Tous les rôles voient le tableau de bord
-  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
-  // Conventions (= Projets) : AC crée, DGB valide
-  { label: "Conventions / Projets", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  // Marchés : AC crée, délégués et admin consultent
-  { label: "Attributions / Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  // Demandes groupées : Correction et Mise en place
+  { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { labelKey: "conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+  { labelKey: "marches", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
   {
-    label: "Demandes",
+    labelKey: "demandes",
     icon: FileText,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      { label: "Correction", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Mise en place CI", href: "/dashboard/mise-en-place", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "demandes_correction", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "demandes_mise_en_place", href: "/dashboard/mise-en-place", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
-  // Représentants : AC gère ses UPM/UEP
-  { label: "Représentants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
-  // P3 (Certificat) : suivi des certificats ouverts
-  { label: "Certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-  // P4 (Douane) : ENT soumet, DGD contrôle, DGTCP impute | P5 (Intérieur) : ENT soumet, DGTCP valide, DGI consulte
-  { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
-  // Simulation : Entreprise uniquement
-  { label: "Simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
-  { label: "Reporting", href: "/dashboard/reporting", icon: PieChart },
+  { labelKey: "representants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
+  { labelKey: "certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
+  { labelKey: "simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
+  { labelKey: "reporting", href: "/dashboard/reporting", icon: PieChart },
   {
-    label: "Opérations",
+    labelKey: "operations",
     icon: ArrowRightLeft,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      { label: "Modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Sous-traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Clôture & Reporting", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
   {
-    label: "GED",
+    labelKey: "ged",
     icon: FolderOpen,
     roles: ["ADMIN_SI"],
     children: [
-      { label: "Configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
-      { label: "Dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI"] },
+      { labelKey: "ged_configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
+      { labelKey: "ged_dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI"] },
     ],
   },
   {
-    label: "Paramétrage",
+    labelKey: "parametrage",
     icon: Settings,
     roles: ["ADMIN_SI"],
     children: [
-      { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
-      { label: "Rôles & Permissions", href: "/dashboard/roles", icon: Tag },
-      { label: "Référentiel Taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
-      { label: "Journal d'audit", href: "/dashboard/audit", icon: BarChart3 },
+      { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
+      { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag },
+      { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
+      { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3 },
     ],
   },
 ];
@@ -94,6 +89,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout, hasRole, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation(["nav", "common"]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [releasing, setReleasing] = useState(false);
 
@@ -104,23 +100,19 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     try {
       const res = await commissionRelaisApi.release();
       applyImpersonation(res);
-      toast.success("Vous êtes revenu sur votre compte Commission relais");
+      toast.success(t("common:session.back_to_relay"));
       navigate("/dashboard/relais");
     } catch (err: any) {
-      // Le back exige la permission `commission.relais.release` qui n'est pas
-      // dans le JWT d'impersonation (porte les permissions ENTREPRISE / AC).
-      // Fallback : on déconnecte proprement et on renvoie sur /login afin que
-      // l'agent se reconnecte avec son compte natif COMMISSION_RELAIS.
       const status = err?.status ?? err?.response?.status;
       if (status === 403) {
-        toast.message("Session de relais terminée. Veuillez vous reconnecter.");
+        toast.message(t("common:session.session_ended"));
         logout();
         navigate("/login");
         return;
       }
       emitErrorDialog({
-        title: "Échec de la sortie d'impersonation",
-        description: formatApiErrorMessage(err, "Échec de la sortie d'impersonation"),
+        title: t("common:session.release_failed_title"),
+        description: formatApiErrorMessage(err, t("common:session.release_failed_title")),
       });
     } finally {
       setReleasing(false);
@@ -143,19 +135,19 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           if (entry.roles && !hasRole(entry.roles)) return null;
           const groupActive = isGroupActive(entry);
           return (
-            <Collapsible key={entry.label} defaultOpen={groupActive}>
+            <Collapsible key={entry.labelKey} defaultOpen={groupActive}>
               <CollapsibleTrigger className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full transition-colors text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground group">
                 <entry.icon className="h-4 w-4" />
-                <span className="flex-1 text-left">{entry.label}</span>
+                <span className="flex-1 text-start">{t(`nav:${entry.labelKey}`)}</span>
                 <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
               </CollapsibleTrigger>
-              <CollapsibleContent className="pl-4 space-y-0.5 mt-0.5">
+              <CollapsibleContent className="ps-4 space-y-0.5 mt-0.5">
                 {entry.children.map((child) => {
                   if (child.roles && !hasRole(child.roles)) return null;
                   return (
                     <Link key={child.href} to={child.href} className={linkClass(child.href)} onClick={closeMobile}>
                       <child.icon className="h-4 w-4" />
-                      {child.label}
+                      {t(`nav:${child.labelKey}`)}
                     </Link>
                   );
                 })}
@@ -167,7 +159,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         return (
           <Link key={entry.href} to={entry.href} className={linkClass(entry.href)} onClick={closeMobile}>
             <entry.icon className="h-4 w-4" />
-            {entry.label}
+            {t(`nav:${entry.labelKey}`)}
           </Link>
         );
       })}
@@ -178,16 +170,16 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     <>
       <div className="p-4 border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Commission Fiscale" className="h-8 w-8" />
+          <img src={logo} alt={t("common:app.title")} className="h-8 w-8" />
           <div className="leading-tight">
-            <span className="block text-sm font-bold">Commission Fiscale</span>
-            <span className="block text-[10px] font-medium text-sidebar-primary tracking-wider uppercase">Mauritanie</span>
+            <span className="block text-sm font-bold">{t("common:app.title")}</span>
+            <span className="block text-[10px] font-medium text-sidebar-primary tracking-wider uppercase">{t("common:app.subtitle")}</span>
           </div>
         </Link>
       </div>
       {renderNav(closeMobile)}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="text-[10px] text-sidebar-foreground/40 text-center">© Commission Fiscale</div>
+        <div className="text-[10px] text-sidebar-foreground/40 text-center">© {t("common:app.title")}</div>
       </div>
     </>
   );
@@ -212,6 +204,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Desktop top bar */}
         <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card shrink-0">
+          <LanguageSwitcher />
           <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -224,11 +217,11 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel className="font-normal">
                 <p className="text-sm font-medium">{user?.nomComplet || user?.username}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
+                <p className="text-xs text-muted-foreground">{tRole(user?.role)}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
-                <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+                <LogOut className="h-4 w-4 me-2" /> {t("common:session.logout")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -240,11 +233,12 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               <Menu className="h-5 w-5" />
             </Button>
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Commission Fiscale" className="h-7 w-7" />
-              <span className="text-sm font-bold text-foreground">Commission Fiscale</span>
+              <img src={logo} alt={t("common:app.title")} className="h-7 w-7" />
+              <span className="text-sm font-bold text-foreground">{t("common:app.title")}</span>
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -255,11 +249,11 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel className="font-normal">
                   <p className="text-sm font-medium">{user?.nomComplet || user?.username}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase().replace("_", " ")}</p>
+                  <p className="text-xs text-muted-foreground">{tRole(user?.role)}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
-                  <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+                  <LogOut className="h-4 w-4 me-2" /> {t("common:session.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -273,9 +267,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <div className="flex items-center gap-2 text-sm">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>
-                Vous agissez en tant que <span className="font-semibold">{user?.actingTargetLabel ?? "entité externe"}</span>
-                <span className="ml-1 opacity-80">
-                  (mode {user?.role === "ENTREPRISE" ? "Entreprise" : "Autorité Contractante"} — session 4 h)
+                {t("common:session.impersonating", { label: user?.actingTargetLabel ?? "—" })}
+                <span className="ms-1 opacity-80">
+                  ({user?.role === "ENTREPRISE" ? t("common:session.impersonating_mode_entreprise") : t("common:session.impersonating_mode_ac")} — {t("common:session.impersonating_duration")})
                 </span>
               </span>
             </div>
@@ -286,15 +280,15 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               onClick={handleRelease}
               disabled={releasing}
             >
-              {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1" />}
-              Quitter le relais
+              {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin me-1" /> : <ShieldCheck className="h-3.5 w-3.5 me-1" />}
+              {t("common:session.release")}
             </Button>
           </div>
         )}
         {isCommissionRelais && !isImpersonating && location.pathname !== "/dashboard/relais" && (
           <div className="bg-muted border-b border-border px-4 md:px-6 py-2.5 text-sm shrink-0">
             <Link to="/dashboard/relais" className="text-primary font-medium hover:underline">
-              Choisir une entité à prendre en charge →
+              {t("common:session.choose_entity")} <span className="rtl:hidden">→</span><span className="hidden rtl:inline">←</span>
             </Link>
           </div>
         )}

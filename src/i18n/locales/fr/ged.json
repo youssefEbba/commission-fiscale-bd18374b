@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "GED",
+    "subtitle": "Gestion électronique des documents",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "GED — Détail"
+  }
+}
