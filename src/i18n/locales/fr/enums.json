@@ -120,6 +120,12 @@
     "REJETE": "Rejeté",
     "REJETEE": "Rejeté"
   },
+  "statut_sous_traitance": {
+    "DEMANDE": "Demandée",
+    "EN_COURS": "En cours",
+    "AUTORISEE": "Autorisée",
+    "REFUSEE": "Refusée"
+  },
   "statut_modification": {
     "BROUILLON": "Brouillon",
     "SOUMISE": "Soumise",
@@ -172,7 +178,9 @@
     "LETTRES_AUTORITE_CONTRACTANTE": "Lettres de l'autorité contractante",
     "DETAIL_CORRECTIONS_NECESSAIRES": "Détail des corrections nécessaires",
     "DOCUMENTS_OFFICIELS": "Documents officiels",
-    "AUTRE_DOCUMENT": "Autre document"
+    "AUTRE_DOCUMENT": "Autre document",
+    "CONTRAT_SOUS_TRAITANCE_ENREGISTRE": "Contrat de sous-traitance enregistré",
+    "LETTRE_SOUS_TRAITANCE": "Lettre détaillant volumes, quantités et pouvoir"
   },
   "type_utilisation": {
     "DOUANE": "Douane",

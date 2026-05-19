@@ -1,0 +1,105 @@
+{
+  "list": {
+    "title": "المقاولة من الباطن",
+    "subtitle": "إدارة تراخيص المقاولة من الباطن",
+    "search_placeholder": "بحث…",
+    "filter_all": "كل الحالات",
+    "empty": "لا توجد مقاولة من الباطن",
+    "columns": {
+      "id": "#",
+      "certificat": "الشهادة",
+      "sous_traitant": "المقاول من الباطن",
+      "volumes": "الأحجام",
+      "quantites": "الكميات",
+      "contrat_enregistre": "عقد مسجَّل",
+      "statut": "الحالة",
+      "date_autorisation": "تاريخ الترخيص",
+      "actions": "إجراءات"
+    },
+    "cert_fallback": "شهادة #{{id}}",
+    "ent_fallback": "مؤسسة #{{id}}"
+  },
+  "actions": {
+    "new": "مقاولة من الباطن جديدة",
+    "refresh": "تحديث",
+    "view": "عرض",
+    "documents": "الوثائق",
+    "authorize": "ترخيص",
+    "refuse": "رفض",
+    "cancel": "إلغاء",
+    "create_submit": "إنشاء وإرسال"
+  },
+  "common": {
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "detail": {
+    "title": "المقاولة من الباطن رقم {{id}}",
+    "fields": {
+      "certificat": "الشهادة",
+      "sous_traitant": "المقاول من الباطن",
+      "volumes": "الأحجام",
+      "quantites": "الكميات",
+      "contrat_enregistre": "عقد مسجَّل",
+      "statut": "الحالة",
+      "date_autorisation": "تاريخ الترخيص"
+    }
+  },
+  "dialogs": {
+    "create": {
+      "title": "مقاولة من الباطن جديدة",
+      "certificat_label": "الشهادة المصدر (مفتوحة) *",
+      "certificat_placeholder": "اختر شهادة",
+      "certificat_search_placeholder": "ابحث عن شهادة…",
+      "certificat_option_label": "{{ref}} — الرصيد: {{solde}}",
+      "entreprise_section": "مؤسسة المقاول من الباطن",
+      "select_existing": "اختيار قائمة",
+      "create_new": "إنشاء جديدة",
+      "select_label": "اختر مؤسسة موجودة *",
+      "select_placeholder": "اختر مؤسسة",
+      "select_search_placeholder": "بحث (الاسم، الرقم الضريبي)…",
+      "nif_prefix": "الرقم الضريبي: {{nif}}",
+      "fields": {
+        "raison_sociale": "الاسم الاجتماعي *",
+        "nif": "الرقم الضريبي *",
+        "adresse": "العنوان",
+        "situation_fiscale": "الوضع الجبائي",
+        "situation_placeholder": "اختر",
+        "situation_reguliere": "منتظم",
+        "situation_non_reguliere": "غير منتظم",
+        "nom_commercial": "الاسم التجاري",
+        "activite": "النشاط",
+        "autre": "أخرى",
+        "autre_placeholder": "معلومات إضافية (2000 حرف كحد أقصى)",
+        "volumes": "الأحجام",
+        "quantites": "الكميات",
+        "contrat_enregistre": "عقد مسجَّل"
+      },
+      "documents_section": "الوثائق المطلوبة",
+      "doc_contrat_label": "عقد المقاولة من الباطن المسجَّل *",
+      "doc_lettre_label": "رسالة المقاولة من الباطن *"
+    },
+    "documents": {
+      "title": "وثائق المقاولة من الباطن رقم {{id}}"
+    }
+  },
+  "toast": {
+    "load_error_title": "خطأ",
+    "load_error_desc": "تعذّر تحميل المقاولات من الباطن",
+    "error_title": "خطأ",
+    "warn_title": "تنبيه",
+    "permissions_title": "صلاحيات غير كافية",
+    "permissions_desc": "ملفك لا يسمح بسرد المؤسسات. اطلب إضافة صلاحية entreprise.list إلى دور ENTREPRISE لاختيار مؤسسة موجودة.",
+    "certs_load_error": "تعذّر تحميل الشهادات: {{error}}",
+    "ents_load_error": "تعذّر تحميل المؤسسات: {{error}}",
+    "unknown_error": "خطأ غير معروف",
+    "select_certificat": "يرجى اختيار شهادة",
+    "select_entreprise": "يرجى اختيار مؤسسة",
+    "fill_raison_nif": "يرجى إدخال الاسم الاجتماعي والرقم الضريبي",
+    "docs_upload_error": "تم إنشاء المقاولة من الباطن لكن حدث خطأ أثناء رفع الوثائق: {{error}}",
+    "success_title": "تم بنجاح",
+    "created": "تم إنشاء المقاولة من الباطن وإرسال الطلب",
+    "authorized": "تم ترخيص المقاولة من الباطن",
+    "refused": "تم رفض المقاولة من الباطن"
+  }
+}

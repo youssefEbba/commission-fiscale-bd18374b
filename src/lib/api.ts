@@ -1710,17 +1710,9 @@ export interface DocumentSousTraitanceDto {
 
 export type TypeDocumentSousTraitance = "CONTRAT_SOUS_TRAITANCE_ENREGISTRE" | "LETTRE_SOUS_TRAITANCE";
 
-export const SOUS_TRAITANCE_DOCUMENT_TYPES: { value: TypeDocumentSousTraitance; label: string }[] = [
-  { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
-  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
-];
+// Removed SOUS_TRAITANCE_DOCUMENT_TYPES and SOUS_TRAITANCE_STATUT_LABELS (G2 migration).
+// Use tTypeDocument / tStatutSousTraitance from "@/i18n/enums" instead.
 
-export const SOUS_TRAITANCE_STATUT_LABELS: Record<StatutSousTraitance, string> = {
-  DEMANDE: "Demandé",
-  EN_COURS: "En cours",
-  AUTORISEE: "Autorisée",
-  REFUSEE: "Refusée",
-};
 
 export const sousTraitanceApi = {
   getAll: () => apiFetch<SousTraitanceDto[]>("/sous-traitances"),
