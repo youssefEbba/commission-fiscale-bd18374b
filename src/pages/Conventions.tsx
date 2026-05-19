@@ -707,57 +707,56 @@ const Conventions = () => {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nouvelle Convention</DialogTitle>
+            <DialogTitle>{t("conventions:create.title")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pe-1">
             <div className="space-y-2">
-              <Label>Référence *</Label>
-              <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="CONV-2026-001" />
+              <Label>{t("conventions:fields.reference_required")}</Label>
+              <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} placeholder={t("conventions:create.reference_placeholder")} />
             </div>
             <div className="space-y-2">
-              <Label>Intitulé *</Label>
-              <Input value={form.intitule} onChange={(e) => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Convention de financement..." />
+              <Label>{t("conventions:fields.intitule_required")}</Label>
+              <Input value={form.intitule} onChange={(e) => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder={t("conventions:create.intitule_placeholder")} />
             </div>
 
             {/* Bailleur - dropdown + add */}
             <div className="space-y-2">
-              <Label>Bailleur de fonds *</Label>
+              <Label>{t("conventions:fields.bailleur_required")}</Label>
               <div className="flex gap-2">
                 <SearchableSelect
                   value={form.bailleurId != null ? String(form.bailleurId) : ""}
                   onValueChange={(v) => setForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
-                  placeholder={bailleursLoading ? "Chargement..." : "Sélectionner un bailleur"}
-                  searchPlaceholder="Rechercher un bailleur..."
+                  placeholder={bailleursLoading ? t("conventions:create.loading") : t("conventions:create.select_bailleur")}
+                  searchPlaceholder={t("conventions:create.search_bailleur")}
                   triggerClassName="flex-1"
                   options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
                 />
-                <Button type="button" variant="outline" size="icon" onClick={() => setAddBailleurOpen(true)} title="Ajouter un bailleur">
+                <Button type="button" variant="outline" size="icon" onClick={() => setAddBailleurOpen(true)} title={t("conventions:create.add_bailleur_title")}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Le descriptif provient désormais du bailleur sélectionné. */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Date signature</Label>
+                <Label>{t("conventions:fields.date_signature")}</Label>
                 <Input type="date" value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>Date fin</Label>
+                <Label>{t("conventions:fields.date_fin")}</Label>
                 <Input type="date" value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
               </div>
             </div>
 
             {/* Devise - dropdown + add */}
             <div className="space-y-2">
-              <Label>Devise d'origine</Label>
+              <Label>{t("conventions:fields.devise")}</Label>
               <div className="flex gap-2">
                 <SearchableSelect
                   value={form.deviseOrigine || ""}
                   onValueChange={handleDeviseChange}
-                  placeholder={devisesLoading ? "Chargement..." : "Sélectionner une devise"}
-                  searchPlaceholder="Rechercher une devise..."
+                  placeholder={devisesLoading ? t("conventions:create.loading") : t("conventions:create.select_devise")}
+                  searchPlaceholder={t("conventions:create.search_devise")}
                   triggerClassName="flex-1"
                   options={devises.map((d) => ({
                     value: d.code,
@@ -765,7 +764,7 @@ const Conventions = () => {
                     keywords: `${d.code} ${d.libelle}`,
                   }))}
                 />
-                <Button type="button" variant="outline" size="icon" onClick={() => setAddDeviseOpen(true)} title="Ajouter une devise">
+                <Button type="button" variant="outline" size="icon" onClick={() => setAddDeviseOpen(true)} title={t("conventions:create.add_devise_title")}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -773,35 +772,35 @@ const Conventions = () => {
 
             <div className="grid grid-cols-3 gap-3 items-end">
               <div className="space-y-2">
-                <Label>Montant devise</Label>
+                <Label>{t("conventions:fields.montant_devise")}</Label>
                 <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
                   setForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                 }} placeholder="1200000" />
               </div>
               <div className="space-y-2">
-                <Label>Taux de change</Label>
-                <Input readOnly value={form.tauxChange ?? "—"} className="bg-muted" />
+                <Label>{t("conventions:fields.taux_change")}</Label>
+                <Input readOnly value={form.tauxChange != null ? formatNumber(form.tauxChange) : "—"} className="bg-muted" />
               </div>
               <div className="space-y-2">
-                <Label>Montant MRU (auto)</Label>
-                <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
+                <Label>{t("conventions:fields.montant_mru_auto")}</Label>
+                <Input readOnly value={form.montantMru != null ? formatNumber(form.montantMru) : "—"} className="bg-muted" />
               </div>
             </div>
             {tauxLoading && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Récupération du taux de change...
+                <Loader2 className="h-4 w-4 animate-spin" /> {t("conventions:create.rate_loading")}
               </div>
             )}
 
             {/* Documents section - follows GED configuration */}
             <div className="border-t pt-4 space-y-3">
               <Label className="text-sm font-semibold flex items-center gap-2">
-                <Paperclip className="h-4 w-4" /> Documents joints
+                <Paperclip className="h-4 w-4" /> {t("conventions:docs.title")}
               </Label>
               {gedReqLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Chargement des exigences GED...
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("conventions:docs.loading_requirements")}
                 </div>
               ) : gedRequirements.length > 0 ? (
                 <div className="space-y-1">
@@ -818,18 +817,18 @@ const Conventions = () => {
                             <XCircle className={`h-3.5 w-3.5 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />
                           )}
                           <span className={req.obligatoire && !hasDoc ? "text-destructive font-medium" : ""}>
-                            {req.typeDocument}
+                            {tTypeDocument(req.typeDocument)}
                           </span>
-                          {hasDoc && <span className="text-muted-foreground">({docsForType.length} fichier{docsForType.length > 1 ? "s" : ""})</span>}
+                          {hasDoc && <span className="text-muted-foreground">{t("conventions:docs.files_count", { count: docsForType.length })}</span>}
                           {req.obligatoire && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0">Obligatoire</Badge>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">{t("conventions:docs.mandatory")}</Badge>
                           )}
                         </div>
                       );
                     })}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Aucune exigence GED configurée pour les conventions.</p>
+                <p className="text-xs text-muted-foreground">{t("conventions:docs.no_requirements")}</p>
               )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={createDocType} onValueChange={(v) => setCreateDocType(v as TypeDocumentConvention)}>
@@ -840,10 +839,10 @@ const Conventions = () => {
                     {(gedRequirements.length > 0
                       ? gedRequirements
                           .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
-                          .map(r => ({ value: r.typeDocument, label: r.typeDocument }))
-                      : CONVENTION_DOCUMENT_TYPES
-                    ).map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                          .map(r => ({ value: r.typeDocument }))
+                      : CONVENTION_DOCUMENT_TYPES.map(d => ({ value: d.value }))
+                    ).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{tTypeDocument(opt.value)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -864,12 +863,12 @@ const Conventions = () => {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground">
-                      {createDocs.length} fichier(s) — Réordonnez puis fusionnez les PDF
+                      {t("conventions:docs.summary", { count: createDocs.length })}
                     </span>
                     {createDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
                       <Button type="button" variant="outline" size="sm" onClick={mergeCreateDocs} disabled={merging}>
-                        {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
-                        Fusionner PDF
+                        {merging ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Merge className="h-4 w-4 me-1" />}
+                        {t("conventions:docs.merge_pdf")}
                       </Button>
                     )}
                   </div>
@@ -886,7 +885,7 @@ const Conventions = () => {
                       </div>
                       <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="outline" className="text-xs shrink-0">
-                        {d.type}
+                        {tTypeDocument(d.type)}
                       </Badge>
                       <span className="truncate flex-1">{d.file.name}</span>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCreateDoc(i)}>
@@ -899,15 +898,15 @@ const Conventions = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t("conventions:actions.dismiss")}</Button>
             <Button onClick={handleCreate} disabled={
               creating || !form.reference || !form.intitule ||
               (gedRequirements.length > 0
                 ? gedRequirements.filter(r => r.obligatoire).some(r => !createDocs.some(d => d.type === r.typeDocument))
                 : !createDocs.some(d => d.type === "CONVENTION_CONTRAT"))
             }>
-              {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-              Créer
+              {creating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
+              {t("conventions:actions.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
