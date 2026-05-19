@@ -208,7 +208,7 @@ const MarcheDetail = () => {
         onOpenChange={setGedOpen}
         title={t("marches:ged.title", { ref: marche.numeroMarche || `#${marche.id}` })}
         dossierId={marche.id}
-        documentTypes={MARCHE_DOCUMENT_TYPES}
+        documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={canManage}
