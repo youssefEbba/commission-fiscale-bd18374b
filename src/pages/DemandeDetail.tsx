@@ -561,7 +561,7 @@ const DemandeDetail = () => {
                           <span className="text-[10px] text-muted-foreground">{t("demandes:detail.org_status.docs_demandes")}</span>
                           {rej.documentsDemandes.map((dt: string) => (
                             <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">
-                              {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                              {tTypeDocument(dt)}
                             </Badge>
                           ))}
                         </div>
@@ -575,7 +575,7 @@ const DemandeDetail = () => {
                               {resp.documentType && (
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                   <FileText className="h-3 w-3" />
-                                  <span>{ALL_DOCUMENT_TYPES.find(tt => tt.value === resp.documentType)?.label || resp.documentType}</span>
+                                  <span>{tTypeDocument(resp.documentType)}</span>
                                   {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
                                 </div>
                               )}
@@ -657,7 +657,7 @@ const DemandeDetail = () => {
                                 <span className="text-[10px] text-muted-foreground">{t("demandes:detail.org_status.docs_demandes")}</span>
                                 {rej.documentsDemandes.map((dt: string) => (
                                   <Badge key={dt} variant="outline" className="text-[9px] bg-muted text-muted-foreground border-muted-foreground/20">
-                                    {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                                    {tTypeDocument(dt)}
                                   </Badge>
                                 ))}
                               </div>
@@ -1088,7 +1088,7 @@ const DemandeDetail = () => {
                   <div className="flex flex-wrap gap-1">
                     {rejetDec.documentsDemandes.map((dt: string) => (
                       <Badge key={dt} variant="outline" className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
-                        {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                        {tTypeDocument(dt)}
                       </Badge>
                     ))}
                   </div>
