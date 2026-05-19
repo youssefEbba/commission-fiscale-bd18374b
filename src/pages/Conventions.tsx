@@ -951,7 +951,7 @@ const Conventions = () => {
             </div>
             <div className="space-y-2">
               <Label>{t("conventions:devise.libelle_required")}</Label>
-              <Input value={newDevise.libelle} onChange={(e) => setNewDevise(d => ({ ...d, libelle: e.target.value }))} placeholder="Euro" />
+              <Input value={newDevise.libelle} onChange={(e) => setNewDevise(d => ({ ...d, libelle: e.target.value }))} placeholder={t("conventions:devise.libelle_placeholder")} />
             </div>
             <div className="space-y-2">
               <Label>{t("conventions:devise.symbole")}</Label>
