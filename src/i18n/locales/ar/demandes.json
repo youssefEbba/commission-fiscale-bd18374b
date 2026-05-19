@@ -488,7 +488,7 @@
       "marche_busy_with_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط (الحالة: {{statut}}). يرجى اختيار صفقة أخرى.",
       "marche_busy_no_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط. يرجى اختيار صفقة أخرى."
     },
-    "wtoast": {
+    "toast": {
       "entreprise_created": "تم إنشاء المؤسسة",
       "convention_created": "تم إنشاء الاتفاقية",
       "convention_created_with_docs": "تم إنشاء الاتفاقية مع {{count}} مستند",

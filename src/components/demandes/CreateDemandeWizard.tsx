@@ -357,7 +357,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setEntrepriseId(String(created.id));
       setShowCreateEntreprise(false);
       setNewEntreprise({ raisonSociale: "", nif: "" });
-      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.entreprise_created") });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.toast.entreprise_created") });
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
@@ -431,7 +431,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const mergedBlob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
       setConvCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.pdfs_merged", { count: pdfFiles.length }) });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.toast.pdfs_merged", { count: pdfFiles.length }) });
     } catch (e: any) {
       toast({ title: t("demandes:wizard.errors.merge_error"), description: e.message, variant: "destructive" });
     } finally { setConvMerging(false); }
@@ -465,7 +465,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
       setConvCreateDocs([]);
-      toast({ title: t("demandes:toast.success"), description: convCreateDocs.length ? t("demandes:wizard.wtoast.convention_created_with_docs", { count: convCreateDocs.length }) : t("demandes:wizard.wtoast.convention_created") });
+      toast({ title: t("demandes:toast.success"), description: convCreateDocs.length ? t("demandes:wizard.toast.convention_created_with_docs", { count: convCreateDocs.length }) : t("demandes:wizard.toast.convention_created") });
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
@@ -506,7 +506,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setMarcheId(String(created.id));
       setShowCreateMarche(false);
       setNewMarche({ numeroMarche: "" });
-      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.marche_created") });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.toast.marche_created") });
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
@@ -672,10 +672,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({
         title: t("demandes:toast.success"),
         description: asBrouillon
-          ? t("demandes:wizard.wtoast.draft_saved", { numero: demande.numero || `#${demande.id}` })
+          ? t("demandes:wizard.toast.draft_saved", { numero: demande.numero || `#${demande.id}` })
           : isEditing
-          ? t("demandes:wizard.wtoast.demande_submitted", { numero: demande.numero || `#${demande.id}` })
-          : t("demandes:wizard.wtoast.demande_created", { numero: demande.numero || `#${demande.id}` }),
+          ? t("demandes:wizard.toast.demande_submitted", { numero: demande.numero || `#${demande.id}` })
+          : t("demandes:wizard.toast.demande_created", { numero: demande.numero || `#${demande.id}` }),
       });
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
@@ -1000,7 +1000,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                           setNewConvForm(prev => ({ ...prev, bailleurId: created.id }));
                                           setNewBailleurNom("");
                                           setShowCreateBailleur(false);
-                                          toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.bailleur_added") });
+                                          toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.toast.bailleur_added") });
                                         } catch (e: any) {
                                           toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
                                         } finally { setCreatingBailleur(false); }
@@ -1592,7 +1592,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               setNewConvForm(f => ({ ...f, deviseOrigine: created.code, tauxChange: undefined, montantMru: undefined }));
               setShowAddDevise(false);
               setNewDevise({ code: "", libelle: "", symbole: "" });
-              toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.devise_added") });
+              toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.toast.devise_added") });
             } catch (e: any) {
               toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
             } finally { setAddingDevise(false); }

@@ -488,7 +488,7 @@
       "marche_busy_with_status": "Ce marché est déjà associé à une demande de correction active (statut : {{statut}}). Veuillez en choisir un autre.",
       "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre."
     },
-    "wtoast": {
+    "toast": {
       "entreprise_created": "Entreprise créée",
       "convention_created": "Convention créée",
       "convention_created_with_docs": "Convention créée avec {{count}} document(s)",
