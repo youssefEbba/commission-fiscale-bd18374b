@@ -27,7 +27,7 @@ import {
   MessageSquare, FileText, RefreshCw,
 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
-import { Checkbox as Checkbox2 } from "@/components/ui/checkbox";
+import { Checkbox as Checkbox } from "@/components/ui/checkbox";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
@@ -508,7 +508,7 @@ const TransfertDetail = () => {
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
                 {TRANSFERT_DOCUMENT_TYPES.map((d) => (
                   <div key={d.value} className="flex items-center gap-2">
-                    <Checkbox2
+                    <Checkbox
                       id={`rt-${d.value}`}
                       checked={rejetDocs.includes(d.value)}
                       onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d.value] : prev.filter(x => x !== d.value))}
