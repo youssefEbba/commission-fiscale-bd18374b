@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { PDFDocument } from "pdf-lib";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -33,6 +34,9 @@ import {
   ArrowUp, ArrowDown, Merge, MoreHorizontal, Eye, Edit,
   Trash2, Ban, ShieldCheck, ShieldX,
 } from "lucide-react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
+import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
