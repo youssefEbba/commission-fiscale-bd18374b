@@ -24,7 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutDemande, tReclamationStatut } from "@/i18n/enums";
+import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 
@@ -68,24 +68,8 @@ const ROLE_TRANSITIONS: Record<string, Transition[]> = {
   ],
 };
 
-const TRANSITION_LABELS_FR: Record<string, string> = {
-  "transitions.DGD.visa": "Apposer visa Douanes",
-  "transitions.DGTCP.visa": "Apposer visa Trésor",
-  "transitions.DGI.visa": "Apposer visa Impôts",
-  "transitions.DGB.visa": "Apposer visa Budget",
-  "transitions.PRESIDENT.adopt": "Décision finale : Adopter",
-  "transitions.PRESIDENT.reject": "Décision finale : Rejeter",
-  "transitions.reject": "Rejeter",
-};
-const TRANSITION_LABELS_AR: Record<string, string> = {
-  "transitions.DGD.visa": "وضع تأشيرة الجمارك",
-  "transitions.DGTCP.visa": "وضع تأشيرة الخزينة",
-  "transitions.DGI.visa": "وضع تأشيرة الضرائب",
-  "transitions.DGB.visa": "وضع تأشيرة الميزانية",
-  "transitions.PRESIDENT.adopt": "قرار نهائي: اعتماد",
-  "transitions.PRESIDENT.reject": "قرار نهائي: رفض",
-  "transitions.reject": "رفض",
-};
+// Note: les libellés des transitions vivent dans `demandes.json` sous `transitions.*`
+// et sont résolus via `t(\`demandes:${labelKey}\`)`.
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -126,12 +110,9 @@ const DemandeDetail = () => {
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
-  const { t, i18n } = useTranslation(["demandes", "common"]);
+  const { t } = useTranslation(["demandes", "common"]);
 
-  const tTransition = (key: string): string => {
-    const isAr = i18n.language?.startsWith("ar");
-    return (isAr ? TRANSITION_LABELS_AR[key] : TRANSITION_LABELS_FR[key]) || key;
-  };
+  const tTransition = (key: string): string => t(`demandes:${key}`);
 
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
@@ -185,10 +166,13 @@ const DemandeDetail = () => {
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
 
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
-    DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
+  // Document à uploader obligatoirement avant le visa, selon le rôle.
+  // Libellé via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
+  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
+    DGD: { docType: "CREDIT_EXTERIEUR" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
+  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
@@ -280,7 +264,7 @@ const DemandeDetail = () => {
     setOffreCorrigeeUploading(true);
     try {
       await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null);
       await handleTempVisa(offreCorrigeePendingId);
       fetchDetail();
@@ -577,7 +561,7 @@ const DemandeDetail = () => {
                           <span className="text-[10px] text-muted-foreground">{t("demandes:detail.org_status.docs_demandes")}</span>
                           {rej.documentsDemandes.map((dt: string) => (
                             <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">
-                              {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                              {tTypeDocument(dt)}
                             </Badge>
                           ))}
                         </div>
@@ -591,7 +575,7 @@ const DemandeDetail = () => {
                               {resp.documentType && (
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                   <FileText className="h-3 w-3" />
-                                  <span>{ALL_DOCUMENT_TYPES.find(tt => tt.value === resp.documentType)?.label || resp.documentType}</span>
+                                  <span>{tTypeDocument(resp.documentType)}</span>
                                   {resp.documentVersion && <span>(v{resp.documentVersion})</span>}
                                 </div>
                               )}
@@ -673,7 +657,7 @@ const DemandeDetail = () => {
                                 <span className="text-[10px] text-muted-foreground">{t("demandes:detail.org_status.docs_demandes")}</span>
                                 {rej.documentsDemandes.map((dt: string) => (
                                   <Badge key={dt} variant="outline" className="text-[9px] bg-muted text-muted-foreground border-muted-foreground/20">
-                                    {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                                    {tTypeDocument(dt)}
                                   </Badge>
                                 ))}
                               </div>
@@ -755,8 +739,7 @@ const DemandeDetail = () => {
                     return <p className="text-sm text-muted-foreground italic py-2">{t("demandes:detail.pieces.empty")}</p>;
                   }
 
-                  const DOC_LABEL_MAP: Record<string, string> = {};
-                  ALL_DOCUMENT_TYPES.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
+                  // Libellés traduits via tTypeDocument (enums.type_document.*)
 
                   const isIncomplete = selected.statut === "INCOMPLETE";
                   const allowedDocTypes = isIncomplete
@@ -768,7 +751,7 @@ const DemandeDetail = () => {
                     const uploaded = sorted.find(d => d.actif === true) || sorted[0];
                     const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
                     const olderVersions = sorted.filter(d => d.id !== uploaded?.id);
-                    const label = DOC_LABEL_MAP[type] || type;
+                    const label = tTypeDocument(type);
                     const isLocked = isIncomplete && allowedDocTypes !== null && !allowedDocTypes.includes(type);
                     const isUnlocked = isIncomplete && allowedDocTypes !== null && allowedDocTypes.includes(type);
 
@@ -1056,7 +1039,7 @@ const DemandeDetail = () => {
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {(uploadAllowedTypes.length > 0 ? ALL_DOCUMENT_TYPES.filter(tt => uploadAllowedTypes.includes(tt.value)) : ALL_DOCUMENT_TYPES).map((tt) => (
-                    <SelectItem key={tt.value} value={tt.value}>{tt.label}</SelectItem>
+                    <SelectItem key={tt.value} value={tt.value}>{tTypeDocument(tt.value)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1104,7 +1087,7 @@ const DemandeDetail = () => {
                   <div className="flex flex-wrap gap-1">
                     {rejetDec.documentsDemandes.map((dt: string) => (
                       <Badge key={dt} variant="outline" className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
-                        {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                        {tTypeDocument(dt)}
                       </Badge>
                     ))}
                   </div>
@@ -1144,7 +1127,7 @@ const DemandeDetail = () => {
                   {ALL_DOCUMENT_TYPES.map(dt => (
                     <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
                       <Checkbox checked={rejectDocsDemandes.includes(dt.value)} onCheckedChange={(checked) => setRejectDocsDemandes(prev => checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value))} />
-                      <span>{dt.label}</span>
+                      <span>{tTypeDocument(dt.value)}</span>
                     </label>
                   ))}
                 </div>
@@ -1165,7 +1148,7 @@ const DemandeDetail = () => {
       <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
+            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
             <DialogDescription>{t("demandes:dialogs.offre_corrigee.description_short")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

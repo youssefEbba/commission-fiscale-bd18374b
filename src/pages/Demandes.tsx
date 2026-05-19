@@ -27,7 +27,7 @@ import { useNavigate } from "react-router-dom";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutDemande } from "@/i18n/enums";
+import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 
@@ -73,26 +73,8 @@ const ROLE_TRANSITIONS: Record<string, Transition[]> = {
   ],
 };
 
-// Transition labels stored locally in this file (used in dropdown rows). They are kept
-// here rather than in JSON because they're tightly coupled to the role-action matrix.
-const TRANSITION_LABELS_FR: Record<string, string> = {
-  "transitions.DGD.visa": "Apposer visa Douanes",
-  "transitions.DGTCP.visa": "Apposer visa Trésor",
-  "transitions.DGI.visa": "Apposer visa Impôts",
-  "transitions.DGB.visa": "Apposer visa Budget",
-  "transitions.PRESIDENT.adopt": "Décision finale : Adopter",
-  "transitions.PRESIDENT.reject": "Décision finale : Rejeter",
-  "transitions.reject": "Rejeter",
-};
-const TRANSITION_LABELS_AR: Record<string, string> = {
-  "transitions.DGD.visa": "وضع تأشيرة الجمارك",
-  "transitions.DGTCP.visa": "وضع تأشيرة الخزينة",
-  "transitions.DGI.visa": "وضع تأشيرة الضرائب",
-  "transitions.DGB.visa": "وضع تأشيرة الميزانية",
-  "transitions.PRESIDENT.adopt": "قرار نهائي: اعتماد",
-  "transitions.PRESIDENT.reject": "قرار نهائي: رفض",
-  "transitions.reject": "رفض",
-};
+// Note: les libellés des transitions vivent dans `demandes.json` sous `transitions.*`
+// et sont résolus via `t(\`demandes:${labelKey}\`)`.
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -110,13 +92,10 @@ const Demandes = () => {
   const role = user?.role as AppRole;
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t, i18n } = useTranslation(["demandes", "common"]);
+  const { t } = useTranslation(["demandes", "common"]);
   usePageTitle("demandes:list.title");
 
-  const tTransition = (key: string): string => {
-    const isAr = i18n.language?.startsWith("ar");
-    return (isAr ? TRANSITION_LABELS_AR[key] : TRANSITION_LABELS_FR[key]) || key;
-  };
+  const tTransition = (key: string): string => t(`demandes:${key}`);
 
   const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -274,10 +253,13 @@ const Demandes = () => {
     }
   };
 
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
-    DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
+  // Document à uploader obligatoirement avant le visa, selon le rôle.
+  // Le libellé est traduit via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
+  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
+    DGD: { docType: "CREDIT_EXTERIEUR" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
+  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
     if (uploadBeforeVisa) {
@@ -303,7 +285,7 @@ const Demandes = () => {
     setOffreCorrigeeUploading(true);
     try {
       await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
       await handleTempVisa(offreCorrigeePendingId);
@@ -644,7 +626,7 @@ const Demandes = () => {
                                             <div className="flex flex-wrap gap-1">
                                               {r.docs.map(dt => (
                                                 <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                                  {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                                                  {tTypeDocument(dt)}
                                                 </Badge>
                                               ))}
                                             </div>
@@ -659,7 +641,7 @@ const Demandes = () => {
                                                     onClick={() => navigate(`/dashboard/demandes/${d.id}`)}
                                                   >
                                                     <Upload className="h-3 w-3 me-1" />
-                                                    {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
+                                                    {tTypeDocument(dt)}
                                                   </Button>
                                                 ))}
                                               </div>
@@ -813,7 +795,7 @@ const Demandes = () => {
                     ? ALL_DOCUMENT_TYPES.filter(tt => uploadAllowedTypes.includes(tt.value))
                     : ALL_DOCUMENT_TYPES
                   ).map((tt) => (
-                    <SelectItem key={tt.value} value={tt.value}>{tt.label}</SelectItem>
+                    <SelectItem key={tt.value} value={tt.value}>{tTypeDocument(tt.value)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -991,7 +973,7 @@ const Demandes = () => {
                           );
                         }}
                       />
-                      <span>{dt.label}</span>
+                      <span>{tTypeDocument(dt.value)}</span>
                     </label>
                   ))}
                 </div>
@@ -1018,14 +1000,14 @@ const Demandes = () => {
       <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
+            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
             <DialogDescription>
-              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
+              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
+              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
               <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
             </div>
           </div>

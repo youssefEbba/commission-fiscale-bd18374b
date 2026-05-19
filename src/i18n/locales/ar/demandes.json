@@ -287,5 +287,16 @@
     "reclamation_rejected": "تم رفض الشكوى",
     "reclamation_cancelled": "تم إلغاء الشكوى",
     "rejet_resolved": "تم وضع علامة على الرفض كمحلول"
+  },
+  "transitions": {
+    "reject": "رفض",
+    "DGD": { "visa": "وضع تأشيرة الجمارك" },
+    "DGTCP": { "visa": "وضع تأشيرة الخزينة" },
+    "DGI": { "visa": "وضع تأشيرة الضرائب" },
+    "DGB": { "visa": "وضع تأشيرة الميزانية" },
+    "PRESIDENT": {
+      "adopt": "قرار نهائي: اعتماد",
+      "reject": "قرار نهائي: رفض"
+    }
   }
 }

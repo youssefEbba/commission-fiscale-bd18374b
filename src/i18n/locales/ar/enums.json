@@ -156,7 +156,15 @@
     "BULLETIN_ANNOTE": "كشف مؤشَّر عليه",
     "CHEQUE_CERTIFIE": "شيك مصدَّق",
     "QUITTANCE_TRESOR": "إيصال الخزينة",
-    "AUTRE": "أخرى"
+    "AUTRE": "أخرى",
+    "LETTRE_SAISINE": "رسالة الإحالة",
+    "PV_OUVERTURE": "محضر فتح العروض المالية",
+    "ATTESTATION_FISCALE": "شهادة جبائية للمؤسسة",
+    "OFFRE_FINANCIERE": "العرض المالي",
+    "TABLEAU_MODELE": "الجدول النموذجي (الطبيعة، القيمة، التصنيف)",
+    "DAO_DQE": "ملف الاستشارة + الجدول الكمي التقديري",
+    "LISTE_ITEMS_EXCEL": "قائمة البنود Excel (FR/AR)",
+    "CREDIT_EXTERIEUR": "الاعتماد الخارجي"
   },
   "type_utilisation": {
     "DOUANE": "الجمارك",

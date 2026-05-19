@@ -156,7 +156,15 @@
     "BULLETIN_ANNOTE": "Bulletin annoté",
     "CHEQUE_CERTIFIE": "Chèque certifié",
     "QUITTANCE_TRESOR": "Quittance du Trésor",
-    "AUTRE": "Autre"
+    "AUTRE": "Autre",
+    "LETTRE_SAISINE": "Lettre de saisine",
+    "PV_OUVERTURE": "PV ouverture offres financières",
+    "ATTESTATION_FISCALE": "Attestation fiscale entreprise",
+    "OFFRE_FINANCIERE": "Offre financière",
+    "TABLEAU_MODELE": "Tableau modèle (nature, valeur, classification)",
+    "DAO_DQE": "DAO + DQE",
+    "LISTE_ITEMS_EXCEL": "Liste items Excel (FR/AR)",
+    "CREDIT_EXTERIEUR": "Crédit Extérieur"
   },
   "type_utilisation": {
     "DOUANE": "Douane",

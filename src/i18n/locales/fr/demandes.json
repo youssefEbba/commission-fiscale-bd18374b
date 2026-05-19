@@ -287,5 +287,16 @@
     "reclamation_rejected": "Réclamation rejetée",
     "reclamation_cancelled": "Réclamation annulée",
     "rejet_resolved": "Rejet marqué comme résolu"
+  },
+  "transitions": {
+    "reject": "Rejeter",
+    "DGD": { "visa": "Apposer visa Douanes" },
+    "DGTCP": { "visa": "Apposer visa Trésor" },
+    "DGI": { "visa": "Apposer visa Impôts" },
+    "DGB": { "visa": "Apposer visa Budget" },
+    "PRESIDENT": {
+      "adopt": "Décision finale : Adopter",
+      "reject": "Décision finale : Rejeter"
+    }
   }
 }
