@@ -739,8 +739,7 @@ const DemandeDetail = () => {
                     return <p className="text-sm text-muted-foreground italic py-2">{t("demandes:detail.pieces.empty")}</p>;
                   }
 
-                  const DOC_LABEL_MAP: Record<string, string> = {};
-                  ALL_DOCUMENT_TYPES.forEach(dt => { DOC_LABEL_MAP[dt.value] = dt.label; });
+                  // Libellés traduits via tTypeDocument (enums.type_document.*)
 
                   const isIncomplete = selected.statut === "INCOMPLETE";
                   const allowedDocTypes = isIncomplete
@@ -752,7 +751,7 @@ const DemandeDetail = () => {
                     const uploaded = sorted.find(d => d.actif === true) || sorted[0];
                     const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
                     const olderVersions = sorted.filter(d => d.id !== uploaded?.id);
-                    const label = DOC_LABEL_MAP[type] || type;
+                    const label = tTypeDocument(type);
                     const isLocked = isIncomplete && allowedDocTypes !== null && !allowedDocTypes.includes(type);
                     const isUnlocked = isIncomplete && allowedDocTypes !== null && allowedDocTypes.includes(type);
 
@@ -1040,7 +1039,7 @@ const DemandeDetail = () => {
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {(uploadAllowedTypes.length > 0 ? ALL_DOCUMENT_TYPES.filter(tt => uploadAllowedTypes.includes(tt.value)) : ALL_DOCUMENT_TYPES).map((tt) => (
-                    <SelectItem key={tt.value} value={tt.value}>{tt.label}</SelectItem>
+                    <SelectItem key={tt.value} value={tt.value}>{tTypeDocument(tt.value)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1128,7 +1127,7 @@ const DemandeDetail = () => {
                   {ALL_DOCUMENT_TYPES.map(dt => (
                     <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
                       <Checkbox checked={rejectDocsDemandes.includes(dt.value)} onCheckedChange={(checked) => setRejectDocsDemandes(prev => checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value))} />
-                      <span>{dt.label}</span>
+                      <span>{tTypeDocument(dt.value)}</span>
                     </label>
                   ))}
                 </div>
