@@ -166,10 +166,13 @@ const DemandeDetail = () => {
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
 
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
-    DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
+  // Document à uploader obligatoirement avant le visa, selon le rôle.
+  // Libellé via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
+  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
+    DGD: { docType: "CREDIT_EXTERIEUR" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
+  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
