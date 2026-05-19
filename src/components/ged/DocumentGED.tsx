@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { API_BASE } from "@/lib/apiConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateTime, formatFileSize } from "@/i18n/format";
 import {
-  Upload, FileText, Loader2, Download, Clock, CheckCircle2, Archive,
-  File, FileImage, FileSpreadsheet, AlertCircle, Trash2, Replace
+  Upload, FileText, Loader2, Clock, CheckCircle2, Archive,
+  File, FileImage, FileSpreadsheet, AlertCircle, Trash2, Replace, X
 } from "lucide-react";
 
 export interface GEDDocument {
@@ -46,13 +48,6 @@ interface DocumentGEDProps {
   onReplaceDocument?: (dossierId: number, docId: number, file: File) => Promise<void>;
 }
 
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes) return "—";
-  if (bytes < 1024) return `${bytes} o`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
-};
-
 const getFileIcon = (filename: string) => {
   const ext = filename.split(".").pop()?.toLowerCase();
   if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || "")) return <FileImage className="h-4 w-4 text-emerald-500" />;
@@ -66,6 +61,7 @@ const DocumentGED = ({
   documents, loading, canUpload, canManageDocuments, onUpload, onRefresh,
   onDeleteDocument, onReplaceDocument,
 }: DocumentGEDProps) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [tab, setTab] = useState<"actifs" | "historique">("actifs");
   const [uploadType, setUploadType] = useState(documentTypes[0]?.value || "");
@@ -77,8 +73,6 @@ const DocumentGED = ({
 
   const activeDocs = documents.filter(d => d.actif !== false);
   const historyDocs = documents.filter(d => d.actif === false);
-
-  // Check which required types are present (active)
   const activeTypes = new Set(activeDocs.map(d => d.type));
 
   const handleUpload = async () => {
@@ -86,11 +80,11 @@ const DocumentGED = ({
     setUploading(true);
     try {
       await onUpload(dossierId, uploadType, uploadFile);
-      toast({ title: "Succès", description: "Document uploadé avec succès" });
+      toast({ title: t("ged:toast.success_title"), description: t("ged:toast.upload_success_desc") });
       setUploadFile(null);
       await onRefresh(dossierId);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Échec de l'upload", variant: "destructive" });
+      toast({ title: t("ged:toast.error_title"), description: e.message || t("ged:toast.upload_error_fallback"), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -100,22 +94,20 @@ const DocumentGED = ({
     if (!dossierId || !onDeleteDocument) return;
     try {
       await onDeleteDocument(dossierId, docId);
-      toast({ title: "Succès", description: "Document supprimé" });
+      toast({ title: t("ged:toast.success_title"), description: t("ged:toast.delete_success_desc") });
       await onRefresh(dossierId);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("ged:toast.error_title"), description: e.message, variant: "destructive" });
     }
   };
 
   const openFile = (doc: GEDDocument) => {
     if (!doc.chemin) return;
     let url = doc.chemin;
-    // Si chemin relatif, préfixer avec l'origine du backend (sans /api)
     if (!/^https?:\/\//i.test(url)) {
       const apiOrigin = API_BASE.replace(/\/api\/?$/, "");
       url = apiOrigin + (url.startsWith("/") ? "" : "/") + url;
     }
-    // Ajoute ngrok-skip-browser-warning pour bypasser la page d'avertissement ngrok
     if (url.includes("ngrok")) {
       url += (url.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true";
     }
@@ -127,12 +119,12 @@ const DocumentGED = ({
     setReplacing(true);
     try {
       await onReplaceDocument(dossierId, replaceDocId, replaceFile);
-      toast({ title: "Succès", description: "Document remplacé" });
+      toast({ title: t("ged:toast.success_title"), description: t("ged:toast.replace_success_desc") });
       setReplaceDocId(null);
       setReplaceFile(null);
       await onRefresh(dossierId);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("ged:toast.error_title"), description: e.message, variant: "destructive" });
     } finally {
       setReplacing(false);
     }
@@ -142,20 +134,20 @@ const DocumentGED = ({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Type</TableHead>
-          <TableHead>Fichier</TableHead>
-          <TableHead>Taille</TableHead>
-          <TableHead>Version</TableHead>
-          <TableHead>Date</TableHead>
-          {showActifBadge && <TableHead>État</TableHead>}
-          {canManageDocuments && !showActifBadge && <TableHead className="text-right">Actions</TableHead>}
+          <TableHead>{t("ged:document.table.type")}</TableHead>
+          <TableHead>{t("ged:document.table.file")}</TableHead>
+          <TableHead>{t("ged:document.table.size")}</TableHead>
+          <TableHead>{t("ged:document.table.version")}</TableHead>
+          <TableHead>{t("ged:document.table.date")}</TableHead>
+          {showActifBadge && <TableHead>{t("ged:document.table.state")}</TableHead>}
+          {canManageDocuments && !showActifBadge && <TableHead className="text-end">{t("ged:document.table.actions")}</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {docs.length === 0 ? (
           <TableRow>
             <TableCell colSpan={canManageDocuments && !showActifBadge ? 7 : (showActifBadge ? 6 : 5)} className="text-center py-6 text-muted-foreground">
-              Aucun document
+              {t("ged:document.empty")}
             </TableCell>
           </TableRow>
         ) : docs.map((d) => (
@@ -172,7 +164,7 @@ const DocumentGED = ({
                   <button
                     type="button"
                     onClick={() => openFile(d)}
-                    className="text-primary underline text-xs hover:text-primary/80 transition-colors text-left"
+                    className="text-primary underline text-xs hover:text-primary/80 transition-colors text-start"
                   >
                     {d.nomFichier}
                   </button>
@@ -186,24 +178,22 @@ const DocumentGED = ({
               <Badge variant="outline" className="text-xs">v{d.version || 1}</Badge>
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-              {d.dateUpload ? new Date(d.dateUpload).toLocaleDateString("fr-FR", {
-                day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
-              }) : "—"}
+              {d.dateUpload ? formatDateTime(d.dateUpload) : "—"}
             </TableCell>
             {showActifBadge && (
               <TableCell>
                 <Badge variant={d.actif !== false ? "default" : "secondary"} className="text-xs">
-                  {d.actif !== false ? "Actif" : "Remplacé"}
+                  {d.actif !== false ? t("ged:document.state_active") : t("ged:document.state_replaced")}
                 </Badge>
               </TableCell>
             )}
             {canManageDocuments && !showActifBadge && (
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <div className="flex gap-1 justify-end">
                   <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setReplaceDocId(d.id); setReplaceFile(null); }}>
-                    <Replace className="h-3 w-3 mr-1" /> Remplacer
+                    <Replace className="h-3 w-3 me-1" /> {t("ged:document.replace")}
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive" onClick={() => handleDeleteDoc(d.id)}>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive" onClick={() => handleDeleteDoc(d.id)} aria-label={t("ged:toast.delete_success_desc")}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -231,10 +221,9 @@ const DocumentGED = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Required documents checklist */}
             <div className="bg-muted/50 rounded-lg p-3">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Documents requis
+                {t("ged:document.required_section_title")}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {documentTypes.map((dt) => (
@@ -258,16 +247,15 @@ const DocumentGED = ({
               </div>
             </div>
 
-            {/* Tabs: Active / History */}
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
               <TabsList className="w-full">
                 <TabsTrigger value="actifs" className="flex-1 gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Actifs ({activeDocs.length})
+                  {t("ged:document.tab_active", { count: activeDocs.length })}
                 </TabsTrigger>
                 <TabsTrigger value="historique" className="flex-1 gap-1">
                   <Archive className="h-3.5 w-3.5" />
-                  Historique ({historyDocs.length})
+                  {t("ged:document.tab_history", { count: historyDocs.length })}
                 </TabsTrigger>
               </TabsList>
 
@@ -278,7 +266,7 @@ const DocumentGED = ({
               <TabsContent value="historique">
                 {historyDocs.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-6">
-                    Aucune version précédente
+                    {t("ged:document.no_history")}
                   </p>
                 ) : (
                   renderDocTable(historyDocs, true)
@@ -286,16 +274,15 @@ const DocumentGED = ({
               </TabsContent>
             </Tabs>
 
-            {/* Inline replace file input */}
             {replaceDocId && (
               <div className="flex items-center gap-2 border border-border rounded-lg p-2">
                 <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
                 <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
-                  {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Replace className="h-4 w-4 mr-1" />}
-                  Confirmer
+                  {replacing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Replace className="h-4 w-4 me-1" />}
+                  {t("ged:document.confirm")}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
-                  ✕
+                <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }} aria-label={t("ged:document.cancel")}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -304,28 +291,28 @@ const DocumentGED = ({
               <div className="border-t pt-4 space-y-3">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <Upload className="h-4 w-4 text-primary" />
-                  Ajouter / remplacer un document
+                  {t("ged:upload.section_title")}
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  Si un document actif existe déjà pour le type sélectionné, il sera automatiquement remplacé (versionnage).
+                  {t("ged:upload.section_help")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs">Type de document</Label>
+                    <Label className="text-xs">{t("ged:upload.type_label")}</Label>
                     <Select value={uploadType} onValueChange={setUploadType}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {documentTypes.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>
-                            {t.label}
-                            {activeTypes.has(t.value) && " (remplacement)"}
+                        {documentTypes.map((dt) => (
+                          <SelectItem key={dt.value} value={dt.value}>
+                            {dt.label}
+                            {activeTypes.has(dt.value) && t("ged:document.replacement_suffix")}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Fichier</Label>
+                    <Label className="text-xs">{t("ged:upload.file_label")}</Label>
                     <Input
                       type="file"
                       onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
@@ -346,11 +333,11 @@ const DocumentGED = ({
                   className="w-full sm:w-auto"
                 >
                   {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin me-2" />
                   ) : (
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Upload className="h-4 w-4 me-2" />
                   )}
-                  Uploader
+                  {t("ged:upload.submit")}
                 </Button>
               </div>
             )}
