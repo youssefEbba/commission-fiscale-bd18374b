@@ -15,14 +15,14 @@ import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import { tRole } from "@/i18n/enums";
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: React.ElementType;
   roles?: AppRole[];
 }
 
 interface NavGroup {
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
   roles?: AppRole[];
   children: NavItem[];
@@ -35,60 +35,52 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 }
 
 const NAV_ENTRIES: NavEntry[] = [
-  // Tous les rôles voient le tableau de bord
-  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
-  // Conventions (= Projets) : AC crée, DGB valide
-  { label: "Conventions / Projets", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  // Marchés : AC crée, délégués et admin consultent
-  { label: "Attributions / Marchés", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  // Demandes groupées : Correction et Mise en place
+  { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { labelKey: "conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+  { labelKey: "marches", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
   {
-    label: "Demandes",
+    labelKey: "demandes",
     icon: FileText,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      { label: "Correction", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Mise en place CI", href: "/dashboard/mise-en-place", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "demandes_correction", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "demandes_mise_en_place", href: "/dashboard/mise-en-place", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
-  // Représentants : AC gère ses UPM/UEP
-  { label: "Représentants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
-  // P3 (Certificat) : suivi des certificats ouverts
-  { label: "Certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-  // P4 (Douane) : ENT soumet, DGD contrôle, DGTCP impute | P5 (Intérieur) : ENT soumet, DGTCP valide, DGI consulte
-  { label: "Utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
-  // Simulation : Entreprise uniquement
-  { label: "Simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
-  { label: "Reporting", href: "/dashboard/reporting", icon: PieChart },
+  { labelKey: "representants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
+  { labelKey: "certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
+  { labelKey: "simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
+  { labelKey: "reporting", href: "/dashboard/reporting", icon: PieChart },
   {
-    label: "Opérations",
+    labelKey: "operations",
     icon: ArrowRightLeft,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      { label: "Modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Sous-traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { label: "Clôture & Reporting", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
   {
-    label: "GED",
+    labelKey: "ged",
     icon: FolderOpen,
     roles: ["ADMIN_SI"],
     children: [
-      { label: "Configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
-      { label: "Dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI"] },
+      { labelKey: "ged_configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
+      { labelKey: "ged_dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI"] },
     ],
   },
   {
-    label: "Paramétrage",
+    labelKey: "parametrage",
     icon: Settings,
     roles: ["ADMIN_SI"],
     children: [
-      { label: "Utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
-      { label: "Rôles & Permissions", href: "/dashboard/roles", icon: Tag },
-      { label: "Référentiel Taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
-      { label: "Journal d'audit", href: "/dashboard/audit", icon: BarChart3 },
+      { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
+      { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag },
+      { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
+      { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3 },
     ],
   },
 ];
