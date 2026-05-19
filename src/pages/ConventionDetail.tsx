@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { ArrowLeft, FileText, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutConvention } from "@/i18n/enums";
+import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 
 const STATUT_COLORS: Record<string, string> = {
@@ -171,7 +171,7 @@ const ConventionDetail = () => {
         onOpenChange={setGedOpen}
         title={t("conventions:docs.modal_title", { ref: conv.reference || `#${conv.id}` })}
         dossierId={conv.id}
-        documentTypes={CONVENTION_DOCUMENT_TYPES}
+        documentTypes={CONVENTION_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={canManage}

@@ -839,11 +839,12 @@ const Conventions = () => {
                     {(gedRequirements.length > 0
                       ? gedRequirements
                           .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
-                          .map(r => ({ value: r.typeDocument }))
-                      : CONVENTION_DOCUMENT_TYPES.map(d => ({ value: d.value }))
-                    ).map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{tTypeDocument(opt.value)}</SelectItem>
+                          .map(r => r.typeDocument as string)
+                      : (CONVENTION_DOCUMENT_TYPES as readonly string[])
+                    ).map((value) => (
+                      <SelectItem key={value} value={value}>{tTypeDocument(value)}</SelectItem>
                     ))}
+
                   </SelectContent>
                 </Select>
                 <Input
@@ -988,9 +989,10 @@ const Conventions = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {CONVENTION_DOCUMENT_TYPES.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>{tTypeDocument(opt.value)}</SelectItem>
+                        {CONVENTION_DOCUMENT_TYPES.map((value) => (
+                          <SelectItem key={value} value={value}>{tTypeDocument(value)}</SelectItem>
                         ))}
+
                       </SelectContent>
                     </Select>
                     <Input

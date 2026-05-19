@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutMarche } from "@/i18n/enums";
+import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 
 const STATUT_COLORS: Record<string, string> = {
@@ -208,7 +208,7 @@ const MarcheDetail = () => {
         onOpenChange={setGedOpen}
         title={t("marches:ged.title", { ref: marche.numeroMarche || `#${marche.id}` })}
         dossierId={marche.id}
-        documentTypes={MARCHE_DOCUMENT_TYPES}
+        documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={canManage}

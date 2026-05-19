@@ -25,7 +25,7 @@ import { CreateDelegueRequest } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutMarche } from "@/i18n/enums";
+import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount } from "@/i18n/format";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
@@ -579,7 +579,7 @@ const Marches = () => {
         onOpenChange={setGedOpen}
         title={t("marches:ged.title", { ref: gedMarche?.numeroMarche || `#${gedMarche?.id}` })}
         dossierId={gedMarche?.id || null}
-        documentTypes={MARCHE_DOCUMENT_TYPES}
+        documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={gedDocs}
         loading={gedLoading}
         canUpload={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}

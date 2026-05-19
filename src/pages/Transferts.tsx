@@ -143,11 +143,11 @@ const Transferts = () => {
     if (!selectedCert || montantAuto <= 0) {
       toast({ title: t("common:error", { defaultValue: "Erreur" }), description: t("transferts:toasts.no_amount_err"), variant: "destructive" }); return;
     }
-    const missing = TRANSFERT_DOCUMENT_TYPES.filter(d => !createFiles[d.value]);
+    const missing = TRANSFERT_DOCUMENT_TYPES.filter(d => !createFiles[d]);
     if (missing.length > 0) {
       toast({
         title: t("transferts:toasts.missing_pieces_title"),
-        description: t("transferts:toasts.missing_pieces", { list: missing.map(m => tTypeDocument(m.value) || m.label).join(", ") }),
+        description: t("transferts:toasts.missing_pieces", { list: missing.map(m => tTypeDocument(m)).join(", ") }),
         variant: "destructive",
       });
       return;
@@ -161,13 +161,14 @@ const Transferts = () => {
       });
       const failures: string[] = [];
       for (const d of TRANSFERT_DOCUMENT_TYPES) {
-        const file = createFiles[d.value];
+        const file = createFiles[d];
         if (!file) continue;
-        try { await transfertCreditApi.uploadDocument(created.id, d.value, file); }
+        try { await transfertCreditApi.uploadDocument(created.id, d, file); }
         catch (e: any) {
-          console.error(`[Transfert #${created.id}] Upload ${d.value} failed:`, e);
-          failures.push(`${tTypeDocument(d.value) || d.label} : ${e?.message || "—"}`);
+          console.error(`[Transfert #${created.id}] Upload ${d} failed:`, e);
+          failures.push(`${tTypeDocument(d)} : ${e?.message || "—"}`);
         }
+
       }
       if (failures.length > 0) {
         toast({ title: t("transferts:toasts.create_partial_title"), description: failures.join(" • "), variant: "destructive" });
@@ -517,15 +518,16 @@ const Transferts = () => {
               <Label>{t("transferts:rejet_temp.pieces_label")} <span className="text-destructive">*</span></Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
                 {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                  <div key={d.value} className="flex items-center gap-2">
+                  <div key={d} className="flex items-center gap-2">
                     <Checkbox
-                      id={`rt-${d.value}`}
-                      checked={rejetDocs.includes(d.value)}
-                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d.value] : prev.filter(x => x !== d.value))}
+                      id={`rt-${d}`}
+                      checked={rejetDocs.includes(d)}
+                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d] : prev.filter(x => x !== d))}
                     />
-                    <label htmlFor={`rt-${d.value}`} className="text-sm cursor-pointer">{tTypeDocument(d.value) || d.label}</label>
+                    <label htmlFor={`rt-${d}`} className="text-sm cursor-pointer">{tTypeDocument(d)}</label>
                   </div>
                 ))}
+
               </div>
             </div>
           </div>
@@ -640,18 +642,19 @@ const Transferts = () => {
                 <p className="text-xs text-muted-foreground mt-1">{t("transferts:create.pieces_help")}</p>
               </div>
               {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                <div key={d.value} className="space-y-1">
-                  <Label className="text-xs">{tTypeDocument(d.value) || d.label} <span className="text-destructive">*</span></Label>
+                <div key={d} className="space-y-1">
+                  <Label className="text-xs">{tTypeDocument(d)} <span className="text-destructive">*</span></Label>
                   <Input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => setCreateFiles({ ...createFiles, [d.value]: e.target.files?.[0] || null })}
+                    onChange={(e) => setCreateFiles({ ...createFiles, [d]: e.target.files?.[0] || null })}
                   />
-                  {createFiles[d.value] && (
-                    <p className="text-xs text-emerald-700 truncate">{createFiles[d.value]!.name}</p>
+                  {createFiles[d] && (
+                    <p className="text-xs text-emerald-700 truncate">{createFiles[d]!.name}</p>
                   )}
                 </div>
               ))}
+
             </div>
           </div>
           <DialogFooter>
@@ -670,7 +673,7 @@ const Transferts = () => {
         onOpenChange={() => setDocDialog(null)}
         title={t("transferts:documents.dialog_title", { id: docDialog?.id })}
         dossierId={docDialog?.id ?? null}
-        documentTypes={TRANSFERT_DOCUMENT_TYPES}
+        documentTypes={TRANSFERT_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={docDialog ? canUploadDocs(docDialog) : false}

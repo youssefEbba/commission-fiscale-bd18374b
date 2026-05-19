@@ -1105,11 +1105,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                       </SelectTrigger>
                                       <SelectContent>
                                         {(convGedReqs.length > 0
-                                          ? convGedReqs.map(r => ({ value: r.typeDocument, label: tTypeDocument(r.typeDocument) }))
-                                          : CONVENTION_DOCUMENT_TYPES
+                                          ? convGedReqs.map(r => ({ value: r.typeDocument as string, label: tTypeDocument(r.typeDocument) }))
+                                          : CONVENTION_DOCUMENT_TYPES.map(v => ({ value: v as string, label: tTypeDocument(v) }))
                                         ).map(dt => (
                                           <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                                         ))}
+
                                       </SelectContent>
                                     </Select>
                                     <Input type="file" multiple className="flex-1 text-xs" onChange={e => {

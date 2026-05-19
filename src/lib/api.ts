@@ -420,12 +420,14 @@ export type TypeDocumentConvention =
   | "ACCORD_FINANCEMENT"
   | "AUTRE";
 
-export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: string }[] = [
-  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
-  { value: "AVENANT", label: "Avenant" },
-  { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
-  { value: "AUTRE", label: "Autre document" },
-];
+/**
+ * Codes des types de documents Convention.
+ * Libellés résolus via `tTypeDocument(code)` côté UI (cf. `enums.type_document.*`).
+ */
+export const CONVENTION_DOCUMENT_TYPES: readonly TypeDocumentConvention[] = [
+  "CONVENTION_CONTRAT", "AVENANT", "ACCORD_FINANCEMENT", "AUTRE",
+] as const;
+
 
 export const conventionApi = {
   /** Liste avec recherche optionnelle. `q` = recherche sur référence / intitulé / projectReference. */
@@ -791,12 +793,14 @@ export type TypeDocumentMarche =
   | "CONTRAT_SIGNE"
   | "AUTRE";
 
-export const MARCHE_DOCUMENT_TYPES: { value: TypeDocumentMarche; label: string }[] = [
-  { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
-  { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
-  { value: "CONTRAT_SIGNE", label: "Contrat signé" },
-  { value: "AUTRE", label: "Autre document" },
-];
+/**
+ * Codes des types de documents Marché.
+ * Libellés résolus via `tTypeDocument(code)` côté UI.
+ */
+export const MARCHE_DOCUMENT_TYPES: readonly TypeDocumentMarche[] = [
+  "PV_ADJUDICATION", "AVIS_ATTRIBUTION", "CONTRAT_SIGNE", "AUTRE",
+] as const;
+
 
 export const marcheApi = {
   /** Liste paginée. `q` = recherche sur numéro de marché et intitulé. */
@@ -1571,11 +1575,14 @@ export interface DocumentTransfertCreditDto {
 
 export type TypeDocumentTransfert = "DEMANDE_MOTIVEE_TRANSFERT" | "DECLARATION_CLOTURE_DOUANE" | "JUSTIFICATIFS_CLOTURE_DOUANE";
 
-export const TRANSFERT_DOCUMENT_TYPES: { value: TypeDocumentTransfert; label: string }[] = [
-  { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée" },
-  { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
-  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
-];
+/**
+ * Codes des types de documents Transfert de crédit.
+ * Libellés résolus via `tTypeDocument(code)` côté UI.
+ */
+export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
+  "DEMANDE_MOTIVEE_TRANSFERT", "DECLARATION_CLOTURE_DOUANE", "JUSTIFICATIFS_CLOTURE_DOUANE",
+] as const;
+
 
 export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
   DEMANDE: "Demandé",
