@@ -84,8 +84,12 @@
   "statut_convention": {
     "BROUILLON": "Brouillon",
     "EN_ATTENTE": "En attente",
+    "VALIDE": "Validée",
     "VALIDEE": "Validée",
+    "REJETE": "Rejetée",
     "REJETEE": "Rejetée",
+    "ANNULE": "Annulée",
+    "ANNULEE": "Annulée",
     "CLOTUREE": "Clôturée"
   },
   "statut_marche": {
@@ -116,6 +120,10 @@
   },
   "type_document": {
     "CONVENTION": "Convention",
+    "CONVENTION_CONTRAT": "Convention / Contrat",
+    "AVENANT": "Avenant",
+    "ACCORD_FINANCEMENT": "Accord de financement",
+    "CONVENTION_JOIGNED_DOCUMENT": "Document de convention fusionné",
     "MARCHE": "Marché",
     "FACTURE": "Facture",
     "DECLARATION": "Déclaration",
