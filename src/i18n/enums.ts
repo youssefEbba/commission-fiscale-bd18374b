@@ -34,6 +34,7 @@ export const tTypeLigneTaxe = (v?: string | null) => tEnum("type_ligne_taxe", v 
 export const tMotifCloture = (v?: string | null) => tEnum("motif_cloture", v ?? undefined);
 export const tTypeOperationCloture = (v?: string | null) => tEnum("type_operation_cloture", v ?? undefined);
 export const tReclamationStatut = (v?: string | null) => tEnum("reclamation_statut", v ?? undefined);
+export const tTypeProjet = (v?: string | null) => tEnum("type_projet", v ?? undefined);
 
 /** Libellé traduit d'une notification (namespace `notifications.types.<TYPE>`). */
 export const tNotificationType = (v?: string | null) => {
