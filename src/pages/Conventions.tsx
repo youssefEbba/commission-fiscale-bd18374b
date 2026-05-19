@@ -563,19 +563,19 @@ const Conventions = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              Conventions
+              {t("conventions:list.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Gestion des conventions de financement
+              {t("conventions:list.subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => fetchConventions(search.trim() || undefined)} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("conventions:list.refresh")}
             </Button>
             {(isAC || isAdmin) && (
               <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle convention
+                <Plus className="h-4 w-4 me-2" /> {t("conventions:list.new")}
               </Button>
             )}
           </div>
@@ -583,18 +583,18 @@ const Conventions = () => {
 
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher (réf., intitulé, projet, bailleur)..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder={t("conventions:list.search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48">
-              <Filter className="h-4 w-4 mr-2" />
+              <Filter className="h-4 w-4 me-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(CONVENTION_STATUT_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem value="ALL">{t("conventions:list.all_statuses")}</SelectItem>
+              {Object.keys(CONVENTION_STATUT_LABELS).map((k) => (
+                <SelectItem key={k} value={k}>{tStatutConvention(k)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -609,18 +609,18 @@ const Conventions = () => {
                 <Table className="min-w-[600px] [&_th]:h-10 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2">
                    <TableHeader>
                     <TableRow>
-                      <TableHead>Référence</TableHead>
-                      <TableHead>Intitulé</TableHead>
-                      <TableHead>Bailleur</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("conventions:columns.reference")}</TableHead>
+                      <TableHead>{t("conventions:columns.intitule")}</TableHead>
+                      <TableHead>{t("conventions:columns.bailleur")}</TableHead>
+                      <TableHead>{t("conventions:columns.statut")}</TableHead>
+                      <TableHead className="text-end">{t("conventions:columns.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginated.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                          Aucune convention trouvée
+                          {t("conventions:list.empty")}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -631,10 +631,10 @@ const Conventions = () => {
                           <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleurNom || c.bailleur || "—"}</TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
-                              {CONVENTION_STATUT_LABELS[c.statut]}
+                              {tStatutConvention(c.statut)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 variant="outline"
@@ -642,7 +642,7 @@ const Conventions = () => {
                                 className="h-8"
                                 onClick={() => navigate(`/dashboard/conventions/${c.id}`)}
                               >
-                                <Eye className="h-4 w-4 mr-1" /> Voir
+                                <Eye className="h-4 w-4 me-1" /> {t("conventions:actions.view")}
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -652,16 +652,16 @@ const Conventions = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => openDocuments(c)}>
-                                    <Paperclip className="h-4 w-4 mr-2" /> Documents
+                                    <Paperclip className="h-4 w-4 me-2" /> {t("conventions:actions.documents")}
                                   </DropdownMenuItem>
                                   {(isDGB || isDGI) && c.statut === "EN_ATTENTE" && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleStatutChange(c.id, "VALIDE")}>
-                                        <ShieldCheck className="h-4 w-4 mr-2 text-green-600" /> Valider
+                                        <ShieldCheck className="h-4 w-4 me-2 text-green-600" /> {t("conventions:actions.validate")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => openReject(c)}>
-                                        <ShieldX className="h-4 w-4 mr-2 text-destructive" /> Rejeter
+                                        <ShieldX className="h-4 w-4 me-2 text-destructive" /> {t("conventions:actions.reject")}
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -669,10 +669,10 @@ const Conventions = () => {
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => openEdit(c)}>
-                                        <Edit className="h-4 w-4 mr-2" /> Modifier
+                                        <Edit className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
-                                        <Ban className="h-4 w-4 mr-2" /> Annuler la convention
+                                        <Ban className="h-4 w-4 me-2" /> {t("conventions:actions.cancel")}
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -688,12 +688,12 @@ const Conventions = () => {
                 {filtered.length > 0 && (
                   <div className="flex items-center justify-between gap-2 px-3 py-2 border-t text-sm">
                     <span className="text-muted-foreground">
-                      {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length}
+                      {t("conventions:list.pagination.range", { from: (currentPage - 1) * PAGE_SIZE + 1, to: Math.min(currentPage * PAGE_SIZE, filtered.length), total: filtered.length })}
                     </span>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Précédent</Button>
-                      <span className="text-muted-foreground">Page {currentPage} / {totalPages}</span>
-                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Suivant</Button>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>{t("conventions:list.pagination.previous")}</Button>
+                      <span className="text-muted-foreground">{t("conventions:list.pagination.page", { current: currentPage, total: totalPages })}</span>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t("conventions:list.pagination.next")}</Button>
                     </div>
                   </div>
                 )}
