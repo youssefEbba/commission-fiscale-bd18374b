@@ -1107,7 +1107,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         {(convGedReqs.length > 0
                                           ? convGedReqs.map(r => ({ value: r.typeDocument, label: tTypeDocument(r.typeDocument) }))
                                           : CONVENTION_DOCUMENT_TYPES
-                                        ).map(t => (
+                                        ).map(dt => (
                                           <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                                         ))}
                                       </SelectContent>
