@@ -673,7 +673,7 @@ const Transferts = () => {
         onOpenChange={() => setDocDialog(null)}
         title={t("transferts:documents.dialog_title", { id: docDialog?.id })}
         dossierId={docDialog?.id ?? null}
-        documentTypes={TRANSFERT_DOCUMENT_TYPES}
+        documentTypes={TRANSFERT_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={docDialog ? canUploadDocs(docDialog) : false}
