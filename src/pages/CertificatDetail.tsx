@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
 import {
-  certificatCreditApi, CertificatCreditDto, CERTIFICAT_STATUT_LABELS, CertificatStatut,
-  utilisationCreditApi, UtilisationCreditDto, UTILISATION_STATUT_LABELS, utilisationStatutLabel, UtilisationStatut,
-  documentRequirementApi, DocumentRequirementDto, DocumentDto, TvaDeductibleStockDto,
+  certificatCreditApi, CertificatCreditDto, CertificatStatut,
+  utilisationCreditApi, UtilisationCreditDto, UtilisationStatut,
+  documentRequirementApi, DocumentDto, TvaDeductibleStockDto,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, Ship, TrendingUp, TrendingDown, CheckCircle2, XCircle, Info } from "lucide-react";
+import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, CheckCircle2, XCircle, Info } from "lucide-react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource } from "@/i18n/enums";
+import { formatAmount, formatDate } from "@/i18n/format";
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -52,6 +56,7 @@ const STATUT_COLORS_UTIL: Record<UtilisationStatut, string> = {
 };
 
 const CertificatDetail = () => {
+  const { t } = useTranslation(["certificats", "common"]);
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -69,6 +74,9 @@ const CertificatDetail = () => {
 
   const role = (user as any)?.role;
   const canUpload = role === "ENTREPRISE" || role === "ADMIN_SI" || role === "DGTCP";
+
+  const certRef = certificat?.numero || certificat?.reference || (certificat ? `#${certificat.id}` : "");
+  usePageTitle("certificats:detail.title", { ref: certRef });
 
   useEffect(() => {
     if (!id) return;
@@ -93,7 +101,7 @@ const CertificatDetail = () => {
           // ignore fallback errors
         }
 
-        throw new Error("Certificat introuvable");
+        throw new Error(t("certificats:detail.not_found"));
       }
     };
 
@@ -130,24 +138,23 @@ const CertificatDetail = () => {
         setCertificat(null);
         setUtilisations([]);
         setTvaStock([]);
-        toast({ title: "Erreur", description: "Impossible de charger le certificat", variant: "destructive" });
+        toast({ title: t("common:states.error"), description: t("certificats:detail.load_error"), variant: "destructive" });
       })
       .finally(() => setLoading(false));
 
     // Load GED document requirements
     documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI")
       .then((reqs) => {
-        setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: formatDocLabel(r.typeDocument) })));
+        setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: tTypeDocument(r.typeDocument) })));
       })
       .catch(() => {
-        // Fallback document types
         setGedDocTypes([
-          { value: "CERTIFICAT_CREDIT", label: "Certificat de crédit" },
-          { value: "DECISION_COMMISSION", label: "Décision de la commission" },
-          { value: "AUTRE", label: "Autre" },
+          { value: "CERTIFICAT_CREDIT", label: tTypeDocument("CERTIFICAT_CREDIT") },
+          { value: "DECISION_COMMISSION", label: tTypeDocument("DECISION_COMMISSION") },
+          { value: "AUTRE", label: tTypeDocument("AUTRE") },
         ]);
       });
-  }, [id, role, toast, user?.entrepriseId]);
+  }, [id, role, toast, user?.entrepriseId, t]);
 
   const loadGedDocs = async (certId: number) => {
     setGedLoading(true);
@@ -197,7 +204,7 @@ const CertificatDetail = () => {
   if (!certificat) {
     return (
       <DashboardLayout>
-        <div className="text-center py-24 text-muted-foreground">Certificat introuvable</div>
+        <div className="text-center py-24 text-muted-foreground">{t("certificats:detail.not_found")}</div>
       </DashboardLayout>
     );
   }
@@ -210,17 +217,17 @@ const CertificatDetail = () => {
         {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("certificats:detail.back")}
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Award className="h-6 w-6 text-primary" />
-              Certificat {c.numero || c.reference || `#${c.id}`}
+              {t("certificats:detail.title", { ref: certRef })}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Détail du certificat, documents GED et historique des utilisations</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("certificats:detail.subtitle")}</p>
           </div>
           <Button variant="outline" onClick={openGed}>
-            <FileText className="h-4 w-4 mr-2" /> Documents GED
+            <FileText className="h-4 w-4 me-2" /> {t("certificats:detail.ged_button")}
           </Button>
         </div>
 
@@ -233,7 +240,7 @@ const CertificatDetail = () => {
                   <Building2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Entreprise</p>
+                  <p className="text-xs text-muted-foreground">{t("certificats:detail.cards.entreprise")}</p>
                   <p className="font-semibold text-sm">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</p>
                 </div>
               </div>
@@ -247,9 +254,9 @@ const CertificatDetail = () => {
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Statut</p>
+                  <p className="text-xs text-muted-foreground">{t("certificats:detail.cards.statut")}</p>
                   <Badge className={`text-xs mt-1 ${STATUT_COLORS_CERT[c.statut]}`}>
-                    {CERTIFICAT_STATUT_LABELS[c.statut]}
+                    {tStatutCertificat(c.statut)}
                   </Badge>
                 </div>
               </div>
@@ -263,10 +270,8 @@ const CertificatDetail = () => {
                   <CalendarDays className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Date d'émission</p>
-                  <p className="font-semibold text-sm">
-                    {(c.dateEmission || c.dateCreation) ? new Date(c.dateEmission || c.dateCreation!).toLocaleDateString("fr-FR") : "—"}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("certificats:detail.cards.date_emission")}</p>
+                  <p className="font-semibold text-sm">{formatDate(c.dateEmission || c.dateCreation)}</p>
                 </div>
               </div>
             </CardContent>
@@ -279,10 +284,8 @@ const CertificatDetail = () => {
                   <CalendarDays className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Validité</p>
-                  <p className="font-semibold text-sm">
-                    {c.dateValidite ? new Date(c.dateValidite).toLocaleDateString("fr-FR") : "—"}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("certificats:detail.cards.validite")}</p>
+                  <p className="font-semibold text-sm">{formatDate(c.dateValidite)}</p>
                 </div>
               </div>
             </CardContent>
@@ -291,95 +294,100 @@ const CertificatDetail = () => {
 
         {/* Montants */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-s-4 border-s-blue-500">
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Montant Cordon (Douane) — enveloppe (b+d)</p>
-              <p className="text-xl font-bold">{(c.montantCordon ?? c.montantDouane ?? 0).toLocaleString("fr-FR")} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
-              <p className="text-[10px] text-muted-foreground mt-1">Valeur fixe — affichage</p>
+              <p className="text-xs text-muted-foreground">{t("certificats:detail.amounts.montant_cordon")}</p>
+              <p className="text-xl font-bold">{formatAmount(c.montantCordon ?? c.montantDouane)}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{t("certificats:detail.amounts.montant_cordon_note")}</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-indigo-500">
+          <Card className="border-s-4 border-s-indigo-500">
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Montant TVA Intérieure</p>
-              <p className="text-xl font-bold">{(c.montantTVAInterieure ?? c.montantInterieur ?? 0).toLocaleString("fr-FR")} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+              <p className="text-xs text-muted-foreground">{t("certificats:detail.amounts.montant_tva")}</p>
+              <p className="text-xl font-bold">{formatAmount(c.montantTVAInterieure ?? c.montantInterieur)}</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card className="border-s-4 border-s-emerald-500">
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Solde Cordon (droits)</p>
-              <p className="text-xl font-bold text-emerald-600">{(c.soldeCordon ?? 0).toLocaleString("fr-FR")} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+              <p className="text-xs text-muted-foreground">{t("certificats:detail.amounts.solde_cordon")}</p>
+              <p className="text-xl font-bold text-emerald-600">{formatAmount(c.soldeCordon)}</p>
               <p className="text-[10px] text-muted-foreground mt-1">
-                + TVA restante : <span className="font-semibold">{(c.tvaImportationDouane ?? 0).toLocaleString("fr-FR")}</span> = <span className="font-semibold">{((c.soldeCordon ?? 0) + (c.tvaImportationDouane ?? 0)).toLocaleString("fr-FR")}</span> MRU restant
+                {t("certificats:detail.amounts.solde_cordon_extra", {
+                  tva: formatAmount(c.tvaImportationDouane),
+                  total: formatAmount((c.soldeCordon ?? 0) + (c.tvaImportationDouane ?? 0)),
+                })}
               </p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-s-4 border-s-green-500">
             <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground">Solde TVA</p>
-              <p className="text-xl font-bold text-green-600">{(c.soldeTVA ?? 0).toLocaleString("fr-FR")} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+              <p className="text-xs text-muted-foreground">{t("certificats:detail.amounts.solde_tva")}</p>
+              <p className="text-xl font-bold text-green-600">{formatAmount(c.soldeTVA)}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Récapitulatif fiscal (a, b, d, e=b+d, f, g, h=g-d, total) — affiché si au moins un champ saisi */}
+        {/* Récapitulatif fiscal */}
         {(c.valeurDouaneFournitures != null || c.droitsEtTaxesDouaneHorsTva != null || c.tvaImportationDouane != null
           || c.montantMarcheHt != null || c.tvaCollecteeTravaux != null
           || c.creditExterieurRecap != null || c.creditInterieurNetRecap != null || c.totalCreditImpotRecap != null) && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" /> Récapitulatif fiscal
+                <Info className="h-5 w-5 text-primary" /> {t("certificats:detail.recap.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">Réf.</TableHead>
-                    <TableHead>Libellé</TableHead>
-                    <TableHead className="text-right">Montant (MRU)</TableHead>
+                    <TableHead className="w-16">{t("certificats:detail.recap.ref_col")}</TableHead>
+                    <TableHead>{t("certificats:detail.recap.label_col")}</TableHead>
+                    <TableHead className="text-end">{t("certificats:detail.recap.amount_col")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow><TableCell className="font-mono">a</TableCell><TableCell>Valeur en douane des fournitures</TableCell><TableCell className="text-right">{c.valeurDouaneFournitures?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
-                  <TableRow><TableCell className="font-mono">b</TableCell><TableCell>Droits et taxes douane (hors TVA)</TableCell><TableCell className="text-right">{c.droitsEtTaxesDouaneHorsTva?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
-                  <TableRow><TableCell className="font-mono">d</TableCell><TableCell>TVA d'importation (douane) — accord initial</TableCell><TableCell className="text-right">{(c.tvaImportationDouaneAccordee ?? c.tvaImportationDouane)?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">a</TableCell><TableCell>{t("certificats:detail.recap.a")}</TableCell><TableCell className="text-end">{formatAmount(c.valeurDouaneFournitures)}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">b</TableCell><TableCell>{t("certificats:detail.recap.b")}</TableCell><TableCell className="text-end">{formatAmount(c.droitsEtTaxesDouaneHorsTva)}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">d</TableCell><TableCell>{t("certificats:detail.recap.d")}</TableCell><TableCell className="text-end">{formatAmount(c.tvaImportationDouaneAccordee ?? c.tvaImportationDouane)}</TableCell></TableRow>
                   {c.tvaImportationDouaneAccordee != null && c.tvaImportationDouane != null && c.tvaImportationDouane !== c.tvaImportationDouaneAccordee && (
-                    <TableRow><TableCell className="font-mono text-muted-foreground">d′</TableCell><TableCell className="text-muted-foreground">TVA d'importation — restant après liquidations</TableCell><TableCell className="text-right text-muted-foreground">{c.tvaImportationDouane.toLocaleString("fr-FR")}</TableCell></TableRow>
+                    <TableRow><TableCell className="font-mono text-muted-foreground">d′</TableCell><TableCell className="text-muted-foreground">{t("certificats:detail.recap.dp")}</TableCell><TableCell className="text-end text-muted-foreground">{formatAmount(c.tvaImportationDouane)}</TableCell></TableRow>
                   )}
-                  <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">e</TableCell><TableCell className="font-semibold">Crédit extérieur (b + d accord)</TableCell><TableCell className="text-right font-bold">{c.creditExterieurRecap?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
-                  <TableRow><TableCell className="font-mono">f</TableCell><TableCell>Montant du marché HT</TableCell><TableCell className="text-right">{c.montantMarcheHt?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
-                  <TableRow><TableCell className="font-mono">g</TableCell><TableCell>TVA collectée travaux</TableCell><TableCell className="text-right">{c.tvaCollecteeTravaux?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
-                  <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">h</TableCell><TableCell className="font-semibold">Crédit intérieur net (g − d)</TableCell><TableCell className="text-right font-bold">{c.creditInterieurNetRecap?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
-                  <TableRow className="bg-primary/5"><TableCell className="font-mono font-bold">Σ</TableCell><TableCell className="font-bold text-primary">Total crédit d'impôt (e + h)</TableCell><TableCell className="text-right font-bold text-primary">{c.totalCreditImpotRecap?.toLocaleString("fr-FR") ?? "—"}</TableCell></TableRow>
+                  <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">e</TableCell><TableCell className="font-semibold">{t("certificats:detail.recap.e")}</TableCell><TableCell className="text-end font-bold">{formatAmount(c.creditExterieurRecap)}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">f</TableCell><TableCell>{t("certificats:detail.recap.f")}</TableCell><TableCell className="text-end">{formatAmount(c.montantMarcheHt)}</TableCell></TableRow>
+                  <TableRow><TableCell className="font-mono">g</TableCell><TableCell>{t("certificats:detail.recap.g")}</TableCell><TableCell className="text-end">{formatAmount(c.tvaCollecteeTravaux)}</TableCell></TableRow>
+                  <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">h</TableCell><TableCell className="font-semibold">{t("certificats:detail.recap.h")}</TableCell><TableCell className="text-end font-bold">{formatAmount(c.creditInterieurNetRecap)}</TableCell></TableRow>
+                  <TableRow className="bg-primary/5"><TableCell className="font-mono font-bold">Σ</TableCell><TableCell className="font-bold text-primary">{t("certificats:detail.recap.total")}</TableCell><TableCell className="text-end font-bold text-primary">{formatAmount(c.totalCreditImpotRecap)}</TableCell></TableRow>
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         )}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Informations complémentaires</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              {c.demandeCorrectionId && (
-                <div>
-                  <p className="text-muted-foreground">Demande correction</p>
-                  <p className="font-medium">#{c.demandeCorrectionId}</p>
-                </div>
-              )}
-              {c.marcheId && (
-                <div>
-                  <p className="text-muted-foreground">Marché</p>
-                  <p className="font-medium">#{c.marcheId}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {(c.demandeCorrectionId || c.marcheId) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("certificats:detail.info.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                {c.demandeCorrectionId && (
+                  <div>
+                    <p className="text-muted-foreground">{t("certificats:detail.info.demande_correction")}</p>
+                    <p className="font-medium">#{c.demandeCorrectionId}</p>
+                  </div>
+                )}
+                {c.marcheId && (
+                  <div>
+                    <p className="text-muted-foreground">{t("certificats:detail.info.marche")}</p>
+                    <p className="font-medium">#{c.marcheId}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Indicateurs tableau de bord */}
+        {/* Indicateurs */}
         {c.statut === "OUVERT" && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {(() => {
@@ -390,12 +398,12 @@ const CertificatDetail = () => {
               const totalReport = apurees.reduce((s, u) => s + (u.reportANouveau ?? 0), 0);
               return (
                 <>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Importations liquidées</p><p className="text-2xl font-bold">{liquidees.length}</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Apurements réalisés</p><p className="text-2xl font-bold">{apurees.length}</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Stock TVA déductible</p><p className="text-2xl font-bold text-blue-600">{totalStock.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Paiement cash cumulé</p><p className="text-2xl font-bold text-amber-600">{totalCash.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Reports à nouveau</p><p className="text-2xl font-bold text-emerald-600">{totalReport.toLocaleString("fr-FR")}</p><p className="text-xs text-muted-foreground">MRU</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">Utilisations en cours</p><p className="text-2xl font-bold">{utilisations.filter(u => !["LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut)).length}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.importations_liquidees")}</p><p className="text-2xl font-bold">{liquidees.length}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.apurements")}</p><p className="text-2xl font-bold">{apurees.length}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.stock_tva")}</p><p className="text-2xl font-bold text-blue-600">{formatAmount(totalStock)}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.paiement_cash")}</p><p className="text-2xl font-bold text-amber-600">{formatAmount(totalCash)}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.reports")}</p><p className="text-2xl font-bold text-emerald-600">{formatAmount(totalReport)}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.utilisations_cours")}</p><p className="text-2xl font-bold">{utilisations.filter(u => !["LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut)).length}</p></CardContent></Card>
                 </>
               );
             })()}
@@ -408,40 +416,40 @@ const CertificatDetail = () => {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Info className="h-5 w-5 text-primary" />
-                Stock TVA déductible — Total disponible : {tvaStock.reduce((s, t) => s + t.montantRestant, 0).toLocaleString("fr-FR")} MRU
+                {t("certificats:detail.stock.title", { total: formatAmount(tvaStock.reduce((s, t) => s + t.montantRestant, 0)) })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Origine</TableHead>
-                    <TableHead>Déclaration</TableHead>
-                    <TableHead>Montant initial</TableHead>
-                    <TableHead>Consommé</TableHead>
-                    <TableHead>Restant</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>État</TableHead>
+                    <TableHead>{t("certificats:detail.stock.source")}</TableHead>
+                    <TableHead>{t("certificats:detail.stock.declaration")}</TableHead>
+                    <TableHead>{t("certificats:detail.stock.montant_initial")}</TableHead>
+                    <TableHead>{t("certificats:detail.stock.consomme")}</TableHead>
+                    <TableHead>{t("certificats:detail.stock.restant")}</TableHead>
+                    <TableHead>{t("certificats:detail.stock.date")}</TableHead>
+                    <TableHead>{t("certificats:detail.stock.etat")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tvaStock.map(t => {
-                    const source = t.source ?? (t.utilisationDouaneId ? "UTILISATION_DOUANE" : "TRANSFERT_CREDIT");
+                  {tvaStock.map(stk => {
+                    const source = stk.source ?? (stk.utilisationDouaneId ? "UTILISATION_DOUANE" : "TRANSFERT_CREDIT");
                     const isTransfert = source === "TRANSFERT_CREDIT";
                     return (
-                    <TableRow key={t.id} className={t.epuise ? "opacity-50" : ""}>
-                      <TableCell>
-                        <Badge variant="outline" className={isTransfert ? "border-amber-500 text-amber-700 bg-amber-50" : "border-blue-500 text-blue-700 bg-blue-50"}>
-                          {isTransfert ? "Transfert crédit" : "Utilisation douane"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{t.numeroDeclaration || (t.utilisationDouaneId ? `Util #${t.utilisationDouaneId}` : "—")}</TableCell>
-                      <TableCell>{t.montantInitial.toLocaleString("fr-FR")} MRU</TableCell>
-                      <TableCell>{t.montantConsomme.toLocaleString("fr-FR")} MRU</TableCell>
-                      <TableCell className="font-bold">{t.montantRestant.toLocaleString("fr-FR")} MRU</TableCell>
-                      <TableCell>{t.dateCreation ? new Date(t.dateCreation).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                      <TableCell>{t.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
-                    </TableRow>
+                      <TableRow key={stk.id} className={stk.epuise ? "opacity-50" : ""}>
+                        <TableCell>
+                          <Badge variant="outline" className={isTransfert ? "border-amber-500 text-amber-700 bg-amber-50" : "border-blue-500 text-blue-700 bg-blue-50"}>
+                            {tTvaStockSource(source)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{stk.numeroDeclaration || (stk.utilisationDouaneId ? t("certificats:detail.stock.util_short", { id: stk.utilisationDouaneId }) : "—")}</TableCell>
+                        <TableCell>{formatAmount(stk.montantInitial)}</TableCell>
+                        <TableCell>{formatAmount(stk.montantConsomme)}</TableCell>
+                        <TableCell className="font-bold">{formatAmount(stk.montantRestant)}</TableCell>
+                        <TableCell>{formatDate(stk.dateCreation)}</TableCell>
+                        <TableCell>{stk.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                      </TableRow>
                     );
                   })}
                 </TableBody>
@@ -456,11 +464,11 @@ const CertificatDetail = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Landmark className="h-5 w-5 text-primary" />
-                Utilisations liées ({utilisations.length})
+                {t("certificats:detail.utilisations.title", { count: utilisations.length })}
               </CardTitle>
               {c.statut === "OUVERT" && (role === "ENTREPRISE" || role === "ADMIN_SI") && (
                 <Button size="sm" onClick={() => navigate("/dashboard/utilisations")}>
-                  <Plus className="h-4 w-4 mr-2" /> Nouvelle utilisation
+                  <Plus className="h-4 w-4 me-2" /> {t("certificats:detail.utilisations.new")}
                 </Button>
               )}
             </div>
@@ -469,13 +477,13 @@ const CertificatDetail = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Droits</TableHead>
-                  <TableHead>TVA</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.id")}</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.type")}</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.montant")}</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.droits")}</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.tva")}</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.date")}</TableHead>
+                  <TableHead>{t("certificats:detail.utilisations.statut")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -483,7 +491,7 @@ const CertificatDetail = () => {
                 {utilisations.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Aucune utilisation pour ce certificat
+                      {t("certificats:detail.utilisations.empty")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -492,28 +500,16 @@ const CertificatDetail = () => {
                       <TableCell className="font-medium">#{u.id}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {u.type === "DOUANIER" ? "Douane" : "TVA Int."}
+                          {u.type === "DOUANIER" ? t("certificats:detail.utilisations.type_douane") : t("certificats:detail.utilisations.type_tva")}
                         </Badge>
                       </TableCell>
-                      <TableCell>{u.montant?.toLocaleString("fr-FR") ?? "—"} MRU</TableCell>
-                      <TableCell>
-                        {u.type === "DOUANIER"
-                          ? `${u.montantDroits?.toLocaleString("fr-FR") ?? "—"} MRU`
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {u.type === "DOUANIER"
-                          ? `${u.montantTVADouane?.toLocaleString("fr-FR") ?? "—"} MRU`
-                          : `${u.montantTVAInterieure?.toLocaleString("fr-FR") ?? "—"} MRU`}
-                      </TableCell>
-                      <TableCell>
-                        {(u.dateLiquidation || u.dateCreation)
-                          ? new Date(u.dateLiquidation || u.dateCreation!).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
-                          : "—"}
-                      </TableCell>
+                      <TableCell>{formatAmount(u.montant)}</TableCell>
+                      <TableCell>{u.type === "DOUANIER" ? formatAmount(u.montantDroits) : "—"}</TableCell>
+                      <TableCell>{u.type === "DOUANIER" ? formatAmount(u.montantTVADouane) : formatAmount(u.montantTVAInterieure)}</TableCell>
+                      <TableCell>{formatDate(u.dateLiquidation || u.dateCreation)}</TableCell>
                       <TableCell>
                         <Badge className={`text-xs ${STATUT_COLORS_UTIL[u.statut]}`}>
-                          {utilisationStatutLabel(u.statut, u.type)}
+                          {tStatutUtilisation(u.statut)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -532,7 +528,7 @@ const CertificatDetail = () => {
       <DocumentGED
         open={showGed}
         onOpenChange={setShowGed}
-        title={`Documents GED — Certificat ${c.numero || c.reference || `#${c.id}`}`}
+        title={t("certificats:detail.ged_dialog_title", { ref: certRef })}
         dossierId={c.id}
         documentTypes={gedDocTypes}
         documents={gedDocs}
@@ -544,13 +540,5 @@ const CertificatDetail = () => {
     </DashboardLayout>
   );
 };
-
-function formatDocLabel(type: string): string {
-  return type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace(/\bCi\b/g, "CI")
-    .replace(/\bTva\b/g, "TVA");
-}
 
 export default CertificatDetail;

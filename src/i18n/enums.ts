@@ -30,6 +30,8 @@ export const tRejetTempStatus = (v?: string | null) => tEnum("rejet_temp_status"
 export const tTvaStockSource = (v?: string | null) => tEnum("tva_stock_source", v ?? undefined);
 export const tAffectationTaxe = (v?: string | null) => tEnum("affectation_taxe", v ?? undefined);
 export const tTypeLigneTaxe = (v?: string | null) => tEnum("type_ligne_taxe", v ?? undefined);
+export const tMotifCloture = (v?: string | null) => tEnum("motif_cloture", v ?? undefined);
+export const tTypeOperationCloture = (v?: string | null) => tEnum("type_operation_cloture", v ?? undefined);
 
 /** Libellé traduit d'une notification (namespace `notifications.types.<TYPE>`). */
 export const tNotificationType = (v?: string | null) => {
