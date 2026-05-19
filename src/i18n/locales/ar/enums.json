@@ -120,6 +120,12 @@
     "REJETE": "مرفوض",
     "REJETEE": "مرفوضة"
   },
+  "statut_sous_traitance": {
+    "DEMANDE": "مطلوبة",
+    "EN_COURS": "قيد المعالجة",
+    "AUTORISEE": "مرخَّصة",
+    "REFUSEE": "مرفوضة"
+  },
   "statut_modification": {
     "BROUILLON": "مسودة",
     "SOUMISE": "مقدَّمة",

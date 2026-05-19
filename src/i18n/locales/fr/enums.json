@@ -120,6 +120,12 @@
     "REJETE": "Rejeté",
     "REJETEE": "Rejeté"
   },
+  "statut_sous_traitance": {
+    "DEMANDE": "Demandée",
+    "EN_COURS": "En cours",
+    "AUTORISEE": "Autorisée",
+    "REFUSEE": "Refusée"
+  },
   "statut_modification": {
     "BROUILLON": "Brouillon",
     "SOUMISE": "Soumise",

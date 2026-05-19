@@ -1,0 +1,105 @@
+{
+  "list": {
+    "title": "Sous-traitance",
+    "subtitle": "Gestion des autorisations de sous-traitance",
+    "search_placeholder": "Rechercher…",
+    "filter_all": "Tous les statuts",
+    "empty": "Aucune sous-traitance",
+    "columns": {
+      "id": "#",
+      "certificat": "Certificat",
+      "sous_traitant": "Sous-traitant",
+      "volumes": "Volumes",
+      "quantites": "Quantités",
+      "contrat_enregistre": "Contrat enregistré",
+      "statut": "Statut",
+      "date_autorisation": "Date autorisation",
+      "actions": "Actions"
+    },
+    "cert_fallback": "Cert #{{id}}",
+    "ent_fallback": "Ent. #{{id}}"
+  },
+  "actions": {
+    "new": "Nouvelle sous-traitance",
+    "refresh": "Actualiser",
+    "view": "Voir",
+    "documents": "Documents",
+    "authorize": "Autoriser",
+    "refuse": "Refuser",
+    "cancel": "Annuler",
+    "create_submit": "Créer et soumettre"
+  },
+  "common": {
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "detail": {
+    "title": "Sous-traitance #{{id}}",
+    "fields": {
+      "certificat": "Certificat",
+      "sous_traitant": "Sous-traitant",
+      "volumes": "Volumes",
+      "quantites": "Quantités",
+      "contrat_enregistre": "Contrat enregistré",
+      "statut": "Statut",
+      "date_autorisation": "Date autorisation"
+    }
+  },
+  "dialogs": {
+    "create": {
+      "title": "Nouvelle sous-traitance",
+      "certificat_label": "Certificat source (OUVERT) *",
+      "certificat_placeholder": "Sélectionner un certificat",
+      "certificat_search_placeholder": "Rechercher un certificat…",
+      "certificat_option_label": "{{ref}} — Solde : {{solde}}",
+      "entreprise_section": "Entreprise sous-traitante",
+      "select_existing": "Sélectionner existante",
+      "create_new": "Créer nouvelle",
+      "select_label": "Sélectionner une entreprise existante *",
+      "select_placeholder": "Choisir une entreprise",
+      "select_search_placeholder": "Rechercher (nom, NIF)…",
+      "nif_prefix": "NIF : {{nif}}",
+      "fields": {
+        "raison_sociale": "Raison sociale *",
+        "nif": "NIF *",
+        "adresse": "Adresse",
+        "situation_fiscale": "Situation fiscale",
+        "situation_placeholder": "Sélectionner",
+        "situation_reguliere": "Régulière",
+        "situation_non_reguliere": "Non régulière",
+        "nom_commercial": "Nom commercial",
+        "activite": "Activité",
+        "autre": "Autre",
+        "autre_placeholder": "Informations complémentaires (max 2000 car.)",
+        "volumes": "Volumes",
+        "quantites": "Quantités",
+        "contrat_enregistre": "Contrat enregistré"
+      },
+      "documents_section": "Documents requis",
+      "doc_contrat_label": "Contrat de sous-traitance enregistré *",
+      "doc_lettre_label": "Lettre de sous-traitance *"
+    },
+    "documents": {
+      "title": "Documents — Sous-traitance #{{id}}"
+    }
+  },
+  "toast": {
+    "load_error_title": "Erreur",
+    "load_error_desc": "Impossible de charger les sous-traitances",
+    "error_title": "Erreur",
+    "warn_title": "Attention",
+    "permissions_title": "Permissions insuffisantes",
+    "permissions_desc": "Votre profil ne peut pas lister les entreprises. Demandez l'ajout de la permission entreprise.list au rôle ENTREPRISE pour sélectionner une entreprise existante.",
+    "certs_load_error": "Impossible de charger les certificats : {{error}}",
+    "ents_load_error": "Impossible de charger les entreprises : {{error}}",
+    "unknown_error": "Erreur inconnue",
+    "select_certificat": "Veuillez sélectionner un certificat",
+    "select_entreprise": "Veuillez sélectionner une entreprise",
+    "fill_raison_nif": "Veuillez remplir la raison sociale et le NIF",
+    "docs_upload_error": "Sous-traitance créée mais erreur lors de l'upload des documents : {{error}}",
+    "success_title": "Succès",
+    "created": "Sous-traitance créée et demande soumise",
+    "authorized": "Sous-traitance autorisée",
+    "refused": "Sous-traitance refusée"
+  }
+}
