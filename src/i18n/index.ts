@@ -98,6 +98,7 @@ const resources = {
     transferts: frTransferts,
     cloture: frCloture,
     modifications: frModifications,
+    mise_en_place: frMiseEnPlace,
     ged: frGed,
     users: frUsers,
     roles: frRoles,
