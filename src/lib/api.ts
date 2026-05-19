@@ -1575,11 +1575,14 @@ export interface DocumentTransfertCreditDto {
 
 export type TypeDocumentTransfert = "DEMANDE_MOTIVEE_TRANSFERT" | "DECLARATION_CLOTURE_DOUANE" | "JUSTIFICATIFS_CLOTURE_DOUANE";
 
-export const TRANSFERT_DOCUMENT_TYPES: { value: TypeDocumentTransfert; label: string }[] = [
-  { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée" },
-  { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
-  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
-];
+/**
+ * Codes des types de documents Transfert de crédit.
+ * Libellés résolus via `tTypeDocument(code)` côté UI.
+ */
+export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
+  "DEMANDE_MOTIVEE_TRANSFERT", "DECLARATION_CLOTURE_DOUANE", "JUSTIFICATIFS_CLOTURE_DOUANE",
+] as const;
+
 
 export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
   DEMANDE: "Demandé",
