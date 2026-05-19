@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
-  avenantApi, AvenantDto, StatutAvenant, AVENANT_STATUT_LABELS,
-  AVENANT_DOCUMENT_TYPES, TypeDocumentAvenant, DocumentAvenantDto,
+  avenantApi, AvenantDto, StatutAvenant,
+  TypeDocumentAvenant, DocumentAvenantDto,
   documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Settings, Search, RefreshCw, Loader2, Filter, FileText } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 import type { GEDDocumentType } from "@/components/ged/DocumentGED";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutAvenant, tTypeDocument } from "@/i18n/enums";
+import { formatDate } from "@/i18n/format";
 
 const STATUT_COLORS: Record<StatutAvenant, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -23,7 +27,23 @@ const STATUT_COLORS: Record<StatutAvenant, string> = {
   REJETE: "bg-red-100 text-red-800",
 };
 
+const AVENANT_DOC_TYPES: TypeDocumentAvenant[] = [
+  "NOTE_SERVICE",
+  "JUSTIFICATIONS_LEGALES",
+  "LETTRES_MOTIVEES",
+  "AVENANT_CONTRAT",
+  "LETTRES_AUTORITE_CONTRACTANTE",
+  "DETAIL_CORRECTIONS_NECESSAIRES",
+  "DOCUMENTS_OFFICIELS",
+  "DECISION_COMMISSION",
+  "AUTRE_DOCUMENT",
+];
+
+const STATUT_VALUES: StatutAvenant[] = ["EN_ATTENTE", "VALIDE", "REJETE"];
+
 const Modifications = () => {
+  const { t } = useTranslation();
+  usePageTitle("modifications:list.title");
   const { user } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
@@ -38,6 +58,9 @@ const Modifications = () => {
   const [docsLoading, setDocsLoading] = useState(false);
   const [gedDocTypes, setGedDocTypes] = useState<GEDDocumentType[]>([]);
 
+  const defaultDocTypes = (): GEDDocumentType[] =>
+    AVENANT_DOC_TYPES.map((v) => ({ value: v, label: tTypeDocument(v) }));
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -45,7 +68,11 @@ const Modifications = () => {
       // Avenants can only be accessed by ID via their document endpoints
       setData([]);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les avenants", variant: "destructive" });
+      toast({
+        title: t("modifications:toast.load_error_title"),
+        description: t("modifications:toast.load_error_desc"),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -57,12 +84,14 @@ const Modifications = () => {
     documentRequirementApi.getByProcessus("MODIFICATION_CI")
       .then((reqs: DocumentRequirementDto[]) => {
         if (reqs.length > 0) {
-          setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: r.description || r.typeDocument })));
+          // Backend description is a referential value — do not translate
+          setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: r.description || tTypeDocument(r.typeDocument) })));
         } else {
-          setGedDocTypes(AVENANT_DOCUMENT_TYPES);
+          setGedDocTypes(defaultDocTypes());
         }
       })
-      .catch(() => setGedDocTypes(AVENANT_DOCUMENT_TYPES));
+      .catch(() => setGedDocTypes(defaultDocTypes()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openDocs = async (id: number) => {
@@ -106,15 +135,16 @@ const Modifications = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Settings className="h-6 w-6 text-primary" />
-              Modifications / Avenants (P8)
+              {t("modifications:list.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Gestion des avenants et notes de service avec documents GED
+              {t("modifications:list.subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchData} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+            <Button variant="outline" onClick={fetchData} disabled={loading} aria-label={t("modifications:actions.refresh")}>
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} />
+              {t("modifications:actions.refresh")}
             </Button>
           </div>
         </div>
@@ -124,23 +154,23 @@ const Modifications = () => {
           <CardContent className="py-3">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher par description, certificat, marché…"
+                  placeholder={t("modifications:list.search_placeholder")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
+                  className="ps-10"
                 />
               </div>
               <Select value={filterStatut} onValueChange={setFilterStatut}>
                 <SelectTrigger className="w-48">
-                  <Filter className="h-4 w-4 mr-2" />
+                  <Filter className="h-4 w-4 me-2" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Tous les statuts</SelectItem>
-                  {Object.entries(AVENANT_STATUT_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  <SelectItem value="ALL">{t("modifications:list.filter_all")}</SelectItem>
+                  {STATUT_VALUES.map((k) => (
+                    <SelectItem key={k} value={k}>{tStatutAvenant(k)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -159,20 +189,20 @@ const Modifications = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Certificat</TableHead>
-                    <TableHead>Marché</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t("modifications:list.columns.id")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.description")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.certificat")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.marche")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.statut")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.date")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Aucun avenant trouvé
+                        {t("modifications:list.empty")}
                       </TableCell>
                     </TableRow>
                   ) : filtered.map((a) => (
@@ -182,14 +212,14 @@ const Modifications = () => {
                       <TableCell className="text-xs">{a.certificatNumero || "—"}</TableCell>
                       <TableCell className="text-xs">{a.marcheNumero || "—"}</TableCell>
                       <TableCell>
-                        <Badge className={STATUT_COLORS[a.statut]}>{AVENANT_STATUT_LABELS[a.statut]}</Badge>
+                        <Badge className={STATUT_COLORS[a.statut]}>{tStatutAvenant(a.statut)}</Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {a.dateCreation ? new Date(a.dateCreation).toLocaleDateString("fr-FR") : "—"}
+                        {a.dateCreation ? formatDate(a.dateCreation) : "—"}
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => openDocs(a.id)}>
-                          <FileText className="h-4 w-4 mr-1" /> Documents
+                        <Button variant="outline" size="sm" onClick={() => openDocs(a.id)} aria-label={t("modifications:actions.documents")}>
+                          <FileText className="h-4 w-4 me-1" /> {t("modifications:actions.documents")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -205,7 +235,7 @@ const Modifications = () => {
       <DocumentGED
         open={docDialog !== null}
         onOpenChange={() => setDocDialog(null)}
-        title={`Documents — Avenant #${docDialog}`}
+        title={t("modifications:dialogs.documents_title", { id: docDialog })}
         dossierId={docDialog}
         documentTypes={gedDocTypes}
         documents={docs}

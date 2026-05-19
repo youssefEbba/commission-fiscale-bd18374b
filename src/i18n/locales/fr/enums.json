@@ -164,7 +164,15 @@
     "TABLEAU_MODELE": "Tableau modèle (nature, valeur, classification)",
     "DAO_DQE": "DAO + DQE",
     "LISTE_ITEMS_EXCEL": "Liste items Excel (FR/AR)",
-    "CREDIT_EXTERIEUR": "Crédit Extérieur"
+    "CREDIT_EXTERIEUR": "Crédit Extérieur",
+    "NOTE_SERVICE": "Note de service",
+    "JUSTIFICATIONS_LEGALES": "Justifications légales",
+    "LETTRES_MOTIVEES": "Lettres motivées",
+    "AVENANT_CONTRAT": "Avenant au contrat",
+    "LETTRES_AUTORITE_CONTRACTANTE": "Lettres de l'autorité contractante",
+    "DETAIL_CORRECTIONS_NECESSAIRES": "Détail des corrections nécessaires",
+    "DOCUMENTS_OFFICIELS": "Documents officiels",
+    "AUTRE_DOCUMENT": "Autre document"
   },
   "type_utilisation": {
     "DOUANE": "Douane",

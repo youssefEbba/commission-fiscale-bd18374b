@@ -1,9 +1,30 @@
 {
   "list": {
-    "title": "التعديلات",
-    "subtitle": "التعديلات والملاحق",
-    "search_placeholder": "بحث…",
-    "empty": "لا توجد عناصر"
+    "title": "التعديلات / الملاحق (P8)",
+    "subtitle": "إدارة الملاحق ومذكرات الخدمة مع وثائق إدارة الوثائق الإلكترونية",
+    "search_placeholder": "ابحث بالوصف أو الشهادة أو الصفقة…",
+    "filter_all": "كل الحالات",
+    "empty": "لا يوجد ملحق",
+    "columns": {
+      "id": "المعرّف",
+      "description": "الوصف",
+      "certificat": "الشهادة",
+      "marche": "الصفقة",
+      "statut": "الحالة",
+      "date": "التاريخ",
+      "actions": "إجراءات"
+    }
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "documents": "الوثائق"
+  },
+  "dialogs": {
+    "documents_title": "وثائق الملحق رقم {{id}}"
+  },
+  "toast": {
+    "load_error_title": "خطأ",
+    "load_error_desc": "تعذّر تحميل الملاحق"
   },
   "detail": {
     "title": "التعديلات — التفاصيل"

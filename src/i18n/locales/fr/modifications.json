@@ -1,9 +1,30 @@
 {
   "list": {
-    "title": "Modifications",
-    "subtitle": "Modifications et avenants",
-    "search_placeholder": "Rechercher…",
-    "empty": "Aucun élément"
+    "title": "Modifications / Avenants (P8)",
+    "subtitle": "Gestion des avenants et notes de service avec documents GED",
+    "search_placeholder": "Rechercher par description, certificat, marché…",
+    "filter_all": "Tous les statuts",
+    "empty": "Aucun avenant trouvé",
+    "columns": {
+      "id": "ID",
+      "description": "Description",
+      "certificat": "Certificat",
+      "marche": "Marché",
+      "statut": "Statut",
+      "date": "Date",
+      "actions": "Actions"
+    }
+  },
+  "actions": {
+    "refresh": "Actualiser",
+    "documents": "Documents"
+  },
+  "dialogs": {
+    "documents_title": "Documents — Avenant #{{id}}"
+  },
+  "toast": {
+    "load_error_title": "Erreur",
+    "load_error_desc": "Impossible de charger les avenants"
   },
   "detail": {
     "title": "Modifications — Détail"
