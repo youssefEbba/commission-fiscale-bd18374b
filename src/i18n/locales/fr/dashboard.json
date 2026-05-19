@@ -1,0 +1,69 @@
+{
+  "page_title": "Tableau de bord",
+  "greeting": "Bonjour, {{name}}",
+  "welcome": "Bienvenue sur votre tableau de bord",
+  "stats": {
+    "demandes": "Demandes",
+    "certificats": "Certificats",
+    "utilisations": "Utilisations",
+    "utilisateurs": "Utilisateurs"
+  },
+  "sections": {
+    "quick_actions": "Actions rapides",
+    "recent_demandes": "Demandes récentes",
+    "recent_certificats": "Certificats récents",
+    "view_all": "Voir tout",
+    "no_pending_demandes": "Aucune demande en cours",
+    "no_pending_certificats": "Aucun certificat en cours"
+  },
+  "labels": {
+    "demande_default": "Demande #{{id}}",
+    "certificat_default": "Certificat #{{id}}"
+  },
+  "actions": {
+    "demande_correction": {
+      "label": "Nouvelle demande de correction",
+      "description": "Soumettre une correction d'offre fiscale"
+    },
+    "mes_certificats": {
+      "label": "Mes certificats",
+      "description": "Consulter vos certificats de crédit"
+    },
+    "utilisation_douane": {
+      "label": "Utilisation Douane",
+      "description": "Soumettre une utilisation douanière"
+    },
+    "utilisation_interieur": {
+      "label": "Utilisation Intérieur",
+      "description": "Soumettre une utilisation intérieure"
+    },
+    "dossiers_traiter": {
+      "label": "Dossiers à traiter",
+      "description": "Évaluer les corrections d'offre"
+    },
+    "validation_finale": {
+      "label": "Validation finale",
+      "description": "Valider et signer les dossiers"
+    },
+    "certificats_signer": {
+      "label": "Certificats à signer",
+      "description": "Certificats en attente de signature"
+    },
+    "transferts": {
+      "label": "Transferts",
+      "description": "Gérer les transferts de solde"
+    },
+    "cloture": {
+      "label": "Clôture & Reporting",
+      "description": "Clôture, archivage et rapports"
+    },
+    "utilisateurs": {
+      "label": "Utilisateurs",
+      "description": "Gérer les comptes et rôles"
+    },
+    "audit": {
+      "label": "Journal d'audit",
+      "description": "Consulter les logs d'activité"
+    }
+  }
+}

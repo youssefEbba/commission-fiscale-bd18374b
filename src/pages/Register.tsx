@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { UserPlus, Eye, EyeOff, Building2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
@@ -9,13 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-
-const ROLES = [
-  { value: "AUTORITE_CONTRACTANTE", label: "Autorité Contractante" },
-  { value: "ENTREPRISE", label: "Entreprise" },
-];
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
 const Register = () => {
+  const { t } = useTranslation("auth");
+  usePageTitle("auth:register.title");
+
+  const ROLES = [
+    { value: "AUTORITE_CONTRACTANTE", label: t("roles.AUTORITE_CONTRACTANTE") },
+    { value: "ENTREPRISE", label: t("roles.ENTREPRISE") },
+  ];
+
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -31,7 +37,6 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // New entreprise fields
   const [phoneError, setPhoneError] = useState("");
   const [newEntreprise, setNewEntreprise] = useState({
     raisonSociale: "",
@@ -44,7 +49,6 @@ const Register = () => {
     autre: "",
   });
 
-  // New AC fields
   const [newAC, setNewAC] = useState({
     nom: "",
     sigle: "",
@@ -53,12 +57,11 @@ const Register = () => {
     email: "",
   });
 
-
   const validatePhone = (phone: string) => {
     if (!phone) return "";
     const cleaned = phone.replace(/\s/g, "");
     if (!/^[234]\d{7}$/.test(cleaned)) {
-      return "Le téléphone doit commencer par 2, 3 ou 4 et contenir 8 chiffres";
+      return t("register.errors.phone_invalid");
     }
     return "";
   };
@@ -66,18 +69,17 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
-      toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
+      toast({ title: t("register.errors.title"), description: t("register.errors.passwords_dont_match"), variant: "destructive" });
       return;
     }
     if (form.password.length < 6) {
-      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
+      toast({ title: t("register.errors.title"), description: t("register.errors.password_too_short"), variant: "destructive" });
       return;
     }
-    // Validate phone numbers
     const entPhone = form.role === "ENTREPRISE" ? validatePhone(newEntreprise.telephone) : "";
     const acPhone = form.role === "AUTORITE_CONTRACTANTE" ? validatePhone(newAC.telephone) : "";
     if (entPhone || acPhone) {
-      toast({ title: "Erreur", description: entPhone || acPhone, variant: "destructive" });
+      toast({ title: t("register.errors.title"), description: entPhone || acPhone, variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -92,7 +94,7 @@ const Register = () => {
 
       if (form.role === "ENTREPRISE") {
         if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
-          toast({ title: "Erreur", description: "Raison sociale et NIF sont obligatoires", variant: "destructive" });
+          toast({ title: t("register.errors.title"), description: t("register.errors.entreprise_required"), variant: "destructive" });
           setLoading(false);
           return;
         }
@@ -107,7 +109,7 @@ const Register = () => {
 
       if (form.role === "AUTORITE_CONTRACTANTE") {
         if (!newAC.nom) {
-          toast({ title: "Erreur", description: "Le nom de l'Autorité Contractante est obligatoire", variant: "destructive" });
+          toast({ title: t("register.errors.title"), description: t("register.errors.ac_required"), variant: "destructive" });
           setLoading(false);
           return;
         }
@@ -120,12 +122,12 @@ const Register = () => {
 
       await authApi.register(registerData);
 
-      toast({ title: "Inscription réussie", description: "Votre compte a été créé. Veuillez attendre la validation par un administrateur avant de vous connecter." });
+      toast({ title: t("register.success_title"), description: t("register.success_description") });
       navigate("/login");
     } catch (err: unknown) {
       toast({
-        title: "Erreur d'inscription",
-        description: err instanceof Error ? err.message : "Impossible de créer le compte",
+        title: t("register.errors.register_failed_title"),
+        description: err instanceof Error ? err.message : t("register.errors.register_failed_default"),
         variant: "destructive",
       });
     } finally {
@@ -142,47 +144,48 @@ const Register = () => {
       <div className="w-full max-w-md space-y-8">
         <div className="flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            Accueil
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            {t("back_home")}
           </Link>
+          <LanguageSwitcher variant="compact" />
         </div>
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <img src={logo} alt="Commission Fiscale" className="h-12 w-12" />
-            <div className="text-left leading-tight">
-              <span className="block text-lg font-bold text-foreground">Commission Fiscale</span>
-              <span className="block text-xs font-medium text-accent tracking-wider uppercase">Mauritanie</span>
+            <img src={logo} alt={t("brand.name")} className="h-12 w-12" />
+            <div className="text-start leading-tight">
+              <span className="block text-lg font-bold text-foreground">{t("brand.name")}</span>
+              <span className="block text-xs font-medium text-accent tracking-wider uppercase">{t("brand.country")}</span>
             </div>
           </Link>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-8 shadow-lg">
-          <h1 className="text-2xl font-bold text-foreground text-center mb-2">Inscription</h1>
+          <h1 className="text-2xl font-bold text-foreground text-center mb-2">{t("register.title")}</h1>
           <p className="text-muted-foreground text-center text-sm mb-6">
-            Créez votre compte pour accéder à la plateforme
+            {t("register.subtitle")}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nomComplet">Nom complet</Label>
-              <Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} placeholder="Prénom et nom" required />
+              <Label htmlFor="nomComplet">{t("register.nom_complet")}</Label>
+              <Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} placeholder={t("register.nom_complet_placeholder")} required />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="votre@email.mr" required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title="Veuillez entrer une adresse email valide" />
+              <Label htmlFor="email">{t("register.email")}</Label>
+              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder={t("register.email_placeholder")} required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title={t("register.email_title")} />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reg-username">Nom d'utilisateur</Label>
-              <Input id="reg-username" value={form.username} onChange={(e) => update("username", e.target.value)} placeholder="Identifiant de connexion" required />
+              <Label htmlFor="reg-username">{t("register.username")}</Label>
+              <Input id="reg-username" value={form.username} onChange={(e) => update("username", e.target.value)} placeholder={t("register.username_placeholder")} required />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
+              <Label htmlFor="role">{t("register.role")}</Label>
               <Select value={form.role} onValueChange={(v) => update("role", v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez votre rôle" />
+                  <SelectValue placeholder={t("register.role_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ROLES.map((r) => (
@@ -196,43 +199,43 @@ const Register = () => {
               <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
                 <div className="flex items-center gap-2 mb-1">
                   <Building2 className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold">Informations de l'entreprise</Label>
+                  <Label className="text-sm font-semibold">{t("register.entreprise.title")}</Label>
                 </div>
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Raison sociale *</Label>
-                    <Input value={newEntreprise.raisonSociale} onChange={(e) => updateEntreprise("raisonSociale", e.target.value)} placeholder="Nom de l'entreprise" required />
+                    <Label className="text-xs">{t("register.entreprise.raison_sociale")}</Label>
+                    <Input value={newEntreprise.raisonSociale} onChange={(e) => updateEntreprise("raisonSociale", e.target.value)} placeholder={t("register.entreprise.raison_sociale_placeholder")} required />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Nom commercial</Label>
-                    <Input value={newEntreprise.nomCommercial} onChange={(e) => updateEntreprise("nomCommercial", e.target.value)} placeholder="Nom commercial (optionnel)" />
+                    <Label className="text-xs">{t("register.entreprise.nom_commercial")}</Label>
+                    <Input value={newEntreprise.nomCommercial} onChange={(e) => updateEntreprise("nomCommercial", e.target.value)} placeholder={t("register.entreprise.nom_commercial_placeholder")} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">NIF *</Label>
-                    <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder="Numéro d'identification fiscale" required />
+                    <Label className="text-xs">{t("register.entreprise.nif")}</Label>
+                    <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder={t("register.entreprise.nif_placeholder")} required />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Activité</Label>
-                    <Input value={newEntreprise.activite} onChange={(e) => updateEntreprise("activite", e.target.value)} placeholder="Secteur d'activité" />
+                    <Label className="text-xs">{t("register.entreprise.activite")}</Label>
+                    <Input value={newEntreprise.activite} onChange={(e) => updateEntreprise("activite", e.target.value)} placeholder={t("register.entreprise.activite_placeholder")} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Adresse</Label>
-                    <Input value={newEntreprise.adresse} onChange={(e) => updateEntreprise("adresse", e.target.value)} placeholder="Adresse" />
+                    <Label className="text-xs">{t("register.entreprise.adresse")}</Label>
+                    <Input value={newEntreprise.adresse} onChange={(e) => updateEntreprise("adresse", e.target.value)} placeholder={t("register.entreprise.adresse_placeholder")} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                     <Label className="text-xs">Téléphone</Label>
-                      <Input value={newEntreprise.telephone} onChange={(e) => { updateEntreprise("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder="2XXXXXXX" pattern="[234]\d{7}" title="8 chiffres, commence par 2, 3 ou 4" maxLength={8} />
+                      <Label className="text-xs">{t("register.entreprise.telephone")}</Label>
+                      <Input value={newEntreprise.telephone} onChange={(e) => { updateEntreprise("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder={t("register.entreprise.telephone_placeholder")} pattern="[234]\d{7}" title={t("register.entreprise.telephone_title")} maxLength={8} />
                       {phoneError && newEntreprise.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Email entreprise</Label>
-                      <Input type="email" value={newEntreprise.email} onChange={(e) => updateEntreprise("email", e.target.value)} placeholder="contact@..." />
+                      <Label className="text-xs">{t("register.entreprise.email")}</Label>
+                      <Input type="email" value={newEntreprise.email} onChange={(e) => updateEntreprise("email", e.target.value)} placeholder={t("register.entreprise.email_placeholder")} />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Autre (informations complémentaires)</Label>
-                    <Input value={newEntreprise.autre} onChange={(e) => updateEntreprise("autre", e.target.value)} placeholder="Précisions (max 2000 car.)" maxLength={2000} />
+                    <Label className="text-xs">{t("register.entreprise.autre")}</Label>
+                    <Input value={newEntreprise.autre} onChange={(e) => updateEntreprise("autre", e.target.value)} placeholder={t("register.entreprise.autre_placeholder")} maxLength={2000} />
                   </div>
                 </div>
               </div>
@@ -242,30 +245,30 @@ const Register = () => {
               <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
                 <div className="flex items-center gap-2 mb-1">
                   <Building2 className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold">Informations de l'Autorité Contractante</Label>
+                  <Label className="text-sm font-semibold">{t("register.ac.title")}</Label>
                 </div>
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Nom de l'AC *</Label>
-                    <Input value={newAC.nom} onChange={(e) => updateAC("nom", e.target.value)} placeholder="Nom de l'autorité contractante" required />
+                    <Label className="text-xs">{t("register.ac.nom")}</Label>
+                    <Input value={newAC.nom} onChange={(e) => updateAC("nom", e.target.value)} placeholder={t("register.ac.nom_placeholder")} required />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Sigle</Label>
-                    <Input value={newAC.sigle} onChange={(e) => updateAC("sigle", e.target.value)} placeholder="Ex: MAEP, MEN..." />
+                    <Label className="text-xs">{t("register.ac.sigle")}</Label>
+                    <Input value={newAC.sigle} onChange={(e) => updateAC("sigle", e.target.value)} placeholder={t("register.ac.sigle_placeholder")} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Adresse</Label>
-                    <Input value={newAC.adresse} onChange={(e) => updateAC("adresse", e.target.value)} placeholder="Adresse" />
+                    <Label className="text-xs">{t("register.ac.adresse")}</Label>
+                    <Input value={newAC.adresse} onChange={(e) => updateAC("adresse", e.target.value)} placeholder={t("register.ac.adresse_placeholder")} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                     <Label className="text-xs">Téléphone</Label>
-                      <Input value={newAC.telephone} onChange={(e) => { updateAC("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder="2XXXXXXX" pattern="[234]\d{7}" title="8 chiffres, commence par 2, 3 ou 4" maxLength={8} />
+                      <Label className="text-xs">{t("register.ac.telephone")}</Label>
+                      <Input value={newAC.telephone} onChange={(e) => { updateAC("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder={t("register.ac.telephone_placeholder")} pattern="[234]\d{7}" title={t("register.entreprise.telephone_title")} maxLength={8} />
                       {phoneError && newAC.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Email AC</Label>
-                      <Input type="email" value={newAC.email} onChange={(e) => updateAC("email", e.target.value)} placeholder="contact@..." />
+                      <Label className="text-xs">{t("register.ac.email")}</Label>
+                      <Input type="email" value={newAC.email} onChange={(e) => updateAC("email", e.target.value)} placeholder={t("register.ac.email_placeholder")} />
                     </div>
                   </div>
                 </div>
@@ -273,44 +276,44 @@ const Register = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="reg-password">Mot de passe</Label>
+              <Label htmlFor="reg-password">{t("register.password")}</Label>
               <div className="relative">
                 <Input
                   id="reg-password"
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={(e) => update("password", e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t("register.password_placeholder")}
                   required
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t("login.toggle_password_hide") : t("login.toggle_password_show")} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+              <Label htmlFor="confirmPassword">{t("register.confirm_password")}</Label>
               <Input
                 id="confirmPassword"
                 type={showPassword ? "text" : "password"}
                 value={form.confirmPassword}
                 onChange={(e) => update("confirmPassword", e.target.value)}
-                placeholder="••••••••"
+                placeholder={t("register.password_placeholder")}
                 required
               />
             </div>
 
             <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading || !form.role}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              {loading ? "Inscription..." : "S'inscrire"}
+              <UserPlus className="h-4 w-4 me-2" />
+              {loading ? t("register.submitting") : t("register.submit")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Déjà un compte ?{" "}
+            {t("register.have_account")}{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">
-              Se connecter
+              {t("register.login")}
             </Link>
           </p>
         </div>

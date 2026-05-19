@@ -3,6 +3,10 @@ import { useTranslation } from "react-i18next";
 import "@fontsource/noto-sans-arabic/400.css";
 import "@fontsource/noto-sans-arabic/600.css";
 import "@fontsource/noto-sans-arabic/700.css";
+import { installZodErrorMap } from "./zodErrorMap";
+
+// Install the global Zod error map once at module load
+installZodErrorMap();
 
 /**
  * Synchronise <html lang/dir> + persiste la langue active.

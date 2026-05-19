@@ -1,0 +1,20 @@
+{
+  "title": "Notifications",
+  "empty": "Aucune notification",
+  "mark_all_read": "Tout marquer lu",
+  "open_label": "Ouvrir les notifications",
+  "unread_count": "{{count}} non lue",
+  "unread_count_plural": "{{count}} non lues",
+  "types": {
+    "CORRECTION_STATUT_CHANGE": "Demande de correction",
+    "CORRECTION_DECISION": "Décision correction",
+    "REFERENTIEL_STATUT_CHANGE": "Référentiel projet",
+    "CONVENTION_STATUT_CHANGE": "Convention",
+    "CERTIFICAT_STATUT_CHANGE": "Certificat",
+    "UTILISATION_STATUT_CHANGE": "Utilisation crédit",
+    "TRANSFERT_STATUT_CHANGE": "Transfert de crédit",
+    "DEMANDE_MISE_EN_PLACE_CHANGE": "Mise en place CI",
+    "MODIFICATION_STATUT_CHANGE": "Modification",
+    "GED_DOCUMENT_CHANGE": "Document GED"
+  }
+}

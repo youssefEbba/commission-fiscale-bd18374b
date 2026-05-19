@@ -25,4 +25,16 @@ export const tTypeDocument = (v?: string | null) => tEnum("type_document", v ?? 
 export const tTypeUtilisation = (v?: string | null) => tEnum("type_utilisation", v ?? undefined);
 export const tTypeOperation = (v?: string | null) => tEnum("type_operation", v ?? undefined);
 export const tDecisionType = (v?: string | null) => tEnum("decision_type", v ?? undefined);
+export const tDecisionCorrectionType = (v?: string | null) => tEnum("decision_correction_type", v ?? undefined);
+export const tRejetTempStatus = (v?: string | null) => tEnum("rejet_temp_status", v ?? undefined);
 export const tTvaStockSource = (v?: string | null) => tEnum("tva_stock_source", v ?? undefined);
+export const tAffectationTaxe = (v?: string | null) => tEnum("affectation_taxe", v ?? undefined);
+export const tTypeLigneTaxe = (v?: string | null) => tEnum("type_ligne_taxe", v ?? undefined);
+
+/** Libellé traduit d'une notification (namespace `notifications.types.<TYPE>`). */
+export const tNotificationType = (v?: string | null) => {
+  if (!v) return "";
+  const k = `notifications:types.${v}`;
+  const r = i18n.t(k, { defaultValue: "" });
+  return (r as string) || v;
+};
