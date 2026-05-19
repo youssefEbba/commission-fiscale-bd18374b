@@ -50,6 +50,8 @@ const Conventions = () => {
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation(["conventions", "common"]);
+  usePageTitle("conventions:list.title");
 
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [loading, setLoading] = useState(true);
