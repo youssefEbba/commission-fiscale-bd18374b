@@ -264,7 +264,7 @@ const DemandeDetail = () => {
     setOffreCorrigeeUploading(true);
     try {
       await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null);
       await handleTempVisa(offreCorrigeePendingId);
       fetchDetail();
@@ -1149,7 +1149,7 @@ const DemandeDetail = () => {
       <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
+            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
             <DialogDescription>{t("demandes:dialogs.offre_corrigee.description_short")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
