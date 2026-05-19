@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { PDFDocument } from "pdf-lib";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -33,6 +34,9 @@ import {
   ArrowUp, ArrowDown, Merge, MoreHorizontal, Eye, Edit,
   Trash2, Ban, ShieldCheck, ShieldX,
 } from "lucide-react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
+import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -46,6 +50,8 @@ const Conventions = () => {
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation(["conventions", "common"]);
+  usePageTitle("conventions:list.title");
 
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +144,7 @@ const Conventions = () => {
       const data = await conventionApi.getAll(q);
       setConventions(data);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les conventions", variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:load_error"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -216,10 +222,10 @@ const Conventions = () => {
           tauxChange: rate,
           montantMru: f.montantDevise ? Math.round(f.montantDevise * rate * 100) / 100 : undefined,
         }));
-        toast({ title: "Taux récupéré", description: `1 ${form.deviseOrigine} = ${rate.toLocaleString("fr-FR")} MRU` });
+        toast({ title: t("conventions:create.rate_fetched"), description: t("conventions:create.rate_value", { currency: form.deviseOrigine, rate: formatNumber(rate) }) });
       })
       .catch(() => {
-        if (!cancelled) toast({ title: "Erreur", description: `Impossible de récupérer le taux pour ${form.deviseOrigine} → MRU`, variant: "destructive" });
+        if (!cancelled) toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.rate_error", { currency: form.deviseOrigine }), variant: "destructive" });
       })
       .finally(() => { if (!cancelled) setTauxLoading(false); });
     return () => { cancelled = true; };
@@ -238,9 +244,9 @@ const Conventions = () => {
       setForm(f => ({ ...f, bailleurId: created.id }));
       setAddBailleurOpen(false);
       setNewBailleur({ nom: "", details: "" });
-      toast({ title: "Succès", description: "Bailleur ajouté" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:bailleur.added") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setAddingBailleur(false);
     }
@@ -255,9 +261,9 @@ const Conventions = () => {
       handleDeviseChange(created.code);
       setAddDeviseOpen(false);
       setNewDevise({ code: "", libelle: "", symbole: "" });
-      toast({ title: "Succès", description: "Devise ajoutée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:devise.added") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setAddingDevise(false);
     }
@@ -288,7 +294,7 @@ const Conventions = () => {
       .filter(d => d.file.type === "application/pdf" || d.file.name.toLowerCase().endsWith(".pdf"))
       .map(d => d.file);
     if (pdfFiles.length < 2) {
-      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF à fusionner.", variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_impossible"), description: t("conventions:docs.merge_min_two_pdf"), variant: "destructive" });
       return;
     }
     setMerging(true);
@@ -305,9 +311,9 @@ const Conventions = () => {
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
       // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
       setCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
-      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés. Le document résultant sera soumis comme CONVENTION_JOIGNED_DOCUMENT.` });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.merge_success", { count: pdfFiles.length }) });
     } catch (e: any) {
-      toast({ title: "Erreur de fusion", description: e.message || "Impossible de fusionner les PDF", variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_error"), description: e.message || t("conventions:docs.merge_error_desc"), variant: "destructive" });
     } finally {
       setMerging(false);
     }
@@ -317,7 +323,7 @@ const Conventions = () => {
     if (documents.length < 2) return;
     const pdfDocs = documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf") && d.chemin);
     if (pdfDocs.length < 2) {
-      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF.", variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_impossible"), description: t("conventions:docs.merge_min_two_pdf"), variant: "destructive" });
       return;
     }
     setMerging(true);
@@ -338,9 +344,9 @@ const Conventions = () => {
       a.download = `convention_${docsConvention?.reference || "merged"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "Succès", description: `${pdfDocs.length} PDF fusionnés.` });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.merge_existing_success", { count: pdfDocs.length }) });
     } catch (e: any) {
-      toast({ title: "Erreur de fusion", description: e.message, variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_error"), description: e.message, variant: "destructive" });
     } finally {
       setMerging(false);
     }
@@ -348,7 +354,7 @@ const Conventions = () => {
 
   const handleCreate = async () => {
     if (!form.reference || !form.intitule) {
-      toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.missing_required"), variant: "destructive" });
       return;
     }
     setCreating(true);
@@ -358,10 +364,10 @@ const Conventions = () => {
         try {
           await conventionApi.uploadDocument(created.id, doc.type, doc.file);
         } catch {
-          toast({ title: "Attention", description: `Échec upload: ${doc.file.name}`, variant: "destructive" });
+          toast({ title: t("common:warnings.title", "Attention"), description: t("conventions:docs.upload_failure", { name: doc.file.name }), variant: "destructive" });
         }
       }
-      toast({ title: "Succès", description: `Convention créée${createDocs.length ? ` avec ${createDocs.length} document(s)` : ""}` });
+      toast({ title: t("common:success.title", "Succès"), description: createDocs.length ? t("conventions:create.success_with_docs", { count: createDocs.length }) : t("conventions:create.success") });
       setCreateOpen(false);
       setForm({
         reference: "", intitule: "", bailleurId: undefined,
@@ -371,7 +377,7 @@ const Conventions = () => {
       setCreateDocs([]);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setCreating(false);
     }
@@ -381,10 +387,10 @@ const Conventions = () => {
     setActionLoading(id);
     try {
       await conventionApi.updateStatut(id, statut);
-      toast({ title: "Succès", description: `Convention ${CONVENTION_STATUT_LABELS[statut].toLowerCase()}` });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:statut_change.success", { label: tStatutConvention(statut) }) });
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -420,11 +426,11 @@ const Conventions = () => {
     setEditing(true);
     try {
       await conventionApi.update(editConvention.id, editForm);
-      toast({ title: "Succès", description: "Convention modifiée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:edit.success") });
       setEditOpen(false);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setEditing(false);
     }
@@ -442,11 +448,11 @@ const Conventions = () => {
     setRejecting(true);
     try {
       await conventionApi.updateStatut(rejectConvention.id, "REJETE", rejectMotif);
-      toast({ title: "Succès", description: "Convention rejetée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:reject.success") });
       setRejectOpen(false);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setRejecting(false);
     }
@@ -463,11 +469,11 @@ const Conventions = () => {
     setCancelling(true);
     try {
       await conventionApi.updateStatut(cancelConvention.id, "ANNULEE");
-      toast({ title: "Succès", description: "Convention annulée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:cancel_dialog.success") });
       setCancelOpen(false);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setCancelling(false);
     }
@@ -481,7 +487,7 @@ const Conventions = () => {
       const docs = await conventionApi.getDocuments(conv.id);
       setDocuments(docs);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les documents", variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:docs.load_error"), variant: "destructive" });
     } finally {
       setDocsLoading(false);
     }
@@ -492,12 +498,12 @@ const Conventions = () => {
     setUploading(true);
     try {
       await conventionApi.uploadDocument(docsConvention.id, uploadType, uploadFile);
-      toast({ title: "Succès", description: "Document uploadé" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.upload_success") });
       setUploadFile(null);
       const docs = await conventionApi.getDocuments(docsConvention.id);
       setDocuments(docs);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -507,11 +513,11 @@ const Conventions = () => {
     if (!docsConvention) return;
     try {
       await conventionApi.deleteDocument(docsConvention.id, docId);
-      toast({ title: "Succès", description: "Document supprimé" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.deleted") });
       const docs = await conventionApi.getDocuments(docsConvention.id);
       setDocuments(docs);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     }
   };
 
@@ -520,13 +526,13 @@ const Conventions = () => {
     setReplacing(true);
     try {
       await conventionApi.replaceDocument(docsConvention.id, replaceDocId, replaceFile);
-      toast({ title: "Succès", description: "Document remplacé" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.replaced") });
       setReplaceDocId(null);
       setReplaceFile(null);
       const docs = await conventionApi.getDocuments(docsConvention.id);
       setDocuments(docs);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setReplacing(false);
     }
@@ -557,19 +563,19 @@ const Conventions = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              Conventions
+              {t("conventions:list.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Gestion des conventions de financement
+              {t("conventions:list.subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => fetchConventions(search.trim() || undefined)} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("conventions:list.refresh")}
             </Button>
             {(isAC || isAdmin) && (
               <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle convention
+                <Plus className="h-4 w-4 me-2" /> {t("conventions:list.new")}
               </Button>
             )}
           </div>
@@ -577,18 +583,18 @@ const Conventions = () => {
 
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher (réf., intitulé, projet, bailleur)..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder={t("conventions:list.search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48">
-              <Filter className="h-4 w-4 mr-2" />
+              <Filter className="h-4 w-4 me-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(CONVENTION_STATUT_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem value="ALL">{t("conventions:list.all_statuses")}</SelectItem>
+              {Object.keys(CONVENTION_STATUT_LABELS).map((k) => (
+                <SelectItem key={k} value={k}>{tStatutConvention(k)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -603,18 +609,18 @@ const Conventions = () => {
                 <Table className="min-w-[600px] [&_th]:h-10 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2">
                    <TableHeader>
                     <TableRow>
-                      <TableHead>Référence</TableHead>
-                      <TableHead>Intitulé</TableHead>
-                      <TableHead>Bailleur</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("conventions:columns.reference")}</TableHead>
+                      <TableHead>{t("conventions:columns.intitule")}</TableHead>
+                      <TableHead>{t("conventions:columns.bailleur")}</TableHead>
+                      <TableHead>{t("conventions:columns.statut")}</TableHead>
+                      <TableHead className="text-end">{t("conventions:columns.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginated.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                          Aucune convention trouvée
+                          {t("conventions:list.empty")}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -625,10 +631,10 @@ const Conventions = () => {
                           <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleurNom || c.bailleur || "—"}</TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
-                              {CONVENTION_STATUT_LABELS[c.statut]}
+                              {tStatutConvention(c.statut)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 variant="outline"
@@ -636,7 +642,7 @@ const Conventions = () => {
                                 className="h-8"
                                 onClick={() => navigate(`/dashboard/conventions/${c.id}`)}
                               >
-                                <Eye className="h-4 w-4 mr-1" /> Voir
+                                <Eye className="h-4 w-4 me-1" /> {t("conventions:actions.view")}
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -646,16 +652,16 @@ const Conventions = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => openDocuments(c)}>
-                                    <Paperclip className="h-4 w-4 mr-2" /> Documents
+                                    <Paperclip className="h-4 w-4 me-2" /> {t("conventions:actions.documents")}
                                   </DropdownMenuItem>
                                   {(isDGB || isDGI) && c.statut === "EN_ATTENTE" && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleStatutChange(c.id, "VALIDE")}>
-                                        <ShieldCheck className="h-4 w-4 mr-2 text-green-600" /> Valider
+                                        <ShieldCheck className="h-4 w-4 me-2 text-green-600" /> {t("conventions:actions.validate")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => openReject(c)}>
-                                        <ShieldX className="h-4 w-4 mr-2 text-destructive" /> Rejeter
+                                        <ShieldX className="h-4 w-4 me-2 text-destructive" /> {t("conventions:actions.reject")}
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -663,10 +669,10 @@ const Conventions = () => {
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => openEdit(c)}>
-                                        <Edit className="h-4 w-4 mr-2" /> Modifier
+                                        <Edit className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
-                                        <Ban className="h-4 w-4 mr-2" /> Annuler la convention
+                                        <Ban className="h-4 w-4 me-2" /> {t("conventions:actions.cancel")}
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -682,12 +688,12 @@ const Conventions = () => {
                 {filtered.length > 0 && (
                   <div className="flex items-center justify-between gap-2 px-3 py-2 border-t text-sm">
                     <span className="text-muted-foreground">
-                      {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length}
+                      {t("conventions:list.pagination.range", { from: (currentPage - 1) * PAGE_SIZE + 1, to: Math.min(currentPage * PAGE_SIZE, filtered.length), total: filtered.length })}
                     </span>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Précédent</Button>
-                      <span className="text-muted-foreground">Page {currentPage} / {totalPages}</span>
-                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Suivant</Button>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>{t("conventions:list.pagination.previous")}</Button>
+                      <span className="text-muted-foreground">{t("conventions:list.pagination.page", { current: currentPage, total: totalPages })}</span>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t("conventions:list.pagination.next")}</Button>
                     </div>
                   </div>
                 )}
@@ -701,57 +707,56 @@ const Conventions = () => {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nouvelle Convention</DialogTitle>
+            <DialogTitle>{t("conventions:create.title")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pe-1">
             <div className="space-y-2">
-              <Label>Référence *</Label>
-              <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="CONV-2026-001" />
+              <Label>{t("conventions:fields.reference_required")}</Label>
+              <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} placeholder={t("conventions:create.reference_placeholder")} />
             </div>
             <div className="space-y-2">
-              <Label>Intitulé *</Label>
-              <Input value={form.intitule} onChange={(e) => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Convention de financement..." />
+              <Label>{t("conventions:fields.intitule_required")}</Label>
+              <Input value={form.intitule} onChange={(e) => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder={t("conventions:create.intitule_placeholder")} />
             </div>
 
             {/* Bailleur - dropdown + add */}
             <div className="space-y-2">
-              <Label>Bailleur de fonds *</Label>
+              <Label>{t("conventions:fields.bailleur_required")}</Label>
               <div className="flex gap-2">
                 <SearchableSelect
                   value={form.bailleurId != null ? String(form.bailleurId) : ""}
                   onValueChange={(v) => setForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
-                  placeholder={bailleursLoading ? "Chargement..." : "Sélectionner un bailleur"}
-                  searchPlaceholder="Rechercher un bailleur..."
+                  placeholder={bailleursLoading ? t("conventions:create.loading") : t("conventions:create.select_bailleur")}
+                  searchPlaceholder={t("conventions:create.search_bailleur")}
                   triggerClassName="flex-1"
                   options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
                 />
-                <Button type="button" variant="outline" size="icon" onClick={() => setAddBailleurOpen(true)} title="Ajouter un bailleur">
+                <Button type="button" variant="outline" size="icon" onClick={() => setAddBailleurOpen(true)} title={t("conventions:create.add_bailleur_title")}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Le descriptif provient désormais du bailleur sélectionné. */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Date signature</Label>
+                <Label>{t("conventions:fields.date_signature")}</Label>
                 <Input type="date" value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>Date fin</Label>
+                <Label>{t("conventions:fields.date_fin")}</Label>
                 <Input type="date" value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
               </div>
             </div>
 
             {/* Devise - dropdown + add */}
             <div className="space-y-2">
-              <Label>Devise d'origine</Label>
+              <Label>{t("conventions:fields.devise")}</Label>
               <div className="flex gap-2">
                 <SearchableSelect
                   value={form.deviseOrigine || ""}
                   onValueChange={handleDeviseChange}
-                  placeholder={devisesLoading ? "Chargement..." : "Sélectionner une devise"}
-                  searchPlaceholder="Rechercher une devise..."
+                  placeholder={devisesLoading ? t("conventions:create.loading") : t("conventions:create.select_devise")}
+                  searchPlaceholder={t("conventions:create.search_devise")}
                   triggerClassName="flex-1"
                   options={devises.map((d) => ({
                     value: d.code,
@@ -759,7 +764,7 @@ const Conventions = () => {
                     keywords: `${d.code} ${d.libelle}`,
                   }))}
                 />
-                <Button type="button" variant="outline" size="icon" onClick={() => setAddDeviseOpen(true)} title="Ajouter une devise">
+                <Button type="button" variant="outline" size="icon" onClick={() => setAddDeviseOpen(true)} title={t("conventions:create.add_devise_title")}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -767,35 +772,35 @@ const Conventions = () => {
 
             <div className="grid grid-cols-3 gap-3 items-end">
               <div className="space-y-2">
-                <Label>Montant devise</Label>
+                <Label>{t("conventions:fields.montant_devise")}</Label>
                 <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
                   setForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                 }} placeholder="1200000" />
               </div>
               <div className="space-y-2">
-                <Label>Taux de change</Label>
-                <Input readOnly value={form.tauxChange ?? "—"} className="bg-muted" />
+                <Label>{t("conventions:fields.taux_change")}</Label>
+                <Input readOnly value={form.tauxChange != null ? formatNumber(form.tauxChange) : "—"} className="bg-muted" />
               </div>
               <div className="space-y-2">
-                <Label>Montant MRU (auto)</Label>
-                <Input readOnly value={form.montantMru ? form.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
+                <Label>{t("conventions:fields.montant_mru_auto")}</Label>
+                <Input readOnly value={form.montantMru != null ? formatNumber(form.montantMru) : "—"} className="bg-muted" />
               </div>
             </div>
             {tauxLoading && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Récupération du taux de change...
+                <Loader2 className="h-4 w-4 animate-spin" /> {t("conventions:create.rate_loading")}
               </div>
             )}
 
             {/* Documents section - follows GED configuration */}
             <div className="border-t pt-4 space-y-3">
               <Label className="text-sm font-semibold flex items-center gap-2">
-                <Paperclip className="h-4 w-4" /> Documents joints
+                <Paperclip className="h-4 w-4" /> {t("conventions:docs.title")}
               </Label>
               {gedReqLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Chargement des exigences GED...
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("conventions:docs.loading_requirements")}
                 </div>
               ) : gedRequirements.length > 0 ? (
                 <div className="space-y-1">
@@ -812,18 +817,18 @@ const Conventions = () => {
                             <XCircle className={`h-3.5 w-3.5 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />
                           )}
                           <span className={req.obligatoire && !hasDoc ? "text-destructive font-medium" : ""}>
-                            {req.typeDocument}
+                            {tTypeDocument(req.typeDocument)}
                           </span>
-                          {hasDoc && <span className="text-muted-foreground">({docsForType.length} fichier{docsForType.length > 1 ? "s" : ""})</span>}
+                          {hasDoc && <span className="text-muted-foreground">{t("conventions:docs.files_count", { count: docsForType.length })}</span>}
                           {req.obligatoire && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0">Obligatoire</Badge>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">{t("conventions:docs.mandatory")}</Badge>
                           )}
                         </div>
                       );
                     })}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Aucune exigence GED configurée pour les conventions.</p>
+                <p className="text-xs text-muted-foreground">{t("conventions:docs.no_requirements")}</p>
               )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={createDocType} onValueChange={(v) => setCreateDocType(v as TypeDocumentConvention)}>
@@ -834,10 +839,10 @@ const Conventions = () => {
                     {(gedRequirements.length > 0
                       ? gedRequirements
                           .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))
-                          .map(r => ({ value: r.typeDocument, label: r.typeDocument }))
-                      : CONVENTION_DOCUMENT_TYPES
-                    ).map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                          .map(r => ({ value: r.typeDocument }))
+                      : CONVENTION_DOCUMENT_TYPES.map(d => ({ value: d.value }))
+                    ).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{tTypeDocument(opt.value)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -858,12 +863,12 @@ const Conventions = () => {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground">
-                      {createDocs.length} fichier(s) — Réordonnez puis fusionnez les PDF
+                      {t("conventions:docs.summary", { count: createDocs.length })}
                     </span>
                     {createDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 && (
                       <Button type="button" variant="outline" size="sm" onClick={mergeCreateDocs} disabled={merging}>
-                        {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
-                        Fusionner PDF
+                        {merging ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Merge className="h-4 w-4 me-1" />}
+                        {t("conventions:docs.merge_pdf")}
                       </Button>
                     )}
                   </div>
@@ -880,7 +885,7 @@ const Conventions = () => {
                       </div>
                       <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="outline" className="text-xs shrink-0">
-                        {d.type}
+                        {tTypeDocument(d.type)}
                       </Badge>
                       <span className="truncate flex-1">{d.file.name}</span>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCreateDoc(i)}>
@@ -893,15 +898,15 @@ const Conventions = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t("conventions:actions.dismiss")}</Button>
             <Button onClick={handleCreate} disabled={
               creating || !form.reference || !form.intitule ||
               (gedRequirements.length > 0
                 ? gedRequirements.filter(r => r.obligatoire).some(r => !createDocs.some(d => d.type === r.typeDocument))
                 : !createDocs.some(d => d.type === "CONVENTION_CONTRAT"))
             }>
-              {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-              Créer
+              {creating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
+              {t("conventions:actions.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -911,23 +916,23 @@ const Conventions = () => {
       <Dialog open={addBailleurOpen} onOpenChange={setAddBailleurOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nouveau bailleur</DialogTitle>
+            <DialogTitle>{t("conventions:bailleur.modal_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>Nom *</Label>
-              <Input value={newBailleur.nom} onChange={(e) => setNewBailleur(b => ({ ...b, nom: e.target.value }))} placeholder="Banque Mondiale" />
+              <Label>{t("conventions:bailleur.name_required")}</Label>
+              <Input value={newBailleur.nom} onChange={(e) => setNewBailleur(b => ({ ...b, nom: e.target.value }))} placeholder={t("conventions:bailleur.name_placeholder")} />
             </div>
             <div className="space-y-2">
-              <Label>Détails</Label>
-              <Input value={newBailleur.details} onChange={(e) => setNewBailleur(b => ({ ...b, details: e.target.value }))} placeholder="Description..." />
+              <Label>{t("conventions:bailleur.details")}</Label>
+              <Input value={newBailleur.details} onChange={(e) => setNewBailleur(b => ({ ...b, details: e.target.value }))} placeholder={t("conventions:bailleur.details_placeholder")} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddBailleurOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setAddBailleurOpen(false)}>{t("conventions:actions.dismiss")}</Button>
             <Button onClick={handleAddBailleur} disabled={addingBailleur || !newBailleur.nom.trim()}>
-              {addingBailleur ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-              Ajouter
+              {addingBailleur ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
+              {t("conventions:actions.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -937,27 +942,27 @@ const Conventions = () => {
       <Dialog open={addDeviseOpen} onOpenChange={setAddDeviseOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nouvelle devise</DialogTitle>
+            <DialogTitle>{t("conventions:devise.modal_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>Code *</Label>
+              <Label>{t("conventions:devise.code_required")}</Label>
               <Input value={newDevise.code} onChange={(e) => setNewDevise(d => ({ ...d, code: e.target.value.toUpperCase() }))} placeholder="EUR" maxLength={5} />
             </div>
             <div className="space-y-2">
-              <Label>Libellé *</Label>
+              <Label>{t("conventions:devise.libelle_required")}</Label>
               <Input value={newDevise.libelle} onChange={(e) => setNewDevise(d => ({ ...d, libelle: e.target.value }))} placeholder="Euro" />
             </div>
             <div className="space-y-2">
-              <Label>Symbole</Label>
+              <Label>{t("conventions:devise.symbole")}</Label>
               <Input value={newDevise.symbole} onChange={(e) => setNewDevise(d => ({ ...d, symbole: e.target.value }))} placeholder="€" maxLength={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDeviseOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setAddDeviseOpen(false)}>{t("conventions:actions.dismiss")}</Button>
             <Button onClick={handleAddDevise} disabled={addingDevise || !newDevise.code.trim() || !newDevise.libelle.trim()}>
-              {addingDevise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-              Ajouter
+              {addingDevise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
+              {t("conventions:actions.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -969,22 +974,22 @@ const Conventions = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Paperclip className="h-5 w-5" />
-              Documents — {docsConvention?.reference || docsConvention?.intitule}
+              {t("conventions:docs.modal_title", { ref: docsConvention?.reference || docsConvention?.intitule || "" })}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[65vh] overflow-y-auto">
-            {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== "ANNULEE" && (
+            {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
               <Card>
                 <CardContent className="p-4 space-y-3">
-                  <Label className="text-sm font-semibold">Ajouter un document</Label>
+                  <Label className="text-sm font-semibold">{t("conventions:docs.add_doc")}</Label>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Select value={uploadType} onValueChange={(v) => setUploadType(v as TypeDocumentConvention)}>
                       <SelectTrigger className="w-full sm:w-56">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {CONVENTION_DOCUMENT_TYPES.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        {CONVENTION_DOCUMENT_TYPES.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>{tTypeDocument(opt.value)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -994,20 +999,19 @@ const Conventions = () => {
                       className="flex-1"
                     />
                     <Button onClick={handleUpload} disabled={uploading || !uploadFile}>
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-                      Envoyer
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
+                      {t("conventions:actions.send")}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Merge button for existing docs */}
             {!docsLoading && documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf")).length >= 2 && (
               <div className="flex justify-end">
                 <Button variant="outline" size="sm" onClick={mergeExistingDocs} disabled={merging}>
-                  {merging ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Merge className="h-4 w-4 mr-1" />}
-                  Fusionner tous les PDF
+                  {merging ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Merge className="h-4 w-4 me-1" />}
+                  {t("conventions:docs.merge_all_pdf")}
                 </Button>
               </div>
             )}
@@ -1019,16 +1023,16 @@ const Conventions = () => {
             ) : documents.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <File className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                <p>Aucun document associé</p>
+                <p>{t("conventions:docs.empty")}</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Nom du fichier</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead>{t("conventions:columns.type")}</TableHead>
+                    <TableHead>{t("conventions:columns.filename")}</TableHead>
+                    <TableHead>{t("conventions:columns.date")}</TableHead>
+                    <TableHead className="text-end">{t("conventions:columns.action")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1036,26 +1040,26 @@ const Conventions = () => {
                     <TableRow key={doc.id}>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {CONVENTION_DOCUMENT_TYPES.find(t => t.value === doc.type)?.label || doc.type}
+                          {tTypeDocument(doc.type)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">{doc.nomFichier}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {doc.dateUpload ? new Date(doc.dateUpload).toLocaleDateString("fr-FR") : "—"}
+                        {formatDate(doc.dateUpload)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <div className="flex gap-1 justify-end">
                           {doc.chemin && (
                             <Button variant="outline" size="sm" asChild>
                               <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
-                                <FileText className="h-4 w-4 mr-1" /> Ouvrir
+                                <FileText className="h-4 w-4 me-1" /> {t("conventions:actions.open")}
                               </a>
                             </Button>
                           )}
-                          {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== "ANNULEE" && (
+                          {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
                             <>
                               <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => { setReplaceDocId(doc.id); setReplaceFile(null); }}>
-                                Remplacer
+                                {t("conventions:actions.replace")}
                               </Button>
                               <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-destructive" onClick={() => handleDeleteConvDoc(doc.id)}>
                                 <Trash2 className="h-3 w-3" />
@@ -1069,13 +1073,12 @@ const Conventions = () => {
                 </TableBody>
               </Table>
             )}
-            {/* Inline replace file input */}
             {replaceDocId && (
               <div className="flex items-center gap-2 border border-border rounded-lg p-2">
                 <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
                 <Button size="sm" onClick={handleReplaceConvDoc} disabled={replacing || !replaceFile}>
-                  {replacing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                  Confirmer
+                  {replacing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+                  {t("conventions:actions.confirm")}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => { setReplaceDocId(null); setReplaceFile(null); }}>
                   ✕
@@ -1091,100 +1094,99 @@ const Conventions = () => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" /> Détails de la convention
+              <Eye className="h-5 w-5" /> {t("conventions:docs.details_title")}
             </DialogTitle>
           </DialogHeader>
           {detailConvention && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Référence :</span> <span className="font-medium">{detailConvention.reference || "—"}</span></div>
-                <div><span className="text-muted-foreground">Statut :</span> <Badge className={`text-xs ml-1 ${STATUT_COLORS[detailConvention.statut] || ""}`}>{CONVENTION_STATUT_LABELS[detailConvention.statut] || detailConvention.statut}</Badge></div>
+                <div><span className="text-muted-foreground">{t("conventions:columns.reference")} :</span> <span className="font-medium">{detailConvention.reference || "—"}</span></div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.statut")} :</span> <Badge className={`text-xs ms-1 ${STATUT_COLORS[detailConvention.statut] || ""}`}>{tStatutConvention(detailConvention.statut)}</Badge></div>
               </div>
-              <div><span className="text-muted-foreground">Intitulé :</span> <span className="font-medium">{detailConvention.intitule || "—"}</span></div>
-              <div><span className="text-muted-foreground">Bailleur :</span> {detailConvention.bailleurNom || detailConvention.bailleur || "—"}</div>
-              <div><span className="text-muted-foreground">Descriptif :</span> {detailConvention.bailleurDetails || "—"}</div>
+              <div><span className="text-muted-foreground">{t("conventions:fields.intitule")} :</span> <span className="font-medium">{detailConvention.intitule || "—"}</span></div>
+              <div><span className="text-muted-foreground">{t("conventions:fields.bailleur")} :</span> {detailConvention.bailleurNom || detailConvention.bailleur || "—"}</div>
+              <div><span className="text-muted-foreground">{t("conventions:fields.descriptif")} :</span> {detailConvention.bailleurDetails || "—"}</div>
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Date signature :</span> {detailConvention.dateSignature ? new Date(detailConvention.dateSignature).toLocaleDateString("fr-FR") : "—"}</div>
-                <div><span className="text-muted-foreground">Date fin :</span> {detailConvention.dateFin ? new Date(detailConvention.dateFin).toLocaleDateString("fr-FR") : "—"}</div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.date_signature")} :</span> {formatDate(detailConvention.dateSignature)}</div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.date_fin")} :</span> {formatDate(detailConvention.dateFin)}</div>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <div><span className="text-muted-foreground">Montant devise :</span><br />{detailConvention.montantDevise ? `${detailConvention.montantDevise.toLocaleString("fr-FR")} ${detailConvention.deviseOrigine || ""}` : "—"}</div>
-                <div><span className="text-muted-foreground">Taux :</span><br />{detailConvention.tauxChange ?? "—"}</div>
-                <div><span className="text-muted-foreground">Montant MRU :</span><br />{detailConvention.montantMru ? `${detailConvention.montantMru.toLocaleString("fr-FR")} MRU` : "—"}</div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.montant_devise")} :</span><br />{detailConvention.montantDevise != null ? formatAmount(detailConvention.montantDevise, { currency: detailConvention.deviseOrigine || "MRU", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"}</div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.taux")} :</span><br />{detailConvention.tauxChange != null ? formatNumber(detailConvention.tauxChange) : "—"}</div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.montant_mru")} :</span><br />{detailConvention.montantMru != null ? formatAmount(detailConvention.montantMru, { currency: "MRU", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"}</div>
               </div>
               {detailConvention.autoriteContractanteNom && (
-                <div><span className="text-muted-foreground">Autorité contractante :</span> {detailConvention.autoriteContractanteNom}</div>
+                <div><span className="text-muted-foreground">{t("conventions:fields.autorite_contractante")} :</span> {detailConvention.autoriteContractanteNom}</div>
               )}
               {detailConvention.motifRejet && (
-                <div className="bg-destructive/10 rounded p-2"><span className="text-destructive font-medium">Motif de rejet :</span> {detailConvention.motifRejet}</div>
+                <div className="bg-destructive/10 rounded p-2"><span className="text-destructive font-medium">{t("conventions:fields.motif_rejet")} :</span> {detailConvention.motifRejet}</div>
               )}
-              <div><span className="text-muted-foreground">Créée le :</span> {detailConvention.dateCreation ? new Date(detailConvention.dateCreation).toLocaleDateString("fr-FR") : "—"}</div>
+              <div><span className="text-muted-foreground">{t("conventions:fields.date_creation")} :</span> {formatDate(detailConvention.dateCreation)}</div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog (AC only) */}
+      {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5" /> Modifier la convention
+              <Edit className="h-5 w-5" /> {t("conventions:edit.title")}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pe-1">
             <div className="space-y-2">
-              <Label>Référence *</Label>
+              <Label>{t("conventions:fields.reference_required")}</Label>
               <Input value={editForm.reference} onChange={(e) => setEditForm(f => ({ ...f, reference: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Intitulé *</Label>
+              <Label>{t("conventions:fields.intitule_required")}</Label>
               <Input value={editForm.intitule} onChange={(e) => setEditForm(f => ({ ...f, intitule: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Bailleur</Label>
+              <Label>{t("conventions:fields.bailleur")}</Label>
               <SearchableSelect
                 value={editForm.bailleurId != null ? String(editForm.bailleurId) : ""}
                 onValueChange={(v) => setEditForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
-                placeholder={bailleursLoading ? "Chargement..." : "Sélectionner"}
-                searchPlaceholder="Rechercher un bailleur..."
+                placeholder={bailleursLoading ? t("conventions:create.loading") : t("conventions:edit.select_bailleur")}
+                searchPlaceholder={t("conventions:edit.search_bailleur")}
                 options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
               />
             </div>
-            {/* Le descriptif provient désormais du bailleur sélectionné. */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Date signature</Label>
+                <Label>{t("conventions:fields.date_signature")}</Label>
                 <Input type="date" value={editForm.dateSignature} onChange={(e) => setEditForm(f => ({ ...f, dateSignature: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>Date fin</Label>
+                <Label>{t("conventions:fields.date_fin")}</Label>
                 <Input type="date" value={editForm.dateFin} onChange={(e) => setEditForm(f => ({ ...f, dateFin: e.target.value }))} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Montant devise</Label>
+                <Label>{t("conventions:fields.montant_devise")}</Label>
                 <Input type="number" value={editForm.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
                   setEditForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                 }} />
               </div>
               <div className="space-y-2">
-                <Label>Taux</Label>
-                <Input readOnly value={editForm.tauxChange ?? "—"} className="bg-muted" />
+                <Label>{t("conventions:fields.taux")}</Label>
+                <Input readOnly value={editForm.tauxChange != null ? formatNumber(editForm.tauxChange) : "—"} className="bg-muted" />
               </div>
               <div className="space-y-2">
-                <Label>MRU</Label>
-                <Input readOnly value={editForm.montantMru ? editForm.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
+                <Label>{t("conventions:fields.mru")}</Label>
+                <Input readOnly value={editForm.montantMru != null ? formatNumber(editForm.montantMru) : "—"} className="bg-muted" />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>{t("conventions:actions.dismiss")}</Button>
             <Button onClick={handleEdit} disabled={editing || !editForm.reference || !editForm.intitule}>
-              {editing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-              Enregistrer
+              {editing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle className="h-4 w-4 me-1" />}
+              {t("conventions:actions.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1195,49 +1197,49 @@ const Conventions = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <ShieldX className="h-5 w-5" /> Rejeter la convention
+              <ShieldX className="h-5 w-5" /> {t("conventions:reject.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Convention : <span className="font-medium text-foreground">{rejectConvention?.reference || rejectConvention?.intitule}</span>
+              {t("conventions:reject.convention_label")} <span className="font-medium text-foreground">{rejectConvention?.reference || rejectConvention?.intitule}</span>
             </p>
             <div className="space-y-2">
-              <Label>Motif du rejet *</Label>
+              <Label>{t("conventions:reject.motif_required")}</Label>
               <Textarea
                 value={rejectMotif}
                 onChange={(e) => setRejectMotif(e.target.value)}
-                placeholder="Indiquer le motif du rejet..."
+                placeholder={t("conventions:reject.motif_placeholder")}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>{t("conventions:actions.dismiss")}</Button>
             <Button variant="destructive" onClick={handleReject} disabled={rejecting || !rejectMotif.trim()}>
-              {rejecting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-              Confirmer le rejet
+              {rejecting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <XCircle className="h-4 w-4 me-1" />}
+              {t("conventions:actions.confirm_reject")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Cancel Dialog (AC only) */}
+      {/* Cancel Dialog */}
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Ban className="h-5 w-5" /> Annuler la convention
+              <Ban className="h-5 w-5" /> {t("conventions:cancel_dialog.title")}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Êtes-vous sûr de vouloir annuler la convention <span className="font-medium text-foreground">{cancelConvention?.reference || cancelConvention?.intitule}</span> ? Cette action est irréversible.
+            {t("conventions:cancel_dialog.confirm", { ref: cancelConvention?.reference || cancelConvention?.intitule || "" })}
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>Non, garder</Button>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("conventions:actions.keep")}</Button>
             <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
-              {cancelling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
-              Oui, annuler
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Ban className="h-4 w-4 me-1" />}
+              {t("conventions:actions.cancel_yes")}
             </Button>
           </DialogFooter>
         </DialogContent>
