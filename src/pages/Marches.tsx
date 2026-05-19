@@ -25,7 +25,7 @@ import { CreateDelegueRequest } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutMarche } from "@/i18n/enums";
+import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount } from "@/i18n/format";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
