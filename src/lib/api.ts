@@ -420,12 +420,14 @@ export type TypeDocumentConvention =
   | "ACCORD_FINANCEMENT"
   | "AUTRE";
 
-export const CONVENTION_DOCUMENT_TYPES: { value: TypeDocumentConvention; label: string }[] = [
-  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
-  { value: "AVENANT", label: "Avenant" },
-  { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
-  { value: "AUTRE", label: "Autre document" },
-];
+/**
+ * Codes des types de documents Convention.
+ * Libellés résolus via `tTypeDocument(code)` côté UI (cf. `enums.type_document.*`).
+ */
+export const CONVENTION_DOCUMENT_TYPES: readonly TypeDocumentConvention[] = [
+  "CONVENTION_CONTRAT", "AVENANT", "ACCORD_FINANCEMENT", "AUTRE",
+] as const;
+
 
 export const conventionApi = {
   /** Liste avec recherche optionnelle. `q` = recherche sur référence / intitulé / projectReference. */
