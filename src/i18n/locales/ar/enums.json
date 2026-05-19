@@ -95,8 +95,19 @@
   "statut_marche": {
     "BROUILLON": "مسودة",
     "ATTRIBUE": "ممنوح",
+    "EN_COURS": "قيد التنفيذ",
     "EN_EXECUTION": "قيد التنفيذ",
-    "CLOTURE": "مقفل"
+    "AVENANT": "ملحق",
+    "CLOTURE": "مقفل",
+    "ANNULE": "ملغى",
+    "ANNULEE": "ملغاة"
+  },
+  "statut_avenant": {
+    "EN_ATTENTE": "قيد الانتظار",
+    "VALIDE": "مصادق عليه",
+    "VALIDEE": "مصادق عليها",
+    "REJETE": "مرفوض",
+    "REJETEE": "مرفوضة"
   },
   "statut_modification": {
     "BROUILLON": "مسودة",
