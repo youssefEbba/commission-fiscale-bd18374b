@@ -95,8 +95,19 @@
   "statut_marche": {
     "BROUILLON": "Brouillon",
     "ATTRIBUE": "Attribué",
+    "EN_COURS": "En cours",
     "EN_EXECUTION": "En exécution",
-    "CLOTURE": "Clôturé"
+    "AVENANT": "Avenant",
+    "CLOTURE": "Clôturé",
+    "ANNULE": "Annulé",
+    "ANNULEE": "Annulé"
+  },
+  "statut_avenant": {
+    "EN_ATTENTE": "En attente",
+    "VALIDE": "Validé",
+    "VALIDEE": "Validé",
+    "REJETE": "Rejeté",
+    "REJETEE": "Rejeté"
   },
   "statut_modification": {
     "BROUILLON": "Brouillon",
