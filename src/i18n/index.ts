@@ -18,6 +18,7 @@ import frUtilisations from "./locales/fr/utilisations.json";
 import frTransferts from "./locales/fr/transferts.json";
 import frCloture from "./locales/fr/cloture.json";
 import frModifications from "./locales/fr/modifications.json";
+import frMiseEnPlace from "./locales/fr/mise_en_place.json";
 import frGed from "./locales/fr/ged.json";
 import frUsers from "./locales/fr/users.json";
 import frRoles from "./locales/fr/roles.json";
