@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Rôles & Permissions",
+    "subtitle": "Gestion des rôles",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Rôles & Permissions — Détail"
+  }
+}

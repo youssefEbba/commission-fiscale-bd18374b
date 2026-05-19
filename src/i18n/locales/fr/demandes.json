@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Demandes",
+    "subtitle": "Demandes de correction et de mise en place",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Demandes — Détail"
+  }
+}

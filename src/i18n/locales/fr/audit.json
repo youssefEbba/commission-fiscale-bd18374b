@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Journal d'audit",
+    "subtitle": "Traçabilité des actions",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Journal d'audit — Détail"
+  }
+}

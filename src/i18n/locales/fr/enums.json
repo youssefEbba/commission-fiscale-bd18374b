@@ -1,0 +1,97 @@
+{
+  "statut_certificat": {
+    "OUVERT": "Ouvert",
+    "CLOTURE": "Clôturé",
+    "ANNULE": "Annulé",
+    "EPUISE": "Épuisé",
+    "SUSPENDU": "Suspendu"
+  },
+  "statut_transfert": {
+    "BROUILLON": "Brouillon",
+    "EN_ATTENTE": "En attente",
+    "VALIDE": "Validé",
+    "REJETE": "Rejeté",
+    "ANNULE": "Annulé"
+  },
+  "statut_utilisation": {
+    "BROUILLON": "Brouillon",
+    "SOUMISE": "Soumise",
+    "EN_COURS": "En cours",
+    "IMPUTEE": "Imputée",
+    "APUREE": "Apurée",
+    "REJETEE": "Rejetée",
+    "ANNULEE": "Annulée"
+  },
+  "statut_demande": {
+    "BROUILLON": "Brouillon",
+    "SOUMISE": "Soumise",
+    "EN_INSTRUCTION": "En instruction",
+    "ADOPTEE": "Adoptée",
+    "REJETEE": "Rejetée",
+    "NOTIFIEE": "Notifiée",
+    "ANNULEE": "Annulée"
+  },
+  "statut_convention": {
+    "BROUILLON": "Brouillon",
+    "EN_ATTENTE": "En attente",
+    "VALIDEE": "Validée",
+    "REJETEE": "Rejetée",
+    "CLOTUREE": "Clôturée"
+  },
+  "statut_marche": {
+    "BROUILLON": "Brouillon",
+    "ATTRIBUE": "Attribué",
+    "EN_EXECUTION": "En exécution",
+    "CLOTURE": "Clôturé"
+  },
+  "statut_modification": {
+    "BROUILLON": "Brouillon",
+    "SOUMISE": "Soumise",
+    "VALIDEE": "Validée",
+    "REJETEE": "Rejetée"
+  },
+  "role": {
+    "ENTREPRISE": "Entreprise",
+    "AUTORITE_CONTRACTANTE": "Autorité Contractante",
+    "AUTORITE_UPM": "Délégué UPM",
+    "AUTORITE_UEP": "Délégué UEP",
+    "SOUS_TRAITANT": "Sous-traitant",
+    "DGD": "DGD",
+    "DGI": "DGI",
+    "DGB": "DGB",
+    "DGTCP": "DGTCP",
+    "PRESIDENT": "Président",
+    "ADMIN_SI": "Administrateur SI",
+    "COMMISSION_RELAIS": "Commission Relais"
+  },
+  "type_document": {
+    "CONVENTION": "Convention",
+    "MARCHE": "Marché",
+    "FACTURE": "Facture",
+    "DECLARATION": "Déclaration",
+    "CERTIFICAT": "Certificat",
+    "AUTRE": "Autre"
+  },
+  "type_utilisation": {
+    "DOUANE": "Douane",
+    "TVA_INTERIEURE": "TVA Intérieure"
+  },
+  "type_operation": {
+    "CREATION": "Création",
+    "MODIFICATION": "Modification",
+    "VALIDATION": "Validation",
+    "REJET": "Rejet",
+    "ANNULATION": "Annulation"
+  },
+  "decision_type": {
+    "ACCEPTATION": "Acceptation",
+    "REJET": "Rejet",
+    "CORRECTION": "Correction",
+    "REJET_TEMPORAIRE": "Rejet temporaire"
+  },
+  "tva_stock_source": {
+    "ENTREPRISE": "Entreprise",
+    "IMPORT": "Import",
+    "CERTIFICAT": "Certificat"
+  }
+}

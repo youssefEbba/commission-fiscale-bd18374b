@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Référentiels",
+    "subtitle": "Référentiels fiscaux",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Référentiels — Détail"
+  }
+}

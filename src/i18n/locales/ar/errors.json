@@ -1,0 +1,22 @@
+{
+  "default": "حدث خطأ",
+  "network": "خطأ في الشبكة — تحقق من الاتصال",
+  "timeout": "انتهت المهلة",
+  "unauthorized": "يجب تسجيل الدخول",
+  "forbidden": "إجراء غير مسموح",
+  "not_found": "المورد غير موجود",
+  "conflict": "تعارض في البيانات",
+  "validation_failed": "بيانات غير صالحة",
+  "server": "خطأ في الخادم",
+  "service_unavailable": "الخدمة غير متاحة",
+  "storage_unavailable": "تخزين الوثائق غير متاح",
+  "validation": {
+    "required": "حقل إلزامي",
+    "email_invalid": "بريد إلكتروني غير صالح",
+    "min_length": "على الأقل {{count}} حروف",
+    "max_length": "على الأكثر {{count}} حروف",
+    "number_invalid": "رقم غير صالح",
+    "date_invalid": "تاريخ غير صالح",
+    "positive": "يجب أن يكون موجبًا"
+  }
+}

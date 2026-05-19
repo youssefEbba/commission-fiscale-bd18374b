@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Transferts",
+    "subtitle": "Transferts de crédits entre certificats",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Transferts — Détail"
+  }
+}

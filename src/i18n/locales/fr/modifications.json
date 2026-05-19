@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Modifications",
+    "subtitle": "Modifications et avenants",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Modifications — Détail"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Conventions / Projets",
+    "subtitle": "Gestion des conventions et projets",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Conventions / Projets — Détail"
+  }
+}

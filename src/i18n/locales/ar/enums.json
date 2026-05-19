@@ -1,0 +1,97 @@
+{
+  "statut_certificat": {
+    "OUVERT": "مفتوحة",
+    "CLOTURE": "مغلقة",
+    "ANNULE": "ملغاة",
+    "EPUISE": "مستنفدة",
+    "SUSPENDU": "موقوفة"
+  },
+  "statut_transfert": {
+    "BROUILLON": "مسودة",
+    "EN_ATTENTE": "في الانتظار",
+    "VALIDE": "مصادق عليه",
+    "REJETE": "مرفوض",
+    "ANNULE": "ملغى"
+  },
+  "statut_utilisation": {
+    "BROUILLON": "مسودة",
+    "SOUMISE": "مقدَّمة",
+    "EN_COURS": "قيد المعالجة",
+    "IMPUTEE": "مخصومة",
+    "APUREE": "مسوّاة",
+    "REJETEE": "مرفوضة",
+    "ANNULEE": "ملغاة"
+  },
+  "statut_demande": {
+    "BROUILLON": "مسودة",
+    "SOUMISE": "مقدَّمة",
+    "EN_INSTRUCTION": "قيد الدراسة",
+    "ADOPTEE": "معتمدة",
+    "REJETEE": "مرفوضة",
+    "NOTIFIEE": "تم التبليغ",
+    "ANNULEE": "ملغاة"
+  },
+  "statut_convention": {
+    "BROUILLON": "مسودة",
+    "EN_ATTENTE": "في الانتظار",
+    "VALIDEE": "مصادق عليها",
+    "REJETEE": "مرفوضة",
+    "CLOTUREE": "مقفلة"
+  },
+  "statut_marche": {
+    "BROUILLON": "مسودة",
+    "ATTRIBUE": "ممنوح",
+    "EN_EXECUTION": "قيد التنفيذ",
+    "CLOTURE": "مقفل"
+  },
+  "statut_modification": {
+    "BROUILLON": "مسودة",
+    "SOUMISE": "مقدَّمة",
+    "VALIDEE": "مصادق عليها",
+    "REJETEE": "مرفوضة"
+  },
+  "role": {
+    "ENTREPRISE": "مؤسسة",
+    "AUTORITE_CONTRACTANTE": "السلطة المتعاقدة",
+    "AUTORITE_UPM": "مندوب UPM",
+    "AUTORITE_UEP": "مندوب UEP",
+    "SOUS_TRAITANT": "مقاول من الباطن",
+    "DGD": "المديرية العامة للجمارك",
+    "DGI": "المديرية العامة للضرائب",
+    "DGB": "المديرية العامة للميزانية",
+    "DGTCP": "الخزينة العامة",
+    "PRESIDENT": "الرئيس",
+    "ADMIN_SI": "مسؤول النظام",
+    "COMMISSION_RELAIS": "لجنة الترحيل"
+  },
+  "type_document": {
+    "CONVENTION": "اتفاقية",
+    "MARCHE": "صفقة",
+    "FACTURE": "فاتورة",
+    "DECLARATION": "تصريح",
+    "CERTIFICAT": "شهادة",
+    "AUTRE": "أخرى"
+  },
+  "type_utilisation": {
+    "DOUANE": "الجمارك",
+    "TVA_INTERIEURE": "الضريبة الداخلية"
+  },
+  "type_operation": {
+    "CREATION": "إنشاء",
+    "MODIFICATION": "تعديل",
+    "VALIDATION": "مصادقة",
+    "REJET": "رفض",
+    "ANNULATION": "إلغاء"
+  },
+  "decision_type": {
+    "ACCEPTATION": "قبول",
+    "REJET": "رفض",
+    "CORRECTION": "تصحيح",
+    "REJET_TEMPORAIRE": "رفض مؤقت"
+  },
+  "tva_stock_source": {
+    "ENTREPRISE": "مؤسسة",
+    "IMPORT": "استيراد",
+    "CERTIFICAT": "شهادة"
+  }
+}

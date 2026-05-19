@@ -1,0 +1,11 @@
+{
+  "list": {
+    "title": "Attributions / Marchés",
+    "subtitle": "Marchés attribués aux entreprises",
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucun élément"
+  },
+  "detail": {
+    "title": "Attributions / Marchés — Détail"
+  }
+}
