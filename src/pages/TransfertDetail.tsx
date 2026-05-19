@@ -27,7 +27,7 @@ import {
   MessageSquare, FileText, RefreshCw,
 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
-import { Checkbox as Checkbox } from "@/components/ui/checkbox";
+
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",

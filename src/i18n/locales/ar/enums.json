@@ -84,8 +84,12 @@
   "statut_convention": {
     "BROUILLON": "مسودة",
     "EN_ATTENTE": "في الانتظار",
+    "VALIDE": "مصادق عليها",
     "VALIDEE": "مصادق عليها",
+    "REJETE": "مرفوضة",
     "REJETEE": "مرفوضة",
+    "ANNULE": "ملغاة",
+    "ANNULEE": "ملغاة",
     "CLOTUREE": "مقفلة"
   },
   "statut_marche": {
@@ -116,6 +120,10 @@
   },
   "type_document": {
     "CONVENTION": "اتفاقية",
+    "CONVENTION_CONTRAT": "اتفاقية / عقد",
+    "AVENANT": "ملحق",
+    "ACCORD_FINANCEMENT": "اتفاق تمويل",
+    "CONVENTION_JOIGNED_DOCUMENT": "مستند اتفاقية مدمج",
     "MARCHE": "صفقة",
     "FACTURE": "فاتورة",
     "DECLARATION": "تصريح",
