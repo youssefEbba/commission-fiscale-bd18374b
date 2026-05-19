@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -17,6 +18,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Award, Search, RefreshCw, Eye, Loader2, Filter, FileText } from "lucide-react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { formatAmount, formatDate } from "@/i18n/format";
 
 import { API_BASE } from "@/lib/apiConfig";
 
@@ -37,15 +41,13 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Updated for new parallel workflow
-const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string }[]> = {
+const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; labelKey: string }[]> = {
   AUTORITE_CONTRACTANTE: [],
   PRESIDENT: [
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider et ouvrir" },
+    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", labelKey: "list.actions.valider_ouvrir" },
   ],
   DGTCP: [],
 };
-
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (!doc.chemin) return "#";
@@ -54,12 +56,13 @@ function getDocFileUrl(doc: DocumentDto): string {
 }
 
 const Certificats = () => {
+  const { t } = useTranslation(["certificats", "common"]);
+  usePageTitle("certificats:list.title");
   const { user } = useAuth();
   const navigate = useNavigate();
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
-  // Track which certificate IDs come from sous-traitance
   const [sousTraiteCertIds, setSousTraiteCertIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -67,7 +70,6 @@ const Certificats = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
 
-  // Detail documents
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
@@ -75,24 +77,20 @@ const Certificats = () => {
     setLoading(true);
     try {
       if (role === "ENTREPRISE" && user?.entrepriseId) {
-        // Fetch own certificates first
         let ownCerts: CertificatCreditDto[] = [];
         try {
           ownCerts = await certificatCreditApi.getByEntreprise(user.entrepriseId);
         } catch { /* ignore */ }
 
-        // Fetch sous-traitances separately (may fail with 403 for some roles)
         let allSousTraitances: any[] = [];
         try {
           allSousTraitances = await sousTraitanceApi.getAll();
-        } catch { /* ignore - user may not have access to list all */ }
+        } catch { /* ignore */ }
 
-        // Find sous-traitances where this enterprise is the sous-traitant and status is AUTORISEE
         const mySousTraitances = allSousTraitances.filter(
           (st: any) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE"
         );
 
-        // Build certificate entries from sous-traitance data
         const ownCertIds = new Set(ownCerts.map((c) => c.id));
         const stCertIds = new Set<number>();
         const sousTraiteCerts: CertificatCreditDto[] = [];
@@ -100,12 +98,10 @@ const Certificats = () => {
         for (const st of mySousTraitances) {
           if (!ownCertIds.has(st.certificatCreditId) && !stCertIds.has(st.certificatCreditId)) {
             stCertIds.add(st.certificatCreditId);
-            // Try to fetch the full cert; if 403, build a minimal version from ST data
             try {
               const cert = await certificatCreditApi.getById(st.certificatCreditId);
               sousTraiteCerts.push(cert);
             } catch {
-              // Build minimal cert from sous-traitance data so it still appears in the list
               sousTraiteCerts.push({
                 id: st.certificatCreditId,
                 numero: st.certificatNumero || `CERT-${st.certificatCreditId}`,
@@ -125,21 +121,20 @@ const Certificats = () => {
         setCertificats(await certificatCreditApi.getAll());
       }
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les certificats", variant: "destructive" });
+      toast({ title: t("common:states.error"), description: t("certificats:list.toast.load_error"), variant: "destructive" });
     } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchCertificats(); }, []);
 
-
   const handleStatut = async (id: number, statut: CertificatStatut) => {
     setActionLoading(id);
     try {
       await certificatCreditApi.updateStatut(id, statut);
-      toast({ title: "Succès", description: `Statut: ${CERTIFICAT_STATUT_LABELS[statut]}` });
+      toast({ title: t("common:states.success"), description: t("certificats:list.toast.statut_success", { label: tStatutCertificat(statut) }) });
       fetchCertificats();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:states.error"), description: e.message, variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -165,7 +160,6 @@ const Certificats = () => {
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const filtered = certificats.filter((c) => {
-    // Ne pas afficher les certificats qui ne sont pas encore ouverts
     if (c.statut !== "OUVERT" && c.statut !== "MODIFIE" && c.statut !== "CLOTURE") return false;
     const q = search.trim().toLowerCase();
     const ms = !q ||
@@ -177,15 +171,9 @@ const Certificats = () => {
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
 
-
-  const pageTitle: Record<string, string> = {
-    AUTORITE_CONTRACTANTE: "Mes certificats",
-    ENTREPRISE: "Mes certificats de crédit",
-    DGTCP: "Certificats – Ouverture & ventilation",
-    DGI: "Certificats – Contrôle fiscal",
-    PRESIDENT: "Certificats en attente de signature",
-    ADMIN_SI: "Tous les certificats (Audit)",
-  };
+  const pageTitle = t(`certificats:list.role_titles.${role}`, {
+    defaultValue: t("certificats:list.role_titles.DEFAULT"),
+  });
 
   return (
     <DashboardLayout>
@@ -194,27 +182,27 @@ const Certificats = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Award className="h-6 w-6 text-primary" />
-              {pageTitle[role] || "Certificats de crédit"}
+              {pageTitle}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Suivi des certificats de crédit d'impôt</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("certificats:list.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("certificats:list.refresh")}
             </Button>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Réf. certificat ou entreprise" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder={t("certificats:list.search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
-            <SelectTrigger className="w-48"><Filter className="h-4 w-4 mr-2" /><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48"><Filter className="h-4 w-4 me-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(CERTIFICAT_STATUT_LABELS).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              <SelectItem value="ALL">{t("certificats:list.filter_all")}</SelectItem>
+              {Object.keys(CERTIFICAT_STATUT_LABELS).map((k) => (<SelectItem key={k} value={k}>{tStatutCertificat(k)}</SelectItem>))}
             </SelectContent>
           </Select>
         </div>
@@ -227,41 +215,41 @@ const Certificats = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead>Réf.</TableHead>
-                     <TableHead>Entreprise</TableHead>
-                     <TableHead>Cordon (Douane)</TableHead>
-                     <TableHead>TVA Int.</TableHead>
-                     <TableHead>Solde Cordon (droits)</TableHead>
-                     <TableHead>Solde TVA</TableHead>
-                     <TableHead>Statut</TableHead>
-                     <TableHead className="text-right">Actions</TableHead>
+                     <TableHead>{t("certificats:list.columns.ref")}</TableHead>
+                     <TableHead>{t("certificats:list.columns.entreprise")}</TableHead>
+                     <TableHead>{t("certificats:list.columns.cordon")}</TableHead>
+                     <TableHead>{t("certificats:list.columns.tva_int")}</TableHead>
+                     <TableHead>{t("certificats:list.columns.solde_cordon")}</TableHead>
+                     <TableHead>{t("certificats:list.columns.solde_tva")}</TableHead>
+                     <TableHead>{t("certificats:list.columns.statut")}</TableHead>
+                     <TableHead className="text-end">{t("certificats:list.columns.actions")}</TableHead>
                    </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun certificat</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("certificats:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((c) => (
                      <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
                        <TableCell className="font-medium">
                          {c.numero || c.reference || `#${c.id}`}
                          {sousTraiteCertIds.has(c.id) && (
-                           <Badge className="ml-2 text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">Sous-traité</Badge>
+                           <Badge className="ms-2 text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">{t("certificats:list.badge.sous_traite")}</Badge>
                          )}
                        </TableCell>
                        <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
-                       <TableCell>{c.montantCordon?.toLocaleString("fr-FR") ?? c.montantDouane?.toLocaleString("fr-FR") ?? "—"}</TableCell>
-                       <TableCell>{c.montantTVAInterieure?.toLocaleString("fr-FR") ?? c.montantInterieur?.toLocaleString("fr-FR") ?? "—"}</TableCell>
-                       <TableCell className="font-semibold">{c.soldeCordon?.toLocaleString("fr-FR") ?? "—"}</TableCell>
-                       <TableCell className="font-semibold">{c.soldeTVA?.toLocaleString("fr-FR") ?? "—"}</TableCell>
-                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
-                      <TableCell className="text-right">
+                       <TableCell>{formatAmount(c.montantCordon ?? c.montantDouane)}</TableCell>
+                       <TableCell>{formatAmount(c.montantTVAInterieure ?? c.montantInterieur)}</TableCell>
+                       <TableCell className="font-semibold">{formatAmount(c.soldeCordon)}</TableCell>
+                       <TableCell className="font-semibold">{formatAmount(c.soldeTVA)}</TableCell>
+                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge></TableCell>
+                      <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}><Eye className="h-4 w-4 mr-1" /> Détail</Button>
-                          {transitions.map((t) =>
-                            t.from.includes(c.statut) ? (
-                              <Button key={t.to} variant={t.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, t.to)}>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}><Eye className="h-4 w-4 me-1" /> {t("certificats:list.actions.detail")}</Button>
+                          {transitions.map((tr) =>
+                            tr.from.includes(c.statut) ? (
+                              <Button key={tr.to} variant={tr.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, tr.to)}>
                                 {actionLoading === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                {t.label}
+                                {t(`certificats:${tr.labelKey}`)}
                               </Button>
                             ) : null
                           )}
@@ -279,30 +267,41 @@ const Certificats = () => {
       {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Certificat {selected?.reference || `#${selected?.id}`}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("certificats:list.dialog.title", { ref: selected?.reference || `#${selected?.id}` })}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">{selected.entrepriseRaisonSociale || selected.entrepriseNom || "—"}</p></div>
-                <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
-                <div><span className="text-muted-foreground">Montant Cordon (Douane) — enveloppe</span><p className="font-medium">{selected.montantCordon?.toLocaleString("fr-FR") ?? selected.montantDouane?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Montant TVA Intérieure</span><p className="font-medium">{selected.montantTVAInterieure?.toLocaleString("fr-FR") ?? selected.montantInterieur?.toLocaleString("fr-FR") ?? "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Solde Cordon (droits)</span><p className="font-bold">{selected.soldeCordon?.toLocaleString("fr-FR") ?? "—"} MRU<br/><span className="text-[10px] font-normal text-muted-foreground">+ TVA restante {selected.tvaImportationDouane?.toLocaleString("fr-FR") ?? "0"} = {((selected.soldeCordon ?? 0) + (selected.tvaImportationDouane ?? 0)).toLocaleString("fr-FR")} MRU</span></p></div>
-                <div><span className="text-muted-foreground">Solde TVA</span><p className="font-bold">{selected.soldeTVA?.toLocaleString("fr-FR") ?? "—"} MRU</p></div>
-                <div><span className="text-muted-foreground">Total</span><p className="font-bold text-primary">{selected.montantTotal?.toLocaleString("fr-FR") || "0"} MRU</p></div>
-                <div><span className="text-muted-foreground">Date</span><p>{(selected.dateEmission || selected.dateCreation) ? new Date(selected.dateEmission || selected.dateCreation!).toLocaleDateString("fr-FR") : "—"}</p></div>
-                {selected.dateValidite && <div><span className="text-muted-foreground">Validité</span><p>{new Date(selected.dateValidite).toLocaleDateString("fr-FR")}</p></div>}
-                {selected.demandeCorrectionId && <div><span className="text-muted-foreground">Demande correction</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
-                {selected.marcheId && <div><span className="text-muted-foreground">Marché</span><p className="font-medium">#{selected.marcheId}</p></div>}
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.entreprise")}</span><p className="font-medium">{selected.entrepriseRaisonSociale || selected.entrepriseNom || "—"}</p></div>
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutCertificat(selected.statut)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.montant_cordon")}</span><p className="font-medium">{formatAmount(selected.montantCordon ?? selected.montantDouane)}</p></div>
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.montant_tva")}</span><p className="font-medium">{formatAmount(selected.montantTVAInterieure ?? selected.montantInterieur)}</p></div>
+                <div>
+                  <span className="text-muted-foreground">{t("certificats:list.dialog.solde_cordon")}</span>
+                  <p className="font-bold">
+                    {formatAmount(selected.soldeCordon)}
+                    <br />
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      {t("certificats:list.dialog.solde_cordon_plus", {
+                        tva: formatAmount(selected.tvaImportationDouane),
+                        total: formatAmount((selected.soldeCordon ?? 0) + (selected.tvaImportationDouane ?? 0)),
+                      })}
+                    </span>
+                  </p>
+                </div>
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.solde_tva")}</span><p className="font-bold">{formatAmount(selected.soldeTVA)}</p></div>
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.total")}</span><p className="font-bold text-primary">{formatAmount(selected.montantTotal)}</p></div>
+                <div><span className="text-muted-foreground">{t("certificats:list.dialog.date")}</span><p>{formatDate(selected.dateEmission || selected.dateCreation)}</p></div>
+                {selected.dateValidite && <div><span className="text-muted-foreground">{t("certificats:list.dialog.validite")}</span><p>{formatDate(selected.dateValidite)}</p></div>}
+                {selected.demandeCorrectionId && <div><span className="text-muted-foreground">{t("certificats:list.dialog.demande_correction")}</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
+                {selected.marcheId && <div><span className="text-muted-foreground">{t("certificats:list.dialog.marche")}</span><p className="font-medium">#{selected.marcheId}</p></div>}
               </div>
 
-              {/* Documents */}
               <div className="border-t pt-3">
-                <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Documents du dossier</h4>
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> {t("certificats:list.dialog.documents_title")}</h4>
                 {loadingDocs ? (
                   <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : detailDocs.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">Aucun document associé</p>
+                  <p className="text-muted-foreground text-xs">{t("certificats:list.dialog.no_documents")}</p>
                 ) : (
                   <div className="space-y-2">
                     {detailDocs.map((doc) => (
@@ -311,7 +310,7 @@ const Certificats = () => {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-sm font-medium">{doc.nomFichier}</p>
-                            <p className="text-xs text-muted-foreground">{doc.type?.replace(/_/g, " ")}</p>
+                            <p className="text-xs text-muted-foreground">{tTypeDocument(doc.type)}</p>
                           </div>
                         </div>
                         <a
@@ -320,7 +319,7 @@ const Certificats = () => {
                           rel="noopener noreferrer"
                           className="text-xs text-primary hover:underline"
                         >
-                          Télécharger
+                          {t("certificats:list.dialog.download")}
                         </a>
                       </div>
                     ))}
