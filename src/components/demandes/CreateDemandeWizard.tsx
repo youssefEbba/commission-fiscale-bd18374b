@@ -1,4 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { formatAmount, formatNumber } from "@/i18n/format";
+import { tTypeDocument, tTypeProjet } from "@/i18n/enums";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { PDFDocument } from "pdf-lib";
 import { useAuth } from "@/contexts/AuthContext";
