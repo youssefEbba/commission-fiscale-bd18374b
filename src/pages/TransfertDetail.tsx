@@ -487,7 +487,7 @@ const TransfertDetail = () => {
         onOpenChange={setGedOpen}
         title={t("transferts:documents.dialog_title", { id: transfert.id })}
         dossierId={transfert.id}
-        documentTypes={TRANSFERT_DOCUMENT_TYPES}
+        documentTypes={TRANSFERT_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={canUpload}
