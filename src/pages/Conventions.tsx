@@ -989,9 +989,10 @@ const Conventions = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {CONVENTION_DOCUMENT_TYPES.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>{tTypeDocument(opt.value)}</SelectItem>
+                        {CONVENTION_DOCUMENT_TYPES.map((value) => (
+                          <SelectItem key={value} value={value}>{tTypeDocument(value)}</SelectItem>
                         ))}
+
                       </SelectContent>
                     </Select>
                     <Input
