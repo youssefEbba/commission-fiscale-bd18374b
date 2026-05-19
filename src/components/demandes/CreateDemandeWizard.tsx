@@ -61,7 +61,7 @@ const emptyDqeLigne = (): DqeLigne => ({
   designation: "", unite: "", quantite: 0, prixUnitaireHT: 0, montantHT: 0,
 });
 
-const fmt = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (n: number) => formatNumber(Math.round(n * 100) / 100);
 
 interface Props {
   open: boolean;
@@ -217,7 +217,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       }
       setBusyMarcheIds(busy);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.load_data"), variant: "destructive" });
     } finally {
       setLoadingData(false);
     }
@@ -343,11 +343,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // Create enterprise inline
   const handleCreateEntreprise = async () => {
     if (!newEntreprise.raisonSociale) {
-      toast({ title: "Erreur", description: "La raison sociale est obligatoire", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.raison_sociale_required"), variant: "destructive" });
       return;
     }
     if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
-      toast({ title: "Erreur", description: "Le NIF doit contenir exactement 8 caractères", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
       return;
     }
     setCreatingEntreprise(true);
@@ -357,9 +357,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setEntrepriseId(String(created.id));
       setShowCreateEntreprise(false);
       setNewEntreprise({ raisonSociale: "", nif: "" });
-      toast({ title: "Succès", description: "Entreprise créée" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.entreprise_created") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setCreatingEntreprise(false);
     }
@@ -417,7 +417,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   const convMergeCreateDocs = useCallback(async () => {
     const pdfFiles = convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).map(d => d.file);
-    if (pdfFiles.length < 2) { toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF.", variant: "destructive" }); return; }
+    if (pdfFiles.length < 2) { toast({ title: t("demandes:wizard.errors.merge_impossible_title"), description: t("demandes:wizard.errors.merge_impossible_desc"), variant: "destructive" }); return; }
     setConvMerging(true);
     try {
       const mergedPdf = await PDFDocument.create();
@@ -431,16 +431,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const mergedBlob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
       setConvCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
-      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés.` });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.pdfs_merged", { count: pdfFiles.length }) });
     } catch (e: any) {
-      toast({ title: "Erreur de fusion", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:wizard.errors.merge_error"), description: e.message, variant: "destructive" });
     } finally { setConvMerging(false); }
   }, [convCreateDocs, toast]);
 
   // Create convention inline
   const handleCreateConvention = async () => {
     if (!newConvForm.reference || !newConvForm.intitule) {
-      toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.ref_intitule_required"), variant: "destructive" });
       return;
     }
     setCreatingConvention(true);
@@ -465,7 +465,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
       });
       setConvCreateDocs([]);
-      toast({ title: "Succès", description: `Convention créée${convCreateDocs.length ? ` avec ${convCreateDocs.length} document(s)` : ""}` });
+      toast({ title: t("demandes:toast.success"), description: convCreateDocs.length ? t("demandes:wizard.wtoast.convention_created_with_docs", { count: convCreateDocs.length }) : t("demandes:wizard.wtoast.convention_created") });
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
@@ -476,20 +476,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // Create marché inline
   const handleCreateMarche = async () => {
     if (!newMarche.numeroMarche) {
-      toast({ title: "Erreur", description: "Le numéro de marché est obligatoire", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.numero_marche_required"), variant: "destructive" });
       return;
     }
     if (!conventionId) {
-      toast({ title: "Erreur", description: "Veuillez d'abord sélectionner une convention", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_first"), variant: "destructive" });
       return;
     }
     if (!newMarche.dateSignature) {
-      toast({ title: "Erreur", description: "La date d'attribution est obligatoire", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.date_attribution_required"), variant: "destructive" });
       return;
     }
     const today = new Date().toISOString().split("T")[0];
     if (newMarche.dateSignature > today) {
-      toast({ title: "Erreur", description: "La date d'attribution doit être antérieure à la date du jour", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.date_attribution_past"), variant: "destructive" });
       return;
     }
     setCreatingMarche(true);
@@ -506,7 +506,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setMarcheId(String(created.id));
       setShowCreateMarche(false);
       setNewMarche({ numeroMarche: "" });
-      toast({ title: "Succès", description: "Marché créé" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.marche_created") });
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     } finally {
@@ -585,16 +585,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   // brouillon=false → POST normal puis (en édition) déclenche soumettre().
   const handleSubmit = async (asBrouillon: boolean) => {
     if ((user?.role === "AUTORITE_CONTRACTANTE" || isDelegate) && !user?.autoriteContractanteId) {
-      toast({ title: "Erreur", description: "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.no_ac_associated"), variant: "destructive" });
       return;
     }
     if (!entrepriseId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner une entreprise", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.entreprise_required"), variant: "destructive" });
       return;
     }
     // En soumission ferme, conv/marché obligatoire ; en brouillon on est plus tolérant.
     if (!asBrouillon && !conventionId && !marcheId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner une convention ou un marché", variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_or_marche_required"), variant: "destructive" });
       return;
     }
 
@@ -670,12 +670,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       }
 
       toast({
-        title: "Succès",
+        title: t("demandes:toast.success"),
         description: asBrouillon
-          ? `Brouillon ${demande.numero || "#" + demande.id} enregistré`
+          ? t("demandes:wizard.wtoast.draft_saved", { numero: demande.numero || `#${demande.id}` })
           : isEditing
-          ? `Demande ${demande.numero || "#" + demande.id} soumise`
-          : `Demande ${demande.numero || "#" + demande.id} créée`,
+          ? t("demandes:wizard.wtoast.demande_submitted", { numero: demande.numero || `#${demande.id}` })
+          : t("demandes:wizard.wtoast.demande_created", { numero: demande.numero || `#${demande.id}` }),
       });
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
@@ -692,7 +692,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       onOpenChange(false);
       onCreated();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: formatApiErrorMessage(e, asBrouillon ? "Échec de l'enregistrement" : "Échec de la soumission"), variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e, asBrouillon ? t("demandes:wizard.errors.save_failed") : t("demandes:wizard.errors.submit_failed")), variant: "destructive" });
     } finally {
       setSavingDraft(false);
       setSubmitting(false);
@@ -700,7 +700,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   };
 
   const steps = [
-    { label: "Entreprise & Documents", icon: FileText },
+    { label: t("demandes:wizard.steps.entreprise_documents"), icon: FileText },
   ];
 
   const selectedEntreprise = entreprises.find(e => String(e.id) === entrepriseId);
@@ -710,12 +710,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? `Modifier la demande ${editingDemande?.numero || `#${editingId}`}` : "Nouvelle demande de correction"}</DialogTitle>
+          <DialogTitle>{isEditing ? t("demandes:wizard.title_edit", { numero: editingDemande?.numero || `#${editingId}` }) : t("demandes:wizard.title_new")}</DialogTitle>
         </DialogHeader>
         <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <div>
-            <strong>Astuce mobile :</strong> votre saisie <em>et vos fichiers</em> sont sauvegardés automatiquement. Vous pouvez quitter l'application (WhatsApp, appel, etc.) et revenir : tout sera restauré.
+            <strong>{t("demandes:wizard.mobile_tip_title")}</strong> {t("demandes:wizard.mobile_tip_body")}
           </div>
         </div>
 
@@ -743,7 +743,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   {/* Entreprise with searchable combobox */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
-                      <span>Entreprise *</span>
+                      <span>{t("demandes:wizard.fields.entreprise_required")} *</span>
                       <Button
                         type="button"
                         variant="ghost"
@@ -752,7 +752,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         onClick={() => setShowCreateEntreprise(!showCreateEntreprise)}
                       >
                         <Plus className="h-3 w-3 mr-1" />
-                        {showCreateEntreprise ? "Annuler" : "Créer"}
+                        {showCreateEntreprise ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                       </Button>
                     </Label>
                     {!showCreateEntreprise ? (
@@ -765,16 +765,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             className="w-full justify-between font-normal"
                           >
                             {selectedEntreprise
-                              ? `${selectedEntreprise.raisonSociale} — NIF: ${selectedEntreprise.nif}`
-                              : "Rechercher une entreprise..."}
+                              ? t("demandes:wizard.fields.entreprise_label_value", { name: selectedEntreprise.raisonSociale, nif: selectedEntreprise.nif })
+                              : t("demandes:wizard.fields.entreprise_search_placeholder")}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                           <Command>
-                            <CommandInput placeholder="Rechercher par nom ou NIF..." />
+                            <CommandInput placeholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")} />
                             <CommandList>
-                              <CommandEmpty>Aucune entreprise trouvée.</CommandEmpty>
+                              <CommandEmpty>{t("demandes:wizard.fields.entreprise_empty")}</CommandEmpty>
                               <CommandGroup>
                                 {entreprises.map(e => (
                                   <CommandItem
@@ -786,7 +786,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                     }}
                                   >
                                     <Check className={`mr-2 h-4 w-4 ${entrepriseId === String(e.id) ? "opacity-100" : "opacity-0"}`} />
-                                    {e.raisonSociale} — NIF: {e.nif}
+                                    {t("demandes:wizard.fields.entreprise_label_value", { name: e.raisonSociale, nif: e.nif })}
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -799,20 +799,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         <CardContent className="p-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-primary">
                             <Building2 className="h-4 w-4" />
-                            Nouvelle entreprise
+                            {t("demandes:wizard.fields.new_entreprise")}
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Raison sociale <span className="text-destructive">*</span></Label>
+                            <Label className="text-xs">{t("demandes:wizard.fields.raison_sociale")} <span className="text-destructive">*</span></Label>
                             <Input
-                              placeholder="Ex: SARL Mon Entreprise"
+                              placeholder={t("demandes:wizard.fields.raison_sociale_placeholder")}
                               value={newEntreprise.raisonSociale}
                               onChange={e => setNewEntreprise(prev => ({ ...prev, raisonSociale: e.target.value }))}
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">NIF <span className="text-destructive">*</span> <span className="text-muted-foreground">(exactement 8 caractères)</span></Label>
+                            <Label className="text-xs">{t("demandes:wizard.fields.nif")} <span className="text-destructive">*</span> <span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span></Label>
                             <Input
-                              placeholder="Ex: 12345678"
+                              placeholder={t("demandes:wizard.fields.nif_placeholder")}
                               value={newEntreprise.nif}
                               maxLength={8}
                               onChange={e => setNewEntreprise(prev => ({ ...prev, nif: e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) }))}
@@ -820,28 +820,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             {newEntreprise.nif && newEntreprise.nif.length !== 8 && (
                               <p className="text-xs text-destructive flex items-center gap-1">
                                 <AlertCircle className="h-3 w-3" />
-                                {newEntreprise.nif.length}/8 caractères
+                                {t("demandes:wizard.fields.nif_count", { count: newEntreprise.nif.length })}
                               </p>
                             )}
                             {newEntreprise.nif && newEntreprise.nif.length === 8 && (
                               <p className="text-xs text-green-600 flex items-center gap-1">
                                 <CheckCircle className="h-3 w-3" />
-                                8/8 caractères
+                                {t("demandes:wizard.fields.nif_count", { count: 8 })}
                               </p>
                             )}
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Adresse</Label>
+                            <Label className="text-xs">{t("demandes:wizard.fields.adresse")}</Label>
                             <Input
-                              placeholder="Ex: Avenue Gamal Abdel Nasser, Nouakchott"
+                              placeholder={t("demandes:wizard.fields.adresse_placeholder")}
                               value={newEntreprise.adresse || ""}
                               onChange={e => setNewEntreprise(prev => ({ ...prev, adresse: e.target.value }))}
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Email</Label>
+                            <Label className="text-xs">{t("demandes:wizard.fields.email")}</Label>
                             <Input
-                              placeholder="Ex: contact@entreprise.mr"
+                              placeholder={t("demandes:wizard.fields.email_placeholder")}
                               type="email"
                               value={newEntreprise.email || ""}
                               onChange={e => setNewEntreprise(prev => ({ ...prev, email: e.target.value }))}
@@ -854,7 +854,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             disabled={creatingEntreprise || !newEntreprise.raisonSociale || newEntreprise.nif.length !== 8}
                           >
                             {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-                            Créer l'entreprise
+                            {t("demandes:wizard.fields.create_entreprise")}
                           </Button>
                         </CardContent>
                       </Card>
@@ -864,7 +864,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   {/* Attribution / Adjudication */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
-                      <span>Attribution / Adjudication</span>
+                      <span>{t("demandes:wizard.fields.attribution")}</span>
                       <Button
                         type="button"
                         variant="ghost"
@@ -873,7 +873,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         onClick={() => { setShowCreateMarche(!showCreateMarche); if (showCreateMarche) { setShowCreateConvention(false); } }}
                       >
                         <Plus className="h-3 w-3 mr-1" />
-                        {showCreateMarche ? "Annuler" : "Créer"}
+                        {showCreateMarche ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                       </Button>
                     </Label>
 
@@ -897,8 +897,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 return next;
                               });
                               toast({
-                                title: "Marché indisponible",
-                                description: `Ce marché est déjà associé à une demande de correction active${res.demandeCorrectionStatut ? ` (statut : ${res.demandeCorrectionStatut})` : ""}. Veuillez en choisir un autre.`,
+                                title: t("demandes:wizard.errors.marche_busy_title"),
+                                description: res.demandeCorrectionStatut
+                                  ? t("demandes:wizard.errors.marche_busy_with_status", { statut: res.demandeCorrectionStatut })
+                                  : t("demandes:wizard.errors.marche_busy_no_status"),
                                 variant: "destructive",
                               });
                               // On désélectionne pour forcer un nouveau choix
@@ -906,15 +908,18 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             })
                             .catch(() => { /* silencieux : fallback sur busyMarcheIds existants */ });
                         }}
-                        placeholder="Sélectionnez"
-                        searchPlaceholder="Rechercher un marché..."
+                        placeholder={t("demandes:wizard.fields.select_marche")}
+                        searchPlaceholder={t("demandes:wizard.fields.search_marche")}
                         options={marches.map(m => {
                           const isBusy = busyMarcheIds.has(m.id);
-                          const baseLabel = `${m.numeroMarche || `#${m.id}`} — ${m.montantContratTtc?.toLocaleString("fr-FR") || "0"} MRU`;
+                          const baseLabel = t("demandes:wizard.fields.marche_amount_value", {
+                            numero: m.numeroMarche || `#${m.id}`,
+                            amount: formatAmount(m.montantContratTtc ?? 0, { currency: "MRU" }),
+                          });
                           return {
                             value: String(m.id),
-                            label: isBusy ? `${baseLabel} (déjà associé à une demande active)` : baseLabel,
-                            description: isBusy ? "Marché indisponible : une demande de correction est déjà en cours pour ce marché." : undefined,
+                            label: isBusy ? `${baseLabel} ${t("demandes:wizard.fields.marche_busy_suffix")}` : baseLabel,
+                            description: isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined,
                             keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
                             disabled: isBusy,
                           };
@@ -925,13 +930,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         <CardContent className="p-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-primary">
                             <FileText className="h-4 w-4" />
-                            Nouveau marché
+                            {t("demandes:wizard.fields.new_marche")}
                           </div>
 
                           {/* Convention selector */}
                           <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                              <span>Convention <span className="text-destructive">*</span></span>
+                              <span>{t("demandes:wizard.fields.convention")} <span className="text-destructive">*</span></span>
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -940,15 +945,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 onClick={() => setShowCreateConvention(!showCreateConvention)}
                               >
                                 <Plus className="h-3 w-3 mr-0.5" />
-                                {showCreateConvention ? "Annuler" : "Créer"}
+                                {showCreateConvention ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                               </Button>
                             </Label>
                             {!showCreateConvention ? (
                               <SearchableSelect
                                 value={conventionId}
                                 onValueChange={v => { setConventionId(v); }}
-                                placeholder="Sélectionnez une convention"
-                                searchPlaceholder="Rechercher une convention..."
+                                placeholder={t("demandes:wizard.fields.select_convention")}
+                                searchPlaceholder={t("demandes:wizard.fields.search_convention")}
                                 options={conventions.map(c => ({
                                   value: String(c.id),
                                   label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
@@ -958,35 +963,35 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             ) : (
                               <div className="space-y-3 border border-dashed border-border rounded-md p-3 max-h-[50vh] overflow-y-auto">
                                 <Input
-                                  placeholder="Référence *"
+                                  placeholder={t("demandes:wizard.fields.reference_placeholder")}
                                   value={newConvForm.reference}
                                   onChange={e => setNewConvForm(prev => ({ ...prev, reference: e.target.value }))}
                                 />
                                 <Input
-                                  placeholder="Intitulé *"
+                                  placeholder={t("demandes:wizard.fields.intitule_placeholder")}
                                   value={newConvForm.intitule}
                                   onChange={e => setNewConvForm(prev => ({ ...prev, intitule: e.target.value }))}
                                 />
                                 {/* Bailleur */}
                                 <div className="space-y-1">
                                   <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                                    <span>Bailleur</span>
+                                    <span>{t("demandes:wizard.fields.bailleur")}</span>
                                     <Button type="button" variant="ghost" size="sm" className="h-5 text-xs text-primary p-0" onClick={() => setShowCreateBailleur(!showCreateBailleur)}>
                                       <Plus className="h-3 w-3 mr-0.5" />
-                                      {showCreateBailleur ? "Annuler" : "Ajouter"}
+                                      {showCreateBailleur ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.add_short")}
                                     </Button>
                                   </Label>
                                   {!showCreateBailleur ? (
                                     <SearchableSelect
                                       value={newConvForm.bailleurId != null ? String(newConvForm.bailleurId) : ""}
                                       onValueChange={v => setNewConvForm(prev => ({ ...prev, bailleurId: v ? Number(v) : undefined }))}
-                                      placeholder="Sélectionnez un bailleur"
-                                      searchPlaceholder="Rechercher un bailleur..."
+                                      placeholder={t("demandes:wizard.fields.select_bailleur")}
+                                      searchPlaceholder={t("demandes:wizard.fields.search_bailleur")}
                                       options={bailleurs.map(b => ({ value: String(b.id), label: b.nom }))}
                                     />
                                   ) : (
                                     <div className="flex gap-1">
-                                      <Input placeholder="Nom du bailleur" value={newBailleurNom} onChange={e => setNewBailleurNom(e.target.value)} className="text-sm" />
+                                      <Input placeholder={t("demandes:wizard.fields.bailleur_name")} value={newBailleurNom} onChange={e => setNewBailleurNom(e.target.value)} className="text-sm" />
                                       <Button size="sm" disabled={creatingBailleur || !newBailleurNom} onClick={async () => {
                                         setCreatingBailleur(true);
                                         try {
@@ -995,7 +1000,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                           setNewConvForm(prev => ({ ...prev, bailleurId: created.id }));
                                           setNewBailleurNom("");
                                           setShowCreateBailleur(false);
-                                          toast({ title: "Succès", description: "Bailleur ajouté" });
+                                          toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.bailleur_added") });
                                         } catch (e: any) {
                                           toast({ title: "Erreur", description: e.message, variant: "destructive" });
                                         } finally { setCreatingBailleur(false); }
@@ -1009,23 +1014,23 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 {/* Dates */}
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Date signature <span className="text-destructive">*</span></Label>
+                                    <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.date_signature")} <span className="text-destructive">*</span></Label>
                                     <Input type="date" value={newConvForm.dateSignature || ""} onChange={e => setNewConvForm(prev => ({ ...prev, dateSignature: e.target.value }))} />
                                   </div>
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Date fin</Label>
+                                    <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.date_fin")}</Label>
                                     <Input type="date" value={newConvForm.dateFin || ""} onChange={e => setNewConvForm(prev => ({ ...prev, dateFin: e.target.value }))} />
                                   </div>
                                 </div>
                                 {/* Devise */}
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Devise d'origine</Label>
+                                  <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.devise_origine")}</Label>
                                   <div className="flex gap-1">
                                     <SearchableSelect
                                       value={newConvForm.deviseOrigine || ""}
                                       onValueChange={code => setNewConvForm(f => ({ ...f, deviseOrigine: code, tauxChange: undefined, montantMru: undefined }))}
-                                      placeholder={devisesLoading ? "Chargement..." : "Devise"}
-                                      searchPlaceholder="Rechercher une devise..."
+                                      placeholder={devisesLoading ? t("demandes:wizard.fields.devise_loading") : t("demandes:wizard.fields.devise")}
+                                      searchPlaceholder={t("demandes:wizard.fields.search_devise")}
                                       triggerClassName="flex-1"
                                       options={devises.map(d => ({
                                         value: d.code,
@@ -1033,7 +1038,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         keywords: `${d.code} ${d.libelle}`,
                                       }))}
                                     />
-                                    <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setShowAddDevise(true)} title="Ajouter devise">
+                                    <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setShowAddDevise(true)} title={t("demandes:wizard.fields.add_devise_title")}>
                                       <Plus className="h-3 w-3" />
                                     </Button>
                                   </div>
@@ -1041,14 +1046,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 {/* Montants */}
                                 <div className="grid grid-cols-3 gap-2">
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Montant devise</Label>
+                                    <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.amount_devise")}</Label>
                                     <Input type="number" value={newConvForm.montantDevise ?? ""} onChange={e => {
                                       const val = e.target.value ? Number(e.target.value) : undefined;
                                       setNewConvForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                                     }} />
                                   </div>
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Taux de change</Label>
+                                    <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.exchange_rate")}</Label>
                                     <Input
                                       type="number"
                                       step="0.0001"
@@ -1065,19 +1070,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                     />
                                   </div>
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Montant MRU</Label>
-                                    <Input readOnly value={newConvForm.montantMru ? newConvForm.montantMru.toLocaleString("fr-FR") : "—"} className="bg-muted" />
+                                    <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.amount_mru")}</Label>
+                                    <Input readOnly value={newConvForm.montantMru ? formatNumber(newConvForm.montantMru) : "—"} className="bg-muted" />
                                   </div>
                                 </div>
                                 {convTauxLoading && (
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Loader2 className="h-3 w-3 animate-spin" /> Récupération du taux...
+                                    <Loader2 className="h-3 w-3 animate-spin" /> {t("demandes:wizard.fields.rate_loading")}
                                   </div>
                                 )}
                                 {/* Documents convention */}
                                 <div className="border-t border-border pt-2 space-y-2">
                                   <Label className="text-xs font-semibold flex items-center gap-1">
-                                    <Paperclip className="h-3 w-3" /> Documents joints
+                                    <Paperclip className="h-3 w-3" /> {t("demandes:wizard.fields.attached_documents")}
                                   </Label>
                                   {convGedReqs.length > 0 && (
                                     <div className="space-y-0.5">
@@ -1086,7 +1091,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         return (
                                           <div key={req.id} className={`flex items-center gap-1 text-[11px] rounded px-1.5 py-0.5 ${req.obligatoire && !hasDoc ? "bg-destructive/10" : hasDoc ? "bg-green-50" : "bg-muted/30"}`}>
                                             {hasDoc ? <CheckCircle className="h-3 w-3 text-green-600 shrink-0" /> : <XCircle className={`h-3 w-3 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />}
-                                            <span>{req.typeDocument}</span>
+                                            <span>{tTypeDocument(req.typeDocument)}</span>
                                             {req.obligatoire && <span className="text-destructive">*</span>}
                                           </div>
                                         );
@@ -1100,10 +1105,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                       </SelectTrigger>
                                       <SelectContent>
                                         {(convGedReqs.length > 0
-                                          ? convGedReqs.map(r => ({ value: r.typeDocument, label: r.typeDocument }))
+                                          ? convGedReqs.map(r => ({ value: r.typeDocument, label: tTypeDocument(r.typeDocument) }))
                                           : CONVENTION_DOCUMENT_TYPES
                                         ).map(t => (
-                                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                          <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                                         ))}
                                       </SelectContent>
                                     </Select>
@@ -1114,7 +1119,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                   </div>
                                   {convCreateDocs.length > 0 && (
                                     <div className="space-y-1">
-                                      <span className="text-[11px] text-muted-foreground">{convCreateDocs.length} fichier(s)</span>
+                                      <span className="text-[11px] text-muted-foreground">{t("demandes:wizard.fields.files_count", { count: convCreateDocs.length })}</span>
                                       {convCreateDocs.map((d, i) => (
                                         <div key={i} className="flex items-center gap-1 text-xs bg-muted/50 rounded px-2 py-1">
                                           <span className="text-muted-foreground font-mono w-4 shrink-0">{i + 1}</span>
@@ -1127,7 +1132,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                             }}><ArrowDown className="h-2 w-2" /></Button>
                                           </div>
                                           <File className="h-3 w-3 text-muted-foreground shrink-0" />
-                                          <Badge variant="outline" className="text-[10px] shrink-0">{d.type}</Badge>
+                                          <Badge variant="outline" className="text-[10px] shrink-0">{tTypeDocument(d.type)}</Badge>
                                           <span className="truncate flex-1">{d.file.name}</span>
                                           <Button variant="ghost" size="sm" className="h-4 w-4 p-0 text-destructive" onClick={() => setConvCreateDocs(prev => prev.filter((_, j) => j !== i))}>
                                             <XCircle className="h-3 w-3" />
@@ -1139,18 +1144,18 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
                                           <Info className="h-3 w-3 mt-0.5 shrink-0" />
                                           <div>
-                                            <p className="font-medium text-foreground">Fusion de fichiers PDF</p>
-                                            <p>Vous pouvez fusionner plusieurs fichiers PDF en un seul document. Réorganisez l'ordre des fichiers ci-dessus avant de lancer la fusion. Seuls les fichiers PDF seront inclus.</p>
+                                            <p className="font-medium text-foreground">{t("demandes:wizard.inline.fusion_title")}</p>
+                                            <p>{t("demandes:wizard.inline.fusion_body")}</p>
                                           </div>
                                         </div>
                                         {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 ? (
                                           <Button type="button" variant="outline" size="sm" className="w-full" onClick={convMergeCreateDocs} disabled={convMerging}>
                                             {convMerging ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Merge className="h-3 w-3 mr-1" />}
-                                            Fusionner les {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length} fichiers PDF
+                                            {t("demandes:wizard.inline.fusion_btn", { count: convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length })}
                                           </Button>
                                         ) : (
                                           <p className="text-[11px] text-muted-foreground italic text-center">
-                                            Ajoutez au moins 2 fichiers PDF pour activer la fusion.
+                                            {t("demandes:wizard.inline.fusion_min_hint")}
                                           </p>
                                         )}
                                       </div>
@@ -1164,7 +1169,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                   disabled={creatingConvention || !newConvForm.reference || !newConvForm.intitule}
                                 >
                                   {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-                                  Créer la convention
+                                  {t("demandes:wizard.fields.create_convention")}
                                 </Button>
                               </div>
                             )}
@@ -1173,36 +1178,36 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           {/* Marché fields — enabled after convention */}
                           {!conventionId ? (
                             <p className="text-xs text-muted-foreground italic border border-dashed border-border rounded-md p-2 text-center">
-                              Choisissez d'abord une convention ci-dessus
+                              {t("demandes:wizard.fields.convention_choose_first")}
                             </p>
                           ) : (
                             <>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Numéro de marché <span className="text-destructive">*</span></Label>
+                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.numero_marche")} <span className="text-destructive">*</span></Label>
                                 <Input
-                                  placeholder="Ex: MARCHE-2026-001"
+                                  placeholder={t("demandes:wizard.fields.numero_marche_placeholder")}
                                   value={newMarche.numeroMarche}
                                   onChange={e => setNewMarche(prev => ({ ...prev, numeroMarche: e.target.value }))}
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Montant TTC</Label>
+                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ttc")}</Label>
                                 <Input
-                                  placeholder="Ex: 50000000"
+                                  placeholder={t("demandes:wizard.fields.montant_ttc_placeholder")}
                                   type="number"
                                   value={newMarche.montantContratTtc || ""}
                                   onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Date d'attribution <span className="text-destructive">*</span></Label>
+                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.date_attribution")} <span className="text-destructive">*</span></Label>
                                 <Input
                                   type="date"
                                   max={new Date().toISOString().split("T")[0]}
                                   value={newMarche.dateSignature || ""}
                                   onChange={e => setNewMarche(prev => ({ ...prev, dateSignature: e.target.value }))}
                                 />
-                                <p className="text-[11px] text-muted-foreground">Doit être antérieure à la date du jour</p>
+                                <p className="text-[11px] text-muted-foreground">{t("demandes:wizard.fields.date_attribution_hint")}</p>
                               </div>
                               <Button
                                 size="sm"
@@ -1211,7 +1216,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature}
                               >
                                 {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-                                Créer le marché
+                                {t("demandes:wizard.fields.create_marche")}
                               </Button>
                             </>
                           )}
@@ -1222,9 +1227,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">Pièces à joindre <span className="text-muted-foreground text-xs">(selon configuration GED)</span></h3>
+                  <h3 className="text-sm font-semibold mb-2">{t("demandes:wizard.fields.pieces_to_attach")} <span className="text-muted-foreground text-xs">{t("demandes:wizard.fields.pieces_ged_hint")}</span></h3>
                   {gedDocTypes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic py-4 text-center">Aucun document configuré pour ce processus dans la GED.</p>
+                    <p className="text-sm text-muted-foreground italic py-4 text-center">{t("demandes:wizard.fields.pieces_empty")}</p>
                   ) : (
                     <div className="space-y-2">
                       {gedDocTypes.map(dt => (
@@ -1247,7 +1252,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                           <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
-                            {dt.typeDocument.replace(/_/g, " ")}
+                            {tTypeDocument(dt.typeDocument)}
                             {dt.obligatoire && <span className="text-destructive ml-1">*</span>}
                             {dt.description && (
                               <Tooltip>
@@ -1264,11 +1269,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.typeDocument].name}</span>
                           ) : existingDocs[dt.typeDocument] ? (
                             <span className="text-xs text-primary truncate max-w-[180px]" title={existingDocs[dt.typeDocument].nomFichier}>
-                              Déjà fourni — {existingDocs[dt.typeDocument].nomFichier}
+                              {t("demandes:wizard.fields.already_provided", { name: existingDocs[dt.typeDocument].nomFichier })}
                             </span>
                           ) : (
                             <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                              Glissez un fichier ici ou
+                              {t("demandes:wizard.actions.drop_hint")}
                             </span>
                           )}
                           <label className="cursor-pointer">
@@ -1282,7 +1287,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               }}
                             />
                             <span className="text-xs text-primary hover:underline">
-                              {docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? "Remplacer" : "Parcourir"}
+                              {docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
                             </span>
                           </label>
                         </div>
@@ -1300,27 +1305,27 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Modèle fiscal — Paramètres</CardTitle>
+                <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_parameters")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Référence dossier</Label>
-                    <Input value={referenceDossier} onChange={e => setReferenceDossier(e.target.value)} placeholder="REF-001" />
+                    <Label className="text-xs">{t("demandes:wizard.fields.reference_dossier")}</Label>
+                    <Input value={referenceDossier} onChange={e => setReferenceDossier(e.target.value)} placeholder={t("demandes:wizard.fields.reference_dossier_placeholder")} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Type de projet</Label>
+                    <Label className="text-xs">{t("demandes:wizard.fields.type_projet")}</Label>
                     <Select value={typeProjet} onValueChange={setTypeProjet}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="BTP">BTP</SelectItem>
-                        <SelectItem value="EQUIPEMENT">Équipements industriels</SelectItem>
+                        <SelectItem value="BTP">{tTypeProjet("BTP")}</SelectItem>
+                        <SelectItem value="EQUIPEMENT">{tTypeProjet("EQUIPEMENT")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex items-center gap-2 pt-5">
                     <Switch checked={showNomenclature} onCheckedChange={setShowNomenclature} />
-                    <Label className="text-xs">Nomenclature douanière</Label>
+                    <Label className="text-xs">{t("demandes:wizard.fields.nomenclature_douaniere")}</Label>
                   </div>
                 </div>
               </CardContent>
@@ -1329,9 +1334,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">1 — Importations & Douane</CardTitle>
+                  <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_importations")}</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => setImportations(prev => [...prev, emptyImportation()])}>
-                    <Plus className="h-3 w-3 mr-1" /> Ligne
+                    <Plus className="h-3 w-3 mr-1" /> {t("demandes:wizard.modele_fiscal.add_line")}
                   </Button>
                 </div>
               </CardHeader>
@@ -1340,19 +1345,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs min-w-[120px]">Désignation</TableHead>
-                        <TableHead className="text-xs w-16">Unité</TableHead>
-                        <TableHead className="text-xs w-20">Qté</TableHead>
-                        <TableHead className="text-xs w-20">PU</TableHead>
-                        {showNomenclature && <TableHead className="text-xs w-24">Nomencl.</TableHead>}
-                        <TableHead className="text-xs w-16">DD%</TableHead>
-                        <TableHead className="text-xs w-16">RS%</TableHead>
-                        <TableHead className="text-xs w-16">PSC%</TableHead>
-                        <TableHead className="text-xs w-16">TVA%</TableHead>
-                        <TableHead className="text-xs w-24 text-right">Val. Douane</TableHead>
-                        <TableHead className="text-xs w-20 text-right">DD</TableHead>
-                        <TableHead className="text-xs w-20 text-right">TVA douane</TableHead>
-                        <TableHead className="text-xs w-24 text-right">Total taxes</TableHead>
+                        <TableHead className="text-xs min-w-[120px]">{t("demandes:wizard.modele_fiscal.imp_cols.designation")}</TableHead>
+                        <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.unite")}</TableHead>
+                        <TableHead className="text-xs w-20">{t("demandes:wizard.modele_fiscal.imp_cols.quantite")}</TableHead>
+                        <TableHead className="text-xs w-20">{t("demandes:wizard.modele_fiscal.imp_cols.pu")}</TableHead>
+                        {showNomenclature && <TableHead className="text-xs w-24">{t("demandes:wizard.modele_fiscal.imp_cols.nomencl")}</TableHead>}
+                        <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.dd_pct")}</TableHead>
+                        <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.rs_pct")}</TableHead>
+                        <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.psc_pct")}</TableHead>
+                        <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.tva_pct")}</TableHead>
+                        <TableHead className="text-xs w-24 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.val_douane")}</TableHead>
+                        <TableHead className="text-xs w-20 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.dd")}</TableHead>
+                        <TableHead className="text-xs w-20 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.tva_douane")}</TableHead>
+                        <TableHead className="text-xs w-24 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.total_taxes")}</TableHead>
                         <TableHead className="w-8" />
                       </TableRow>
                     </TableHeader>
@@ -1385,46 +1390,46 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   </Table>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 p-3 bg-muted/50 rounded-lg text-sm">
-                  <div><span className="text-muted-foreground">Total VD</span><p className="font-semibold">{fmt(totalVD)}</p></div>
-                  <div><span className="text-muted-foreground">Total DD</span><p className="font-semibold">{fmt(totalDD)}</p></div>
-                  <div><span className="text-muted-foreground">Total TVA douane</span><p className="font-semibold">{fmt(totalTVADouane)}</p></div>
-                  <div><span className="text-muted-foreground">Crédit extérieur</span><p className="font-semibold text-primary">{fmt(creditExterieur)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.vd")}</span><p className="font-semibold">{fmt(totalVD)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.dd")}</span><p className="font-semibold">{fmt(totalDD)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.tva_douane")}</span><p className="font-semibold">{fmt(totalTVADouane)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</span><p className="font-semibold text-primary">{fmt(creditExterieur)}</p></div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">2 — Fiscalité intérieure (DGI)</CardTitle>
+                <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_fiscalite")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Montant HT</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.montant_ht")}</Label>
                     <Input type="number" value={fiscalite.montantHT || ""} onChange={e => updateFiscalite("montantHT", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Taux TVA %</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.taux_tva")}</Label>
                     <Input type="number" value={fiscalite.tauxTVA} onChange={e => updateFiscalite("tauxTVA", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Autres taxes</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.autres_taxes")}</Label>
                     <Input type="number" value={fiscalite.autresTaxes || ""} onChange={e => updateFiscalite("autresTaxes", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">TVA collectée</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.tva_collectee")}</Label>
                     <Input readOnly value={fmt(fiscalite.tvaCollectee)} className="bg-muted" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">TVA déductible (douane)</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.tva_deductible")}</Label>
                     <Input readOnly value={fmt(totalTVADouane)} className="bg-muted" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">TVA nette</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.tva_nette")}</Label>
                     <Input readOnly value={fmt(fiscalite.tvaNette)} className="bg-muted" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Crédit intérieur</Label>
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.credit_interieur")}</Label>
                     <Input readOnly value={fmt(fiscalite.creditInterieur)} className="bg-muted" />
                   </div>
                 </div>
@@ -1433,20 +1438,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
             <Card className="border-primary/30">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">3 — Récapitulatif</CardTitle>
+                <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_recap")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-xs text-muted-foreground">Crédit extérieur</p>
+                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</p>
                     <p className="text-lg font-bold">{fmt(creditExterieur)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Crédit intérieur</p>
+                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_interieur")}</p>
                     <p className="text-lg font-bold">{fmt(fiscalite.creditInterieur)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Crédit total</p>
+                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</p>
                     <p className="text-xl font-bold text-primary">{fmt(creditTotal)}</p>
                   </div>
                 </div>
@@ -1460,20 +1465,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Formulaire DQE</CardTitle>
+                <CardTitle className="text-base">{t("demandes:wizard.dqe_form.section")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Numéro AAOI</Label>
-                    <Input value={dqeNumero} onChange={e => setDqeNumero(e.target.value)} placeholder="AAOI-2026-01" />
+                    <Label className="text-xs">{t("demandes:wizard.dqe_form.numero_aaoi")}</Label>
+                    <Input value={dqeNumero} onChange={e => setDqeNumero(e.target.value)} placeholder={t("demandes:wizard.dqe_form.numero_aaoi_placeholder")} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Projet</Label>
+                    <Label className="text-xs">{t("demandes:wizard.dqe_form.projet")}</Label>
                     <Input value={dqeProjet} onChange={e => setDqeProjet(e.target.value)} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Lot</Label>
+                    <Label className="text-xs">{t("demandes:wizard.dqe_form.lot")}</Label>
                     <Input value={dqeLot} onChange={e => setDqeLot(e.target.value)} />
                   </div>
                   <div className="space-y-1">
@@ -1484,18 +1489,18 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
                 <div className="flex justify-end">
                   <Button variant="outline" size="sm" onClick={() => setDqeLignes(prev => [...prev, emptyDqeLigne()])}>
-                    <Plus className="h-3 w-3 mr-1" /> Ajouter une ligne
+                    <Plus className="h-3 w-3 mr-1" /> {t("demandes:wizard.dqe_form.add_line")}
                   </Button>
                 </div>
 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs">Désignation</TableHead>
-                      <TableHead className="text-xs w-20">Unité</TableHead>
-                      <TableHead className="text-xs w-24">Quantité</TableHead>
-                      <TableHead className="text-xs w-24">PU HT</TableHead>
-                      <TableHead className="text-xs w-28 text-right">Montant HT</TableHead>
+                      <TableHead className="text-xs">{t("demandes:wizard.dqe_form.cols.designation")}</TableHead>
+                      <TableHead className="text-xs w-20">{t("demandes:wizard.dqe_form.cols.unite")}</TableHead>
+                      <TableHead className="text-xs w-24">{t("demandes:wizard.dqe_form.cols.quantite")}</TableHead>
+                      <TableHead className="text-xs w-24">{t("demandes:wizard.dqe_form.cols.pu_ht")}</TableHead>
+                      <TableHead className="text-xs w-28 text-right">{t("demandes:wizard.dqe_form.cols.montant_ht")}</TableHead>
                       <TableHead className="w-8" />
                     </TableRow>
                   </TableHeader>
@@ -1520,9 +1525,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 </Table>
 
                 <div className="grid grid-cols-3 gap-4 p-3 bg-muted/50 rounded-lg text-sm">
-                  <div><span className="text-muted-foreground">Total HT</span><p className="font-semibold">{fmt(dqeTotalHT)}</p></div>
-                  <div><span className="text-muted-foreground">TVA</span><p className="font-semibold">{fmt(dqeMontantTVA)}</p></div>
-                  <div><span className="text-muted-foreground">Total TTC</span><p className="font-semibold text-primary">{fmt(dqeTotalTTC)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.dqe_form.totals.total_ht")}</span><p className="font-semibold">{fmt(dqeTotalHT)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.dqe_form.totals.tva")}</span><p className="font-semibold">{fmt(dqeMontantTVA)}</p></div>
+                  <div><span className="text-muted-foreground">{t("demandes:wizard.dqe_form.totals.total_ttc")}</span><p className="font-semibold text-primary">{fmt(dqeTotalTTC)}</p></div>
                 </div>
               </CardContent>
             </Card>
@@ -1534,15 +1539,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div>
             {step > 0 && (
               <Button variant="outline" onClick={() => setStep(s => s - 1)}>
-                <ArrowLeft className="h-4 w-4 mr-1" /> Précédent
+                <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("demandes:wizard.actions.previous")}
               </Button>
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>{t("demandes:wizard.actions.cancel")}</Button>
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
-                Suivant <ArrowRight className="h-4 w-4 ml-1" />
+                {t("demandes:wizard.actions.next")} <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
               </Button>
             ) : (
               <>
@@ -1551,15 +1556,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     variant="secondary"
                     onClick={() => handleSubmit(true)}
                     disabled={savingDraft || submitting || !entrepriseId}
-                    title="Enregistrer sans notifier les services"
+                    title={t("demandes:wizard.actions.save_draft_tooltip")}
                   >
                     {savingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
-                    Enregistrer brouillon
+                    {t("demandes:wizard.actions.save_draft")}
                   </Button>
                 )}
                 <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                  {isEditing ? "Soumettre" : "Soumettre la demande"}
+                  {isEditing ? t("demandes:wizard.actions.submit") : t("demandes:wizard.actions.submit_full")}
                 </Button>
               </>
             )}
@@ -1571,14 +1576,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     {/* Add Devise dialog */}
     <Dialog open={showAddDevise} onOpenChange={setShowAddDevise}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader><DialogTitle>Ajouter une devise</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("demandes:wizard.inline.add_devise_dialog_title")}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Input placeholder="Code (ex: GBP) *" value={newDevise.code} onChange={e => setNewDevise(prev => ({ ...prev, code: e.target.value.toUpperCase() }))} />
-          <Input placeholder="Libellé (ex: Livre sterling) *" value={newDevise.libelle} onChange={e => setNewDevise(prev => ({ ...prev, libelle: e.target.value }))} />
-          <Input placeholder="Symbole (ex: £)" value={newDevise.symbole} onChange={e => setNewDevise(prev => ({ ...prev, symbole: e.target.value }))} />
+          <Input placeholder={t("demandes:wizard.inline.devise_code_placeholder")} value={newDevise.code} onChange={e => setNewDevise(prev => ({ ...prev, code: e.target.value.toUpperCase() }))} />
+          <Input placeholder={t("demandes:wizard.inline.devise_libelle_placeholder")} value={newDevise.libelle} onChange={e => setNewDevise(prev => ({ ...prev, libelle: e.target.value }))} />
+          <Input placeholder={t("demandes:wizard.inline.devise_symbole_placeholder")} value={newDevise.symbole} onChange={e => setNewDevise(prev => ({ ...prev, symbole: e.target.value }))} />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setShowAddDevise(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setShowAddDevise(false)}>{t("demandes:wizard.actions.cancel")}</Button>
           <Button disabled={addingDevise || !newDevise.code || !newDevise.libelle} onClick={async () => {
             setAddingDevise(true);
             try {
@@ -1587,13 +1592,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               setNewConvForm(f => ({ ...f, deviseOrigine: created.code, tauxChange: undefined, montantMru: undefined }));
               setShowAddDevise(false);
               setNewDevise({ code: "", libelle: "", symbole: "" });
-              toast({ title: "Succès", description: "Devise ajoutée" });
+              toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.devise_added") });
             } catch (e: any) {
               toast({ title: "Erreur", description: e.message, variant: "destructive" });
             } finally { setAddingDevise(false); }
           }}>
             {addingDevise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-            Ajouter
+            {t("demandes:wizard.actions.add_short")}
           </Button>
         </DialogFooter>
       </DialogContent>
