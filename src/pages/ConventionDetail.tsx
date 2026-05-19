@@ -171,7 +171,7 @@ const ConventionDetail = () => {
         onOpenChange={setGedOpen}
         title={t("conventions:docs.modal_title", { ref: conv.reference || `#${conv.id}` })}
         dossierId={conv.id}
-        documentTypes={CONVENTION_DOCUMENT_TYPES}
+        documentTypes={CONVENTION_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
         canUpload={canManage}
