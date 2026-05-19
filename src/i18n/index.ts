@@ -18,6 +18,7 @@ import frUtilisations from "./locales/fr/utilisations.json";
 import frTransferts from "./locales/fr/transferts.json";
 import frCloture from "./locales/fr/cloture.json";
 import frModifications from "./locales/fr/modifications.json";
+import frSousTraitance from "./locales/fr/sous_traitance.json";
 import frMiseEnPlace from "./locales/fr/mise_en_place.json";
 import frGed from "./locales/fr/ged.json";
 import frUsers from "./locales/fr/users.json";
@@ -43,6 +44,7 @@ import arUtilisations from "./locales/ar/utilisations.json";
 import arTransferts from "./locales/ar/transferts.json";
 import arCloture from "./locales/ar/cloture.json";
 import arModifications from "./locales/ar/modifications.json";
+import arSousTraitance from "./locales/ar/sous_traitance.json";
 import arMiseEnPlace from "./locales/ar/mise_en_place.json";
 import arGed from "./locales/ar/ged.json";
 import arUsers from "./locales/ar/users.json";
@@ -71,6 +73,7 @@ export const NAMESPACES = [
   "transferts",
   "cloture",
   "modifications",
+  "sous_traitance",
   "mise_en_place",
   "ged",
   "users",
@@ -98,6 +101,7 @@ const resources = {
     transferts: frTransferts,
     cloture: frCloture,
     modifications: frModifications,
+    sous_traitance: frSousTraitance,
     mise_en_place: frMiseEnPlace,
     ged: frGed,
     users: frUsers,
@@ -123,6 +127,7 @@ const resources = {
     transferts: arTransferts,
     cloture: arCloture,
     modifications: arModifications,
+    sous_traitance: arSousTraitance,
     mise_en_place: arMiseEnPlace,
     ged: arGed,
     users: arUsers,
