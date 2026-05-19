@@ -1,28 +1,17 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
-  CERTIFICAT_STATUT_LABELS, CreateCertificatCreditRequest,
+  CreateCertificatCreditRequest,
   demandeCorrectionApi, DemandeCorrectionDto,
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
-  DecisionCorrectionDto, DecisionType, isApiError,
+  DecisionCorrectionDto, isApiError,
 } from "@/lib/api";
-
-// Extracts a user-friendly error message, with special handling for 409 / CONFLICT.
-function describeApiError(e: unknown, fallback: string): string {
-  if (isApiError(e)) {
-    if (e.status === 409 || e.code === "CONFLICT") {
-      return e.message || "Un certificat de crédit actif existe déjà pour cette demande de correction.";
-    }
-    return e.message || fallback;
-  }
-  if (e instanceof Error) return e.message || fallback;
-  return fallback;
-}
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,11 +26,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, DollarSign, ShieldCheck, XCircle, Lock, Unlock, AlertTriangle, History, MoreHorizontal, Send, Trash2 } from "lucide-react";
+import { Award, Search, RefreshCw, Eye, Loader2, Filter, Plus, Upload, FileText, CheckCircle, Info, XCircle, AlertTriangle, History, MoreHorizontal, Send, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { API_BASE } from "@/lib/apiConfig";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { formatDate, formatAmount } from "@/i18n/format";
 
+// Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
   ENVOYEE: "bg-sky-100 text-sky-800",
@@ -59,23 +52,28 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Document types for mise en place (P4)
-const MISE_EN_PLACE_DOC_TYPES: { value: string; label: string }[] = [
-  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
-  { value: "CONTRAT", label: "Contrat enregistré" },
-  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre de notification" },
-  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
-  { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
+// Types de documents demandables en rejet temporaire pour la mise en place (P4).
+// Valeurs brutes alignées sur l'enum TypeDocument backend ; libellés traduits via tTypeDocument().
+const MISE_EN_PLACE_DOC_TYPES = [
+  "LETTRE_SAISINE",
+  "CONTRAT",
+  "LETTRE_NOTIFICATION_CONTRAT",
+  "CERTIFICAT_NIF",
+  "LETTRE_CORRECTION",
 ];
 
-// Updated for new parallel workflow
-const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; label: string; icon?: string }[]> = {
-  AUTORITE_CONTRACTANTE: [],
-  PRESIDENT: [
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", label: "Valider et ouvrir" },
-  ],
-  DGTCP: [],
-};
+const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
+
+function describeApiError(e: unknown, fallback: string, dupMsg: string): string {
+  if (isApiError(e)) {
+    if (e.status === 409 || e.code === "CONFLICT") {
+      return e.message || dupMsg;
+    }
+    return e.message || fallback;
+  }
+  if (e instanceof Error) return e.message || fallback;
+  return fallback;
+}
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (!doc.chemin) return "#";
@@ -84,13 +82,17 @@ function getDocFileUrl(doc: DocumentDto): string {
 }
 
 const DemandesMiseEnPlace = () => {
+  const { t } = useTranslation(["mise_en_place", "common", "enums"]);
+  usePageTitle("mise_en_place:list.title");
+
   const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const [annulTarget, setAnnulTarget] = useState<CertificatCreditDto | null>(null);
   const [annulMotif, setAnnulMotif] = useState("");
   const [annulLoading, setAnnulLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -101,11 +103,9 @@ const DemandesMiseEnPlace = () => {
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
 
-  // Creation dialog state
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [savingBrouillon, setSavingBrouillon] = useState(false);
-  // Edit brouillon state
   const [editingBrouillon, setEditingBrouillon] = useState<CertificatCreditDto | null>(null);
   const [editingLoading, setEditingLoading] = useState(false);
   const [editingExistingDocs, setEditingExistingDocs] = useState<DocumentDto[]>([]);
@@ -116,45 +116,35 @@ const DemandesMiseEnPlace = () => {
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
 
-  // Detail documents
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
-  // Montants dialog (DGTCP)
-  const [showMontants, setShowMontants] = useState<CertificatCreditDto | null>(null);
-  const [montantCordon, setMontantCordon] = useState("");
-  const [montantTVAInt, setMontantTVAInt] = useState("");
-  const [savingMontants, setSavingMontants] = useState(false);
-
-  // Lookup caches for full objects
   const [correctionCache, setCorrectionCache] = useState<Record<number, DemandeCorrectionDto>>({});
   const [marcheCache, setMarcheCache] = useState<Record<number, MarcheDto>>({});
   const [entrepriseCache, setEntrepriseCache] = useState<Record<number, EntrepriseDto>>({});
 
-  // Info modal state
   const [infoModal, setInfoModal] = useState<{ type: "entreprise" | "correction" | "marche"; id: number } | null>(null);
 
-  // Reject dialog state (DGTCP)
   const [showReject, setShowReject] = useState<CertificatCreditDto | null>(null);
   const [motifRejet, setMotifRejet] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
-  // REJET_TEMP dialog state
   const [showRejetTemp, setShowRejetTemp] = useState<CertificatCreditDto | null>(null);
   const [rejetTempMotif, setRejetTempMotif] = useState("");
   const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
   const [rejetTempLoading, setRejetTempLoading] = useState(false);
 
-  // Decisions state
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
-
-
-  // Organism tabs state
   const [activeOrg, setActiveOrg] = useState("DGI");
-
-  // Visa dialog
-  const [showVisaOrg, setShowVisaOrg] = useState<{ certId: number; orgRole: string } | null>(null);
   const [visaLoading, setVisaLoading] = useState(false);
+
+  const tErr = (e: unknown, fallback: string) =>
+    describeApiError(e, fallback, t("mise_en_place:toast.duplicate_active"));
+
+  const okToast = (description: string) =>
+    toast({ title: t("common:states.success"), description });
+  const errToast = (description: string) =>
+    toast({ title: t("common:states.error"), description, variant: "destructive" });
 
   const fetchCertificats = async () => {
     setLoading(true);
@@ -167,12 +157,10 @@ const DemandesMiseEnPlace = () => {
       }
       setCertificats(data);
 
-      // Collect unique IDs to resolve
       const corrIds = [...new Set(data.map(c => c.demandeCorrectionId).filter(Boolean))] as number[];
       const marcheIds = [...new Set(data.map(c => c.marcheId).filter(Boolean))] as number[];
       const entIds = [...new Set(data.map(c => c.entrepriseId).filter(Boolean))] as number[];
 
-      // Fetch names in parallel
       const [corrResults, marcheResults, entResults] = await Promise.all([
         Promise.all(corrIds.map(id => demandeCorrectionApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
         Promise.all(marcheIds.map(id => marcheApi.getById(id).then(r => ({ id, data: r })).catch(() => null))),
@@ -183,7 +171,7 @@ const DemandesMiseEnPlace = () => {
       setMarcheCache(Object.fromEntries(marcheResults.filter(Boolean).map(r => [r!.id, r!.data])));
       setEntrepriseCache(Object.fromEntries(entResults.filter(Boolean).map(r => [r!.id, r!.data])));
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les demandes", variant: "destructive" });
+      errToast(t("mise_en_place:list.load_error"));
     } finally { setLoading(false); }
   };
 
@@ -203,7 +191,7 @@ const DemandesMiseEnPlace = () => {
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
       setDocRequirements(reqs);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+      errToast(t("mise_en_place:dialogs.create.load_error"));
     }
   };
 
@@ -214,28 +202,24 @@ const DemandesMiseEnPlace = () => {
     for (const [type, file] of Object.entries(docFiles)) {
       try {
         await certificatCreditApi.uploadDocument(certId, type, file);
-      } catch (e) {
+      } catch {
         failures.push(type);
       }
     }
     setUploadingDocs(false);
     if (failures.length > 0) {
-      toast({
-        title: "Avertissement",
-        description: `Échec upload: ${failures.join(", ")}`,
-        variant: "destructive",
-      });
+      errToast(t("mise_en_place:toast.upload_failures", { list: failures.map(tTypeDocument).join(", ") }));
     }
   };
 
   const handleCreate = async (asBrouillon: boolean) => {
     if (!selectedCorrectionId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner une demande de correction", variant: "destructive" });
+      errToast(t("mise_en_place:dialogs.create.no_correction_selected"));
       return;
     }
     const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
     if (!correction?.entrepriseId) {
-      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
+      errToast(t("mise_en_place:dialogs.create.no_entreprise"));
       return;
     }
 
@@ -254,18 +238,15 @@ const DemandesMiseEnPlace = () => {
         try {
           await certificatCreditApi.soumettre(created.id);
         } catch {
-          // Si la soumission échoue, le certificat reste créé en BROUILLON
+          // si la soumission échoue, le brouillon reste créé
         }
       }
 
-      toast({
-        title: "Succès",
-        description: asBrouillon ? "Brouillon enregistré" : "Demande soumise au contrôle",
-      });
+      okToast(asBrouillon ? t("mise_en_place:toast.draft_saved") : t("mise_en_place:toast.submitted_to_control"));
       setShowCreate(false);
       fetchCertificats();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: describeApiError(e, "Impossible de créer la demande"), variant: "destructive" });
+      errToast(tErr(e, t("mise_en_place:dialogs.create.create_error")));
     } finally {
       setCreating(false);
       setSavingBrouillon(false);
@@ -290,7 +271,7 @@ const DemandesMiseEnPlace = () => {
       setDocRequirements(reqs);
       setEditingExistingDocs(existingDocs);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+      errToast(t("mise_en_place:dialogs.create.load_error"));
     } finally {
       setLoadingExistingDocs(false);
     }
@@ -300,7 +281,7 @@ const DemandesMiseEnPlace = () => {
     if (!editingBrouillon || !selectedCorrectionId) return;
     const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
     if (!correction?.entrepriseId) {
-      toast({ title: "Erreur", description: "L'entreprise n'est pas définie dans la correction", variant: "destructive" });
+      errToast(t("mise_en_place:dialogs.create.no_entreprise"));
       return;
     }
     const wasBrouillon = editingBrouillon.statut === "BROUILLON";
@@ -309,21 +290,17 @@ const DemandesMiseEnPlace = () => {
       await certificatCreditApi.update(editingBrouillon.id, {
         entrepriseId: correction.entrepriseId,
         demandeCorrectionId: Number(selectedCorrectionId),
-        // Préserver le statut côté back : on ne renvoie brouillon=true que si on était en BROUILLON.
         brouillon: wasBrouillon,
       });
       await uploadDocsFor(editingBrouillon.id);
       if (alsoSubmit && wasBrouillon) {
         await certificatCreditApi.soumettre(editingBrouillon.id);
       }
-      toast({
-        title: "Succès",
-        description: alsoSubmit && wasBrouillon ? "Brouillon soumis" : "Demande mise à jour",
-      });
+      okToast(alsoSubmit && wasBrouillon ? t("mise_en_place:toast.draft_submitted_short") : t("mise_en_place:toast.updated"));
       setEditingBrouillon(null);
       fetchCertificats();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: describeApiError(e, "Échec mise à jour"), variant: "destructive" });
+      errToast(tErr(e, t("mise_en_place:dialogs.edit.update_error")));
     } finally {
       setEditingLoading(false);
     }
@@ -333,21 +310,10 @@ const DemandesMiseEnPlace = () => {
     setActionLoading(id);
     try {
       await certificatCreditApi.prendreEnCharge(id);
-      toast({ title: "Succès", description: "Demande prise en charge (EN_CONTROLE)" });
+      okToast(t("mise_en_place:toast.taken_charge"));
       fetchCertificats();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: describeApiError(e, "Échec de la prise en charge"), variant: "destructive" });
-    } finally { setActionLoading(null); }
-  };
-
-  const handleStatut = async (id: number, statut: CertificatStatut) => {
-    setActionLoading(id);
-    try {
-      await certificatCreditApi.updateStatut(id, statut);
-      toast({ title: "Succès", description: `Statut: ${CERTIFICAT_STATUT_LABELS[statut]}` });
-      fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      errToast(tErr(e, t("mise_en_place:toast.taken_charge")));
     } finally { setActionLoading(null); }
   };
 
@@ -355,10 +321,10 @@ const DemandesMiseEnPlace = () => {
     setSubmittingId(id);
     try {
       await certificatCreditApi.soumettre(id);
-      toast({ title: "Succès", description: "Certificat soumis (EN_CONTROLE)" });
+      okToast(t("mise_en_place:toast.submitted_envoyee_to_encontrole"));
       fetchCertificats();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: describeApiError(e, "Échec de la soumission"), variant: "destructive" });
+      errToast(tErr(e, t("mise_en_place:toast.submitted_envoyee_to_encontrole")));
     } finally { setSubmittingId(null); }
   };
 
@@ -367,11 +333,11 @@ const DemandesMiseEnPlace = () => {
     setDeletingLoading(true);
     try {
       await certificatCreditApi.remove(deletingTarget.id);
-      toast({ title: "Succès", description: "Brouillon supprimé" });
+      okToast(t("mise_en_place:toast.draft_deleted"));
       setDeletingTarget(null);
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      errToast(tErr(e, t("mise_en_place:toast.draft_deleted")));
     } finally { setDeletingLoading(false); }
   };
 
@@ -380,12 +346,12 @@ const DemandesMiseEnPlace = () => {
     setRejecting(true);
     try {
       await certificatCreditApi.reject(showReject.id, motifRejet.trim());
-      toast({ title: "Succès", description: "Demande rejetée" });
+      okToast(t("mise_en_place:toast.rejected"));
       setShowReject(null);
       setMotifRejet("");
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      errToast(tErr(e, t("mise_en_place:toast.rejected")));
     } finally { setRejecting(false); }
   };
 
@@ -394,16 +360,15 @@ const DemandesMiseEnPlace = () => {
     setRejetTempLoading(true);
     try {
       await certificatCreditApi.postDecision(showRejetTemp.id, "REJET_TEMP", rejetTempMotif.trim(), rejetTempDocs);
-      toast({ title: "Succès", description: "Rejet temporaire envoyé — documents demandés" });
+      okToast(t("mise_en_place:toast.rejet_temp_sent"));
       setShowRejetTemp(null);
       setRejetTempMotif("");
       setRejetTempDocs([]);
       fetchCertificats();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      errToast(tErr(e, t("mise_en_place:toast.rejet_temp_sent")));
     } finally { setRejetTempLoading(false); }
   };
-
 
   const openDetail = async (c: CertificatCreditDto) => {
     setSelected(c);
@@ -421,15 +386,13 @@ const DemandesMiseEnPlace = () => {
     setLoadingDocs(false);
   };
 
-  const transitions = ROLE_TRANSITIONS[role] || [];
-
   // Une mise en place "ouverte" (OUVERT/MODIFIE/CLOTURE) bascule dans le module Certificats
-  // et n'apparaît plus dans la liste des demandes de mise en place.
   const HIDDEN_STATUTS: CertificatStatut[] = ["OUVERT", "MODIFIE", "CLOTURE"];
   const filtered = certificats.filter((c) => {
     if (HIDDEN_STATUTS.includes(c.statut)) return false;
-    const ms = (c.reference || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
+    const s = search.toLowerCase();
+    const ms = (c.reference || "").toLowerCase().includes(s) ||
+      (c.entrepriseNom || "").toLowerCase().includes(s) ||
       String(c.id).includes(search);
     return ms && (filterStatut === "ALL" || c.statut === filterStatut);
   });
@@ -441,15 +404,17 @@ const DemandesMiseEnPlace = () => {
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
 
-  // Demandes de correction qui ont déjà un certificat actif (non ANNULE).
-  // Sert à désactiver/empêcher la création d'un doublon (le backend renvoie 409).
   const lockedCorrectionIds = new Set<number>(
-    certificats
-      .filter(c => c.statut !== "ANNULE" && c.demandeCorrectionId)
-      .map(c => c.demandeCorrectionId as number)
+    certificats.filter(c => c.statut !== "ANNULE" && c.demandeCorrectionId).map(c => c.demandeCorrectionId as number)
   );
-  // En édition d'un brouillon, autoriser sa propre demande liée (cas où on remet la même).
   const editingOwnCorrectionId = editingBrouillon?.demandeCorrectionId ?? null;
+
+  // Toutes les valeurs CertificatStatut connues (pour le filtre — labels via tStatutCertificat)
+  const STATUT_FILTER_OPTIONS: CertificatStatut[] = [
+    "BROUILLON", "ENVOYEE", "DEMANDE", "EN_CONTROLE", "INCOMPLETE", "A_RECONTROLER",
+    "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT", "VALIDE_PRESIDENT",
+    "EN_OUVERTURE_DGTCP", "OUVERT", "MODIFIE", "CLOTURE", "ANNULE",
+  ];
 
   return (
     <DashboardLayout>
@@ -458,32 +423,32 @@ const DemandesMiseEnPlace = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Award className="h-6 w-6 text-primary" />
-              Demandes de mise en place du crédit d'impôt
+              {t("mise_en_place:list.title")}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Créer et suivre les demandes de mise en place</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("mise_en_place:list.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             {canCreate && (
               <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande
+                <Plus className="h-4 w-4 me-2" /> {t("mise_en_place:actions.new")}
               </Button>
             )}
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("mise_en_place:actions.refresh")}
             </Button>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder={t("mise_en_place:list.search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
-            <SelectTrigger className="w-48"><Filter className="h-4 w-4 mr-2" /><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48"><Filter className="h-4 w-4 me-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(CERTIFICAT_STATUT_LABELS).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              <SelectItem value="ALL">{t("mise_en_place:list.filter_all")}</SelectItem>
+              {STATUT_FILTER_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{tStatutCertificat(s)}</SelectItem>))}
             </SelectContent>
           </Select>
         </div>
@@ -496,85 +461,65 @@ const DemandesMiseEnPlace = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Réf.</TableHead>
-                    <TableHead>Entreprise</TableHead>
-                    <TableHead>Correction</TableHead>
-                    <TableHead>Marché</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-start">{t("mise_en_place:list.columns.reference")}</TableHead>
+                    <TableHead className="text-start">{t("mise_en_place:list.columns.entreprise")}</TableHead>
+                    <TableHead className="text-start">{t("mise_en_place:list.columns.correction")}</TableHead>
+                    <TableHead className="text-start">{t("mise_en_place:list.columns.marche")}</TableHead>
+                    <TableHead className="text-start">{t("mise_en_place:list.columns.statut")}</TableHead>
+                    <TableHead className="text-end">{t("mise_en_place:list.columns.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("mise_en_place:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
                       <TableCell>{getEntrepriseName(c)}</TableCell>
                       <TableCell>{getCorrectionName(c)}</TableCell>
                       <TableCell>{getMarcheName(c)}</TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{CERTIFICAT_STATUT_LABELS[c.statut]}</Badge></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge></TableCell>
+                      <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
-                            <Eye className="h-4 w-4 mr-1" /> {role === "AUTORITE_CONTRACTANTE" ? "Voir" : "Traiter"}
+                            <Eye className="h-4 w-4 me-1" /> {role === "AUTORITE_CONTRACTANTE" ? t("mise_en_place:list.row_actions.view") : t("mise_en_place:list.row_actions.process")}
                           </Button>
-                          {/* Prise en charge (ENVOYEE → EN_CONTROLE) pour DGI/DGD/DGTCP */}
                           {c.statut === "ENVOYEE" && ["DGI", "DGD", "DGTCP"].includes(role as string) && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              disabled={actionLoading === c.id}
-                              onClick={() => handlePrendreEnCharge(c.id)}
-                            >
-                              {actionLoading === c.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                              Prendre en charge
+                            <Button variant="default" size="sm" disabled={actionLoading === c.id} onClick={() => handlePrendreEnCharge(c.id)}>
+                              {actionLoading === c.id ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <CheckCircle className="h-4 w-4 me-1" />}
+                              {t("mise_en_place:list.row_actions.take_charge")}
                             </Button>
                           )}
                           {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" title="Actions brouillon">
+                                <Button variant="ghost" size="sm" title={t("mise_en_place:list.row_actions.draft_menu_title")}>
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => openEditBrouillon(c)}>
-                                  <FileText className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                  <FileText className="h-4 w-4 me-2" /> {t("mise_en_place:list.row_actions.edit_draft")}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={submittingId === c.id}
-                                  onClick={() => handleSoumettreBrouillon(c.id)}
-                                >
-                                  {submittingId === c.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                                  Soumettre
+                                <DropdownMenuItem disabled={submittingId === c.id} onClick={() => handleSoumettreBrouillon(c.id)}>
+                                  {submittingId === c.id ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Send className="h-4 w-4 me-2" />}
+                                  {t("mise_en_place:list.row_actions.submit")}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => setDeletingTarget(c)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeletingTarget(c)}>
+                                  <Trash2 className="h-4 w-4 me-2" /> {t("mise_en_place:list.row_actions.delete_draft")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
-                          {/* Édition possible aussi en ENVOYEE (PUT autorisé tant que EN_CONTROLE n'a pas commencé) */}
                           {c.statut === "ENVOYEE" && (role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI") && (
-                            <Button variant="ghost" size="sm" title="Modifier" onClick={() => openEditBrouillon(c)}>
-                              <FileText className="h-4 w-4 mr-1" /> Modifier
+                            <Button variant="ghost" size="sm" title={t("mise_en_place:list.row_actions.edit")} onClick={() => openEditBrouillon(c)}>
+                              <FileText className="h-4 w-4 me-1" /> {t("mise_en_place:list.row_actions.edit")}
                             </Button>
                           )}
-                          {/* Annulation d'une demande envoyée (avant ouverture/clôture) */}
                           {hasPermission("mise_en_place.annuler") && !["BROUILLON", "OUVERT", "CLOTURE", "ANNULE"].includes(c.statut) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              title="Annuler la demande"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => { setAnnulTarget(c); setAnnulMotif(""); }}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" /> Annuler
+                            <Button variant="ghost" size="sm" title={t("mise_en_place:list.row_actions.cancel_tooltip")} className="text-destructive hover:text-destructive" onClick={() => { setAnnulTarget(c); setAnnulMotif(""); }}>
+                              <XCircle className="h-4 w-4 me-1" /> {t("mise_en_place:list.row_actions.cancel")}
                             </Button>
                           )}
                         </div>
@@ -588,36 +533,28 @@ const DemandesMiseEnPlace = () => {
         </Card>
       </div>
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog (résumé) */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Demande {selected?.reference || `#${selected?.id}`}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("mise_en_place:dialogs.detail_dialog.title", { ref: selected?.reference || `#${selected?.id}` })}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Entreprise</span><p className="font-medium">
+                <div><span className="text-muted-foreground">{t("mise_en_place:detail.info.entreprise")}</span><p className="font-medium">
                   {selected.entrepriseId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "entreprise", id: selected.entrepriseId! })}>{getEntrepriseName(selected)}</button> : "—"}
                 </p></div>
-                <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{CERTIFICAT_STATUT_LABELS[selected.statut]}</Badge></p></div>
-                <div><span className="text-muted-foreground">Date</span><p>{selected.dateCreation ? new Date(selected.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Correction</span><p className="font-medium">
+                <div><span className="text-muted-foreground">{t("mise_en_place:list.columns.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutCertificat(selected.statut)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("mise_en_place:detail.info.date")}</span><p>{formatDate(selected.dateCreation)}</p></div>
+                <div><span className="text-muted-foreground">{t("mise_en_place:list.columns.correction")}</span><p className="font-medium">
                   {selected.demandeCorrectionId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "correction", id: selected.demandeCorrectionId! })}>{getCorrectionName(selected)}</button> : "—"}
                 </p></div>
-                <div><span className="text-muted-foreground">Marché</span><p className="font-medium">
+                <div><span className="text-muted-foreground">{t("mise_en_place:list.columns.marche")}</span><p className="font-medium">
                   {selected.marcheId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "marche", id: selected.marcheId! })}>{getMarcheName(selected)}</button> : "—"}
                 </p></div>
               </div>
 
               {/* Statut par organisme — Tabs */}
               {(() => {
-                const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
-                const DECISION_ROLE_LABELS: Record<string, string> = {
-                  DGI: "DGI – Impôts",
-                  DGTCP: "DGTCP – Trésor",
-                  DGB: "DGB – Budget",
-                  DGD: "DGD – Douanes",
-                  PRESIDENT: "Président",
-                };
                 const decs = decisions;
                 const r = activeOrg;
                 const roleDecs = decs.filter(d => d.role === r);
@@ -633,8 +570,7 @@ const DemandesMiseEnPlace = () => {
 
                 return (
                   <div className="border-t pt-3">
-                    <h4 className="font-semibold mb-2 text-sm">Statut par organisme</h4>
-                    {/* Tab navigation */}
+                    <h4 className="font-semibold mb-2 text-sm">{t("mise_en_place:detail.orgs.title")}</h4>
                     <div className="flex border-b border-border mb-3 gap-0">
                       {DECISION_ROLES_LIST.map((orgRole) => {
                         const orgDecs = decs.filter(d => d.role === orgRole);
@@ -645,102 +581,94 @@ const DemandesMiseEnPlace = () => {
                         const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
                         const isActive = activeOrg === orgRole;
                         return (
-                          <button
-                            key={orgRole}
-                            onClick={() => setActiveOrg(orgRole)}
+                          <button key={orgRole} onClick={() => setActiveOrg(orgRole)}
                             className={`relative flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
                               isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
-                            }`}
-                          >
+                            }`}>
                             {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : orgAllResolved ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : orgHasRejets ? <XCircle className="h-3.5 w-3.5 text-red-600" /> : <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />}
-                            <span>{DECISION_ROLE_LABELS[orgRole] || orgRole}</span>
+                            <span>{t(`mise_en_place:detail.orgs.labels.${orgRole}`)}</span>
                           </button>
                         );
                       })}
                     </div>
-                    {/* Active organism content */}
                     <div className={`rounded-lg border p-4 min-h-[100px] ${cardStyle}`}>
                       <div className="text-center mb-3">
                         {hasVisa ? <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" /> : allResolved ? <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" /> : hasRejets ? <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" /> : <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 mx-auto mb-1" />}
-                        <p className="font-semibold text-sm">{DECISION_ROLE_LABELS[r] || r}</p>
-                        {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">Visa apposé</p>}
-                        {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">Tous les rejets ont été résolus</p>}
-                        {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">En attente de décision</p>}
-                        {hasVisa && latestDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">Le : {new Date(latestDec.dateDecision).toLocaleDateString("fr-FR")}</p>}
+                        <p className="font-semibold text-sm">{t(`mise_en_place:detail.orgs.labels.${r}`)}</p>
+                        {hasVisa && <p className="text-green-700 font-medium text-xs mt-0.5">{t("mise_en_place:detail.orgs.visa_apposed")}</p>}
+                        {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">{t("mise_en_place:detail.orgs.all_resolved")}</p>}
+                        {!latestDec && <p className="text-muted-foreground text-xs mt-0.5">{t("mise_en_place:detail.orgs.waiting")}</p>}
+                        {hasVisa && latestDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">{t("mise_en_place:detail.orgs.on_date", { date: formatDate(latestDec.dateDecision) })}</p>}
                       </div>
-                      {/* Open rejets */}
                       {openRejets.length > 0 && (
                         <div className="space-y-2">
-                          <p className="text-red-700 font-semibold text-xs text-center">{openRejets.length} rejet{openRejets.length > 1 ? "s" : ""} ouvert{openRejets.length > 1 ? "s" : ""}</p>
+                          <p className="text-red-700 font-semibold text-xs text-center">{t("mise_en_place:detail.orgs.open_rejets_count", { count: openRejets.length })}</p>
                           {openRejets.map((rej, idx) => (
-                            <div key={idx} className="border-l-2 border-red-300 pl-3 py-2 space-y-1 bg-background/50 rounded-r">
+                            <div key={idx} className="border-s-2 border-red-300 ps-3 py-2 space-y-1 bg-background/50 rounded-e">
                               <div className="flex items-center justify-between gap-1">
-                                <span className="font-medium text-red-800 text-xs">Rejet {idx + 1}</span>
-                                <Badge className="text-[9px] bg-red-100 text-red-700">Ouvert</Badge>
-                                {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                                <span className="font-medium text-red-800 text-xs">{t("mise_en_place:detail.orgs.rejet_label", { n: idx + 1 })}</span>
+                                <Badge className="text-[9px] bg-red-100 text-red-700">{t("mise_en_place:detail.orgs.rejet_open")}</Badge>
+                                {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{formatDate(rej.dateDecision)}</span>}
                               </div>
                               {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
                               {rej.documentsDemandes && rej.documentsDemandes.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
-                                  <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                  <span className="text-[10px] text-muted-foreground">{t("mise_en_place:detail.orgs.docs_demanded")}</span>
                                   {rej.documentsDemandes.map((dt: string) => (
-                                    <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">{MISE_EN_PLACE_DOC_TYPES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ")}</Badge>
+                                    <Badge key={dt} variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200">{tTypeDocument(dt)}</Badge>
                                   ))}
                                 </div>
                               )}
-                              {/* Resolve button for initiator */}
                               {rej.role === role && (
                                 <Button size="sm" variant="default" className="h-6 text-[10px] px-2 mt-1" disabled={actionLoading === selected.id} onClick={async () => {
                                   setActionLoading(selected.id);
                                   try {
                                     await certificatCreditApi.resolveRejetTemp(rej.id);
-                                    toast({ title: "Succès", description: "Rejet marqué comme résolu" });
+                                    okToast(t("mise_en_place:toast.rejet_resolved"));
                                     openDetail(selected);
-                                  } catch (e: any) {
-                                    toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                  } catch (e: unknown) {
+                                    errToast(tErr(e, t("mise_en_place:toast.rejet_resolved")));
                                   } finally { setActionLoading(null); }
                                 }}>
-                                  <CheckCircle className="h-3 w-3 mr-0.5" /> Marquer résolu
+                                  <CheckCircle className="h-3 w-3 me-0.5" /> {t("mise_en_place:detail.orgs.resolve_btn")}
                                 </Button>
                               )}
                             </div>
                           ))}
                         </div>
                       )}
-                      {/* Actions: visa + rejet for current role */}
                       {isMyRole && !["OUVERT", "ANNULE", "CLOTURE"].includes(selected.statut) && (
                         <div className="flex gap-2 mt-3 justify-center">
                           <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={async () => {
                             setVisaLoading(true);
                             try {
                               await certificatCreditApi.postDecision(selected.id, "VISA");
-                              toast({ title: "Succès", description: "Visa apposé" });
+                              okToast(t("mise_en_place:toast.visa_apposed"));
                               openDetail(selected);
-                            } catch (e: any) {
-                              toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                            } catch (e: unknown) {
+                              errToast(tErr(e, t("mise_en_place:toast.visa_apposed")));
                             } finally { setVisaLoading(false); }
                           }}>
-                            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Apposer visa
+                            <CheckCircle className="h-3.5 w-3.5 me-1" /> {t("mise_en_place:actions.visa")}
                           </Button>
                           <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={() => { setShowRejetTemp(selected); setRejetTempMotif(""); setRejetTempDocs([]); }}>
-                            <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
+                            <XCircle className="h-3.5 w-3.5 me-1" /> {t("mise_en_place:actions.reject")}
                           </Button>
                         </div>
                       )}
-                      {/* Historique pliable */}
                       {resolvedRejets.length > 0 && (
                         <details className="mt-3 border-t border-border pt-3">
                           <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
                             <History className="h-3.5 w-3.5" />
-                            Historique ({resolvedRejets.length} rejet{resolvedRejets.length > 1 ? "s" : ""} résolu{resolvedRejets.length > 1 ? "s" : ""})
+                            {t("mise_en_place:detail.orgs.history_summary", { count: resolvedRejets.length })}
                           </summary>
                           <div className="space-y-2 mt-2">
                             {resolvedRejets.map((rej, idx) => (
-                              <div key={idx} className="border-l-2 border-muted pl-3 py-2 space-y-1 bg-muted/30 rounded-r opacity-75">
+                              <div key={idx} className="border-s-2 border-muted ps-3 py-2 space-y-1 bg-muted/30 rounded-e opacity-75">
                                 <div className="flex items-center justify-between gap-1">
-                                  <span className="font-medium text-muted-foreground text-xs">Rejet {idx + 1}</span>
-                                  <Badge className="text-[9px] bg-green-100 text-green-700">Résolu</Badge>
-                                  {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{new Date(rej.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                                  <span className="font-medium text-muted-foreground text-xs">{t("mise_en_place:detail.orgs.rejet_label", { n: idx + 1 })}</span>
+                                  <Badge className="text-[9px] bg-green-100 text-green-700">{t("mise_en_place:detail.orgs.rejet_resolved")}</Badge>
+                                  {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{formatDate(rej.dateDecision)}</span>}
                                 </div>
                                 {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
                               </div>
@@ -755,11 +683,11 @@ const DemandesMiseEnPlace = () => {
 
               {/* Documents */}
               <div className="border-t pt-3">
-                <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Documents du dossier</h4>
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> {t("mise_en_place:detail.documents.title")}</h4>
                 {loadingDocs ? (
                   <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                 ) : detailDocs.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">Aucun document associé</p>
+                  <p className="text-muted-foreground text-xs">{t("mise_en_place:detail.documents.empty")}</p>
                 ) : (
                   <div className="space-y-2">
                     {detailDocs.map((doc) => (
@@ -768,10 +696,10 @@ const DemandesMiseEnPlace = () => {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-sm font-medium">{doc.nomFichier}</p>
-                            <p className="text-xs text-muted-foreground">{doc.type?.replace(/_/g, " ")}</p>
+                            <p className="text-xs text-muted-foreground">{tTypeDocument(doc.type)}</p>
                           </div>
                         </div>
-                        <a href={getDocFileUrl(doc)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Télécharger</a>
+                        <a href={getDocFileUrl(doc)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">{t("mise_en_place:detail.documents.download")}</a>
                       </div>
                     ))}
                   </div>
@@ -782,29 +710,29 @@ const DemandesMiseEnPlace = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Dialog - uses GED-configured documents */}
+      {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
-              Nouvelle demande de mise en place
+              {t("mise_en_place:dialogs.create.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Demande de correction (adoptée/notifiée) *</Label>
+              <Label>{t("mise_en_place:dialogs.create.correction_label")}</Label>
               <SearchableSelect
                 value={selectedCorrectionId}
                 onValueChange={setSelectedCorrectionId}
-                placeholder="Sélectionner une correction..."
-                searchPlaceholder="Rechercher (n°, entreprise)..."
-                emptyMessage={corrections.length === 0 ? "Aucune correction adoptée disponible" : "Aucun résultat."}
+                placeholder={t("mise_en_place:dialogs.create.correction_placeholder")}
+                searchPlaceholder={t("mise_en_place:dialogs.create.correction_search")}
+                emptyMessage={corrections.length === 0 ? t("mise_en_place:dialogs.create.correction_empty_none") : t("mise_en_place:dialogs.create.correction_empty_search")}
                 options={corrections.map((c) => {
                   const locked = lockedCorrectionIds.has(c.id);
                   return {
                     value: String(c.id),
-                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || "Entreprise"}${locked ? " (mise en place déjà en cours)" : ""}`,
+                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
                     keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
                     disabled: locked,
                   };
@@ -813,7 +741,7 @@ const DemandesMiseEnPlace = () => {
               {selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)) && (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
-                  Une mise en place active existe déjà pour cette correction.
+                  {t("mise_en_place:dialogs.create.locked_alert")}
                 </p>
               )}
             </div>
@@ -821,22 +749,21 @@ const DemandesMiseEnPlace = () => {
             {selectedCorrection && (
               <Card className="bg-muted/30">
                 <CardContent className="p-3 text-sm">
-                  <p className="font-semibold mb-1">Correction sélectionnée</p>
+                  <p className="font-semibold mb-1">{t("mise_en_place:dialogs.create.selected_title")}</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">N°</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
-                    <div><span className="text-muted-foreground">Entreprise</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">Statut</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">AC</span> {selectedCorrection.autoriteContractanteNom}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Documents from GED configuration */}
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Pièces du dossier (configurées dans la GED)</Label>
+              <Label className="text-base font-semibold">{t("mise_en_place:dialogs.create.docs_title")}</Label>
               {docRequirements.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Aucun document configuré pour ce processus</p>
+                <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.create.docs_empty")}</p>
               ) : (
                 <div className="space-y-2">
                   {docRequirements.map((req) => {
@@ -845,13 +772,14 @@ const DemandesMiseEnPlace = () => {
                       <div key={req.id} className="flex items-center gap-3 p-2 rounded border bg-background">
                         <div className="flex-1">
                           <p className="text-sm font-medium flex items-center gap-1">
-                            {req.typeDocument.replace(/_/g, " ")}
-                            {req.obligatoire && <span className="text-destructive ml-1">*</span>}
+                            {tTypeDocument(req.typeDocument)}
+                            {req.obligatoire && <span className="text-destructive ms-1">*</span>}
                             {req.description && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                                 </TooltipTrigger>
+                                {/* req.description vient du backend (configuration GED), laissé tel quel */}
                                 <TooltipContent><p className="max-w-xs text-xs">{req.description}</p></TooltipContent>
                               </Tooltip>
                             )}
@@ -863,18 +791,14 @@ const DemandesMiseEnPlace = () => {
                           )}
                         </div>
                         <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) setDocFiles(prev => ({ ...prev, [req.typeDocument]: file }));
-                            }}
-                          />
+                            }} />
                           <div className="flex items-center gap-1 text-xs text-primary hover:underline">
                             <Upload className="h-3 w-3" />
-                            {hasFile ? "Remplacer" : "Choisir"}
+                            {hasFile ? t("mise_en_place:dialogs.create.replace_file") : t("mise_en_place:dialogs.create.choose_file")}
                           </div>
                         </label>
                       </div>
@@ -885,21 +809,14 @@ const DemandesMiseEnPlace = () => {
             </div>
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => setShowCreate(false)} className="sm:mr-auto">Annuler</Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleCreate(true)}
-              disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}
-            >
-              {savingBrouillon && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer le brouillon
+            <Button variant="outline" onClick={() => setShowCreate(false)} className="sm:me-auto">{t("mise_en_place:dialogs.create.cancel")}</Button>
+            <Button variant="secondary" onClick={() => handleCreate(true)} disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}>
+              {savingBrouillon && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.create.save_draft")}
             </Button>
-            <Button
-              onClick={() => handleCreate(false)}
-              disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}
-            >
-              {(creating || (uploadingDocs && !savingBrouillon)) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Soumettre la demande
+            <Button onClick={() => handleCreate(false)} disabled={creating || savingBrouillon || uploadingDocs || (!!selectedCorrectionId && lockedCorrectionIds.has(Number(selectedCorrectionId)))}>
+              {(creating || (uploadingDocs && !savingBrouillon)) && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.create.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -911,23 +828,25 @@ const DemandesMiseEnPlace = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              {editingBrouillon?.statut === "BROUILLON" ? "Modifier le brouillon" : "Modifier la demande"} {editingBrouillon?.reference || `#${editingBrouillon?.id}`}
+              {editingBrouillon?.statut === "BROUILLON"
+                ? t("mise_en_place:dialogs.edit.title_draft", { ref: editingBrouillon?.reference || `#${editingBrouillon?.id}` })
+                : t("mise_en_place:dialogs.edit.title_demande", { ref: editingBrouillon?.reference || `#${editingBrouillon?.id}` })}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Demande de correction *</Label>
+              <Label>{t("mise_en_place:dialogs.edit.correction_label")}</Label>
               <SearchableSelect
                 value={selectedCorrectionId}
                 onValueChange={setSelectedCorrectionId}
-                placeholder="Sélectionner..."
-                searchPlaceholder="Rechercher (n°, entreprise)..."
-                emptyMessage={corrections.length === 0 ? "Aucune correction disponible" : "Aucun résultat."}
+                placeholder={t("mise_en_place:dialogs.edit.correction_placeholder")}
+                searchPlaceholder={t("mise_en_place:dialogs.create.correction_search")}
+                emptyMessage={corrections.length === 0 ? t("mise_en_place:dialogs.create.correction_empty_none") : t("mise_en_place:dialogs.create.correction_empty_search")}
                 options={corrections.map((c) => {
                   const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
                   return {
                     value: String(c.id),
-                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || "Entreprise"}${locked ? " (mise en place déjà en cours)" : ""}`,
+                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
                     keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
                     disabled: locked,
                   };
@@ -938,39 +857,34 @@ const DemandesMiseEnPlace = () => {
             {selectedCorrection && (
               <Card className="bg-muted/30">
                 <CardContent className="p-3 text-sm">
-                  <p className="font-semibold mb-1">Correction sélectionnée</p>
+                  <p className="font-semibold mb-1">{t("mise_en_place:dialogs.create.selected_title")}</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">N°</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
-                    <div><span className="text-muted-foreground">Entreprise</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">Statut</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">AC</span> {selectedCorrection.autoriteContractanteNom}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Pièces déjà rattachées</Label>
+              <Label className="text-base font-semibold">{t("mise_en_place:dialogs.edit.existing_docs_title")}</Label>
               {loadingExistingDocs ? (
-                <p className="text-xs text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Chargement…</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> {t("mise_en_place:dialogs.edit.existing_loading")}</p>
               ) : editingExistingDocs.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Aucune pièce déjà chargée</p>
+                <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.edit.existing_empty")}</p>
               ) : (
                 <div className="space-y-2">
                   {editingExistingDocs.map((doc) => (
                     <div key={doc.id} className="flex items-center gap-3 p-2 rounded border bg-muted/20">
                       <FileText className="h-4 w-4 text-primary shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{(doc.type || "").replace(/_/g, " ") || "Document"}</p>
+                        <p className="text-sm font-medium truncate">{tTypeDocument(doc.type)}</p>
                         <p className="text-xs text-muted-foreground truncate">{doc.nomFichier || doc.chemin || `#${doc.id}`}</p>
                       </div>
-                      <a
-                        href={getDocFileUrl(doc)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0"
-                      >
-                        <Eye className="h-3 w-3" /> Ouvrir
+                      <a href={getDocFileUrl(doc)} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0">
+                        <Eye className="h-3 w-3" /> {t("mise_en_place:detail.documents.open")}
                       </a>
                     </div>
                   ))}
@@ -979,9 +893,9 @@ const DemandesMiseEnPlace = () => {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Ajouter / remplacer des pièces</Label>
+              <Label className="text-base font-semibold">{t("mise_en_place:dialogs.edit.add_replace_title")}</Label>
               {docRequirements.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Aucun document configuré</p>
+                <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.edit.no_doc_required")}</p>
               ) : (
                 <div className="space-y-2">
                   {docRequirements.map((req) => {
@@ -991,11 +905,11 @@ const DemandesMiseEnPlace = () => {
                       <div key={req.id} className="flex items-center gap-3 p-2 rounded border bg-background">
                         <div className="flex-1">
                           <p className="text-sm font-medium">
-                            {req.typeDocument.replace(/_/g, " ")}
-                            {req.obligatoire && <span className="text-destructive ml-1">*</span>}
+                            {tTypeDocument(req.typeDocument)}
+                            {req.obligatoire && <span className="text-destructive ms-1">*</span>}
                           </p>
                           {existing && !hasFile && (
-                            <p className="text-xs text-muted-foreground mt-0.5">Déjà chargé : {existing.nomFichier || `#${existing.id}`}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{t("mise_en_place:dialogs.edit.already_loaded", { name: existing.nomFichier || `#${existing.id}` })}</p>
                           )}
                           {hasFile && (
                             <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
@@ -1004,18 +918,14 @@ const DemandesMiseEnPlace = () => {
                           )}
                         </div>
                         <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) setDocFiles(prev => ({ ...prev, [req.typeDocument]: file }));
-                            }}
-                          />
+                            }} />
                           <div className="flex items-center gap-1 text-xs text-primary hover:underline">
                             <Upload className="h-3 w-3" />
-                            {hasFile ? "Remplacer" : existing ? "Remplacer" : "Choisir"}
+                            {hasFile || existing ? t("mise_en_place:dialogs.create.replace_file") : t("mise_en_place:dialogs.create.choose_file")}
                           </div>
                         </label>
                       </div>
@@ -1023,138 +933,49 @@ const DemandesMiseEnPlace = () => {
                   })}
                 </div>
               )}
-              <p className="text-[11px] text-muted-foreground">Les documents déjà rattachés au dossier restent en place ; vous pouvez en ajouter ou en remplacer ici.</p>
+              <p className="text-[11px] text-muted-foreground">{t("mise_en_place:dialogs.edit.hint")}</p>
             </div>
-
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => setEditingBrouillon(null)} className="sm:mr-auto" disabled={editingLoading || uploadingDocs}>Annuler</Button>
+            <Button variant="outline" onClick={() => setEditingBrouillon(null)} className="sm:me-auto" disabled={editingLoading || uploadingDocs}>{t("mise_en_place:dialogs.create.cancel")}</Button>
             <Button variant="secondary" onClick={() => handleUpdateBrouillon(false)} disabled={editingLoading || uploadingDocs}>
-              {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer
+              {editingLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.edit.save")}
             </Button>
             {editingBrouillon?.statut === "BROUILLON" && (
               <Button onClick={() => handleUpdateBrouillon(true)} disabled={editingLoading || uploadingDocs}>
-                {editingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                <Send className="h-4 w-4 mr-1" />
-                Enregistrer & Soumettre
+                {editingLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                <Send className="h-4 w-4 me-1" />
+                {t("mise_en_place:dialogs.edit.save_submit")}
               </Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Montants Dialog (DGTCP) */}
-      <Dialog open={!!showMontants} onOpenChange={() => setShowMontants(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              Renseigner les montants
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Demande <span className="font-medium text-foreground">{showMontants?.reference || `#${showMontants?.id}`}</span> — {showMontants?.entrepriseNom || "—"}
-            </p>
-          </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant Cordon (Douane) *</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} className="pl-9 text-base font-medium" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Montant TVA Intérieure *</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} className="pl-9 text-base font-medium" />
-              </div>
-            </div>
-          </div>
-          {montantCordon && montantTVAInt && Number(montantCordon) > 0 && Number(montantTVAInt) > 0 && (
-            <div className="rounded-lg bg-muted/50 border p-3 text-sm">
-              <p className="text-muted-foreground mb-1">Récapitulatif</p>
-              <div className="flex justify-between">
-                <span>Total crédit</span>
-                <span className="font-bold text-foreground">{(Number(montantCordon) + Number(montantTVAInt)).toLocaleString("fr-FR")} MRU</span>
-              </div>
-            </div>
-          )}
-          <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-2">
-            <Button variant="outline" onClick={() => setShowMontants(null)} className="sm:mr-auto">Annuler</Button>
-            <Button
-              variant="secondary"
-              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
-              onClick={async () => {
-                if (!showMontants) return;
-                setSavingMontants(true);
-                try {
-                  await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
-                  toast({ title: "Succès", description: "Montants enregistrés, vous pouvez maintenant ouvrir le crédit." });
-                  setShowMontants(null);
-                  fetchCertificats();
-                } catch (e: any) {
-                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                } finally { setSavingMontants(false); }
-              }}
-            >
-              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer
-            </Button>
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              disabled={savingMontants || !montantCordon || !montantTVAInt || Number(montantCordon) <= 0 || Number(montantTVAInt) <= 0}
-              onClick={async () => {
-                if (!showMontants) return;
-                setSavingMontants(true);
-                try {
-                  await certificatCreditApi.updateMontants(showMontants.id, Number(montantCordon), Number(montantTVAInt));
-                  await certificatCreditApi.updateStatut(showMontants.id, "OUVERT");
-                  toast({ title: "Succès", description: "Montants enregistrés et crédit ouvert !" });
-                  setShowMontants(null);
-                  fetchCertificats();
-                } catch (e: any) {
-                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                } finally { setSavingMontants(false); }
-              }}
-            >
-              {savingMontants && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              <ShieldCheck className="h-4 w-4 mr-1" />
-              Valider & Ouvrir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reject Dialog (DGTCP) */}
+      {/* Reject Dialog */}
       <Dialog open={!!showReject} onOpenChange={() => setShowReject(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <XCircle className="h-5 w-5 text-destructive" />
-              Rejeter la demande
+              {t("mise_en_place:dialogs.reject.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Demande {showReject?.reference || `#${showReject?.id}`} — {showReject ? getEntrepriseName(showReject) : ""}
+              {t("mise_en_place:dialogs.reject.subtitle", { ref: showReject?.reference || `#${showReject?.id}`, entreprise: showReject ? getEntrepriseName(showReject) : "" })}
             </p>
             <div className="space-y-2">
-              <Label>Motif du rejet *</Label>
-              <Textarea
-                placeholder="Veuillez préciser le motif du rejet..."
-                value={motifRejet}
-                onChange={(e) => setMotifRejet(e.target.value)}
-                className="min-h-[100px]"
-              />
+              <Label>{t("mise_en_place:dialogs.reject.motif_label")}</Label>
+              <Textarea placeholder={t("mise_en_place:dialogs.reject.motif_placeholder")} value={motifRejet} onChange={(e) => setMotifRejet(e.target.value)} className="min-h-[100px]" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReject(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setShowReject(null)}>{t("mise_en_place:dialogs.reject.cancel")}</Button>
             <Button variant="destructive" disabled={rejecting || !motifRejet.trim()} onClick={handleReject}>
-              {rejecting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmer le rejet
+              {rejecting && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.reject.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1166,108 +987,100 @@ const DemandesMiseEnPlace = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Rejet temporaire — Demander des compléments
+              {t("mise_en_place:dialogs.rejet_temp.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Demande {showRejetTemp?.reference || `#${showRejetTemp?.id}`} — {showRejetTemp ? getEntrepriseName(showRejetTemp) : ""}
+              {t("mise_en_place:dialogs.rejet_temp.subtitle", { ref: showRejetTemp?.reference || `#${showRejetTemp?.id}`, entreprise: showRejetTemp ? getEntrepriseName(showRejetTemp) : "" })}
             </p>
             <div className="space-y-2">
-              <Label>Motif *</Label>
-              <Textarea
-                placeholder="Précisez les corrections ou compléments attendus..."
-                value={rejetTempMotif}
-                onChange={(e) => setRejetTempMotif(e.target.value)}
-                className="min-h-[80px]"
-              />
+              <Label>{t("mise_en_place:dialogs.rejet_temp.motif_label")}</Label>
+              <Textarea placeholder={t("mise_en_place:dialogs.rejet_temp.motif_placeholder")} value={rejetTempMotif} onChange={(e) => setRejetTempMotif(e.target.value)} className="min-h-[80px]" />
             </div>
             <div className="space-y-2">
-              <Label>Documents à corriger / compléter *</Label>
-              <p className="text-xs text-muted-foreground">Sélectionnez au moins un document</p>
+              <Label>{t("mise_en_place:dialogs.rejet_temp.docs_label")}</Label>
+              <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.rejet_temp.docs_hint")}</p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {MISE_EN_PLACE_DOC_TYPES.map((dt) => (
-                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
                     <Checkbox
-                      checked={rejetTempDocs.includes(dt.value)}
+                      checked={rejetTempDocs.includes(dt)}
                       onCheckedChange={(checked) => {
-                        setRejetTempDocs(prev =>
-                          checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value)
-                        );
+                        setRejetTempDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt));
                       }}
                     />
-                    <span className="text-sm">{dt.label}</span>
+                    <span className="text-sm">{tTypeDocument(dt)}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>Annuler</Button>
-            <Button
-              className="bg-amber-600 hover:bg-amber-700 text-white"
-              disabled={rejetTempLoading || !rejetTempMotif.trim() || rejetTempDocs.length === 0}
-              onClick={handleRejetTemp}
-            >
-              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmer le rejet temporaire
+            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>{t("mise_en_place:dialogs.rejet_temp.cancel")}</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700 text-white" disabled={rejetTempLoading || !rejetTempMotif.trim() || rejetTempDocs.length === 0} onClick={handleRejetTemp}>
+              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.rejet_temp.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Info Modal */}
       <Dialog open={!!infoModal} onOpenChange={() => setInfoModal(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="h-5 w-5 text-primary" />
-              {infoModal?.type === "entreprise" && "Détails de l'entreprise"}
-              {infoModal?.type === "correction" && "Détails de la correction"}
-              {infoModal?.type === "marche" && "Détails du marché"}
+              {infoModal?.type === "entreprise" && t("mise_en_place:dialogs.info.title_entreprise")}
+              {infoModal?.type === "correction" && t("mise_en_place:dialogs.info.title_correction")}
+              {infoModal?.type === "marche" && t("mise_en_place:dialogs.info.title_marche")}
             </DialogTitle>
           </DialogHeader>
           {infoModal?.type === "entreprise" && (() => {
             const ent = entrepriseCache[infoModal.id];
-            if (!ent) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            if (!ent) return <p className="text-muted-foreground text-sm">{t("mise_en_place:dialogs.info.loading")}</p>;
             return (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">Raison sociale</span><p className="font-medium">{ent.raisonSociale}</p></div>
-                  <div><span className="text-muted-foreground">NIF</span><p className="font-medium">{ent.nif || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Adresse</span><p>{ent.adresse || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Téléphone</span><p>{ent.telephone || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Email</span><p>{ent.email || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Situation fiscale</span><p>{ent.situationFiscale || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.raison_sociale")}</span><p className="font-medium">{ent.raisonSociale}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.nif")}</span><p className="font-medium">{ent.nif || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.adresse")}</span><p>{ent.adresse || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.telephone")}</span><p>{ent.telephone || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.email")}</span><p>{ent.email || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.situation_fiscale")}</span><p>{ent.situationFiscale || "—"}</p></div>
                 </div>
               </div>
             );
           })()}
           {infoModal?.type === "correction" && (() => {
             const corr = correctionCache[infoModal.id];
-            if (!corr) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            if (!corr) return <p className="text-muted-foreground text-sm">{t("mise_en_place:dialogs.info.loading")}</p>;
             return (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">Numéro</span><p className="font-medium">{corr.numero || `#${corr.id}`}</p></div>
-                  <div><span className="text-muted-foreground">Statut</span><p className="font-medium">{corr.statut}</p></div>
-                  <div><span className="text-muted-foreground">Entreprise</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Autorité contractante</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Date de dépôt</span><p>{corr.dateDepot ? new Date(corr.dateDepot).toLocaleDateString("fr-FR") : "—"}</p></div>
-                  {corr.motifRejet && <div className="col-span-2"><span className="text-muted-foreground">Motif de rejet</span><p className="text-destructive">{corr.motifRejet}</p></div>}
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.numero")}</span><p className="font-medium">{corr.numero || `#${corr.id}`}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{corr.statut}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.entreprise")}</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.ac")}</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_depot")}</span><p>{formatDate(corr.dateDepot)}</p></div>
+                  {corr.motifRejet && <div className="col-span-2"><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.motif_rejet")}</span><p className="text-destructive">{corr.motifRejet}</p></div>}
                 </div>
               </div>
             );
           })()}
           {infoModal?.type === "marche" && (() => {
             const m = marcheCache[infoModal.id];
-            if (!m) return <p className="text-muted-foreground text-sm">Chargement...</p>;
+            if (!m) return <p className="text-muted-foreground text-sm">{t("mise_en_place:dialogs.info.loading")}</p>;
+            // Devise du marché si disponible, sinon MRU par défaut.
+            const cur = (m as any).deviseOrigine || "MRU";
             return (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">N° Marché</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
-                  <div><span className="text-muted-foreground">Statut</span><p className="font-medium">{m.statut}</p></div>
-                  <div><span className="text-muted-foreground">Date signature</span><p>{m.dateSignature ? new Date(m.dateSignature).toLocaleDateString("fr-FR") : "—"}</p></div>
-                  <div><span className="text-muted-foreground">Montant TTC</span><p>{m.montantContratTtc != null ? `${m.montantContratTtc.toLocaleString("fr-FR")} MRU` : "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.marche_num")}</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{m.statut}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_signature")}</span><p>{formatDate(m.dateSignature)}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.montant_ttc")}</span><p>{formatAmount(m.montantContratTtc, { currency: cur })}</p></div>
                 </div>
               </div>
             );
@@ -1275,74 +1088,57 @@ const DemandesMiseEnPlace = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Suppression définitive d'un brouillon (DELETE /certificats-credit/{id}) */}
+      {/* Delete draft */}
       <AlertDialog open={!!deletingTarget} onOpenChange={(o) => !o && setDeletingTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le brouillon ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("mise_en_place:dialogs.delete_draft.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action supprime définitivement le brouillon
-              {deletingTarget ? ` ${deletingTarget.reference || `#${deletingTarget.id}`}` : ""}. Elle ne peut pas être annulée.
+              {t("mise_en_place:dialogs.delete_draft.description", { ref: deletingTarget?.reference || `#${deletingTarget?.id || ""}` })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingLoading}>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deletingLoading}
-              onClick={(e) => { e.preventDefault(); handleDeleteBrouillon(); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Supprimer définitivement
+            <AlertDialogCancel disabled={deletingLoading}>{t("mise_en_place:dialogs.delete_draft.cancel")}</AlertDialogCancel>
+            <AlertDialogAction disabled={deletingLoading} onClick={(e) => { e.preventDefault(); handleDeleteBrouillon(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.delete_draft.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Annulation d'une demande envoyée (PATCH statut=ANNULE&motif=...) */}
+      {/* Annulation */}
       <Dialog open={!!annulTarget} onOpenChange={(o) => !o && setAnnulTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Annuler la demande</DialogTitle>
+            <DialogTitle>{t("mise_en_place:dialogs.annul_dialog.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              Vous êtes sur le point d'annuler la demande
-              {annulTarget ? ` ${annulTarget.reference || `#${annulTarget.id}`}` : ""}.
-              Cette action est irréversible.
+              {t("mise_en_place:dialogs.annul_dialog.description", { ref: annulTarget?.reference || `#${annulTarget?.id || ""}` })}
             </p>
             <div className="space-y-1">
-              <Label htmlFor="annul-motif">Motif d'annulation <span className="text-destructive">*</span></Label>
-              <Textarea
-                id="annul-motif"
-                value={annulMotif}
-                onChange={(e) => setAnnulMotif(e.target.value)}
-                placeholder="Expliquez le motif d'annulation..."
-                rows={3}
-              />
+              <Label htmlFor="annul-motif">{t("mise_en_place:dialogs.annul_dialog.motif_label")} <span className="text-destructive">*</span></Label>
+              <Textarea id="annul-motif" value={annulMotif} onChange={(e) => setAnnulMotif(e.target.value)} placeholder={t("mise_en_place:dialogs.annul_dialog.motif_placeholder")} rows={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAnnulTarget(null)} disabled={annulLoading}>Retour</Button>
-            <Button
-              variant="destructive"
-              disabled={annulLoading || !annulMotif.trim()}
-              onClick={async () => {
-                if (!annulTarget) return;
-                setAnnulLoading(true);
-                try {
-                  await certificatCreditApi.reject(annulTarget.id, annulMotif.trim());
-                  toast({ title: "Succès", description: "Demande annulée" });
-                  setAnnulTarget(null);
-                  setAnnulMotif("");
-                  fetchCertificats();
-                } catch (e: any) {
-                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                } finally { setAnnulLoading(false); }
-              }}
-            >
-              {annulLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmer l'annulation
+            <Button variant="outline" onClick={() => setAnnulTarget(null)} disabled={annulLoading}>{t("mise_en_place:dialogs.annul_dialog.back")}</Button>
+            <Button variant="destructive" disabled={annulLoading || !annulMotif.trim()} onClick={async () => {
+              if (!annulTarget) return;
+              setAnnulLoading(true);
+              try {
+                await certificatCreditApi.reject(annulTarget.id, annulMotif.trim());
+                okToast(t("mise_en_place:toast.cancelled"));
+                setAnnulTarget(null);
+                setAnnulMotif("");
+                fetchCertificats();
+              } catch (e: unknown) {
+                errToast(tErr(e, t("mise_en_place:toast.cancelled")));
+              } finally { setAnnulLoading(false); }
+            }}>
+              {annulLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("mise_en_place:dialogs.annul_dialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
