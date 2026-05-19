@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   transfertCreditApi, TransfertCreditDto, StatutTransfert,
-  TRANSFERT_STATUT_LABELS, TRANSFERT_DOCUMENT_TYPES,
+  TRANSFERT_DOCUMENT_TYPES,
   TypeDocumentTransfert, DocumentTransfertCreditDto,
   DecisionCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutTransfert, tTypeDocument, tRejetTempStatus } from "@/i18n/enums";
+import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +26,7 @@ import {
   MessageSquare, FileText, RefreshCw,
 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
+import { Checkbox as Checkbox2 } from "@/components/ui/checkbox";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
@@ -42,6 +46,8 @@ const VALIDATE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "A
 const TransfertDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(["transferts", "common", "enums"]);
+  usePageTitle("transferts:detail.title", { id: id ?? "" });
   const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
@@ -71,16 +77,17 @@ const TransfertDetail = () => {
 
   const [cancelOpen, setCancelOpen] = useState(false);
 
-  const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
+  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+  const okToast = (description: string) => toast({ title: t("common:success", { defaultValue: "Succès" }), description });
 
   const loadAll = async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const t = await transfertCreditApi.getById(Number(id));
-      setTransfert(t);
+      const tr = await transfertCreditApi.getById(Number(id));
+      setTransfert(tr);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger le transfert", variant: "destructive" });
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: t("transferts:toasts.load_error_one"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -120,25 +127,15 @@ const TransfertDetail = () => {
   const handleValider = async () => {
     if (!transfert) return;
     setActionLoading(true);
-    try {
-      await transfertCreditApi.valider(transfert.id);
-      toast({ title: "Succès", description: "Transfert validé" });
-      loadAll();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setActionLoading(false); }
+    try { await transfertCreditApi.valider(transfert.id); okToast(t("transferts:toasts.valid_success_short")); loadAll(); }
+    catch (e: any) { errToast(e); } finally { setActionLoading(false); }
   };
 
   const handleRejeter = async () => {
     if (!transfert) return;
     setActionLoading(true);
-    try {
-      await transfertCreditApi.rejeter(transfert.id);
-      toast({ title: "Succès", description: "Transfert rejeté" });
-      loadAll();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setActionLoading(false); }
+    try { await transfertCreditApi.rejeter(transfert.id); okToast(t("transferts:toasts.reject_success")); loadAll(); }
+    catch (e: any) { errToast(e); } finally { setActionLoading(false); }
   };
 
   const handleAnnuler = async () => {
@@ -146,12 +143,10 @@ const TransfertDetail = () => {
     setActionLoading(true);
     try {
       await transfertCreditApi.annuler(transfert.id);
-      toast({ title: "Succès", description: "Demande annulée" });
+      okToast(t("transferts:toasts.cancel_success"));
       setCancelOpen(false);
       loadAll();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setActionLoading(false); }
+    } catch (e: any) { errToast(e); } finally { setActionLoading(false); }
   };
 
   const handleRejetTemp = async () => {
@@ -159,20 +154,18 @@ const TransfertDetail = () => {
     setRejetLoading(true);
     try {
       await transfertCreditApi.postDecision(transfert.id, "REJET_TEMP", rejetMotif.trim(), rejetDocs);
-      toast({ title: "Succès", description: "Rejet temporaire envoyé" });
+      okToast(t("transferts:toasts.rejet_temp_sent_short"));
       setRejetOpen(false);
       setRejetMotif(""); setRejetDocs([]);
       loadAll();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setRejetLoading(false); }
+    } catch (e: any) { errToast(e); } finally { setRejetLoading(false); }
   };
 
   const handleRespond = async () => {
     if (!respondDecision || !responseMsg.trim()) return;
     const demanded = respondDecision.documentsDemandes || [];
     if (demanded.length > 0 && (!responseFile || !responseDocType)) {
-      toast({ title: "Pièce requise", description: "Veuillez joindre la pièce demandée et préciser son type.", variant: "destructive" });
+      toast({ title: t("transferts:toasts.response_missing_piece_title"), description: t("transferts:toasts.response_missing_piece"), variant: "destructive" });
       return;
     }
     setResponding(true);
@@ -183,27 +176,23 @@ const TransfertDetail = () => {
         responseFile || undefined,
         responseDocType || undefined,
       );
-      toast({ title: "Succès", description: "Réponse envoyée" });
+      okToast(responseFile ? t("transferts:rejet_temp.response.versioned") : t("transferts:toasts.response_sent"));
       setRespondDecision(null);
       setResponseMsg("");
       setResponseFile(null);
       setResponseDocType("");
       loadDecisions();
       loadDocs();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally { setResponding(false); }
+    } catch (e: any) { errToast(e); } finally { setResponding(false); }
   };
 
   const handleResolve = async (decisionId: number) => {
     try {
       await transfertCreditApi.resolveRejetTemp(decisionId);
-      toast({ title: "Succès", description: "Rejet temporaire résolu" });
+      okToast(t("transferts:toasts.rejet_resolved"));
       loadDecisions();
       loadAll();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    }
+    } catch (e: any) { errToast(e); }
   };
 
   const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
@@ -222,16 +211,14 @@ const TransfertDetail = () => {
     return (
       <DashboardLayout>
         <div className="text-center py-20 space-y-4">
-          <p className="text-muted-foreground">Transfert introuvable.</p>
+          <p className="text-muted-foreground">{t("transferts:detail.not_found")}</p>
           <Button variant="outline" onClick={() => navigate("/dashboard/transferts")}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Retour à la liste
+            <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("transferts:detail.back_to_list")}
           </Button>
         </div>
       </DashboardLayout>
     );
   }
-
-  const activeDocs = docs.filter(d => d.actif !== false);
 
   return (
     <DashboardLayout>
@@ -239,69 +226,67 @@ const TransfertDetail = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/transferts")}>
-              <ArrowLeft className="h-4 w-4 mr-2" /> Retour
+              <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("transferts:detail.back")}
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Transfert #{transfert.id}</h1>
-              <p className="text-muted-foreground text-sm">Renonciation aux importations — transfert vers TVA déductible sur cordon douanier</p>
+              <h1 className="text-2xl font-bold text-foreground">{t("transferts:detail.title", { id: transfert.id })}</h1>
+              <p className="text-muted-foreground text-sm">{t("transferts:detail.subtitle")}</p>
             </div>
           </div>
           <Button variant="outline" onClick={loadAll}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Actualiser
+            <RefreshCw className="h-4 w-4 me-2" /> {t("transferts:detail.refresh")}
           </Button>
         </div>
 
-        {/* Informations */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Informations</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">{t("transferts:detail.info_title")}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Certificat</span>
+                <span className="text-muted-foreground">{t("transferts:detail.certificat")}</span>
                 <p className="font-medium">{transfert.certificatNumero || `#${transfert.certificatCreditId}`}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Montant transféré</span>
-                <p className="font-medium">{f(transfert.montant)} MRU</p>
+                <span className="text-muted-foreground">{t("transferts:detail.montant")}</span>
+                <p className="font-medium">{formatAmount(transfert.montant)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Statut</span>
-                <p><Badge className={`text-xs ${STATUT_COLORS[transfert.statut]}`}>{TRANSFERT_STATUT_LABELS[transfert.statut]}</Badge></p>
+                <span className="text-muted-foreground">{t("transferts:detail.statut")}</span>
+                <p><Badge className={`text-xs ${STATUT_COLORS[transfert.statut]}`}>{tStatutTransfert(transfert.statut)}</Badge></p>
               </div>
               <div>
-                <span className="text-muted-foreground">Ops douane clôturées</span>
-                <p className="font-medium">{transfert.operationsDouaneCloturees ? "Oui" : "Non"}</p>
+                <span className="text-muted-foreground">{t("transferts:detail.ops_cloturees")}</span>
+                <p className="font-medium">{transfert.operationsDouaneCloturees ? t("transferts:detail.yes") : t("transferts:detail.no")}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Date demande</span>
-                <p className="font-medium">{transfert.dateDemande ? new Date(transfert.dateDemande).toLocaleDateString("fr-FR") : "—"}</p>
+                <span className="text-muted-foreground">{t("transferts:detail.date_demande")}</span>
+                <p className="font-medium">{formatDate(transfert.dateDemande)}</p>
               </div>
             </div>
 
-            {/* Actions */}
             {!TERMINAL_STATUTS.includes(transfert.statut) && (canValider || canRejetTemp || canRejeter || canAnnuler) && (
               <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-2">
                 {VALIDATE_STATUTS.includes(transfert.statut) && canValider && (
                   <Button size="sm" disabled={actionLoading || hasOpenRejetTemp} onClick={handleValider}
-                    title={hasOpenRejetTemp ? "Un rejet temporaire est encore ouvert" : ""}>
-                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                    Valider le transfert
+                    title={hasOpenRejetTemp ? t("transferts:actions.validate_blocked_tooltip") : ""}>
+                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle2 className="h-4 w-4 me-1" />}
+                    {t("transferts:actions.valider")}
                   </Button>
                 )}
                 {transfert.statut !== "INCOMPLETE" && canRejetTemp && (
                   <Button variant="outline" size="sm" onClick={() => { setRejetOpen(true); setRejetMotif(""); setRejetDocs([]); }}>
-                    <AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire
+                    <AlertTriangle className="h-4 w-4 me-1" /> {t("transferts:actions.rejet_temp_short")}
                   </Button>
                 )}
                 {canRejeter && (
                   <Button variant="destructive" size="sm" disabled={actionLoading} onClick={handleRejeter}>
-                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-                    Rejeter définitivement
+                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <XCircle className="h-4 w-4 me-1" />}
+                    {t("transferts:actions.rejeter")}
                   </Button>
                 )}
                 {canAnnuler && (
                   <Button variant="outline" size="sm" onClick={() => setCancelOpen(true)}>
-                    <Ban className="h-4 w-4 mr-1" /> Annuler la demande
+                    <Ban className="h-4 w-4 me-1" /> {t("transferts:actions.annuler")}
                   </Button>
                 )}
               </div>
@@ -309,25 +294,23 @@ const TransfertDetail = () => {
           </CardContent>
         </Card>
 
-        {/* GED Documents */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" /> Documents (GED)
+              <FileText className="h-4 w-4 text-primary" /> {t("transferts:documents.title")}
             </CardTitle>
             <Button size="sm" variant="outline" onClick={() => setGedOpen(true)}>
-              Gérer les documents
+              {t("transferts:documents.manage")}
             </Button>
           </CardHeader>
           <CardContent>
             {docsLoading ? (
               <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
             ) : docs.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">Aucun document déposé.</p>
+              <p className="text-xs text-muted-foreground italic">{t("transferts:documents.empty")}</p>
             ) : (
               <ul className="divide-y divide-border text-sm">
                 {(() => {
-                  // Regrouper par type, trier versions desc
                   const groups = new Map<string, DocumentTransfertCreditDto[]>();
                   docs.forEach(d => {
                     const arr = groups.get(d.type) || [];
@@ -341,7 +324,7 @@ const TransfertDetail = () => {
                     return { type, current, previous };
                   });
                   return ordered.map(({ type, current, previous }) => {
-                    const typeLabel = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === type)?.label || type;
+                    const typeLabel = tTypeDocument(type) || TRANSFERT_DOCUMENT_TYPES.find(tt => tt.value === type)?.label || type;
                     const expanded = expandedVersions.has(type);
                     return (
                       <li key={type} className="py-2">
@@ -350,15 +333,13 @@ const TransfertDetail = () => {
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{typeLabel}</p>
                               <Badge variant="secondary" className="text-xs shrink-0">
-                                v{current.version ?? 1} actuelle
+                                {t("transferts:documents.current", { n: current.version ?? 1 })}
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground truncate">{current.nomFichier}</p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant="outline" className="text-xs">
-                              {current.dateUpload ? new Date(current.dateUpload).toLocaleDateString("fr-FR") : "—"}
-                            </Badge>
+                            <Badge variant="outline" className="text-xs">{formatDate(current.dateUpload)}</Badge>
                             {previous.length > 0 && (
                               <Button
                                 variant="ghost"
@@ -372,22 +353,20 @@ const TransfertDetail = () => {
                                   });
                                 }}
                               >
-                                {expanded ? "Masquer" : `Historique (${previous.length})`}
+                                {expanded ? t("transferts:documents.hide") : t("transferts:documents.history", { count: previous.length })}
                               </Button>
                             )}
                           </div>
                         </div>
                         {expanded && previous.length > 0 && (
-                          <ul className="mt-2 ml-4 pl-3 border-l border-border space-y-1.5">
+                          <ul className="mt-2 ms-4 ps-3 border-s border-border space-y-1.5">
                             {previous.map(p => (
                               <li key={p.id} className="flex items-center justify-between gap-3 text-xs">
                                 <div className="min-w-0 flex-1 flex items-center gap-2">
                                   <Badge variant="outline" className="text-[10px] shrink-0">v{p.version ?? "—"}</Badge>
                                   <span className="text-muted-foreground truncate">{p.nomFichier}</span>
                                 </div>
-                                <span className="text-muted-foreground shrink-0">
-                                  {p.dateUpload ? new Date(p.dateUpload).toLocaleDateString("fr-FR") : "—"}
-                                </span>
+                                <span className="text-muted-foreground shrink-0">{formatDate(p.dateUpload)}</span>
                               </li>
                             ))}
                           </ul>
@@ -401,18 +380,17 @@ const TransfertDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Opérations (décisions) */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-primary" /> Opérations ({decisions.length})
+              <MessageSquare className="h-4 w-4 text-primary" /> {t("transferts:decisions.title_ops", { count: decisions.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {decisionsLoading ? (
               <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
             ) : decisions.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">Aucune opération enregistrée.</p>
+              <p className="text-xs text-muted-foreground italic">{t("transferts:decisions.empty_ops")}</p>
             ) : (
               <div className="space-y-4">
                 {decisions.map((d) => {
@@ -420,47 +398,42 @@ const TransfertDetail = () => {
                   const responses = d.rejetTempResponses || [];
                   return (
                     <div key={d.id} className={`relative border rounded-lg overflow-hidden bg-card ${isOuvert ? "border-amber-300" : "border-border"}`}>
-                      {/* Bandeau d'entête */}
                       <div className={`flex items-center justify-between gap-2 px-4 py-2 border-b ${isOuvert ? "bg-amber-50 border-amber-200" : "bg-muted/40 border-border"}`}>
                         <div className="flex items-center gap-2 flex-wrap">
                           <AlertTriangle className={`h-4 w-4 ${isOuvert ? "text-amber-600" : "text-muted-foreground"}`} />
-                          <span className="text-sm font-semibold">Rejet temporaire</span>
+                          <span className="text-sm font-semibold">{t("transferts:rejet_temp.history.title")}</span>
                           <Badge variant="outline" className="text-[10px]">{d.role}</Badge>
                           {d.rejetTempStatus && (
                             <Badge className={`text-[10px] ${isOuvert ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"}`}>
-                              {isOuvert ? "Ouvert" : "Résolu"}
+                              {tRejetTempStatus(d.rejetTempStatus)}
                             </Badge>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {d.dateDecision ? new Date(d.dateDecision).toLocaleString("fr-FR") : ""}
-                        </span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(d.dateDecision)}</span>
                       </div>
 
-                      {/* Corps */}
                       <div className="p-4 space-y-3">
                         {d.motifRejet && (
                           <div className="text-sm">
-                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Motif</div>
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{t("transferts:rejet_temp.history.motif")}</div>
                             <p className="text-foreground">{d.motifRejet}</p>
                           </div>
                         )}
                         {d.documentsDemandes && d.documentsDemandes.length > 0 && (
                           <div>
-                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Pièces demandées</div>
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{t("transferts:rejet_temp.history.pieces_demandees")}</div>
                             <div className="flex flex-wrap gap-1">
                               {d.documentsDemandes.map((doc) => (
-                                <Badge key={doc} variant="secondary" className="text-[10px]">{doc}</Badge>
+                                <Badge key={doc} variant="secondary" className="text-[10px]">{tTypeDocument(doc) || doc}</Badge>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Réponses */}
                         {responses.length > 0 && (
                           <div>
                             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                              Réponses ({responses.length})
+                              {t("transferts:rejet_temp.history.responses", { count: responses.length })}
                             </div>
                             <div className="space-y-2">
                               {responses.map((r) => (
@@ -472,12 +445,10 @@ const TransfertDetail = () => {
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-xs font-semibold">{r.auteurNom || r.utilisateurNom || "—"}</span>
                                       {r.createdAt && (
-                                        <span className="text-[10px] text-muted-foreground">
-                                          {new Date(r.createdAt).toLocaleString("fr-FR")}
-                                        </span>
+                                        <span className="text-[10px] text-muted-foreground">{formatDateTime(r.createdAt)}</span>
                                       )}
                                       {r.documentType && (
-                                        <Badge variant="outline" className="text-[10px]">{r.documentType}</Badge>
+                                        <Badge variant="outline" className="text-[10px]">{tTypeDocument(r.documentType) || r.documentType}</Badge>
                                       )}
                                     </div>
                                     <p className="text-sm mt-1 break-words">{r.message}</p>
@@ -489,16 +460,15 @@ const TransfertDetail = () => {
                         )}
                       </div>
 
-                      {/* Actions */}
                       {isOuvert && (canRespondRejet || canValider) && (
                         <div className="flex gap-2 px-4 py-2 border-t bg-muted/20 justify-end">
                           {canRespondRejet && (
                             <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setResponseMsg(""); }}>
-                              Répondre
+                              {t("transferts:actions.repondre")}
                             </Button>
                           )}
                           {canValider && (
-                            <Button size="sm" onClick={() => handleResolve(d.id)}>Marquer résolu</Button>
+                            <Button size="sm" onClick={() => handleResolve(d.id)}>{t("transferts:actions.marquer_resolu")}</Button>
                           )}
                         </div>
                       )}
@@ -511,11 +481,10 @@ const TransfertDetail = () => {
         </Card>
       </div>
 
-      {/* GED Dialog */}
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={`Documents — Transfert #${transfert.id}`}
+        title={t("transferts:documents.dialog_title", { id: transfert.id })}
         dossierId={transfert.id}
         documentTypes={TRANSFERT_DOCUMENT_TYPES}
         documents={docs}
@@ -525,85 +494,83 @@ const TransfertDetail = () => {
         onRefresh={async () => { await loadDocs(); await loadAll(); }}
       />
 
-      {/* Rejet temp dialog */}
       <Dialog open={rejetOpen} onOpenChange={setRejetOpen}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Rejet temporaire — Transfert #{transfert.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: transfert.id })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Motif <span className="text-destructive">*</span></Label>
-              <Textarea value={rejetMotif} onChange={(e) => setRejetMotif(e.target.value)} rows={3} />
+              <Label>{t("transferts:rejet_temp.motif_label")} <span className="text-destructive">*</span></Label>
+              <Textarea value={rejetMotif} onChange={(e) => setRejetMotif(e.target.value)} rows={3} placeholder={t("transferts:rejet_temp.motif_placeholder")} />
             </div>
             <div>
-              <Label>Pièces à fournir <span className="text-destructive">*</span></Label>
+              <Label>{t("transferts:rejet_temp.pieces_label")} <span className="text-destructive">*</span></Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
                 {TRANSFERT_DOCUMENT_TYPES.map((d) => (
                   <div key={d.value} className="flex items-center gap-2">
-                    <Checkbox
+                    <Checkbox2
                       id={`rt-${d.value}`}
                       checked={rejetDocs.includes(d.value)}
                       onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d.value] : prev.filter(x => x !== d.value))}
                     />
-                    <label htmlFor={`rt-${d.value}`} className="text-sm cursor-pointer">{d.label}</label>
+                    <label htmlFor={`rt-${d.value}`} className="text-sm cursor-pointer">{tTypeDocument(d.value) || d.label}</label>
                   </div>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejetOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setRejetOpen(false)}>{t("transferts:rejet_temp.btn_cancel")}</Button>
             <Button onClick={handleRejetTemp} disabled={rejetLoading || !rejetMotif.trim() || rejetDocs.length === 0}>
-              {rejetLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Envoyer
+              {rejetLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("transferts:rejet_temp.btn_send")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Respond dialog */}
       <Dialog open={!!respondDecision} onOpenChange={(o) => { if (!o) { setRespondDecision(null); setResponseMsg(""); setResponseFile(null); setResponseDocType(""); } }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Répondre au rejet temporaire</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.response.dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             {respondDecision?.motifRejet && (
               <div className="p-3 rounded-md bg-muted/50 border border-border text-xs">
-                <span className="text-muted-foreground">Motif :</span> {respondDecision.motifRejet}
+                <span className="text-muted-foreground">{t("transferts:rejet_temp.response.motif_recall")}</span> {respondDecision.motifRejet}
               </div>
             )}
             {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
               <div className="p-3 rounded-md bg-amber-50 border border-amber-200 text-xs">
-                <span className="text-muted-foreground">Pièces demandées :</span>{" "}
-                <span className="font-medium">{respondDecision.documentsDemandes.join(", ")}</span>
+                <span className="text-muted-foreground">{t("transferts:rejet_temp.response.pieces_demanded")}</span>{" "}
+                <span className="font-medium">{respondDecision.documentsDemandes.map(dt => tTypeDocument(dt) || dt).join(", ")}</span>
               </div>
             )}
             <div>
-              <Label>Message <span className="text-destructive">*</span></Label>
-              <Textarea value={responseMsg} onChange={(e) => setResponseMsg(e.target.value)} rows={4} />
+              <Label>{t("transferts:rejet_temp.response.message_label")} <span className="text-destructive">*</span></Label>
+              <Textarea value={responseMsg} onChange={(e) => setResponseMsg(e.target.value)} rows={4} placeholder={t("transferts:rejet_temp.response.message_placeholder")} />
             </div>
             {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
               <>
                 <div>
-                  <Label>Type de pièce <span className="text-destructive">*</span></Label>
+                  <Label>{t("transferts:rejet_temp.response.type_label")} <span className="text-destructive">*</span></Label>
                   <Select value={responseDocType} onValueChange={setResponseDocType}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner le type de pièce" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("transferts:rejet_temp.response.type_placeholder")} /></SelectTrigger>
                     <SelectContent>
-                      {(respondDecision.documentsDemandes || []).map((dt) => {
-                        const meta = TRANSFERT_DOCUMENT_TYPES.find(t => t.value === dt);
-                        return <SelectItem key={dt} value={dt}>{meta?.label || dt}</SelectItem>;
-                      })}
+                      {(respondDecision.documentsDemandes || []).map((dt) => (
+                        <SelectItem key={dt} value={dt}>{tTypeDocument(dt) || dt}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Pièce justificative <span className="text-destructive">*</span></Label>
+                  <Label>{t("transferts:rejet_temp.response.file_label")} <span className="text-destructive">*</span></Label>
                   <Input type="file" accept="application/pdf,image/*" onChange={(e) => setResponseFile(e.target.files?.[0] || null)} />
                   {responseFile && <p className="text-xs text-muted-foreground mt-1">{responseFile.name}</p>}
+                  <p className="text-xs text-muted-foreground mt-1">{t("transferts:rejet_temp.response.versioned")}</p>
                 </div>
               </>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRespondDecision(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setRespondDecision(null)}>{t("transferts:rejet_temp.response.btn_cancel")}</Button>
             <Button
               onClick={handleRespond}
               disabled={
@@ -612,25 +579,22 @@ const TransfertDetail = () => {
                 ((respondDecision?.documentsDemandes?.length || 0) > 0 && (!responseFile || !responseDocType))
               }
             >
-              {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Envoyer
+              {responding && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("transferts:rejet_temp.response.btn_send_short")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Cancel dialog */}
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Annuler la demande de transfert</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Confirmez l'annulation du transfert <strong>#{transfert.id}</strong>.
-          </p>
+          <DialogHeader><DialogTitle>{t("transferts:cancel.dialog_title")}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t("transferts:cancel.confirm_short", { id: transfert.id })}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>Retour</Button>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("transferts:cancel.btn_back")}</Button>
             <Button variant="destructive" onClick={handleAnnuler} disabled={actionLoading}>
-              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmer
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("transferts:cancel.btn_confirm_short")}
             </Button>
           </DialogFooter>
         </DialogContent>
