@@ -1,25 +1,53 @@
 {
   "statut_certificat": {
+    "BROUILLON": "مسودة",
+    "CREEE": "تم الإنشاء",
     "OUVERT": "مفتوحة",
-    "CLOTURE": "مغلقة",
-    "ANNULE": "ملغاة",
+    "EN_CONTROLE_DGD": "قيد المراقبة لدى الجمارك",
+    "EN_COURS": "قيد المعالجة",
+    "SUSPENDU": "موقوفة",
     "EPUISE": "مستنفدة",
-    "SUSPENDU": "موقوفة"
+    "LIQUIDE": "مسوّاة",
+    "LIQUIDEE": "مسوّاة",
+    "APUREE": "مُصفّاة",
+    "APURE": "مُصفّاة",
+    "CLOTURE": "مغلقة",
+    "CLOTUREE": "مغلقة",
+    "ANNULE": "ملغاة",
+    "ANNULEE": "ملغاة"
   },
   "statut_transfert": {
     "BROUILLON": "مسودة",
     "EN_ATTENTE": "في الانتظار",
+    "EN_ATTENTE_VISA": "في انتظار التأشيرة",
+    "VISE": "مؤشّر",
     "VALIDE": "مصادق عليه",
+    "VALIDEE": "مصادق عليه",
+    "EXECUTE": "منفّذ",
+    "EXECUTEE": "منفّذ",
     "REJETE": "مرفوض",
-    "ANNULE": "ملغى"
+    "REJETEE": "مرفوض",
+    "REJET_TEMPORAIRE": "رفض مؤقت",
+    "ANNULE": "ملغى",
+    "ANNULEE": "ملغى"
   },
   "statut_utilisation": {
     "BROUILLON": "مسودة",
+    "CREEE": "تم الإنشاء",
     "SOUMISE": "مقدَّمة",
     "EN_COURS": "قيد المعالجة",
+    "EN_CONTROLE_DGD": "قيد المراقبة لدى الجمارك",
+    "BULLETIN_LIQUIDE": "تمت تسوية الكشف",
+    "VISEE_DGD": "مؤشّرة من الجمارك",
+    "CHEQUE_SAISI": "تم إدخال الشيك",
+    "ENVOYEE_AU_TRESOR": "أُرسلت إلى الخزينة",
+    "QUITTANCES_ENREGISTREES": "تم تسجيل الإيصالات",
+    "LIQUIDEE": "مسوّاة",
     "IMPUTEE": "مخصومة",
-    "APUREE": "مسوّاة",
+    "APUREE": "مُصفّاة",
+    "CLOTUREE": "مغلقة",
     "REJETEE": "مرفوضة",
+    "REJET_TEMPORAIRE": "رفض مؤقت",
     "ANNULEE": "ملغاة"
   },
   "statut_demande": {
@@ -28,6 +56,7 @@
     "EN_INSTRUCTION": "قيد الدراسة",
     "ADOPTEE": "معتمدة",
     "REJETEE": "مرفوضة",
+    "REJET_TEMPORAIRE": "رفض مؤقت",
     "NOTIFIEE": "تم التبليغ",
     "ANNULEE": "ملغاة"
   },
@@ -70,6 +99,10 @@
     "FACTURE": "فاتورة",
     "DECLARATION": "تصريح",
     "CERTIFICAT": "شهادة",
+    "BULLETIN_LIQUIDATION": "كشف التسوية",
+    "BULLETIN_ANNOTE": "كشف مؤشَّر عليه",
+    "CHEQUE_CERTIFIE": "شيك مصدَّق",
+    "QUITTANCE_TRESOR": "إيصال الخزينة",
     "AUTRE": "أخرى"
   },
   "type_utilisation": {
@@ -89,9 +122,31 @@
     "CORRECTION": "تصحيح",
     "REJET_TEMPORAIRE": "رفض مؤقت"
   },
+  "decision_correction_type": {
+    "ACCEPTATION": "قبول",
+    "REJET": "رفض",
+    "REJET_TEMPORAIRE": "رفض مؤقت",
+    "DEMANDE_CORRECTION": "طلب تصحيح"
+  },
+  "rejet_temp_status": {
+    "OUVERT": "مفتوح",
+    "REPONDU": "تم الرد",
+    "RESOLU": "تم الحل",
+    "EXPIRE": "منتهي الصلاحية"
+  },
   "tva_stock_source": {
     "ENTREPRISE": "مؤسسة",
     "IMPORT": "استيراد",
-    "CERTIFICAT": "شهادة"
+    "CERTIFICAT": "شهادة",
+    "UTILISATION_DOUANE": "استخدام جمركي",
+    "TRANSFERT_CREDIT": "تحويل اعتماد"
+  },
+  "affectation_taxe": {
+    "AU_CI": "للائتمان الضريبي",
+    "A_PAYER": "للدفع"
+  },
+  "type_ligne_taxe": {
+    "GLOBALE": "إجمالية",
+    "ARTICLE": "حسب البند"
   }
 }

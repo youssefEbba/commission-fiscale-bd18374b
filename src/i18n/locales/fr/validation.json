@@ -1,0 +1,31 @@
+{
+  "required": "Champ obligatoire",
+  "invalid_type": "Valeur invalide",
+  "invalid_type_expected": "Valeur invalide ({{expected}} attendu)",
+  "invalid_string": {
+    "email": "Adresse email invalide",
+    "url": "URL invalide",
+    "uuid": "Identifiant invalide",
+    "regex": "Format invalide",
+    "default": "Chaîne invalide"
+  },
+  "too_small": {
+    "string": "Au moins {{minimum}} caractères",
+    "string_exact": "Doit faire exactement {{minimum}} caractères",
+    "number": "Doit être supérieur ou égal à {{minimum}}",
+    "number_exclusive": "Doit être supérieur à {{minimum}}",
+    "array": "Au moins {{minimum}} élément(s)",
+    "date": "Date trop ancienne"
+  },
+  "too_big": {
+    "string": "Au plus {{maximum}} caractères",
+    "string_exact": "Doit faire exactement {{maximum}} caractères",
+    "number": "Doit être inférieur ou égal à {{maximum}}",
+    "number_exclusive": "Doit être inférieur à {{maximum}}",
+    "array": "Au plus {{maximum}} élément(s)",
+    "date": "Date trop éloignée"
+  },
+  "invalid_enum": "Valeur non autorisée",
+  "invalid_date": "Date invalide",
+  "custom": "Valeur invalide"
+}

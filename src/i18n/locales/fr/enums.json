@@ -1,25 +1,53 @@
 {
   "statut_certificat": {
+    "BROUILLON": "Brouillon",
+    "CREEE": "Créé",
     "OUVERT": "Ouvert",
-    "CLOTURE": "Clôturé",
-    "ANNULE": "Annulé",
+    "EN_CONTROLE_DGD": "En contrôle DGD",
+    "EN_COURS": "En cours",
+    "SUSPENDU": "Suspendu",
     "EPUISE": "Épuisé",
-    "SUSPENDU": "Suspendu"
+    "LIQUIDE": "Liquidé",
+    "LIQUIDEE": "Liquidé",
+    "APUREE": "Apuré",
+    "APURE": "Apuré",
+    "CLOTURE": "Clôturé",
+    "CLOTUREE": "Clôturé",
+    "ANNULE": "Annulé",
+    "ANNULEE": "Annulé"
   },
   "statut_transfert": {
     "BROUILLON": "Brouillon",
     "EN_ATTENTE": "En attente",
+    "EN_ATTENTE_VISA": "En attente de visa",
+    "VISE": "Visé",
     "VALIDE": "Validé",
+    "VALIDEE": "Validé",
+    "EXECUTE": "Exécuté",
+    "EXECUTEE": "Exécuté",
     "REJETE": "Rejeté",
-    "ANNULE": "Annulé"
+    "REJETEE": "Rejeté",
+    "REJET_TEMPORAIRE": "Rejet temporaire",
+    "ANNULE": "Annulé",
+    "ANNULEE": "Annulé"
   },
   "statut_utilisation": {
     "BROUILLON": "Brouillon",
+    "CREEE": "Créée",
     "SOUMISE": "Soumise",
     "EN_COURS": "En cours",
+    "EN_CONTROLE_DGD": "En contrôle DGD",
+    "BULLETIN_LIQUIDE": "Bulletin liquidé",
+    "VISEE_DGD": "Visée DGD",
+    "CHEQUE_SAISI": "Chèque saisi",
+    "ENVOYEE_AU_TRESOR": "Envoyée au Trésor",
+    "QUITTANCES_ENREGISTREES": "Quittances enregistrées",
+    "LIQUIDEE": "Liquidée",
     "IMPUTEE": "Imputée",
     "APUREE": "Apurée",
+    "CLOTUREE": "Clôturée",
     "REJETEE": "Rejetée",
+    "REJET_TEMPORAIRE": "Rejet temporaire",
     "ANNULEE": "Annulée"
   },
   "statut_demande": {
@@ -28,6 +56,7 @@
     "EN_INSTRUCTION": "En instruction",
     "ADOPTEE": "Adoptée",
     "REJETEE": "Rejetée",
+    "REJET_TEMPORAIRE": "Rejet temporaire",
     "NOTIFIEE": "Notifiée",
     "ANNULEE": "Annulée"
   },
@@ -70,6 +99,10 @@
     "FACTURE": "Facture",
     "DECLARATION": "Déclaration",
     "CERTIFICAT": "Certificat",
+    "BULLETIN_LIQUIDATION": "Bulletin de liquidation",
+    "BULLETIN_ANNOTE": "Bulletin annoté",
+    "CHEQUE_CERTIFIE": "Chèque certifié",
+    "QUITTANCE_TRESOR": "Quittance du Trésor",
     "AUTRE": "Autre"
   },
   "type_utilisation": {
@@ -89,9 +122,31 @@
     "CORRECTION": "Correction",
     "REJET_TEMPORAIRE": "Rejet temporaire"
   },
+  "decision_correction_type": {
+    "ACCEPTATION": "Acceptation",
+    "REJET": "Rejet",
+    "REJET_TEMPORAIRE": "Rejet temporaire",
+    "DEMANDE_CORRECTION": "Demande de correction"
+  },
+  "rejet_temp_status": {
+    "OUVERT": "Ouvert",
+    "REPONDU": "Répondu",
+    "RESOLU": "Résolu",
+    "EXPIRE": "Expiré"
+  },
   "tva_stock_source": {
     "ENTREPRISE": "Entreprise",
     "IMPORT": "Import",
-    "CERTIFICAT": "Certificat"
+    "CERTIFICAT": "Certificat",
+    "UTILISATION_DOUANE": "Utilisation Douane",
+    "TRANSFERT_CREDIT": "Transfert de crédit"
+  },
+  "affectation_taxe": {
+    "AU_CI": "Au CI",
+    "A_PAYER": "À payer"
+  },
+  "type_ligne_taxe": {
+    "GLOBALE": "Globale",
+    "ARTICLE": "Article"
   }
 }

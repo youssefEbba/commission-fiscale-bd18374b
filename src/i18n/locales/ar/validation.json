@@ -1,0 +1,31 @@
+{
+  "required": "حقل إلزامي",
+  "invalid_type": "قيمة غير صالحة",
+  "invalid_type_expected": "قيمة غير صالحة (المتوقع: {{expected}})",
+  "invalid_string": {
+    "email": "عنوان بريد إلكتروني غير صالح",
+    "url": "رابط غير صالح",
+    "uuid": "معرّف غير صالح",
+    "regex": "صيغة غير صالحة",
+    "default": "سلسلة غير صالحة"
+  },
+  "too_small": {
+    "string": "على الأقل {{minimum}} حرفًا",
+    "string_exact": "يجب أن يحتوي بالضبط على {{minimum}} حرفًا",
+    "number": "يجب أن يكون أكبر من أو يساوي {{minimum}}",
+    "number_exclusive": "يجب أن يكون أكبر من {{minimum}}",
+    "array": "على الأقل {{minimum}} عنصرًا",
+    "date": "التاريخ قديم جدًا"
+  },
+  "too_big": {
+    "string": "على الأكثر {{maximum}} حرفًا",
+    "string_exact": "يجب أن يحتوي بالضبط على {{maximum}} حرفًا",
+    "number": "يجب أن يكون أصغر من أو يساوي {{maximum}}",
+    "number_exclusive": "يجب أن يكون أصغر من {{maximum}}",
+    "array": "على الأكثر {{maximum}} عنصرًا",
+    "date": "التاريخ بعيد جدًا"
+  },
+  "invalid_enum": "قيمة غير مسموح بها",
+  "invalid_date": "تاريخ غير صالح",
+  "custom": "قيمة غير صالحة"
+}

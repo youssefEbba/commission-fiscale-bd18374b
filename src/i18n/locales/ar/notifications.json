@@ -1,0 +1,20 @@
+{
+  "title": "التنبيهات",
+  "empty": "لا توجد تنبيهات",
+  "mark_all_read": "وضع علامة مقروء على الكل",
+  "open_label": "فتح التنبيهات",
+  "unread_count": "{{count}} غير مقروءة",
+  "unread_count_plural": "{{count}} غير مقروءة",
+  "types": {
+    "CORRECTION_STATUT_CHANGE": "طلب تصحيح",
+    "CORRECTION_DECISION": "قرار تصحيح",
+    "REFERENTIEL_STATUT_CHANGE": "مرجع المشروع",
+    "CONVENTION_STATUT_CHANGE": "اتفاقية",
+    "CERTIFICAT_STATUT_CHANGE": "شهادة",
+    "UTILISATION_STATUT_CHANGE": "استخدام اعتماد",
+    "TRANSFERT_STATUT_CHANGE": "تحويل اعتماد",
+    "DEMANDE_MISE_EN_PLACE_CHANGE": "وضع الاعتماد",
+    "MODIFICATION_STATUT_CHANGE": "تعديل",
+    "GED_DOCUMENT_CHANGE": "وثيقة GED"
+  }
+}
