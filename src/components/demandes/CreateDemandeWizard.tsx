@@ -74,6 +74,7 @@ interface Props {
 }
 
 export default function CreateDemandeWizard({ open, onOpenChange, onCreated, editingId, editingDemande }: Props) {
+  const { t } = useTranslation(["demandes", "common"]);
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
