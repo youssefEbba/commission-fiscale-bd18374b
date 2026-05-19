@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ export function emitErrorDialog(payload: ErrorDialogPayload) {
 }
 
 export function ErrorDialog() {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [payload, setPayload] = useState<ErrorDialogPayload>({ title: "", description: "" });
 
@@ -49,7 +51,7 @@ export function ErrorDialog() {
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" size="lg" onClick={() => setOpen(false)}>
-            Fermer
+            {t("actions.close")}
           </Button>
         </DialogFooter>
       </DialogContent>
