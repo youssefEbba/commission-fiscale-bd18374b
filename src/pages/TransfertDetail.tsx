@@ -325,7 +325,7 @@ const TransfertDetail = () => {
                     return { type, current, previous };
                   });
                   return ordered.map(({ type, current, previous }) => {
-                    const typeLabel = tTypeDocument(type) || TRANSFERT_DOCUMENT_TYPES.find(tt => tt.value === type)?.label || type;
+                    const typeLabel = tTypeDocument(type) || type;
                     const expanded = expandedVersions.has(type);
                     return (
                       <li key={type} className="py-2">
