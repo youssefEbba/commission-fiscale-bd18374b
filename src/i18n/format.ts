@@ -55,3 +55,28 @@ export function formatNumber(n: number | string | null | undefined): string {
   if (v == null || Number.isNaN(v as number)) return "0";
   return new Intl.NumberFormat(locale(), { numberingSystem: "latn" }).format(v as number);
 }
+
+/**
+ * Formate une taille de fichier en utilisant les suffixes localisés (`ged.units.*`).
+ * Le séparateur décimal suit la locale courante. Le nombre est toujours en chiffres latins.
+ */
+export function formatFileSize(bytes?: number | null): string {
+  if (bytes == null || Number.isNaN(bytes)) return i18n.t("ged:units.placeholder", { defaultValue: "—" }) as string;
+  const fmt = (n: number, frac = 0) =>
+    new Intl.NumberFormat(locale(), {
+      numberingSystem: "latn",
+      maximumFractionDigits: frac,
+      minimumFractionDigits: 0,
+    }).format(n);
+  if (bytes < 1024) {
+    return `${fmt(bytes)} ${i18n.t("ged:units.byte_short", { defaultValue: "o" })}`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${fmt(bytes / 1024, 1)} ${i18n.t("ged:units.kilobyte_short", { defaultValue: "Ko" })}`;
+  }
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${fmt(bytes / (1024 * 1024), 1)} ${i18n.t("ged:units.megabyte_short", { defaultValue: "Mo" })}`;
+  }
+  return `${fmt(bytes / (1024 * 1024 * 1024), 2)} ${i18n.t("ged:units.gigabyte_short", { defaultValue: "Go" })}`;
+}
+
