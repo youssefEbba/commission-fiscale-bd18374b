@@ -467,7 +467,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setConvCreateDocs([]);
       toast({ title: t("demandes:toast.success"), description: convCreateDocs.length ? t("demandes:wizard.wtoast.convention_created_with_docs", { count: convCreateDocs.length }) : t("demandes:wizard.wtoast.convention_created") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setCreatingConvention(false);
     }
@@ -508,7 +508,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       setNewMarche({ numeroMarche: "" });
       toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.marche_created") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setCreatingMarche(false);
     }
@@ -1002,7 +1002,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                           setShowCreateBailleur(false);
                                           toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.bailleur_added") });
                                         } catch (e: any) {
-                                          toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                          toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
                                         } finally { setCreatingBailleur(false); }
                                       }}>
                                         {creatingBailleur ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
@@ -1594,7 +1594,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               setNewDevise({ code: "", libelle: "", symbole: "" });
               toast({ title: t("demandes:toast.success"), description: t("demandes:wizard.wtoast.devise_added") });
             } catch (e: any) {
-              toast({ title: "Erreur", description: e.message, variant: "destructive" });
+              toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
             } finally { setAddingDevise(false); }
           }}>
             {addingDevise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
