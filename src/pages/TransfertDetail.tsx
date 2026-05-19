@@ -507,15 +507,16 @@ const TransfertDetail = () => {
               <Label>{t("transferts:rejet_temp.pieces_label")} <span className="text-destructive">*</span></Label>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
                 {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                  <div key={d.value} className="flex items-center gap-2">
+                  <div key={d} className="flex items-center gap-2">
                     <Checkbox
-                      id={`rt-${d.value}`}
-                      checked={rejetDocs.includes(d.value)}
-                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d.value] : prev.filter(x => x !== d.value))}
+                      id={`rt-${d}`}
+                      checked={rejetDocs.includes(d)}
+                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d] : prev.filter(x => x !== d))}
                     />
-                    <label htmlFor={`rt-${d.value}`} className="text-sm cursor-pointer">{tTypeDocument(d.value) || d.label}</label>
+                    <label htmlFor={`rt-${d}`} className="text-sm cursor-pointer">{tTypeDocument(d)}</label>
                   </div>
                 ))}
+
               </div>
             </div>
           </div>
