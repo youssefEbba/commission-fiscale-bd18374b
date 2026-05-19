@@ -4,8 +4,10 @@ declare module "i18next" {
   interface CustomTypeOptions {
     defaultNS: "common";
     returnNull: false;
-    // Resources volontairement non-typés strictement pour autoriser t("...") avec n'importe quelle clé connue.
+    // Désactive le typage strict des clés : t("any.key") est autorisé.
     // Le namespace courant est inféré via useTranslation(ns).
-    resources: Record<string, Record<string, unknown>>;
+    jsonFormat: "v4";
+    allowObjectInHTMLChildren: true;
+    resources: never;
   }
 }
