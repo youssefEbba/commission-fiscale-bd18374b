@@ -579,7 +579,7 @@ const Marches = () => {
         onOpenChange={setGedOpen}
         title={t("marches:ged.title", { ref: gedMarche?.numeroMarche || `#${gedMarche?.id}` })}
         dossierId={gedMarche?.id || null}
-        documentTypes={MARCHE_DOCUMENT_TYPES}
+        documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={gedDocs}
         loading={gedLoading}
         canUpload={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
