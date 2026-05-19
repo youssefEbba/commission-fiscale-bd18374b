@@ -131,7 +131,8 @@
     "code_required": "Code *",
     "libelle_required": "Libellé *",
     "symbole": "Symbole",
-    "added": "Devise ajoutée"
+    "added": "Devise ajoutée",
+    "libelle_placeholder": "Euro"
   },
   "edit": {
     "title": "Modifier la convention",
