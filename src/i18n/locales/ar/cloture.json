@@ -1,11 +1,84 @@
 {
   "list": {
-    "title": "الإقفال والتقارير",
-    "subtitle": "إقفال الملفات الجبائية",
-    "search_placeholder": "بحث…",
-    "empty": "لا توجد عناصر"
+    "title": "الإقفال / الإلغاء",
+    "subtitle": "إدارة دورة إقفال وإلغاء شهادات الاعتماد الضريبي",
+    "refresh": "تحديث",
+    "propose": "اقتراح إقفال/إلغاء",
+    "eligible": {
+      "title": "الشهادات المؤهَّلة للإقفال",
+      "empty": "لا توجد شهادة مؤهَّلة",
+      "propose_btn": "اقتراح",
+      "columns": {
+        "numero": "الرقم",
+        "solde_cordon": "رصيد الكوردون (الحقوق)",
+        "solde_tva": "رصيد ض.ق.م",
+        "date_validite": "تاريخ الصلاحية",
+        "action": "الإجراء"
+      }
+    },
+    "propositions": {
+      "title_president": "المقترحات بانتظار المصادقة",
+      "title_default": "مقترحات الإقفال / الإلغاء",
+      "empty": "لا توجد مقترحات",
+      "columns": {
+        "id": "المعرّف",
+        "certificat": "الشهادة",
+        "type": "النوع",
+        "motif": "السبب",
+        "solde_restant": "الرصيد المتبقي",
+        "date_proposition": "تاريخ الاقتراح",
+        "statut": "الحالة",
+        "actions": "الإجراءات"
+      }
+    }
+  },
+  "approbation": {
+    "pending": "في الانتظار",
+    "approved": "تمت المصادقة",
+    "rejected": "مرفوضة"
+  },
+  "step1": {
+    "title": "اقتراح إقفال / إلغاء",
+    "description": "المرحلة 1 — الخزينة العامة: تقديم المقترح مع تحديد السبب ونوع العملية.",
+    "certificat_label": "الشهادة",
+    "certificat_placeholder": "اختيار شهادة",
+    "certificat_search": "ابحث عن شهادة…",
+    "certificat_item": "الشهادة رقم {{id}}",
+    "type_label": "نوع العملية",
+    "type_placeholder": "اختيار",
+    "motif_label": "السبب",
+    "motif_placeholder": "اختر سبباً",
+    "cancel": "إلغاء",
+    "submit": "إرسال"
+  },
+  "step2": {
+    "description": "المرحلة 2 — الرئيس: المصادقة على المقترح أو رفضه.",
+    "approve": "مصادقة",
+    "reject": "رفض"
+  },
+  "step3": {
+    "description": "المرحلة 3 — الخزينة العامة: إنهاء الإقفال بعد المصادقة.",
+    "finalize": "إنهاء"
   },
   "detail": {
-    "title": "الإقفال والتقارير — التفاصيل"
+    "title": "تفاصيل المقترح رقم {{id}}",
+    "certificat": "الشهادة:",
+    "type": "النوع:",
+    "motif": "السبب:",
+    "solde_restant": "الرصيد المتبقي:",
+    "proposition": "تاريخ الاقتراح:",
+    "cloture": "تاريخ الإقفال:",
+    "cloture_not_done": "لم يُنهَ بعد",
+    "approbation": "المصادقة:"
+  },
+  "toast": {
+    "load_error": "تعذّر تحميل المقترحات",
+    "propose_required_title": "حقول إلزامية",
+    "propose_required_desc": "يرجى ملء جميع الحقول",
+    "propose_success": "تم إرسال المقترح",
+    "approved": "تمت المصادقة",
+    "rejected": "تم الرفض",
+    "finalized": "تم الإنهاء",
+    "error": "خطأ"
   }
 }

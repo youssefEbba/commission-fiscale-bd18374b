@@ -1,11 +1,84 @@
 {
   "list": {
-    "title": "Clôture & Reporting",
-    "subtitle": "Clôture des dossiers fiscaux",
-    "search_placeholder": "Rechercher…",
-    "empty": "Aucun élément"
+    "title": "Clôture / Annulation",
+    "subtitle": "Gestion du cycle de clôture et annulation des certificats de crédit",
+    "refresh": "Actualiser",
+    "propose": "Proposer clôture/annulation",
+    "eligible": {
+      "title": "Certificats éligibles à la clôture",
+      "empty": "Aucun certificat éligible détecté",
+      "propose_btn": "Proposer",
+      "columns": {
+        "numero": "Numéro",
+        "solde_cordon": "Solde Cordon (droits)",
+        "solde_tva": "Solde TVA",
+        "date_validite": "Date validité",
+        "action": "Action"
+      }
+    },
+    "propositions": {
+      "title_president": "Propositions en attente d'approbation",
+      "title_default": "Propositions de clôture / annulation",
+      "empty": "Aucune proposition",
+      "columns": {
+        "id": "ID",
+        "certificat": "Certificat",
+        "type": "Type",
+        "motif": "Motif",
+        "solde_restant": "Solde restant",
+        "date_proposition": "Date proposition",
+        "statut": "Statut",
+        "actions": "Actions"
+      }
+    }
+  },
+  "approbation": {
+    "pending": "En attente",
+    "approved": "Approuvée",
+    "rejected": "Rejetée"
+  },
+  "step1": {
+    "title": "Proposer une clôture / annulation",
+    "description": "Étape 1 — DGTCP : initier la proposition avec motif et type d'opération.",
+    "certificat_label": "Certificat",
+    "certificat_placeholder": "Sélectionner un certificat",
+    "certificat_search": "Rechercher un certificat…",
+    "certificat_item": "Certificat #{{id}}",
+    "type_label": "Type d'opération",
+    "type_placeholder": "Choisir",
+    "motif_label": "Motif",
+    "motif_placeholder": "Choisir un motif",
+    "cancel": "Annuler",
+    "submit": "Soumettre"
+  },
+  "step2": {
+    "description": "Étape 2 — PRESIDENT : valider ou rejeter la proposition.",
+    "approve": "Approuver",
+    "reject": "Rejeter"
+  },
+  "step3": {
+    "description": "Étape 3 — DGTCP : finaliser la clôture après approbation.",
+    "finalize": "Finaliser"
   },
   "detail": {
-    "title": "Clôture & Reporting — Détail"
+    "title": "Détail proposition #{{id}}",
+    "certificat": "Certificat :",
+    "type": "Type :",
+    "motif": "Motif :",
+    "solde_restant": "Solde restant :",
+    "proposition": "Proposition :",
+    "cloture": "Clôture :",
+    "cloture_not_done": "Non finalisée",
+    "approbation": "Approbation :"
+  },
+  "toast": {
+    "load_error": "Impossible de charger les propositions",
+    "propose_required_title": "Champs obligatoires",
+    "propose_required_desc": "Remplissez tous les champs",
+    "propose_success": "Proposition soumise",
+    "approved": "Approuvée",
+    "rejected": "Rejetée",
+    "finalized": "Finalisée",
+    "error": "Erreur"
   }
 }

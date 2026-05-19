@@ -2,7 +2,17 @@
   "statut_certificat": {
     "BROUILLON": "مسودة",
     "CREEE": "تم الإنشاء",
+    "ENVOYEE": "مُرسَلة",
+    "DEMANDE": "طلب",
+    "EN_CONTROLE": "قيد المراقبة",
+    "INCOMPLETE": "غير مكتملة",
+    "A_RECONTROLER": "تحتاج إعادة مراقبة",
+    "EN_VERIFICATION_DGI": "قيد التحقق لدى المديرية العامة للضرائب",
+    "EN_VALIDATION_PRESIDENT": "بانتظار مصادقة الرئيس",
+    "VALIDE_PRESIDENT": "مصادق عليها من الرئيس",
+    "EN_OUVERTURE_DGTCP": "قيد الفتح لدى الخزينة",
     "OUVERT": "مفتوحة",
+    "MODIFIE": "مُعدَّلة",
     "EN_CONTROLE_DGD": "قيد المراقبة لدى الجمارك",
     "EN_COURS": "قيد المعالجة",
     "SUSPENDU": "موقوفة",
@@ -34,11 +44,17 @@
   "statut_utilisation": {
     "BROUILLON": "مسودة",
     "CREEE": "تم الإنشاء",
+    "DEMANDEE": "مطلوبة",
     "SOUMISE": "مقدَّمة",
     "EN_COURS": "قيد المعالجة",
     "EN_CONTROLE_DGD": "قيد المراقبة لدى الجمارك",
+    "EN_VERIFICATION": "قيد التحقق",
+    "INCOMPLETE": "غير مكتملة",
+    "A_RECONTROLER": "تحتاج إعادة مراقبة",
     "BULLETIN_LIQUIDE": "تمت تسوية الكشف",
+    "VISE": "مؤشّرة",
     "VISEE_DGD": "مؤشّرة من الجمارك",
+    "VALIDEE": "مصادق عليها",
     "CHEQUE_SAISI": "تم إدخال الشيك",
     "ENVOYEE_AU_TRESOR": "أُرسلت إلى الخزينة",
     "QUITTANCES_ENREGISTREES": "تم تسجيل الإيصالات",
@@ -99,6 +115,8 @@
     "FACTURE": "فاتورة",
     "DECLARATION": "تصريح",
     "CERTIFICAT": "شهادة",
+    "CERTIFICAT_CREDIT": "شهادة الاعتماد الضريبي",
+    "DECISION_COMMISSION": "قرار اللجنة",
     "BULLETIN_LIQUIDATION": "كشف التسوية",
     "BULLETIN_ANNOTE": "كشف مؤشَّر عليه",
     "CHEQUE_CERTIFIE": "شيك مصدَّق",
@@ -107,6 +125,7 @@
   },
   "type_utilisation": {
     "DOUANE": "الجمارك",
+    "DOUANIER": "الجمارك",
     "TVA_INTERIEURE": "الضريبة الداخلية"
   },
   "type_operation": {
@@ -148,5 +167,15 @@
   "type_ligne_taxe": {
     "GLOBALE": "إجمالية",
     "ARTICLE": "حسب البند"
+  },
+  "motif_cloture": {
+    "RECEPTION_DEFINITIVE": "الاستلام النهائي",
+    "SOLDE_ZERO": "رصيد صفري",
+    "EXPIRATION_VALIDITE": "انتهاء الصلاحية",
+    "RENONCIATION": "تنازل"
+  },
+  "type_operation_cloture": {
+    "CLOTURE": "إقفال",
+    "ANNULATION": "إلغاء"
   }
 }

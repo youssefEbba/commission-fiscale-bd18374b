@@ -1,27 +1,136 @@
 {
   "list": {
-    "title": "Certificats",
-    "subtitle": "Suivi des crédits d'impôt délivrés",
-    "search_placeholder": "Rechercher par référence ou entreprise…",
+    "title": "Certificats de crédit",
+    "subtitle": "Suivi des certificats de crédit d'impôt",
+    "search_placeholder": "Réf. certificat ou entreprise",
     "filter_status": "Filtrer par statut",
+    "filter_all": "Tous les statuts",
     "empty": "Aucun certificat",
+    "refresh": "Actualiser",
+    "role_titles": {
+      "AUTORITE_CONTRACTANTE": "Mes certificats",
+      "ENTREPRISE": "Mes certificats de crédit",
+      "DGTCP": "Certificats – Ouverture & ventilation",
+      "DGI": "Certificats – Contrôle fiscal",
+      "PRESIDENT": "Certificats en attente de signature",
+      "ADMIN_SI": "Tous les certificats (Audit)",
+      "DEFAULT": "Certificats de crédit"
+    },
     "columns": {
-      "reference": "Référence",
+      "ref": "Réf.",
       "entreprise": "Entreprise",
-      "solde": "Solde",
-      "montant_initial": "Montant initial",
-      "date_emission": "Date d'émission",
+      "cordon": "Cordon (Douane)",
+      "tva_int": "TVA Int.",
+      "solde_cordon": "Solde Cordon (droits)",
+      "solde_tva": "Solde TVA",
       "statut": "Statut",
       "actions": "Actions"
+    },
+    "badge": {
+      "sous_traite": "Sous-traité"
+    },
+    "actions": {
+      "detail": "Détail",
+      "valider_ouvrir": "Valider et ouvrir"
+    },
+    "toast": {
+      "load_error": "Impossible de charger les certificats",
+      "statut_success": "Statut: {{label}}"
+    },
+    "dialog": {
+      "title": "Certificat {{ref}}",
+      "entreprise": "Entreprise",
+      "statut": "Statut",
+      "montant_cordon": "Montant Cordon (Douane) — enveloppe",
+      "montant_tva": "Montant TVA Intérieure",
+      "solde_cordon": "Solde Cordon (droits)",
+      "solde_cordon_plus": "+ TVA restante {{tva}} = {{total}}",
+      "solde_tva": "Solde TVA",
+      "total": "Total",
+      "date": "Date",
+      "validite": "Validité",
+      "demande_correction": "Demande correction",
+      "marche": "Marché",
+      "documents_title": "Documents du dossier",
+      "no_documents": "Aucun document associé",
+      "download": "Télécharger"
     }
   },
   "detail": {
-    "title": "Détail du certificat",
-    "solde_cordon": "Solde Cordon",
-    "solde_tva": "Solde TVA",
-    "paiement_cash_cumule": "Paiement cash cumulé",
-    "utilisations": "Utilisations",
-    "documents": "Documents",
-    "historique": "Historique"
+    "title": "Certificat {{ref}}",
+    "title_short": "Détail du certificat",
+    "subtitle": "Détail du certificat, documents GED et historique des utilisations",
+    "back": "Retour",
+    "ged_button": "Documents GED",
+    "ged_dialog_title": "Documents GED — Certificat {{ref}}",
+    "not_found": "Certificat introuvable",
+    "load_error": "Impossible de charger le certificat",
+    "cards": {
+      "entreprise": "Entreprise",
+      "statut": "Statut",
+      "date_emission": "Date d'émission",
+      "validite": "Validité"
+    },
+    "amounts": {
+      "montant_cordon": "Montant Cordon (Douane) — enveloppe (b+d)",
+      "montant_cordon_note": "Valeur fixe — affichage",
+      "montant_tva": "Montant TVA Intérieure",
+      "solde_cordon": "Solde Cordon (droits)",
+      "solde_cordon_extra": "+ TVA restante : {{tva}} = {{total}} restant",
+      "solde_tva": "Solde TVA"
+    },
+    "recap": {
+      "title": "Récapitulatif fiscal",
+      "ref_col": "Réf.",
+      "label_col": "Libellé",
+      "amount_col": "Montant (MRU)",
+      "a": "Valeur en douane des fournitures",
+      "b": "Droits et taxes douane (hors TVA)",
+      "d": "TVA d'importation (douane) — accord initial",
+      "dp": "TVA d'importation — restant après liquidations",
+      "e": "Crédit extérieur (b + d accord)",
+      "f": "Montant du marché HT",
+      "g": "TVA collectée travaux",
+      "h": "Crédit intérieur net (g − d)",
+      "total": "Total crédit d'impôt (e + h)"
+    },
+    "info": {
+      "title": "Informations complémentaires",
+      "demande_correction": "Demande correction",
+      "marche": "Marché"
+    },
+    "indicators": {
+      "importations_liquidees": "Importations liquidées",
+      "apurements": "Apurements réalisés",
+      "stock_tva": "Stock TVA déductible",
+      "paiement_cash": "Paiement cash cumulé",
+      "reports": "Reports à nouveau",
+      "utilisations_cours": "Utilisations en cours"
+    },
+    "stock": {
+      "title": "Stock TVA déductible — Total disponible : {{total}}",
+      "source": "Origine",
+      "declaration": "Déclaration",
+      "montant_initial": "Montant initial",
+      "consomme": "Consommé",
+      "restant": "Restant",
+      "date": "Date",
+      "etat": "État",
+      "util_short": "Util #{{id}}"
+    },
+    "utilisations": {
+      "title": "Utilisations liées ({{count}})",
+      "new": "Nouvelle utilisation",
+      "empty": "Aucune utilisation pour ce certificat",
+      "id": "ID",
+      "type": "Type",
+      "montant": "Montant",
+      "droits": "Droits",
+      "tva": "TVA",
+      "date": "Date",
+      "statut": "Statut",
+      "type_douane": "Douane",
+      "type_tva": "TVA Int."
+    }
   }
 }
