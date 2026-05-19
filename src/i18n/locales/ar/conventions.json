@@ -131,7 +131,8 @@
     "code_required": "الرمز *",
     "libelle_required": "التسمية *",
     "symbole": "الرمز التعبيري",
-    "added": "تمت إضافة العملة"
+    "added": "تمت إضافة العملة",
+    "libelle_placeholder": "يورو"
   },
   "edit": {
     "title": "تعديل الاتفاقية",
