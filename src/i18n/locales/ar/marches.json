@@ -1,11 +1,123 @@
 {
   "list": {
     "title": "الإسنادات / الصفقات",
-    "subtitle": "الصفقات الممنوحة للمؤسسات",
-    "search_placeholder": "بحث…",
-    "empty": "لا توجد عناصر"
+    "subtitle": "إدارة الإسنادات والصفقات العمومية",
+    "refresh": "تحديث",
+    "new": "إسناد جديد",
+    "search_placeholder": "بحث (الرقم أو العنوان)…",
+    "empty": "لا توجد صفقة",
+    "load_error": "تعذّر تحميل الصفقات",
+    "delegues_load_error": "تعذّر تحميل الممثلين"
   },
   "detail": {
-    "title": "الإسنادات / الصفقات — التفاصيل"
+    "title": "الصفقة {{ref}}",
+    "title_fallback": "الصفقة رقم {{id}}",
+    "back": "رجوع",
+    "not_found": "الصفقة غير موجودة",
+    "load_error": "تعذّر تحميل الصفقة",
+    "documents_count": "الوثائق ({{count}})",
+    "sections": {
+      "general": "المعلومات العامة",
+      "convention": "الاتفاقية المرتبطة",
+      "delegues": "الممثلون المعيّنون"
+    },
+    "delegues_empty": "لا يوجد ممثل معيّن."
+  },
+  "columns": {
+    "numero": "رقم الإسناد / الصفقة",
+    "intitule": "العنوان",
+    "montant_ht": "المبلغ دون الرسوم",
+    "statut": "الحالة",
+    "type": "النوع",
+    "actions": "إجراءات"
+  },
+  "type": {
+    "contrat": "صفقة / عقد",
+    "contrat_long": "صفقة / عقد (ناتج عن طلب)",
+    "attribution": "إسناد / ترسية"
+  },
+  "fields": {
+    "numero": "رقم الإسناد / الصفقة",
+    "intitule": "العنوان",
+    "date_signature": "تاريخ التوقيع",
+    "montant_ht": "مبلغ العقد دون الرسوم",
+    "statut": "الحالة",
+    "type": "النوع",
+    "reference": "المرجع",
+    "bailleur": "الممول"
+  },
+  "form": {
+    "title_edit": "تعديل",
+    "title_create": "إسناد / ترسية جديدة",
+    "description_edit": "عدّل معلومات الصفقة.",
+    "description_create": "أدخل معلومات الصفقة الجديدة.",
+    "convention": "الاتفاقية",
+    "convention_scope": "(ضمن نطاق سلطتك المتعاقدة)",
+    "convention_placeholder": "لا توجد اتفاقية مرتبطة",
+    "convention_empty_scope": "لا توجد اتفاقية ضمن نطاقك",
+    "convention_search": "ابحث عن اتفاقية...",
+    "numero_required": "رقم الإسناد *",
+    "numero_placeholder": "MARC-2026-001",
+    "intitule": "عنوان الصفقة",
+    "intitule_hint": "(اختياري، 500 حرف كحد أقصى)",
+    "intitule_placeholder": "مثال: بناء مدرسة...",
+    "montant_required": "مبلغ العقد دون الرسوم *",
+    "montant_placeholder": "المبلغ بالأوقية",
+    "statut": "الحالة",
+    "errors": {
+      "numero_required": "رقم الصفقة مطلوب",
+      "montant_required": "مبلغ العقد دون الرسوم مطلوب",
+      "submit_failed": "فشلت العملية"
+    }
+  },
+  "assign": {
+    "title": "إدارة الممثلين",
+    "description": "أضف أو أزل الممثلين من الصفقة رقم {{id}}.",
+    "current": "الممثلون المعيّنون",
+    "add": "إضافة ممثل",
+    "add_placeholder": "اختر ممثلاً",
+    "all_assigned": "جميع الممثلين معيّنون مسبقاً.",
+    "create_new": "إنشاء ممثل جديد",
+    "new_title": "ممثل جديد",
+    "nom_required": "الاسم الكامل *",
+    "nom_placeholder": "اسم لقب",
+    "username_required": "المعرّف *",
+    "username_placeholder": "upm1",
+    "password_required": "كلمة المرور *",
+    "email": "البريد الإلكتروني",
+    "email_placeholder": "email@example.com",
+    "role_required": "الدور *",
+    "back": "رجوع"
+  },
+  "cancel_dialog": {
+    "title": "إلغاء الصفقة",
+    "description": "هل أنت متأكد من إلغاء هذه الصفقة؟ هذا الإجراء لا يمكن التراجع عنه.",
+    "keep": "لا، احتفظ",
+    "confirm": "نعم، ألغِ"
+  },
+  "ged": {
+    "title": "الوثائق — الصفقة {{ref}}"
+  },
+  "actions": {
+    "view": "عرض",
+    "ged": "إدارة الوثائق",
+    "edit": "تعديل",
+    "assign": "تعيين",
+    "cancel": "إلغاء",
+    "documents": "الوثائق",
+    "close": "إغلاق",
+    "add": "إضافة",
+    "create": "إنشاء",
+    "save": "حفظ",
+    "dismiss": "إلغاء"
+  },
+  "toast": {
+    "created": "تم إنشاء الصفقة",
+    "updated": "تم تحديث الصفقة",
+    "cancelled": "تم إلغاء الصفقة",
+    "delegue_added": "تمت إضافة الممثل إلى الصفقة",
+    "delegue_removed": "تم سحب الممثل من الصفقة",
+    "delegue_created": "تم إنشاء الممثل",
+    "delegue_form_required": "الاسم الكامل والمعرّف وكلمة المرور مطلوبة"
   }
 }

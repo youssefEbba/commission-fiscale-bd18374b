@@ -1,11 +1,123 @@
 {
   "list": {
     "title": "Attributions / Marchés",
-    "subtitle": "Marchés attribués aux entreprises",
-    "search_placeholder": "Rechercher…",
-    "empty": "Aucun élément"
+    "subtitle": "Gestion des attributions et marchés publics",
+    "refresh": "Actualiser",
+    "new": "Nouvelle attribution",
+    "search_placeholder": "Rechercher (n° ou intitulé)…",
+    "empty": "Aucun marché",
+    "load_error": "Impossible de charger les marchés",
+    "delegues_load_error": "Impossible de charger les représentants"
   },
   "detail": {
-    "title": "Attributions / Marchés — Détail"
+    "title": "Marché {{ref}}",
+    "title_fallback": "Marché #{{id}}",
+    "back": "Retour",
+    "not_found": "Marché introuvable",
+    "load_error": "Impossible de charger le marché",
+    "documents_count": "Documents ({{count}})",
+    "sections": {
+      "general": "Informations générales",
+      "convention": "Convention rattachée",
+      "delegues": "Représentants affectés"
+    },
+    "delegues_empty": "Aucun représentant affecté."
+  },
+  "columns": {
+    "numero": "N° Attribution / Marché",
+    "intitule": "Intitulé",
+    "montant_ht": "Montant HT",
+    "statut": "Statut",
+    "type": "Type",
+    "actions": "Actions"
+  },
+  "type": {
+    "contrat": "Marché / Contrat",
+    "contrat_long": "Marché / Contrat (issu d'une demande)",
+    "attribution": "Attribution / Adjudication"
+  },
+  "fields": {
+    "numero": "N° Attribution / Marché",
+    "intitule": "Intitulé",
+    "date_signature": "Date signature",
+    "montant_ht": "Montant contrat HT",
+    "statut": "Statut",
+    "type": "Type",
+    "reference": "Référence",
+    "bailleur": "Bailleur"
+  },
+  "form": {
+    "title_edit": "Modifier",
+    "title_create": "Nouvelle attribution / adjudication",
+    "description_edit": "Modifiez les informations du marché.",
+    "description_create": "Renseignez les informations du nouveau marché.",
+    "convention": "Convention",
+    "convention_scope": "(périmètre de votre AC)",
+    "convention_placeholder": "Aucune convention rattachée",
+    "convention_empty_scope": "Aucune convention dans votre périmètre",
+    "convention_search": "Rechercher une convention...",
+    "numero_required": "Numéro d'attribution *",
+    "numero_placeholder": "MARC-2026-001",
+    "intitule": "Intitulé du marché",
+    "intitule_hint": "(optionnel, max 500 car.)",
+    "intitule_placeholder": "Ex : Construction d'une école...",
+    "montant_required": "Montant contrat HT *",
+    "montant_placeholder": "Montant en MRU",
+    "statut": "Statut",
+    "errors": {
+      "numero_required": "Le numéro de marché est requis",
+      "montant_required": "Le montant contrat HT est obligatoire",
+      "submit_failed": "Échec de l'opération"
+    }
+  },
+  "assign": {
+    "title": "Gérer les représentants",
+    "description": "Ajoutez ou retirez des représentants du marché #{{id}}.",
+    "current": "Représentants affectés",
+    "add": "Ajouter un représentant",
+    "add_placeholder": "Sélectionner un représentant",
+    "all_assigned": "Tous les représentants sont déjà affectés.",
+    "create_new": "Créer un nouveau représentant",
+    "new_title": "Nouveau représentant",
+    "nom_required": "Nom complet *",
+    "nom_placeholder": "Nom Prénom",
+    "username_required": "Identifiant *",
+    "username_placeholder": "upm1",
+    "password_required": "Mot de passe *",
+    "email": "Email",
+    "email_placeholder": "email@example.com",
+    "role_required": "Rôle *",
+    "back": "Retour"
+  },
+  "cancel_dialog": {
+    "title": "Annuler le marché",
+    "description": "Êtes-vous sûr de vouloir annuler ce marché ? Cette action est irréversible.",
+    "keep": "Non, garder",
+    "confirm": "Oui, annuler"
+  },
+  "ged": {
+    "title": "Documents — Marché {{ref}}"
+  },
+  "actions": {
+    "view": "Voir",
+    "ged": "GED",
+    "edit": "Modifier",
+    "assign": "Affecter",
+    "cancel": "Annuler",
+    "documents": "Documents",
+    "close": "Fermer",
+    "add": "Ajouter",
+    "create": "Créer",
+    "save": "Enregistrer",
+    "dismiss": "Annuler"
+  },
+  "toast": {
+    "created": "Marché créé",
+    "updated": "Marché mis à jour",
+    "cancelled": "Marché annulé",
+    "delegue_added": "Représentant ajouté au marché",
+    "delegue_removed": "Représentant retiré du marché",
+    "delegue_created": "Représentant créé",
+    "delegue_form_required": "Nom complet, identifiant et mot de passe sont requis"
   }
 }

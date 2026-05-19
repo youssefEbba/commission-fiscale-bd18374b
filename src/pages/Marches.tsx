@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -20,9 +21,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban, MoreHorizontal, Eye } from "lucide-react";
-import { CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
+import { CreateDelegueRequest } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutMarche } from "@/i18n/enums";
+import { formatAmount } from "@/i18n/format";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -32,6 +36,8 @@ const STATUT_COLORS: Record<StatutMarche, string> = {
 };
 
 const Marches = () => {
+  const { t } = useTranslation();
+  usePageTitle("marches:list.title");
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,34 +46,32 @@ const Marches = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
   const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
-  // Assign delegate dialog
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignMarche, setAssignMarche] = useState<MarcheDto | null>(null);
   const [delegues, setDelegues] = useState<DelegueDto[]>([]);
   const [selectedDelegue, setSelectedDelegue] = useState<string>("");
   const [assigning, setAssigning] = useState(false);
 
-  // Inline create delegate
   const [showCreateDelegue, setShowCreateDelegue] = useState(false);
   const [delegueForm, setDelegueForm] = useState<CreateDelegueRequest>({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
   const [creatingDelegue, setCreatingDelegue] = useState(false);
 
-  // GED Documents
   const [gedOpen, setGedOpen] = useState(false);
   const [gedMarche, setGedMarche] = useState<MarcheDto | null>(null);
   const [gedDocs, setGedDocs] = useState<DocumentDto[]>([]);
   const [gedLoading, setGedLoading] = useState(false);
 
-  // Cancel dialog
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelMarche, setCancelMarche] = useState<MarcheDto | null>(null);
   const [cancelling, setCancelling] = useState(false);
+
+  const errTitle = t("common:toast.error", { defaultValue: "Erreur" });
+  const okTitle = t("common:toast.success", { defaultValue: "Succès" });
 
   const fetchMarches = async (q?: string) => {
     setLoading(true);
@@ -79,17 +83,16 @@ const Marches = () => {
       setMarches(results[0].status === "fulfilled" ? results[0].value : []);
       setConventions(results[1].status === "fulfilled" ? results[1].value : []);
       if (results[0].status === "rejected") {
-        toast({ title: "Erreur", description: "Impossible de charger les marchés", variant: "destructive" });
+        toast({ title: errTitle, description: t("marches:list.load_error"), variant: "destructive" });
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Recherche serveur (debounce léger) — la recherche locale reste comme filet
   useEffect(() => {
-    const t = setTimeout(() => { fetchMarches(search.trim() || undefined); }, 300);
-    return () => clearTimeout(t);
+    const tm = setTimeout(() => { fetchMarches(search.trim() || undefined); }, 300);
+    return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
@@ -122,27 +125,26 @@ const Marches = () => {
       const d = await delegueApi.getAll();
       setDelegues(d.filter(x => x.actif));
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les représentants", variant: "destructive" });
+      toast({ title: errTitle, description: t("marches:list.delegues_load_error"), variant: "destructive" });
     }
   };
 
   const handleCreateDelegueInline = async () => {
     if (!delegueForm.username.trim() || !delegueForm.password.trim() || !delegueForm.nomComplet.trim()) {
-      toast({ title: "Erreur", description: "Nom complet, identifiant et mot de passe sont requis", variant: "destructive" });
+      toast({ title: errTitle, description: t("marches:toast.delegue_form_required"), variant: "destructive" });
       return;
     }
     setCreatingDelegue(true);
     try {
       const created = await delegueApi.create(delegueForm);
-      toast({ title: "Succès", description: "Représentant créé" });
+      toast({ title: okTitle, description: t("marches:toast.delegue_created") });
       setDelegueForm({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
       setShowCreateDelegue(false);
-      // Refresh list and auto-select
       const d = await delegueApi.getAll();
       setDelegues(d.filter(x => x.actif));
       setSelectedDelegue(String(created.id));
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
     } finally {
       setCreatingDelegue(false);
     }
@@ -153,14 +155,13 @@ const Marches = () => {
     setAssigning(true);
     try {
       await marcheApi.addDelegue(assignMarche.id, parseInt(selectedDelegue));
-      toast({ title: "Succès", description: "Représentant ajouté au marché" });
+      toast({ title: okTitle, description: t("marches:toast.delegue_added") });
       setSelectedDelegue("");
       fetchMarches();
-      // Refresh assignMarche
       const updated = await marcheApi.getById(assignMarche.id);
       setAssignMarche(updated);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
     } finally {
       setAssigning(false);
     }
@@ -170,12 +171,12 @@ const Marches = () => {
     if (!assignMarche) return;
     try {
       await marcheApi.removeDelegue(assignMarche.id, delegueId);
-      toast({ title: "Succès", description: "Représentant retiré du marché" });
+      toast({ title: okTitle, description: t("marches:toast.delegue_removed") });
       fetchMarches();
       const updated = await marcheApi.getById(assignMarche.id);
       setAssignMarche(updated);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
     }
   };
 
@@ -196,16 +197,13 @@ const Marches = () => {
   const handleGedUpload = async (marcheId: number, type: string, file: File) => {
     await marcheApi.uploadDocument(marcheId, type as TypeDocumentMarche, file);
   };
-
   const handleGedRefresh = async (marcheId: number) => {
     const docs = await marcheApi.getDocuments(marcheId);
     setGedDocs(docs);
   };
-
   const handleGedDelete = async (marcheId: number, docId: number) => {
     await marcheApi.deleteDocument(marcheId, docId);
   };
-
   const handleGedReplace = async (marcheId: number, docId: number, file: File) => {
     await marcheApi.replaceDocument(marcheId, docId, file);
   };
@@ -220,12 +218,12 @@ const Marches = () => {
     setCancelling(true);
     try {
       await marcheApi.updateStatut(cancelMarche.id, "ANNULE");
-      toast({ title: "Succès", description: "Marché annulé" });
+      toast({ title: okTitle, description: t("marches:toast.cancelled") });
       setCancelOpen(false);
       setCancelMarche(null);
       fetchMarches();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
     } finally {
       setCancelling(false);
     }
@@ -233,20 +231,18 @@ const Marches = () => {
 
   const handleSubmit = async () => {
     if (!form.numeroMarche?.trim()) {
-      toast({ title: "Erreur", description: "Le numéro de marché est requis", variant: "destructive" });
+      toast({ title: errTitle, description: t("marches:form.errors.numero_required"), variant: "destructive" });
       return;
     }
     if (form.montantContratHt == null || isNaN(form.montantContratHt)) {
-      toast({ title: "Erreur", description: "Le montant contrat HT est obligatoire", variant: "destructive" });
+      toast({ title: errTitle, description: t("marches:form.errors.montant_required"), variant: "destructive" });
       return;
     }
-    // Préparer payload : envoyer montantContratHt (alias TTC accepté côté back)
     const payload: CreateMarcheRequest = { ...form };
     if (payload.montantContratHt == null) {
       delete payload.montantContratHt;
       delete payload.montantContratTtc;
     } else {
-      // alias rétro-compat
       payload.montantContratTtc = payload.montantContratHt;
     }
     if (!payload.conventionId) {
@@ -256,15 +252,15 @@ const Marches = () => {
     try {
       if (editing) {
         await marcheApi.update(editing.id, payload);
-        toast({ title: "Succès", description: "Marché mis à jour" });
+        toast({ title: okTitle, description: t("marches:toast.updated") });
       } else {
         await marcheApi.create(payload);
-        toast({ title: "Succès", description: "Marché créé" });
+        toast({ title: okTitle, description: t("marches:toast.created") });
       }
       setDialogOpen(false);
       fetchMarches();
     } catch (e: unknown) {
-      toast({ title: "Erreur", description: formatApiErrorMessage(e, "Échec de l'opération"), variant: "destructive" });
+      toast({ title: errTitle, description: formatApiErrorMessage(e, t("marches:form.errors.submit_failed")), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -283,6 +279,11 @@ const Marches = () => {
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
 
+  const conventionDevise = (conventionId?: number) => {
+    const c = conventions.find(x => x.id === conventionId);
+    return c?.deviseOrigine || "MRU";
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -290,25 +291,25 @@ const Marches = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Gavel className="h-6 w-6 text-primary" />
-              Attributions / Marchés
+              {t("marches:list.title")}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Gestion des attributions et marchés publics</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("marches:list.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             {isAC && (
               <Button onClick={openCreate}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle attribution
+                <Plus className="h-4 w-4 me-2" /> {t("marches:list.new")}
               </Button>
             )}
             <Button variant="outline" onClick={() => fetchMarches(search.trim() || undefined)} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("marches:list.refresh")}
             </Button>
           </div>
         </div>
 
         <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher (n° ou intitulé)..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder={t("marches:list.search_placeholder")} value={search} onChange={e => setSearch(e.target.value)} className="ps-9" />
         </div>
 
         <Card>
@@ -320,38 +321,40 @@ const Marches = () => {
                 <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>N° Attribution / Marché</TableHead>
-                      <TableHead>Intitulé</TableHead>
-                      <TableHead>Montant HT</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("marches:columns.numero")}</TableHead>
+                      <TableHead>{t("marches:columns.intitule")}</TableHead>
+                      <TableHead className="text-end">{t("marches:columns.montant_ht")}</TableHead>
+                      <TableHead>{t("marches:columns.statut")}</TableHead>
+                      <TableHead>{t("marches:columns.type")}</TableHead>
+                      <TableHead className="text-end">{t("marches:columns.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun marché</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
                       </TableRow>
                     ) : (
                       filtered.map(m => (
                         <TableRow key={m.id}>
                           <TableCell className="font-medium whitespace-nowrap">{m.numeroMarche || `#${m.id}`}</TableCell>
                           <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
-                          <TableCell className="whitespace-nowrap">{(m.montantContratHt ?? m.montantContratTtc)?.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) || "—"}</TableCell>
+                          <TableCell className="whitespace-nowrap text-end">
+                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
-                              {MARCHE_STATUT_LABELS[m.statut]}
+                              {tStatutMarche(m.statut)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {m.demandeCorrectionId ? (
-                              <Badge className="text-xs bg-green-100 text-green-800">Marché / Contrat</Badge>
+                              <Badge className="text-xs bg-green-100 text-green-800">{t("marches:type.contrat")}</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs">Attribution / Adjudication</Badge>
+                              <Badge variant="outline" className="text-xs">{t("marches:type.attribution")}</Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 variant="outline"
@@ -359,7 +362,7 @@ const Marches = () => {
                                 className="h-8"
                                 onClick={() => navigate(`/dashboard/marches/${m.id}`)}
                               >
-                                <Eye className="h-4 w-4 mr-1" /> Voir
+                                <Eye className="h-4 w-4 me-1" /> {t("marches:actions.view")}
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -369,19 +372,19 @@ const Marches = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => openGed(m)}>
-                                    <FileText className="h-4 w-4 mr-2" /> GED
+                                    <FileText className="h-4 w-4 me-2" /> {t("marches:actions.ged")}
                                   </DropdownMenuItem>
                                   {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => openEdit(m)}>
-                                        <Edit className="h-4 w-4 mr-2" /> Modifier
+                                        <Edit className="h-4 w-4 me-2" /> {t("marches:actions.edit")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => openAssign(m)}>
-                                        <UserPlus className="h-4 w-4 mr-2" /> Affecter
+                                        <UserPlus className="h-4 w-4 me-2" /> {t("marches:actions.assign")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => openCancelMarche(m)} className="text-destructive">
-                                        <Ban className="h-4 w-4 mr-2" /> Annuler
+                                        <Ban className="h-4 w-4 me-2" /> {t("marches:actions.cancel")}
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -404,9 +407,9 @@ const Marches = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? "Modifier" : "Nouvelle attribution / adjudication"}</DialogTitle>
+            <DialogTitle>{editing ? t("marches:form.title_edit") : t("marches:form.title_create")}</DialogTitle>
             <DialogDescription>
-              {editing ? "Modifiez les informations du marché." : "Renseignez les informations du nouveau marché."}
+              {editing ? t("marches:form.description_edit") : t("marches:form.description_create")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -417,12 +420,12 @@ const Marches = () => {
                 : conventions;
               return (
               <div className="space-y-2">
-                <Label>Convention <span className="text-muted-foreground text-xs">(périmètre de votre AC)</span></Label>
+                <Label>{t("marches:form.convention")} <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span></Label>
                 <SearchableSelect
                   value={form.conventionId ? String(form.conventionId) : ""}
                   onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}
-                  placeholder={visibleConventions.length === 0 ? "Aucune convention dans votre périmètre" : "Aucune convention rattachée"}
-                  searchPlaceholder="Rechercher une convention..."
+                  placeholder={visibleConventions.length === 0 ? t("marches:form.convention_empty_scope") : t("marches:form.convention_placeholder")}
+                  searchPlaceholder={t("marches:form.convention_search")}
                   options={visibleConventions.map(c => ({
                     value: String(c.id),
                     label: `${c.reference || `#${c.id}`} — ${c.intitule || ""}`,
@@ -433,34 +436,34 @@ const Marches = () => {
               );
             })()}
             <div className="space-y-2">
-              <Label>Numéro d'attribution *</Label>
-              <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder="MARC-2026-001" />
+              <Label>{t("marches:form.numero_required")}</Label>
+              <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder={t("marches:form.numero_placeholder")} />
             </div>
             <div className="space-y-2">
-              <Label>Intitulé du marché <span className="text-muted-foreground text-xs">(optionnel, max 500 car.)</span></Label>
-              <Input maxLength={500} value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder="Ex : Construction d'une école..." />
-            </div>
-             <div className="space-y-2">
-              <Label>Montant contrat HT *</Label>
-              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder="Montant en MRU" />
+              <Label>{t("marches:form.intitule")} <span className="text-muted-foreground text-xs">{t("marches:form.intitule_hint")}</span></Label>
+              <Input maxLength={500} value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder={t("marches:form.intitule_placeholder")} />
             </div>
             <div className="space-y-2">
-              <Label>Statut</Label>
+              <Label>{t("marches:form.montant_required")}</Label>
+              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("marches:form.statut")}</Label>
               <Select value={form.statut} onValueChange={v => setForm(f => ({ ...f, statut: v as StatutMarche }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(MARCHE_STATUT_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {Object.keys(MARCHE_STATUT_LABELS).map((k) => (
+                    <SelectItem key={k} value={k}>{tStatutMarche(k)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("marches:actions.dismiss")}</Button>
             <Button onClick={handleSubmit} disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-              {editing ? "Enregistrer" : "Créer"}
+              {submitting && <Loader2 className="h-4 w-4 animate-spin me-1" />}
+              {editing ? t("marches:actions.save") : t("marches:actions.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -470,23 +473,22 @@ const Marches = () => {
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Gérer les représentants</DialogTitle>
+            <DialogTitle>{t("marches:assign.title")}</DialogTitle>
             <DialogDescription>
-              Ajoutez ou retirez des représentants du marché #{assignMarche?.id}.
+              {t("marches:assign.description", { id: assignMarche?.id })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Current delegates */}
             {assignMarche?.delegueIds && assignMarche.delegueIds.length > 0 && (
               <div className="space-y-2">
-                <Label>Représentants affectés</Label>
+                <Label>{t("marches:assign.current")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {assignMarche.delegueIds.map(dId => {
                     const d = delegues.find(x => x.id === dId);
                     return (
                       <Badge key={dId} variant="secondary" className="flex items-center gap-1 px-3 py-1">
                         {d ? `${d.nomComplet} (${d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})` : `#${dId}`}
-                        <button onClick={() => handleRemoveDelegue(dId)} className="ml-1 rounded-full hover:bg-muted p-0.5">
+                        <button onClick={() => handleRemoveDelegue(dId)} className="ms-1 rounded-full hover:bg-muted p-0.5">
                           <X className="h-3 w-3" />
                         </button>
                       </Badge>
@@ -499,9 +501,9 @@ const Marches = () => {
             {!showCreateDelegue ? (
               <>
                 <div className="space-y-2">
-                  <Label>Ajouter un représentant</Label>
+                  <Label>{t("marches:assign.add")}</Label>
                   <Select value={selectedDelegue} onValueChange={setSelectedDelegue}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner un représentant" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("marches:assign.add_placeholder")} /></SelectTrigger>
                     <SelectContent>
                       {delegues
                         .filter(d => !(assignMarche?.delegueIds || []).includes(d.id))
@@ -514,46 +516,46 @@ const Marches = () => {
                   </Select>
                 </div>
                 {delegues.filter(d => !(assignMarche?.delegueIds || []).includes(d.id)).length === 0 && (
-                  <p className="text-sm text-muted-foreground">Tous les représentants sont déjà affectés.</p>
+                  <p className="text-sm text-muted-foreground">{t("marches:assign.all_assigned")}</p>
                 )}
                 <Button variant="outline" size="sm" className="w-full" onClick={() => setShowCreateDelegue(true)}>
-                  <UserRoundPlus className="h-4 w-4 mr-2" /> Créer un nouveau représentant
+                  <UserRoundPlus className="h-4 w-4 me-2" /> {t("marches:assign.create_new")}
                 </Button>
               </>
             ) : (
               <div className="space-y-3 border rounded-lg p-4">
-                <p className="text-sm font-medium">Nouveau représentant</p>
+                <p className="text-sm font-medium">{t("marches:assign.new_title")}</p>
                 <div className="space-y-2">
-                  <Label>Nom complet *</Label>
-                  <Input value={delegueForm.nomComplet} onChange={e => setDelegueForm(f => ({ ...f, nomComplet: e.target.value }))} placeholder="Nom Prénom" />
+                  <Label>{t("marches:assign.nom_required")}</Label>
+                  <Input value={delegueForm.nomComplet} onChange={e => setDelegueForm(f => ({ ...f, nomComplet: e.target.value }))} placeholder={t("marches:assign.nom_placeholder")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Identifiant *</Label>
-                  <Input value={delegueForm.username} onChange={e => setDelegueForm(f => ({ ...f, username: e.target.value }))} placeholder="upm1" />
+                  <Label>{t("marches:assign.username_required")}</Label>
+                  <Input value={delegueForm.username} onChange={e => setDelegueForm(f => ({ ...f, username: e.target.value }))} placeholder={t("marches:assign.username_placeholder")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Mot de passe *</Label>
+                  <Label>{t("marches:assign.password_required")}</Label>
                   <Input type="password" value={delegueForm.password} onChange={e => setDelegueForm(f => ({ ...f, password: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={delegueForm.email} onChange={e => setDelegueForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
+                  <Label>{t("marches:assign.email")}</Label>
+                  <Input type="email" value={delegueForm.email} onChange={e => setDelegueForm(f => ({ ...f, email: e.target.value }))} placeholder={t("marches:assign.email_placeholder")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Rôle *</Label>
+                  <Label>{t("marches:assign.role_required")}</Label>
                   <Select value={delegueForm.role} onValueChange={v => setDelegueForm(f => ({ ...f, role: v as "AUTORITE_UPM" | "AUTORITE_UEP" }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AUTORITE_UPM">Autorité UPM</SelectItem>
-                      <SelectItem value="AUTORITE_UEP">Autorité UEP</SelectItem>
+                      <SelectItem value="AUTORITE_UPM">{t("enums:role.AUTORITE_UPM")}</SelectItem>
+                      <SelectItem value="AUTORITE_UEP">{t("enums:role.AUTORITE_UEP")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowCreateDelegue(false)} className="flex-1">Retour</Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowCreateDelegue(false)} className="flex-1">{t("marches:assign.back")}</Button>
                   <Button size="sm" onClick={handleCreateDelegueInline} disabled={creatingDelegue} className="flex-1">
-                    {creatingDelegue && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                    Créer
+                    {creatingDelegue && <Loader2 className="h-4 w-4 animate-spin me-1" />}
+                    {t("marches:actions.create")}
                   </Button>
                 </div>
               </div>
@@ -561,10 +563,10 @@ const Marches = () => {
           </div>
           {!showCreateDelegue && (
             <DialogFooter>
-              <Button variant="outline" onClick={() => setAssignOpen(false)}>Fermer</Button>
+              <Button variant="outline" onClick={() => setAssignOpen(false)}>{t("marches:actions.close")}</Button>
               <Button onClick={handleAssign} disabled={assigning || !selectedDelegue}>
-                {assigning && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                Ajouter
+                {assigning && <Loader2 className="h-4 w-4 animate-spin me-1" />}
+                {t("marches:actions.add")}
               </Button>
             </DialogFooter>
           )}
@@ -575,7 +577,7 @@ const Marches = () => {
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={`Documents — Marché ${gedMarche?.numeroMarche || `#${gedMarche?.id}`}`}
+        title={t("marches:ged.title", { ref: gedMarche?.numeroMarche || `#${gedMarche?.id}` })}
         dossierId={gedMarche?.id || null}
         documentTypes={MARCHE_DOCUMENT_TYPES}
         documents={gedDocs}
@@ -593,17 +595,17 @@ const Marches = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Ban className="h-5 w-5" /> Annuler le marché
+              <Ban className="h-5 w-5" /> {t("marches:cancel_dialog.title")}
             </DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir annuler ce marché ? Cette action est irréversible.
+              {t("marches:cancel_dialog.description")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>Non, garder</Button>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("marches:cancel_dialog.keep")}</Button>
             <Button variant="destructive" onClick={handleCancelMarche} disabled={cancelling}>
-              {cancelling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
-              Oui, annuler
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Ban className="h-4 w-4 me-1" />}
+              {t("marches:cancel_dialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
