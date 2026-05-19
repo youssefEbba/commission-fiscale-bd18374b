@@ -71,6 +71,7 @@ export const NAMESPACES = [
   "transferts",
   "cloture",
   "modifications",
+  "mise_en_place",
   "ged",
   "users",
   "roles",
