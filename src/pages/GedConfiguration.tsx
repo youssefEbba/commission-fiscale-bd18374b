@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,95 +15,54 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
+import { tTypeDocument } from "@/i18n/enums";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
-type ProcessusSectionConfig = { key: string; processus: ProcessusType; label: string };
+type ProcessusSectionConfig = { key: string; processus: ProcessusType };
 
 const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
-  { key: "CONVENTION", processus: "CONVENTION", label: "Convention" },
-  { key: "MARCHE", processus: "MARCHE", label: "Marché / Attribution / Adjudication" },
-  { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE", label: "Demande de correction de l'offre Fiscale" },
-  { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI", label: "Mise en place CI (Certificat)" },
-  { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR", label: "Utilisation CI — Douane (Importation)" },
-  { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR", label: "Utilisation CI — TVA Intérieure" },
-  { key: "TRANSFERT", processus: "TRANSFERT_CREDIT", label: "Transfert de crédit (Douane → Intérieur)" },
-  { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE", label: "Sous-traitance" },
-  { key: "MODIFICATION", processus: "MODIFICATION_CI", label: "Modification / Avenant (P8)" },
-  { key: "CLOTURE", processus: "CLOTURE_CI", label: "Clôture / Annulation (P11)" },
+  { key: "CONVENTION", processus: "CONVENTION" },
+  { key: "MARCHE", processus: "MARCHE" },
+  { key: "CORRECTION", processus: "CORRECTION_OFFRE_FISCALE" },
+  { key: "MISE_EN_PLACE", processus: "MISE_EN_PLACE_CI" },
+  { key: "UTIL_EXTERIEUR", processus: "UTILISATION_CI_EXTERIEUR" },
+  { key: "UTIL_INTERIEUR", processus: "UTILISATION_CI_INTERIEUR" },
+  { key: "TRANSFERT", processus: "TRANSFERT_CREDIT" },
+  { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE" },
+  { key: "MODIFICATION", processus: "MODIFICATION_CI" },
+  { key: "CLOTURE", processus: "CLOTURE_CI" },
 ];
 
-const FORMAT_OPTIONS: { value: FormatFichier; label: string }[] = [
-  { value: "WORD", label: "Word" },
-  { value: "EXCEL", label: "Excel" },
-  { value: "IMAGE", label: "Images" },
-  { value: "PDF", label: "PDF" },
-];
+const FORMAT_VALUES: FormatFichier[] = ["WORD", "EXCEL", "IMAGE", "PDF"];
 
-const TYPE_DOCUMENT_OPTIONS = [
-  { value: "OFFRE_CORRIGEE", label: "Offre corrigée" },
-  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
-  { value: "PV_OUVERTURE", label: "PV d'ouverture" },
-  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale" },
-  { value: "OFFRE_FINANCIERE", label: "Offre financière" },
-  { value: "TABLEAU_MODELE", label: "Tableau modèle" },
-  { value: "DAO_DQE", label: "DAO DQE" },
-  { value: "LISTE_ITEMS", label: "Liste des items" },
-  { value: "DAO_ANNOTE", label: "DAO annoté" },
-  { value: "CERTIFICAT_VISITE_DOUANE", label: "Certificat visite douane" },
-  { value: "CERTIFICAT_CREDIT_IMPOTS_SYDONIA", label: "Certificat CI Sydonia" },
-  { value: "LETTRE_DEMANDE_CREDIT_IMPOTS", label: "Lettre demande CI" },
-  { value: "DECLARATION_TVA", label: "Déclaration TVA" },
-  { value: "ORDRE_TRANSIT", label: "Ordre de transit" },
-  { value: "IMAGE_DECLARATION_DOUANE", label: "Image déclaration douane" },
-  { value: "DEVIS", label: "Devis" },
-  { value: "LETTRE_DEMANDE_MISE_EN_PLACE_CI", label: "Lettre demande mise en place CI" },
-  { value: "LETTRE_NOTIFICATION_CONTRAT", label: "Lettre notification contrat" },
-  { value: "CONTRAT", label: "Contrat" },
-  { value: "CERTIFICAT_NIF", label: "Certificat NIF" },
-  { value: "LETTRE_CORRECTION", label: "Lettre de correction" },
-  { value: "LETTRE_ADOPTION", label: "Lettre d'adoption" },
-  { value: "BULLETIN_LIQUIDATION", label: "Bulletin de liquidation" },
-  { value: "DECLARATION_DOUANE", label: "Déclaration douane" },
-  { value: "FACTURE", label: "Facture" },
-  { value: "CONNAISSEMENT", label: "Connaissement" },
-  { value: "DECOMPTE", label: "Décompte" },
-  { value: "AUTRE_DOCUMENT", label: "Autre document" },
-  { value: "CREDIT_EXTERIEUR", label: "Crédit extérieur" },
-  { value: "CREDIT_INTERIEUR", label: "Crédit intérieur" },
-  { value: "DEMANDE_MOTIVEE", label: "Demande motivée" },
-  { value: "DECLARATION_CLOTURE", label: "Déclaration clôture" },
-  { value: "JUSTIFICATIFS_CLOTURE_DOUANE", label: "Justificatifs de clôture douane" },
-  { value: "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", label: "Contrat de sous-traitance enregistré" },
-  { value: "LETTRE_SOUS_TRAITANCE", label: "Lettre détaillant volumes, quantités et pouvoir" },
-  // Convention
-  { value: "CONVENTION_CONTRAT", label: "Convention / Contrat" },
-  { value: "CONVENTION_JOIGNED_DOCUMENT", label: "Document joint convention" },
-  { value: "AVENANT", label: "Avenant" },
-  { value: "ACCORD_FINANCEMENT", label: "Accord de financement" },
-  { value: "ANNEXE", label: "Annexe" },
-  // Marché
-  { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
-  { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
-  { value: "CONTRAT_SIGNE", label: "Contrat signé" },
-  // Types backend enum
-  { value: "CERTIFICAT_CREDIT_IMPOTS", label: "Certificat crédit d'impôts" },
-  { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
-  { value: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée de transfert" },
-  { value: "DECLARATION_CLOTURE_DOUANE", label: "Déclaration clôture douane" },
-  // P8 - Modification / Avenant
-  { value: "NOTE_SERVICE", label: "Note de service" },
-  { value: "JUSTIFICATIONS_LEGALES", label: "Justifications légales" },
-  { value: "LETTRES_MOTIVEES", label: "Lettres motivées" },
-  { value: "AVENANT_CONTRAT", label: "Avenant au contrat" },
-  { value: "LETTRES_AUTORITE_CONTRACTANTE", label: "Lettres de l'autorité contractante" },
-  { value: "DETAIL_CORRECTIONS_NECESSAIRES", label: "Détail des corrections nécessaires" },
-  { value: "DOCUMENTS_OFFICIELS", label: "Documents officiels" },
-  { value: "DECISION_COMMISSION", label: "Décision de la commission" },
-  // P11 - Clôture
-  { value: "LISTE_CREDITS_A_CLOTURER", label: "Liste des crédits à clôturer" },
+// Liste des codes "type document" pilotés par la GED (la traduction du libellé
+// est faite via tTypeDocument — voir `enums.type_document.*`).
+const TYPE_DOCUMENT_CODES: string[] = [
+  "OFFRE_CORRIGEE", "LETTRE_SAISINE", "PV_OUVERTURE", "ATTESTATION_FISCALE",
+  "OFFRE_FINANCIERE", "TABLEAU_MODELE", "DAO_DQE", "LISTE_ITEMS", "DAO_ANNOTE",
+  "CERTIFICAT_VISITE_DOUANE", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+  "LETTRE_DEMANDE_CREDIT_IMPOTS", "DECLARATION_TVA", "ORDRE_TRANSIT",
+  "IMAGE_DECLARATION_DOUANE", "DEVIS", "LETTRE_DEMANDE_MISE_EN_PLACE_CI",
+  "LETTRE_NOTIFICATION_CONTRAT", "CONTRAT", "CERTIFICAT_NIF",
+  "LETTRE_CORRECTION", "LETTRE_ADOPTION", "BULLETIN_LIQUIDATION",
+  "DECLARATION_DOUANE", "FACTURE", "CONNAISSEMENT", "DECOMPTE",
+  "AUTRE_DOCUMENT", "CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "DEMANDE_MOTIVEE",
+  "DECLARATION_CLOTURE", "JUSTIFICATIFS_CLOTURE_DOUANE",
+  "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", "LETTRE_SOUS_TRAITANCE",
+  "CONVENTION_CONTRAT", "CONVENTION_JOIGNED_DOCUMENT", "AVENANT",
+  "ACCORD_FINANCEMENT", "ANNEXE",
+  "PV_ADJUDICATION", "AVIS_ATTRIBUTION", "CONTRAT_SIGNE",
+  "CERTIFICAT_CREDIT_IMPOTS", "DEMANDE_UTILISATION",
+  "DEMANDE_MOTIVEE_TRANSFERT", "DECLARATION_CLOTURE_DOUANE",
+  "NOTE_SERVICE", "JUSTIFICATIONS_LEGALES", "LETTRES_MOTIVEES",
+  "AVENANT_CONTRAT", "LETTRES_AUTORITE_CONTRACTANTE",
+  "DETAIL_CORRECTIONS_NECESSAIRES", "DOCUMENTS_OFFICIELS",
+  "DECISION_COMMISSION", "LISTE_CREDITS_A_CLOTURER",
 ];
 
 const GedConfiguration = () => {
+  const { t } = useTranslation();
+  usePageTitle("ged:config.title");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogProcessus, setDialogProcessus] = useState<ProcessusType>("CORRECTION_OFFRE_FISCALE");
@@ -163,14 +124,14 @@ const GedConfiguration = () => {
     mutationFn: (data: CreateDocumentRequirementRequest) => documentRequirementApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
-      toast({ title: "Document ajouté" });
+      toast({ title: t("ged:config.toast.added") });
       closeDialog();
     },
     onError: (e: Error) => {
       const msg = e.message?.includes("Unique") || e.message?.includes("unique") || e.message?.includes("UK_DOC_REQ")
-        ? "Ce type de document est déjà configuré pour ce processus."
+        ? t("ged:config.toast.unique_constraint")
         : e.message;
-      toast({ title: "Erreur", description: msg, variant: "destructive" });
+      toast({ title: t("ged:config.toast.error"), description: msg, variant: "destructive" });
     },
   });
 
@@ -179,19 +140,19 @@ const GedConfiguration = () => {
       documentRequirementApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
-      toast({ title: "Document modifié" });
+      toast({ title: t("ged:config.toast.modified") });
       closeDialog();
     },
-    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => documentRequirementApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
-      toast({ title: "Document supprimé" });
+      toast({ title: t("ged:config.toast.deleted") });
     },
-    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
   });
 
   const closeDialog = () => {
@@ -227,7 +188,7 @@ const GedConfiguration = () => {
 
   const handleSubmit = () => {
     if (!typeDocument.trim()) {
-      toast({ title: "Veuillez saisir le type de document", variant: "destructive" });
+      toast({ title: t("ged:config.toast.type_required_title"), variant: "destructive" });
       return;
     }
     if (!editItem || editItem.typeDocument !== typeDocument.trim()) {
@@ -235,8 +196,8 @@ const GedConfiguration = () => {
       const duplicate = existing.find((r) => r.typeDocument === typeDocument.trim());
       if (duplicate) {
         toast({
-          title: "Doublon détecté",
-          description: `Le type "${typeDocument.trim()}" est déjà configuré pour ce processus.`,
+          title: t("ged:config.toast.duplicate_title"),
+          description: t("ged:config.toast.duplicate_desc", { type: tTypeDocument(typeDocument.trim()) }),
           variant: "destructive",
         });
         return;
@@ -270,9 +231,9 @@ const GedConfiguration = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">GED – Configuration</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("ged:config.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Configurez les documents requis par processus
+            {t("ged:config.subtitle")}
           </p>
         </div>
 
@@ -284,35 +245,37 @@ const GedConfiguration = () => {
             return (
               <Card key={section.key}>
                 <CardHeader className="flex flex-row items-center justify-between pb-4">
-                  <CardTitle className="text-lg text-primary">{section.label}</CardTitle>
+                  <CardTitle className="text-lg text-primary">
+                    {t(`ged:config.modules.${section.processus}`)}
+                  </CardTitle>
                   <Button size="sm" onClick={() => openCreate(section.processus)}>
-                    <Plus className="h-4 w-4 mr-1" /> Ajouter un document
+                    <Plus className="h-4 w-4 me-1" /> {t("ged:config.add_document")}
                   </Button>
                 </CardHeader>
                 <CardContent>
                   {q.isLoading ? (
-                    <p className="text-muted-foreground text-sm py-8 text-center">Chargement…</p>
+                    <p className="text-muted-foreground text-sm py-8 text-center">{t("ged:config.loading")}</p>
                   ) : sorted.length === 0 ? (
-                    <p className="text-muted-foreground text-sm py-8 text-center">Aucun document configuré.</p>
+                    <p className="text-muted-foreground text-sm py-8 text-center">{t("ged:config.empty")}</p>
                   ) : (
                     <div className="overflow-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="min-w-[200px]">DOCUMENT</TableHead>
-                            <TableHead className="min-w-[120px]">OBLIGATOIRE ?</TableHead>
-                            <TableHead className="min-w-[250px]">TYPE</TableHead>
-                            <TableHead className="min-w-[250px]">DESCRIPTION</TableHead>
-                            <TableHead className="w-[100px]">ACTIONS</TableHead>
+                            <TableHead className="min-w-[200px]">{t("ged:config.table.document")}</TableHead>
+                            <TableHead className="min-w-[120px]">{t("ged:config.table.required")}</TableHead>
+                            <TableHead className="min-w-[250px]">{t("ged:config.table.type")}</TableHead>
+                            <TableHead className="min-w-[250px]">{t("ged:config.table.description")}</TableHead>
+                            <TableHead className="w-[100px]">{t("ged:config.table.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {sorted.map((req) => (
                             <TableRow key={req.id}>
-                              <TableCell className="font-medium">{formatDocLabel(req.typeDocument)}</TableCell>
+                              <TableCell className="font-medium">{tTypeDocument(req.typeDocument)}</TableCell>
                               <TableCell>
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
-                                  {req.obligatoire ? "Oui" : "Non"}
+                                  {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -325,14 +288,14 @@ const GedConfiguration = () => {
                                 </div>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                                {req.description || "—"}
+                                {req.description || t("ged:config.no_description")}
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-1">
-                                  <Button variant="ghost" size="icon" onClick={() => openEdit(req)}>
+                                  <Button variant="ghost" size="icon" onClick={() => openEdit(req)} aria-label={t("ged:config.dialog.submit_edit")}>
                                     <Pencil className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive">
+                                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive" aria-label={t("ged:config.toast.deleted")}>
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
@@ -353,42 +316,42 @@ const GedConfiguration = () => {
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editItem ? "Modifier le document" : "Ajouter un document requis"}</DialogTitle>
+            <DialogTitle>{editItem ? t("ged:config.dialog.edit_title") : t("ged:config.dialog.create_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Type de document *</Label>
+              <Label>{t("ged:config.dialog.type_label")}</Label>
               <Select value={typeDocument} onValueChange={setTypeDocument}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un type de document" />
+                  <SelectValue placeholder={t("ged:config.dialog.type_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {TYPE_DOCUMENT_OPTIONS.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  {TYPE_DOCUMENT_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center gap-3">
-              <Label>Obligatoire</Label>
+              <Label>{t("ged:config.dialog.required_label")}</Label>
               <Switch checked={obligatoire} onCheckedChange={setObligatoire} />
-              <span className="text-sm text-muted-foreground">{obligatoire ? "Oui" : "Non"}</span>
+              <span className="text-sm text-muted-foreground">{obligatoire ? t("ged:config.yes") : t("ged:config.no")}</span>
             </div>
             <div className="space-y-2">
-              <Label>Formats autorisés</Label>
+              <Label>{t("ged:config.dialog.formats_label")}</Label>
               <div className="flex flex-wrap gap-2">
-                {FORMAT_OPTIONS.map((f) => {
-                  const selected = typesAutorises.includes(f.value);
+                {FORMAT_VALUES.map((value) => {
+                  const selected = typesAutorises.includes(value);
                   return (
                     <button
-                      key={f.value}
+                      key={value}
                       type="button"
-                      onClick={() => toggleFormat(f.value)}
+                      onClick={() => toggleFormat(value)}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                         selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {f.label}
+                      {t(`ged:config.formats.${value}`)}
                       {selected && <X className="h-3 w-3" />}
                     </button>
                   );
@@ -396,18 +359,18 @@ const GedConfiguration = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description du document..." rows={3} />
+              <Label>{t("ged:config.dialog.description_label")}</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("ged:config.dialog.description_placeholder")} rows={3} />
             </div>
             <div className="space-y-2">
-              <Label>Ordre d'affichage</Label>
+              <Label>{t("ged:config.dialog.ordre_label")}</Label>
               <Input type="number" min={1} value={ordreAffichage} onChange={(e) => setOrdreAffichage(Number(e.target.value))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Annuler</Button>
+            <Button variant="outline" onClick={closeDialog}>{t("ged:config.dialog.cancel")}</Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
-              {editItem ? "Modifier" : "Ajouter"}
+              {editItem ? t("ged:config.dialog.submit_edit") : t("ged:config.dialog.submit_create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -415,13 +378,5 @@ const GedConfiguration = () => {
     </DashboardLayout>
   );
 };
-
-function formatDocLabel(type: string): string {
-  return type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace(/\bCi\b/g, "CI")
-    .replace(/\bTva\b/g, "TVA");
-}
 
 export default GedConfiguration;
