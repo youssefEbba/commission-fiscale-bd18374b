@@ -43,6 +43,7 @@ import arUtilisations from "./locales/ar/utilisations.json";
 import arTransferts from "./locales/ar/transferts.json";
 import arCloture from "./locales/ar/cloture.json";
 import arModifications from "./locales/ar/modifications.json";
+import arMiseEnPlace from "./locales/ar/mise_en_place.json";
 import arGed from "./locales/ar/ged.json";
 import arUsers from "./locales/ar/users.json";
 import arRoles from "./locales/ar/roles.json";
