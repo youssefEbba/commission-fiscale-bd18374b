@@ -1000,14 +1000,14 @@ const Demandes = () => {
       <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
+            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
             <DialogDescription>
-              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
+              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
+              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
               <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
             </div>
           </div>
