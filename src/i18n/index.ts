@@ -6,6 +6,10 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import frCommon from "./locales/fr/common.json";
 import frNav from "./locales/fr/nav.json";
 import frAuth from "./locales/fr/auth.json";
+import frLanding from "./locales/fr/landing.json";
+import frDashboard from "./locales/fr/dashboard.json";
+import frNotifications from "./locales/fr/notifications.json";
+import frValidation from "./locales/fr/validation.json";
 import frConventions from "./locales/fr/conventions.json";
 import frMarches from "./locales/fr/marches.json";
 import frDemandes from "./locales/fr/demandes.json";
@@ -26,6 +30,10 @@ import frEnums from "./locales/fr/enums.json";
 import arCommon from "./locales/ar/common.json";
 import arNav from "./locales/ar/nav.json";
 import arAuth from "./locales/ar/auth.json";
+import arLanding from "./locales/ar/landing.json";
+import arDashboard from "./locales/ar/dashboard.json";
+import arNotifications from "./locales/ar/notifications.json";
+import arValidation from "./locales/ar/validation.json";
 import arConventions from "./locales/ar/conventions.json";
 import arMarches from "./locales/ar/marches.json";
 import arDemandes from "./locales/ar/demandes.json";
@@ -49,6 +57,10 @@ export const NAMESPACES = [
   "common",
   "nav",
   "auth",
+  "landing",
+  "dashboard",
+  "notifications",
+  "validation",
   "conventions",
   "marches",
   "demandes",
@@ -71,6 +83,10 @@ const resources = {
     common: frCommon,
     nav: frNav,
     auth: frAuth,
+    landing: frLanding,
+    dashboard: frDashboard,
+    notifications: frNotifications,
+    validation: frValidation,
     conventions: frConventions,
     marches: frMarches,
     demandes: frDemandes,
@@ -91,6 +107,10 @@ const resources = {
     common: arCommon,
     nav: arNav,
     auth: arAuth,
+    landing: arLanding,
+    dashboard: arDashboard,
+    notifications: arNotifications,
+    validation: arValidation,
     conventions: arConventions,
     marches: arMarches,
     demandes: arDemandes,
