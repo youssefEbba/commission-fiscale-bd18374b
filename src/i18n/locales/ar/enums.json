@@ -164,7 +164,15 @@
     "TABLEAU_MODELE": "الجدول النموذجي (الطبيعة، القيمة، التصنيف)",
     "DAO_DQE": "ملف الاستشارة + الجدول الكمي التقديري",
     "LISTE_ITEMS_EXCEL": "قائمة البنود Excel (FR/AR)",
-    "CREDIT_EXTERIEUR": "الاعتماد الخارجي"
+    "CREDIT_EXTERIEUR": "الاعتماد الخارجي",
+    "NOTE_SERVICE": "مذكرة خدمة",
+    "JUSTIFICATIONS_LEGALES": "مبررات قانونية",
+    "LETTRES_MOTIVEES": "رسائل معلَّلة",
+    "AVENANT_CONTRAT": "ملحق العقد",
+    "LETTRES_AUTORITE_CONTRACTANTE": "رسائل السلطة المتعاقدة",
+    "DETAIL_CORRECTIONS_NECESSAIRES": "تفاصيل التصحيحات المطلوبة",
+    "DOCUMENTS_OFFICIELS": "وثائق رسمية",
+    "AUTRE_DOCUMENT": "وثيقة أخرى"
   },
   "type_utilisation": {
     "DOUANE": "الجمارك",

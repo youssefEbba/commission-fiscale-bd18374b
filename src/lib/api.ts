@@ -1838,23 +1838,9 @@ export type TypeDocumentAvenant =
   | "DECISION_COMMISSION"
   | "AUTRE_DOCUMENT";
 
-export const AVENANT_DOCUMENT_TYPES: { value: TypeDocumentAvenant; label: string }[] = [
-  { value: "NOTE_SERVICE", label: "Note de service" },
-  { value: "JUSTIFICATIONS_LEGALES", label: "Justifications légales" },
-  { value: "LETTRES_MOTIVEES", label: "Lettres motivées" },
-  { value: "AVENANT_CONTRAT", label: "Avenant au contrat" },
-  { value: "LETTRES_AUTORITE_CONTRACTANTE", label: "Lettres de l'autorité contractante" },
-  { value: "DETAIL_CORRECTIONS_NECESSAIRES", label: "Détail des corrections nécessaires" },
-  { value: "DOCUMENTS_OFFICIELS", label: "Documents officiels" },
-  { value: "DECISION_COMMISSION", label: "Décision de la commission" },
-  { value: "AUTRE_DOCUMENT", label: "Autre document" },
-];
+// Removed AVENANT_DOCUMENT_TYPES and AVENANT_STATUT_LABELS (G1 migration).
+// Use tTypeDocument / tStatutAvenant from "@/i18n/enums" instead.
 
-export const AVENANT_STATUT_LABELS: Record<StatutAvenant, string> = {
-  EN_ATTENTE: "En attente",
-  VALIDE: "Validé",
-  REJETE: "Rejeté",
-};
 
 export const avenantApi = {
   // getAll and getById removed — backend only supports document endpoints
