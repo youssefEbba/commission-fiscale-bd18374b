@@ -793,12 +793,14 @@ export type TypeDocumentMarche =
   | "CONTRAT_SIGNE"
   | "AUTRE";
 
-export const MARCHE_DOCUMENT_TYPES: { value: TypeDocumentMarche; label: string }[] = [
-  { value: "PV_ADJUDICATION", label: "PV d'adjudication" },
-  { value: "AVIS_ATTRIBUTION", label: "Avis d'attribution" },
-  { value: "CONTRAT_SIGNE", label: "Contrat signé" },
-  { value: "AUTRE", label: "Autre document" },
-];
+/**
+ * Codes des types de documents Marché.
+ * Libellés résolus via `tTypeDocument(code)` côté UI.
+ */
+export const MARCHE_DOCUMENT_TYPES: readonly TypeDocumentMarche[] = [
+  "PV_ADJUDICATION", "AVIS_ATTRIBUTION", "CONTRAT_SIGNE", "AUTRE",
+] as const;
+
 
 export const marcheApi = {
   /** Liste paginée. `q` = recherche sur numéro de marché et intitulé. */
