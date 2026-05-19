@@ -144,7 +144,7 @@ const Conventions = () => {
       const data = await conventionApi.getAll(q);
       setConventions(data);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les conventions", variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:load_error"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -222,10 +222,10 @@ const Conventions = () => {
           tauxChange: rate,
           montantMru: f.montantDevise ? Math.round(f.montantDevise * rate * 100) / 100 : undefined,
         }));
-        toast({ title: "Taux récupéré", description: `1 ${form.deviseOrigine} = ${rate.toLocaleString("fr-FR")} MRU` });
+        toast({ title: t("conventions:create.rate_fetched"), description: t("conventions:create.rate_value", { currency: form.deviseOrigine, rate: formatNumber(rate) }) });
       })
       .catch(() => {
-        if (!cancelled) toast({ title: "Erreur", description: `Impossible de récupérer le taux pour ${form.deviseOrigine} → MRU`, variant: "destructive" });
+        if (!cancelled) toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.rate_error", { currency: form.deviseOrigine }), variant: "destructive" });
       })
       .finally(() => { if (!cancelled) setTauxLoading(false); });
     return () => { cancelled = true; };
@@ -244,9 +244,9 @@ const Conventions = () => {
       setForm(f => ({ ...f, bailleurId: created.id }));
       setAddBailleurOpen(false);
       setNewBailleur({ nom: "", details: "" });
-      toast({ title: "Succès", description: "Bailleur ajouté" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:bailleur.added") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setAddingBailleur(false);
     }
@@ -261,9 +261,9 @@ const Conventions = () => {
       handleDeviseChange(created.code);
       setAddDeviseOpen(false);
       setNewDevise({ code: "", libelle: "", symbole: "" });
-      toast({ title: "Succès", description: "Devise ajoutée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:devise.added") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setAddingDevise(false);
     }
@@ -294,7 +294,7 @@ const Conventions = () => {
       .filter(d => d.file.type === "application/pdf" || d.file.name.toLowerCase().endsWith(".pdf"))
       .map(d => d.file);
     if (pdfFiles.length < 2) {
-      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF à fusionner.", variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_impossible"), description: t("conventions:docs.merge_min_two_pdf"), variant: "destructive" });
       return;
     }
     setMerging(true);
@@ -311,9 +311,9 @@ const Conventions = () => {
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
       // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
       setCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
-      toast({ title: "Succès", description: `${pdfFiles.length} PDF fusionnés. Le document résultant sera soumis comme CONVENTION_JOIGNED_DOCUMENT.` });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.merge_success", { count: pdfFiles.length }) });
     } catch (e: any) {
-      toast({ title: "Erreur de fusion", description: e.message || "Impossible de fusionner les PDF", variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_error"), description: e.message || t("conventions:docs.merge_error_desc"), variant: "destructive" });
     } finally {
       setMerging(false);
     }
@@ -323,7 +323,7 @@ const Conventions = () => {
     if (documents.length < 2) return;
     const pdfDocs = documents.filter(d => d.nomFichier?.toLowerCase().endsWith(".pdf") && d.chemin);
     if (pdfDocs.length < 2) {
-      toast({ title: "Fusion impossible", description: "Il faut au moins 2 fichiers PDF.", variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_impossible"), description: t("conventions:docs.merge_min_two_pdf"), variant: "destructive" });
       return;
     }
     setMerging(true);
@@ -344,9 +344,9 @@ const Conventions = () => {
       a.download = `convention_${docsConvention?.reference || "merged"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "Succès", description: `${pdfDocs.length} PDF fusionnés.` });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.merge_existing_success", { count: pdfDocs.length }) });
     } catch (e: any) {
-      toast({ title: "Erreur de fusion", description: e.message, variant: "destructive" });
+      toast({ title: t("conventions:docs.merge_error"), description: e.message, variant: "destructive" });
     } finally {
       setMerging(false);
     }
@@ -354,7 +354,7 @@ const Conventions = () => {
 
   const handleCreate = async () => {
     if (!form.reference || !form.intitule) {
-      toast({ title: "Erreur", description: "Référence et intitulé sont obligatoires", variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.missing_required"), variant: "destructive" });
       return;
     }
     setCreating(true);
@@ -364,10 +364,10 @@ const Conventions = () => {
         try {
           await conventionApi.uploadDocument(created.id, doc.type, doc.file);
         } catch {
-          toast({ title: "Attention", description: `Échec upload: ${doc.file.name}`, variant: "destructive" });
+          toast({ title: t("common:warnings.title", "Attention"), description: t("conventions:docs.upload_failure", { name: doc.file.name }), variant: "destructive" });
         }
       }
-      toast({ title: "Succès", description: `Convention créée${createDocs.length ? ` avec ${createDocs.length} document(s)` : ""}` });
+      toast({ title: t("common:success.title", "Succès"), description: createDocs.length ? t("conventions:create.success_with_docs", { count: createDocs.length }) : t("conventions:create.success") });
       setCreateOpen(false);
       setForm({
         reference: "", intitule: "", bailleurId: undefined,
@@ -377,7 +377,7 @@ const Conventions = () => {
       setCreateDocs([]);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setCreating(false);
     }
@@ -387,10 +387,10 @@ const Conventions = () => {
     setActionLoading(id);
     try {
       await conventionApi.updateStatut(id, statut);
-      toast({ title: "Succès", description: `Convention ${CONVENTION_STATUT_LABELS[statut].toLowerCase()}` });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:statut_change.success", { label: tStatutConvention(statut) }) });
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -426,11 +426,11 @@ const Conventions = () => {
     setEditing(true);
     try {
       await conventionApi.update(editConvention.id, editForm);
-      toast({ title: "Succès", description: "Convention modifiée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:edit.success") });
       setEditOpen(false);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setEditing(false);
     }
@@ -448,11 +448,11 @@ const Conventions = () => {
     setRejecting(true);
     try {
       await conventionApi.updateStatut(rejectConvention.id, "REJETE", rejectMotif);
-      toast({ title: "Succès", description: "Convention rejetée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:reject.success") });
       setRejectOpen(false);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setRejecting(false);
     }
@@ -469,11 +469,11 @@ const Conventions = () => {
     setCancelling(true);
     try {
       await conventionApi.updateStatut(cancelConvention.id, "ANNULEE");
-      toast({ title: "Succès", description: "Convention annulée" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:cancel_dialog.success") });
       setCancelOpen(false);
       fetchConventions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setCancelling(false);
     }
@@ -487,7 +487,7 @@ const Conventions = () => {
       const docs = await conventionApi.getDocuments(conv.id);
       setDocuments(docs);
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger les documents", variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:docs.load_error"), variant: "destructive" });
     } finally {
       setDocsLoading(false);
     }
@@ -498,12 +498,12 @@ const Conventions = () => {
     setUploading(true);
     try {
       await conventionApi.uploadDocument(docsConvention.id, uploadType, uploadFile);
-      toast({ title: "Succès", description: "Document uploadé" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.upload_success") });
       setUploadFile(null);
       const docs = await conventionApi.getDocuments(docsConvention.id);
       setDocuments(docs);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -513,11 +513,11 @@ const Conventions = () => {
     if (!docsConvention) return;
     try {
       await conventionApi.deleteDocument(docsConvention.id, docId);
-      toast({ title: "Succès", description: "Document supprimé" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.deleted") });
       const docs = await conventionApi.getDocuments(docsConvention.id);
       setDocuments(docs);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     }
   };
 
@@ -526,13 +526,13 @@ const Conventions = () => {
     setReplacing(true);
     try {
       await conventionApi.replaceDocument(docsConvention.id, replaceDocId, replaceFile);
-      toast({ title: "Succès", description: "Document remplacé" });
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.replaced") });
       setReplaceDocId(null);
       setReplaceFile(null);
       const docs = await conventionApi.getDocuments(docsConvention.id);
       setDocuments(docs);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
     } finally {
       setReplacing(false);
     }
