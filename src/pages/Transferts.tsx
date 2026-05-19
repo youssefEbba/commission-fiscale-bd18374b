@@ -143,11 +143,11 @@ const Transferts = () => {
     if (!selectedCert || montantAuto <= 0) {
       toast({ title: t("common:error", { defaultValue: "Erreur" }), description: t("transferts:toasts.no_amount_err"), variant: "destructive" }); return;
     }
-    const missing = TRANSFERT_DOCUMENT_TYPES.filter(d => !createFiles[d.value]);
+    const missing = TRANSFERT_DOCUMENT_TYPES.filter(d => !createFiles[d]);
     if (missing.length > 0) {
       toast({
         title: t("transferts:toasts.missing_pieces_title"),
-        description: t("transferts:toasts.missing_pieces", { list: missing.map(m => tTypeDocument(m.value) || m.label).join(", ") }),
+        description: t("transferts:toasts.missing_pieces", { list: missing.map(m => tTypeDocument(m)).join(", ") }),
         variant: "destructive",
       });
       return;
@@ -161,13 +161,14 @@ const Transferts = () => {
       });
       const failures: string[] = [];
       for (const d of TRANSFERT_DOCUMENT_TYPES) {
-        const file = createFiles[d.value];
+        const file = createFiles[d];
         if (!file) continue;
-        try { await transfertCreditApi.uploadDocument(created.id, d.value, file); }
+        try { await transfertCreditApi.uploadDocument(created.id, d, file); }
         catch (e: any) {
-          console.error(`[Transfert #${created.id}] Upload ${d.value} failed:`, e);
-          failures.push(`${tTypeDocument(d.value) || d.label} : ${e?.message || "—"}`);
+          console.error(`[Transfert #${created.id}] Upload ${d} failed:`, e);
+          failures.push(`${tTypeDocument(d)} : ${e?.message || "—"}`);
         }
+
       }
       if (failures.length > 0) {
         toast({ title: t("transferts:toasts.create_partial_title"), description: failures.join(" • "), variant: "destructive" });
