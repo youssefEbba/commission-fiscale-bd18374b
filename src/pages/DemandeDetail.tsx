@@ -24,7 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutDemande, tReclamationStatut } from "@/i18n/enums";
+import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 
@@ -68,24 +68,8 @@ const ROLE_TRANSITIONS: Record<string, Transition[]> = {
   ],
 };
 
-const TRANSITION_LABELS_FR: Record<string, string> = {
-  "transitions.DGD.visa": "Apposer visa Douanes",
-  "transitions.DGTCP.visa": "Apposer visa Trésor",
-  "transitions.DGI.visa": "Apposer visa Impôts",
-  "transitions.DGB.visa": "Apposer visa Budget",
-  "transitions.PRESIDENT.adopt": "Décision finale : Adopter",
-  "transitions.PRESIDENT.reject": "Décision finale : Rejeter",
-  "transitions.reject": "Rejeter",
-};
-const TRANSITION_LABELS_AR: Record<string, string> = {
-  "transitions.DGD.visa": "وضع تأشيرة الجمارك",
-  "transitions.DGTCP.visa": "وضع تأشيرة الخزينة",
-  "transitions.DGI.visa": "وضع تأشيرة الضرائب",
-  "transitions.DGB.visa": "وضع تأشيرة الميزانية",
-  "transitions.PRESIDENT.adopt": "قرار نهائي: اعتماد",
-  "transitions.PRESIDENT.reject": "قرار نهائي: رفض",
-  "transitions.reject": "رفض",
-};
+// Note: les libellés des transitions vivent dans `demandes.json` sous `transitions.*`
+// et sont résolus via `t(\`demandes:${labelKey}\`)`.
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -126,12 +110,9 @@ const DemandeDetail = () => {
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
-  const { t, i18n } = useTranslation(["demandes", "common"]);
+  const { t } = useTranslation(["demandes", "common"]);
 
-  const tTransition = (key: string): string => {
-    const isAr = i18n.language?.startsWith("ar");
-    return (isAr ? TRANSITION_LABELS_AR[key] : TRANSITION_LABELS_FR[key]) || key;
-  };
+  const tTransition = (key: string): string => t(`demandes:${key}`);
 
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
