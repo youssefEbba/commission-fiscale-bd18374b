@@ -74,11 +74,22 @@
   "statut_demande": {
     "BROUILLON": "مسودة",
     "SOUMISE": "مقدَّمة",
+    "RECUE": "مستلمة",
+    "INCOMPLETE": "غير مكتملة",
+    "RECEVABLE": "مقبولة شكلاً",
+    "EN_EVALUATION": "قيد التقييم",
+    "EN_VALIDATION": "قيد المصادقة",
     "EN_INSTRUCTION": "قيد الدراسة",
     "ADOPTEE": "معتمدة",
     "REJETEE": "مرفوضة",
     "REJET_TEMPORAIRE": "رفض مؤقت",
     "NOTIFIEE": "تم التبليغ",
+    "ANNULEE": "ملغاة"
+  },
+  "reclamation_statut": {
+    "SOUMISE": "مقدَّمة",
+    "ACCEPTEE": "مقبولة",
+    "REJETEE": "مرفوضة",
     "ANNULEE": "ملغاة"
   },
   "statut_convention": {
