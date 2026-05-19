@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
-  DEMANDE_STATUT_LABELS, DocumentDto, DOCUMENT_TYPES_REQUIS, RejetDto,
-  DecisionCorrectionDto, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
-  ReclamationDemandeCorrectionDto, RECLAMATION_STATUT_LABELS,
+  DocumentDto, ALL_DOCUMENT_TYPES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,16 +17,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
-  CheckCircle, XCircle, ArrowRight, Filter, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock, MoreHorizontal, Info, History,
+  CheckCircle, XCircle, ArrowRight, Filter,
+  AlertTriangle, MoreHorizontal, Info,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutDemande } from "@/i18n/enums";
+import { formatDate } from "@/i18n/format";
+import { API_BASE } from "@/lib/apiConfig";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -42,41 +44,58 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   ANNULEE: "bg-red-200 text-red-900",
 };
 
-// Visa/rejet actions: no status change on backend (decisionFinale=false)
-// Decision finale: only PRESIDENT can adopt/reject with decisionFinale=true
 const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
-// Statuts terminaux : aucune action possible, lecture seule
 const TERMINAL_STATUTS: DemandeStatut[] = ["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"];
 const isTerminalStatut = (s?: DemandeStatut) => !!s && TERMINAL_STATUTS.includes(s);
 
-const ROLE_TRANSITIONS: Record<string, { from: DemandeStatut[]; to: DemandeStatut; label: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean }[]> = {
+type Transition = { from: DemandeStatut[]; to: DemandeStatut; labelKey: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean };
+
+const ROLE_TRANSITIONS: Record<string, Transition[]> = {
   DGD: [
-    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Douanes", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGD.visa", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
   ],
   DGTCP: [
-    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Trésor", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGTCP.visa", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
   ],
   DGI: [
-    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Impôts", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGI.visa", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
   ],
   DGB: [
-    { from: ALL_STATUTS, to: "ADOPTEE", label: "Apposer visa Budget", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", label: "Rejeter", icon: XCircle },
+    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGB.visa", icon: CheckCircle, isVisa: true },
+    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
   ],
   PRESIDENT: [
-    { from: ALL_STATUTS, to: "ADOPTEE", label: "Décision finale : Adopter", icon: CheckCircle, isDecisionFinale: true },
-    { from: ALL_STATUTS, to: "REJETEE", label: "Décision finale : Rejeter", icon: XCircle, isDecisionFinale: true },
+    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.PRESIDENT.adopt", icon: CheckCircle, isDecisionFinale: true },
+    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.PRESIDENT.reject", icon: XCircle, isDecisionFinale: true },
   ],
 };
 
-import { API_BASE } from "@/lib/apiConfig";
+// Transition labels stored locally in this file (used in dropdown rows). They are kept
+// here rather than in JSON because they're tightly coupled to the role-action matrix.
+const TRANSITION_LABELS_FR: Record<string, string> = {
+  "transitions.DGD.visa": "Apposer visa Douanes",
+  "transitions.DGTCP.visa": "Apposer visa Trésor",
+  "transitions.DGI.visa": "Apposer visa Impôts",
+  "transitions.DGB.visa": "Apposer visa Budget",
+  "transitions.PRESIDENT.adopt": "Décision finale : Adopter",
+  "transitions.PRESIDENT.reject": "Décision finale : Rejeter",
+  "transitions.reject": "Rejeter",
+};
+const TRANSITION_LABELS_AR: Record<string, string> = {
+  "transitions.DGD.visa": "وضع تأشيرة الجمارك",
+  "transitions.DGTCP.visa": "وضع تأشيرة الخزينة",
+  "transitions.DGI.visa": "وضع تأشيرة الضرائب",
+  "transitions.DGB.visa": "وضع تأشيرة الميزانية",
+  "transitions.PRESIDENT.adopt": "قرار نهائي: اعتماد",
+  "transitions.PRESIDENT.reject": "قرار نهائي: رفض",
+  "transitions.reject": "رفض",
+};
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
-    // Convert Windows backslash path to a file:/// URL
     const normalized = doc.chemin.replace(/\\/g, "/");
     if (normalized.match(/^[A-Za-z]:\//)) {
       return "file:///" + normalized;
@@ -86,41 +105,28 @@ function getDocFileUrl(doc: DocumentDto): string {
   return "";
 }
 
-async function downloadDocAuthenticated(url: string, filename: string) {
-  const token = localStorage.getItem("auth_token");
-  const res = await fetch(url, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-      "ngrok-skip-browser-warning": "true",
-    },
-  });
-  if (!res.ok) throw new Error("Téléchargement échoué");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(objectUrl);
-}
-
 const Demandes = () => {
-  const { user, hasRole, hasPermission } = useAuth();
+  const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation(["demandes", "common"]);
+  usePageTitle("demandes:list.title");
+
+  const tTransition = (key: string): string => {
+    const isAr = i18n.language?.startsWith("ar");
+    return (isAr ? TRANSITION_LABELS_AR[key] : TRANSITION_LABELS_FR[key]) || key;
+  };
+
   const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  // Detail/Document dialog
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
-  const [docsLoading, setDocsLoading] = useState(false);
 
-  // Upload dialog
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -128,25 +134,20 @@ const Demandes = () => {
   const [uploadAllowedTypes, setUploadAllowedTypes] = useState<string[]>([]);
   const [uploadMessage, setUploadMessage] = useState("");
 
-  // Message-only response to rejet
   const [responseOpen, setResponseOpen] = useState(false);
   const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
   const [responseMessage, setResponseMessage] = useState("");
   const [responseSending, setResponseSending] = useState(false);
 
-  // Upload offre corrigée dialog (DGTCP/DGB before visa)
   const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
   const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
 
-  // Create / Edit wizard
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<number | null>(null);
 
-  // Charge la version COMPLETE (modeleFiscal, dqe, marcheId, conventionId, entrepriseId)
-  // avant d'ouvrir le wizard en mode édition. La liste `getAll` peut omettre ces champs.
   const openEditWizard = async (d: DemandeCorrectionDto) => {
     setLoadingEditId(d.id);
     try {
@@ -154,36 +155,29 @@ const Demandes = () => {
       setEditingDemande(full);
     } catch (e: any) {
       toast({
-        title: "Erreur",
-        description: e?.message || "Impossible de charger la demande complète",
+        title: t("demandes:toast.error"),
+        description: e?.message || t("demandes:toast.load_demande_complete_error"),
         variant: "destructive",
       });
-      // Fallback : ouvrir avec ce qu'on a
       setEditingDemande(d);
     } finally {
       setLoadingEditId(null);
     }
   };
 
-  // Delete brouillon
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  // Rejection modal
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
   const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
-  // Cancel confirmation
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
-  // Entreprise detail dialog
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
-  const [activeOrg, setActiveOrg] = useState("DGD");
-  // Adoption with lettre upload (President)
   const [adoptionOpen, setAdoptionOpen] = useState(false);
   const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
   const [adoptionUploading, setAdoptionUploading] = useState(false);
@@ -204,7 +198,6 @@ const Demandes = () => {
       if (!res.ok) throw new Error("Erreur");
       setEntrepriseDetail(await res.json());
     } catch {
-      // Fallback: try list and filter
       try {
         const token = localStorage.getItem("auth_token");
         const res = await fetch(`${API_BASE}/entreprises`, {
@@ -218,7 +211,7 @@ const Demandes = () => {
         const found = list.find((e: any) => e.id === entrepriseId);
         setEntrepriseDetail(found || null);
       } catch {
-        toast({ title: "Erreur", description: "Impossible de charger les informations de l'entreprise", variant: "destructive" });
+        toast({ title: t("demandes:toast.error"), description: t("demandes:toast.load_entreprise_error"), variant: "destructive" });
       }
     } finally {
       setEntrepriseLoading(false);
@@ -235,21 +228,17 @@ const Demandes = () => {
       } else if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId) {
         data = await demandeCorrectionApi.getByAutorite(user.autoriteContractanteId);
       } else if ((role === "AUTORITE_UPM" || role === "AUTORITE_UEP") && user?.userId) {
-        // Delegates: strict server-side filtering via marche_delegue
         data = await demandeCorrectionApi.getByDelegue(user.userId);
       } else {
         data = await demandeCorrectionApi.getAll();
       }
-      // Filtrage des brouillons géré côté backend (visibles uniquement par l'AC propriétaire)
       setDemandes(data);
     } catch (e: any) {
       const message = String(e?.message || "");
       const accessDenied = message.includes("Accès refusé") || message.includes("Access Denied");
       toast({
-        title: "Erreur",
-        description: accessDenied
-          ? "Votre compte n'a pas encore la permission de consulter les demandes de correction."
-          : "Impossible de charger les demandes",
+        title: t("demandes:toast.error"),
+        description: accessDenied ? t("demandes:toast.permission_denied") : t("demandes:toast.load_demandes_error"),
         variant: "destructive",
       });
       setDemandes([]);
@@ -264,44 +253,27 @@ const Demandes = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, user?.entrepriseId, user?.autoriteContractanteId]);
 
-  // Wizard handles creation now
-
-  const openDetail = async (d: DemandeCorrectionDto) => {
-    setDocsLoading(true);
-    try {
-      // Fetch full detail (includes rejets)
-      const full = await demandeCorrectionApi.getById(d.id);
-      setSelected(full);
-    } catch {
-      setSelected(d);
-    }
-    try {
-      const documents = await demandeCorrectionApi.getDocuments(d.id);
-      setDocs(documents);
-    } catch {
-      setDocs(d.documents || []);
-    } finally {
-      setDocsLoading(false);
-    }
-  };
-
   const handleStatutChange = async (id: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => {
     setActionLoading(id);
     try {
       const updated = await demandeCorrectionApi.updateStatut(id, statut, motifRejet, decisionFinale);
-      toast({ title: "Succès", description: decisionFinale ? `Décision finale appliquée: ${DEMANDE_STATUT_LABELS[updated.statut || statut]}` : statut === "REJETEE" ? "Rejet enregistré" : "Visa apposé avec succès" });
+      toast({
+        title: t("demandes:toast.success"),
+        description: decisionFinale
+          ? t("demandes:toast.decision_finale_applied", { statut: tStatutDemande(updated.statut || statut) })
+          : statut === "REJETEE"
+            ? t("demandes:toast.rejet_saved")
+            : t("demandes:toast.visa_applied"),
+      });
       fetchDemandes();
-      if (selected?.id === id) {
-        setSelected(updated);
-      }
+      if (selected?.id === id) setSelected(updated);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
   };
 
-  // DGTCP must upload CREDIT_INTERIEUR, DGD must upload CREDIT_EXTERIEUR before visa
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string; label: string }> = {
     DGD: { docType: "CREDIT_EXTERIEUR", label: "Crédit Extérieur" },
   };
@@ -331,41 +303,34 @@ const Demandes = () => {
     setOffreCorrigeeUploading(true);
     try {
       await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: "Succès", description: `${uploadBeforeVisa?.label || "Document"} uploadé` });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
-      // Now proceed with visa
       await handleTempVisa(offreCorrigeePendingId);
-      // Refresh docs if detail is open
       if (selected?.id === offreCorrigeePendingId) {
         const documents = await demandeCorrectionApi.getDocuments(offreCorrigeePendingId);
         setDocs(documents);
       }
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setOffreCorrigeeUploading(false);
       setOffreCorrigeePendingId(null);
     }
   };
 
-  // Note: la transition de statut (RECUE/RECEVABLE -> EN_EVALUATION, et -> EN_VALIDATION
-  // après les 4 visas DGD/DGTCP/DGI/DGB) est gérée automatiquement côté backend
-  // dans DecisionCorrectionService.saveDecision. Le front se contente de recharger la demande.
-
-  // Temporary decision (VISA / REJET_TEMP) via POST /decisions
   const handleTempVisa = async (id: number) => {
     setActionLoading(id);
     try {
       await demandeCorrectionApi.postDecision(id, "VISA");
-      toast({ title: "Succès", description: "Visa temporaire apposé" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.visa_temp_applied") });
       fetchDemandes();
       if (selected) {
         const full = await demandeCorrectionApi.getById(id);
         setSelected(full);
       }
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -375,14 +340,14 @@ const Demandes = () => {
     setActionLoading(id);
     try {
       await demandeCorrectionApi.postDecision(id, "REJET_TEMP", motif, documentsDemandes);
-      toast({ title: "Succès", description: "Rejet temporaire enregistré" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.rejet_temp_saved") });
       fetchDemandes();
       if (selected) {
         const full = await demandeCorrectionApi.getById(id);
         setSelected(full);
       }
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -411,20 +376,19 @@ const Demandes = () => {
     setRejectDecisionFinale(false);
   };
 
-  // Annulation par l'AC
   const handleCancelDemande = async () => {
     if (!cancelTargetId) return;
     setCancelLoading(true);
     try {
       await demandeCorrectionApi.updateStatut(cancelTargetId, "ANNULEE");
-      toast({ title: "Demande annulée avec succès" });
+      toast({ title: t("demandes:toast.demande_cancelled") });
       setCancelOpen(false);
       setCancelTargetId(null);
       fetchDemandes();
       if (selected?.id === cancelTargetId) setSelected(null);
     } catch (e: any) {
-      const msg = e?.message || "Erreur lors de l'annulation";
-      toast({ title: "Erreur", description: msg, variant: "destructive" });
+      const msg = e?.message || t("demandes:toast.cancel_error");
+      toast({ title: t("demandes:toast.error"), description: msg, variant: "destructive" });
     } finally {
       setCancelLoading(false);
     }
@@ -436,7 +400,7 @@ const Demandes = () => {
     try {
       await demandeCorrectionApi.uploadDocument(adoptionTargetId, "LETTRE_ADOPTION", adoptionFile);
       const updated = await demandeCorrectionApi.updateStatut(adoptionTargetId, "ADOPTEE", undefined, true);
-      toast({ title: "Succès", description: "Demande adoptée et lettre d'adoption enregistrée" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
       setAdoptionOpen(false);
       setAdoptionFile(null);
       fetchDemandes();
@@ -447,7 +411,7 @@ const Demandes = () => {
       }
       setAdoptionTargetId(null);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setAdoptionUploading(false);
     }
@@ -455,29 +419,27 @@ const Demandes = () => {
 
   const handleUpload = async () => {
     if (!selected || !uploadFile || !uploadType) return;
-    // Check if this upload responds to an open REJET_TEMP
     const openRejets = (selected.decisions || []).filter(
       d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
     );
     if (openRejets.length > 0 && !uploadMessage.trim()) {
-      toast({ title: "Message requis", description: "Ce document répond à un rejet temporaire. Veuillez saisir un message.", variant: "destructive" });
+      toast({ title: t("demandes:toast.message_required_title"), description: t("demandes:toast.message_required_desc"), variant: "destructive" });
       return;
     }
     setUploading(true);
     try {
       await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
-      toast({ title: "Succès", description: "Document uploadé" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded") });
       setUploadOpen(false);
       setUploadFile(null);
       setUploadType("");
       setUploadMessage("");
       const documents = await demandeCorrectionApi.getDocuments(selected.id);
       setDocs(documents);
-      // Refresh selected to get updated rejetTempStatus
       const full = await demandeCorrectionApi.getById(selected.id);
       setSelected(full);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -488,7 +450,7 @@ const Demandes = () => {
     setResponseSending(true);
     try {
       await demandeCorrectionApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
-      toast({ title: "Succès", description: "Réponse envoyée" });
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.response_sent") });
       setResponseOpen(false);
       setResponseDecisionId(null);
       setResponseMessage("");
@@ -498,21 +460,15 @@ const Demandes = () => {
       }
       fetchDemandes();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
       setResponseSending(false);
     }
   };
 
   const filtered = demandes.filter((d) => {
-    // AC ne voit que ses propres demandes
-    if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) {
-      return false;
-    }
-    // Entreprise ne voit que ses propres demandes
-    if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) {
-      return false;
-    }
+    if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) return false;
+    if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) return false;
     const matchSearch =
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.autoriteContractanteNom || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -523,19 +479,11 @@ const Demandes = () => {
   });
 
   const transitions = ROLE_TRANSITIONS[role] || [];
+  const pageTitle = t(`demandes:list.page_titles.${role}`, { defaultValue: t("demandes:list.page_titles.default") });
 
-  const pageTitle: Record<string, string> = {
-    AUTORITE_CONTRACTANTE: "Mes demandes de correction",
-    DGD: "Dossiers à évaluer (Douanes)",
-    DGI: "Dossiers en attente de visa (Impôts)",
-    DGB: "Dossiers en attente de visa (Budget)",
-    DGTCP: "Dossiers à valider (Trésor)",
-    PRESIDENT: "Dossiers en attente de validation finale",
-    ADMIN_SI: "Toutes les demandes (Audit)",
-    ENTREPRISE: "Demandes associées",
-    AUTORITE_UPM: "Mes demandes (Délégué UPM)",
-    AUTORITE_UEP: "Mes demandes (Délégué UEP)",
-  };
+  // All document type values (codes from backend); their labels come from ALL_DOCUMENT_TYPES (FR-only).
+  // Per F3a rules, labels coming from backend lists are displayed as-is.
+  const STATUT_KEYS: DemandeStatut[] = ["BROUILLON","RECUE","INCOMPLETE","RECEVABLE","EN_EVALUATION","EN_VALIDATION","ADOPTEE","REJETEE","NOTIFIEE","ANNULEE"];
 
   return (
     <DashboardLayout>
@@ -544,45 +492,41 @@ const Demandes = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              {pageTitle[role] || "Demandes de correction"}
+              {pageTitle}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Correction de l'offre fiscale
-            </p>
+            <p className="text-muted-foreground text-sm mt-1">{t("demandes:list.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI"]) && (
               <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvelle demande de correction
+                <Plus className="h-4 w-4 me-2" /> {t("demandes:list.new")}
               </Button>
             )}
             <Button variant="outline" onClick={fetchDemandes} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("demandes:list.refresh")}
             </Button>
           </div>
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder={t("demandes:list.search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48">
-              <Filter className="h-4 w-4 mr-2" />
+              <Filter className="h-4 w-4 me-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(DEMANDE_STATUT_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem value="ALL">{t("demandes:list.all_statuses")}</SelectItem>
+              {STATUT_KEYS.map((k) => (
+                <SelectItem key={k} value={k}>{tStatutDemande(k)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Table */}
         <Card>
           <CardContent className="p-0">
             {loading ? (
@@ -591,19 +535,19 @@ const Demandes = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>N° Demande</TableHead>
-                    <TableHead>Autorité Contractante</TableHead>
-                    <TableHead>Entreprise</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Stade</TableHead>
-                    <TableHead>Date dépôt</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("demandes:columns.numero")}</TableHead>
+                    <TableHead>{t("demandes:columns.ac")}</TableHead>
+                    <TableHead>{t("demandes:columns.entreprise")}</TableHead>
+                    <TableHead>{t("demandes:columns.statut")}</TableHead>
+                    <TableHead>{t("demandes:columns.stade")}</TableHead>
+                    <TableHead>{t("demandes:columns.date_depot")}</TableHead>
+                    <TableHead className="text-end">{t("demandes:columns.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("demandes:list.empty")}</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((d) => (
@@ -613,7 +557,7 @@ const Demandes = () => {
                         <TableCell className="text-muted-foreground">{d.entrepriseRaisonSociale || "—"}</TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${STATUT_COLORS[d.statut] || ""}`}>
-                            {DEMANDE_STATUT_LABELS[d.statut]}
+                            {tStatutDemande(d.statut)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -631,13 +575,13 @@ const Demandes = () => {
                             const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
 
                             const badgeContent = blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">⏳ Visa DGD</Badge>
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">{t("demandes:stade.waiting_dgd_visa")}</Badge>
                               : myHasVisa
-                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">Visa apposé</Badge>
+                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">{t("demandes:stade.visa_applied")}</Badge>
                               : hasRejet && !allRejetsResolved
-                              ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">Rejet en cours</Badge>
+                              ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">{t("demandes:stade.rejet_in_progress")}</Badge>
                               : allRejetsResolved
-                              ? <Badge className="bg-emerald-100 text-emerald-800 text-xs cursor-pointer">Rejets résolus</Badge>
+                              ? <Badge className="bg-emerald-100 text-emerald-800 text-xs cursor-pointer">{t("demandes:stade.rejets_resolved")}</Badge>
                               : <span className="text-muted-foreground text-xs">—</span>;
 
                             const allRejets = [
@@ -646,7 +590,6 @@ const Demandes = () => {
                                 motif: r.motifRejet || "—",
                                 docs: r.documentsDemandes || [],
                                 date: r.dateDecision,
-                                utilisateur: r.utilisateurNom,
                                 status: r.rejetTempStatus,
                               })),
                               ...((d.rejets && (!decs.length)) ? d.rejets.map(r => ({
@@ -654,7 +597,6 @@ const Demandes = () => {
                                 motif: r.motifRejet || "—",
                                 docs: [] as string[],
                                 date: r.dateRejet,
-                                utilisateur: r.utilisateurNom,
                                 status: undefined as string | undefined,
                               })) : []),
                             ];
@@ -670,21 +612,19 @@ const Demandes = () => {
                                   <div className="p-3 border-b">
                                     <h4 className="text-sm font-semibold flex items-center gap-1.5">
                                       <Info className="h-4 w-4 text-primary" />
-                                      Détails du stade
+                                      {t("demandes:stade.details_title")}
                                     </h4>
                                   </div>
                                   <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
-                                    {/* Visas */}
                                     {decs.filter(dec => dec.decision === "VISA").map((v, i) => (
                                       <div key={`v-${i}`} className="flex items-center gap-2 text-xs rounded border border-green-200 bg-green-50 p-2">
                                         <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
                                         <div>
-                                          <span className="font-medium">{v.role}</span> — Visa
-                                          {v.dateDecision && <span className="text-muted-foreground ml-1">({new Date(v.dateDecision).toLocaleDateString("fr-FR")})</span>}
+                                          <span className="font-medium">{v.role}</span> — {t("demandes:stade.visa_applied")}
+                                          {v.dateDecision && <span className="text-muted-foreground ms-1">({formatDate(v.dateDecision)})</span>}
                                         </div>
                                       </div>
                                     ))}
-                                    {/* Rejets */}
                                     {allRejets.length > 0 ? allRejets.map((r, i) => (
                                       <div key={`r-${i}`} className="rounded border border-red-200 bg-red-50 p-2 text-xs space-y-1">
                                         <div className="flex items-center gap-1.5">
@@ -692,19 +632,19 @@ const Demandes = () => {
                                           <span className="font-medium">{r.role}</span>
                                           {r.status && (
                                             <Badge className={`text-[9px] ${r.status === "OUVERT" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
-                                              {r.status === "OUVERT" ? "Ouvert" : "Résolu"}
+                                              {r.status === "OUVERT" ? t("demandes:stade.rejet_open") : t("demandes:stade.rejet_resolved")}
                                             </Badge>
                                           )}
-                                          {r.date && <span className="text-muted-foreground ml-auto text-[10px]">{new Date(r.date).toLocaleDateString("fr-FR")}</span>}
+                                          {r.date && <span className="text-muted-foreground ms-auto text-[10px]">{formatDate(r.date)}</span>}
                                         </div>
-                                        <p className="text-muted-foreground ml-5">{r.motif}</p>
+                                        <p className="text-muted-foreground ms-5">{r.motif}</p>
                                         {r.docs.length > 0 && (
-                                          <div className="ml-5 space-y-1">
-                                            <span className="text-[10px] text-muted-foreground">Docs requis :</span>
+                                          <div className="ms-5 space-y-1">
+                                            <span className="text-[10px] text-muted-foreground">{t("demandes:stade.docs_requis")}</span>
                                             <div className="flex flex-wrap gap-1">
                                               {r.docs.map(dt => (
                                                 <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                                  {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                                  {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
                                                 </Badge>
                                               ))}
                                             </div>
@@ -716,12 +656,10 @@ const Demandes = () => {
                                                     variant="outline"
                                                     size="sm"
                                                     className="h-6 px-2 text-[10px]"
-                                                    onClick={() => {
-                                                      navigate(`/dashboard/demandes/${d.id}`);
-                                                    }}
+                                                    onClick={() => navigate(`/dashboard/demandes/${d.id}`)}
                                                   >
-                                                    <Upload className="h-3 w-3 mr-1" />
-                                                    {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                                    <Upload className="h-3 w-3 me-1" />
+                                                    {ALL_DOCUMENT_TYPES.find(tt => tt.value === dt)?.label || dt}
                                                   </Button>
                                                 ))}
                                               </div>
@@ -730,11 +668,11 @@ const Demandes = () => {
                                         )}
                                       </div>
                                     )) : (
-                                      <p className="text-xs text-muted-foreground text-center py-2">Aucun rejet</p>
+                                      <p className="text-xs text-muted-foreground text-center py-2">{t("demandes:stade.no_rejet")}</p>
                                     )}
                                     {blocked && (
                                       <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                                        ⏳ Le DGD doit valider en premier.
+                                        {t("demandes:stade.dgd_first")}
                                       </div>
                                     )}
                                   </div>
@@ -744,36 +682,30 @@ const Demandes = () => {
                           })()}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {d.dateDepot ? new Date(d.dateDepot).toLocaleDateString("fr-FR") : "—"}
+                          {d.dateDepot ? formatDate(d.dateDepot) : "—"}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-end">
                           <div className="flex gap-1 justify-end items-center">
                             {role === "DGD" && !isTerminalStatut(d.statut) ? (
                               <Button size="sm" onClick={() => navigate(`/dashboard/correction-douaniere/${d.id}`)}>
-                                <ArrowRight className="h-4 w-4 mr-1" /> Correction douanière
+                                <ArrowRight className="h-4 w-4 me-1 rtl:rotate-180" /> {t("demandes:actions.correction_douaniere")}
                               </Button>
                             ) : (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="icon" className="h-8 w-8">
+                                  <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t("demandes:actions.more")}>
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
-                                    <Eye className="h-4 w-4 mr-2" /> Détail
+                                    <Eye className="h-4 w-4 me-2" /> {t("demandes:actions.view")}
                                   </DropdownMenuItem>
-                                  {/* Actions Brouillon (entreprise / AC dépositaire) */}
                                   {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
                                     <>
-                                      <DropdownMenuItem
-                                        disabled={loadingEditId === d.id}
-                                        onClick={() => openEditWizard(d)}
-                                      >
-                                        {loadingEditId === d.id
-                                          ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                          : <FileText className="h-4 w-4 mr-2" />}
-                                        Modifier le brouillon
+                                      <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>
+                                        {loadingEditId === d.id ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <FileText className="h-4 w-4 me-2" />}
+                                        {t("demandes:actions.edit_draft")}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         disabled={actionLoading === d.id}
@@ -781,33 +713,25 @@ const Demandes = () => {
                                           setActionLoading(d.id);
                                           try {
                                             await demandeCorrectionApi.soumettre(d.id);
-                                            toast({ title: "Brouillon soumis", description: "La demande est passée en Reçue." });
+                                            toast({ title: t("demandes:toast.draft_submitted_title"), description: t("demandes:toast.draft_submitted_desc") });
                                             fetchDemandes();
                                           } catch (e: any) {
-                                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                                            toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
                                           } finally { setActionLoading(null); }
                                         }}
                                       >
-                                        <CheckCircle className="h-4 w-4 mr-2" /> Soumettre
+                                        <CheckCircle className="h-4 w-4 me-2" /> {t("demandes:actions.submit")}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        className="text-destructive focus:text-destructive"
-                                        onClick={() => setDeleteTargetId(d.id)}
-                                      >
-                                        <XCircle className="h-4 w-4 mr-2" /> Supprimer
+                                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTargetId(d.id)}>
+                                        <XCircle className="h-4 w-4 me-2" /> {t("demandes:actions.delete")}
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                     </>
                                   )}
                                   {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && d.statut === "RECUE" && (
-                                    <DropdownMenuItem
-                                      disabled={loadingEditId === d.id}
-                                      onClick={() => openEditWizard(d)}
-                                    >
-                                      {loadingEditId === d.id
-                                        ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        : <FileText className="h-4 w-4 mr-2" />}
-                                      Modifier
+                                    <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>
+                                      {loadingEditId === d.id ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <FileText className="h-4 w-4 me-2" />}
+                                      {t("demandes:actions.edit")}
                                     </DropdownMenuItem>
                                   )}
                                   {(() => {
@@ -815,36 +739,31 @@ const Demandes = () => {
                                     const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
                                     const myOpenRejets = myRoleDecs.filter(dec => dec.decision === "REJET_TEMP" && dec.rejetTempStatus !== "RESOLU");
                                     const canCancel = hasRole(["AUTORITE_CONTRACTANTE"]) && d.statut === "RECUE";
-                                    
 
                                     const visaTransitions = transitions
-                                      .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.isVisa)
+                                      .filter(tr => tr.from.includes(d.statut) && !tr.isDecisionFinale && tr.isVisa)
                                       .filter(() => !myHasVisa && myOpenRejets.length === 0 && !isTerminalStatut(d.statut));
 
                                     const rejetTransitions = transitions
-                                      .filter(t => t.from.includes(d.statut) && !t.isDecisionFinale && t.to === "REJETEE")
+                                      .filter(tr => tr.from.includes(d.statut) && !tr.isDecisionFinale && tr.to === "REJETEE")
                                       .filter(() => !myHasVisa && !isTerminalStatut(d.statut));
 
                                     const actionItems = [
-                                      ...visaTransitions.map((t, idx) => (
-                                        <DropdownMenuItem
-                                          key={`v-${idx}`}
-                                          disabled={actionLoading === d.id}
-                                          onClick={() => checkAndHandleVisa(d.id)}
-                                        >
-                                          <t.icon className="h-4 w-4 mr-2" />
-                                          {t.label}
+                                      ...visaTransitions.map((tr, idx) => (
+                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => checkAndHandleVisa(d.id)}>
+                                          <tr.icon className="h-4 w-4 me-2" />
+                                          {tTransition(tr.labelKey)}
                                         </DropdownMenuItem>
                                       )),
-                                      ...rejetTransitions.map((t, idx) => (
+                                      ...rejetTransitions.map((tr, idx) => (
                                         <DropdownMenuItem
                                           key={`r-${idx}`}
                                           className="text-destructive focus:text-destructive"
                                           disabled={actionLoading === d.id}
                                           onClick={() => openRejectDialog(d.id)}
                                         >
-                                          <t.icon className="h-4 w-4 mr-2" />
-                                          {myRoleDecs.some(dec => dec.decision === "REJET_TEMP") ? "Nouveau rejet temporaire" : t.label}
+                                          <tr.icon className="h-4 w-4 me-2" />
+                                          {myRoleDecs.some(dec => dec.decision === "REJET_TEMP") ? t("demandes:actions.new_rejet_temp") : tTransition(tr.labelKey)}
                                         </DropdownMenuItem>
                                       )),
                                     ];
@@ -859,7 +778,7 @@ const Demandes = () => {
                                             className="text-destructive focus:text-destructive"
                                             onClick={() => { setCancelTargetId(d.id); setCancelOpen(true); }}
                                           >
-                                            <XCircle className="h-4 w-4 mr-2" /> Annuler la demande
+                                            <XCircle className="h-4 w-4 me-2" /> {t("demandes:actions.cancel_demande")}
                                           </DropdownMenuItem>
                                         )}
                                       </>
@@ -880,33 +799,29 @@ const Demandes = () => {
         </Card>
       </div>
 
-
-
-
       {/* Upload Dialog */}
-      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) { setUploadMessage(""); } }}>
+      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) setUploadMessage(""); }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Ajouter un document</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("demandes:dialogs.upload.title")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Type de document</Label>
+              <Label>{t("demandes:dialogs.upload.type_label")}</Label>
               <Select value={uploadType} onValueChange={setUploadType}>
-                <SelectTrigger><SelectValue placeholder="Sélectionnez le type" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {(uploadAllowedTypes.length > 0
-                    ? ALL_DOCUMENT_TYPES.filter(t => uploadAllowedTypes.includes(t.value))
+                    ? ALL_DOCUMENT_TYPES.filter(tt => uploadAllowedTypes.includes(tt.value))
                     : ALL_DOCUMENT_TYPES
-                  ).map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ).map((tt) => (
+                    <SelectItem key={tt.value} value={tt.value}>{tt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Fichier</Label>
+              <Label>{t("demandes:dialogs.upload.file_label")}</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
             </div>
-            {/* Message field — required if responding to an open REJET_TEMP */}
             {(() => {
               const isRejetResponse = selected && uploadType && (selected.decisions || []).some(
                 d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
@@ -914,10 +829,10 @@ const Demandes = () => {
               return (
                 <div className="space-y-2">
                   <Label>
-                    Message {isRejetResponse && <span className="text-destructive">* (réponse à un rejet)</span>}
+                    {t("demandes:dialogs.upload.message_label")} {isRejetResponse && <span className="text-destructive">{t("demandes:dialogs.upload.message_required_hint")}</span>}
                   </Label>
                   <Textarea
-                    placeholder={isRejetResponse ? "Décrivez les corrections apportées..." : "Message optionnel..."}
+                    placeholder={isRejetResponse ? t("demandes:dialogs.upload.message_placeholder_rejet") : t("demandes:dialogs.upload.message_placeholder_default")}
                     value={uploadMessage}
                     onChange={(e) => setUploadMessage(e.target.value)}
                     rows={2}
@@ -927,35 +842,35 @@ const Demandes = () => {
             })()}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setUploadOpen(false); setUploadMessage(""); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setUploadOpen(false); setUploadMessage(""); }}>{t("demandes:dialogs.upload.cancel")}</Button>
             <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadType}>
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-              Uploader
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
+              {t("demandes:dialogs.upload.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Message-only response to rejet dialog */}
+      {/* Message response dialog */}
       <Dialog open={responseOpen} onOpenChange={(v) => { setResponseOpen(v); if (!v) { setResponseDecisionId(null); setResponseMessage(""); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Répondre au rejet temporaire</DialogTitle>
-            <DialogDescription>Envoyez un message de réponse sans upload de document.</DialogDescription>
+            <DialogTitle>{t("demandes:dialogs.rejet_response.title")}</DialogTitle>
+            <DialogDescription>{t("demandes:dialogs.rejet_response.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Textarea
-              placeholder="Saisissez votre réponse..."
+              placeholder={t("demandes:dialogs.rejet_response.placeholder")}
               value={responseMessage}
               onChange={(e) => setResponseMessage(e.target.value)}
               rows={3}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setResponseOpen(false); setResponseDecisionId(null); setResponseMessage(""); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setResponseOpen(false); setResponseDecisionId(null); setResponseMessage(""); }}>{t("demandes:dialogs.rejet_response.cancel")}</Button>
             <Button onClick={handleRejetTempResponse} disabled={responseSending || !responseMessage.trim()}>
-              {responseSending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Envoyer la réponse
+              {responseSending ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+              {t("demandes:dialogs.rejet_response.send")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -974,13 +889,11 @@ const Demandes = () => {
       <Dialog open={deleteTargetId !== null} onOpenChange={(v) => { if (!v) setDeleteTargetId(null); }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Supprimer le brouillon ?</DialogTitle>
-            <DialogDescription>
-              Cette action est définitive et ne peut pas être annulée.
-            </DialogDescription>
+            <DialogTitle>{t("demandes:dialogs.delete_brouillon.title")}</DialogTitle>
+            <DialogDescription>{t("demandes:dialogs.delete_brouillon.description")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTargetId(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteTargetId(null)}>{t("demandes:dialogs.delete_brouillon.cancel")}</Button>
             <Button
               variant="destructive"
               disabled={deleteLoading}
@@ -989,18 +902,18 @@ const Demandes = () => {
                 setDeleteLoading(true);
                 try {
                   await demandeCorrectionApi.remove(deleteTargetId);
-                  toast({ title: "Brouillon supprimé" });
+                  toast({ title: t("demandes:toast.draft_deleted") });
                   setDeleteTargetId(null);
                   fetchDemandes();
                 } catch (e: any) {
-                  toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                  toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
                 } finally {
                   setDeleteLoading(false);
                 }
               }}
             >
-              {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Supprimer
+              {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+              {t("demandes:dialogs.delete_brouillon.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1010,7 +923,7 @@ const Demandes = () => {
       <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Informations de l'entreprise</DialogTitle>
+            <DialogTitle>{t("demandes:dialogs.entreprise_info.title")}</DialogTitle>
           </DialogHeader>
           {entrepriseLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -1018,19 +931,19 @@ const Demandes = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 text-sm">
                 <div className="rounded-lg border border-border p-3">
-                  <span className="text-muted-foreground text-xs">Raison sociale</span>
+                  <span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.raison_sociale")}</span>
                   <p className="font-medium">{entrepriseDetail.raisonSociale || "—"}</p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
-                  <span className="text-muted-foreground text-xs">NIF</span>
+                  <span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.nif")}</span>
                   <p className="font-medium">{entrepriseDetail.nif || "—"}</p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
-                  <span className="text-muted-foreground text-xs">Adresse</span>
+                  <span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.adresse")}</span>
                   <p className="font-medium">{entrepriseDetail.adresse || "—"}</p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
-                  <span className="text-muted-foreground text-xs">Situation fiscale</span>
+                  <span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.situation_fiscale")}</span>
                   <p>
                     <Badge className={entrepriseDetail.situationFiscale === "REGULIERE" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
                       {entrepriseDetail.situationFiscale || "—"}
@@ -1040,7 +953,7 @@ const Demandes = () => {
               </div>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-4">Aucune information disponible</p>
+            <p className="text-center text-muted-foreground py-4">{t("demandes:dialogs.entreprise_info.empty")}</p>
           )}
         </DialogContent>
       </Dialog>
@@ -1049,16 +962,14 @@ const Demandes = () => {
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{rejectDecisionFinale ? "Rejet final" : "Rejet temporaire"}</DialogTitle>
+            <DialogTitle>{rejectDecisionFinale ? t("demandes:dialogs.reject.title_final") : t("demandes:dialogs.reject.title_temp")}</DialogTitle>
             <DialogDescription>
-              {rejectDecisionFinale
-                ? "Veuillez indiquer le motif du rejet final de cette demande."
-                : "Indiquez le motif du rejet et sélectionnez les documents à corriger/compléter."}
+              {rejectDecisionFinale ? t("demandes:dialogs.reject.description_final") : t("demandes:dialogs.reject.description_temp")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Textarea
-              placeholder="Saisissez le motif du rejet..."
+              placeholder={t("demandes:dialogs.reject.motif_placeholder")}
               value={rejectMotif}
               onChange={(e) => setRejectMotif(e.target.value)}
               rows={3}
@@ -1067,7 +978,7 @@ const Demandes = () => {
               <div>
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Documents à corriger / compléter <span className="text-destructive">*</span>
+                  {t("demandes:dialogs.reject.docs_label")} <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
                   {ALL_DOCUMENT_TYPES.map(dt => (
@@ -1085,87 +996,84 @@ const Demandes = () => {
                   ))}
                 </div>
                 {rejectDocsDemandes.length === 0 && (
-                  <p className="text-xs text-destructive mt-1">Sélectionnez au moins un document</p>
+                  <p className="text-xs text-destructive mt-1">{t("demandes:dialogs.reject.select_at_least_one")}</p>
                 )}
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>{t("demandes:dialogs.reject.cancel")}</Button>
             <Button
               variant="destructive"
               disabled={!rejectMotif.trim() || (!rejectDecisionFinale && rejectDocsDemandes.length === 0)}
               onClick={handleRejectConfirm}
             >
-              <XCircle className="h-4 w-4 mr-1" /> Confirmer le rejet
+              <XCircle className="h-4 w-4 me-1" /> {t("demandes:dialogs.reject.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Offre Corrigée Upload Dialog (DGTCP/DGB) */}
+
+      {/* Offre Corrigée Upload Dialog */}
       <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload du {uploadBeforeVisa?.label || "document"}</DialogTitle>
+            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
             <DialogDescription>
-              Vous devez uploader le document « {uploadBeforeVisa?.label || "requis"} » avant de pouvoir apposer votre visa.
+              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Fichier du {uploadBeforeVisa?.label || "document"}</Label>
+              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisa?.label || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
               <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
             <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
-              {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-              Uploader et valider
+              {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
+              {t("demandes:dialogs.offre_corrigee.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Cancel confirmation dialog */}
+      {/* Cancel confirmation */}
       <Dialog open={cancelOpen} onOpenChange={(v) => { if (!v) { setCancelOpen(false); setCancelTargetId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmer l'annulation</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir annuler cette demande de correction ? Cette action est irréversible.
-            </DialogDescription>
+            <DialogTitle>{t("demandes:dialogs.cancel.title")}</DialogTitle>
+            <DialogDescription>{t("demandes:dialogs.cancel.description")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelTargetId(null); }}>Non, garder</Button>
+            <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelTargetId(null); }}>{t("demandes:dialogs.cancel.keep")}</Button>
             <Button variant="destructive" onClick={handleCancelDemande} disabled={cancelLoading}>
-              {cancelLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-              Oui, annuler la demande
+              {cancelLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <XCircle className="h-4 w-4 me-1" />}
+              {t("demandes:dialogs.cancel.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Adoption Dialog — President uploads lettre */}
+      {/* Adoption Dialog */}
       <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) { setAdoptionFile(null); setAdoptionTargetId(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Adopter la demande</DialogTitle>
-            <DialogDescription>
-              Uploadez la lettre d'adoption avant de confirmer l'adoption de cette demande.
-            </DialogDescription>
+            <DialogTitle>{t("demandes:dialogs.adoption.title")}</DialogTitle>
+            <DialogDescription>{t("demandes:dialogs.adoption.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Lettre d'adoption <span className="text-destructive">*</span></Label>
+              <Label>{t("demandes:dialogs.adoption.file_label")} <span className="text-destructive">*</span></Label>
               <Input type="file" onChange={(e) => setAdoptionFile(e.target.files?.[0] || null)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setAdoptionOpen(false); setAdoptionFile(null); setAdoptionTargetId(null); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setAdoptionOpen(false); setAdoptionFile(null); setAdoptionTargetId(null); }}>{t("demandes:dialogs.adoption.cancel")}</Button>
             <Button onClick={handleAdoptWithLetter} disabled={adoptionUploading || !adoptionFile}>
-              {adoptionUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-              Adopter
+              {adoptionUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle className="h-4 w-4 me-1" />}
+              {t("demandes:dialogs.adoption.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

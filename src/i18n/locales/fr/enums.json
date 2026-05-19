@@ -74,11 +74,22 @@
   "statut_demande": {
     "BROUILLON": "Brouillon",
     "SOUMISE": "Soumise",
+    "RECUE": "Reçue",
+    "INCOMPLETE": "Incomplète",
+    "RECEVABLE": "Recevable",
+    "EN_EVALUATION": "En évaluation",
+    "EN_VALIDATION": "En validation",
     "EN_INSTRUCTION": "En instruction",
     "ADOPTEE": "Adoptée",
     "REJETEE": "Rejetée",
     "REJET_TEMPORAIRE": "Rejet temporaire",
     "NOTIFIEE": "Notifiée",
+    "ANNULEE": "Annulée"
+  },
+  "reclamation_statut": {
+    "SOUMISE": "Soumise",
+    "ACCEPTEE": "Acceptée",
+    "REJETEE": "Rejetée",
     "ANNULEE": "Annulée"
   },
   "statut_convention": {
