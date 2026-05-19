@@ -123,6 +123,7 @@ const resources = {
     transferts: arTransferts,
     cloture: arCloture,
     modifications: arModifications,
+    mise_en_place: arMiseEnPlace,
     ged: arGed,
     users: arUsers,
     roles: arRoles,
