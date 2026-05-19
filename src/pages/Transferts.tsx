@@ -642,18 +642,19 @@ const Transferts = () => {
                 <p className="text-xs text-muted-foreground mt-1">{t("transferts:create.pieces_help")}</p>
               </div>
               {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                <div key={d.value} className="space-y-1">
-                  <Label className="text-xs">{tTypeDocument(d.value) || d.label} <span className="text-destructive">*</span></Label>
+                <div key={d} className="space-y-1">
+                  <Label className="text-xs">{tTypeDocument(d)} <span className="text-destructive">*</span></Label>
                   <Input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => setCreateFiles({ ...createFiles, [d.value]: e.target.files?.[0] || null })}
+                    onChange={(e) => setCreateFiles({ ...createFiles, [d]: e.target.files?.[0] || null })}
                   />
-                  {createFiles[d.value] && (
-                    <p className="text-xs text-emerald-700 truncate">{createFiles[d.value]!.name}</p>
+                  {createFiles[d] && (
+                    <p className="text-xs text-emerald-700 truncate">{createFiles[d]!.name}</p>
                   )}
                 </div>
               ))}
+
             </div>
           </div>
           <DialogFooter>
