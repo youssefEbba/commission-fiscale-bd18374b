@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutMarche } from "@/i18n/enums";
+import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 
 const STATUT_COLORS: Record<string, string> = {
