@@ -28,6 +28,8 @@
   },
   "statut_transfert": {
     "BROUILLON": "Brouillon",
+    "DEMANDE": "Demande",
+    "EN_COURS": "En cours",
     "EN_ATTENTE": "En attente",
     "EN_ATTENTE_VISA": "En attente de visa",
     "VISE": "Visé",
@@ -35,6 +37,9 @@
     "VALIDEE": "Validé",
     "EXECUTE": "Exécuté",
     "EXECUTEE": "Exécuté",
+    "TRANSFERE": "Transféré",
+    "INCOMPLETE": "Incomplète",
+    "A_RECONTROLER": "À recontrôler",
     "REJETE": "Rejeté",
     "REJETEE": "Rejeté",
     "REJET_TEMPORAIRE": "Rejet temporaire",

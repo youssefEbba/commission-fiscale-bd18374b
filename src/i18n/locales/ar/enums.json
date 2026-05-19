@@ -28,6 +28,8 @@
   },
   "statut_transfert": {
     "BROUILLON": "مسودة",
+    "DEMANDE": "طلب",
+    "EN_COURS": "قيد المعالجة",
     "EN_ATTENTE": "في الانتظار",
     "EN_ATTENTE_VISA": "في انتظار التأشيرة",
     "VISE": "مؤشّر",
@@ -35,6 +37,9 @@
     "VALIDEE": "مصادق عليه",
     "EXECUTE": "منفّذ",
     "EXECUTEE": "منفّذ",
+    "TRANSFERE": "تم التحويل",
+    "INCOMPLETE": "غير مكتمل",
+    "A_RECONTROLER": "تحتاج إعادة مراقبة",
     "REJETE": "مرفوض",
     "REJETEE": "مرفوض",
     "REJET_TEMPORAIRE": "رفض مؤقت",
