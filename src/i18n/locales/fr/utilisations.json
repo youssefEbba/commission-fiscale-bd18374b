@@ -1,0 +1,29 @@
+{
+  "list": {
+    "title": "Utilisations",
+    "subtitle": "Imputations Douane et Intérieur sur les certificats",
+    "tabs": {
+      "all": "Toutes",
+      "douane": "Douane",
+      "interieure": "TVA Intérieure"
+    },
+    "search_placeholder": "Rechercher…",
+    "empty": "Aucune utilisation",
+    "columns": {
+      "reference": "Référence",
+      "certificat": "Certificat",
+      "type": "Type",
+      "montant": "Montant",
+      "date": "Date",
+      "statut": "Statut",
+      "actions": "Actions"
+    }
+  },
+  "detail": {
+    "title": "Détail de l'utilisation",
+    "type_utilisation": "Type d'utilisation",
+    "imputation": "Imputation",
+    "documents": "Documents",
+    "apurement": "Apurement"
+  }
+}

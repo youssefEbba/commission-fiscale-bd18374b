@@ -1,0 +1,27 @@
+{
+  "list": {
+    "title": "الشهادات",
+    "subtitle": "متابعة الاعتمادات الضريبية الممنوحة",
+    "search_placeholder": "البحث بالمرجع أو اسم المؤسسة…",
+    "filter_status": "تصفية حسب الحالة",
+    "empty": "لا توجد شهادات",
+    "columns": {
+      "reference": "المرجع",
+      "entreprise": "المؤسسة",
+      "solde": "الرصيد",
+      "montant_initial": "المبلغ الأولي",
+      "date_emission": "تاريخ الإصدار",
+      "statut": "الحالة",
+      "actions": "الإجراءات"
+    }
+  },
+  "detail": {
+    "title": "تفاصيل الشهادة",
+    "solde_cordon": "رصيد الكوردون",
+    "solde_tva": "رصيد الضريبة على القيمة المضافة",
+    "paiement_cash_cumule": "إجمالي المدفوعات النقدية",
+    "utilisations": "الاستخدامات",
+    "documents": "الوثائق",
+    "historique": "السجل"
+  }
+}

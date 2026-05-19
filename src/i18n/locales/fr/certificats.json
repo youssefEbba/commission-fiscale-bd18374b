@@ -1,0 +1,27 @@
+{
+  "list": {
+    "title": "Certificats",
+    "subtitle": "Suivi des crédits d'impôt délivrés",
+    "search_placeholder": "Rechercher par référence ou entreprise…",
+    "filter_status": "Filtrer par statut",
+    "empty": "Aucun certificat",
+    "columns": {
+      "reference": "Référence",
+      "entreprise": "Entreprise",
+      "solde": "Solde",
+      "montant_initial": "Montant initial",
+      "date_emission": "Date d'émission",
+      "statut": "Statut",
+      "actions": "Actions"
+    }
+  },
+  "detail": {
+    "title": "Détail du certificat",
+    "solde_cordon": "Solde Cordon",
+    "solde_tva": "Solde TVA",
+    "paiement_cash_cumule": "Paiement cash cumulé",
+    "utilisations": "Utilisations",
+    "documents": "Documents",
+    "historique": "Historique"
+  }
+}
