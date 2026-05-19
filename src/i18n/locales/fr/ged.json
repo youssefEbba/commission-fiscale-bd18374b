@@ -7,5 +7,139 @@
   },
   "detail": {
     "title": "GED — Détail"
+  },
+  "dossiers": {
+    "title": "GED – Dossiers",
+    "subtitle": "Consultez les dossiers et leurs documents par étape du workflow",
+    "search_placeholder": "Rechercher un dossier...",
+    "count_label": "{{count}} dossier(s)",
+    "loading": "Chargement des dossiers…",
+    "empty": "Aucun dossier trouvé",
+    "created_on": "Créé le {{date}}",
+    "certificat_short": "Certificat #{{id}}",
+    "correction_short": "Correction {{ref}}",
+    "documents_count": "{{count}} document(s)",
+    "etapes_progress": "{{done}}/{{total}} étapes",
+    "back": "Retour aux dossiers",
+    "back_short": "Retour",
+    "loading_detail": "Chargement du dossier…",
+    "not_found": "Dossier introuvable.",
+    "total_documents": "{{count}} document(s) au total",
+    "entreprise": "Entreprise",
+    "autorite_contractante": "Autorité Contractante",
+    "marche": "Marché",
+    "table": {
+      "document": "Document",
+      "type": "Type",
+      "date": "Date",
+      "action": "Action",
+      "empty_etape": "Aucun document pour cette étape",
+      "open": "Ouvrir",
+      "download": "Télécharger"
+    }
+  },
+  "document": {
+    "required_section_title": "Documents requis",
+    "tab_active": "Actifs ({{count}})",
+    "tab_history": "Historique ({{count}})",
+    "no_history": "Aucune version précédente",
+    "table": {
+      "type": "Type",
+      "file": "Fichier",
+      "size": "Taille",
+      "version": "Version",
+      "date": "Date",
+      "state": "État",
+      "actions": "Actions"
+    },
+    "state_active": "Actif",
+    "state_replaced": "Remplacé",
+    "empty": "Aucun document",
+    "replace": "Remplacer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "loading": "Chargement…",
+    "replacement_suffix": " (remplacement)"
+  },
+  "upload": {
+    "section_title": "Ajouter / remplacer un document",
+    "section_help": "Si un document actif existe déjà pour le type sélectionné, il sera automatiquement remplacé (versionnage).",
+    "type_label": "Type de document",
+    "file_label": "Fichier",
+    "submit": "Uploader"
+  },
+  "units": {
+    "byte_short": "o",
+    "kilobyte_short": "Ko",
+    "megabyte_short": "Mo",
+    "gigabyte_short": "Go",
+    "placeholder": "—"
+  },
+  "toast": {
+    "success_title": "Succès",
+    "error_title": "Erreur",
+    "upload_success_desc": "Document uploadé avec succès",
+    "upload_error_fallback": "Échec de l'upload",
+    "delete_success_desc": "Document supprimé",
+    "replace_success_desc": "Document remplacé"
+  },
+  "config": {
+    "title": "GED – Configuration",
+    "subtitle": "Configurez les documents requis par processus",
+    "add_document": "Ajouter un document",
+    "loading": "Chargement…",
+    "empty": "Aucun document configuré.",
+    "table": {
+      "document": "DOCUMENT",
+      "required": "OBLIGATOIRE ?",
+      "type": "TYPE",
+      "description": "DESCRIPTION",
+      "actions": "ACTIONS"
+    },
+    "yes": "Oui",
+    "no": "Non",
+    "no_description": "—",
+    "dialog": {
+      "edit_title": "Modifier le document",
+      "create_title": "Ajouter un document requis",
+      "type_label": "Type de document *",
+      "type_placeholder": "Sélectionner un type de document",
+      "required_label": "Obligatoire",
+      "formats_label": "Formats autorisés",
+      "description_label": "Description",
+      "description_placeholder": "Description du document...",
+      "ordre_label": "Ordre d'affichage",
+      "cancel": "Annuler",
+      "submit_edit": "Modifier",
+      "submit_create": "Ajouter"
+    },
+    "toast": {
+      "added": "Document ajouté",
+      "modified": "Document modifié",
+      "deleted": "Document supprimé",
+      "error": "Erreur",
+      "type_required_title": "Veuillez saisir le type de document",
+      "duplicate_title": "Doublon détecté",
+      "duplicate_desc": "Le type « {{type}} » est déjà configuré pour ce processus.",
+      "unique_constraint": "Ce type de document est déjà configuré pour ce processus."
+    },
+    "modules": {
+      "CONVENTION": "Convention",
+      "MARCHE": "Marché / Attribution / Adjudication",
+      "CORRECTION_OFFRE_FISCALE": "Demande de correction de l'offre Fiscale",
+      "MISE_EN_PLACE_CI": "Mise en place CI (Certificat)",
+      "UTILISATION_CI_EXTERIEUR": "Utilisation CI — Douane (Importation)",
+      "UTILISATION_CI_INTERIEUR": "Utilisation CI — TVA Intérieure",
+      "TRANSFERT_CREDIT": "Transfert de crédit (Douane → Intérieur)",
+      "SOUS_TRAITANCE": "Sous-traitance",
+      "MODIFICATION_CI": "Modification / Avenant (P8)",
+      "CLOTURE_CI": "Clôture / Annulation (P11)"
+    },
+    "formats": {
+      "WORD": "Word",
+      "EXCEL": "Excel",
+      "IMAGE": "Images",
+      "PDF": "PDF"
+    }
   }
 }

@@ -7,5 +7,139 @@
   },
   "detail": {
     "title": "إدارة الوثائق — التفاصيل"
+  },
+  "dossiers": {
+    "title": "إدارة الوثائق – الملفات",
+    "subtitle": "اطّلع على الملفات ووثائقها حسب مرحلة سير العمل",
+    "search_placeholder": "ابحث عن ملف...",
+    "count_label": "{{count}} ملف",
+    "loading": "جارٍ تحميل الملفات…",
+    "empty": "لا يوجد أي ملف",
+    "created_on": "أُنشئ في {{date}}",
+    "certificat_short": "شهادة رقم {{id}}",
+    "correction_short": "تصحيح {{ref}}",
+    "documents_count": "{{count}} وثيقة",
+    "etapes_progress": "{{done}}/{{total}} مراحل",
+    "back": "العودة إلى الملفات",
+    "back_short": "رجوع",
+    "loading_detail": "جارٍ تحميل الملف…",
+    "not_found": "الملف غير موجود.",
+    "total_documents": "{{count}} وثيقة إجمالًا",
+    "entreprise": "المؤسسة",
+    "autorite_contractante": "السلطة المتعاقدة",
+    "marche": "الصفقة",
+    "table": {
+      "document": "الوثيقة",
+      "type": "النوع",
+      "date": "التاريخ",
+      "action": "إجراء",
+      "empty_etape": "لا توجد وثائق لهذه المرحلة",
+      "open": "فتح",
+      "download": "تنزيل"
+    }
+  },
+  "document": {
+    "required_section_title": "الوثائق المطلوبة",
+    "tab_active": "النشطة ({{count}})",
+    "tab_history": "السجل ({{count}})",
+    "no_history": "لا توجد إصدارات سابقة",
+    "table": {
+      "type": "النوع",
+      "file": "الملف",
+      "size": "الحجم",
+      "version": "الإصدار",
+      "date": "التاريخ",
+      "state": "الحالة",
+      "actions": "الإجراءات"
+    },
+    "state_active": "نشط",
+    "state_replaced": "مُستبدَل",
+    "empty": "لا توجد أي وثيقة",
+    "replace": "استبدال",
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "loading": "جارٍ التحميل…",
+    "replacement_suffix": " (استبدال)"
+  },
+  "upload": {
+    "section_title": "إضافة / استبدال وثيقة",
+    "section_help": "إذا كانت هناك وثيقة نشطة من نفس النوع، فسيتم استبدالها تلقائيًا (إدارة الإصدارات).",
+    "type_label": "نوع الوثيقة",
+    "file_label": "الملف",
+    "submit": "رفع"
+  },
+  "units": {
+    "byte_short": "ب",
+    "kilobyte_short": "ك.ب",
+    "megabyte_short": "م.ب",
+    "gigabyte_short": "ج.ب",
+    "placeholder": "—"
+  },
+  "toast": {
+    "success_title": "تم بنجاح",
+    "error_title": "خطأ",
+    "upload_success_desc": "تم رفع الوثيقة بنجاح",
+    "upload_error_fallback": "فشل الرفع",
+    "delete_success_desc": "تم حذف الوثيقة",
+    "replace_success_desc": "تم استبدال الوثيقة"
+  },
+  "config": {
+    "title": "إدارة الوثائق – الإعدادات",
+    "subtitle": "اضبط الوثائق المطلوبة لكل سيرورة",
+    "add_document": "إضافة وثيقة",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد أي وثيقة مُعدَّة.",
+    "table": {
+      "document": "الوثيقة",
+      "required": "إلزامية ؟",
+      "type": "النوع",
+      "description": "الوصف",
+      "actions": "الإجراءات"
+    },
+    "yes": "نعم",
+    "no": "لا",
+    "no_description": "—",
+    "dialog": {
+      "edit_title": "تعديل الوثيقة",
+      "create_title": "إضافة وثيقة مطلوبة",
+      "type_label": "نوع الوثيقة *",
+      "type_placeholder": "اختر نوع الوثيقة",
+      "required_label": "إلزامية",
+      "formats_label": "الصِّيغ المسموح بها",
+      "description_label": "الوصف",
+      "description_placeholder": "وصف الوثيقة...",
+      "ordre_label": "ترتيب العرض",
+      "cancel": "إلغاء",
+      "submit_edit": "تعديل",
+      "submit_create": "إضافة"
+    },
+    "toast": {
+      "added": "تمت إضافة الوثيقة",
+      "modified": "تم تعديل الوثيقة",
+      "deleted": "تم حذف الوثيقة",
+      "error": "خطأ",
+      "type_required_title": "يرجى إدخال نوع الوثيقة",
+      "duplicate_title": "تكرار مكتشَف",
+      "duplicate_desc": "النوع « {{type}} » مُعدّ مسبقًا لهذه السيرورة.",
+      "unique_constraint": "هذا النوع من الوثائق مُعدّ مسبقًا لهذه السيرورة."
+    },
+    "modules": {
+      "CONVENTION": "الاتفاقية",
+      "MARCHE": "الصفقة / الإسناد / الترسية",
+      "CORRECTION_OFFRE_FISCALE": "طلب تصحيح العرض الجبائي",
+      "MISE_EN_PLACE_CI": "وضع الرصيد الضريبي (الشهادة)",
+      "UTILISATION_CI_EXTERIEUR": "استخدام الرصيد الضريبي — الجمارك (الاستيراد)",
+      "UTILISATION_CI_INTERIEUR": "استخدام الرصيد الضريبي — الـ TVA الداخلية",
+      "TRANSFERT_CREDIT": "تحويل الرصيد (جمارك ← داخلي)",
+      "SOUS_TRAITANCE": "المناولة",
+      "MODIFICATION_CI": "التعديل / الملحق (P8)",
+      "CLOTURE_CI": "الإقفال / الإلغاء (P11)"
+    },
+    "formats": {
+      "WORD": "Word",
+      "EXCEL": "Excel",
+      "IMAGE": "صور",
+      "PDF": "PDF"
+    }
   }
 }
