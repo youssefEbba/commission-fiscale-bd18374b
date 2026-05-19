@@ -220,5 +220,9 @@
   "type_operation_cloture": {
     "CLOTURE": "Clôture",
     "ANNULATION": "Annulation"
+  },
+  "type_projet": {
+    "BTP": "BTP",
+    "EQUIPEMENT": "Équipements industriels"
   }
 }
