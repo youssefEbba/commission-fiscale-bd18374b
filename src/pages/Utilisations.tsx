@@ -564,7 +564,7 @@ const Utilisations = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("utilisations:list.filter_all")}</SelectItem>
-              {Object.keys(UTILISATION_STATUT_LABELS).map((k) => (
+              {UTILISATION_STATUT_VALUES.map((k) => (
                 <SelectItem key={k} value={k}>{tStatutUtilisation(k)}</SelectItem>
               ))}
             </SelectContent>

@@ -9,9 +9,10 @@ import {
 } from "recharts";
 import {
   ReportingSummaryDto, TimeSeriesPointDto, KeyCount,
-  DEMANDE_STATUT_LABELS, CERTIFICAT_STATUT_LABELS, UTILISATION_STATUT_LABELS,
+  DEMANDE_STATUT_LABELS, CERTIFICAT_STATUT_LABELS,
   CONVENTION_STATUT_LABELS, REFERENTIEL_STATUT_LABELS, MARCHE_STATUT_LABELS,
 } from "@/lib/api";
+import { tStatutUtilisation } from "@/i18n/enums";
 import { AppRole } from "@/contexts/AuthContext";
 import { showAuditSection } from "./ReportingRoleConfig";
 
@@ -87,7 +88,7 @@ const ReportingCharts = ({ summary, timeseries, role }: ReportingChartsProps) =>
 
   const utilisationsChartData = useMemo(() =>
     summary.utilisationsByStatut.map(kc => ({
-      name: resolveLabel(kc.key, UTILISATION_STATUT_LABELS), value: kc.count,
+      name: tStatutUtilisation(kc.key), value: kc.count,
     })), [summary]);
 
   const utilisationsTypeData = useMemo(() =>
