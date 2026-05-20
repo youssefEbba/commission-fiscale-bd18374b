@@ -351,6 +351,17 @@ const Utilisations = () => {
         });
         return;
       }
+      if (createType === "DOUANIER") {
+        const missingAff = (form.lignes || []).filter(l => (Number(l.valeurTaxe) || 0) > 0 && !l.affectation);
+        if (missingAff.length > 0) {
+          toast({
+            title: t("utilisations:toast.create_affectation_missing_title"),
+            description: t("utilisations:toast.create_affectation_missing_desc", { count: missingAff.length }),
+            variant: "destructive",
+          });
+          return;
+        }
+      }
     }
     setCreating(true);
     try {
