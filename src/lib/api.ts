@@ -1192,46 +1192,46 @@ export type TypeDocumentUtilisation =
   | "DECOMPTE"
   | "AUTRE";
 
-export const UTILISATION_DOC_TYPES_DOUANE: { value: TypeDocumentUtilisation; label: string }[] = [
-  { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
-  { value: "ORDRE_TRANSIT", label: "Ordre de transit" },
-  { value: "DECLARATION_DOUANE", label: "Déclaration en douane" },
-  { value: "BULLETIN_LIQUIDATION", label: "Bulletin de liquidation" },
-  { value: "FACTURE", label: "Facture" },
-  { value: "CONNAISSEMENT", label: "Connaissement" },
-  { value: "CERTIFICAT_CREDIT_IMPOTS_SYDONIA", label: "Certificat crédit d'impôts SYDONIA" },
-];
+export const UTILISATION_DOC_TYPES_DOUANE: readonly TypeDocumentUtilisation[] = [
+  "DEMANDE_UTILISATION",
+  "ORDRE_TRANSIT",
+  "DECLARATION_DOUANE",
+  "BULLETIN_LIQUIDATION",
+  "FACTURE",
+  "CONNAISSEMENT",
+  "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+] as const;
 
-export const UTILISATION_DOC_TYPES_TVA: { value: TypeDocumentUtilisation; label: string }[] = [
-  { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
-  { value: "FACTURE", label: "Facture" },
-  { value: "DECLARATION_TVA", label: "Déclaration TVA" },
-  { value: "DECOMPTE", label: "Décompte" },
-];
+export const UTILISATION_DOC_TYPES_TVA: readonly TypeDocumentUtilisation[] = [
+  "DEMANDE_UTILISATION",
+  "FACTURE",
+  "DECLARATION_TVA",
+  "DECOMPTE",
+] as const;
 
-export function getUtilisationDocTypesTVA(typeAchat?: string): { value: TypeDocumentUtilisation; label: string }[] {
-  const base = [...UTILISATION_DOC_TYPES_TVA];
+export function getUtilisationDocTypesTVA(typeAchat?: string): readonly TypeDocumentUtilisation[] {
   if (typeAchat === "ACHAT_LOCAL") {
-    return base.filter(dt => dt.value !== "DECOMPTE");
+    return UTILISATION_DOC_TYPES_TVA.filter(dt => dt !== "DECOMPTE");
   }
   if (typeAchat === "DECOMPTE") {
-    return base.filter(dt => dt.value !== "FACTURE");
+    return UTILISATION_DOC_TYPES_TVA.filter(dt => dt !== "FACTURE");
   }
-  return base;
+  return UTILISATION_DOC_TYPES_TVA;
 }
 
-export const UTILISATION_DOCUMENT_TYPES: { value: TypeDocumentUtilisation; label: string }[] = [
-  { value: "DEMANDE_UTILISATION", label: "Demande d'utilisation" },
-  { value: "ORDRE_TRANSIT", label: "Ordre de transit" },
-  { value: "DECLARATION_DOUANE", label: "Déclaration en douane" },
-  { value: "BULLETIN_LIQUIDATION", label: "Bulletin de liquidation" },
-  { value: "FACTURE", label: "Facture" },
-  { value: "CONNAISSEMENT", label: "Connaissement" },
-  { value: "CERTIFICAT_CREDIT_IMPOTS_SYDONIA", label: "Certificat crédit d'impôts SYDONIA" },
-  { value: "DECLARATION_TVA", label: "Déclaration TVA" },
-  { value: "DECOMPTE", label: "Décompte" },
-  { value: "AUTRE", label: "Autre" },
-];
+export const UTILISATION_DOCUMENT_TYPES: readonly TypeDocumentUtilisation[] = [
+  "DEMANDE_UTILISATION",
+  "ORDRE_TRANSIT",
+  "DECLARATION_DOUANE",
+  "BULLETIN_LIQUIDATION",
+  "FACTURE",
+  "CONNAISSEMENT",
+  "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
+  "DECLARATION_TVA",
+  "DECOMPTE",
+  "AUTRE",
+] as const;
+
 
 export const utilisationCreditApi = {
   getAll: async (params?: { demandeurSousTraitantOnly?: boolean }) => {
