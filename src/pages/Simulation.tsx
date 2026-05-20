@@ -15,9 +15,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePageTitle } from "@/hooks/usePageTitle";
-import { formatNumber as fmtNumI18n } from "@/i18n/format";
-import { formatDateTime } from "@/i18n/format";
+import { formatNumber as fmtNumI18n, formatDateTime } from "@/i18n/format";
+import i18n from "@/i18n";
 
 /* ──────────────── Types ──────────────── */
 
@@ -40,13 +39,15 @@ type Step = "home" | "upload" | "preview" | "processing";
 /* ──────────────── Helpers ──────────────── */
 
 /**
- * Formatage numérique (3 décimales max) délégué au helper i18n mutualisé
- * pour respecter la locale active (fr-FR / ar-MR).
+ * Formatage numérique (3 décimales max) locale-aware (fr-FR / ar-MR),
+ * en chiffres latins pour rester comparable aux exports Excel.
  */
 function formatNumber(n: number | undefined | null): string {
   if (n === undefined || n === null || isNaN(n as number)) return "-";
-  if (Math.abs(n as number) < 0.001) return "0";
-  return fmtNumI18n(n, { maximumFractionDigits: 3, minimumFractionDigits: 0 } as any);
+  const v = n as number;
+  if (Math.abs(v) < 0.001) return "0";
+  const loc = i18n.language?.startsWith("ar") ? "ar-MR" : "fr-FR";
+  return new Intl.NumberFormat(loc, { numberingSystem: "latn", maximumFractionDigits: 3 }).format(v);
 }
 
 function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
