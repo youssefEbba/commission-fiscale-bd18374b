@@ -6,11 +6,13 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
   UTILISATION_STATUT_LABELS, utilisationStatutLabel, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA,
-  UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
+  TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
   LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
+import { tTypeDocument } from "@/i18n/enums";
+
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
