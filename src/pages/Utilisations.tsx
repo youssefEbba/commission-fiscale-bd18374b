@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
-  CreateUtilisationCreditRequest, UTILISATION_STATUT_LABELS, utilisationStatutLabel,
+  CreateUtilisationCreditRequest, UTILISATION_STATUT_VALUES,
   certificatCreditApi, CertificatCreditDto,
   UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
   TypeDocumentUtilisation, DocumentDto,
