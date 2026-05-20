@@ -1394,8 +1394,9 @@ const UtilisationDetail = () => {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(t => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <SelectItem key={t} value={t}>{tTypeDocument(t)}</SelectItem>
                 ))}
+
               </SelectContent>
             </Select>
             <Input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} />
