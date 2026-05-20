@@ -1,11 +1,39 @@
 {
+  "page": {
+    "title": "سجل التدقيق",
+    "subtitle": "تتبع عمليات الاتصال والأنشطة"
+  },
   "list": {
     "title": "سجل التدقيق",
     "subtitle": "تتبع الإجراءات",
-    "search_placeholder": "بحث…",
-    "empty": "لا توجد عناصر"
+    "search_placeholder": "تصفية حسب المستخدم...",
+    "empty": "لا توجد سجلات"
   },
   "detail": {
     "title": "سجل التدقيق — التفاصيل"
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "all": "كل الإجراءات",
+    "CREATE": "إنشاء",
+    "UPDATE": "تعديل",
+    "DELETE": "حذف"
+  },
+  "table": {
+    "date": "التاريخ",
+    "user": "المستخدم",
+    "action": "الإجراء",
+    "entity": "الكيان",
+    "details": "التفاصيل",
+    "empty_cell": "—"
+  },
+  "pagination": {
+    "summary": "الصفحة {{current}} / {{total}} ({{count}} عنصر)",
+    "previous": "الصفحة السابقة",
+    "next": "الصفحة التالية"
+  },
+  "toast": {
+    "load_error_title": "خطأ",
+    "load_error_description": "تعذر تحميل السجلات"
   }
 }

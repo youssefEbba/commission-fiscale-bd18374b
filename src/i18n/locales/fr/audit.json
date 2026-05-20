@@ -1,11 +1,39 @@
 {
+  "page": {
+    "title": "Journal d'audit",
+    "subtitle": "Traçabilité des connexions et activités"
+  },
   "list": {
     "title": "Journal d'audit",
     "subtitle": "Traçabilité des actions",
-    "search_placeholder": "Rechercher…",
-    "empty": "Aucun élément"
+    "search_placeholder": "Filtrer par utilisateur...",
+    "empty": "Aucun log"
   },
   "detail": {
     "title": "Journal d'audit — Détail"
+  },
+  "actions": {
+    "refresh": "Actualiser",
+    "all": "Toutes actions",
+    "CREATE": "Création",
+    "UPDATE": "Modification",
+    "DELETE": "Suppression"
+  },
+  "table": {
+    "date": "Date",
+    "user": "Utilisateur",
+    "action": "Action",
+    "entity": "Entité",
+    "details": "Détails",
+    "empty_cell": "—"
+  },
+  "pagination": {
+    "summary": "Page {{current}} / {{total}} ({{count}} entrées)",
+    "previous": "Page précédente",
+    "next": "Page suivante"
+  },
+  "toast": {
+    "load_error_title": "Erreur",
+    "load_error_description": "Impossible de charger les logs"
   }
 }
