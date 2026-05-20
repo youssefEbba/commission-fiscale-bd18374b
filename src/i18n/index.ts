@@ -172,7 +172,9 @@ i18n
       lookupLocalStorage: STORAGE_KEY,
       caches: ["localStorage"],
     },
-    saveMissing: import.meta.env.DEV,
+    // saveMissing: true en dev pour journaliser les clés manquantes via missingKeyHandler.
+    // false en prod pour éviter tout overhead (cf. docs/I18N.md).
+    saveMissing: import.meta.env.DEV && !import.meta.env.PROD,
     missingKeyHandler: (lngs, ns, key) => {
       if (import.meta.env.DEV) {
         // eslint-disable-next-line no-console
