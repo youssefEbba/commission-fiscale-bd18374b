@@ -569,7 +569,7 @@ const ReferentielProjets = () => {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Statut</span>
-                  <p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{REFERENTIEL_STATUT_LABELS[selected.statut]}</Badge></p>
+                  <p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutReferentiel(selected.statut)}</Badge></p>
                 </div>
                 {selected.bailleurFonds && (
                   <div>
