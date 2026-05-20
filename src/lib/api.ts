@@ -1069,7 +1069,12 @@ export interface LigneBulletinDto {
   type: TypeLigneTaxe;
   /** Valeur en MRU (alias backend: valeurTaxe) */
   valeur: number;
+  /** Décision finale DGD (null tant que pas de visa). */
   affectation?: AffectationTaxe | null;
+  /** Proposition entreprise (AU_CI / A_PAYER) — saisie à la création/édition. */
+  affectationEntreprise?: AffectationTaxe | null;
+  /** true si DGD a changé la proposition entreprise lors du visa ; false si validée à l'identique ; null avant visa. */
+  affectationModifieeParDgd?: boolean | null;
   ordre?: number;
   // Champs bruts backend (au cas où)
   codeTaxe?: string;
@@ -1088,6 +1093,8 @@ export function normalizeLigneBulletin(l: any): LigneBulletinDto {
     type: l.type ?? l.typeLigne,
     valeur: Number(l.valeur ?? l.valeurTaxe ?? 0),
     affectation: l.affectation ?? null,
+    affectationEntreprise: l.affectationEntreprise ?? null,
+    affectationModifieeParDgd: l.affectationModifieeParDgd ?? null,
     ordre: l.ordre,
   };
 }
@@ -1099,6 +1106,8 @@ export interface LigneBulletinRequest {
   denominationTaxe: string;
   typeLigne: TypeLigneTaxe;
   valeurTaxe: number;
+  /** Proposition entreprise (AU_CI / A_PAYER). Obligatoire à la soumission pour toute ligne > 0. */
+  affectation?: AffectationTaxe | null;
   ordre?: number;
 }
 
