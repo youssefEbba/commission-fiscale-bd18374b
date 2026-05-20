@@ -1367,11 +1367,12 @@ const UtilisationDetail = () => {
               <Label>Documents à corriger *</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto mt-2">
                 {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(dt => (
-                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox checked={rejetDocs.includes(dt.value)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value))} />
-                    <span className="text-sm">{dt.label}</span>
+                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                    <Checkbox checked={rejetDocs.includes(dt)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt))} />
+                    <span className="text-sm">{tTypeDocument(dt)}</span>
                   </label>
                 ))}
+
               </div>
             </div>
           </div>
