@@ -41,7 +41,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <LanguageSwitcher variant="compact" />
+          <LanguageSwitcher variant="compact" className="text-primary-foreground hover:bg-primary/20 hover:text-primary-foreground" />
           <Button variant="outline" className="border-gold text-gold hover:bg-gold/20 hover:text-gold" asChild>
             <Link to="/register">{t("nav.register")}</Link>
           </Button>
