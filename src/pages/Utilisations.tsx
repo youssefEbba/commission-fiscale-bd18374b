@@ -882,19 +882,21 @@ const Utilisations = () => {
                                 <Input className="col-span-4 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
                                 <Input
                                   className={`col-span-3 h-8 text-xs ${isEmpty ? "border-destructive focus-visible:ring-destructive bg-destructive/5" : ""}`}
-                                  type="number"
-                                  min="0"
+                                  type="text"
+                                  inputMode="decimal"
                                   placeholder={t("utilisations:create.douane.value_required")}
                                   value={ligne.valeurTaxe ?? ""}
                                   onChange={e => {
+                                    const raw = e.target.value.replace(/\s/g, "").replace(",", ".");
+                                    if (raw !== "" && !/^-?\d*\.?\d*$/.test(raw)) return;
                                     const next = [...(form.lignes || [])];
-                                    const newVal = e.target.value === "" ? (undefined as any) : Number(e.target.value);
-                                    // Si remis à 0, on efface l'affectation (non requise)
+                                    const newVal = raw === "" ? (undefined as any) : (raw.endsWith(".") || raw === "-" ? (raw as any) : Number(raw));
                                     const newAff = (Number(newVal) || 0) === 0 ? null : next[idx].affectation;
                                     next[idx] = { ...next[idx], valeurTaxe: newVal, affectation: newAff };
                                     setForm({ ...form, lignes: next });
                                   }}
                                 />
+
                                 <div className={`col-span-3 flex gap-1 ${affMissing ? "ring-1 ring-destructive rounded-md p-0.5" : ""}`}>
                                   <Button
                                     type="button"
