@@ -118,7 +118,13 @@
       "mismatch": "مجموع قيم الضرائب ({{total}}) لا يتطابق مع المبلغ الإجمالي المُدخل ({{amount}}).",
       "montant_total": "المبلغ الإجمالي المُصرَّح به",
       "montant_total_placeholder": "المبلغ الإجمالي المُدخل من المستخدم",
-      "add_tax_btn": "إضافة"
+      "add_tax_btn": "إضافة",
+      "col_affectation": "التخصيص",
+      "affectation_au_ci_short": "إلى الاعتماد",
+      "affectation_a_payer_short": "للدفع",
+      "affectation_au_ci_title": "محمَّل على الاعتماد الخارجي (الحبل)",
+      "affectation_a_payer_title": "يُدفع نقداً من طرف المؤسسة",
+      "affectation_hint": "لكل سطر بمبلغ > 0، حدّد ما إذا كانت الضريبة محمَّلة على الاعتماد الخارجي (إلى الاعتماد) أو تُدفع نقداً (للدفع). يمكن للجمارك تعديل اختيارك عند المصادقة. // REVIEW"
     },
     "tva": {
       "type_achat": "نوع الشراء",
@@ -252,7 +258,9 @@
     "scan_required_title": "المرفق مطلوب",
     "scan_required_desc": "يرجى إرفاق نسخة من الشيك المصدّق.",
     "no_valid_quittance_title": "لا توجد إيصالات صالحة",
-    "no_valid_quittance_desc": "أدخل إيصالاً واحداً على الأقل."
+    "no_valid_quittance_desc": "أدخل إيصالاً واحداً على الأقل.",
+    "create_affectation_missing_title": "التخصيص مفقود",
+    "create_affectation_missing_desc": "{{count}} سطر/أسطر بمبلغ > 0 دون تخصيص (إلى الاعتماد أو للدفع)."
   },
   "detail": {
     "title": "الاستخدام #{{reference}}",
@@ -319,7 +327,11 @@
     "date_prefix": "بتاريخ {{date}}",
     "a_payer_line": "للدفع",
     "au_ci_line": "إلى الاعتماد",
-    "edit_letters_title": "انقر لتعديل المبلغ بالأحرف"
+    "edit_letters_title": "انقر لتعديل المبلغ بالأحرف",
+    "col_proposition": "اقتراح المؤسسة",
+    "proposition_none": "غير محدد",
+    "dgd_validated": "مُعتمَد من الجمارك",
+    "dgd_modified": "مُعدَّل من الجمارك"
   },
   "cheque": {
     "title": "شيك مصدّق",
@@ -453,7 +465,11 @@
     "lines_pending_many": "{{count}} سطراً بقيمة > 0 دون تخصيص.",
     "lines_pending_other": "{{count}} سطر بقيمة > 0 دون تخصيص.",
     "cancel": "إلغاء",
-    "confirm": "تأكيد التأشيرة"
+    "confirm": "تأكيد التأشيرة",
+    "col_proposition": "اقتراح المؤسسة",
+    "proposition_au_ci": "مُقترح: إلى الاعتماد",
+    "proposition_a_payer": "مُقترح: للدفع",
+    "proposition_none": "لا يوجد"
   },
   "cheque_dialog": {
     "title": "إدخال الشيك المصدّق — #{{id}}",
