@@ -305,12 +305,13 @@ export interface CreateReferentielProjetRequest {
   referenceBciSecteur?: string;
 }
 
-export const REFERENTIEL_STATUT_LABELS: Record<ReferentielStatut, string> = {
-  EN_ATTENTE: "En attente",
-  VALIDE: "Validé",
-  REJETE: "Rejeté",
-  ANNULE: "Annulé",
-};
+/**
+ * Valeurs ordonnées de ReferentielStatut pour les filtres / dropdowns.
+ * Libellés via `tStatutReferentiel(code)` (cf. `enums.statut_referentiel.*`).
+ */
+export const REFERENTIEL_STATUT_VALUES: readonly ReferentielStatut[] = [
+  "EN_ATTENTE", "VALIDE", "REJETE", "ANNULE",
+] as const;
 
 export type TypeDocumentProjet =
   | "CONVENTION_CONTRAT"
@@ -407,12 +408,13 @@ export interface CreateConventionRequest {
   autoriteContractanteId?: number;
 }
 
-export const CONVENTION_STATUT_LABELS: Record<ConventionStatut, string> = {
-  EN_ATTENTE: "En attente",
-  VALIDE: "Validée",
-  REJETE: "Rejetée",
-  ANNULEE: "Annulée",
-};
+/**
+ * Valeurs ordonnées de ConventionStatut pour les filtres / dropdowns.
+ * Libellés via `tStatutConvention(code)` (cf. `enums.statut_convention.*`).
+ */
+export const CONVENTION_STATUT_VALUES: readonly ConventionStatut[] = [
+  "EN_ATTENTE", "VALIDE", "REJETE", "ANNULEE",
+] as const;
 
 export type TypeDocumentConvention =
   | "CONVENTION_CONTRAT"
@@ -795,12 +797,13 @@ export interface CreateMarcheRequest {
   statut?: StatutMarche;
 }
 
-export const MARCHE_STATUT_LABELS: Record<StatutMarche, string> = {
-  EN_COURS: "En cours",
-  AVENANT: "Avenant",
-  CLOTURE: "Clôturé",
-  ANNULE: "Annulé",
-};
+/**
+ * Valeurs ordonnées de StatutMarche pour les filtres / dropdowns.
+ * Libellés via `tStatutMarche(code)` (cf. `enums.statut_marche.*`).
+ */
+export const MARCHE_STATUT_VALUES: readonly StatutMarche[] = [
+  "EN_COURS", "AVENANT", "CLOTURE", "ANNULE",
+] as const;
 
 export type TypeDocumentMarche =
   | "PV_ADJUDICATION"
@@ -1421,28 +1424,16 @@ export const auditLogApi = {
   },
 };
 
-// Statut labels
-export const DEMANDE_STATUT_LABELS: Record<DemandeStatut, string> = {
-  BROUILLON: "Brouillon",
-  RECUE: "Reçue", INCOMPLETE: "Incomplète", RECEVABLE: "Recevable",
-  EN_EVALUATION: "En évaluation", EN_VALIDATION: "En validation",
-  ADOPTEE: "Adoptée", REJETEE: "Rejetée", NOTIFIEE: "Notifiée", ANNULEE: "Annulée",
-};
+// Statut value arrays (i18n via helpers tStatutDemande / tStatutCertificat — cf. `enums.json`)
+// DEMANDE_STATUT_LABELS supprimée (orpheline). Si besoin d'un dropdown, utiliser :
+//   const DEMANDE_STATUT_VALUES: readonly DemandeStatut[] = [...] + tStatutDemande(code).
 
-export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
-  BROUILLON: "Brouillon",
-  ENVOYEE: "Envoyée",
-  DEMANDE: "Demandé",
-  EN_CONTROLE: "En contrôle",
-  INCOMPLETE: "Incomplète",
-  A_RECONTROLER: "À recontrôler",
-  EN_VERIFICATION_DGI: "En vérification DGI",
-  EN_VALIDATION_PRESIDENT: "En validation Président",
-  VALIDE_PRESIDENT: "Validé Président",
-  EN_OUVERTURE_DGTCP: "En ouverture DGTCP",
-  OUVERT: "Ouvert",
-  MODIFIE: "Modifié", CLOTURE: "Clôturé", ANNULE: "Annulé",
-};
+export const CERTIFICAT_STATUT_VALUES: readonly CertificatStatut[] = [
+  "BROUILLON", "ENVOYEE", "DEMANDE", "EN_CONTROLE", "INCOMPLETE",
+  "A_RECONTROLER", "EN_VERIFICATION_DGI", "EN_VALIDATION_PRESIDENT",
+  "VALIDE_PRESIDENT", "EN_OUVERTURE_DGTCP", "OUVERT",
+  "MODIFIE", "CLOTURE", "ANNULE",
+] as const;
 
 /**
  * Valeurs ordonnées de UtilisationStatut pour les filtres / dropdowns.
@@ -1597,16 +1588,8 @@ export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
 ] as const;
 
 
-export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
-  DEMANDE: "Demandé",
-  EN_COURS: "En cours (pièces déposées)",
-  VALIDE: "Ancien / réservé",
-  INCOMPLETE: "Incomplète (rejet temp.)",
-  A_RECONTROLER: "À recontrôler",
-  TRANSFERE: "Transféré",
-  REJETE: "Rejeté",
-  ANNULEE: "Annulée",
-};
+// TRANSFERT_STATUT_LABELS supprimée (orpheline, détectée en POLISH-1).
+// Libellés via `tStatutTransfert(code)` (cf. `enums.statut_transfert.*`).
 
 export const transfertCreditApi = {
   getAll: () => apiFetch<TransfertCreditDto[]>("/transferts-credit"),

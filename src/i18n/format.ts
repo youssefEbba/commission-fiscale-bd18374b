@@ -50,10 +50,25 @@ export function formatAmount(
   }
 }
 
-export function formatNumber(n: number | string | null | undefined): string {
+export interface FormatNumberOptions {
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+  /** Renvoie "0" pour les valeurs proches de zéro selon l'epsilon (utile pour la simulation fiscale). */
+  zeroEpsilon?: number;
+}
+
+export function formatNumber(
+  n: number | string | null | undefined,
+  { minimumFractionDigits, maximumFractionDigits, zeroEpsilon }: FormatNumberOptions = {},
+): string {
   const v = typeof n === "string" ? Number(n) : n;
   if (v == null || Number.isNaN(v as number)) return "0";
-  return new Intl.NumberFormat(locale(), { numberingSystem: "latn" }).format(v as number);
+  if (zeroEpsilon != null && Math.abs(v as number) < zeroEpsilon) return "0";
+  return new Intl.NumberFormat(locale(), {
+    numberingSystem: "latn",
+    ...(minimumFractionDigits != null ? { minimumFractionDigits } : {}),
+    ...(maximumFractionDigits != null ? { maximumFractionDigits } : {}),
+  }).format(v as number);
 }
 
 /**

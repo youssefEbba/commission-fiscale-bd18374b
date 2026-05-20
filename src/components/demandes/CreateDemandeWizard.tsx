@@ -751,7 +751,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         className="h-6 text-xs text-primary"
                         onClick={() => setShowCreateEntreprise(!showCreateEntreprise)}
                       >
-                        <Plus className="h-3 w-3 mr-1" />
+                        <Plus className="h-3 w-3 me-1" />
                         {showCreateEntreprise ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                       </Button>
                     </Label>
@@ -767,7 +767,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             {selectedEntreprise
                               ? t("demandes:wizard.fields.entreprise_label_value", { name: selectedEntreprise.raisonSociale, nif: selectedEntreprise.nif })
                               : t("demandes:wizard.fields.entreprise_search_placeholder")}
-                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <Search className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
@@ -785,7 +785,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                       setEntrepriseOpen(false);
                                     }}
                                   >
-                                    <Check className={`mr-2 h-4 w-4 ${entrepriseId === String(e.id) ? "opacity-100" : "opacity-0"}`} />
+                                    <Check className={`me-2 h-4 w-4 ${entrepriseId === String(e.id) ? "opacity-100" : "opacity-0"}`} />
                                     {t("demandes:wizard.fields.entreprise_label_value", { name: e.raisonSociale, nif: e.nif })}
                                   </CommandItem>
                                 ))}
@@ -853,7 +853,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             onClick={handleCreateEntreprise}
                             disabled={creatingEntreprise || !newEntreprise.raisonSociale || newEntreprise.nif.length !== 8}
                           >
-                            {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                            {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                             {t("demandes:wizard.fields.create_entreprise")}
                           </Button>
                         </CardContent>
@@ -872,7 +872,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         className="h-6 text-xs text-primary"
                         onClick={() => { setShowCreateMarche(!showCreateMarche); if (showCreateMarche) { setShowCreateConvention(false); } }}
                       >
-                        <Plus className="h-3 w-3 mr-1" />
+                        <Plus className="h-3 w-3 me-1" />
                         {showCreateMarche ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                       </Button>
                     </Label>
@@ -944,7 +944,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 className="h-5 text-xs text-primary p-0"
                                 onClick={() => setShowCreateConvention(!showCreateConvention)}
                               >
-                                <Plus className="h-3 w-3 mr-0.5" />
+                                <Plus className="h-3 w-3 me-0.5" />
                                 {showCreateConvention ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                               </Button>
                             </Label>
@@ -977,7 +977,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                   <Label className="text-xs text-muted-foreground flex items-center justify-between">
                                     <span>{t("demandes:wizard.fields.bailleur")}</span>
                                     <Button type="button" variant="ghost" size="sm" className="h-5 text-xs text-primary p-0" onClick={() => setShowCreateBailleur(!showCreateBailleur)}>
-                                      <Plus className="h-3 w-3 mr-0.5" />
+                                      <Plus className="h-3 w-3 me-0.5" />
                                       {showCreateBailleur ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.add_short")}
                                     </Button>
                                   </Label>
@@ -1151,7 +1151,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         </div>
                                         {convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length >= 2 ? (
                                           <Button type="button" variant="outline" size="sm" className="w-full" onClick={convMergeCreateDocs} disabled={convMerging}>
-                                            {convMerging ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Merge className="h-3 w-3 mr-1" />}
+                                            {convMerging ? <Loader2 className="h-3 w-3 animate-spin me-1" /> : <Merge className="h-3 w-3 me-1" />}
                                             {t("demandes:wizard.inline.fusion_btn", { count: convCreateDocs.filter(d => d.file.name.toLowerCase().endsWith(".pdf")).length })}
                                           </Button>
                                         ) : (
@@ -1169,7 +1169,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                   onClick={handleCreateConvention}
                                   disabled={creatingConvention || !newConvForm.reference || !newConvForm.intitule}
                                 >
-                                  {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                                  {creatingConvention ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                                   {t("demandes:wizard.fields.create_convention")}
                                 </Button>
                               </div>
@@ -1216,7 +1216,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 onClick={handleCreateMarche}
                                 disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature}
                               >
-                                {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                                {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                                 {t("demandes:wizard.fields.create_marche")}
                               </Button>
                             </>
@@ -1254,7 +1254,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           )}
                           <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
                             {tTypeDocument(dt.typeDocument)}
-                            {dt.obligatoire && <span className="text-destructive ml-1">*</span>}
+                            {dt.obligatoire && <span className="text-destructive ms-1">*</span>}
                             {dt.description && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -1337,7 +1337,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_importations")}</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => setImportations(prev => [...prev, emptyImportation()])}>
-                    <Plus className="h-3 w-3 mr-1" /> {t("demandes:wizard.modele_fiscal.add_line")}
+                    <Plus className="h-3 w-3 me-1" /> {t("demandes:wizard.modele_fiscal.add_line")}
                   </Button>
                 </div>
               </CardHeader>
@@ -1355,10 +1355,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.rs_pct")}</TableHead>
                         <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.psc_pct")}</TableHead>
                         <TableHead className="text-xs w-16">{t("demandes:wizard.modele_fiscal.imp_cols.tva_pct")}</TableHead>
-                        <TableHead className="text-xs w-24 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.val_douane")}</TableHead>
-                        <TableHead className="text-xs w-20 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.dd")}</TableHead>
-                        <TableHead className="text-xs w-20 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.tva_douane")}</TableHead>
-                        <TableHead className="text-xs w-24 text-right">{t("demandes:wizard.modele_fiscal.imp_cols.total_taxes")}</TableHead>
+                        <TableHead className="text-xs w-24 text-end">{t("demandes:wizard.modele_fiscal.imp_cols.val_douane")}</TableHead>
+                        <TableHead className="text-xs w-20 text-end">{t("demandes:wizard.modele_fiscal.imp_cols.dd")}</TableHead>
+                        <TableHead className="text-xs w-20 text-end">{t("demandes:wizard.modele_fiscal.imp_cols.tva_douane")}</TableHead>
+                        <TableHead className="text-xs w-24 text-end">{t("demandes:wizard.modele_fiscal.imp_cols.total_taxes")}</TableHead>
                         <TableHead className="w-8" />
                       </TableRow>
                     </TableHeader>
@@ -1374,10 +1374,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxRS} onChange={e => updateImportation(i, "tauxRS", e.target.value)} /></TableCell>
                           <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxPSC} onChange={e => updateImportation(i, "tauxPSC", e.target.value)} /></TableCell>
                           <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxTVA} onChange={e => updateImportation(i, "tauxTVA", e.target.value)} /></TableCell>
-                          <TableCell className="text-right text-xs">{fmt(l.valeurDouane)}</TableCell>
-                          <TableCell className="text-right text-xs">{fmt(l.dd)}</TableCell>
-                          <TableCell className="text-right text-xs">{fmt(l.tvaDouane)}</TableCell>
-                          <TableCell className="text-right text-xs font-semibold">{fmt(l.totalTaxes)}</TableCell>
+                          <TableCell className="text-end text-xs">{fmt(l.valeurDouane)}</TableCell>
+                          <TableCell className="text-end text-xs">{fmt(l.dd)}</TableCell>
+                          <TableCell className="text-end text-xs">{fmt(l.tvaDouane)}</TableCell>
+                          <TableCell className="text-end text-xs font-semibold">{fmt(l.totalTaxes)}</TableCell>
                           <TableCell>
                             {importations.length > 1 && (
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setImportations(prev => prev.filter((_, j) => j !== i))}>
@@ -1490,7 +1490,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
                 <div className="flex justify-end">
                   <Button variant="outline" size="sm" onClick={() => setDqeLignes(prev => [...prev, emptyDqeLigne()])}>
-                    <Plus className="h-3 w-3 mr-1" /> {t("demandes:wizard.dqe_form.add_line")}
+                    <Plus className="h-3 w-3 me-1" /> {t("demandes:wizard.dqe_form.add_line")}
                   </Button>
                 </div>
 
@@ -1501,7 +1501,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <TableHead className="text-xs w-20">{t("demandes:wizard.dqe_form.cols.unite")}</TableHead>
                       <TableHead className="text-xs w-24">{t("demandes:wizard.dqe_form.cols.quantite")}</TableHead>
                       <TableHead className="text-xs w-24">{t("demandes:wizard.dqe_form.cols.pu_ht")}</TableHead>
-                      <TableHead className="text-xs w-28 text-right">{t("demandes:wizard.dqe_form.cols.montant_ht")}</TableHead>
+                      <TableHead className="text-xs w-28 text-end">{t("demandes:wizard.dqe_form.cols.montant_ht")}</TableHead>
                       <TableHead className="w-8" />
                     </TableRow>
                   </TableHeader>
@@ -1512,7 +1512,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         <TableCell><Input className="h-7 text-xs" value={l.unite} onChange={e => updateDqeLigne(i, "unite", e.target.value)} /></TableCell>
                         <TableCell><Input className="h-7 text-xs" type="number" value={l.quantite || ""} onChange={e => updateDqeLigne(i, "quantite", e.target.value)} /></TableCell>
                         <TableCell><Input className="h-7 text-xs" type="number" value={l.prixUnitaireHT || ""} onChange={e => updateDqeLigne(i, "prixUnitaireHT", e.target.value)} /></TableCell>
-                        <TableCell className="text-right text-xs font-semibold">{fmt(l.montantHT)}</TableCell>
+                        <TableCell className="text-end text-xs font-semibold">{fmt(l.montantHT)}</TableCell>
                         <TableCell>
                           {dqeLignes.length > 1 && (
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setDqeLignes(prev => prev.filter((_, j) => j !== i))}>
@@ -1559,12 +1559,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     disabled={savingDraft || submitting || !entrepriseId}
                     title={t("demandes:wizard.actions.save_draft_tooltip")}
                   >
-                    {savingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
+                    {savingDraft ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <FileText className="h-4 w-4 me-1" />}
                     {t("demandes:wizard.actions.save_draft")}
                   </Button>
                 )}
                 <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Send className="h-4 w-4 me-1" />}
                   {isEditing ? t("demandes:wizard.actions.submit") : t("demandes:wizard.actions.submit_full")}
                 </Button>
               </>
@@ -1598,7 +1598,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
             } finally { setAddingDevise(false); }
           }}>
-            {addingDevise ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+            {addingDevise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
             {t("demandes:wizard.actions.add_short")}
           </Button>
         </DialogFooter>

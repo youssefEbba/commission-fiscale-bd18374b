@@ -84,6 +84,7 @@ function _below1000(n: number): string {
   }
   return s;
 }
+// i18n-intentional: montant en lettres pour document officiel PDF (français uniquement, exigence légale).
 function numberToFrenchWords(n: number): string {
   if (!isFinite(n)) return "";
   const entier = Math.floor(Math.abs(n));
@@ -575,7 +576,7 @@ const UtilisationDetail = () => {
           )}
 
           {cert && (
-            <Card className="border-l-4 border-l-primary">
+            <Card className="border-s-4 border-s-primary">
               <CardContent className="pt-6">
                 <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.soldes_cert")}</p>
                 <div className="text-sm space-y-1 mt-1">
@@ -719,7 +720,7 @@ const UtilisationDetail = () => {
 
         {/* Chèque */}
         {isDouane && u.numeroCheque && (
-          <Card className="border-l-4 border-l-indigo-500">
+          <Card className="border-s-4 border-s-indigo-500">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> {t("utilisations:cheque.title")}</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -734,7 +735,7 @@ const UtilisationDetail = () => {
 
         {/* Quittances */}
         {isDouane && u.quittances && u.quittances.length > 0 && (
-          <Card className="border-l-4 border-l-teal-500">
+          <Card className="border-s-4 border-s-teal-500">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-5 w-5 text-teal-500" />
@@ -781,7 +782,7 @@ const UtilisationDetail = () => {
 
         {/* Traçabilité Liquidation Douane */}
         {isDouane && u.statut === "LIQUIDEE" && u.soldeCordonAvant != null && (
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-s-4 border-s-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>
               <Button size="sm" variant="outline" onClick={() => generateLiquidationPdf(u, cert)}>
@@ -801,7 +802,7 @@ const UtilisationDetail = () => {
 
         {/* Traçabilité Apurement TVA */}
         {isTVA && u.statut === "APUREE" && u.tvaNette != null && (
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card className="border-s-4 border-s-emerald-500">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><CircleDollarSign className="h-5 w-5 text-emerald-500" /> {t("utilisations:traceability_apur.title")}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
