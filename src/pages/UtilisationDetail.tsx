@@ -54,7 +54,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
 };
 
-const fmtAmt = (v: any) => formatAmount(v, { currency: "MRU" });
+const fmtAmt = (v: any) => formatAmount(v, { currency: "MRU", maximumFractionDigits: 2 });
 const fmtNum = (v: any) => (v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("fr-FR"));
 
 // Conversion d'un nombre en lettres (français) — usage bulletin de liquidation.
