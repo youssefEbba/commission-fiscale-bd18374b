@@ -928,15 +928,15 @@ const Utilisations = () => {
                             {t("utilisations:create.douane.affectation_hint")}
                           </p>
                           <div className={`text-end text-xs pt-1 border-t ${mismatch ? "text-destructive font-semibold" : ""}`}>
-                            {t("utilisations:create.douane.total")} : <strong>{fmtAmt(totalLignes)}</strong>
+                            {t("utilisations:create.douane.total")} : <strong>{formatAmount(totalLignes, { maximumFractionDigits: 2 })}</strong>
                             {form.montant !== undefined && form.montant !== null && (
-                              <> &nbsp;|&nbsp; {t("utilisations:create.douane.amount_typed")} : <strong>{fmtAmt(montantSaisi)}</strong></>
+                              <> &nbsp;|&nbsp; {t("utilisations:create.douane.amount_typed")} : <strong>{formatAmount(montantSaisi, { maximumFractionDigits: 2 })}</strong></>
                             )}
                           </div>
                           {mismatch && (
                             <div className="flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10 text-xs text-destructive">
                               <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                              <span>{t("utilisations:create.douane.mismatch", { total: fmtAmt(totalLignes), amount: fmtAmt(montantSaisi) })}</span>
+                              <span>{t("utilisations:create.douane.mismatch", { total: formatAmount(totalLignes, { maximumFractionDigits: 2 }), amount: formatAmount(montantSaisi, { maximumFractionDigits: 2 }) })}</span>
                             </div>
                           )}
                         </div>
