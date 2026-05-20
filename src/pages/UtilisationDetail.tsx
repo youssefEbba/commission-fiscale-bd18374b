@@ -84,6 +84,7 @@ function _below1000(n: number): string {
   }
   return s;
 }
+// i18n-intentional: montant en lettres pour document officiel PDF (français uniquement, exigence légale).
 function numberToFrenchWords(n: number): string {
   if (!isFinite(n)) return "";
   const entier = Math.floor(Math.abs(n));
