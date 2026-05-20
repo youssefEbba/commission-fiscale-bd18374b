@@ -1417,7 +1417,7 @@ const UtilisationDetail = () => {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Documents demandés ({respondDecision.documentsDemandes.length})</Label>
                 {respondDecision.documentsDemandes.map(dt => {
-                  const docLabel = UTILISATION_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ");
+                  const docLabel = tTypeDocument(dt) || dt.replace(/_/g, " ");
                   const file = responseFiles[dt];
                   return (
                     <div key={dt} className="p-3 rounded-lg border space-y-1.5">
