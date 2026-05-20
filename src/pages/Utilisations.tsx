@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -9,12 +10,15 @@ import {
   UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
   TypeDocumentUtilisation, DocumentDto,
   documentRequirementApi, DocumentRequirementDto,
-  DecisionCorrectionDto, DecisionType,
+  DecisionCorrectionDto,
   transfertCreditApi,
   LigneBulletinRequest, TypeLigneTaxe,
   referentielTaxeApi, ReferentielTaxeDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { tStatutUtilisation, tTypeDocument } from "@/i18n/enums";
+import { formatAmount, formatDate, formatNumber } from "@/i18n/format";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -27,7 +31,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save } from "lucide-react";
@@ -52,35 +55,6 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
 };
 
-// Type-aware transitions: DGD handles Douane, DGTCP handles TVA + Douane final steps
-const getTransitions = (role: string, type?: UtilisationType): { from: UtilisationStatut[]; to: UtilisationStatut; label: string }[] => {
-  if (role === "DGD") {
-    if (type !== "DOUANIER") return [];
-    return [
-      { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
-      { from: ["EN_VERIFICATION"], to: "VISE", label: "Viser" },
-      { from: ["DEMANDEE", "EN_VERIFICATION"], to: "REJETEE", label: "Rejeter" },
-    ];
-  }
-    if (role === "DGTCP") {
-    if (type === "DOUANIER") {
-      return [
-        { from: ["VISE"], to: "LIQUIDEE", label: "Liquider" },
-        { from: ["VISE"], to: "REJETEE", label: "Rejeter" },
-      ];
-    }
-    if (type === "TVA_INTERIEURE") {
-      return [
-        { from: ["DEMANDEE"], to: "EN_VERIFICATION", label: "Vérifier" },
-        { from: ["EN_VERIFICATION"], to: "VALIDEE", label: "Valider" },
-        { from: ["VALIDEE"], to: "APUREE", label: "Apurer" },
-        { from: ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"], to: "REJETEE", label: "Rejeter" },
-      ];
-    }
-  }
-  return [];
-};
-
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
   type: "DOUANIER", montant: undefined, numeroDeclaration: "", numeroBulletin: "",
   dateDeclaration: "", lignes: [], enregistreeSYDONIA: false,
@@ -91,22 +65,8 @@ const emptyTVA: Partial<CreateUtilisationCreditRequest> = {
   dateFacture: "", montantTVAInterieure: undefined, numeroDecompte: "",
 };
 
-// Catalogue des codes de taxes du bulletin de liquidation (Douanes MR)
-// Sélectionner un code pré-remplit le libellé ; tout reste éditable.
-const TAX_CODES_CATALOG: { code: string; libelle: string; type: TypeLigneTaxe }[] = [
-  // Taxes globales
-  { code: "TTI", libelle: "Taxe sur Tonnage Importé", type: "GLOBALE" },
-  { code: "RIF", libelle: "Redevance informatique", type: "GLOBALE" },
-  // Taxes article
-  { code: "DD",  libelle: "Droit de Douane", type: "ARTICLE" },
-  { code: "PSC", libelle: "Promotion Sports et Culture", type: "ARTICLE" },
-  { code: "RS",  libelle: "Redevance Statistique", type: "ARTICLE" },
-  { code: "PC",  libelle: "Prélèvement Communautaire", type: "ARTICLE" },
-  { code: "IMF", libelle: "Impôt minimum forfaitaire", type: "ARTICLE" },
-  { code: "TVA", libelle: "Taxe sur valeur ajoutée", type: "ARTICLE" },
-];
-
 // Lignes par défaut suggérées pour un bulletin de liquidation douanier
+// (libellés sources métier — non destinés à l'affichage : le label provient du référentiel API à l'affichage)
 const DEFAULT_BULLETIN_LIGNES: LigneBulletinRequest[] = [
   { codeTaxe: "DD", denominationTaxe: "Droit de Douane", typeLigne: "ARTICLE", valeurTaxe: 0, ordre: 1 },
   { codeTaxe: "TVA", denominationTaxe: "Taxe sur valeur ajoutée", typeLigne: "ARTICLE", valeurTaxe: 0, ordre: 2 },
@@ -117,6 +77,16 @@ const Utilisations = () => {
   const role = user?.role as AppRole;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation(["utilisations", "common", "errors"]);
+  // Libellé contextualisé (CLOTUREE+DOUANIER = "Clôturée (transfert)"). Localisé via i18n.
+  const tStatutContextuel = (statut: UtilisationStatut, type?: UtilisationType): string => {
+    if (statut === "CLOTUREE" && type === "DOUANIER") return t("utilisations:statut.cloturee_transfert");
+    return tStatutUtilisation(statut);
+  };
+  const titleKey = `utilisations:list.title_by_role.${role}`;
+  const pageTitleLabel = role ? (t(titleKey, { defaultValue: "" }) || t("utilisations:list.title")) : t("utilisations:list.title");
+  usePageTitle("utilisations:list.title");
+
   const [data, setData] = useState<UtilisationCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -124,7 +94,7 @@ const Utilisations = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [tab, setTab] = useState("all");
 
-  // Create / edit dialog (brouillon ou soumission)
+  // Create / edit dialog
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [createType, setCreateType] = useState<UtilisationType>("DOUANIER");
@@ -135,13 +105,10 @@ const Utilisations = () => {
   const [deletingTarget, setDeletingTarget] = useState<UtilisationCreditDto | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
-  // Detail dialog
+  // Detail dialog (code mort actuellement — pas de setSelected, conservé pour parité)
   const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
 
-  // (Liquidation Douane est désormais gérée dans la page Détail — décision par ligne)
-
-
-  // Apurement TVA dialog
+  // Apurement TVA dialog (code mort — pas de setApurementTarget, conservé pour parité)
   const [apurementTarget, setApurementTarget] = useState<UtilisationCreditDto | null>(null);
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
@@ -170,14 +137,14 @@ const Utilisations = () => {
   // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
   const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
 
-  // Référentiel des taxes (admin-managed) — source de vérité pour les lignes du bulletin
+  // Référentiel des taxes (admin-managed)
   const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
   const [referentielTaxesLoading, setReferentielTaxesLoading] = useState(false);
-  // Dialog "Ajouter taxe au référentiel"
   const [showAddTaxe, setShowAddTaxe] = useState(false);
   const [newTaxeCode, setNewTaxeCode] = useState("");
   const [newTaxeLibelle, setNewTaxeLibelle] = useState("");
   const [addingTaxe, setAddingTaxe] = useState(false);
+
   const loadReferentielTaxes = async (): Promise<ReferentielTaxeDto[]> => {
     setReferentielTaxesLoading(true);
     try {
@@ -186,7 +153,6 @@ const Utilisations = () => {
       setReferentielTaxes(sorted);
       return sorted;
     } catch {
-      // fallback silencieux : le formulaire reste utilisable en saisie libre
       return [];
     } finally {
       setReferentielTaxesLoading(false);
@@ -194,53 +160,50 @@ const Utilisations = () => {
   };
   useEffect(() => { void loadReferentielTaxes(); }, []);
 
-  // Ajouter une nouvelle taxe au référentiel (back-end), puis rafraîchir le tableau
   const handleAddTaxe = async () => {
     const code = newTaxeCode.trim().toUpperCase();
     const libelle = newTaxeLibelle.trim();
     if (!code || !libelle) {
-      toast({ title: "Champs requis", description: "Code et libellé sont obligatoires", variant: "destructive" });
+      toast({ title: t("utilisations:toast.fields_required"), description: t("utilisations:create.add_taxe.code_libelle_required"), variant: "destructive" });
       return;
     }
     setAddingTaxe(true);
     try {
       await referentielTaxeApi.create({ codeTaxe: code, denominationTaxe: libelle, active: true });
       const taxes = await loadReferentielTaxes();
-      // Mettre à jour les lignes du formulaire avec le nouveau référentiel (préserver les valeurs saisies)
       const currentValues = new Map((form.lignes || []).map(l => [l.codeTaxe, l.valeurTaxe]));
-      const nextLignes: LigneBulletinRequest[] = taxes.map((t, i) => ({
-        codeTaxe: t.codeTaxe,
-        denominationTaxe: t.denominationTaxe,
+      const nextLignes: LigneBulletinRequest[] = taxes.map((tx, i) => ({
+        codeTaxe: tx.codeTaxe,
+        denominationTaxe: tx.denominationTaxe,
         typeLigne: "ARTICLE" as TypeLigneTaxe,
-        valeurTaxe: currentValues.get(t.codeTaxe) ?? 0,
-        ordre: t.ordreAffichage ?? i + 1,
+        valeurTaxe: currentValues.get(tx.codeTaxe) ?? 0,
+        ordre: tx.ordreAffichage ?? i + 1,
       }));
       setForm({ ...form, lignes: nextLignes });
-      toast({ title: "Succès", description: "Taxe ajoutée au référentiel" });
+      toast({ title: t("utilisations:toast.tax_added_title"), description: t("utilisations:toast.tax_added_desc") });
       setShowAddTaxe(false);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Impossible d'ajouter la taxe", variant: "destructive" });
+      toast({ title: t("common:errors.title", { defaultValue: "Erreur" }), description: e.message || t("utilisations:toast.tax_add_failed"), variant: "destructive" });
     } finally {
       setAddingTaxe(false);
     }
   };
 
-  // Construit les lignes par défaut à partir du référentiel chargé
   const buildDefaultLignesFromReferentiel = (taxes: ReferentielTaxeDto[]): LigneBulletinRequest[] => {
     if (!taxes || taxes.length === 0) return DEFAULT_BULLETIN_LIGNES.map(l => ({ ...l }));
-    return taxes.map((t, i) => ({
-      codeTaxe: t.codeTaxe,
-      denominationTaxe: t.denominationTaxe,
+    return taxes.map((tx, i) => ({
+      codeTaxe: tx.codeTaxe,
+      denominationTaxe: tx.denominationTaxe,
       typeLigne: "ARTICLE" as TypeLigneTaxe,
       valeurTaxe: 0,
-      ordre: t.ordreAffichage ?? i + 1,
+      ordre: tx.ordreAffichage ?? i + 1,
     }));
   };
 
   const fetchData = async () => {
     setLoading(true);
     try { setData(await utilisationCreditApi.getAll()); }
-    catch { toast({ title: "Erreur", description: "Impossible de charger les utilisations", variant: "destructive" }); }
+    catch { toast({ title: t("common:errors.title", { defaultValue: "Erreur" }), description: t("utilisations:list.load_error"), variant: "destructive" }); }
     finally { setLoading(false); }
   };
 
@@ -248,11 +211,11 @@ const Utilisations = () => {
     try {
       const all = await transfertCreditApi.getAll();
       const ids = new Set(
-        all.filter((t) => t.statut === "TRANSFERE").map((t) => t.certificatCreditId)
+        all.filter((tr) => tr.statut === "TRANSFERE").map((tr) => tr.certificatCreditId)
       );
       setTransferredCertIds(ids);
     } catch {
-      // silencieux : on garde la set vide, le back protège in fine
+      // silencieux
     }
   };
 
@@ -268,12 +231,11 @@ const Utilisations = () => {
         documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR").catch(() => []),
       ]);
       setCertificats(certs);
-      // Use backend requirements if available, otherwise build fallback from doc type constants
       if (extReqs.length > 0 || intReqs.length > 0) {
         const allReqs = [...extReqs, ...intReqs].map(r => ({
           ...r,
           processus: r.processus === "UTILISATION_CI"
-            ? (UTILISATION_DOC_TYPES_TVA.some(dt => dt.value === r.typeDocument && !UTILISATION_DOC_TYPES_DOUANE.some(dd => dd.value === r.typeDocument))
+            ? (UTILISATION_DOC_TYPES_TVA.some(v => v === r.typeDocument && !UTILISATION_DOC_TYPES_DOUANE.some(d => d === r.typeDocument))
               ? "UTILISATION_CI_INTERIEUR" as const
               : "UTILISATION_CI_EXTERIEUR" as const)
             : r.processus,
@@ -283,20 +245,20 @@ const Utilisations = () => {
         const fallbackExt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_DOUANE.map((dt, i) => ({
           id: -(i + 1),
           processus: "UTILISATION_CI_EXTERIEUR" as const,
-          typeDocument: dt.value,
-          obligatoire: dt.value === "DEMANDE_UTILISATION",
+          typeDocument: dt,
+          obligatoire: dt === "DEMANDE_UTILISATION",
           typesAutorises: ["PDF" as const, "IMAGE" as const, "WORD" as const, "EXCEL" as const],
           ordreAffichage: i,
-          description: dt.label,
+          description: tTypeDocument(dt),
         }));
         const fallbackInt: DocumentRequirementDto[] = UTILISATION_DOC_TYPES_TVA.map((dt, i) => ({
           id: -(100 + i),
           processus: "UTILISATION_CI_INTERIEUR" as const,
-          typeDocument: dt.value,
-          obligatoire: dt.value === "DEMANDE_UTILISATION",
+          typeDocument: dt,
+          obligatoire: dt === "DEMANDE_UTILISATION",
           typesAutorises: ["PDF" as const, "IMAGE" as const, "WORD" as const, "EXCEL" as const],
           ordreAffichage: i,
-          description: dt.label,
+          description: tTypeDocument(dt),
         }));
         setGedRequirements([...fallbackExt, ...fallbackInt]);
       }
@@ -320,13 +282,11 @@ const Utilisations = () => {
   const openEditBrouillon = async (u: UtilisationCreditDto) => {
     setEditingId(u.id);
     setCreateType(u.type);
-    // Pré-remplir le formulaire à partir du DTO existant
     setForm({
       type: u.type,
       certificatCreditId: u.certificatCreditId,
       entrepriseId: u.entrepriseId,
       montant: u.montant,
-      // Douane
       numeroDeclaration: u.numeroDeclaration,
       numeroBulletin: u.numeroBulletin,
       dateDeclaration: u.dateDeclaration ? u.dateDeclaration.substring(0, 10) : "",
@@ -334,7 +294,6 @@ const Utilisations = () => {
         ? u.lignes.map(l => ({ id: l.id, codeTaxe: l.code, denominationTaxe: l.libelle, typeLigne: l.type, valeurTaxe: l.valeur, ordre: l.ordre }))
         : [],
       enregistreeSYDONIA: u.enregistreeSYDONIA ?? false,
-      // TVA
       typeAchat: u.typeAchat,
       numeroFacture: u.numeroFacture,
       dateFacture: u.dateFacture ? u.dateFacture.substring(0, 10) : "",
@@ -346,10 +305,10 @@ const Utilisations = () => {
     setShowCreate(true);
   };
 
-  const handleCreateTypeChange = (t: UtilisationType) => {
-    setCreateType(t);
-    const base = t === "DOUANIER" ? emptyDouane : emptyTVA;
-    const lignes = t === "DOUANIER" ? buildDefaultLignesFromReferentiel(referentielTaxes) : [];
+  const handleCreateTypeChange = (typeVal: UtilisationType) => {
+    setCreateType(typeVal);
+    const base = typeVal === "DOUANIER" ? emptyDouane : emptyTVA;
+    const lignes = typeVal === "DOUANIER" ? buildDefaultLignesFromReferentiel(referentielTaxes) : [];
     setForm({ ...base, lignes, certificatCreditId: form.certificatCreditId, entrepriseId: form.entrepriseId });
     setCreateDocFiles({});
   };
@@ -363,26 +322,21 @@ const Utilisations = () => {
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
-
   const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
     return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
   };
 
-  /**
-   * @param mode "brouillon" => sauvegarde sans contrôles ;
-   *             "submit" => création/édition + soumission immédiate (DEMANDEE).
-   */
+  const errorTitle = () => t("common:errors.title", { defaultValue: "Erreur" });
+
   const handleSave = async (mode: "brouillon" | "submit") => {
     if (!form.certificatCreditId) {
-      toast({ title: "Erreur", description: "Certificat requis", variant: "destructive" });
+      toast({ title: errorTitle(), description: t("utilisations:toast.cert_required"), variant: "destructive" });
       return;
     }
-    // Garde-fou : utilisations DOUANIERES interdites après transfert exécuté
     if (createType === "DOUANIER" && transferredCertIds.has(form.certificatCreditId)) {
       toast({
-        title: "Action bloquée",
-        description:
-          "Un transfert a déjà été exécuté sur ce certificat. Aucune nouvelle utilisation douanière (ni création ni soumission de brouillon) n'est possible. Les utilisations TVA intérieure restent autorisées.",
+        title: t("utilisations:toast.douane_blocked_title"),
+        description: t("utilisations:toast.douane_blocked_desc"),
         variant: "destructive",
       });
       return;
@@ -391,8 +345,8 @@ const Utilisations = () => {
       const missing = getMissingObligatoryDocs();
       if (missing.length > 0) {
         toast({
-          title: "Documents manquants",
-          description: `Veuillez joindre : ${missing.map((m) => formatDocLabel(m.typeDocument)).join(", ")}`,
+          title: t("utilisations:toast.missing_docs_title"),
+          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => tTypeDocument(m.typeDocument)).join(", ") }),
           variant: "destructive",
         });
         return;
@@ -410,7 +364,6 @@ const Utilisations = () => {
 
       let target: UtilisationCreditDto;
       if (editingId != null) {
-        // Édition d'un existant (brouillon ou DEMANDEE) — type immutable côté back
         target = await utilisationCreditApi.update(editingId, sanitized as CreateUtilisationCreditRequest);
       } else {
         const payload: CreateUtilisationCreditRequest = {
@@ -425,25 +378,22 @@ const Utilisations = () => {
         await utilisationCreditApi.uploadDocument(target.id, type as TypeDocumentUtilisation, file);
       }
 
-      // Si édition d'un brouillon + clic « Soumettre » => soumettre maintenant
       if (mode === "submit" && editingId != null && target.statut === "BROUILLON") {
         await utilisationCreditApi.soumettre(target.id);
       }
 
-      toast({
-        title: "Succès",
-        description:
-          mode === "brouillon"
-            ? "Brouillon enregistré"
-            : editingId != null
-              ? "Utilisation soumise"
-              : `Utilisation créée${uploadEntries.length ? ` avec ${uploadEntries.length} document(s)` : ""}`,
-      });
+      let description: string;
+      if (mode === "brouillon") description = t("utilisations:toast.draft_saved");
+      else if (editingId != null) description = t("utilisations:toast.submitted");
+      else if (uploadEntries.length > 0) description = t("utilisations:toast.created_with_docs", { count: uploadEntries.length });
+      else description = t("utilisations:toast.created");
+
+      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description });
       setShowCreate(false);
       setEditingId(null);
       fetchData();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
     } finally {
       setCreating(false);
     }
@@ -452,9 +402,8 @@ const Utilisations = () => {
   const handleSoumettreFromList = async (u: UtilisationCreditDto) => {
     if (u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId)) {
       toast({
-        title: "Soumission bloquée",
-        description:
-          "Un transfert a déjà été exécuté sur ce certificat. Aucune utilisation douanière ne peut plus être soumise.",
+        title: t("utilisations:toast.submit_blocked_title"),
+        description: t("utilisations:toast.submit_blocked_desc"),
         variant: "destructive",
       });
       return;
@@ -462,10 +411,10 @@ const Utilisations = () => {
     setSubmittingId(u.id);
     try {
       await utilisationCreditApi.soumettre(u.id);
-      toast({ title: "Succès", description: "Utilisation soumise" });
+      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.submitted") });
       fetchData();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
     } finally {
       setSubmittingId(null);
     }
@@ -476,24 +425,26 @@ const Utilisations = () => {
     setDeletingLoading(true);
     try {
       await utilisationCreditApi.remove(deletingTarget.id);
-      toast({ title: "Succès", description: "Brouillon supprimé" });
+      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.draft_deleted") });
       setDeletingTarget(null);
       fetchData();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
     } finally {
       setDeletingLoading(false);
     }
   };
 
+  // Dead code (handler not bound to any UI). Conservé tel quel — supprimé en H2 si confirmé.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleStatut = async (id: number, statut: UtilisationStatut) => {
     setActionLoading(id);
     try {
       await utilisationCreditApi.updateStatut(id, statut);
-      toast({ title: "Succès", description: `Statut: ${UTILISATION_STATUT_LABELS[statut]}` });
+      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
       fetchData();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -502,13 +453,13 @@ const Utilisations = () => {
     setRejetTempLoading(true);
     try {
       await utilisationCreditApi.postDecision(showRejetTemp.id, "REJET_TEMP", rejetTempMotif.trim(), rejetTempDocs);
-      toast({ title: "Succès", description: "Rejet temporaire envoyé — documents demandés" });
+      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.rejet_temp_sent") });
       setShowRejetTemp(null);
       setRejetTempMotif("");
       setRejetTempDocs([]);
       fetchData();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
     } finally { setRejetTempLoading(false); }
   };
 
@@ -524,15 +475,13 @@ const Utilisations = () => {
     setUploading(true);
     try {
       await utilisationCreditApi.uploadDocument(docDialog, docType, docFile);
-      toast({ title: "Succès", description: "Document uploadé" });
+      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.doc_uploaded") });
       setDocFile(null);
       setDocs(await utilisationCreditApi.getDocuments(docDialog));
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
     } finally { setUploading(false); }
   };
-
-  // transitions are now per-row, see rendering below
 
   const filtered = data.filter((u) => {
     const ms = (u.certificatReference || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -556,17 +505,8 @@ const Utilisations = () => {
 
   const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI";
 
-  const pageTitle: Record<string, string> = {
-    AUTORITE_CONTRACTANTE: "Utilisations – Suivi des certificats",
-    ENTREPRISE: "Mes utilisations de crédit",
-    SOUS_TRAITANT: "Mes utilisations (sous-traitant)",
-    DGD: "Utilisations Douane – Vérification",
-    DGTCP: "Utilisations – Imputation & apurement",
-    DGI: "Utilisations – Consultation",
-    ADMIN_SI: "Toutes les utilisations (Audit)",
-  };
-
-  const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
+  // Currency: MRU par défaut (devise du certificat parent non disponible à ce niveau de liste).
+  const fmtAmt = (v: any) => formatAmount(v);
 
   return (
     <DashboardLayout>
@@ -575,31 +515,31 @@ const Utilisations = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Landmark className="h-6 w-6 text-primary" />
-              {pageTitle[role] || "Utilisations de crédit"}
+              {pageTitleLabel}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Douane (SYDONIA) & TVA Intérieure</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("utilisations:list.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             {canCreate && (
-              <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Nouvelle utilisation</Button>
+              <Button onClick={openCreate}><Plus className="h-4 w-4 me-2" /> {t("utilisations:list.actions.new")}</Button>
             )}
-            <Button variant="outline" onClick={fetchData} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
+            <Button variant="outline" onClick={fetchData} disabled={loading} aria-label={t("common:actions.refresh")}>
+              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("common:actions.refresh")}
             </Button>
           </div>
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
-            <TabsTrigger value="all">Toutes</TabsTrigger>
-            <TabsTrigger value="DOUANIER">Douane (SYDONIA)</TabsTrigger>
-            <TabsTrigger value="TVA_INTERIEURE">TVA Intérieure</TabsTrigger>
+            <TabsTrigger value="all">{t("utilisations:list.tabs.all")}</TabsTrigger>
+            <TabsTrigger value="DOUANIER">{t("utilisations:list.tabs.douane")}</TabsTrigger>
+            <TabsTrigger value="TVA_INTERIEURE">{t("utilisations:list.tabs.tva")}</TabsTrigger>
             {(role === "ENTREPRISE" || role === "ADMIN_SI" || role === "DGD" || role === "DGTCP") && (
               <TabsTrigger value="SOUS_TRAITANT">
-                Sous-traitants
+                {t("utilisations:list.tabs.sous_traitant")}
                 {data.filter(u => u.demandeurEstSousTraitant).length > 0 && (
-                  <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">
-                    {data.filter(u => u.demandeurEstSousTraitant).length}
+                  <Badge variant="secondary" className="ms-1.5 text-[10px] px-1.5 py-0">
+                    {formatNumber(data.filter(u => u.demandeurEstSousTraitant).length)}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -609,14 +549,24 @@ const Utilisations = () => {
 
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("utilisations:list.search_placeholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-9"
+              aria-label={t("common:actions.search")}
+            />
           </div>
           <Select value={filterStatut} onValueChange={setFilterStatut}>
-            <SelectTrigger className="w-48"><Filter className="h-4 w-4 mr-2" /><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48" aria-label={t("utilisations:list.columns.statut")}>
+              <Filter className="h-4 w-4 me-2" /><SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(UTILISATION_STATUT_LABELS).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              <SelectItem value="ALL">{t("utilisations:list.filter_all")}</SelectItem>
+              {Object.keys(UTILISATION_STATUT_LABELS).map((k) => (
+                <SelectItem key={k} value={k}>{tStatutUtilisation(k)}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -629,26 +579,26 @@ const Utilisations = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Certificat</TableHead>
-                    <TableHead>Demandeur</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Réf. métier</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("utilisations:list.columns.id")}</TableHead>
+                    <TableHead>{t("utilisations:list.columns.certificat")}</TableHead>
+                    <TableHead>{t("utilisations:list.columns.demandeur")}</TableHead>
+                    <TableHead>{t("utilisations:list.columns.type")}</TableHead>
+                    <TableHead>{t("utilisations:list.columns.reference_metier")}</TableHead>
+                    <TableHead>{t("utilisations:list.columns.montant")}</TableHead>
+                    <TableHead>{t("utilisations:list.columns.statut")}</TableHead>
+                    <TableHead className="text-end">{t("utilisations:list.columns.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("utilisations:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">#{u.id}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        <div>{u.certificatReference || `Cert #${u.certificatCreditId}`}</div>
+                        <div>{u.certificatReference || t("utilisations:list.cert_fallback", { id: u.certificatCreditId })}</div>
                         {u.certificatTitulaireRaisonSociale && (
-                          <div className="text-[11px] text-muted-foreground/70">Titulaire : {u.certificatTitulaireRaisonSociale}</div>
+                          <div className="text-[11px] text-muted-foreground/70">{t("utilisations:list.titulaire_prefix", { name: u.certificatTitulaireRaisonSociale })}</div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -656,68 +606,67 @@ const Utilisations = () => {
                           <span className="text-sm">{u.entrepriseNom || "—"}</span>
                           {u.demandeurEstSousTraitant && (
                             <Badge variant="outline" className="text-[10px] border-orange-300 text-orange-700 bg-orange-50">
-                              Sous-traité
+                              {t("utilisations:list.sous_traite_badge")}
                             </Badge>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {u.type === "DOUANIER" ? "Douane" : u.type === "TVA_INTERIEURE" ? "TVA Int." : "—"}
+                          {u.type === "DOUANIER" ? t("utilisations:list.type_short.douane") : u.type === "TVA_INTERIEURE" ? t("utilisations:list.type_short.tva") : "—"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {u.type === "DOUANIER" ? (u.numeroDeclaration || u.numeroBulletin || "—") : (u.numeroFacture || u.numeroDecompte || "—")}
                       </TableCell>
-                      <TableCell>{f(u.montant)} MRU</TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{utilisationStatutLabel(u.statut, u.type)}</Badge></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>{fmtAmt(u.montant)}</TableCell>
+                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{tStatutContextuel(u.statut, u.type)}</Badge></TableCell>
+                      <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title="Voir détail">
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title={t("utilisations:list.actions.view_detail")} aria-label={t("utilisations:list.actions.view_detail")}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["BROUILLON", "LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut) && (
                             <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
-                              Traiter
+                              {t("utilisations:list.actions.process")}
                             </Button>
                           )}
-                          {/* Actions brouillon : disponibles au déposant (entreprise/sous-traitant) ou ADMIN_SI */}
                           {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (() => {
                             const blockedByTransfert = u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId);
                             return (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" title={blockedByTransfert ? "Transfert exécuté : utilisations douanières bloquées" : "Actions brouillon"}>
+                                  <Button variant="ghost" size="sm" title={blockedByTransfert ? t("utilisations:list.actions.drafts_blocked_title") : t("utilisations:list.actions.drafts_menu_title")} aria-label={t("utilisations:list.actions.drafts_menu_title")}>
                                     <MoreHorizontal className="h-4 w-4" />
-                                    {blockedByTransfert && <AlertTriangle className="h-3.5 w-3.5 ml-1 text-amber-600" />}
+                                    {blockedByTransfert && <AlertTriangle className="h-3.5 w-3.5 ms-1 text-amber-600" />}
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   {blockedByTransfert && (
                                     <div className="px-2 py-1.5 text-[11px] text-amber-700 bg-amber-50 border-b border-amber-200">
-                                      Transfert exécuté sur ce certificat — modification & soumission douanières bloquées.
+                                      {t("utilisations:list.actions.drafts_blocked_banner")}
                                     </div>
                                   )}
                                   <DropdownMenuItem disabled={blockedByTransfert} onClick={() => openEditBrouillon(u)}>
-                                    <Pencil className="h-4 w-4 mr-2" /> Modifier le brouillon
+                                    <Pencil className="h-4 w-4 me-2" /> {t("utilisations:list.actions.edit_draft")}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     disabled={submittingId === u.id || blockedByTransfert}
                                     onClick={() => handleSoumettreFromList(u)}
                                   >
                                     {submittingId === u.id ? (
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      <Loader2 className="h-4 w-4 me-2 animate-spin" />
                                     ) : (
-                                      <Send className="h-4 w-4 mr-2" />
+                                      <Send className="h-4 w-4 me-2" />
                                     )}
-                                    Soumettre
+                                    {t("utilisations:list.actions.submit")}
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => setDeletingTarget(u)}
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" /> Supprimer le brouillon
+                                    <Trash2 className="h-4 w-4 me-2" /> {t("utilisations:list.actions.delete_draft")}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -734,81 +683,79 @@ const Utilisations = () => {
         </Card>
       </div>
 
-      {/* Detail dialog */}
+      {/* Detail dialog (jamais ouvert actuellement — conservé pour parité ; voir page Détail dédiée) */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Utilisation #{selected?.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:list.detail_dialog.title", { id: selected?.id ?? "" })}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Type</span><p className="font-medium">{selected.type === "DOUANIER" ? "Crédit Douanier (SYDONIA)" : "TVA Intérieure"}</p></div>
-                <div><span className="text-muted-foreground">Statut</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{utilisationStatutLabel(selected.statut, selected.type)}</Badge></p></div>
-                <div><span className="text-muted-foreground">Certificat</span><p className="font-medium">{selected.certificatReference || `#${selected.certificatCreditId}`}</p></div>
-                <div><span className="text-muted-foreground">Montant</span><p className="font-bold text-primary">{f(selected.montant)} MRU</p></div>
-                {selected.entrepriseNom && <div><span className="text-muted-foreground">Demandeur</span><p>{selected.entrepriseNom}{selected.demandeurEstSousTraitant && <Badge variant="outline" className="ml-1.5 text-[10px] border-orange-300 text-orange-700 bg-orange-50">Sous-traité</Badge>}</p></div>}
-                {selected.demandeurEstSousTraitant && selected.certificatTitulaireRaisonSociale && <div><span className="text-muted-foreground">Titulaire du certificat</span><p className="font-medium">{selected.certificatTitulaireRaisonSociale}</p></div>}
-                {selected.dateCreation && <div><span className="text-muted-foreground">Date création</span><p>{new Date(selected.dateCreation).toLocaleDateString("fr-FR")}</p></div>}
-                {selected.dateLiquidation && <div><span className="text-muted-foreground">Date liquidation</span><p>{new Date(selected.dateLiquidation).toLocaleDateString("fr-FR")}</p></div>}
+                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.type_label")}</span><p className="font-medium">{selected.type === "DOUANIER" ? t("utilisations:list.detail_dialog.type_value_douane") : t("utilisations:list.detail_dialog.type_value_tva")}</p></div>
+                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutContextuel(selected.statut, selected.type)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.certificat")}</span><p className="font-medium">{selected.certificatReference || `#${selected.certificatCreditId}`}</p></div>
+                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.montant")}</span><p className="font-bold text-primary">{fmtAmt(selected.montant)}</p></div>
+                {selected.entrepriseNom && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.demandeur")}</span><p>{selected.entrepriseNom}{selected.demandeurEstSousTraitant && <Badge variant="outline" className="ms-1.5 text-[10px] border-orange-300 text-orange-700 bg-orange-50">{t("utilisations:list.sous_traite_badge")}</Badge>}</p></div>}
+                {selected.demandeurEstSousTraitant && selected.certificatTitulaireRaisonSociale && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.titulaire_cert")}</span><p className="font-medium">{selected.certificatTitulaireRaisonSociale}</p></div>}
+                {selected.dateCreation && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_creation")}</span><p>{formatDate(selected.dateCreation)}</p></div>}
+                {selected.dateLiquidation && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_liquidation")}</span><p>{formatDate(selected.dateLiquidation)}</p></div>}
               </div>
               {selected.type === "DOUANIER" && (
                 <div className="border-t pt-3 mt-3">
-                  <h4 className="font-semibold mb-2">Données Douane (SYDONIA)</h4>
+                  <h4 className="font-semibold mb-2">{t("utilisations:list.detail_dialog.douane_section")}</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><span className="text-muted-foreground">N° Déclaration</span><p>{selected.numeroDeclaration || "—"}</p></div>
-                    <div><span className="text-muted-foreground">N° Bulletin</span><p>{selected.numeroBulletin || "—"}</p></div>
-                    <div><span className="text-muted-foreground">Date déclaration</span><p>{selected.dateDeclaration ? new Date(selected.dateDeclaration).toLocaleDateString("fr-FR") : "—"}</p></div>
-                    <div><span className="text-muted-foreground">Droits</span><p>{f(selected.montantDroits)} MRU</p></div>
-                    <div><span className="text-muted-foreground">TVA Douane</span><p>{f(selected.montantTVADouane)} MRU</p></div>
-                    <div><span className="text-muted-foreground">SYDONIA</span><p>{selected.enregistreeSYDONIA ? "✅ Oui" : "❌ Non"}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_declaration")}</span><p>{selected.numeroDeclaration || "—"}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_bulletin")}</span><p>{selected.numeroBulletin || "—"}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_declaration")}</span><p>{formatDate(selected.dateDeclaration)}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.droits")}</span><p>{fmtAmt(selected.montantDroits)}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_douane")}</span><p>{fmtAmt(selected.montantTVADouane)}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.sydonia")}</span><p>{selected.enregistreeSYDONIA ? t("utilisations:list.detail_dialog.sydonia_yes") : t("utilisations:list.detail_dialog.sydonia_no")}</p></div>
                   </div>
                 </div>
               )}
               {selected.type === "TVA_INTERIEURE" && (
                 <div className="border-t pt-3 mt-3">
-                  <h4 className="font-semibold mb-2">Données TVA Intérieure</h4>
+                  <h4 className="font-semibold mb-2">{t("utilisations:list.detail_dialog.tva_section")}</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><span className="text-muted-foreground">Type achat</span><p>{selected.typeAchat || "—"}</p></div>
-                    <div><span className="text-muted-foreground">N° Facture</span><p>{selected.numeroFacture || "—"}</p></div>
-                    <div><span className="text-muted-foreground">Date facture</span><p>{selected.dateFacture ? new Date(selected.dateFacture).toLocaleDateString("fr-FR") : "—"}</p></div>
-                    <div><span className="text-muted-foreground">TVA Intérieure</span><p>{f(selected.montantTVAInterieure)} MRU</p></div>
-                    <div><span className="text-muted-foreground">N° Décompte</span><p>{selected.numeroDecompte || "—"}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.type_achat")}</span><p>{selected.typeAchat || "—"}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_facture")}</span><p>{selected.numeroFacture || "—"}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_facture")}</span><p>{formatDate(selected.dateFacture)}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_interieure")}</span><p>{fmtAmt(selected.montantTVAInterieure)}</p></div>
+                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_decompte")}</span><p>{selected.numeroDecompte || "—"}</p></div>
                   </div>
-                  {/* Traçabilité TVA (après apurement) */}
                   {selected.statut === "APUREE" && selected.tvaNette != null && (
                     <div className="mt-3 p-3 rounded-lg border bg-muted/50 space-y-2">
-                      <h5 className="font-semibold text-sm flex items-center gap-1"><Info className="h-4 w-4" /> Traçabilité apurement</h5>
+                      <h5 className="font-semibold text-sm flex items-center gap-1"><Info className="h-4 w-4" /> {t("utilisations:list.detail_dialog.tracabilite_title")}</h5>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div><span className="text-muted-foreground">TVA déductible utilisée</span><p className="font-medium">{f(selected.tvaDeductibleUtilisee)} MRU</p></div>
-                        <div><span className="text-muted-foreground">TVA nette</span><p className={`font-bold ${(selected.tvaNette ?? 0) > 0 ? "text-destructive" : (selected.tvaNette ?? 0) < 0 ? "text-emerald-600" : ""}`}>{f(selected.tvaNette)} MRU</p></div>
-                        <div><span className="text-muted-foreground">Crédit intérieur utilisé</span><p className="font-medium">{f(selected.creditInterieurUtilise)} MRU</p></div>
-                        <div><span className="text-muted-foreground">Paiement entreprise</span><p className="font-medium">{f(selected.paiementEntreprise)} MRU</p></div>
-                        <div><span className="text-muted-foreground">Report à nouveau</span><p className="font-medium">{f(selected.reportANouveau)} MRU</p></div>
+                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_deductible_utilisee")}</span><p className="font-medium">{fmtAmt(selected.tvaDeductibleUtilisee)}</p></div>
+                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_nette")}</span><p className={`font-bold ${(selected.tvaNette ?? 0) > 0 ? "text-destructive" : (selected.tvaNette ?? 0) < 0 ? "text-emerald-600" : ""}`}>{fmtAmt(selected.tvaNette)}</p></div>
+                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.credit_interieur_utilise")}</span><p className="font-medium">{fmtAmt(selected.creditInterieurUtilise)}</p></div>
+                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.paiement_entreprise")}</span><p className="font-medium">{fmtAmt(selected.paiementEntreprise)}</p></div>
+                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.report_a_nouveau")}</span><p className="font-medium">{fmtAmt(selected.reportANouveau)}</p></div>
                         <div className="col-span-2 border-t pt-1 flex justify-between">
-                          <span className="text-muted-foreground">Solde TVA : {f(selected.soldeTVAAvant)} → {f(selected.soldeTVAApres)} MRU</span>
+                          <span className="text-muted-foreground">{t("utilisations:list.detail_dialog.solde_tva", { avant: fmtAmt(selected.soldeTVAAvant), apres: fmtAmt(selected.soldeTVAApres) })}</span>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
               )}
-              {/* Decisions history */}
               {decisions.length > 0 && (
                 <div className="border-t pt-3 mt-3">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Historique des décisions</h4>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> {t("utilisations:list.detail_dialog.decisions_title")}</h4>
                   <div className="space-y-2">
                     {decisions.map((d) => (
                       <div key={d.id} className={`p-2 rounded border text-xs ${d.decision === "REJET_TEMP" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <Badge variant={d.decision === "REJET_TEMP" ? "destructive" : "default"} className="text-[10px]">{d.decision}</Badge>
                           <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
-                          {d.dateDecision && <span className="text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                          {d.dateDecision && <span className="text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                         </div>
                         {d.motifRejet && <p className="text-muted-foreground mb-1">{d.motifRejet}</p>}
                         {d.documentsDemandes && d.documentsDemandes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            <span className="text-muted-foreground">Documents demandés :</span>
+                            <span className="text-muted-foreground">{t("utilisations:list.detail_dialog.documents_demandes")}</span>
                             {d.documentsDemandes.map((doc) => (
-                              <Badge key={doc} variant="outline" className="text-[10px]">{doc.replace(/_/g, " ")}</Badge>
+                              <Badge key={doc} variant="outline" className="text-[10px]">{tTypeDocument(doc)}</Badge>
                             ))}
                           </div>
                         )}
@@ -827,29 +774,29 @@ const Utilisations = () => {
         <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingId != null ? `Modifier l'utilisation #${editingId}` : "Nouvelle utilisation de crédit"}
+              {editingId != null ? t("utilisations:create.title_edit", { id: editingId }) : t("utilisations:create.title_new")}
             </DialogTitle>
             {editingId != null && (
               <p className="text-xs text-muted-foreground">
-                Le type d'utilisation ne peut pas être modifié.
+                {t("utilisations:create.type_immutable_hint")}
               </p>
             )}
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Certificat de crédit *</Label>
+              <Label>{t("utilisations:create.certificat_label")} *</Label>
               <SearchableSelect
                 value={form.certificatCreditId ? String(form.certificatCreditId) : ""}
                 onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
-                placeholder="Sélectionner un certificat"
-                searchPlaceholder="Rechercher (réf., entreprise)..."
+                placeholder={t("utilisations:create.certificat_placeholder")}
+                searchPlaceholder={t("utilisations:create.certificat_search")}
                 options={certificats
                   .filter(c => editingId != null || c.statut === "OUVERT")
                   .map(c => {
                     const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
                     return {
                       value: String(c.id),
-                      label: `${c.reference || c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? " (transfert exécuté — douane bloquée)" : ""}`,
+                      label: `${c.reference || c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? ` ${t("utilisations:create.certificat_blocked_suffix")}` : ""}`,
                       keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""} ${c.entrepriseNom || ""}`,
                       disabled: blockedDouane,
                     };
@@ -858,70 +805,66 @@ const Utilisations = () => {
               {createType === "DOUANIER" && form.certificatCreditId && transferredCertIds.has(form.certificatCreditId) && (
                 <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <div>
-                    <strong>Transfert exécuté sur ce certificat.</strong> Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.
-                  </div>
+                  <div>{t("utilisations:create.transfert_warning")}</div>
                 </div>
               )}
             </div>
 
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Type d'utilisation</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">{t("utilisations:create.type_label")}</Label>
               <Tabs value={createType} onValueChange={(v) => editingId == null && handleCreateTypeChange(v as UtilisationType)}>
                 <TabsList className="w-full">
-                  <TabsTrigger value="DOUANIER" className="flex-1" disabled={editingId != null && createType !== "DOUANIER"}>Douane (SYDONIA)</TabsTrigger>
-                  <TabsTrigger value="TVA_INTERIEURE" className="flex-1" disabled={editingId != null && createType !== "TVA_INTERIEURE"}>TVA Intérieure</TabsTrigger>
+                  <TabsTrigger value="DOUANIER" className="flex-1" disabled={editingId != null && createType !== "DOUANIER"}>{t("utilisations:create.tab_douane")}</TabsTrigger>
+                  <TabsTrigger value="TVA_INTERIEURE" className="flex-1" disabled={editingId != null && createType !== "TVA_INTERIEURE"}>{t("utilisations:create.tab_tva")}</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
             <div className="space-y-3">
-
               {createType === "DOUANIER" && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>N° Déclaration *</Label><Input placeholder="DEC-2024-001" value={form.numeroDeclaration || ""} onChange={e => setForm({ ...form, numeroDeclaration: e.target.value })} /></div>
-                    <div><Label>N° Bulletin *</Label><Input placeholder="BUL-2024-001" value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
+                    <div><Label>{t("utilisations:create.douane.numero_declaration")} *</Label><Input placeholder={t("utilisations:create.douane.numero_declaration_placeholder")} value={form.numeroDeclaration || ""} onChange={e => setForm({ ...form, numeroDeclaration: e.target.value })} /></div>
+                    <div><Label>{t("utilisations:create.douane.numero_bulletin")} *</Label><Input placeholder={t("utilisations:create.douane.numero_bulletin_placeholder")} value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
                   </div>
-                  <div><Label>Date déclaration</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
-                  {/* Bulletin de liquidation : lignes issues du référentiel des taxes */}
+                  <div><Label>{t("utilisations:create.douane.date_declaration")}</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
                   <div className="space-y-2 border rounded-lg p-3 bg-muted/20">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="text-sm">Lignes du bulletin de liquidation *</Label>
-                        <p className="text-[11px] text-muted-foreground">Saisissez la valeur pour chaque taxe. Le code et le libellé proviennent du référentiel.</p>
+                        <Label className="text-sm">{t("utilisations:create.douane.bulletin_title")} *</Label>
+                        <p className="text-[11px] text-muted-foreground">{t("utilisations:create.douane.bulletin_hint")}</p>
                       </div>
                       <Button type="button" variant="outline" size="sm" onClick={() => { setNewTaxeCode(""); setNewTaxeLibelle(""); setShowAddTaxe(true); }}>
-                        <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
+                        <Plus className="h-3.5 w-3.5 me-1" /> {t("utilisations:create.douane.add_tax_btn")}
                       </Button>
                     </div>
                     {referentielTaxesLoading ? (
-                      <p className="text-xs text-muted-foreground italic">Chargement du référentiel des taxes…</p>
+                      <p className="text-xs text-muted-foreground italic">{t("utilisations:create.douane.bulletin_loading")}</p>
                     ) : (!form.lignes || form.lignes.length === 0) ? (
-                      <p className="text-xs text-muted-foreground italic">Aucune taxe disponible dans le référentiel.</p>
+                      <p className="text-xs text-muted-foreground italic">{t("utilisations:create.douane.bulletin_empty")}</p>
                     ) : (() => {
                       const totalLignes = (form.lignes || []).reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0);
                       const montantSaisi = Number(form.montant) || 0;
                       const mismatch = form.montant !== undefined && form.montant !== null && Math.abs(totalLignes - montantSaisi) > 0.001;
                       return (
                         <div className="space-y-1.5">
-                          {/* Header */}
                           <div className="grid grid-cols-12 gap-1.5 items-center px-1">
-                            <span className="col-span-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Code</span>
-                            <span className="col-span-6 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Nom</span>
-                            <span className="col-span-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Valeur taxe</span>
+                            <span className="col-span-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_code")}</span>
+                            <span className="col-span-6 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_name")}</span>
+                            <span className="col-span-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_value")}</span>
                           </div>
                           {form.lignes.map((ligne, idx) => {
                             const isEmpty = ligne.valeurTaxe === undefined || ligne.valeurTaxe === null || (ligne.valeurTaxe as any) === "";
                             return (
                               <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
+                                {/* `denominationTaxe` provient du référentiel API — non traduit (donnée métier) */}
                                 <Input className="col-span-2 h-8 text-xs uppercase bg-muted/40" value={ligne.codeTaxe} readOnly />
                                 <Input className="col-span-6 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
                                 <Input
                                   className={`col-span-4 h-8 text-xs ${isEmpty ? "border-destructive focus-visible:ring-destructive bg-destructive/5" : ""}`}
                                   type="number"
                                   min="0"
-                                  placeholder="Valeur requise"
+                                  placeholder={t("utilisations:create.douane.value_required")}
                                   value={ligne.valeurTaxe ?? ""}
                                   onChange={e => {
                                     const next = [...(form.lignes || [])];
@@ -932,29 +875,28 @@ const Utilisations = () => {
                               </div>
                             );
                           })}
-                          <div className={`text-right text-xs pt-1 border-t ${mismatch ? "text-destructive font-semibold" : ""}`}>
-                            Total bulletin : <strong>{totalLignes.toLocaleString("fr-FR")} MRU</strong>
+                          <div className={`text-end text-xs pt-1 border-t ${mismatch ? "text-destructive font-semibold" : ""}`}>
+                            {t("utilisations:create.douane.total")} : <strong>{fmtAmt(totalLignes)}</strong>
                             {form.montant !== undefined && form.montant !== null && (
-                              <> &nbsp;|&nbsp; Montant saisi : <strong>{montantSaisi.toLocaleString("fr-FR")} MRU</strong></>
+                              <> &nbsp;|&nbsp; {t("utilisations:create.douane.amount_typed")} : <strong>{fmtAmt(montantSaisi)}</strong></>
                             )}
                           </div>
                           {mismatch && (
                             <div className="flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10 text-xs text-destructive">
                               <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                              <span>La somme des valeurs des taxes ({totalLignes.toLocaleString("fr-FR")} MRU) ne correspond pas au montant total saisi ({montantSaisi.toLocaleString("fr-FR")} MRU).</span>
+                              <span>{t("utilisations:create.douane.mismatch", { total: fmtAmt(totalLignes), amount: fmtAmt(montantSaisi) })}</span>
                             </div>
                           )}
                         </div>
                       );
                     })()}
                   </div>
-                  {/* Montant total déclaré — sous le tableau */}
                   <div>
-                    <Label>Montant total déclaré (MRU) *</Label>
+                    <Label>{t("utilisations:create.douane.montant_total")} *</Label>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="Montant total saisi par l'utilisateur"
+                      placeholder={t("utilisations:create.douane.montant_total_placeholder")}
                       value={form.montant ?? ""}
                       onChange={e => setForm({ ...form, montant: e.target.value ? Number(e.target.value) : undefined })}
                       className={form.montant === undefined || form.montant === null ? "border-destructive focus-visible:ring-destructive" : ""}
@@ -963,29 +905,28 @@ const Utilisations = () => {
                 </>
               )}
 
-
               {createType === "TVA_INTERIEURE" && (
                 <>
                   <div>
-                    <Label>Type d'achat *</Label>
+                    <Label>{t("utilisations:create.tva.type_achat")} *</Label>
                     <Select value={form.typeAchat || ""} onValueChange={(v) => setForm({ ...form, typeAchat: v })}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t("utilisations:create.tva.type_achat_placeholder")} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ACHAT_LOCAL">Achat Local</SelectItem>
-                        <SelectItem value="DECOMPTE">Décompte</SelectItem>
+                        <SelectItem value="ACHAT_LOCAL">{t("utilisations:create.tva.achat_local")}</SelectItem>
+                        <SelectItem value="DECOMPTE">{t("utilisations:create.tva.decompte")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   {form.typeAchat === "ACHAT_LOCAL" && (
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>N° Facture *</Label><Input placeholder="FAC-2024-042" value={form.numeroFacture || ""} onChange={e => setForm({ ...form, numeroFacture: e.target.value })} /></div>
-                      <div><Label>Date facture</Label><Input type="date" value={form.dateFacture || ""} onChange={e => setForm({ ...form, dateFacture: e.target.value })} /></div>
+                      <div><Label>{t("utilisations:create.tva.numero_facture")} *</Label><Input placeholder={t("utilisations:create.tva.numero_facture_placeholder")} value={form.numeroFacture || ""} onChange={e => setForm({ ...form, numeroFacture: e.target.value })} /></div>
+                      <div><Label>{t("utilisations:create.tva.date_facture")}</Label><Input type="date" value={form.dateFacture || ""} onChange={e => setForm({ ...form, dateFacture: e.target.value })} /></div>
                     </div>
                   )}
                   {form.typeAchat === "DECOMPTE" && (
-                    <div><Label>N° Décompte *</Label><Input placeholder="DEC-TRAV-003" value={form.numeroDecompte || ""} onChange={e => setForm({ ...form, numeroDecompte: e.target.value })} /></div>
+                    <div><Label>{t("utilisations:create.tva.numero_decompte")} *</Label><Input placeholder={t("utilisations:create.tva.numero_decompte_placeholder")} value={form.numeroDecompte || ""} onChange={e => setForm({ ...form, numeroDecompte: e.target.value })} /></div>
                   )}
-                  <div><Label>Montant TVA Intérieure (MRU) *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                  <div><Label>{t("utilisations:create.tva.montant_tva")} *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
                 </>
               )}
             </div>
@@ -994,18 +935,18 @@ const Utilisations = () => {
             <div className="border-t pt-4 space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <Upload className="h-4 w-4" />
-                Documents requis
+                {t("utilisations:create.docs.title")}
                 {getFilteredRequirements().length > 0 && (
                   <span className="text-xs text-muted-foreground font-normal">
                     ({getMissingObligatoryDocs().length > 0
-                      ? `${getMissingObligatoryDocs().length} obligatoire(s) manquant(s)`
-                      : "Tous les documents obligatoires sont joints"})
+                      ? t("utilisations:create.docs.missing_count", { count: getMissingObligatoryDocs().length })
+                      : t("utilisations:create.docs.all_attached")})
                   </span>
                 )}
               </h4>
               {getFilteredRequirements().length === 0 ? (
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Chargement des exigences documentaires...
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("utilisations:create.docs.loading")}
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -1016,8 +957,8 @@ const Utilisations = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             {hasFile ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /> : req.obligatoire ? <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                            <span className="font-medium truncate">{formatDocLabel(req.typeDocument)}</span>
-                            {req.obligatoire && <Badge variant="destructive" className="text-[10px] px-1 py-0 shrink-0">Obligatoire</Badge>}
+                            <span className="font-medium truncate">{tTypeDocument(req.typeDocument)}</span>
+                            {req.obligatoire && <Badge variant="destructive" className="text-[10px] px-1 py-0 shrink-0">{t("utilisations:create.docs.obligatoire_badge")}</Badge>}
                             {req.description && (
                               <TooltipProvider>
                                 <Tooltip>
@@ -1027,12 +968,12 @@ const Utilisations = () => {
                               </TooltipProvider>
                             )}
                           </div>
-                          {hasFile && <span className="text-xs text-emerald-600 ml-5.5">{createDocFiles[req.typeDocument].name}</span>}
+                          {hasFile && <span className="text-xs text-emerald-600 ms-5">{createDocFiles[req.typeDocument].name}</span>}
                         </div>
                         <div className="shrink-0">
                           <Label htmlFor={`doc-${req.typeDocument}`} className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors">
                             <Upload className="h-3 w-3" />
-                            {hasFile ? "Remplacer" : "Choisir"}
+                            {hasFile ? t("utilisations:create.docs.btn_replace") : t("utilisations:create.docs.btn_choose")}
                           </Label>
                           <input
                             id={`doc-${req.typeDocument}`}
@@ -1053,19 +994,16 @@ const Utilisations = () => {
             </div>
 
             <div className="flex flex-wrap justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => { setShowCreate(false); setEditingId(null); }}>Annuler</Button>
-              {/* En création OU en édition d'un brouillon, on propose Brouillon. En édition d'une demandée, le statut reste DEMANDEE. */}
-              {(editingId == null || /* edit brouillon */ true) && (
-                <Button variant="secondary" onClick={() => handleSave("brouillon")} disabled={creating}>
-                  {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingId != null ? "Enregistrer" : "Enregistrer brouillon"}
-                </Button>
-              )}
+              <Button variant="outline" onClick={() => { setShowCreate(false); setEditingId(null); }}>{t("common:actions.cancel")}</Button>
+              <Button variant="secondary" onClick={() => handleSave("brouillon")} disabled={creating}>
+                {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                <Save className="h-4 w-4 me-2" />
+                {editingId != null ? t("utilisations:create.actions.save_edit") : t("utilisations:create.actions.save_draft")}
+              </Button>
               <Button onClick={() => handleSave("submit")} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                <Send className="h-4 w-4 mr-2" />
-                {editingId != null ? "Soumettre" : "Soumettre maintenant"}
+                {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                <Send className="h-4 w-4 me-2" />
+                {editingId != null ? t("utilisations:create.actions.submit_edit") : t("utilisations:create.actions.submit_new")}
               </Button>
             </div>
           </div>
@@ -1075,19 +1013,19 @@ const Utilisations = () => {
       {/* Documents dialog */}
       <Dialog open={docDialog !== null} onOpenChange={() => { setDocDialog(null); setDocs([]); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Documents — Utilisation #{docDialog}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:docs_dialog.title", { id: docDialog ?? "" })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             {docsLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
             ) : docs.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">Aucun document</p>
+              <p className="text-muted-foreground text-sm text-center py-4">{t("utilisations:docs_dialog.empty")}</p>
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {docs.filter(d => d.actif !== false).map(d => (
                   <div key={d.id} className="flex items-center justify-between p-2 rounded border text-sm">
                     <div>
                       <span className="font-medium">{d.nomFichier}</span>
-                      <span className="text-muted-foreground ml-2 text-xs">{d.type} — v{d.version || 1}</span>
+                      <span className="text-muted-foreground ms-2 text-xs">{tTypeDocument(d.type)} — {t("utilisations:docs_dialog.version_short", { n: d.version || 1 })}</span>
                     </div>
                   </div>
                 ))}
@@ -1095,46 +1033,46 @@ const Utilisations = () => {
             )}
 
             <div className="border-t pt-3 space-y-3">
-              <h4 className="text-sm font-semibold flex items-center gap-1"><Upload className="h-4 w-4" /> Ajouter un document</h4>
+              <h4 className="text-sm font-semibold flex items-center gap-1"><Upload className="h-4 w-4" /> {t("utilisations:docs_dialog.add_title")}</h4>
               <Select value={docType} onValueChange={(v) => setDocType(v as TypeDocumentUtilisation)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(() => {
                     const sel = data.find(u => u.id === docDialog);
-                    const types = sel?.type === "DOUANIER" ? UTILISATION_DOC_TYPES_DOUANE : sel?.type === "TVA_INTERIEURE" ? UTILISATION_DOC_TYPES_TVA : UTILISATION_DOCUMENT_TYPES;
-                    return types.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>);
+                    const types: readonly TypeDocumentUtilisation[] = sel?.type === "DOUANIER"
+                      ? UTILISATION_DOC_TYPES_DOUANE
+                      : sel?.type === "TVA_INTERIEURE"
+                        ? UTILISATION_DOC_TYPES_TVA
+                        : UTILISATION_DOCUMENT_TYPES;
+                    return types.map(tv => <SelectItem key={tv} value={tv}>{tTypeDocument(tv)}</SelectItem>);
                   })()}
                 </SelectContent>
               </Select>
               <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
               <Button onClick={handleUpload} disabled={uploading || !docFile} className="w-full">
-                {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Uploader
+                {uploading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:docs_dialog.upload_btn")}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Liquidation Douane est désormais gérée dans la page Détail (décision par ligne du bulletin) */}
-
-      {/* Apurement TVA dialog (DGTCP) */}
+      {/* Apurement TVA dialog (jamais ouvert actuellement — conservé pour parité) */}
       <Dialog open={!!apurementTarget} onOpenChange={() => setApurementTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Apurement TVA — Utilisation #{apurementTarget?.id}</DialogTitle>
+            <DialogTitle>{t("utilisations:apurement_tva.title", { id: apurementTarget?.id ?? "" })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Saisissez le montant de TVA déductible (issue des importations) à imputer sur cette utilisation. Le système calculera la TVA nette et appliquera les 3 cas métier automatiquement.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("utilisations:apurement_tva.intro")}</p>
             {apurementTarget && (
               <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
-                <div className="flex justify-between"><span className="text-muted-foreground">TVA collectée (montant TVA) :</span><span className="font-semibold">{f(apurementTarget.montantTVAInterieure)} MRU</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t("utilisations:apurement_tva.tva_collectee")}</span><span className="font-semibold">{fmtAmt(apurementTarget.montantTVAInterieure)}</span></div>
               </div>
             )}
             <div className="space-y-3">
               <div>
-                <Label htmlFor="apur-tva-ded">TVA déductible à utiliser (MRU) *</Label>
+                <Label htmlFor="apur-tva-ded">{t("utilisations:apurement_tva.tva_ded_label")} *</Label>
                 <Input
                   id="apur-tva-ded"
                   type="number"
@@ -1143,35 +1081,35 @@ const Utilisations = () => {
                   value={apurMontant}
                   onChange={(e) => setApurMontant(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground mt-1">Montant de TVA déductible (provenant des liquidations Douane) à déduire de la TVA collectée.</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("utilisations:apurement_tva.tva_ded_hint")}</p>
               </div>
               {apurMontant && apurementTarget?.montantTVAInterieure != null && (
                 <div className="p-3 rounded-lg border space-y-1 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">TVA collectée :</span><span>{f(apurementTarget.montantTVAInterieure)} MRU</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">TVA déductible :</span><span>- {f(Number(apurMontant))} MRU</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("utilisations:apurement_tva.tva_collectee_short")}</span><span>{fmtAmt(apurementTarget.montantTVAInterieure)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("utilisations:apurement_tva.tva_ded_short")}</span><span>- {fmtAmt(Number(apurMontant))}</span></div>
                   <div className="border-t pt-1 flex justify-between font-bold">
-                    <span>TVA nette :</span>
+                    <span>{t("utilisations:apurement_tva.tva_nette")}</span>
                     <span className={
                       (apurementTarget.montantTVAInterieure - Number(apurMontant)) > 0 ? "text-destructive" :
                       (apurementTarget.montantTVAInterieure - Number(apurMontant)) < 0 ? "text-emerald-600" : "text-muted-foreground"
                     }>
-                      {f(apurementTarget.montantTVAInterieure - Number(apurMontant))} MRU
+                      {fmtAmt(apurementTarget.montantTVAInterieure - Number(apurMontant))}
                     </span>
                   </div>
                   {(apurementTarget.montantTVAInterieure - Number(apurMontant)) > 0 && (
-                    <p className="text-xs text-amber-600 mt-1">⚠ Cas 2 : TVA nette positive — le solde TVA sera débité, un paiement complémentaire sera requis si le solde est insuffisant.</p>
+                    <p className="text-xs text-amber-600 mt-1">{t("utilisations:apurement_tva.cas2")}</p>
                   )}
                   {(apurementTarget.montantTVAInterieure - Number(apurMontant)) < 0 && (
-                    <p className="text-xs text-emerald-600 mt-1">✅ Cas 3 : TVA nette négative — un report à nouveau sera ajouté au solde TVA.</p>
+                    <p className="text-xs text-emerald-600 mt-1">{t("utilisations:apurement_tva.cas3")}</p>
                   )}
                   {(apurementTarget.montantTVAInterieure - Number(apurMontant)) === 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">➡ Cas 1 : TVA nette nulle — opération neutre.</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("utilisations:apurement_tva.cas1")}</p>
                   )}
                 </div>
               )}
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setApurementTarget(null)}>Annuler</Button>
+              <Button variant="outline" onClick={() => setApurementTarget(null)}>{t("common:actions.cancel")}</Button>
               <Button
                 disabled={apurLoading || !apurMontant || Number(apurMontant) < 0}
                 onClick={async () => {
@@ -1179,16 +1117,16 @@ const Utilisations = () => {
                   setApurLoading(true);
                   try {
                     await utilisationCreditApi.apurerTVA(apurementTarget.id, Number(apurMontant));
-                    toast({ title: "Succès", description: "Utilisation apurée — TVA nette calculée et solde mis à jour" });
+                    toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.apurement_done") });
                     setApurementTarget(null);
                     fetchData();
                   } catch (e: any) {
-                    toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                    toast({ title: errorTitle(), description: e.message, variant: "destructive" });
                   } finally { setApurLoading(false); }
                 }}
               >
-                {apurLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Confirmer l'apurement
+                {apurLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                {t("utilisations:apurement_tva.confirm")}
               </Button>
             </div>
           </div>
@@ -1201,75 +1139,74 @@ const Utilisations = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Rejet temporaire — Demander des compléments
+              {t("utilisations:rejet_temp.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Utilisation #{showRejetTemp?.id} — {showRejetTemp?.entrepriseNom || ""}
+              {t("utilisations:rejet_temp.subline", { id: showRejetTemp?.id ?? "", demandeur: showRejetTemp?.entrepriseNom || "" })}
             </p>
             <div className="space-y-2">
-              <Label>Motif *</Label>
+              <Label>{t("utilisations:rejet_temp.motif_label")} *</Label>
               <Textarea
-                placeholder="Précisez les corrections ou compléments attendus..."
+                placeholder={t("utilisations:rejet_temp.motif_placeholder")}
                 value={rejetTempMotif}
                 onChange={(e) => setRejetTempMotif(e.target.value)}
                 className="min-h-[80px]"
               />
             </div>
             <div className="space-y-2">
-              <Label>Documents à corriger / compléter *</Label>
-              <p className="text-xs text-muted-foreground">Sélectionnez au moins un document</p>
+              <Label>{t("utilisations:rejet_temp.docs_label")} *</Label>
+              <p className="text-xs text-muted-foreground">{t("utilisations:rejet_temp.docs_hint")}</p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {(showRejetTemp?.type === "DOUANIER" ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).map((dt) => (
-                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
                     <Checkbox
-                      checked={rejetTempDocs.includes(dt.value)}
+                      checked={rejetTempDocs.includes(dt)}
                       onCheckedChange={(checked) => {
                         setRejetTempDocs(prev =>
-                          checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value)
+                          checked ? [...prev, dt] : prev.filter(d => d !== dt)
                         );
                       }}
                     />
-                    <span className="text-sm">{dt.label}</span>
+                    <span className="text-sm">{tTypeDocument(dt)}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setShowRejetTemp(null)}>{t("common:actions.cancel")}</Button>
             <Button
               className="bg-amber-600 hover:bg-amber-700 text-white"
               disabled={rejetTempLoading || !rejetTempMotif.trim() || rejetTempDocs.length === 0}
               onClick={handleRejetTemp}
             >
-              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmer le rejet temporaire
+              {rejetTempLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("utilisations:rejet_temp.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Suppression définitive d'un brouillon (DELETE /utilisations-credit/{id}) */}
+      {/* Suppression définitive d'un brouillon */}
       <AlertDialog open={!!deletingTarget} onOpenChange={(o) => !o && setDeletingTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le brouillon ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("utilisations:delete_draft.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action supprime définitivement le brouillon
-              {deletingTarget ? ` #${deletingTarget.id}` : ""} et ses données. Elle ne peut pas être annulée.
+              {t("utilisations:delete_draft.description", { id: deletingTarget ? ` #${deletingTarget.id}` : "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingLoading}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletingLoading}>{t("common:actions.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deletingLoading}
               onClick={(e) => { e.preventDefault(); handleDeleteBrouillon(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Supprimer définitivement
+              {deletingLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("utilisations:delete_draft.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1279,38 +1216,29 @@ const Utilisations = () => {
       <Dialog open={showAddTaxe} onOpenChange={(o) => !addingTaxe && setShowAddTaxe(o)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Ajouter une taxe au référentiel</DialogTitle>
+            <DialogTitle>{t("utilisations:create.add_taxe.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Code *</Label>
-              <Input className="uppercase" placeholder="ex: DD" value={newTaxeCode} onChange={e => setNewTaxeCode(e.target.value.toUpperCase())} />
+              <Label>{t("utilisations:create.add_taxe.code")} *</Label>
+              <Input className="uppercase" placeholder={t("utilisations:create.add_taxe.code_placeholder")} value={newTaxeCode} onChange={e => setNewTaxeCode(e.target.value.toUpperCase())} />
             </div>
             <div>
-              <Label>Dénomination *</Label>
-              <Input placeholder="ex: Droit de Douane" value={newTaxeLibelle} onChange={e => setNewTaxeLibelle(e.target.value)} />
+              <Label>{t("utilisations:create.add_taxe.libelle")} *</Label>
+              <Input placeholder={t("utilisations:create.add_taxe.libelle_placeholder")} value={newTaxeLibelle} onChange={e => setNewTaxeLibelle(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddTaxe(false)} disabled={addingTaxe}>Annuler</Button>
+            <Button variant="outline" onClick={() => setShowAddTaxe(false)} disabled={addingTaxe}>{t("common:actions.cancel")}</Button>
             <Button onClick={handleAddTaxe} disabled={addingTaxe}>
-              {addingTaxe && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Ajouter
+              {addingTaxe && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("common:actions.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
-
   );
 };
-
-function formatDocLabel(type: string): string {
-  return type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace(/\bCi\b/g, "CI")
-    .replace(/\bTva\b/g, "TVA");
-}
 
 export default Utilisations;
