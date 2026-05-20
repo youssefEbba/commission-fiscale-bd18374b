@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "Simulation Entreprise",
+    "subtitle": "Simulez la correction automatique de vos documents fiscaux.",
+    "no_entreprise_title": "Aucune entreprise associée",
+    "no_entreprise_body": "Votre compte n'est pas lié à une entreprise. Veuillez contacter l'administrateur.",
+    "existing_check": "Vérification des résultats existants..."
+  },
+  "home": {
+    "of_available_title": "Offre Fiscale Corrigée disponible",
+    "generated_on": "Générée le {{date}}",
+    "of_available_body": "Une offre fiscale corrigée est disponible pour votre entreprise. Vous pouvez la télécharger au format Excel.",
+    "show_detail": "Voir le détail",
+    "hide_detail": "Masquer le détail",
+    "no_of_title": "Aucune offre fiscale corrigée",
+    "no_of_body": "Lancez une simulation pour générer automatiquement votre offre fiscale corrigée.",
+    "launch": "Lancer une simulation",
+    "relaunch": "Relancer une nouvelle simulation"
+  },
+  "upload": {
+    "back_aria": "Retour",
+    "instruction": "Uploadez vos fichiers (DQE + Offre Fiscale optionnelle) pour simuler la correction.",
+    "dqe_label": "DQE (obligatoire)",
+    "dqe_description": "Fichier du Devis Quantitatif et Estimatif",
+    "of_label": "Offre Fiscale (optionnel)",
+    "of_description": "Fichier de l'offre fiscale",
+    "preview_btn": "Aperçu des fichiers",
+    "launch_btn": "Lancer la simulation",
+    "dropzone_hint": "Glissez-déposez ou cliquez pour sélectionner (.xlsx, .xls, .pdf, .docx)",
+    "file_size_ko": "({{size}} Ko)",
+    "remove_aria": "Retirer le fichier"
+  },
+  "preview": {
+    "title": "Aperçu des fichiers",
+    "subtitle": "Vérifiez le contenu avant de lancer la simulation.",
+    "back": "Retour",
+    "not_excel": "Les fichiers ne sont pas des fichiers Excel. L'aperçu n'est pas disponible.",
+    "lines_sheets_one": "{{lines}} lignes · {{count}} feuille",
+    "lines_sheets_other": "{{lines}} lignes · {{count}} feuilles"
+  },
+  "processing": {
+    "title": "Simulation en cours...",
+    "substeps": "Extraction → Analyse DQE → Génération offre fiscale corrigée.",
+    "msg_sending": "Envoi des fichiers...",
+    "msg_starting": "Traitement lancé. Extraction et analyse en cours...",
+    "msg_extracting": "Extraction et analyse des documents en cours...",
+    "msg_dqe_done": "DQE standard généré. Génération de l'offre fiscale corrigée...",
+    "msg_fetching": "Récupération des résultats..."
+  },
+  "results": {
+    "dqe_title": "DQE Standard ({{count}} lignes)",
+    "of_title": "Offre Fiscale Corrigée",
+    "col_num": "#",
+    "col_designation": "Désignation",
+    "col_quantite": "Quantité",
+    "col_prix_unitaire": "Prix Unitaire",
+    "col_montant": "Montant",
+    "sheet_default": "Feuille {{index}}"
+  },
+  "export": {
+    "of_btn": "Télécharger l'Offre Fiscale (Excel)",
+    "dqe_btn": "Télécharger le DQE Standard (Excel)"
+  },
+  "toast": {
+    "file_loaded": "{{name}} chargé avec succès",
+    "dqe_required_title": "Veuillez charger le fichier DQE",
+    "launch_error_title": "Erreur lors du lancement",
+    "completed": "Simulation terminée avec succès",
+    "of_downloaded": "Offre Fiscale téléchargée",
+    "dqe_downloaded": "DQE Standard téléchargé",
+    "generic_error_title": "Erreur"
+  },
+  "errors": {
+    "generic_status": "Erreur {{status}}",
+    "export_status": "Erreur: {{status}}"
+  }
+}
