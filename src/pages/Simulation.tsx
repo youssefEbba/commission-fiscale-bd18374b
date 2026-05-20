@@ -645,7 +645,7 @@ function FileUploadZone({
               <CheckCircle className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium">{file.name}</span>
               <span className="text-xs text-muted-foreground">
-                {t("simulation:upload.file_size_ko", { size: fmtNumI18n(Math.round(file.size / 1024)) })}
+                {t("simulation:upload.file_size_ko", { size: formatNumber(Math.round(file.size / 1024)) })}
               </span>
             </div>
             <Button variant="ghost" size="sm" onClick={onRemove} aria-label={t("simulation:upload.remove_aria") as string}>
