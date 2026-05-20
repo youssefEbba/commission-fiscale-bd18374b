@@ -963,17 +963,17 @@ const Demandes = () => {
                   {t("demandes:dialogs.reject.docs_label")} <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                  {ALL_DOCUMENT_TYPES.map(dt => (
-                    <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                  {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
+                    <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
                       <Checkbox
-                        checked={rejectDocsDemandes.includes(dt.value)}
+                        checked={rejectDocsDemandes.includes(dt)}
                         onCheckedChange={(checked) => {
                           setRejectDocsDemandes(prev =>
-                            checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value)
+                            checked ? [...prev, dt] : prev.filter(v => v !== dt)
                           );
                         }}
                       />
-                      <span>{tTypeDocument(dt.value)}</span>
+                      <span>{tTypeDocument(dt)}</span>
                     </label>
                   ))}
                 </div>
