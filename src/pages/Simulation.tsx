@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Upload, FileSpreadsheet, Play, Loader2, CheckCircle, X,
-  ChevronDown, Eye, ArrowLeft, FileText, AlertTriangle, RefreshCw, Download,
+  ChevronDown, Eye, ArrowLeft, FileText, AlertTriangle, Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
@@ -15,6 +15,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { formatNumber as fmtNumI18n, formatDateTime } from "@/i18n/format";
+import i18n from "@/i18n";
 
 /* ──────────────── Types ──────────────── */
 
@@ -36,10 +39,16 @@ type Step = "home" | "upload" | "preview" | "processing";
 
 /* ──────────────── Helpers ──────────────── */
 
+/**
+ * Formatage numérique (3 décimales max) locale-aware (fr-FR / ar-MR),
+ * en chiffres latins pour rester comparable aux exports Excel.
+ */
 function formatNumber(n: number | undefined | null): string {
-  if (n === undefined || n === null || isNaN(n)) return "-";
-  if (Math.abs(n) < 0.001) return "0";
-  return n.toLocaleString("fr-FR", { maximumFractionDigits: 3 });
+  if (n === undefined || n === null || isNaN(n as number)) return "-";
+  const v = n as number;
+  if (Math.abs(v) < 0.001) return "0";
+  const loc = i18n.language?.startsWith("ar") ? "ar-MR" : "fr-FR";
+  return new Intl.NumberFormat(loc, { numberingSystem: "latn", maximumFractionDigits: 3 }).format(v);
 }
 
 function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
@@ -67,6 +76,8 @@ function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
 /* ──────────────── Main Component ──────────────── */
 
 const Simulation = () => {
+  const { t } = useTranslation();
+  usePageTitle("simulation:page.title");
   const { toast } = useToast();
   const { user } = useAuth();
   const entrepriseId = user?.entrepriseId ? String(user.entrepriseId) : "";
@@ -115,7 +126,7 @@ const Simulation = () => {
       setOfFile(file);
       try { setOfPreview(await readExcelForPreview(file)); } catch { setOfPreview(null); }
     }
-    toast({ title: `${file.name} chargé avec succès` });
+    toast({ title: t("simulation:toast.file_loaded", { name: file.name }) });
   };
 
   const handleDrop = (e: React.DragEvent, type: "dqe" | "of") => {
@@ -137,7 +148,7 @@ const Simulation = () => {
         const status: SimulationStatus = await res.json();
         if (status.hasDqeStandard && (status.hasOffreFiscale || status.hasOffreFiscaleCorrigee)) {
           stopPolling();
-          setProgressMsg("Récupération des résultats...");
+          setProgressMsg(t("simulation:processing.msg_fetching") as string);
           const [dqeRes, ofRes] = await Promise.all([
             fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(eid)}/dqe-standard`),
             fetch(`${AI_SERVICE_BASE}/api/simulation/${encodeURIComponent(eid)}/offre-fiscale`),
@@ -146,24 +157,24 @@ const Simulation = () => {
           if (ofRes.ok) setOffreFiscale(await ofRes.json());
           setLoading(false);
           setStep("home");
-          toast({ title: "Simulation terminée avec succès" });
+          toast({ title: t("simulation:toast.completed") });
         } else if (status.hasDqeStandard) {
-          setProgressMsg("DQE standard généré. Génération de l'offre fiscale corrigée...");
+          setProgressMsg(t("simulation:processing.msg_dqe_done") as string);
         } else if (status.exists) {
-          setProgressMsg("Extraction et analyse des documents en cours...");
+          setProgressMsg(t("simulation:processing.msg_extracting") as string);
         }
       } catch { }
     }, 3000);
-  }, [stopPolling, toast]);
+  }, [stopPolling, toast, t]);
 
   const startSimulation = async () => {
     if (!dqeFile || !entrepriseId.trim()) {
-      toast({ title: "Veuillez charger le fichier DQE", variant: "destructive" });
+      toast({ title: t("simulation:toast.dqe_required_title"), variant: "destructive" });
       return;
     }
     setStep("processing");
     setLoading(true);
-    setProgressMsg("Envoi des fichiers...");
+    setProgressMsg(t("simulation:processing.msg_sending") as string);
     setDqeStandard(null);
     setOffreFiscale(null);
 
@@ -176,7 +187,7 @@ const Simulation = () => {
       const res = await fetch(`${AI_SERVICE_BASE}/api/simulation/run`, { method: "POST", body: fd });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || errData.details || `Erreur ${res.status}`);
+        throw new Error(errData.error || errData.details || (t("simulation:errors.generic_status", { status: res.status }) as string));
       }
 
       const runData = await res.json().catch(() => null);
@@ -193,13 +204,13 @@ const Simulation = () => {
         } catch { }
         setLoading(false);
         setStep("home");
-        toast({ title: "Simulation terminée avec succès" });
+        toast({ title: t("simulation:toast.completed") });
       } else {
-        setProgressMsg("Traitement lancé. Extraction et analyse en cours...");
+        setProgressMsg(t("simulation:processing.msg_starting") as string);
         pollStatus(entrepriseId.trim());
       }
     } catch (err: any) {
-      toast({ title: "Erreur lors du lancement", description: err.message, variant: "destructive" });
+      toast({ title: t("simulation:toast.launch_error_title"), description: err.message, variant: "destructive" });
       setStep("home");
       setLoading(false);
     }
@@ -215,7 +226,7 @@ const Simulation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offre_fiscale: ofPayload }),
       });
-      if (!res.ok) throw new Error(`Erreur: ${res.status}`);
+      if (!res.ok) throw new Error(t("simulation:errors.export_status", { status: res.status }) as string);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -223,9 +234,9 @@ const Simulation = () => {
       a.download = `Offre_Fiscale_Simulation_${entrepriseId}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "Offre Fiscale téléchargée" });
+      toast({ title: t("simulation:toast.of_downloaded") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("simulation:toast.generic_error_title"), description: e.message, variant: "destructive" });
     } finally {
       setOfExporting(false);
     }
@@ -241,7 +252,7 @@ const Simulation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dqe: dqePayload }),
       });
-      if (!res.ok) throw new Error(`Erreur: ${res.status}`);
+      if (!res.ok) throw new Error(t("simulation:errors.export_status", { status: res.status }) as string);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -249,9 +260,9 @@ const Simulation = () => {
       a.download = `DQE_Standard_Simulation_${entrepriseId}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "DQE Standard téléchargé" });
+      toast({ title: t("simulation:toast.dqe_downloaded") });
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: t("simulation:toast.generic_error_title"), description: e.message, variant: "destructive" });
     } finally {
       setDqeExporting(false);
     }
@@ -273,8 +284,8 @@ const Simulation = () => {
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertTriangle className="h-12 w-12 text-destructive" />
-          <h2 className="text-xl font-semibold">Aucune entreprise associée</h2>
-          <p className="text-muted-foreground text-sm">Votre compte n'est pas lié à une entreprise. Veuillez contacter l'administrateur.</p>
+          <h2 className="text-xl font-semibold">{t("simulation:page.no_entreprise_title")}</h2>
+          <p className="text-muted-foreground text-sm">{t("simulation:page.no_entreprise_body")}</p>
         </div>
       </DashboardLayout>
     );
@@ -285,7 +296,7 @@ const Simulation = () => {
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">Vérification des résultats existants...</p>
+          <p className="text-muted-foreground text-sm">{t("simulation:page.existing_check")}</p>
         </div>
       </DashboardLayout>
     );
@@ -295,9 +306,9 @@ const Simulation = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Simulation Entreprise</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("simulation:page.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Simulez la correction automatique de vos documents fiscaux.
+            {t("simulation:page.subtitle")}
           </p>
         </div>
 
@@ -310,32 +321,32 @@ const Simulation = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    Offre Fiscale Corrigée disponible
+                    {t("simulation:home.of_available_title")}
                     {offreFiscale?.savedAt && (
-                      <span className="text-xs text-muted-foreground font-normal ml-auto">
-                        Générée le {new Date(offreFiscale.savedAt).toLocaleString("fr-FR")}
+                      <span className="text-xs text-muted-foreground font-normal ms-auto">
+                        {t("simulation:home.generated_on", { date: formatDateTime(offreFiscale.savedAt) })}
                       </span>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Une offre fiscale corrigée est disponible pour votre entreprise. Vous pouvez la télécharger au format Excel.
+                    {t("simulation:home.of_available_body")}
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Button onClick={handleOfExport} disabled={ofExporting}>
-                      {ofExporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-                      Télécharger l'Offre Fiscale (Excel)
+                      {ofExporting ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Download className="h-4 w-4 me-2" />}
+                      {t("simulation:export.of_btn")}
                     </Button>
                     {dqeStandard && (
                       <Button variant="outline" onClick={handleDqeExport} disabled={dqeExporting}>
-                        {dqeExporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-                        Télécharger le DQE Standard (Excel)
+                        {dqeExporting ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Download className="h-4 w-4 me-2" />}
+                        {t("simulation:export.dqe_btn")}
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => setShowResults(!showResults)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      {showResults ? "Masquer le détail" : "Voir le détail"}
+                      <Eye className="h-4 w-4 me-1" />
+                      {showResults ? t("simulation:home.hide_detail") : t("simulation:home.show_detail")}
                     </Button>
                   </div>
 
@@ -351,9 +362,9 @@ const Simulation = () => {
               <Card className="border-dashed">
                 <CardContent className="py-12 text-center">
                   <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  <h3 className="text-lg font-medium">Aucune offre fiscale corrigée</h3>
+                  <h3 className="text-lg font-medium">{t("simulation:home.no_of_title")}</h3>
                   <p className="text-sm text-muted-foreground mt-1 mb-4">
-                    Lancez une simulation pour générer automatiquement votre offre fiscale corrigée.
+                    {t("simulation:home.no_of_body")}
                   </p>
                 </CardContent>
               </Card>
@@ -362,8 +373,8 @@ const Simulation = () => {
             {/* Action: launch new simulation */}
             <div className="flex justify-center">
               <Button size="lg" onClick={resetAndNewSimulation} className="px-8">
-                <Play className="h-5 w-5 mr-2" />
-                {offreFiscale ? "Relancer une nouvelle simulation" : "Lancer une simulation"}
+                <Play className="h-5 w-5 me-2" />
+                {offreFiscale ? t("simulation:home.relaunch") : t("simulation:home.launch")}
               </Button>
             </div>
           </>
@@ -373,18 +384,18 @@ const Simulation = () => {
         {step === "upload" && (
           <>
             <div className="flex items-center gap-3 mb-2">
-              <Button variant="ghost" size="icon" onClick={() => setStep("home")}>
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={() => setStep("home")} aria-label={t("simulation:upload.back_aria") as string}>
+                <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
               </Button>
               <p className="text-sm text-muted-foreground">
-                Uploadez vos fichiers (DQE + Offre Fiscale optionnelle) pour simuler la correction.
+                {t("simulation:upload.instruction")}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FileUploadZone
-                label="DQE (obligatoire)"
-                description="Fichier du Devis Quantitatif et Estimatif"
+                label={t("simulation:upload.dqe_label") as string}
+                description={t("simulation:upload.dqe_description") as string}
                 file={dqeFile}
                 onUpload={(f) => handleFileUpload(f, "dqe")}
                 onDrop={(e) => handleDrop(e, "dqe")}
@@ -392,8 +403,8 @@ const Simulation = () => {
                 accept=".xlsx,.xls,.pdf,.docx"
               />
               <FileUploadZone
-                label="Offre Fiscale (optionnel)"
-                description="Fichier de l'offre fiscale"
+                label={t("simulation:upload.of_label") as string}
+                description={t("simulation:upload.of_description") as string}
                 file={ofFile}
                 onUpload={(f) => handleFileUpload(f, "of")}
                 onDrop={(e) => handleDrop(e, "of")}
@@ -405,12 +416,12 @@ const Simulation = () => {
             {dqeFile && (
               <div className="flex justify-center gap-3">
                 <Button variant="outline" onClick={() => setStep("preview")} className="px-6">
-                  <Eye className="h-5 w-5 mr-2" />
-                  Aperçu des fichiers
+                  <Eye className="h-5 w-5 me-2" />
+                  {t("simulation:upload.preview_btn")}
                 </Button>
                 <Button size="lg" onClick={startSimulation} disabled={loading} className="px-8">
-                  <Play className="h-5 w-5 mr-2" />
-                  Lancer la simulation
+                  <Play className="h-5 w-5 me-2" />
+                  {t("simulation:upload.launch_btn")}
                 </Button>
               </div>
             )}
@@ -421,12 +432,12 @@ const Simulation = () => {
         {step === "preview" && (
           <>
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => setStep("upload")}>
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={() => setStep("upload")} aria-label={t("simulation:upload.back_aria") as string}>
+                <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
               </Button>
               <div>
-                <h2 className="text-lg font-semibold">Aperçu des fichiers</h2>
-                <p className="text-muted-foreground text-sm">Vérifiez le contenu avant de lancer la simulation.</p>
+                <h2 className="text-lg font-semibold">{t("simulation:preview.title")}</h2>
+                <p className="text-muted-foreground text-sm">{t("simulation:preview.subtitle")}</p>
               </div>
             </div>
 
@@ -436,17 +447,17 @@ const Simulation = () => {
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Les fichiers ne sont pas des fichiers Excel. L'aperçu n'est pas disponible.</p>
+                  <p>{t("simulation:preview.not_excel")}</p>
                 </CardContent>
               </Card>
             )}
 
             <div className="flex justify-center gap-4 pb-6">
               <Button variant="outline" onClick={() => setStep("upload")}>
-                <ArrowLeft className="h-4 w-4 mr-2" /> Retour
+                <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("simulation:preview.back")}
               </Button>
               <Button size="lg" onClick={startSimulation} disabled={loading} className="px-8">
-                <Play className="h-5 w-5 mr-2" /> Lancer la simulation
+                <Play className="h-5 w-5 me-2" /> {t("simulation:upload.launch_btn")}
               </Button>
             </div>
           </>
@@ -460,10 +471,10 @@ const Simulation = () => {
               <Loader2 className="h-12 w-12 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold">Simulation en cours...</h2>
+              <h2 className="text-xl font-semibold">{t("simulation:processing.title")}</h2>
               <p className="text-muted-foreground text-sm max-w-md">{progressMsg}</p>
               <p className="text-xs text-muted-foreground mt-2">
-                Extraction → Analyse DQE → Génération offre fiscale corrigée.
+                {t("simulation:processing.substeps")}
               </p>
             </div>
             <div className="flex gap-2 mt-4">
@@ -480,6 +491,7 @@ const Simulation = () => {
 
 /* ======== DQE Standard View ======== */
 function DqeStandardView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const dqe = data?.dqe || data;
   const items = dqe?.items || dqe?.lignes || [];
 
@@ -491,7 +503,7 @@ function DqeStandardView({ data }: { data: any }) {
             <CardTitle className="text-base flex items-center gap-2">
               <ChevronDown className="h-4 w-4" />
               <FileSpreadsheet className="h-4 w-4 text-primary" />
-              DQE Standard ({items.length} lignes)
+              {t("simulation:results.dqe_title", { count: items.length })}
             </CardTitle>
           </CardHeader>
         </CollapsibleTrigger>
@@ -503,11 +515,11 @@ function DqeStandardView({ data }: { data: any }) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs min-w-[50px]">#</TableHead>
-                        <TableHead className="text-xs min-w-[200px]">Désignation</TableHead>
-                        <TableHead className="text-xs text-right">Quantité</TableHead>
-                        <TableHead className="text-xs text-right">Prix Unitaire</TableHead>
-                        <TableHead className="text-xs text-right">Montant</TableHead>
+                        <TableHead className="text-xs min-w-[50px]">{t("simulation:results.col_num")}</TableHead>
+                        <TableHead className="text-xs min-w-[200px]">{t("simulation:results.col_designation")}</TableHead>
+                        <TableHead className="text-xs text-end">{t("simulation:results.col_quantite")}</TableHead>
+                        <TableHead className="text-xs text-end">{t("simulation:results.col_prix_unitaire")}</TableHead>
+                        <TableHead className="text-xs text-end">{t("simulation:results.col_montant")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -515,9 +527,9 @@ function DqeStandardView({ data }: { data: any }) {
                         <TableRow key={i}>
                           <TableCell className="text-xs">{item.numero || item.num || i + 1}</TableCell>
                           <TableCell className="text-xs font-medium">{item.designation || item.description || item.libelle || "-"}</TableCell>
-                          <TableCell className="text-xs text-right font-mono">{formatNumber(item.quantite || item.qte)}</TableCell>
-                          <TableCell className="text-xs text-right font-mono">{formatNumber(item.prixUnitaire || item.pu)}</TableCell>
-                          <TableCell className="text-xs text-right font-mono font-medium">{formatNumber(item.montant || item.total)}</TableCell>
+                          <TableCell className="text-xs text-end font-mono">{formatNumber(item.quantite || item.qte)}</TableCell>
+                          <TableCell className="text-xs text-end font-mono">{formatNumber(item.prixUnitaire || item.pu)}</TableCell>
+                          <TableCell className="text-xs text-end font-mono font-medium">{formatNumber(item.montant || item.total)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -538,6 +550,7 @@ function DqeStandardView({ data }: { data: any }) {
 
 /* ======== Offre Fiscale Corrigée View ======== */
 function OffreFiscaleView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const of = data?.offre_fiscale || data;
   const feuilles = of?.feuilles || of?.sheets || [];
 
@@ -546,7 +559,7 @@ function OffreFiscaleView({ data }: { data: any }) {
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary" />
-          Offre Fiscale Corrigée
+          {t("simulation:results.of_title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -557,7 +570,9 @@ function OffreFiscaleView({ data }: { data: any }) {
                 <CollapsibleTrigger className="w-full">
                   <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer">
                     <ChevronDown className="h-4 w-4" />
-                    <span className="text-sm font-medium">{feuille.nom || feuille.name || `Feuille ${i + 1}`}</span>
+                    <span className="text-sm font-medium">
+                      {feuille.nom || feuille.name || (t("simulation:results.sheet_default", { index: i + 1 }) as string)}
+                    </span>
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -613,6 +628,7 @@ function FileUploadZone({
   onUpload: (f: File) => void; onDrop: (e: React.DragEvent) => void;
   onRemove: () => void; accept: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -627,9 +643,13 @@ function FileUploadZone({
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium">{file.name}</span>
-              <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)} Ko)</span>
+              <span className="text-xs text-muted-foreground">
+                {t("simulation:upload.file_size_ko", { size: fmtNumI18n(Math.round(file.size / 1024)) })}
+              </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={onRemove}><X className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={onRemove} aria-label={t("simulation:upload.remove_aria") as string}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         ) : (
           <label
@@ -641,7 +661,7 @@ function FileUploadZone({
             <div className="text-center">
               <p className="text-sm font-medium">{description}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Glissez-déposez ou cliquez pour sélectionner (.xlsx, .xls, .pdf, .docx)
+                {t("simulation:upload.dropzone_hint")}
               </p>
             </div>
             <input type="file" accept={accept} className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
@@ -654,12 +674,19 @@ function FileUploadZone({
 
 /* ======== Full Excel Preview ======== */
 function FullExcelPreview({ data }: { data: ExcelPreviewData }) {
+  const { t } = useTranslation();
   const [openSheet, setOpenSheet] = useState(0);
   const sheetName = data.sheets[openSheet]?.name;
   if (!sheetName) return null;
 
   const ws = data.workbook.Sheets[sheetName];
   const htmlString = XLSX.utils.sheet_to_html(ws, { id: `excel-preview-${openSheet}`, editable: false });
+
+  const lines = data.sheets[openSheet]?.data.length || 0;
+  const sheetsCount = data.sheets.length;
+  const subtitle = sheetsCount > 1
+    ? t("simulation:preview.lines_sheets_other", { lines, count: sheetsCount })
+    : t("simulation:preview.lines_sheets_one", { lines, count: sheetsCount });
 
   return (
     <Card className="overflow-hidden shadow-sm border-border/60">
@@ -670,9 +697,7 @@ function FullExcelPreview({ data }: { data: ExcelPreviewData }) {
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-foreground">{data.fileName}</span>
-            <span className="text-xs text-muted-foreground font-normal">
-              {data.sheets[openSheet]?.data.length || 0} lignes · {data.sheets.length} feuille{data.sheets.length > 1 ? "s" : ""}
-            </span>
+            <span className="text-xs text-muted-foreground font-normal">{subtitle}</span>
           </div>
         </CardTitle>
       </CardHeader>

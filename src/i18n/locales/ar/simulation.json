@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "محاكاة المؤسسة",
+    "subtitle": "حاكِ التصحيح التلقائي لوثائقك الجبائية.",
+    "no_entreprise_title": "لا توجد مؤسسة مرتبطة",
+    "no_entreprise_body": "حسابك غير مرتبط بمؤسسة. يُرجى التواصل مع المسؤول.",
+    "existing_check": "جارٍ التحقق من النتائج الموجودة..."
+  },
+  "home": {
+    "of_available_title": "العرض الجبائي المصحَّح متاح",
+    "generated_on": "أُنشئ بتاريخ {{date}}",
+    "of_available_body": "يتوفر عرض جبائي مصحَّح لمؤسستك. يمكنك تنزيله بصيغة Excel.",
+    "show_detail": "عرض التفاصيل",
+    "hide_detail": "إخفاء التفاصيل",
+    "no_of_title": "لا يوجد عرض جبائي مصحَّح",
+    "no_of_body": "ابدأ محاكاة لتوليد العرض الجبائي المصحَّح تلقائيًا.",
+    "launch": "بدء المحاكاة",
+    "relaunch": "إعادة تشغيل محاكاة جديدة"
+  },
+  "upload": {
+    "back_aria": "رجوع",
+    "instruction": "ارفع ملفاتك (DQE + العرض الجبائي اختياريًا) لمحاكاة التصحيح.",
+    "dqe_label": "DQE (إلزامي)",
+    "dqe_description": "ملف جدول الكميات والتقديرات",
+    "of_label": "العرض الجبائي (اختياري)",
+    "of_description": "ملف العرض الجبائي",
+    "preview_btn": "معاينة الملفات",
+    "launch_btn": "بدء المحاكاة",
+    "dropzone_hint": "اسحب وأفلت أو انقر للاختيار (.xlsx, .xls, .pdf, .docx)",
+    "file_size_ko": "({{size}} كب)",
+    "remove_aria": "إزالة الملف"
+  },
+  "preview": {
+    "title": "معاينة الملفات",
+    "subtitle": "تحقق من المحتوى قبل بدء المحاكاة.",
+    "back": "رجوع",
+    "not_excel": "الملفات ليست بصيغة Excel. المعاينة غير متاحة.",
+    "lines_sheets_one": "{{lines}} سطر · {{count}} ورقة",
+    "lines_sheets_other": "{{lines}} سطر · {{count}} ورقات"
+  },
+  "processing": {
+    "title": "المحاكاة قيد التنفيذ...",
+    "substeps": "الاستخراج ← تحليل DQE ← توليد العرض الجبائي المصحَّح.",
+    "msg_sending": "جارٍ إرسال الملفات...",
+    "msg_starting": "تم إطلاق المعالجة. الاستخراج والتحليل جاريان...",
+    "msg_extracting": "استخراج وتحليل الوثائق جارٍ...",
+    "msg_dqe_done": "تم توليد DQE القياسي. جارٍ توليد العرض الجبائي المصحَّح...",
+    "msg_fetching": "جارٍ استرجاع النتائج..."
+  },
+  "results": {
+    "dqe_title": "DQE القياسي ({{count}} سطر)",
+    "of_title": "العرض الجبائي المصحَّح",
+    "col_num": "#",
+    "col_designation": "التسمية",
+    "col_quantite": "الكمية",
+    "col_prix_unitaire": "السعر الوحدوي",
+    "col_montant": "المبلغ",
+    "sheet_default": "ورقة {{index}}"
+  },
+  "export": {
+    "of_btn": "تنزيل العرض الجبائي (Excel)",
+    "dqe_btn": "تنزيل DQE القياسي (Excel)"
+  },
+  "toast": {
+    "file_loaded": "تم تحميل {{name}} بنجاح",
+    "dqe_required_title": "يُرجى تحميل ملف DQE",
+    "launch_error_title": "خطأ أثناء الإطلاق",
+    "completed": "اكتملت المحاكاة بنجاح",
+    "of_downloaded": "تم تنزيل العرض الجبائي",
+    "dqe_downloaded": "تم تنزيل DQE القياسي",
+    "generic_error_title": "خطأ"
+  },
+  "errors": {
+    "generic_status": "خطأ {{status}}",
+    "export_status": "خطأ: {{status}}"
+  }
+}
