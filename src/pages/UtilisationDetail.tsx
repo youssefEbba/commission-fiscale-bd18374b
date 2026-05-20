@@ -1110,18 +1110,31 @@ const UtilisationDetail = () => {
                     <TableHead className="w-24">{t("utilisations:visa_dgd.col_code")}</TableHead>
                     <TableHead>{t("utilisations:visa_dgd.col_name")}</TableHead>
                     <TableHead className="text-end w-36">{t("utilisations:visa_dgd.col_value_saisie")}</TableHead>
-                    <TableHead className="text-end w-40">{t("utilisations:visa_dgd.col_value_override")}</TableHead>
+                    <TableHead className="w-40">{t("utilisations:visa_dgd.col_proposition")}</TableHead>
+                    <TableHead className="text-end w-36">{t("utilisations:visa_dgd.col_value_override")}</TableHead>
                     <TableHead className="w-48">{t("utilisations:visa_dgd.col_affectation")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {u.lignes.map((l: LigneBulletinDto) => {
                     const isZero = (Number(l.valeur) || 0) === 0;
+                    const propose = l.affectationEntreprise ?? null;
                     return (
                       <TableRow key={l.id}>
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
                         <TableCell className="text-sm">{l.libelle}</TableCell>
                         <TableCell className="text-end font-medium">{fmtNum(l.valeur)}</TableCell>
+                        <TableCell>
+                          {isZero ? (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          ) : propose === "AU_CI" ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{t("utilisations:visa_dgd.proposition_au_ci")}</Badge>
+                          ) : propose === "A_PAYER" ? (
+                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">{t("utilisations:visa_dgd.proposition_a_payer")}</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">{t("utilisations:visa_dgd.proposition_none")}</Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Input
                             type="number"
