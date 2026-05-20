@@ -103,6 +103,15 @@
     "ANNULEE": "Annulée",
     "CLOTUREE": "Clôturée"
   },
+  "statut_referentiel": {
+    "EN_ATTENTE": "En attente",
+    "VALIDE": "Validé",
+    "VALIDEE": "Validé",
+    "REJETE": "Rejeté",
+    "REJETEE": "Rejeté",
+    "ANNULE": "Annulé",
+    "ANNULEE": "Annulé"
+  },
   "statut_marche": {
     "BROUILLON": "Brouillon",
     "ATTRIBUE": "Attribué",
