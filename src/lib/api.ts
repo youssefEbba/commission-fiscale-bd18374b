@@ -656,24 +656,42 @@ export const RECLAMATION_STATUT_LABELS: Record<ReclamationStatut, string> = {
   ANNULEE: "Annulée",
 };
 
-export const DOCUMENT_TYPES_REQUIS: { value: string; label: string }[] = [
-  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
-  { value: "OFFRE_FINANCIERE", label: "Offre financière (table de calcul)" },
-  { value: "TABLEAU_MODELE", label: "Tableau modèle" },
-];
+/** Types de documents requis pour soumettre une demande de correction douanière. */
+export type TypeDocumentCorrectionRequis =
+  | "LETTRE_SAISINE"
+  | "OFFRE_FINANCIERE"
+  | "TABLEAU_MODELE";
 
-// All 7 document types from P1
-export const ALL_DOCUMENT_TYPES: { value: string; label: string }[] = [
-  { value: "LETTRE_SAISINE", label: "Lettre de saisine" },
-  { value: "PV_OUVERTURE", label: "PV ouverture offres financières" },
-  { value: "ATTESTATION_FISCALE", label: "Attestation fiscale entreprise" },
-  { value: "OFFRE_FINANCIERE", label: "Offre financière" },
-  { value: "TABLEAU_MODELE", label: "Tableau modèle (nature, valeur, classification)" },
-  { value: "DAO_DQE", label: "DAO + DQE" },
-  { value: "LISTE_ITEMS_EXCEL", label: "Liste items Excel (FR/AR)" },
-];
+export const DOCUMENT_TYPES_REQUIS: readonly TypeDocumentCorrectionRequis[] = [
+  "LETTRE_SAISINE",
+  "OFFRE_FINANCIERE",
+  "TABLEAU_MODELE",
+] as const;
 
-export const DOCUMENT_TYPES = DOCUMENT_TYPES_REQUIS.map((t) => t.value);
+/**
+ * Tous les types de documents acceptés pour une demande de correction douanière (P1).
+ * Libellés via `tTypeDocument(value)` côté UI.
+ */
+export type TypeDocumentCorrection =
+  | "LETTRE_SAISINE"
+  | "PV_OUVERTURE"
+  | "ATTESTATION_FISCALE"
+  | "OFFRE_FINANCIERE"
+  | "TABLEAU_MODELE"
+  | "DAO_DQE"
+  | "LISTE_ITEMS_EXCEL";
+
+export const ALL_DOCUMENT_TYPES_VALUES: readonly TypeDocumentCorrection[] = [
+  "LETTRE_SAISINE",
+  "PV_OUVERTURE",
+  "ATTESTATION_FISCALE",
+  "OFFRE_FINANCIERE",
+  "TABLEAU_MODELE",
+  "DAO_DQE",
+  "LISTE_ITEMS_EXCEL",
+] as const;
+
+export const DOCUMENT_TYPES = [...DOCUMENT_TYPES_REQUIS];
 
 export const demandeCorrectionApi = {
   getAll: () => apiFetch<DemandeCorrectionDto[]>("/demandes-correction"),
