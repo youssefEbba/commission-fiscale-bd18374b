@@ -195,7 +195,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 flex flex-col bg-sidebar text-sidebar-foreground">
+          <aside className="absolute start-0 top-0 h-full w-64 flex flex-col bg-sidebar text-sidebar-foreground">
             {sidebarContent(() => setMobileOpen(false))}
           </aside>
         </div>
