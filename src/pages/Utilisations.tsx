@@ -12,7 +12,7 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   DecisionCorrectionDto,
   transfertCreditApi,
-  LigneBulletinRequest, TypeLigneTaxe,
+  LigneBulletinRequest, TypeLigneTaxe, AffectationTaxe,
   referentielTaxeApi, ReferentielTaxeDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
