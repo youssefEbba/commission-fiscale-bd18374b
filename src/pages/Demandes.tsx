@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
-  DocumentDto, ALL_DOCUMENT_TYPES,
+  DocumentDto, ALL_DOCUMENT_TYPES_VALUES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -792,10 +792,10 @@ const Demandes = () => {
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {(uploadAllowedTypes.length > 0
-                    ? ALL_DOCUMENT_TYPES.filter(tt => uploadAllowedTypes.includes(tt.value))
-                    : ALL_DOCUMENT_TYPES
+                    ? ALL_DOCUMENT_TYPES_VALUES.filter(tt => uploadAllowedTypes.includes(tt))
+                    : ALL_DOCUMENT_TYPES_VALUES
                   ).map((tt) => (
-                    <SelectItem key={tt.value} value={tt.value}>{tTypeDocument(tt.value)}</SelectItem>
+                    <SelectItem key={tt} value={tt}>{tTypeDocument(tt)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
