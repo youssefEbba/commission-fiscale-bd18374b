@@ -1,0 +1,222 @@
+{
+  "page": {
+    "title": "Correction douanière",
+    "title_with_number": "Correction douanière — {{numero}}",
+    "subtitle": "Évaluation et décisions",
+    "back": "Retour",
+    "not_found": "Demande introuvable"
+  },
+  "info": {
+    "card_title": "Informations de la demande",
+    "numero": "N° Demande",
+    "statut": "Statut",
+    "autorite": "Autorité Contractante",
+    "entreprise": "Entreprise",
+    "date_depot": "Date de dépôt",
+    "dash": "—"
+  },
+  "decisions": {
+    "card_title": "Décisions par organisme",
+    "refresh_aria": "Rafraîchir les décisions",
+    "waiting_title": "En attente",
+    "waiting_subtitle": "Aucune décision de {{role}} pour le moment.",
+    "all_resolved": "Tous les rejets ont été résolus.",
+    "visa": "Visa",
+    "rejet_temp": "Rejet temporaire",
+    "status_open": "Ouvert",
+    "status_resolved": "Résolu",
+    "docs_requested": "Docs demandés :",
+    "responses": "Réponses :",
+    "document_uploaded": "Document uploadé",
+    "by": "Par : {{name}}",
+    "respond": "Répondre",
+    "upload_doc": "Upload doc",
+    "mark_resolved": "Marquer résolu",
+    "toast_mark_resolved": "Rejet marqué comme résolu",
+    "history_one": "Historique ({{count}} rejet résolu)",
+    "history_other": "Historique ({{count}} rejets résolus)",
+    "special_docs_title": "Documents de décision",
+    "special_doc_unavailable": "Non disponible",
+    "open": "Ouvrir"
+  },
+  "actions": {
+    "ma_decision": "Ma décision",
+    "visa_apposed": "Visa apposé",
+    "rejet_resolved": "Rejet résolu",
+    "rejet_resolved_hint": "Le rejet a été résolu — vous pouvez maintenant apposer votre visa",
+    "rejet_in_progress": "Rejet temporaire en cours",
+    "blocked_by_dgd_title": "En attente du visa DGD",
+    "blocked_by_dgd_body": "Le DGD doit valider cette demande en premier avant que vous puissiez apposer votre visa.",
+    "upload_required_title": "Upload requis avant visa",
+    "upload_required_body": "Vous devez uploader le document « {{label}} » avant de pouvoir apposer votre visa.",
+    "upload_required_button": "Uploader {{label}}",
+    "upload_done": "{{label}} uploadé",
+    "apposer_visa": "Apposer visa",
+    "visa_done_short": "Visa apposé",
+    "solve_rejets_first": "Résoudre les rejets d'abord",
+    "rejeter_temp_first": "Rejeter temporairement",
+    "rejeter_temp_again": "Nouveau rejet temporaire",
+    "visa_already": "Visa déjà apposé"
+  },
+  "final": {
+    "card_title": "Décision finale",
+    "lettre_title": "Lettre d'Adoption",
+    "lettre_hint": "Uploadez la lettre d'adoption avant de finaliser la décision.",
+    "lettre_upload_btn": "Uploader Lettre d'Adoption",
+    "lettre_uploaded": "Lettre d'Adoption uploadée",
+    "rejet_warning": "Un rejet temporaire est en cours. Vérifiez les décisions avant de trancher.",
+    "adopt": "Adopter (final)",
+    "reject": "Rejeter (final)",
+    "status_adoptee": "Demande Adoptée",
+    "status_rejetee": "Demande Rejetée"
+  },
+  "documents": {
+    "card_title": "Pièces du dossier",
+    "new_version": "Nouvelle version",
+    "none": "Aucun document associé",
+    "open": "Ouvrir",
+    "download": "Télécharger",
+    "versions_history": "Historique des versions"
+  },
+  "reclamation": {
+    "section_title": "Réclamations",
+    "deposit": "Déposer une réclamation",
+    "none": "Aucune réclamation déposée.",
+    "by_short": "Par : {{name}}",
+    "rejet_motif": "Motif du rejet : ",
+    "accepted_short": "Acceptée",
+    "accepted_info": "La demande a été réinitialisée au statut REÇUE.",
+    "annulee_info": "Réclamation annulée",
+    "accepter": "Accepter",
+    "rejeter": "Rejeter",
+    "annuler": "Annuler la réclamation",
+    "open_file": "Ouvrir",
+    "rebanner_title": "Réclamation acceptée — Nouveau cycle d'évaluation",
+    "rebanner_body": "Le processus d'évaluation reprend. Le DGD doit téléverser la nouvelle offre corrigée et le Président la nouvelle lettre d'adoption."
+  },
+  "ai": {
+    "card_title": "Assistance intelligente",
+    "body": "Lancer l'analyse pour vérifier les corrections douanières.",
+    "open_chatbot": "Chatbot DQE + Offre Fiscale"
+  },
+  "dialog": {
+    "reject_temp": {
+      "title": "Rejet temporaire",
+      "description": "Indiquez le motif du rejet et sélectionnez les documents à corriger/compléter.",
+      "motif_placeholder": "Motif du rejet temporaire...",
+      "docs_label": "Documents à corriger / compléter",
+      "select_at_least_one": "Sélectionnez au moins un document",
+      "cancel": "Annuler",
+      "confirm": "Confirmer"
+    },
+    "final": {
+      "title_adopt": "Décision finale — Adopter",
+      "title_reject": "Décision finale — Rejeter",
+      "description": "Cette action est définitive et changera le statut de la demande.",
+      "motif_placeholder": "Motif du rejet final...",
+      "cancel": "Annuler",
+      "confirm": "Confirmer"
+    },
+    "pre_visa": {
+      "title": "Upload requis — {{label}}",
+      "description": "Vous devez uploader le document « {{label}} » avant de pouvoir apposer votre visa.",
+      "file_label": "Fichier",
+      "cancel": "Annuler",
+      "upload": "Uploader"
+    },
+    "upload": {
+      "title": "Uploader une nouvelle version",
+      "description": "L'ancien document deviendra inactif, le nouveau sera la version active.",
+      "type_label": "Type de document",
+      "type_placeholder": "Sélectionner le type",
+      "file_label": "Fichier",
+      "message_required_label": "Message de justification",
+      "message_placeholder": "Expliquez la correction apportée...",
+      "cancel": "Annuler",
+      "upload": "Uploader"
+    },
+    "response": {
+      "title": "Répondre au rejet",
+      "description": "Envoyez un message de justification à l'organisme ayant émis le rejet.",
+      "requested_docs": "Documents demandés par ce rejet :",
+      "motif_label": "Motif : {{motif}}",
+      "message_placeholder": "Votre message de justification...",
+      "cancel": "Annuler",
+      "send": "Envoyer"
+    },
+    "entreprise": {
+      "title": "Informations de l'entreprise",
+      "raison": "Raison sociale",
+      "nif": "NIF",
+      "adresse": "Adresse",
+      "situation": "Situation fiscale",
+      "empty": "Aucune information disponible"
+    },
+    "reclamation_create": {
+      "title": "Déposer une réclamation",
+      "description": "Décrivez votre réclamation et joignez un document justificatif.",
+      "motif_label": "Motif de la réclamation",
+      "motif_placeholder": "Décrivez votre réclamation...",
+      "counter": "{{current}}/{{max}}",
+      "file_label": "Pièce justificative",
+      "cancel": "Annuler",
+      "submit": "Déposer"
+    },
+    "reclamation_traiter": {
+      "title_accept": "Accepter la réclamation",
+      "title_reject": "Rejeter la réclamation",
+      "description_accept": "L'acceptation remettra la demande au statut REÇUE et réinitialisera les visas.",
+      "description_reject": "Indiquez le motif et joignez un document de réponse pour rejeter cette réclamation.",
+      "motif_label_accept": "Commentaire (optionnel)",
+      "motif_label_reject": "Motif du rejet",
+      "motif_placeholder_accept": "Commentaire interne...",
+      "motif_placeholder_reject": "Motif obligatoire (max 2000 caractères)...",
+      "file_label": "Document de réponse",
+      "file_size": "{{name}} ({{size}} Ko)",
+      "consequences_title": "Conséquences de l'acceptation :",
+      "consequence_status": "La demande repasse au statut REÇUE",
+      "consequence_visas": "Tous les visas sont réinitialisés",
+      "consequence_docs": "La lettre d'adoption et l'offre corrigée sont archivées",
+      "consequence_reupload": "Le DGD et le Président devront retéléverser les documents",
+      "cancel": "Annuler",
+      "confirm_accept": "Confirmer l'acceptation",
+      "confirm_reject": "Confirmer le rejet"
+    }
+  },
+  "decision_roles": {
+    "DGD": "DGD – Douanes",
+    "DGTCP": "DGTCP – Trésor",
+    "DGI": "DGI – Impôts",
+    "DGB": "DGB – Budget",
+    "PRESIDENT": "Président"
+  },
+  "special_docs": {
+    "CREDIT_EXTERIEUR": "Crédit Extérieur",
+    "CREDIT_INTERIEUR": "Crédit Intérieur",
+    "LETTRE_ADOPTION": "Lettre d'Adoption",
+    "OFFRE_FISCALE_CORRIGEE": "Offre Fiscale Corrigée"
+  },
+  "toast": {
+    "load_error": "Impossible de charger la demande",
+    "entreprise_error": "Impossible de charger les informations de l'entreprise",
+    "reclamation_created": "Réclamation déposée avec succès",
+    "reclamation_motif_required_title": "Motif requis",
+    "reclamation_motif_required_body": "Le motif est obligatoire pour un rejet.",
+    "reclamation_file_required_title": "Document requis",
+    "reclamation_file_required_body": "Un document de réponse est obligatoire pour un rejet.",
+    "reclamation_accepted": "Réclamation acceptée — la demande repasse au statut REÇUE",
+    "reclamation_rejected": "Réclamation rejetée",
+    "reclamation_annulee": "Réclamation annulée",
+    "upload_message_required_title": "Message requis",
+    "upload_message_required_body": "Ajoutez un message de justification pour répondre au rejet.",
+    "upload_success": "Document uploadé (nouvelle version)",
+    "pre_visa_success": "{{label}} uploadé avec succès",
+    "visa_success": "Visa apposé avec succès",
+    "visa_temp_success": "Visa temporaire apposé",
+    "rejet_temp_success": "Rejet temporaire enregistré",
+    "response_sent": "Réponse envoyée",
+    "final_adopted": "Demande adoptée (décision finale)",
+    "final_rejected": "Demande rejetée (décision finale)",
+    "generic_error": "Une erreur est survenue"
+  }
+}
