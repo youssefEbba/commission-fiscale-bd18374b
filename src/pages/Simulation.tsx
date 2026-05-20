@@ -16,8 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { formatNumber as fmtNumI18n, formatDateTime } from "@/i18n/format";
-import i18n from "@/i18n";
+import { formatNumber, formatDateTime } from "@/i18n/format";
 
 /* ──────────────── Types ──────────────── */
 
@@ -43,12 +42,14 @@ type Step = "home" | "upload" | "preview" | "processing";
  * Formatage numérique (3 décimales max) locale-aware (fr-FR / ar-MR),
  * en chiffres latins pour rester comparable aux exports Excel.
  */
-function formatNumber(n: number | undefined | null): string {
+/**
+ * Wrapper local : la simulation affiche jusqu'à 3 décimales, met à zéro les
+ * valeurs < 0.001 (bruit numérique Excel) et retombe sur "-" pour les valeurs nulles.
+ * Délègue au helper global `formatNumber` (chiffres latins, locale courante).
+ */
+function fmtSimNum(n: number | undefined | null): string {
   if (n === undefined || n === null || isNaN(n as number)) return "-";
-  const v = n as number;
-  if (Math.abs(v) < 0.001) return "0";
-  const loc = i18n.language?.startsWith("ar") ? "ar-MR" : "fr-FR";
-  return new Intl.NumberFormat(loc, { numberingSystem: "latn", maximumFractionDigits: 3 }).format(v);
+  return formatNumber(n, { maximumFractionDigits: 3, zeroEpsilon: 0.001 });
 }
 
 function readExcelForPreview(file: File): Promise<ExcelPreviewData> {
