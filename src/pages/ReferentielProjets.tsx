@@ -3,11 +3,12 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   referentielProjetApi, ReferentielProjetDto, ReferentielStatut,
-  REFERENTIEL_STATUT_LABELS, REFERENTIEL_DOCUMENT_TYPES,
+  REFERENTIEL_STATUT_VALUES, REFERENTIEL_DOCUMENT_TYPES,
   DocumentDto, autoriteContractanteApi, AutoriteContractanteDto,
   CreateReferentielProjetRequest, TypeDocumentProjet,
   conventionApi, ConventionDto,
 } from "@/lib/api";
+import { tStatutReferentiel } from "@/i18n/enums";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +178,7 @@ const ReferentielProjets = () => {
     setActionLoading(id);
     try {
       await referentielProjetApi.updateStatut(id, statut, motifRejet);
-      toast({ title: "Succès", description: `Statut mis à jour: ${REFERENTIEL_STATUT_LABELS[statut]}` });
+      toast({ title: "Succès", description: `Statut mis à jour: ${tStatutReferentiel(statut)}` });
       fetchProjets();
       if (selected?.id === id) setSelected((prev) => prev ? { ...prev, statut, motifRejet: motifRejet || prev.motifRejet } : null);
     } catch (e: any) {
@@ -332,8 +333,8 @@ const ReferentielProjets = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Tous les statuts</SelectItem>
-              {Object.entries(REFERENTIEL_STATUT_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              {REFERENTIEL_STATUT_VALUES.map((k) => (
+                <SelectItem key={k} value={k}>{tStatutReferentiel(k)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -373,7 +374,7 @@ const ReferentielProjets = () => {
                         </TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${STATUT_COLORS[p.statut] || ""}`}>
-                            {REFERENTIEL_STATUT_LABELS[p.statut]}
+                            {tStatutReferentiel(p.statut)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">

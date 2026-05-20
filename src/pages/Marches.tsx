@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_LABELS,
+  marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_VALUES,
   delegueApi, DelegueDto,
   conventionApi, ConventionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
@@ -452,7 +452,7 @@ const Marches = () => {
               <Select value={form.statut} onValueChange={v => setForm(f => ({ ...f, statut: v as StatutMarche }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.keys(MARCHE_STATUT_LABELS).map((k) => (
+                  {MARCHE_STATUT_VALUES.map((k) => (
                     <SelectItem key={k} value={k}>{tStatutMarche(k)}</SelectItem>
                   ))}
                 </SelectContent>

@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   conventionApi, ConventionDto, ConventionStatut,
-  CONVENTION_STATUT_LABELS, CreateConventionRequest,
+  CONVENTION_STATUT_VALUES, CreateConventionRequest,
   DocumentDto, TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
   bailleurApi, BailleurDto, CreateBailleurRequest,
   deviseApi, DeviseDto, CreateDeviseRequest,
@@ -593,7 +593,7 @@ const Conventions = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("conventions:list.all_statuses")}</SelectItem>
-              {Object.keys(CONVENTION_STATUT_LABELS).map((k) => (
+              {CONVENTION_STATUT_VALUES.map((k) => (
                 <SelectItem key={k} value={k}>{tStatutConvention(k)}</SelectItem>
               ))}
             </SelectContent>

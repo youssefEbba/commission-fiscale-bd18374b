@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
-  CERTIFICAT_STATUT_LABELS,
+  CERTIFICAT_STATUT_VALUES,
   DocumentDto,
   sousTraitanceApi,
 } from "@/lib/api";
@@ -202,7 +202,7 @@ const Certificats = () => {
             <SelectTrigger className="w-48"><Filter className="h-4 w-4 me-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("certificats:list.filter_all")}</SelectItem>
-              {Object.keys(CERTIFICAT_STATUT_LABELS).map((k) => (<SelectItem key={k} value={k}>{tStatutCertificat(k)}</SelectItem>))}
+              {CERTIFICAT_STATUT_VALUES.map((k) => (<SelectItem key={k} value={k}>{tStatutCertificat(k)}</SelectItem>))}
             </SelectContent>
           </Select>
         </div>
