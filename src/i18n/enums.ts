@@ -16,6 +16,19 @@ function tEnum(group: string, value: string | null | undefined, fallback?: strin
 export const tStatutCertificat = (v?: string | null) => tEnum("statut_certificat", v ?? undefined);
 export const tStatutTransfert = (v?: string | null) => tEnum("statut_transfert", v ?? undefined);
 export const tStatutUtilisation = (v?: string | null) => tEnum("statut_utilisation", v ?? undefined);
+/**
+ * Libellé contextualisé : pour une utilisation DOUANIER clôturée,
+ * renvoie « Clôturée (transfert) » / « مغلقة (تحويل) ».
+ * Sinon retombe sur tStatutUtilisation.
+ */
+export const tUtilisationStatutContextualise = (statut?: string | null, type?: string | null): string => {
+  if (statut === "CLOTUREE" && type === "DOUANIER") {
+    const k = "utilisations:statut.cloturee_transfert";
+    const r = i18n.t(k, { defaultValue: "" }) as string;
+    if (r) return r;
+  }
+  return tStatutUtilisation(statut);
+};
 export const tStatutDemande = (v?: string | null) => tEnum("statut_demande", v ?? undefined);
 export const tStatutConvention = (v?: string | null) => tEnum("statut_convention", v ?? undefined);
 export const tStatutMarche = (v?: string | null) => tEnum("statut_marche", v ?? undefined);

@@ -1429,23 +1429,21 @@ export const CERTIFICAT_STATUT_LABELS: Record<CertificatStatut, string> = {
   MODIFIE: "Modifié", CLOTURE: "Clôturé", ANNULE: "Annulé",
 };
 
-export const UTILISATION_STATUT_LABELS: Record<UtilisationStatut, string> = {
-  BROUILLON: "Brouillon",
-  DEMANDEE: "Demandée", INCOMPLETE: "Incomplète", A_RECONTROLER: "À recontrôler",
-  EN_VERIFICATION: "En vérification", VISE: "Visé",
-  VALIDEE: "Validée", LIQUIDEE: "Liquidée", APUREE: "Apurée", REJETEE: "Rejetée",
-  CLOTUREE: "Clôturée",
-  EN_CONTROLE_DGD: "Contrôlée par DGD",
-  CHEQUE_SAISI: "Chèque fourni",
-  ENVOYEE_AU_TRESOR: "Envoyée au Trésor",
-  QUITTANCES_ENREGISTREES: "Quittances enregistrées",
-};
-
-/** Libellé contextuel : pour une utilisation DOUANIER clôturée, on précise l'origine (transfert (d)→TVA intérieure). */
-export const utilisationStatutLabel = (statut: UtilisationStatut, type?: UtilisationType): string => {
-  if (statut === "CLOTUREE" && type === "DOUANIER") return "Clôturée (transfert)";
-  return UTILISATION_STATUT_LABELS[statut];
-};
+/**
+ * Valeurs ordonnées de UtilisationStatut pour les filtres / dropdowns.
+ * Remplace l'ancienne map UTILISATION_STATUT_LABELS (i18n via tStatutUtilisation / tUtilisationStatutContextualise).
+ */
+export const UTILISATION_STATUT_VALUES: readonly UtilisationStatut[] = [
+  "BROUILLON",
+  "DEMANDEE", "INCOMPLETE", "A_RECONTROLER",
+  "EN_VERIFICATION", "VISE",
+  "VALIDEE", "LIQUIDEE", "APUREE", "REJETEE",
+  "CLOTUREE",
+  "EN_CONTROLE_DGD",
+  "CHEQUE_SAISI",
+  "ENVOYEE_AU_TRESOR",
+  "QUITTANCES_ENREGISTREES",
+] as const;
 
 // Notifications
 export type NotificationType = "CORRECTION_STATUT_CHANGE" | "CORRECTION_DECISION" | "REFERENTIEL_STATUT_CHANGE" | "CONVENTION_STATUT_CHANGE" | "CERTIFICAT_STATUT_CHANGE" | "UTILISATION_STATUT_CHANGE";
