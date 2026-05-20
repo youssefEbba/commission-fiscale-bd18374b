@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const LANGS = [
   { code: "fr", label: "Français" },
@@ -17,16 +18,22 @@ const LANGS = [
 
 interface Props {
   variant?: "icon" | "compact";
+  className?: string;
 }
 
-export function LanguageSwitcher({ variant = "icon" }: Props) {
+export function LanguageSwitcher({ variant = "icon", className }: Props) {
   const { i18n, t } = useTranslation("common");
   const current = i18n.language?.startsWith("ar") ? "ar" : "fr";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={variant === "icon" ? "icon" : "sm"} className="gap-2" aria-label={t("language.switch")}>
+        <Button
+          variant="ghost"
+          size={variant === "icon" ? "icon" : "sm"}
+          className={cn("gap-2", className)}
+          aria-label={t("language.switch")}
+        >
           <Globe className="h-4 w-4" />
           {variant === "compact" && <span className="text-xs font-medium uppercase">{current}</span>}
         </Button>
