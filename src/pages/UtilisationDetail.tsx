@@ -883,7 +883,7 @@ const UtilisationDetail = () => {
           </CardHeader>
           <CardContent>
             {(() => {
-              const allowedTvaTypes = isTVA ? new Set(tvaDocTypes.map(t => t.value)) : null;
+              const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
               const visibleDocs = docs.filter(d => {
                 if (d.actif === false) return false;
                 if (!isTVA) return true;
