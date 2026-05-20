@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { formatNumber as fmtNumI18n, formatDateTime } from "@/i18n/format";
 import i18n from "@/i18n";
 
