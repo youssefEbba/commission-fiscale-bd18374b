@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
-  DocumentDto, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
+  DocumentDto, ALL_DOCUMENT_TYPES_VALUES, RejetTempResponseDto,
   ReclamationDemandeCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -1038,8 +1038,8 @@ const DemandeDetail = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
-                  {(uploadAllowedTypes.length > 0 ? ALL_DOCUMENT_TYPES.filter(tt => uploadAllowedTypes.includes(tt.value)) : ALL_DOCUMENT_TYPES).map((tt) => (
-                    <SelectItem key={tt.value} value={tt.value}>{tTypeDocument(tt.value)}</SelectItem>
+                  {(uploadAllowedTypes.length > 0 ? ALL_DOCUMENT_TYPES_VALUES.filter(tt => uploadAllowedTypes.includes(tt)) : ALL_DOCUMENT_TYPES_VALUES).map((tt) => (
+                    <SelectItem key={tt} value={tt}>{tTypeDocument(tt)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1124,10 +1124,10 @@ const DemandeDetail = () => {
                   <AlertTriangle className="h-4 w-4 text-amber-500" /> {t("demandes:dialogs.reject.docs_label_short")} <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                  {ALL_DOCUMENT_TYPES.map(dt => (
-                    <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
-                      <Checkbox checked={rejectDocsDemandes.includes(dt.value)} onCheckedChange={(checked) => setRejectDocsDemandes(prev => checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value))} />
-                      <span>{tTypeDocument(dt.value)}</span>
+                  {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
+                    <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                      <Checkbox checked={rejectDocsDemandes.includes(dt)} onCheckedChange={(checked) => setRejectDocsDemandes(prev => checked ? [...prev, dt] : prev.filter(v => v !== dt))} />
+                      <span>{tTypeDocument(dt)}</span>
                     </label>
                   ))}
                 </div>

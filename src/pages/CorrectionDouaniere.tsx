@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   demandeCorrectionApi, DemandeCorrectionDto, DocumentDto, DecisionCorrectionDto,
-  DEMANDE_STATUT_LABELS, DOCUMENT_TYPES_REQUIS, ALL_DOCUMENT_TYPES, RejetTempResponseDto,
-  ReclamationDemandeCorrectionDto, RECLAMATION_STATUT_LABELS,
+  ALL_DOCUMENT_TYPES_VALUES, RejetTempResponseDto,
+  ReclamationDemandeCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
+import { formatDate, formatDateTime } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,26 +50,9 @@ function getDocFileUrl(doc: DocumentDto): string {
 }
 
 const DECISION_ROLES = ["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"];
-const DECISION_ROLE_LABELS: Record<string, string> = {
-  DGD: "DGD – Douanes",
-  DGTCP: "DGTCP – Trésor",
-  DGI: "DGI – Impôts",
-  DGB: "DGB – Budget",
-  PRESIDENT: "Président",
-};
-
-// Documents spéciaux qui s'affichent en bas des visas (pas dans la liste normale)
 const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION", "OFFRE_FISCALE_CORRIGEE"];
-const SPECIAL_DOC_LABELS: Record<string, string> = {
-  CREDIT_EXTERIEUR: "Crédit Extérieur",
-  CREDIT_INTERIEUR: "Crédit Intérieur",
-  LETTRE_ADOPTION: "Lettre d'Adoption",
-  OFFRE_FISCALE_CORRIGEE: "Offre Fiscale Corrigée",
-};
-
-// Roles that must upload before visa
-const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string; label: string }> = {
-  DGD: { docType: "OFFRE_FISCALE_CORRIGEE", label: "Offre Fiscale Corrigée" },
+const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string }> = {
+  DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
 };
 
 const CorrectionDouaniere = () => {
@@ -73,6 +60,8 @@ const CorrectionDouaniere = () => {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
+  usePageTitle("correction_douaniere:page.title");
 
   const [demande, setDemande] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
@@ -81,43 +70,35 @@ const CorrectionDouaniere = () => {
   const [docsLoading, setDocsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Reject modal for temp decision
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
 
-  // Final decision modal
   const [finalOpen, setFinalOpen] = useState(false);
   const [finalType, setFinalType] = useState<"ADOPTEE" | "REJETEE">("ADOPTEE");
   const [finalMotif, setFinalMotif] = useState("");
 
-  // Upload modal
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
 
-  // Tab navigation for organism decisions
   const [activeOrg, setActiveOrg] = useState("DGD");
 
-  // Response to rejet dialog
   const [responseOpen, setResponseOpen] = useState(false);
   const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
   const [responseMessage, setResponseMessage] = useState("");
   const [responseLoading, setResponseLoading] = useState(false);
 
-  // Upload required doc before visa
   const [preVisaUploadOpen, setPreVisaUploadOpen] = useState(false);
   const [preVisaFile, setPreVisaFile] = useState<File | null>(null);
   const [preVisaLoading, setPreVisaLoading] = useState(false);
 
-  // Entreprise detail
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
 
-  // Réclamations
   const [reclamations, setReclamations] = useState<ReclamationDemandeCorrectionDto[]>([]);
   const [reclamationOpen, setReclamationOpen] = useState(false);
   const [reclamationTexte, setReclamationTexte] = useState("");
@@ -130,55 +111,41 @@ const CorrectionDouaniere = () => {
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
 
+  const errTitle = t("common:errors.generic_title", { defaultValue: "Erreur" });
+  const okTitle = t("common:success.generic_title", { defaultValue: "Succès" });
+
   const fetchDemande = async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const data = await demandeCorrectionApi.getById(Number(id));
-      setDemande(data);
+      setDemande(await demandeCorrectionApi.getById(Number(id)));
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger la demande", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+      toast({ title: errTitle, description: t("correction_douaniere:toast.load_error"), variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
   const fetchDocs = async () => {
     if (!id) return;
     setDocsLoading(true);
-    try {
-      const documents = await demandeCorrectionApi.getDocuments(Number(id));
-      setDocs(documents);
-    } catch {
-      setDocs([]);
-    } finally {
-      setDocsLoading(false);
-    }
+    try { setDocs(await demandeCorrectionApi.getDocuments(Number(id))); }
+    catch { setDocs([]); }
+    finally { setDocsLoading(false); }
   };
 
   const fetchDecisions = async () => {
     if (!id) return;
-    try {
-      const data = await demandeCorrectionApi.getDecisions(Number(id));
-      setDecisions(data);
-    } catch {
-      setDecisions([]);
-    }
+    try { setDecisions(await demandeCorrectionApi.getDecisions(Number(id))); }
+    catch { setDecisions([]); }
   };
 
   const fetchReclamations = async () => {
     if (!id) return;
-    try {
-      const recs = await demandeCorrectionApi.getReclamations(Number(id));
-      setReclamations(recs);
-    } catch { setReclamations([]); }
+    try { setReclamations(await demandeCorrectionApi.getReclamations(Number(id))); }
+    catch { setReclamations([]); }
   };
 
   useEffect(() => {
-    fetchDemande();
-    fetchDocs();
-    fetchDecisions();
-    fetchReclamations();
+    fetchDemande(); fetchDocs(); fetchDecisions(); fetchReclamations();
   }, [id]);
 
   const handleCreateReclamation = async () => {
@@ -186,58 +153,43 @@ const CorrectionDouaniere = () => {
     setReclamationSubmitting(true);
     try {
       await demandeCorrectionApi.createReclamation(demande.id, reclamationTexte.trim(), reclamationFile);
-      toast({ title: "Succès", description: "Réclamation déposée avec succès" });
-      setReclamationOpen(false);
-      setReclamationTexte("");
-      setReclamationFile(null);
-      fetchDemande();
-      fetchReclamations();
+      toast({ title: okTitle, description: t("correction_douaniere:toast.reclamation_created") });
+      setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null);
+      fetchDemande(); fetchReclamations();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setReclamationSubmitting(false);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setReclamationSubmitting(false); }
   };
 
   const handleTraiterReclamation = async () => {
     if (!demande || !traiterReclamationId) return;
     if (!traiterAcceptee && !traiterMotif.trim()) {
-      toast({ title: "Motif requis", description: "Le motif est obligatoire pour un rejet.", variant: "destructive" });
+      toast({ title: t("correction_douaniere:toast.reclamation_motif_required_title"), description: t("correction_douaniere:toast.reclamation_motif_required_body"), variant: "destructive" });
       return;
     }
     if (!traiterAcceptee && !traiterFile) {
-      toast({ title: "Document requis", description: "Un document de réponse est obligatoire pour un rejet.", variant: "destructive" });
+      toast({ title: t("correction_douaniere:toast.reclamation_file_required_title"), description: t("correction_douaniere:toast.reclamation_file_required_body"), variant: "destructive" });
       return;
     }
     setTraiterSubmitting(true);
     try {
       await demandeCorrectionApi.traiterReclamation(demande.id, traiterReclamationId, traiterAcceptee, traiterMotif.trim() || undefined, traiterFile || undefined);
-      toast({ title: "Succès", description: traiterAcceptee ? "Réclamation acceptée — la demande repasse au statut REÇUE" : "Réclamation rejetée" });
-      setTraiterOpen(false);
-      setTraiterReclamationId(null);
-      setTraiterMotif("");
-      setTraiterFile(null);
-      fetchDemande();
-      fetchDecisions();
-      fetchReclamations();
-      fetchDocs();
+      toast({ title: okTitle, description: traiterAcceptee ? t("correction_douaniere:toast.reclamation_accepted") : t("correction_douaniere:toast.reclamation_rejected") });
+      setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null);
+      fetchDemande(); fetchDecisions(); fetchReclamations(); fetchDocs();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setTraiterSubmitting(false);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setTraiterSubmitting(false); }
   };
 
   const handleAnnulerReclamation = async (reclamationId: number) => {
     if (!demande) return;
     try {
       await demandeCorrectionApi.annulerReclamation(demande.id, reclamationId);
-      toast({ title: "Succès", description: "Réclamation annulée" });
-      fetchDemande();
-      fetchReclamations();
-      fetchDecisions();
+      toast({ title: okTitle, description: t("correction_douaniere:toast.reclamation_annulee") });
+      fetchDemande(); fetchReclamations(); fetchDecisions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
     }
   };
 
@@ -247,11 +199,7 @@ const CorrectionDouaniere = () => {
     try {
       const token = localStorage.getItem("auth_token");
       const res = await fetch(`${API_BASE}/entreprises/${entrepriseId}`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
+        headers: { Authorization: token ? `Bearer ${token}` : "", "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
       });
       if (!res.ok) throw new Error("Erreur");
       setEntrepriseDetail(await res.json());
@@ -265,151 +213,100 @@ const CorrectionDouaniere = () => {
         const found = list.find((e: any) => e.id === entrepriseId);
         setEntrepriseDetail(found || null);
       } catch {
-        toast({ title: "Erreur", description: "Impossible de charger les informations de l'entreprise", variant: "destructive" });
+        toast({ title: errTitle, description: t("correction_douaniere:toast.entreprise_error"), variant: "destructive" });
       }
-    } finally {
-      setEntrepriseLoading(false);
-    }
+    } finally { setEntrepriseLoading(false); }
   };
 
-  // Check if current role has uploaded their required doc
   const userRole = user?.role;
   const uploadReq = userRole ? UPLOAD_REQUIRED_ROLES[userRole] : null;
-  const hasUploadedRequiredDoc = uploadReq
-    ? docs.some(d => d.type === uploadReq.docType)
-    : true;
+  const uploadReqLabel = uploadReq ? tTypeDocument(uploadReq.docType) : "";
+  const hasUploadedRequiredDoc = uploadReq ? docs.some(d => d.type === uploadReq.docType) : true;
 
-  // ---- Pre-visa upload for DGD/DGTCP ----
   const handlePreVisaUpload = async () => {
     if (!demande || !uploadReq || !preVisaFile) return;
     setPreVisaLoading(true);
     try {
       await demandeCorrectionApi.uploadDocument(demande.id, uploadReq.docType, preVisaFile);
-      toast({ title: "Succès", description: `${uploadReq.label} uploadé avec succès` });
+      toast({ title: okTitle, description: t("correction_douaniere:toast.pre_visa_success", { label: uploadReqLabel }) });
       await fetchDocs();
-      setPreVisaUploadOpen(false);
-      setPreVisaFile(null);
-      // Auto-apposer le visa après upload réussi
+      setPreVisaUploadOpen(false); setPreVisaFile(null);
       await demandeCorrectionApi.postDecision(demande.id, "VISA");
-      toast({ title: "Succès", description: "Visa apposé avec succès" });
-      await fetchDecisions();
-      await fetchDemande();
+      toast({ title: okTitle, description: t("correction_douaniere:toast.visa_success") });
+      await fetchDecisions(); await fetchDemande();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setPreVisaLoading(false);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setPreVisaLoading(false); }
   };
 
-  // ---- Décision temporaire (VISA / REJET_TEMP) ----
   const handleTempVisa = async () => {
     if (!demande) return;
-    // Check upload requirement
-    if (uploadReq && !hasUploadedRequiredDoc) {
-      setPreVisaUploadOpen(true);
-      return;
-    }
+    if (uploadReq && !hasUploadedRequiredDoc) { setPreVisaUploadOpen(true); return; }
     setActionLoading(true);
     try {
       await demandeCorrectionApi.postDecision(demande.id, "VISA");
-      toast({ title: "Succès", description: "Visa temporaire apposé" });
-      await fetchDecisions();
-      await fetchDemande();
+      toast({ title: okTitle, description: t("correction_douaniere:toast.visa_temp_success") });
+      await fetchDecisions(); await fetchDemande();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setActionLoading(false); }
   };
 
   const handleTempReject = async () => {
     if (!demande || !rejectMotif.trim() || rejectDocsDemandes.length === 0) return;
-    setRejectOpen(false);
-    setActionLoading(true);
+    setRejectOpen(false); setActionLoading(true);
     try {
       await demandeCorrectionApi.postDecision(demande.id, "REJET_TEMP", rejectMotif.trim(), rejectDocsDemandes);
-      toast({ title: "Succès", description: "Rejet temporaire enregistré" });
-      await fetchDecisions();
-      await fetchDemande();
+      toast({ title: okTitle, description: t("correction_douaniere:toast.rejet_temp_success") });
+      await fetchDecisions(); await fetchDemande();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-      setRejectMotif("");
-      setRejectDocsDemandes([]);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setActionLoading(false); setRejectMotif(""); setRejectDocsDemandes([]); }
   };
 
-  // ---- Décision finale (PRESIDENT only) ----
   const handleFinalDecision = async () => {
     if (!demande) return;
-    setFinalOpen(false);
-    setActionLoading(true);
+    setFinalOpen(false); setActionLoading(true);
     try {
-      await demandeCorrectionApi.updateStatut(
-        demande.id,
-        finalType,
-        finalType === "REJETEE" ? finalMotif.trim() || undefined : undefined,
-        true
-      );
-      toast({ title: "Succès", description: finalType === "ADOPTEE" ? "Demande adoptée (décision finale)" : "Demande rejetée (décision finale)" });
-      await fetchDemande();
-      await fetchDecisions();
+      await demandeCorrectionApi.updateStatut(demande.id, finalType, finalType === "REJETEE" ? finalMotif.trim() || undefined : undefined, true);
+      toast({ title: okTitle, description: finalType === "ADOPTEE" ? t("correction_douaniere:toast.final_adopted") : t("correction_douaniere:toast.final_rejected") });
+      await fetchDemande(); await fetchDecisions();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-      setFinalMotif("");
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setActionLoading(false); setFinalMotif(""); }
   };
 
-  // ---- Upload document (nouvelle version) ----
   const handleUpload = async () => {
     if (!demande || !uploadType || !uploadFile) return;
     setUploadLoading(true);
     try {
-      // Check if this upload responds to an open REJET_TEMP
       const openRejets = decisions.filter(
         d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
       );
       if (openRejets.length > 0 && !uploadMessage.trim()) {
-        toast({ title: "Message requis", description: "Ajoutez un message de justification pour répondre au rejet.", variant: "destructive" });
-        setUploadLoading(false);
-        return;
+        toast({ title: t("correction_douaniere:toast.upload_message_required_title"), description: t("correction_douaniere:toast.upload_message_required_body"), variant: "destructive" });
+        setUploadLoading(false); return;
       }
       await demandeCorrectionApi.uploadDocument(demande.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
-      toast({ title: "Succès", description: "Document uploadé (nouvelle version)" });
-      await fetchDocs();
-      // Refresh decisions to get updated rejetTempStatus
-      await fetchDecisions();
-      await fetchDemande();
-      setUploadOpen(false);
-      setUploadFile(null);
-      setUploadType("");
-      setUploadMessage("");
+      toast({ title: okTitle, description: t("correction_douaniere:toast.upload_success") });
+      await fetchDocs(); await fetchDecisions(); await fetchDemande();
+      setUploadOpen(false); setUploadFile(null); setUploadType(""); setUploadMessage("");
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setUploadLoading(false);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setUploadLoading(false); }
   };
 
-  // ---- Répondre à un rejet temporaire (message seul) ----
   const handleRejetResponse = async () => {
     if (!responseDecisionId || !responseMessage.trim()) return;
     setResponseLoading(true);
     try {
       await demandeCorrectionApi.postRejetTempResponse(responseDecisionId, responseMessage.trim());
-      toast({ title: "Réponse envoyée" });
+      toast({ title: t("correction_douaniere:toast.response_sent") });
       await fetchDecisions();
-      setResponseOpen(false);
-      setResponseMessage("");
-      setResponseDecisionId(null);
+      setResponseOpen(false); setResponseMessage(""); setResponseDecisionId(null);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setResponseLoading(false);
-    }
+      toast({ title: errTitle, description: e.message, variant: "destructive" });
+    } finally { setResponseLoading(false); }
   };
 
   const isDirection = userRole && DECISION_ROLES.includes(userRole);
@@ -417,93 +314,85 @@ const CorrectionDouaniere = () => {
   const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE" || demande?.statut === "ANNULEE";
 
-  // Current user's decisions (multi-rejet support)
   const myRoleDecs = decisions.filter(d => d.role === userRole);
-  const myDecision = [...myRoleDecs]
-    .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0] || null;
+  const myDecision = [...myRoleDecs].sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime())[0] || null;
   const hasAnyRejet = decisions.some(d => d.decision === "REJET_TEMP");
   const myHasVisa = myRoleDecs.some(d => d.decision === "VISA");
   const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
 
-  // DGD must validate first — block others if DGD hasn't visa'd
   const dgdHasVisa = decisions.some(d => d.role === "DGD" && d.decision === "VISA");
   const isDGD = userRole === "DGD";
   const isPresident = userRole === "PRESIDENT";
   const blockedByDgd = !isDGD && !isPresident && !dgdHasVisa;
 
-  // Separate special docs from regular docs
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
+  const dash = t("correction_douaniere:info.dash");
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/demandes")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("correction_douaniere:page.back")}
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              Correction douanière — {demande?.numero || `#${id}`}
+              {t("correction_douaniere:page.title_with_number", { numero: demande?.numero || `#${id}` })}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Évaluation et décisions</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("correction_douaniere:page.subtitle")}</p>
           </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : !demande ? (
-          <p className="text-center text-muted-foreground py-8">Demande introuvable</p>
+          <p className="text-center text-muted-foreground py-8">{t("correction_douaniere:page.not_found")}</p>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Infos demande */}
               <Card>
-                <CardHeader><CardTitle className="text-lg">Informations de la demande</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg">{t("correction_douaniere:info.card_title")}</CardTitle></CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">N° Demande</span>
+                      <span className="text-muted-foreground">{t("correction_douaniere:info.numero")}</span>
                       <p className="font-medium">{demande.numero || `#${demande.id}`}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Statut</span>
-                      <p><Badge className={`text-xs ${STATUT_COLORS[demande.statut] || ""}`}>{DEMANDE_STATUT_LABELS[demande.statut]}</Badge></p>
+                      <span className="text-muted-foreground">{t("correction_douaniere:info.statut")}</span>
+                      <p><Badge className={`text-xs ${STATUT_COLORS[demande.statut] || ""}`}>{tStatutDemande(demande.statut)}</Badge></p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Autorité Contractante</span>
-                      <p className="font-medium">{demande.autoriteContractanteNom || "—"}</p>
+                      <span className="text-muted-foreground">{t("correction_douaniere:info.autorite")}</span>
+                      <p className="font-medium">{demande.autoriteContractanteNom || dash}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Entreprise</span>
+                      <span className="text-muted-foreground">{t("correction_douaniere:info.entreprise")}</span>
                       {demande.entrepriseId ? (
-                        <button className="font-medium text-primary hover:underline cursor-pointer text-left" onClick={() => openEntrepriseDetail(demande.entrepriseId)}>
-                          {demande.entrepriseRaisonSociale || "—"}
+                        <button className="font-medium text-primary hover:underline cursor-pointer text-start" onClick={() => openEntrepriseDetail(demande.entrepriseId)}>
+                          {demande.entrepriseRaisonSociale || dash}
                         </button>
                       ) : (
-                        <p className="font-medium">{demande.entrepriseRaisonSociale || "—"}</p>
+                        <p className="font-medium">{demande.entrepriseRaisonSociale || dash}</p>
                       )}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Date de dépôt</span>
-                      <p>{demande.dateDepot ? new Date(demande.dateDepot).toLocaleDateString("fr-FR") : "—"}</p>
+                      <span className="text-muted-foreground">{t("correction_douaniere:info.date_depot")}</span>
+                      <p>{formatDate(demande.dateDepot)}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Décisions par organisme — Navigation par onglets */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Décisions par organisme</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={fetchDecisions}><RefreshCw className="h-4 w-4" /></Button>
+                    <CardTitle className="text-lg">{t("correction_douaniere:decisions.card_title")}</CardTitle>
+                    <Button variant="ghost" size="sm" onClick={fetchDecisions} aria-label={t("correction_douaniere:decisions.refresh_aria")}><RefreshCw className="h-4 w-4" /></Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* Onglets */}
                   <div className="flex border-b border-border mb-4 overflow-x-auto">
                     {DECISION_ROLES.map((role) => {
                       const roleDecs = decisions.filter(d => d.role === role);
@@ -515,31 +404,22 @@ const CorrectionDouaniere = () => {
                           key={role}
                           onClick={() => setActiveOrg(role)}
                           className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                            activeOrg === role
-                              ? "border-primary text-primary"
-                              : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                            activeOrg === role ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                           }`}
                         >
-                          {orgHasVisa ? (
-                            <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                          ) : orgHasRejets ? (
-                            <XCircle className={`h-3.5 w-3.5 ${hasOpenRejet ? "text-red-600" : "text-amber-500"}`} />
-                          ) : (
-                            <div className="h-3 w-3 rounded-full border-2 border-muted-foreground/30" />
-                          )}
-                          {DECISION_ROLE_LABELS[role]}
+                          {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                            : orgHasRejets ? <XCircle className={`h-3.5 w-3.5 ${hasOpenRejet ? "text-red-600" : "text-amber-500"}`} />
+                            : <div className="h-3 w-3 rounded-full border-2 border-muted-foreground/30" />}
+                          {t(`correction_douaniere:decision_roles.${role}`)}
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Contenu de l'onglet actif */}
                   {(() => {
                     const roleDecs = decisions
                       .filter(d => d.role === activeOrg)
                       .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime());
-
-                    // Séparer les décisions actives (visa + rejets ouverts) et résolues
                     const activeDecs = roleDecs.filter(d => d.decision === "VISA" || (d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU"));
                     const resolvedDecs = roleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
 
@@ -547,8 +427,8 @@ const CorrectionDouaniere = () => {
                       return (
                         <div className="text-center py-8 text-muted-foreground">
                           <div className="h-10 w-10 rounded-full border-2 border-muted-foreground/20 mx-auto mb-3" />
-                          <p className="text-sm font-medium">En attente</p>
-                          <p className="text-xs mt-1">Aucune décision de {DECISION_ROLE_LABELS[activeOrg]} pour le moment.</p>
+                          <p className="text-sm font-medium">{t("correction_douaniere:decisions.waiting_title")}</p>
+                          <p className="text-xs mt-1">{t("correction_douaniere:decisions.waiting_subtitle", { role: t(`correction_douaniere:decision_roles.${activeOrg}`) })}</p>
                         </div>
                       );
                     }
@@ -558,137 +438,109 @@ const CorrectionDouaniere = () => {
                         {activeDecs.length === 0 && resolvedDecs.length > 0 && (
                           <div className="text-center py-4 text-muted-foreground">
                             <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                            <p className="text-xs">Tous les rejets ont été résolus.</p>
+                            <p className="text-xs">{t("correction_douaniere:decisions.all_resolved")}</p>
                           </div>
                         )}
                         {activeDecs.map((dec, idx) => (
-                          <div key={dec.id || idx} className={`rounded-lg border p-3 text-sm ${
-                            dec.decision === "VISA" ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"
-                          }`}>
+                          <div key={dec.id || idx} className={`rounded-lg border p-3 text-sm ${dec.decision === "VISA" ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"}`}>
                             <div className="flex items-start gap-3">
-                              {dec.decision === "VISA" ? (
-                                <CheckCircle className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                              ) : (
-                                <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                              )}
+                              {dec.decision === "VISA" ? <CheckCircle className="h-4 w-4 text-green-600 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className={`font-medium text-xs ${dec.decision === "VISA" ? "text-green-800" : "text-red-800"}`}>
-                                    {dec.decision === "VISA" ? "Visa" : "Rejet temporaire"}
+                                    {dec.decision === "VISA" ? t("correction_douaniere:decisions.visa") : t("correction_douaniere:decisions.rejet_temp")}
                                   </span>
                                   {dec.decision === "REJET_TEMP" && dec.rejetTempStatus && (
                                     <Badge className={`text-[9px] ${dec.rejetTempStatus === "OUVERT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                                      {dec.rejetTempStatus === "OUVERT" ? "Ouvert" : "Résolu"}
+                                      {dec.rejetTempStatus === "OUVERT" ? t("correction_douaniere:decisions.status_open") : t("correction_douaniere:decisions.status_resolved")}
                                     </Badge>
                                   )}
                                 </div>
                                 {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{dec.motifRejet}</p>}
                                 {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1.5">
-                                    <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                    <span className="text-[10px] text-muted-foreground">{t("correction_douaniere:decisions.docs_requested")}</span>
                                     {dec.documentsDemandes.map(dt => (
                                       <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                        {tTypeDocument(dt)}
                                       </Badge>
                                     ))}
                                   </div>
                                 )}
 
-                                {/* Réponses au rejet */}
                                 {dec.decision === "REJET_TEMP" && dec.rejetTempResponses && dec.rejetTempResponses.length > 0 && (
-                                  <div className="mt-2 space-y-1.5 ml-1">
-                                    <span className="text-[10px] text-muted-foreground font-medium">💬 Réponses :</span>
+                                  <div className="mt-2 space-y-1.5 ms-1">
+                                    <span className="text-[10px] text-muted-foreground font-medium">{t("correction_douaniere:decisions.responses")}</span>
                                     {dec.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
                                       <div key={ri} className="rounded border border-blue-200 bg-blue-50 p-2 text-xs space-y-0.5">
                                         <p className="text-foreground">{resp.message}</p>
                                         {resp.documentType && (
                                           <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                            📎 {ALL_DOCUMENT_TYPES.find(t => t.value === resp.documentType)?.label || resp.documentType}
+                                            {tTypeDocument(resp.documentType)}
                                             {resp.documentVersion && ` (v${resp.documentVersion})`}
                                           </p>
                                         )}
                                         {resp.documentUrl && (
                                           <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
-                                            <Upload className="h-2.5 w-2.5 mr-0.5" /> Document uploadé
+                                            <Upload className="h-2.5 w-2.5 me-0.5" /> {t("correction_douaniere:decisions.document_uploaded")}
                                           </Badge>
                                         )}
                                         <p className="text-[10px] text-muted-foreground">
-                                          {resp.auteurNom && `Par: ${resp.auteurNom}`}
-                                          {resp.createdAt && ` · ${new Date(resp.createdAt).toLocaleDateString("fr-FR")} ${new Date(resp.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`}
+                                          {resp.auteurNom && t("correction_douaniere:decisions.by", { name: resp.auteurNom })}
+                                          {resp.createdAt && ` · ${formatDateTime(resp.createdAt)}`}
                                         </p>
                                       </div>
                                     ))}
                                   </div>
                                 )}
 
-                                {/* Boutons AC : répondre + upload doc */}
                                 {dec.decision === "REJET_TEMP" && dec.rejetTempStatus === "OUVERT" && isAC && (
                                   <div className="flex gap-1.5 mt-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 text-[11px]"
-                                      onClick={() => { setResponseDecisionId(dec.id); setResponseMessage(""); setResponseOpen(true); }}
-                                    >
-                                      💬 Répondre
+                                    <Button size="sm" variant="outline" className="h-7 text-[11px]"
+                                      onClick={() => { setResponseDecisionId(dec.id); setResponseMessage(""); setResponseOpen(true); }}>
+                                      {t("correction_douaniere:decisions.respond")}
                                     </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 text-[11px]"
+                                    <Button size="sm" variant="outline" className="h-7 text-[11px]"
                                       onClick={() => {
                                         if (dec.documentsDemandes?.length) setUploadType(dec.documentsDemandes[0]);
-                                        setUploadMessage("");
-                                        setUploadFile(null);
-                                        setUploadOpen(true);
-                                      }}
-                                    >
-                                      <Upload className="h-3 w-3 mr-1" /> Upload doc
+                                        setUploadMessage(""); setUploadFile(null); setUploadOpen(true);
+                                      }}>
+                                      <Upload className="h-3 w-3 me-1" /> {t("correction_douaniere:decisions.upload_doc")}
                                     </Button>
                                   </div>
                                 )}
 
-                                {/* Bouton "Marquer résolu" pour l'acteur déclenchant */}
                                 {dec.decision === "REJET_TEMP" && dec.rejetTempStatus === "OUVERT" && isDirection && userRole === dec.role && (
                                   <div className="mt-2">
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      className="h-7 text-[11px]"
-                                      disabled={actionLoading}
+                                    <Button size="sm" variant="default" className="h-7 text-[11px]" disabled={actionLoading}
                                       onClick={async () => {
                                         setActionLoading(true);
                                         try {
                                           await demandeCorrectionApi.resolveRejetTemp(dec.id);
-                                          toast({ title: "Succès", description: "Rejet marqué comme résolu" });
-                                          await fetchDecisions();
-                                          await fetchDemande();
+                                          toast({ title: okTitle, description: t("correction_douaniere:decisions.toast_mark_resolved") });
+                                          await fetchDecisions(); await fetchDemande();
                                         } catch (e: any) {
-                                          toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                                        } finally {
-                                          setActionLoading(false);
-                                        }
-                                      }}
-                                    >
-                                      <CheckCircle className="h-3 w-3 mr-1" /> Marquer résolu
+                                          toast({ title: errTitle, description: e.message, variant: "destructive" });
+                                        } finally { setActionLoading(false); }
+                                      }}>
+                                      <CheckCircle className="h-3 w-3 me-1" /> {t("correction_douaniere:decisions.mark_resolved")}
                                     </Button>
                                   </div>
                                 )}
                               </div>
-                              <div className="text-right shrink-0 text-[10px] text-muted-foreground">
-                                {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")} {new Date(dec.dateDecision).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>}
-                                {dec.utilisateurNom && <p>Par: {dec.utilisateurNom}</p>}
+                              <div className="text-end shrink-0 text-[10px] text-muted-foreground">
+                                {dec.dateDecision && <p>{formatDateTime(dec.dateDecision)}</p>}
+                                {dec.utilisateurNom && <p>{t("correction_douaniere:decisions.by", { name: dec.utilisateurNom })}</p>}
                               </div>
                             </div>
                           </div>
                         ))}
 
-                        {/* Historique des rejets résolus — pliable */}
                         {resolvedDecs.length > 0 && (
                           <details className="mt-3 border-t border-border pt-3">
                             <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
                               <History className="h-3.5 w-3.5" />
-                              Historique ({resolvedDecs.length} rejet{resolvedDecs.length > 1 ? "s" : ""} résolu{resolvedDecs.length > 1 ? "s" : ""})
+                              {t("correction_douaniere:decisions.history", { count: resolvedDecs.length })}
                             </summary>
                             <div className="space-y-2 mt-2">
                               {resolvedDecs.map((dec, idx) => (
@@ -697,43 +549,43 @@ const CorrectionDouaniere = () => {
                                     <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-medium text-xs text-muted-foreground">Rejet temporaire</span>
-                                        <Badge className="text-[9px] bg-green-100 text-green-700">Résolu</Badge>
+                                        <span className="font-medium text-xs text-muted-foreground">{t("correction_douaniere:decisions.rejet_temp")}</span>
+                                        <Badge className="text-[9px] bg-green-100 text-green-700">{t("correction_douaniere:decisions.status_resolved")}</Badge>
                                       </div>
                                       {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{dec.motifRejet}</p>}
                                       {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-1.5">
-                                          <span className="text-[10px] text-muted-foreground">Docs demandés :</span>
+                                          <span className="text-[10px] text-muted-foreground">{t("correction_douaniere:decisions.docs_requested")}</span>
                                           {dec.documentsDemandes.map(dt => (
                                             <Badge key={dt} variant="outline" className="text-[10px] bg-muted text-muted-foreground border-muted-foreground/20">
-                                              {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                                              {tTypeDocument(dt)}
                                             </Badge>
                                           ))}
                                         </div>
                                       )}
                                       {dec.rejetTempResponses && dec.rejetTempResponses.length > 0 && (
-                                        <div className="mt-2 space-y-1.5 ml-1">
-                                          <span className="text-[10px] text-muted-foreground font-medium">💬 Réponses :</span>
+                                        <div className="mt-2 space-y-1.5 ms-1">
+                                          <span className="text-[10px] text-muted-foreground font-medium">{t("correction_douaniere:decisions.responses")}</span>
                                           {dec.rejetTempResponses.map((resp: RejetTempResponseDto, ri: number) => (
                                             <div key={ri} className="rounded border border-muted bg-background p-2 text-xs space-y-0.5">
                                               <p className="text-foreground">{resp.message}</p>
                                               {resp.documentUrl && (
                                                 <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
-                                                  <Upload className="h-2.5 w-2.5 mr-0.5" /> Document uploadé
+                                                  <Upload className="h-2.5 w-2.5 me-0.5" /> {t("correction_douaniere:decisions.document_uploaded")}
                                                 </Badge>
                                               )}
                                               <p className="text-[10px] text-muted-foreground">
-                                                {resp.auteurNom && `Par: ${resp.auteurNom}`}
-                                                {resp.createdAt && ` · ${new Date(resp.createdAt).toLocaleDateString("fr-FR")}`}
+                                                {resp.auteurNom && t("correction_douaniere:decisions.by", { name: resp.auteurNom })}
+                                                {resp.createdAt && ` · ${formatDate(resp.createdAt)}`}
                                               </p>
                                             </div>
                                           ))}
                                         </div>
                                       )}
                                     </div>
-                                    <div className="text-right shrink-0 text-[10px] text-muted-foreground">
-                                      {dec.dateDecision && <p>{new Date(dec.dateDecision).toLocaleDateString("fr-FR")}</p>}
-                                      {dec.utilisateurNom && <p>Par: {dec.utilisateurNom}</p>}
+                                    <div className="text-end shrink-0 text-[10px] text-muted-foreground">
+                                      {dec.dateDecision && <p>{formatDate(dec.dateDecision)}</p>}
+                                      {dec.utilisateurNom && <p>{t("correction_douaniere:decisions.by", { name: dec.utilisateurNom })}</p>}
                                     </div>
                                   </div>
                                 </div>
@@ -745,13 +597,11 @@ const CorrectionDouaniere = () => {
                     );
                   })()}
 
-                  {/* Special documents displayed below visas with large icons — visibles uniquement après adoption */}
                   {(demande?.statut === "ADOPTEE" || demande?.statut === "NOTIFIEE") && <div className="mt-6 pt-4 border-t border-border">
                     <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4" /> Documents de décision
+                      <ShieldCheck className="h-4 w-4" /> {t("correction_douaniere:decisions.special_docs_title")}
                     </p>
                     {(() => {
-                      // DGD only sees Offre Fiscale Corrigée and Lettre d'Adoption
                       const visibleDocTypes = isDGD
                         ? SPECIAL_DOC_TYPES.filter(t => ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"].includes(t))
                         : SPECIAL_DOC_TYPES;
@@ -761,32 +611,21 @@ const CorrectionDouaniere = () => {
                         const doc = specialDocs.find(d => d.type === docType);
                         const fileUrl = doc ? getDocFileUrl(doc) : null;
                         return (
-                          <div
-                            key={docType}
-                            className={`rounded-xl border-2 p-4 text-center transition-colors ${
-                              doc
-                                ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
-                                : "border-dashed border-muted-foreground/20 bg-muted/20"
-                            }`}
-                          >
-                            {doc ? (
-                              <FileDown className="h-10 w-10 text-primary mx-auto mb-2" />
-                            ) : (
-                              <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-                            )}
+                          <div key={docType} className={`rounded-xl border-2 p-4 text-center transition-colors ${doc ? "border-primary/40 bg-primary/5 hover:bg-primary/10" : "border-dashed border-muted-foreground/20 bg-muted/20"}`}>
+                            {doc ? <FileDown className="h-10 w-10 text-primary mx-auto mb-2" /> : <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />}
                             <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>
-                              {SPECIAL_DOC_LABELS[docType]}
+                              {t(`correction_douaniere:special_docs.${docType}`)}
                             </p>
                             {doc ? (
                               <div className="flex items-center justify-center gap-1 mt-2">
                                 {fileUrl && (
                                   <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => window.open(fileUrl, "_blank")}>
-                                    <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                                    <ExternalLink className="h-3 w-3 me-1" /> {t("correction_douaniere:decisions.open")}
                                   </Button>
                                 )}
                               </div>
                             ) : (
-                              <p className="text-[10px] text-muted-foreground mt-1">Non disponible</p>
+                              <p className="text-[10px] text-muted-foreground mt-1">{t("correction_douaniere:decisions.special_doc_unavailable")}</p>
                             )}
                           </div>
                         );
@@ -798,14 +637,13 @@ const CorrectionDouaniere = () => {
                 </CardContent>
               </Card>
 
-              {/* Pièces du dossier (sans les documents spéciaux) */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Pièces du dossier</CardTitle>
+                    <CardTitle className="text-lg">{t("correction_douaniere:documents.card_title")}</CardTitle>
                     {isAC && !isFinal && (
                       <Button size="sm" onClick={() => setUploadOpen(true)}>
-                        <Upload className="h-4 w-4 mr-1" /> Nouvelle version
+                        <Upload className="h-4 w-4 me-1" /> {t("correction_douaniere:documents.new_version")}
                       </Button>
                     )}
                   </div>
@@ -814,7 +652,6 @@ const CorrectionDouaniere = () => {
                   {docsLoading ? (
                     <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                   ) : (() => {
-                    // Group actual docs by type, excluding special doc types
                     const regularDocs = docs.filter(d => !SPECIAL_DOC_TYPES.includes(d.type));
                     const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
                       if (!acc[d.type]) acc[d.type] = [];
@@ -823,14 +660,13 @@ const CorrectionDouaniere = () => {
                     }, {});
 
                     if (Object.keys(groupedByType).length === 0) {
-                      return <p className="text-sm text-muted-foreground italic text-center py-4">Aucun document associé</p>;
+                      return <p className="text-sm text-muted-foreground italic text-center py-4">{t("correction_douaniere:documents.none")}</p>;
                     }
 
                     return (
                       <div className="space-y-2">
                         {Object.entries(groupedByType).map(([type, versions]) => {
-                          const dt = ALL_DOCUMENT_TYPES.find(t => t.value === type);
-                          const label = dt?.label || type;
+                          const label = tTypeDocument(type);
                           const sorted = [...versions].sort((a, b) => (b.version ?? 1) - (a.version ?? 1));
                           const activeDoc = sorted.find(d => d.actif !== false) || sorted[0];
                           const hasVersions = sorted.length > 1;
@@ -844,7 +680,7 @@ const CorrectionDouaniere = () => {
                                   <p className="font-medium truncate">
                                     {label}
                                     {activeDoc?.version && activeDoc.version > 1 && (
-                                      <Badge variant="outline" className="ml-2 text-[10px]">v{activeDoc.version}</Badge>
+                                      <Badge variant="outline" className="ms-2 text-[10px]">v{activeDoc.version}</Badge>
                                     )}
                                   </p>
                                   {activeDoc && <p className="text-xs text-muted-foreground truncate">{activeDoc.nomFichier}</p>}
@@ -853,11 +689,11 @@ const CorrectionDouaniere = () => {
                                   {activeDoc && fileUrl && (
                                     <>
                                       <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
-                                        <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir
+                                        <ExternalLink className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:documents.open")}
                                       </Button>
                                       <a href={fileUrl} download={activeDoc.nomFichier || label}>
                                         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                          <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                                          <Download className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:documents.download")}
                                         </Button>
                                       </a>
                                     </>
@@ -865,13 +701,13 @@ const CorrectionDouaniere = () => {
                                 </div>
                               </div>
                               {hasVersions && (
-                                <div className="mt-2 ml-7 space-y-1">
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1"><History className="h-3 w-3" /> Historique des versions</p>
+                                <div className="mt-2 ms-7 space-y-1">
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1"><History className="h-3 w-3" /> {t("correction_douaniere:documents.versions_history")}</p>
                                   {sorted.filter(d => d.id !== activeDoc?.id).map(v => (
-                                    <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground pl-2 border-l border-border">
+                                    <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground ps-2 border-s border-border">
                                       <Badge variant="outline" className="text-[10px]">v{v.version ?? 1}</Badge>
                                       <span className="truncate">{v.nomFichier}</span>
-                                      {v.dateUpload && <span>{new Date(v.dateUpload).toLocaleDateString("fr-FR")}</span>}
+                                      {v.dateUpload && <span>{formatDate(v.dateUpload)}</span>}
                                     </div>
                                   ))}
                                 </div>
@@ -886,56 +722,48 @@ const CorrectionDouaniere = () => {
               </Card>
             </div>
 
-            {/* Right: Actions */}
             <div className="space-y-4">
-              {/* Actions pour les directions */}
               {isDirection && !isFinal && (
                 <Card>
-                  <CardHeader><CardTitle className="text-lg">Ma décision</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-lg">{t("correction_douaniere:actions.ma_decision")}</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     {myDecision ? (
                       <div className="text-center py-2">
                         {myDecision.decision === "VISA" ? (
                           <>
                             <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-1" />
-                            <p className="font-semibold text-green-700 text-sm">Visa apposé</p>
+                            <p className="font-semibold text-green-700 text-sm">{t("correction_douaniere:actions.visa_apposed")}</p>
                           </>
                         ) : myDecision.rejetTempStatus === "RESOLU" ? (
                           <>
                             <CheckCircle className="h-8 w-8 text-emerald-600 mx-auto mb-1" />
-                            <p className="font-semibold text-emerald-700 text-sm">Rejet résolu</p>
-                            <p className="text-xs text-muted-foreground mt-1">Le rejet a été résolu — vous pouvez maintenant apposer votre visa</p>
+                            <p className="font-semibold text-emerald-700 text-sm">{t("correction_douaniere:actions.rejet_resolved")}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t("correction_douaniere:actions.rejet_resolved_hint")}</p>
                           </>
                         ) : (
                           <>
                             <XCircle className="h-8 w-8 text-red-600 mx-auto mb-1" />
-                            <p className="font-semibold text-red-700 text-sm">Rejet temporaire en cours</p>
+                            <p className="font-semibold text-red-700 text-sm">{t("correction_douaniere:actions.rejet_in_progress")}</p>
                             {myDecision.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{myDecision.motifRejet}</p>}
                           </>
                         )}
                       </div>
                     ) : null}
 
-                    {/* Blocked by DGD warning */}
                     {blockedByDgd && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">⏳ En attente du visa DGD</p>
-                        <p className="mt-1">Le DGD doit valider cette demande en premier avant que vous puissiez apposer votre visa.</p>
+                        <p className="font-medium">{t("correction_douaniere:actions.blocked_by_dgd_title")}</p>
+                        <p className="mt-1">{t("correction_douaniere:actions.blocked_by_dgd_body")}</p>
                       </div>
                     )}
 
-                    {/* Upload requirement warning for DGD/DGTCP */}
                     {!blockedByDgd && uploadReq && !hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">⚠️ Upload requis avant visa</p>
-                        <p className="mt-1">Vous devez uploader le document « {uploadReq.label} » avant de pouvoir apposer votre visa.</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-2 w-full border-amber-300 text-amber-800 hover:bg-amber-100"
-                          onClick={() => { setPreVisaFile(null); setPreVisaUploadOpen(true); }}
-                        >
-                          <Upload className="h-3.5 w-3.5 mr-1" /> Uploader {uploadReq.label}
+                        <p className="font-medium">{t("correction_douaniere:actions.upload_required_title")}</p>
+                        <p className="mt-1">{t("correction_douaniere:actions.upload_required_body", { label: uploadReqLabel })}</p>
+                        <Button size="sm" variant="outline" className="mt-2 w-full border-amber-300 text-amber-800 hover:bg-amber-100"
+                          onClick={() => { setPreVisaFile(null); setPreVisaUploadOpen(true); }}>
+                          <Upload className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:actions.upload_required_button", { label: uploadReqLabel })}
                         </Button>
                       </div>
                     )}
@@ -943,76 +771,69 @@ const CorrectionDouaniere = () => {
                     {!blockedByDgd && uploadReq && hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
-                        <span>{uploadReq.label} uploadé ✓</span>
+                        <span>{t("correction_douaniere:actions.upload_done", { label: uploadReqLabel })}</span>
                       </div>
                     )}
 
                     <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
-                      {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                      {myHasVisa ? "Visa apposé ✓" : myOpenRejets.length > 0 ? "Résoudre les rejets d'abord" : "Apposer visa"}
+                      {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <CheckCircle className="h-4 w-4 me-2" />}
+                      {myHasVisa ? t("correction_douaniere:actions.visa_done_short") : myOpenRejets.length > 0 ? t("correction_douaniere:actions.solve_rejets_first") : t("correction_douaniere:actions.apposer_visa")}
                     </Button>
                     <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd || myHasVisa}>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      {myHasVisa ? "Visa déjà apposé" : myRoleDecs.some(d => d.decision === "REJET_TEMP") ? "Nouveau rejet temporaire" : "Rejeter temporairement"}
+                      <XCircle className="h-4 w-4 me-2" />
+                      {myHasVisa ? t("correction_douaniere:actions.visa_already") : myRoleDecs.some(d => d.decision === "REJET_TEMP") ? t("correction_douaniere:actions.rejeter_temp_again") : t("correction_douaniere:actions.rejeter_temp_first")}
                     </Button>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Décision finale + Lettre d'Adoption (PRESIDENT only) */}
               {canFinalDecision && !isFinal && (
                 <Card className="border-primary/30">
-                  <CardHeader><CardTitle className="text-lg">Décision finale</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-lg">{t("correction_douaniere:final.card_title")}</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
-                    {/* Lettre d'Adoption upload */}
                     {!docs.some(d => d.type === "LETTRE_ADOPTION") ? (
                       <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
-                        <p className="font-medium">📄 Lettre d'Adoption</p>
-                        <p className="mt-1">Uploadez la lettre d'adoption avant de finaliser la décision.</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-2 w-full border-blue-300 text-blue-800 hover:bg-blue-100"
-                          onClick={() => { setUploadType("LETTRE_ADOPTION"); setUploadFile(null); setUploadOpen(true); }}
-                        >
-                          <Upload className="h-3.5 w-3.5 mr-1" /> Uploader Lettre d'Adoption
+                        <p className="font-medium">{t("correction_douaniere:final.lettre_title")}</p>
+                        <p className="mt-1">{t("correction_douaniere:final.lettre_hint")}</p>
+                        <Button size="sm" variant="outline" className="mt-2 w-full border-blue-300 text-blue-800 hover:bg-blue-100"
+                          onClick={() => { setUploadType("LETTRE_ADOPTION"); setUploadFile(null); setUploadOpen(true); }}>
+                          <Upload className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:final.lettre_upload_btn")}
                         </Button>
                       </div>
                     ) : (
                       <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
-                        <span>Lettre d'Adoption uploadée ✓</span>
+                        <span>{t("correction_douaniere:final.lettre_uploaded")}</span>
                       </div>
                     )}
 
                     {hasAnyRejet && (
                       <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-2 text-xs text-destructive">
-                        ⚠️ Un rejet temporaire est en cours. Vérifiez les décisions avant de trancher.
+                        {t("correction_douaniere:final.rejet_warning")}
                       </div>
                     )}
                     <Button className="w-full" onClick={() => { setFinalType("ADOPTEE"); setFinalMotif(""); setFinalOpen(true); }} disabled={actionLoading}>
-                      <CheckCircle className="h-4 w-4 mr-2" /> Adopter (final)
+                      <CheckCircle className="h-4 w-4 me-2" /> {t("correction_douaniere:final.adopt")}
                     </Button>
                     <Button variant="destructive" className="w-full" onClick={() => { setFinalType("REJETEE"); setFinalMotif(""); setFinalOpen(true); }} disabled={actionLoading}>
-                      <XCircle className="h-4 w-4 mr-2" /> Rejeter (final)
+                      <XCircle className="h-4 w-4 me-2" /> {t("correction_douaniere:final.reject")}
                     </Button>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Statut final affiché */}
               {isFinal && (
                 <Card className={demande.statut === "ADOPTEE" ? "border-green-300" : "border-red-300"}>
                   <CardContent className="py-6 text-center">
                     {demande.statut === "ADOPTEE" ? (
                       <>
                         <CheckCircle className="h-10 w-10 text-green-600 mx-auto mb-2" />
-                        <p className="font-bold text-green-700 text-lg">Demande Adoptée</p>
+                        <p className="font-bold text-green-700 text-lg">{t("correction_douaniere:final.status_adoptee")}</p>
                       </>
                     ) : (
                       <>
                         <XCircle className="h-10 w-10 text-red-600 mx-auto mb-2" />
-                        <p className="font-bold text-red-700 text-lg">Demande Rejetée</p>
+                        <p className="font-bold text-red-700 text-lg">{t("correction_douaniere:final.status_rejetee")}</p>
                         {demande.motifRejet && <p className="text-sm text-muted-foreground mt-2 italic">{demande.motifRejet}</p>}
                       </>
                     )}
@@ -1020,25 +841,23 @@ const CorrectionDouaniere = () => {
                 </Card>
               )}
 
-              {/* Réclamations Section */}
               {(demande.statut === "ADOPTEE" || demande.statut === "NOTIFIEE" || reclamations.length > 0) && (
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-500" /> Réclamations
+                        <AlertTriangle className="h-4 w-4 text-amber-500" /> {t("correction_douaniere:reclamation.section_title")}
                       </h3>
-                      {/* Bouton dépôt : AC/UPM/UEP/Entreprise sur ADOPTEE/NOTIFIEE, pas de SOUMISE en cours */}
                       {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE"]) &&
                         (demande.statut === "ADOPTEE" || demande.statut === "NOTIFIEE") &&
                         !reclamations.some(r => r.statut === "SOUMISE") && (
                         <Button size="sm" variant="outline" onClick={() => setReclamationOpen(true)}>
-                          <Plus className="h-4 w-4 mr-1" /> Déposer une réclamation
+                          <Plus className="h-4 w-4 me-1" /> {t("correction_douaniere:reclamation.deposit")}
                         </Button>
                       )}
                     </div>
                     {reclamations.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">Aucune réclamation déposée.</p>
+                      <p className="text-sm text-muted-foreground italic">{t("correction_douaniere:reclamation.none")}</p>
                     ) : (
                       <div className="space-y-3">
                         {reclamations.map((rec) => (
@@ -1056,11 +875,11 @@ const CorrectionDouaniere = () => {
                                   rec.statut === "ANNULEE" ? "bg-muted text-muted-foreground" :
                                   "bg-red-100 text-red-800"
                                 }`}>
-                                  {RECLAMATION_STATUT_LABELS[rec.statut]}
+                                  {tReclamationStatut(rec.statut)}
                                 </Badge>
-                                {rec.auteurNom && <span className="text-xs text-muted-foreground">Par : {rec.auteurNom}</span>}
+                                {rec.auteurNom && <span className="text-xs text-muted-foreground">{t("correction_douaniere:reclamation.by_short", { name: rec.auteurNom })}</span>}
                               </div>
-                              {rec.dateCreation && <span className="text-xs text-muted-foreground">{new Date(rec.dateCreation).toLocaleDateString("fr-FR")}</span>}
+                              {rec.dateCreation && <span className="text-xs text-muted-foreground">{formatDate(rec.dateCreation)}</span>}
                             </div>
                             <p className="text-sm">{rec.texte}</p>
                             {rec.pieceJointeNomFichier && (
@@ -1069,21 +888,21 @@ const CorrectionDouaniere = () => {
                                 <span>{rec.pieceJointeNomFichier}</span>
                                 {rec.pieceJointeChemin && (
                                   <a href={rec.pieceJointeChemin} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                                    <ExternalLink className="h-3 w-3" /> Ouvrir
+                                    <ExternalLink className="h-3 w-3" /> {t("correction_douaniere:reclamation.open_file")}
                                   </a>
                                 )}
                               </div>
                             )}
                             {rec.statut === "REJETEE" && rec.motifReponse && (
                               <div className="rounded border border-red-200 bg-red-100/50 p-2 text-xs space-y-1">
-                                <div><span className="font-medium">Motif du rejet : </span>{rec.motifReponse}</div>
+                                <div><span className="font-medium">{t("correction_douaniere:reclamation.rejet_motif")}</span>{rec.motifReponse}</div>
                                 {rec.reponseRejetNomFichier && (
                                   <div className="flex items-center gap-2">
                                     <FileText className="h-3 w-3 text-red-600" />
                                     <span className="font-medium">{rec.reponseRejetNomFichier}</span>
                                     {rec.reponseRejetChemin && (
                                       <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => window.open(rec.reponseRejetChemin!, "_blank")}>
-                                        <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir
+                                        <ExternalLink className="h-3 w-3 me-1" /> {t("correction_douaniere:reclamation.open_file")}
                                       </Button>
                                     )}
                                   </div>
@@ -1092,48 +911,36 @@ const CorrectionDouaniere = () => {
                             )}
                             {rec.statut === "ACCEPTEE" && (
                               <div className="rounded border border-green-200 bg-green-100/50 p-2 text-xs">
-                                <span className="font-medium">✅ Acceptée</span> — La demande a été réinitialisée au statut REÇUE.
+                                <span className="font-medium">{t("correction_douaniere:reclamation.accepted_short")}</span> — {t("correction_douaniere:reclamation.accepted_info")}
                                 {rec.motifReponse && <p className="mt-1">{rec.motifReponse}</p>}
                               </div>
                             )}
                             {rec.statut === "ANNULEE" && (
                               <div className="rounded border border-muted p-2 text-xs text-muted-foreground italic">
-                                Réclamation annulée
+                                {t("correction_douaniere:reclamation.annulee_info")}
                               </div>
                             )}
-                            {/* Traitement : DGTCP accepte, PRESIDENT rejette */}
                             {rec.statut === "SOUMISE" && (hasRole(["DGTCP"]) || hasRole(["PRESIDENT"])) && (
                               <div className="flex gap-2 mt-2">
                                 {hasRole(["DGTCP"]) && (
                                   <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => {
-                                    setTraiterReclamationId(rec.id);
-                                    setTraiterAcceptee(true);
-                                    setTraiterMotif("");
-                                    setTraiterFile(null);
-                                    setTraiterOpen(true);
+                                    setTraiterReclamationId(rec.id); setTraiterAcceptee(true); setTraiterMotif(""); setTraiterFile(null); setTraiterOpen(true);
                                   }}>
-                                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Accepter
+                                    <CheckCircle className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:reclamation.accepter")}
                                   </Button>
                                 )}
                                 {hasRole(["PRESIDENT"]) && (
                                   <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => {
-                                    setTraiterReclamationId(rec.id);
-                                    setTraiterAcceptee(false);
-                                    setTraiterMotif("");
-                                    setTraiterFile(null);
-                                    setTraiterOpen(true);
+                                    setTraiterReclamationId(rec.id); setTraiterAcceptee(false); setTraiterMotif(""); setTraiterFile(null); setTraiterOpen(true);
                                   }}>
-                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeter
+                                    <XCircle className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:reclamation.rejeter")}
                                   </Button>
                                 )}
                               </div>
                             )}
-                            {/* Annulation par auteur ou AC */}
-                            {rec.statut === "SOUMISE" && (
-                              (rec.auteurUserId === user?.userId) || hasRole(["AUTORITE_CONTRACTANTE"])
-                            ) && (
+                            {rec.statut === "SOUMISE" && ((rec.auteurUserId === user?.userId) || hasRole(["AUTORITE_CONTRACTANTE"])) && (
                               <Button size="sm" variant="outline" className="h-7 text-xs mt-1" onClick={() => handleAnnulerReclamation(rec.id)}>
-                                <XCircle className="h-3.5 w-3.5 mr-1" /> Annuler la réclamation
+                                <XCircle className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:reclamation.annuler")}
                               </Button>
                             )}
                           </div>
@@ -1144,36 +951,30 @@ const CorrectionDouaniere = () => {
                 </Card>
               )}
 
-              {/* Bandeau re-upload après réclamation acceptée */}
               {demande.statut === "RECUE" && reclamations.some(r => r.statut === "ACCEPTEE") && (
                 <Card className="border-amber-300 bg-amber-50">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm text-amber-800">Réclamation acceptée — Nouveau cycle d'évaluation</p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          Le processus d'évaluation reprend. Le <strong>DGD</strong> doit téléverser la nouvelle <strong>offre corrigée</strong> et le <strong>Président</strong> la nouvelle <strong>lettre d'adoption</strong>.
-                        </p>
+                        <p className="font-semibold text-sm text-amber-800">{t("correction_douaniere:reclamation.rebanner_title")}</p>
+                        <p className="text-xs text-amber-700 mt-1">{t("correction_douaniere:reclamation.rebanner_body")}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* AI Assistance Link */}
               <Card className="border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" /> Assistance intelligente
+                    <Bot className="h-5 w-5 text-primary" /> {t("correction_douaniere:ai.card_title")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Lancer l'analyse IA pour vérifier les corrections douanières.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("correction_douaniere:ai.body")}</p>
                   <Button className="w-full" onClick={() => navigate(`/dashboard/extraction-dgd/${id}`)}>
-                    <Bot className="h-4 w-4 mr-2" /> Chatbot DQE + Offre Fiscale
+                    <Bot className="h-4 w-4 me-2" /> {t("correction_douaniere:ai.open_chatbot")}
                   </Button>
                 </CardContent>
               </Card>
@@ -1186,40 +987,38 @@ const CorrectionDouaniere = () => {
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Rejet temporaire</DialogTitle>
-            <DialogDescription>Indiquez le motif du rejet et sélectionnez les documents à corriger/compléter.</DialogDescription>
+            <DialogTitle>{t("correction_douaniere:dialog.reject_temp.title")}</DialogTitle>
+            <DialogDescription>{t("correction_douaniere:dialog.reject_temp.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Textarea placeholder="Motif du rejet temporaire..." value={rejectMotif} onChange={(e) => setRejectMotif(e.target.value)} rows={3} />
+            <Textarea placeholder={t("correction_douaniere:dialog.reject_temp.motif_placeholder")} value={rejectMotif} onChange={(e) => setRejectMotif(e.target.value)} rows={3} />
             <div>
               <Label className="text-sm font-medium flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Documents à corriger / compléter <span className="text-destructive">*</span>
+                {t("correction_douaniere:dialog.reject_temp.docs_label")} <span className="text-destructive">*</span>
               </Label>
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                {ALL_DOCUMENT_TYPES.map(dt => (
-                  <label key={dt.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
+                  <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
                     <Checkbox
-                      checked={rejectDocsDemandes.includes(dt.value)}
+                      checked={rejectDocsDemandes.includes(dt)}
                       onCheckedChange={(checked) => {
-                        setRejectDocsDemandes(prev =>
-                          checked ? [...prev, dt.value] : prev.filter(v => v !== dt.value)
-                        );
+                        setRejectDocsDemandes(prev => checked ? [...prev, dt] : prev.filter(v => v !== dt));
                       }}
                     />
-                    <span>{dt.label}</span>
+                    <span>{tTypeDocument(dt)}</span>
                   </label>
                 ))}
               </div>
               {rejectDocsDemandes.length === 0 && (
-                <p className="text-xs text-destructive mt-1">Sélectionnez au moins un document</p>
+                <p className="text-xs text-destructive mt-1">{t("correction_douaniere:dialog.reject_temp.select_at_least_one")}</p>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>{t("correction_douaniere:dialog.reject_temp.cancel")}</Button>
             <Button variant="destructive" disabled={!rejectMotif.trim() || rejectDocsDemandes.length === 0} onClick={handleTempReject}>
-              <XCircle className="h-4 w-4 mr-1" /> Confirmer
+              <XCircle className="h-4 w-4 me-1" /> {t("correction_douaniere:dialog.reject_temp.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1229,75 +1028,68 @@ const CorrectionDouaniere = () => {
       <Dialog open={finalOpen} onOpenChange={setFinalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Décision finale — {finalType === "ADOPTEE" ? "Adopter" : "Rejeter"}</DialogTitle>
-            <DialogDescription>Cette action est définitive et changera le statut de la demande.</DialogDescription>
+            <DialogTitle>{finalType === "ADOPTEE" ? t("correction_douaniere:dialog.final.title_adopt") : t("correction_douaniere:dialog.final.title_reject")}</DialogTitle>
+            <DialogDescription>{t("correction_douaniere:dialog.final.description")}</DialogDescription>
           </DialogHeader>
           {finalType === "REJETEE" && (
-            <Textarea placeholder="Motif du rejet final..." value={finalMotif} onChange={(e) => setFinalMotif(e.target.value)} rows={3} />
+            <Textarea placeholder={t("correction_douaniere:dialog.final.motif_placeholder")} value={finalMotif} onChange={(e) => setFinalMotif(e.target.value)} rows={3} />
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFinalOpen(false)}>Annuler</Button>
-            <Button
-              variant={finalType === "ADOPTEE" ? "default" : "destructive"}
-              disabled={finalType === "REJETEE" && !finalMotif.trim()}
-              onClick={handleFinalDecision}
-            >
-              {finalType === "ADOPTEE" ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-              Confirmer
+            <Button variant="outline" onClick={() => setFinalOpen(false)}>{t("correction_douaniere:dialog.final.cancel")}</Button>
+            <Button variant={finalType === "ADOPTEE" ? "default" : "destructive"} disabled={finalType === "REJETEE" && !finalMotif.trim()} onClick={handleFinalDecision}>
+              {finalType === "ADOPTEE" ? <CheckCircle className="h-4 w-4 me-1" /> : <XCircle className="h-4 w-4 me-1" />}
+              {t("correction_douaniere:dialog.final.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Pre-Visa Upload Dialog (DGD/DGTCP) */}
+      {/* Pre-Visa Upload Dialog */}
       <Dialog open={preVisaUploadOpen} onOpenChange={setPreVisaUploadOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload requis — {uploadReq?.label}</DialogTitle>
-            <DialogDescription>
-              Vous devez uploader le document « {uploadReq?.label} » avant de pouvoir apposer votre visa.
-            </DialogDescription>
+            <DialogTitle>{t("correction_douaniere:dialog.pre_visa.title", { label: uploadReqLabel })}</DialogTitle>
+            <DialogDescription>{t("correction_douaniere:dialog.pre_visa.description", { label: uploadReqLabel })}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">Fichier</Label>
+              <Label className="text-xs">{t("correction_douaniere:dialog.pre_visa.file_label")}</Label>
               <Input type="file" onChange={(e) => setPreVisaFile(e.target.files?.[0] || null)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPreVisaUploadOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setPreVisaUploadOpen(false)}>{t("correction_douaniere:dialog.pre_visa.cancel")}</Button>
             <Button disabled={!preVisaFile || preVisaLoading} onClick={handlePreVisaUpload}>
-              {preVisaLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-              Uploader
+              {preVisaLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
+              {t("correction_douaniere:dialog.pre_visa.upload")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Upload Dialog (AC - nouvelle version) */}
+      {/* Upload Dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Uploader une nouvelle version</DialogTitle>
-            <DialogDescription>L'ancien document deviendra inactif, le nouveau sera la version active.</DialogDescription>
+            <DialogTitle>{t("correction_douaniere:dialog.upload.title")}</DialogTitle>
+            <DialogDescription>{t("correction_douaniere:dialog.upload.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">Type de document</Label>
+              <Label className="text-xs">{t("correction_douaniere:dialog.upload.type_label")}</Label>
               <Select value={uploadType} onValueChange={setUploadType}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("correction_douaniere:dialog.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
-                  {ALL_DOCUMENT_TYPES.map(dt => (
-                    <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
+                  {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
+                    <SelectItem key={dt} value={dt}>{tTypeDocument(dt)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Fichier</Label>
+              <Label className="text-xs">{t("correction_douaniere:dialog.upload.file_label")}</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
             </div>
-            {/* Message de justification si c'est en réponse à un rejet */}
             {(() => {
               const isRejetResponse = uploadType && decisions.some(
                 d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
@@ -1305,67 +1097,56 @@ const CorrectionDouaniere = () => {
               if (!isRejetResponse) return null;
               return (
                 <div>
-                  <Label className="text-xs">Message de justification <span className="text-destructive">*</span></Label>
-                  <Textarea
-                    placeholder="Expliquez la correction apportée..."
-                    value={uploadMessage}
-                    onChange={(e) => setUploadMessage(e.target.value)}
-                    rows={2}
-                  />
+                  <Label className="text-xs">{t("correction_douaniere:dialog.upload.message_required_label")} <span className="text-destructive">*</span></Label>
+                  <Textarea placeholder={t("correction_douaniere:dialog.upload.message_placeholder")} value={uploadMessage} onChange={(e) => setUploadMessage(e.target.value)} rows={2} />
                 </div>
               );
             })()}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setUploadOpen(false)}>{t("correction_douaniere:dialog.upload.cancel")}</Button>
             <Button disabled={!uploadType || !uploadFile || uploadLoading} onClick={handleUpload}>
-              {uploadLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-              Uploader
+              {uploadLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
+              {t("correction_douaniere:dialog.upload.upload")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Répondre à un rejet (message seul) */}
+      {/* Response Dialog */}
       <Dialog open={responseOpen} onOpenChange={setResponseOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Répondre au rejet</DialogTitle>
-            <DialogDescription>Envoyez un message de justification à l'organisme ayant émis le rejet.</DialogDescription>
+            <DialogTitle>{t("correction_douaniere:dialog.response.title")}</DialogTitle>
+            <DialogDescription>{t("correction_douaniere:dialog.response.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {/* Afficher les documents demandés par ce rejet */}
             {(() => {
               const rejetDec = decisions.find(d => d.id === responseDecisionId);
               if (!rejetDec?.documentsDemandes?.length) return null;
               return (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-xs font-medium text-amber-800 mb-1.5">📋 Documents demandés par ce rejet :</p>
+                  <p className="text-xs font-medium text-amber-800 mb-1.5">{t("correction_douaniere:dialog.response.requested_docs")}</p>
                   <div className="flex flex-wrap gap-1">
                     {rejetDec.documentsDemandes.map((dt: string) => (
                       <Badge key={dt} variant="outline" className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">
-                        {ALL_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt}
+                        {tTypeDocument(dt)}
                       </Badge>
                     ))}
                   </div>
                   {rejetDec.motifRejet && (
-                    <p className="text-xs text-amber-700 italic mt-2">Motif : {rejetDec.motifRejet}</p>
+                    <p className="text-xs text-amber-700 italic mt-2">{t("correction_douaniere:dialog.response.motif_label", { motif: rejetDec.motifRejet })}</p>
                   )}
                 </div>
               );
             })()}
-            <Textarea
-              placeholder="Votre message de justification..."
-              value={responseMessage}
-              onChange={(e) => setResponseMessage(e.target.value)}
-              rows={3}
-            />
+            <Textarea placeholder={t("correction_douaniere:dialog.response.message_placeholder")} value={responseMessage} onChange={(e) => setResponseMessage(e.target.value)} rows={3} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResponseOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setResponseOpen(false)}>{t("correction_douaniere:dialog.response.cancel")}</Button>
             <Button disabled={!responseMessage.trim() || responseLoading} onClick={handleRejetResponse}>
-              {responseLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Envoyer
+              {responseLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+              {t("correction_douaniere:dialog.response.send")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1374,34 +1155,34 @@ const CorrectionDouaniere = () => {
       {/* Entreprise Detail Dialog */}
       <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Informations de l'entreprise</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("correction_douaniere:dialog.entreprise.title")}</DialogTitle></DialogHeader>
           {entrepriseLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : entrepriseDetail ? (
             <div className="grid grid-cols-1 gap-3 text-sm">
               <div className="rounded-lg border border-border p-3">
-                <span className="text-muted-foreground text-xs">Raison sociale</span>
-                <p className="font-medium">{entrepriseDetail.raisonSociale || "—"}</p>
+                <span className="text-muted-foreground text-xs">{t("correction_douaniere:dialog.entreprise.raison")}</span>
+                <p className="font-medium">{entrepriseDetail.raisonSociale || dash}</p>
               </div>
               <div className="rounded-lg border border-border p-3">
-                <span className="text-muted-foreground text-xs">NIF</span>
-                <p className="font-medium">{entrepriseDetail.nif || "—"}</p>
+                <span className="text-muted-foreground text-xs">{t("correction_douaniere:dialog.entreprise.nif")}</span>
+                <p className="font-medium">{entrepriseDetail.nif || dash}</p>
               </div>
               <div className="rounded-lg border border-border p-3">
-                <span className="text-muted-foreground text-xs">Adresse</span>
-                <p className="font-medium">{entrepriseDetail.adresse || "—"}</p>
+                <span className="text-muted-foreground text-xs">{t("correction_douaniere:dialog.entreprise.adresse")}</span>
+                <p className="font-medium">{entrepriseDetail.adresse || dash}</p>
               </div>
               <div className="rounded-lg border border-border p-3">
-                <span className="text-muted-foreground text-xs">Situation fiscale</span>
+                <span className="text-muted-foreground text-xs">{t("correction_douaniere:dialog.entreprise.situation")}</span>
                 <p>
                   <Badge className={entrepriseDetail.situationFiscale === "REGULIERE" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
-                    {entrepriseDetail.situationFiscale || "—"}
+                    {entrepriseDetail.situationFiscale || dash}
                   </Badge>
                 </p>
               </div>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-4">Aucune information disponible</p>
+            <p className="text-center text-muted-foreground py-4">{t("correction_douaniere:dialog.entreprise.empty")}</p>
           )}
         </DialogContent>
       </Dialog>
@@ -1410,25 +1191,25 @@ const CorrectionDouaniere = () => {
       <Dialog open={reclamationOpen} onOpenChange={(v) => { setReclamationOpen(v); if (!v) { setReclamationTexte(""); setReclamationFile(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Déposer une réclamation</DialogTitle>
-            <DialogDescription>Décrivez votre réclamation et joignez un document justificatif.</DialogDescription>
+            <DialogTitle>{t("correction_douaniere:dialog.reclamation_create.title")}</DialogTitle>
+            <DialogDescription>{t("correction_douaniere:dialog.reclamation_create.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Motif de la réclamation <span className="text-destructive">*</span></Label>
-              <Textarea placeholder="Décrivez votre réclamation..." value={reclamationTexte} onChange={(e) => setReclamationTexte(e.target.value)} rows={4} maxLength={4000} />
-              <p className="text-xs text-muted-foreground text-right">{reclamationTexte.length}/4000</p>
+              <Label>{t("correction_douaniere:dialog.reclamation_create.motif_label")} <span className="text-destructive">*</span></Label>
+              <Textarea placeholder={t("correction_douaniere:dialog.reclamation_create.motif_placeholder")} value={reclamationTexte} onChange={(e) => setReclamationTexte(e.target.value)} rows={4} maxLength={4000} />
+              <p className="text-xs text-muted-foreground text-end">{t("correction_douaniere:dialog.reclamation_create.counter", { current: reclamationTexte.length, max: 4000 })}</p>
             </div>
             <div className="space-y-2">
-              <Label>Pièce justificative <span className="text-destructive">*</span></Label>
+              <Label>{t("correction_douaniere:dialog.reclamation_create.file_label")} <span className="text-destructive">*</span></Label>
               <Input type="file" onChange={(e) => setReclamationFile(e.target.files?.[0] || null)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null); }}>{t("correction_douaniere:dialog.reclamation_create.cancel")}</Button>
             <Button onClick={handleCreateReclamation} disabled={reclamationSubmitting || !reclamationTexte.trim() || !reclamationFile}>
-              {reclamationSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-              Déposer
+              {reclamationSubmitting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
+              {t("correction_douaniere:dialog.reclamation_create.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1438,59 +1219,53 @@ const CorrectionDouaniere = () => {
       <Dialog open={traiterOpen} onOpenChange={(v) => { setTraiterOpen(v); if (!v) { setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{traiterAcceptee ? "Accepter la réclamation" : "Rejeter la réclamation"}</DialogTitle>
+            <DialogTitle>{traiterAcceptee ? t("correction_douaniere:dialog.reclamation_traiter.title_accept") : t("correction_douaniere:dialog.reclamation_traiter.title_reject")}</DialogTitle>
             <DialogDescription>
-              {traiterAcceptee
-                ? "L'acceptation remettra la demande au statut REÇUE et réinitialisera les visas."
-                : "Indiquez le motif et joignez un document de réponse pour rejeter cette réclamation."}
+              {traiterAcceptee ? t("correction_douaniere:dialog.reclamation_traiter.description_accept") : t("correction_douaniere:dialog.reclamation_traiter.description_reject")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>
-                {traiterAcceptee ? "Commentaire (optionnel)" : "Motif du rejet"} {!traiterAcceptee && <span className="text-destructive">*</span>}
+                {traiterAcceptee ? t("correction_douaniere:dialog.reclamation_traiter.motif_label_accept") : t("correction_douaniere:dialog.reclamation_traiter.motif_label_reject")} {!traiterAcceptee && <span className="text-destructive">*</span>}
               </Label>
               <Textarea
-                placeholder={traiterAcceptee ? "Commentaire interne..." : "Motif obligatoire (max 2000 caractères)..."}
+                placeholder={traiterAcceptee ? t("correction_douaniere:dialog.reclamation_traiter.motif_placeholder_accept") : t("correction_douaniere:dialog.reclamation_traiter.motif_placeholder_reject")}
                 value={traiterMotif}
                 onChange={(e) => setTraiterMotif(e.target.value.slice(0, 2000))}
                 rows={3}
                 maxLength={2000}
               />
               {!traiterAcceptee && (
-                <p className="text-[10px] text-muted-foreground text-right">{traiterMotif.length}/2000</p>
+                <p className="text-[10px] text-muted-foreground text-end">{t("correction_douaniere:dialog.reclamation_create.counter", { current: traiterMotif.length, max: 2000 })}</p>
               )}
             </div>
             {!traiterAcceptee && (
               <div className="space-y-2">
-                <Label>Document de réponse <span className="text-destructive">*</span></Label>
-                <Input
-                  type="file"
-                  onChange={(e) => setTraiterFile(e.target.files?.[0] || null)}
-                  className="cursor-pointer"
-                />
+                <Label>{t("correction_douaniere:dialog.reclamation_traiter.file_label")} <span className="text-destructive">*</span></Label>
+                <Input type="file" onChange={(e) => setTraiterFile(e.target.files?.[0] || null)} className="cursor-pointer" />
                 {traiterFile && (
-                  <p className="text-xs text-muted-foreground">{traiterFile.name} ({(traiterFile.size / 1024).toFixed(0)} Ko)</p>
+                  <p className="text-xs text-muted-foreground">{t("correction_douaniere:dialog.reclamation_traiter.file_size", { name: traiterFile.name, size: (traiterFile.size / 1024).toFixed(0) })}</p>
                 )}
               </div>
             )}
             {traiterAcceptee && (
               <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                <p className="font-medium">⚠️ Conséquences de l'acceptation :</p>
-                <ul className="list-disc ml-4 mt-1 space-y-0.5">
-                  <li>La demande repasse au statut <strong>REÇUE</strong></li>
-                  <li>Tous les visas sont réinitialisés</li>
-                  <li>La lettre d'adoption et l'offre corrigée sont archivées</li>
-                  <li>Le DGD et le Président devront retéléverser les documents</li>
+                <p className="font-medium">{t("correction_douaniere:dialog.reclamation_traiter.consequences_title")}</p>
+                <ul className="list-disc ms-4 mt-1 space-y-0.5">
+                  <li>{t("correction_douaniere:dialog.reclamation_traiter.consequence_status")}</li>
+                  <li>{t("correction_douaniere:dialog.reclamation_traiter.consequence_visas")}</li>
+                  <li>{t("correction_douaniere:dialog.reclamation_traiter.consequence_docs")}</li>
+                  <li>{t("correction_douaniere:dialog.reclamation_traiter.consequence_reupload")}</li>
                 </ul>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null); }}>{t("correction_douaniere:dialog.reclamation_traiter.cancel")}</Button>
             <Button variant={traiterAcceptee ? "default" : "destructive"} onClick={handleTraiterReclamation} disabled={traiterSubmitting || (!traiterAcceptee && (!traiterMotif.trim() || !traiterFile))}>
-              {traiterSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : traiterAcceptee ? <CheckCircle className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-              {traiterAcceptee ? "Confirmer l'acceptation" : "Confirmer le rejet"}
+              {traiterSubmitting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : traiterAcceptee ? <CheckCircle className="h-4 w-4 me-1" /> : <XCircle className="h-4 w-4 me-1" />}
+              {traiterAcceptee ? t("correction_douaniere:dialog.reclamation_traiter.confirm_accept") : t("correction_douaniere:dialog.reclamation_traiter.confirm_reject")}
             </Button>
           </DialogFooter>
         </DialogContent>

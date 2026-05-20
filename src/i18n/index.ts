@@ -25,6 +25,7 @@ import frUsers from "./locales/fr/users.json";
 import frRoles from "./locales/fr/roles.json";
 import frAudit from "./locales/fr/audit.json";
 import frReferentiel from "./locales/fr/referentiel.json";
+import frCorrectionDouaniere from "./locales/fr/correction_douaniere.json";
 import frErrors from "./locales/fr/errors.json";
 import frEnums from "./locales/fr/enums.json";
 
@@ -51,6 +52,7 @@ import arUsers from "./locales/ar/users.json";
 import arRoles from "./locales/ar/roles.json";
 import arAudit from "./locales/ar/audit.json";
 import arReferentiel from "./locales/ar/referentiel.json";
+import arCorrectionDouaniere from "./locales/ar/correction_douaniere.json";
 import arErrors from "./locales/ar/errors.json";
 import arEnums from "./locales/ar/enums.json";
 
@@ -80,6 +82,7 @@ export const NAMESPACES = [
   "roles",
   "audit",
   "referentiel",
+  "correction_douaniere",
   "errors",
   "enums",
 ] as const;
@@ -108,6 +111,7 @@ const resources = {
     roles: frRoles,
     audit: frAudit,
     referentiel: frReferentiel,
+    correction_douaniere: frCorrectionDouaniere,
     errors: frErrors,
     enums: frEnums,
   },
@@ -134,6 +138,7 @@ const resources = {
     roles: arRoles,
     audit: arAudit,
     referentiel: arReferentiel,
+    correction_douaniere: arCorrectionDouaniere,
     errors: arErrors,
     enums: arEnums,
   },
