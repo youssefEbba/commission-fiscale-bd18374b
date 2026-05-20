@@ -649,12 +649,9 @@ export interface ReclamationDemandeCorrectionDto {
   reponseRejetDateUpload?: string;
 }
 
-export const RECLAMATION_STATUT_LABELS: Record<ReclamationStatut, string> = {
-  SOUMISE: "Soumise",
-  ACCEPTEE: "Acceptée",
-  REJETEE: "Rejetée",
-  ANNULEE: "Annulée",
-};
+// Removed RECLAMATION_STATUT_LABELS (I2 migration — orpheline, remplacée par tReclamationStatut).
+
+
 
 /** Types de documents requis pour soumettre une demande de correction douanière. */
 export type TypeDocumentCorrectionRequis =

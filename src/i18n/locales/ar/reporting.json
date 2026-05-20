@@ -1,0 +1,68 @@
+{
+  "page": {
+    "title": "التقارير",
+    "header": "التقارير",
+    "filters_applied": "تم تطبيق المرشحات",
+    "load_error_title": "خطأ في التحميل",
+    "load_error_fallback": "تعذّر تحميل بيانات التقارير",
+    "retry": "إعادة المحاولة"
+  },
+  "roles": {
+    "PRESIDENT": "الرئاسة — رؤية وطنية",
+    "ADMIN_SI": "الإدارة — رؤية وطنية",
+    "DIRECTION_NATIONALE": "رؤية وطنية (إدارة)",
+    "AUTORITE_CONTRACTANTE": "مجموعتي — السلطة المتعاقدة",
+    "AUTORITE_DELEGUEE": "صفقاتي المفوّضة",
+    "ENTREPRISE": "مؤسستي",
+    "SOUS_TRAITANT": "مؤسستي (مقاول من الباطن)",
+    "DEFAULT": "التقارير"
+  },
+  "filters": {
+    "from": "من",
+    "to": "إلى",
+    "autorite": "السلطة المتعاقدة",
+    "entreprise": "المؤسسة",
+    "all_f_plural": "الكل",
+    "apply": "تطبيق"
+  },
+  "kpis": {
+    "demandes": "الطلبات",
+    "certificats": "الشهادات",
+    "utilisations": "الاستخدامات",
+    "transferts": "التحويلات",
+    "sous_traitances": "{{count}} مقاولة من الباطن",
+    "en_validation_president": "{{count}} في انتظار مصادقة الرئيس",
+    "taux_adoption": "نسبة الاعتماد",
+    "taux_rejet": "نسبة الرفض",
+    "solde_cordon": "رصيد الشريط",
+    "solde_tva": "رصيد الضريبة على القيمة المضافة"
+  },
+  "charts": {
+    "empty": "لا توجد بيانات",
+    "empty_audit": "لا توجد بيانات تدقيق",
+    "marches_not_applicable": "غير قابل للتطبيق على ملفك",
+    "tab_demandes": "الطلبات",
+    "tab_certificats": "الشهادات",
+    "tab_utilisations": "الاستخدامات",
+    "tab_referentiel": "اتفاقيات / مشاريع",
+    "tab_audit": "التدقيق",
+    "demandes_by_statut": "الطلبات حسب الحالة",
+    "demandes_evolution": "التطور الشهري للطلبات",
+    "demandes_detail": "التفصيل حسب الحالة",
+    "demandes_legend": "الطلبات",
+    "certificats_by_statut": "الشهادات حسب الحالة",
+    "certificats_amounts": "مبالغ الشهادات",
+    "montant_cordon": "مبلغ الشريط",
+    "montant_tva_int": "مبلغ الضريبة الداخلية",
+    "solde_cordon": "رصيد الشريط",
+    "solde_tva": "رصيد الضريبة على القيمة المضافة",
+    "certificats_count": "{{count}} شهادة ضمن النطاق",
+    "utilisations_by_statut": "الاستخدامات حسب الحالة",
+    "utilisations_by_type": "الاستخدامات حسب النوع",
+    "conventions_title": "الاتفاقيات",
+    "referentiels_title": "مرجعيات المشاريع",
+    "marches_title": "الصفقات",
+    "audit_actions": "إجراءات التدقيق ({{count}})",
+    "audit_top_entities": "أكثر الكيانات تعديلاً"
+  }
+}

@@ -103,6 +103,15 @@
     "ANNULEE": "ملغاة",
     "CLOTUREE": "مقفلة"
   },
+  "statut_referentiel": {
+    "EN_ATTENTE": "في الانتظار",
+    "VALIDE": "مصادق عليه",
+    "VALIDEE": "مصادق عليه",
+    "REJETE": "مرفوض",
+    "REJETEE": "مرفوض",
+    "ANNULE": "ملغى",
+    "ANNULEE": "ملغى"
+  },
   "statut_marche": {
     "BROUILLON": "مسودة",
     "ATTRIBUE": "ممنوح",

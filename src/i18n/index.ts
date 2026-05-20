@@ -28,6 +28,7 @@ import frReferentiel from "./locales/fr/referentiel.json";
 import frCorrectionDouaniere from "./locales/fr/correction_douaniere.json";
 import frErrors from "./locales/fr/errors.json";
 import frEnums from "./locales/fr/enums.json";
+import frReporting from "./locales/fr/reporting.json";
 
 // AR namespaces
 import arCommon from "./locales/ar/common.json";
@@ -55,6 +56,7 @@ import arReferentiel from "./locales/ar/referentiel.json";
 import arCorrectionDouaniere from "./locales/ar/correction_douaniere.json";
 import arErrors from "./locales/ar/errors.json";
 import arEnums from "./locales/ar/enums.json";
+import arReporting from "./locales/ar/reporting.json";
 
 export const SUPPORTED_LANGS = ["fr", "ar"] as const;
 export type AppLang = (typeof SUPPORTED_LANGS)[number];
@@ -85,6 +87,7 @@ export const NAMESPACES = [
   "correction_douaniere",
   "errors",
   "enums",
+  "reporting",
 ] as const;
 
 const resources = {
@@ -114,6 +117,7 @@ const resources = {
     correction_douaniere: frCorrectionDouaniere,
     errors: frErrors,
     enums: frEnums,
+    reporting: frReporting,
   },
   ar: {
     common: arCommon,
@@ -141,6 +145,7 @@ const resources = {
     correction_douaniere: arCorrectionDouaniere,
     errors: arErrors,
     enums: arEnums,
+    reporting: arReporting,
   },
 } as const;
 

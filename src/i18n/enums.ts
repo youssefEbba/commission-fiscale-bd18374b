@@ -32,6 +32,7 @@ export const tUtilisationStatutContextualise = (statut?: string | null, type?: s
 export const tStatutDemande = (v?: string | null) => tEnum("statut_demande", v ?? undefined);
 export const tStatutConvention = (v?: string | null) => tEnum("statut_convention", v ?? undefined);
 export const tStatutMarche = (v?: string | null) => tEnum("statut_marche", v ?? undefined);
+export const tStatutReferentiel = (v?: string | null) => tEnum("statut_referentiel", v ?? undefined);
 export const tStatutAvenant = (v?: string | null) => tEnum("statut_avenant", v ?? undefined);
 export const tStatutSousTraitance = (v?: string | null) => tEnum("statut_sous_traitance", v ?? undefined);
 export const tStatutModification = (v?: string | null) => tEnum("statut_modification", v ?? undefined);
