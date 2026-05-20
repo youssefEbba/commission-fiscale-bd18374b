@@ -140,7 +140,11 @@
       "loading": "Chargement des exigences documentaires…",
       "obligatoire_badge": "Obligatoire",
       "btn_choose": "Choisir",
-      "btn_replace": "Remplacer"
+      "btn_replace": "Remplacer",
+      "missing_count_zero": "{{count}} obligatoires manquants",
+      "missing_count_two": "{{count}} obligatoires manquants",
+      "missing_count_few": "{{count}} obligatoires manquants",
+      "missing_count_many": "{{count}} obligatoires manquants"
     },
     "actions": {
       "save_draft": "Enregistrer brouillon",
@@ -217,6 +221,10 @@
     "statut_updated": "Statut: {{label}}",
     "rejet_temp_sent": "Rejet temporaire envoyé — documents demandés",
     "doc_uploaded": "Document uploadé",
-    "apurement_done": "Utilisation apurée — TVA nette calculée et solde mis à jour"
+    "apurement_done": "Utilisation apurée — TVA nette calculée et solde mis à jour",
+    "created_with_docs_zero": "Utilisation créée",
+    "created_with_docs_two": "Utilisation créée avec {{count}} documents",
+    "created_with_docs_few": "Utilisation créée avec {{count}} documents",
+    "created_with_docs_many": "Utilisation créée avec {{count}} documents"
   }
 }
