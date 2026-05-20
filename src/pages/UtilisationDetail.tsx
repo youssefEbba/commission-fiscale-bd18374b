@@ -1,17 +1,22 @@
 import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
-  UTILISATION_STATUT_LABELS, utilisationStatutLabel, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA,
+  UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA,
   TypeDocumentUtilisation, DocumentDto,
-  DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
+  DecisionCorrectionDto, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
   LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
-import { tTypeDocument } from "@/i18n/enums";
+import {
+  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise,
+} from "@/i18n/enums";
+import { formatAmount, formatDate } from "@/i18n/format";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -24,10 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Loader2, Landmark, Ship, Building2, FileText, Upload, Info,
-  AlertTriangle, CheckCircle2, Clock, CreditCard, XCircle, CircleDollarSign,
+  AlertTriangle, CheckCircle2, CreditCard, XCircle, CircleDollarSign,
   TrendingDown, TrendingUp, Minus, Download
 } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
@@ -50,9 +54,12 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
 };
 
-const f = (v: any) => v != null ? Number(v).toLocaleString("fr-FR") : "—";
+const fmtAmt = (v: any) => formatAmount(v, { currency: "MRU" });
+const fmtNum = (v: any) => (v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("fr-FR"));
 
-// Conversion d'un nombre en lettres (français) — usage bulletin de liquidation
+// Conversion d'un nombre en lettres (français) — usage bulletin de liquidation.
+// REVIEW: conservé en FR uniquement ; la traduction des montants en lettres en AR
+// n'est pas spécifiée dans ce lot.
 const _u = ["zéro","un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix","onze","douze","treize","quatorze","quinze","seize","dix-sept","dix-huit","dix-neuf"];
 const _t = ["","","vingt","trente","quarante","cinquante","soixante","soixante","quatre-vingt","quatre-vingt"];
 function _below1000(n: number): string {
@@ -101,11 +108,14 @@ function numberToFrenchWords(n: number): string {
 }
 
 const UtilisationDetail = () => {
+  const { t } = useTranslation(["utilisations", "common", "errors"]);
   const { user } = useAuth();
   const role = user?.role as AppRole;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const tSuccess = () => t("common:states.success", { defaultValue: "Succès" });
+  const tError = () => t("common:states.error", { defaultValue: "Erreur" });
 
   const [util, setUtil] = useState<UtilisationCreditDto | null>(null);
   const [cert, setCert] = useState<CertificatCreditDto | null>(null);
@@ -115,7 +125,7 @@ const UtilisationDetail = () => {
   const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Liquidation dialog (décision par ligne du bulletin)
+  // Liquidation dialog
   const [showLiq, setShowLiq] = useState(false);
   const [liqDecisions, setLiqDecisions] = useState<Record<number, AffectationTaxe>>({});
   const [liqValeurs, setLiqValeurs] = useState<Record<number, string>>({});
@@ -133,21 +143,19 @@ const UtilisationDetail = () => {
   const [lettresAPayerLiq, setLettresAPayerLiq] = useState<string | null>(null);
   const [lettresAuCiLiq, setLettresAuCiLiq] = useState<string | null>(null);
 
-  // Chèque dialog (entreprise)
+  // Chèque dialog
   const [showCheque, setShowCheque] = useState(false);
   const [chequeForm, setChequeForm] = useState({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
   const [chequeFile, setChequeFile] = useState<File | null>(null);
   const [chequeLoading, setChequeLoading] = useState(false);
 
-  // Quittances dialog (DGTCP)
+  // Quittances dialog
   const [showQuittances, setShowQuittances] = useState(false);
   const [quittancesForm, setQuittancesForm] = useState<QuittanceTresorDto[]>([]);
   const [quittancesFiles, setQuittancesFiles] = useState<Record<number, File | null>>({});
   const [quittancesLoading, setQuittancesLoading] = useState(false);
 
-  // Envoyer Trésor confirm
   const [envoiLoading, setEnvoiLoading] = useState(false);
-  // Accusé réception
   const [receptionLoading, setReceptionLoading] = useState(false);
 
   // Rejet temp dialog
@@ -156,7 +164,7 @@ const UtilisationDetail = () => {
   const [rejetDocs, setRejetDocs] = useState<string[]>([]);
   const [rejetLoading, setRejetLoading] = useState(false);
 
-  // Document upload
+  // Upload
   const [showUpload, setShowUpload] = useState(false);
   const [docType, setDocType] = useState<TypeDocumentUtilisation>("DEMANDE_UTILISATION");
   const [docFile, setDocFile] = useState<File | null>(null);
@@ -172,6 +180,10 @@ const UtilisationDetail = () => {
 
   const utilId = Number(id);
 
+  usePageTitle("utilisations:detail.title", {
+    reference: util ? (util.numeroDeclaration || util.numeroFacture || `#${util.id}`) : `#${id}`,
+  });
+
   const fetchAll = async () => {
     setLoading(true);
     try {
@@ -183,7 +195,6 @@ const UtilisationDetail = () => {
           ? utilisationCreditApi.getLignesBulletin(utilId).catch(() => [])
           : Promise.resolve(null),
       ]);
-      // Compléter les lignes si le DTO principal ne les contient pas (selon le rôle backend)
       if (lignesFallback && Array.isArray(lignesFallback) && lignesFallback.length > 0) {
         u.lignes = lignesFallback;
         if (u.totalPrisEnCharge == null) {
@@ -200,7 +211,6 @@ const UtilisationDetail = () => {
       setUtil(u);
       setDocs(d);
       setDecisions(dec);
-      // Load cert and TVA stock
       if (u.certificatCreditId) {
         certificatCreditApi.getById(u.certificatCreditId).then(setCert).catch(() => {});
         if (role === "DGTCP" || role === "ADMIN_SI") {
@@ -208,85 +218,76 @@ const UtilisationDetail = () => {
         }
       }
     } catch {
-      toast({ title: "Erreur", description: "Impossible de charger l'utilisation", variant: "destructive" });
+      toast({ title: tError(), description: t("utilisations:detail.load_error"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { if (id) fetchAll(); }, [id]);
+  useEffect(() => { if (id) fetchAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
 
   const handleStatut = async (statut: UtilisationStatut) => {
     setActionLoading(true);
     try {
       await utilisationCreditApi.updateStatut(utilId, statut);
-      toast({ title: "Succès", description: `Statut: ${UTILISATION_STATUT_LABELS[statut]}` });
+      toast({ title: tSuccess(), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setActionLoading(false); }
   };
 
-  // DGD : annote chaque ligne + appose le visa en une seule action (POST /visa-dgd → statut VISE)
   const handleVisaDgd = async () => {
     if (!util) return;
     const lignes = util.lignes || [];
-    // Une affectation est requise uniquement pour les lignes dont la valeur est > 0
     const missing = lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]);
     if (missing.length > 0) {
-      toast({ title: "Décisions incomplètes", description: `Les lignes avec un montant > 0 doivent être affectées (AU CI ou À PAYER). Restantes : ${missing.length}.`, variant: "destructive" });
+      toast({ title: t("utilisations:toast.decisions_missing_title"), description: t("utilisations:toast.decisions_missing_desc", { count: missing.length }), variant: "destructive" });
       return;
     }
     setLiqLoading(true);
     try {
-      const decisions = lignes.filter(l => liqDecisions[l.id]).map(l => {
+      const dec = lignes.filter(l => liqDecisions[l.id]).map(l => {
         const raw = liqValeurs[l.id];
         const overrideNum = raw !== undefined && raw !== "" ? Number(raw) : NaN;
         const hasOverride = !isNaN(overrideNum) && overrideNum !== Number(l.valeur);
         return { ligneId: l.id, affectation: liqDecisions[l.id], ...(hasOverride ? { valeurTaxe: overrideNum } : {}) };
       });
-      await utilisationCreditApi.visaDgd(utilId, decisions, liqBulletinFile);
-      toast({ title: "Visa apposé", description: "Le bulletin est annoté et visé. En attente de la liquidation DGTCP." });
+      await utilisationCreditApi.visaDgd(utilId, dec, liqBulletinFile);
+      toast({ title: t("utilisations:toast.visa_apposed_title"), description: t("utilisations:toast.visa_apposed_desc") });
       setShowLiq(false);
       setLiqDecisions({});
       setLiqValeurs({});
       setLiqBulletinFile(null);
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setLiqLoading(false); }
   };
 
-  // DGTCP : exécute la liquidation financière (POST /liquidation-douane, sans body → statut LIQUIDEE)
   const handleLiquidationDgtcp = async () => {
     setLiqLoading(true);
     try {
       await utilisationCreditApi.liquiderDouane(utilId);
-      toast({ title: "Liquidation effectuée", description: "Solde cordon débité, quota TVA décrémenté, stock TVA déductible alimenté." });
+      toast({ title: t("utilisations:toast.liquidation_done_title"), description: t("utilisations:toast.liquidation_done_desc") });
       setShowLiq(false);
-      // Récupère l'état à jour puis génère le PDF récapitulatif
       const u2 = await utilisationCreditApi.getById(utilId);
       const cert2 = u2.certificatCreditId
         ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null)
         : null;
       setUtil(u2);
       if (cert2) setCert(cert2);
-      try {
-        generateLiquidationPdf(u2, cert2);
-      } catch (err) {
-        console.error("PDF generation failed", err);
-      }
+      try { generateLiquidationPdf(u2, cert2); } catch (err) { console.error("PDF generation failed", err); }
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setLiqLoading(false); }
   };
 
-  // Entreprise : saisir le chèque certifié couvrant la part À PAYER
   const handleSaisirCheque = async () => {
     if (!chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque) return;
     if (!chequeFile) {
-      toast({ title: "Scan requis", description: "Veuillez joindre le scan du chèque certifié.", variant: "destructive" });
+      toast({ title: t("utilisations:toast.scan_required_title"), description: t("utilisations:toast.scan_required_desc"), variant: "destructive" });
       return;
     }
     setChequeLoading(true);
@@ -298,36 +299,34 @@ const UtilisationDetail = () => {
         dateCheque: chequeForm.dateCheque ? new Date(chequeForm.dateCheque).toISOString() : undefined,
         file: chequeFile,
       });
-      toast({ title: "Chèque enregistré", description: "Le dossier passe en attente d'envoi au Trésor." });
+      toast({ title: t("utilisations:toast.cheque_saved_title"), description: t("utilisations:toast.cheque_saved_desc") });
       setShowCheque(false);
       setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
       setChequeFile(null);
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setChequeLoading(false); }
   };
 
-  // DGTCP : envoi au Trésor
   const handleEnvoyerTresor = async () => {
     setEnvoiLoading(true);
     try {
       await utilisationCreditApi.envoyerAuTresor(utilId);
-      toast({ title: "Envoyé", description: "Dossier envoyé au Trésor." });
+      toast({ title: t("utilisations:toast.envoi_tresor_title"), description: t("utilisations:toast.envoi_tresor_desc") });
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setEnvoiLoading(false); }
   };
 
-  // DGTCP : enregistrer / mettre à jour les quittances
   const handleSaisirQuittances = async () => {
     const validIdx: number[] = [];
     quittancesForm.forEach((q, i) => {
       if (q.numeroQuittance.trim() && q.dateQuittance && Number(q.montant) > 0) validIdx.push(i);
     });
     if (validIdx.length === 0) {
-      toast({ title: "Aucune quittance valide", description: "Renseignez au moins une quittance.", variant: "destructive" });
+      toast({ title: t("utilisations:toast.no_valid_quittance_title"), description: t("utilisations:toast.no_valid_quittance_desc"), variant: "destructive" });
       return;
     }
     setQuittancesLoading(true);
@@ -343,24 +342,23 @@ const UtilisationDetail = () => {
       });
       const files = validIdx.map(i => quittancesFiles[i] || null);
       await utilisationCreditApi.saisirQuittances(utilId, valid, files);
-      toast({ title: "Quittances enregistrées", description: `${valid.length} quittance(s) enregistrée(s).` });
+      toast({ title: t("utilisations:toast.quittances_saved_title"), description: t("utilisations:toast.quittances_saved_desc", { count: valid.length }) });
       setShowQuittances(false);
       setQuittancesFiles({});
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setQuittancesLoading(false); }
   };
 
-  // Entreprise : accusé de réception du certificat d'utilisation
   const handleClotureReception = async () => {
     setReceptionLoading(true);
     try {
       await utilisationCreditApi.cloturerReception(utilId);
-      toast({ title: "Réception confirmée", description: "Dossier clôturé et archivé." });
+      toast({ title: t("utilisations:toast.reception_done_title"), description: t("utilisations:toast.reception_done_desc") });
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setReceptionLoading(false); }
   };
 
@@ -368,11 +366,11 @@ const UtilisationDetail = () => {
     setApurLoading(true);
     try {
       await utilisationCreditApi.apurerTVA(utilId, Number(apurMontant));
-      toast({ title: "Succès", description: "Apurement TVA effectué" });
+      toast({ title: tSuccess(), description: t("utilisations:toast.apurement_done") });
       setShowApur(false);
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setApurLoading(false); }
   };
 
@@ -381,13 +379,13 @@ const UtilisationDetail = () => {
     setRejetLoading(true);
     try {
       await utilisationCreditApi.postDecision(utilId, "REJET_TEMP", rejetMotif.trim(), rejetDocs);
-      toast({ title: "Succès", description: "Rejet temporaire envoyé" });
+      toast({ title: tSuccess(), description: t("utilisations:toast.rejet_temp_simple") });
       setShowRejet(false);
       setRejetMotif("");
       setRejetDocs([]);
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setRejetLoading(false); }
   };
 
@@ -396,12 +394,12 @@ const UtilisationDetail = () => {
     setUploading(true);
     try {
       await utilisationCreditApi.uploadDocument(utilId, docType, docFile);
-      toast({ title: "Succès", description: "Document uploadé" });
+      toast({ title: tSuccess(), description: t("utilisations:toast.doc_uploaded") });
       setDocFile(null);
       setShowUpload(false);
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setUploading(false); }
   };
 
@@ -411,21 +409,24 @@ const UtilisationDetail = () => {
     if (!responseMsg.trim() && files.length === 0) return;
     setResponding(true);
     try {
-      // Send one API call per file, or a single call if text-only
       if (files.length === 0) {
         await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim(), undefined, undefined);
       } else if (respondWithUpload && respondDecision.documentsDemandes?.length) {
-        // Multi-upload: responseFiles is keyed by doc type
         const entries = Object.entries(responseFiles);
         for (let i = 0; i < entries.length; i++) {
-          const [docType, file] = entries[i];
-          const msg = i === 0 ? (responseMsg.trim() || "Document joint") : "Document joint";
-          await utilisationCreditApi.postRejetTempResponse(respondDecision.id, msg, file, docType);
+          const [dt, file] = entries[i];
+          const msg = i === 0 ? (responseMsg.trim() || t("utilisations:respond_dialog.default_doc_msg")) : t("utilisations:respond_dialog.default_doc_msg");
+          await utilisationCreditApi.postRejetTempResponse(respondDecision.id, msg, file, dt);
         }
       } else if (responseFile) {
-        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim() || "Document joint", responseFile);
+        await utilisationCreditApi.postRejetTempResponse(respondDecision.id, responseMsg.trim() || t("utilisations:respond_dialog.default_doc_msg"), responseFile);
       }
-      toast({ title: "Succès", description: files.length > 1 ? `${files.length} documents envoyés` : "Réponse envoyée" });
+      toast({
+        title: tSuccess(),
+        description: files.length > 1
+          ? t("utilisations:toast.documents_sent_n", { count: files.length })
+          : t("utilisations:toast.response_sent"),
+      });
       setRespondDecision(null);
       setRespondWithUpload(false);
       setResponseFiles({});
@@ -433,17 +434,17 @@ const UtilisationDetail = () => {
       setResponseFile(null);
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setResponding(false); }
   };
 
   const handleResolveRejet = async (decisionId: number) => {
     try {
       await utilisationCreditApi.resolveRejetTemp(decisionId);
-      toast({ title: "Succès", description: "Rejet résolu" });
+      toast({ title: tSuccess(), description: t("utilisations:toast.rejet_resolved") });
       fetchAll();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+      toast({ title: tError(), description: e.message, variant: "destructive" });
     }
   };
 
@@ -465,7 +466,7 @@ const UtilisationDetail = () => {
   }
 
   if (!util) {
-    return <DashboardLayout><div className="text-center py-24 text-muted-foreground">Utilisation introuvable</div></DashboardLayout>;
+    return <DashboardLayout><div className="text-center py-24 text-muted-foreground">{t("utilisations:detail.not_found")}</div></DashboardLayout>;
   }
 
   const u = util;
@@ -473,25 +474,15 @@ const UtilisationDetail = () => {
   const isTVA = u.type === "TVA_INTERIEURE";
   const tvaDocTypes = isTVA ? getUtilisationDocTypesTVA(u.typeAchat) : [];
   const canUploadDoc = role === "ENTREPRISE" || role === "ADMIN_SI";
-  const totalStockDisponible = tvaStock.reduce((s, t) => s + t.montantRestant, 0);
+  const totalStockDisponible = tvaStock.reduce((s, x) => s + x.montantRestant, 0);
 
-  // Determine available actions
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
-  // Le DGD annote chaque ligne (AU CI / À PAYER) et appose son visa en une seule action.
-  // Possible depuis DEMANDEE, EN_VERIFICATION ou A_RECONTROLER.
-  const lignesAffectees = (u.lignes || []).every(l => !!l.affectation);
   const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
-  // Nouveau workflow douanier
-  // Entreprise — saisie du chèque certifié après visa DGD
   const isEntreprise = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS";
   const canEntrepriseCheque = isEntreprise && isDouane && (u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE");
-  // DGTCP — envoi au Trésor (uniquement après chèque saisi)
   const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
-  // DGTCP — saisie/édition des quittances Trésor
   const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
-  // DGTCP — liquidation finale (débit financier) : nouveau workflow = QUITTANCES_ENREGISTREES, ancien = VISE
   const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
-  // Entreprise — accusé de réception après liquidation
   const canEntrepriseReception = isEntreprise && isDouane && u.statut === "LIQUIDEE";
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
@@ -501,8 +492,6 @@ const UtilisationDetail = () => {
   const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
     (role === "DGTCP" && isDouane && ["VISE", "EN_CONTROLE_DGD", "CHEQUE_SAISI", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES"].includes(u.statut));
-
-  // A_RECONTROLER transitions
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
   const canDGTCPReVerifyTVA = role === "DGTCP" && isTVA && u.statut === "A_RECONTROLER";
 
@@ -516,38 +505,44 @@ const UtilisationDetail = () => {
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+            <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("utilisations:detail.back")}
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               {isDouane ? <Ship className="h-6 w-6 text-primary" /> : <Building2 className="h-6 w-6 text-primary" />}
-              Utilisation #{u.id} — {isDouane ? "Importation Douanière" : "TVA Intérieure"}
+              {isDouane
+                ? t("utilisations:detail.header.title_douane", { id: u.id })
+                : t("utilisations:detail.header.title_tva", { id: u.id })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Certificat {u.certificatReference || `#${u.certificatCreditId}`}
-              {u.entrepriseNom && ` — ${u.entrepriseNom}`}
+              {t("utilisations:detail.header.subtitle_cert", { ref: u.certificatReference || `#${u.certificatCreditId}` })}
+              {u.entrepriseNom && <> — {t("utilisations:detail.header.subtitle_company", { name: u.entrepriseNom })}</>}
               {u.demandeurEstSousTraitant && (
-                <Badge variant="outline" className="ml-2 text-[10px] border-orange-300 text-orange-700 bg-orange-50">Sous-traité</Badge>
+                <Badge variant="outline" className="ms-2 text-[10px] border-orange-300 text-orange-700 bg-orange-50">
+                  {t("utilisations:detail.header.sous_traite_badge")}
+                </Badge>
               )}
             </p>
             {u.demandeurEstSousTraitant && u.certificatTitulaireRaisonSociale && (
-              <p className="text-xs text-muted-foreground mt-0.5">Titulaire du certificat : <span className="font-medium">{u.certificatTitulaireRaisonSociale}</span></p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t("utilisations:detail.header.titulaire_label")} <span className="font-medium">{u.certificatTitulaireRaisonSociale}</span>
+              </p>
             )}
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[u.statut]}`}>
-            {utilisationStatutLabel(u.statut, u.type)}
+            {tUtilisationStatutContextualise(u.statut, u.type)}
           </Badge>
         </div>
 
-        {/* Info cards */}
+        {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-primary/10"><CreditCard className="h-5 w-5 text-primary" /></div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Montant total</p>
-                  <p className="text-lg font-bold">{f(u.montant)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.montant_total")}</p>
+                  <p className="text-lg font-bold">{fmtAmt(u.montant)}</p>
                 </div>
               </div>
             </CardContent>
@@ -557,14 +552,14 @@ const UtilisationDetail = () => {
             <>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">Total pris en charge (CI)</p>
-                  <p className="text-lg font-bold text-primary">{f(u.totalPrisEnCharge)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.total_au_ci")}</p>
+                  <p className="text-lg font-bold text-primary">{fmtAmt(u.totalPrisEnCharge)}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">Total à payer (entreprise)</p>
-                  <p className="text-lg font-bold text-amber-700">{f(u.totalAPayer)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                  <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.total_a_payer")}</p>
+                  <p className="text-lg font-bold text-amber-700">{fmtAmt(u.totalAPayer)}</p>
                 </CardContent>
               </Card>
             </>
@@ -573,8 +568,8 @@ const UtilisationDetail = () => {
           {isTVA && (
             <Card>
               <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">TVA Intérieure (collectée)</p>
-                <p className="text-lg font-bold">{f(u.montantTVAInterieure)} <span className="text-sm font-normal text-muted-foreground">MRU</span></p>
+                <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.tva_collectee")}</p>
+                <p className="text-lg font-bold">{fmtAmt(u.montantTVAInterieure)}</p>
               </CardContent>
             </Card>
           )}
@@ -582,60 +577,64 @@ const UtilisationDetail = () => {
           {cert && (
             <Card className="border-l-4 border-l-primary">
               <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">Soldes certificat</p>
+                <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.soldes_cert")}</p>
                 <div className="text-sm space-y-1 mt-1">
-                  <div className="flex justify-between"><span>Solde Cordon (droits):</span><span className="font-semibold">{f(cert.soldeCordon)} MRU</span></div>
-                  <div className="flex justify-between"><span>TVA importation restante:</span><span className="font-semibold">{f(cert.tvaImportationDouane)} MRU</span></div>
-                  <div className="flex justify-between"><span>Solde TVA intérieure:</span><span className="font-semibold">{f(cert.soldeTVA)} MRU</span></div>
+                  <div className="flex justify-between"><span>{t("utilisations:detail.kpi.solde_cordon")}</span><span className="font-semibold">{fmtAmt(cert.soldeCordon)}</span></div>
+                  <div className="flex justify-between"><span>{t("utilisations:detail.kpi.tva_import_restante")}</span><span className="font-semibold">{fmtAmt(cert.tvaImportationDouane)}</span></div>
+                  <div className="flex justify-between"><span>{t("utilisations:detail.kpi.solde_tva_int")}</span><span className="font-semibold">{fmtAmt(cert.soldeTVA)}</span></div>
                 </div>
               </CardContent>
             </Card>
           )}
         </div>
 
-        {/* Details métier */}
+        {/* Info métier */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Informations métier</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">{t("utilisations:detail.info.title")}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               {isDouane && (
                 <>
-                  <div><p className="text-muted-foreground">N° Déclaration</p><p className="font-medium">{u.numeroDeclaration || "—"}</p></div>
-                  <div><p className="text-muted-foreground">N° Bulletin</p><p className="font-medium">{u.numeroBulletin || "—"}</p></div>
-                  <div><p className="text-muted-foreground">Date déclaration</p><p className="font-medium">{u.dateDeclaration ? new Date(u.dateDeclaration).toLocaleDateString("fr-FR") : "—"}</p></div>
-                  <div><p className="text-muted-foreground">SYDONIA</p><p className="font-medium">{u.enregistreeSYDONIA ? "✅ Oui" : "❌ Non"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_declaration")}</p><p className="font-medium">{u.numeroDeclaration || "—"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_bulletin")}</p><p className="font-medium">{u.numeroBulletin || "—"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_declaration")}</p><p className="font-medium">{formatDate(u.dateDeclaration)}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.sydonia")}</p><p className="font-medium">{u.enregistreeSYDONIA ? t("utilisations:detail.info.sydonia_yes") : t("utilisations:detail.info.sydonia_no")}</p></div>
                 </>
               )}
               {isTVA && (
                 <>
-                  <div><p className="text-muted-foreground">Type d'achat</p><p className="font-medium">{u.typeAchat === "ACHAT_LOCAL" ? "Achat Local" : u.typeAchat === "DECOMPTE" ? "Décompte" : u.typeAchat || "—"}</p></div>
-                  <div><p className="text-muted-foreground">N° Facture</p><p className="font-medium">{u.numeroFacture || "—"}</p></div>
-                  <div><p className="text-muted-foreground">N° Décompte</p><p className="font-medium">{u.numeroDecompte || "—"}</p></div>
-                  <div><p className="text-muted-foreground">Date facture</p><p className="font-medium">{u.dateFacture ? new Date(u.dateFacture).toLocaleDateString("fr-FR") : "—"}</p></div>
+                  <div>
+                    <p className="text-muted-foreground">{t("utilisations:detail.info.type_achat")}</p>
+                    <p className="font-medium">{u.typeAchat === "ACHAT_LOCAL" ? t("utilisations:detail.info.achat_local") : u.typeAchat === "DECOMPTE" ? t("utilisations:detail.info.decompte") : (u.typeAchat || "—")}</p>
+                  </div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_facture")}</p><p className="font-medium">{u.numeroFacture || "—"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_decompte")}</p><p className="font-medium">{u.numeroDecompte || "—"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_facture")}</p><p className="font-medium">{formatDate(u.dateFacture)}</p></div>
                 </>
               )}
-              <div><p className="text-muted-foreground">Date création</p><p className="font-medium">{u.dateCreation ? new Date(u.dateCreation).toLocaleDateString("fr-FR") : "—"}</p></div>
-              {u.dateLiquidation && <div><p className="text-muted-foreground">Date liquidation</p><p className="font-medium">{new Date(u.dateLiquidation).toLocaleDateString("fr-FR")}</p></div>}
+              <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_creation")}</p><p className="font-medium">{formatDate(u.dateCreation)}</p></div>
+              {u.dateLiquidation && <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_liquidation")}</p><p className="font-medium">{formatDate(u.dateLiquidation)}</p></div>}
             </div>
           </CardContent>
         </Card>
 
-        {/* Bulletin de liquidation — lignes saisies par l'entreprise + affectation DGTCP */}
+        {/* Bulletin */}
         {isDouane && u.lignes && u.lignes.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" /> Bulletin de liquidation ({u.lignes.length} ligne{u.lignes.length > 1 ? "s" : ""})
+                <FileText className="h-5 w-5 text-primary" />
+                {t("utilisations:bulletin.title", { count: u.lignes.length })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-20">Code</TableHead>
-                    <TableHead>Nom</TableHead>
-                    <TableHead className="text-right w-40">Valeur taxe (MRU)</TableHead>
-                    <TableHead className="w-36">Affectation</TableHead>
+                    <TableHead className="w-20">{t("utilisations:bulletin.col_code")}</TableHead>
+                    <TableHead>{t("utilisations:bulletin.col_name")}</TableHead>
+                    <TableHead className="text-end w-40">{t("utilisations:bulletin.col_value")}</TableHead>
+                    <TableHead className="w-36">{t("utilisations:bulletin.col_affectation")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -645,16 +644,16 @@ const UtilisationDetail = () => {
                       <TableRow key={l.id}>
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
                         <TableCell className="text-sm">{l.libelle}</TableCell>
-                        <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                        <TableCell className="text-end font-medium">{fmtNum(l.valeur)}</TableCell>
                         <TableCell>
                           {val === 0 ? (
-                            <span className="text-[10px] text-muted-foreground">Non requis</span>
+                            <span className="text-[10px] text-muted-foreground">{t("utilisations:bulletin.affectation_not_required")}</span>
                           ) : l.affectation === "AU_CI" ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">AU CI</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{t("utilisations:bulletin.affectation_au_ci")}</Badge>
                           ) : l.affectation === "A_PAYER" ? (
-                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">À PAYER</Badge>
+                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">{t("utilisations:bulletin.affectation_a_payer")}</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px]">En attente</Badge>
+                            <Badge variant="outline" className="text-[10px]">{t("utilisations:bulletin.affectation_pending")}</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -672,41 +671,41 @@ const UtilisationDetail = () => {
                 const codesAPayer = lignesAPayer.map(l=>l.code).join(" + ");
                 const codesAuCi = lignesAuCi.map(l=>l.code).join(" + ");
                 const dateVisa = u.dateMiseAJour || u.dateCreation;
-                const dateStr = dateVisa ? new Date(dateVisa).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR");
+                const dateStr = formatDate(dateVisa || new Date());
                 return (
                   <div className="border-t bg-muted/20 p-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-3">Annotation & visa DGD</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-3">{t("utilisations:bulletin.annotation_title")}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                       <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4">
-                        <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">À payer (entreprise)</p>
-                        <p className="text-2xl font-bold text-amber-800 mt-1">{f(totalAPayer)} MRU</p>
+                        <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">{t("utilisations:bulletin.a_payer_box")}</p>
+                        <p className="text-2xl font-bold text-amber-800 mt-1">{fmtAmt(totalAPayer)}</p>
                       </div>
                       <div className="rounded-lg border-2 border-primary bg-primary/5 p-4">
-                        <p className="text-xs uppercase tracking-wide text-primary font-semibold">Pris en charge (AU CI)</p>
-                        <p className="text-2xl font-bold text-primary mt-1">{f(totalAuCi)} MRU</p>
+                        <p className="text-xs uppercase tracking-wide text-primary font-semibold">{t("utilisations:bulletin.au_ci_box")}</p>
+                        <p className="text-2xl font-bold text-primary mt-1">{fmtAmt(totalAuCi)}</p>
                       </div>
                     </div>
                     <div className="rounded-lg border bg-background p-4 space-y-2 font-serif">
-                      <p className="text-sm"><span className="font-semibold">Le {dateStr}</span></p>
+                      <p className="text-sm"><span className="font-semibold">{t("utilisations:bulletin.date_prefix", { date: dateStr })}</span></p>
                       {totalAPayer > 0 && (
                         <p className="text-sm">
-                          <span className="underline font-semibold">À payer</span>{codesAPayer && <> : {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em
+                          <span className="underline font-semibold">{t("utilisations:bulletin.a_payer_line")}</span>{codesAPayer && <> : {codesAPayer}</>} (<span className="font-semibold">{fmtAmt(totalAPayer)}</span>) — <em
                             contentEditable
                             suppressContentEditableWarning
                             onBlur={(e) => setLettresAPayer(e.currentTarget.textContent || "")}
                             className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
-                            title="Cliquez pour modifier le montant en lettres"
+                            title={t("utilisations:bulletin.edit_letters_title")}
                           >{lettresAPayer ?? numberToFrenchWords(totalAPayer)}</em>
                         </p>
                       )}
                       {totalAuCi > 0 && (
                         <p className="text-sm">
-                          <span className="underline font-semibold">Au CI</span>{codesAuCi && <> : {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em
+                          <span className="underline font-semibold">{t("utilisations:bulletin.au_ci_line")}</span>{codesAuCi && <> : {codesAuCi}</>} (<span className="font-semibold">{fmtAmt(totalAuCi)}</span>) — <em
                             contentEditable
                             suppressContentEditableWarning
                             onBlur={(e) => setLettresAuCi(e.currentTarget.textContent || "")}
                             className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
-                            title="Cliquez pour modifier le montant en lettres"
+                            title={t("utilisations:bulletin.edit_letters_title")}
                           >{lettresAuCi ?? numberToFrenchWords(totalAuCi)}</em>
                         </p>
                       )}
@@ -718,59 +717,60 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {/* Chèque certifié saisi par l'entreprise */}
+        {/* Chèque */}
         {isDouane && u.numeroCheque && (
           <Card className="border-l-4 border-l-indigo-500">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> Chèque certifié</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> {t("utilisations:cheque.title")}</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><p className="text-muted-foreground">Banque</p><p className="font-medium">{u.banqueNom || "—"}</p></div>
-                <div><p className="text-muted-foreground">N° chèque</p><p className="font-mono font-medium">{u.numeroCheque}</p></div>
-                <div><p className="text-muted-foreground">Montant</p><p className="font-bold">{f(u.montantCheque)} MRU</p></div>
-                <div><p className="text-muted-foreground">Date</p><p className="font-medium">{u.dateCheque ? new Date(u.dateCheque).toLocaleDateString("fr-FR") : "—"}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:cheque.banque")}</p><p className="font-medium">{u.banqueNom || "—"}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:cheque.numero")}</p><p className="font-mono font-medium">{u.numeroCheque}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:cheque.montant")}</p><p className="font-bold">{fmtAmt(u.montantCheque)}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:cheque.date")}</p><p className="font-medium">{formatDate(u.dateCheque)}</p></div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Quittances Trésor */}
+        {/* Quittances */}
         {isDouane && u.quittances && u.quittances.length > 0 && (
           <Card className="border-l-4 border-l-teal-500">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-5 w-5 text-teal-500" /> Quittances Trésor ({u.quittances.length})
+                <FileText className="h-5 w-5 text-teal-500" />
+                {t("utilisations:quittances.title", { count: u.quittances.length })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>N° quittance</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Montant (MRU)</TableHead>
-                    <TableHead>Référence paiement</TableHead>
-                    <TableHead>Justificatif</TableHead>
+                    <TableHead>{t("utilisations:quittances.col_numero")}</TableHead>
+                    <TableHead>{t("utilisations:quittances.col_date")}</TableHead>
+                    <TableHead className="text-end">{t("utilisations:quittances.col_montant")}</TableHead>
+                    <TableHead>{t("utilisations:quittances.col_reference")}</TableHead>
+                    <TableHead>{t("utilisations:quittances.col_justificatif")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {u.quittances.map((q, i) => (
                     <TableRow key={q.id ?? i}>
                       <TableCell className="font-mono">{q.numeroQuittance}</TableCell>
-                      <TableCell>{q.dateQuittance ? new Date(q.dateQuittance).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                      <TableCell className="text-right font-medium">{f(q.montant)}</TableCell>
+                      <TableCell>{formatDate(q.dateQuittance)}</TableCell>
+                      <TableCell className="text-end font-medium">{fmtNum(q.montant)}</TableCell>
                       <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
                       <TableCell>
                         {q.documentChemin ? (
                           <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => openFile({ chemin: q.documentChemin, nomFichier: q.documentNomFichier } as any)}>
-                            <FileText className="h-3.5 w-3.5 mr-1" /> {q.documentNomFichier || "Voir"}
+                            <FileText className="h-3.5 w-3.5 me-1" /> {q.documentNomFichier || t("utilisations:quittances.see_doc")}
                           </Button>
                         ) : <span className="text-xs text-muted-foreground">—</span>}
                       </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/40 font-medium">
-                    <TableCell colSpan={2} className="text-right">Total</TableCell>
-                    <TableCell className="text-right">{f(u.quittances.reduce((s, q) => s + Number(q.montant || 0), 0))}</TableCell>
+                    <TableCell colSpan={2} className="text-end">{t("utilisations:quittances.total")}</TableCell>
+                    <TableCell className="text-end">{fmtNum(u.quittances.reduce((s, q) => s + Number(q.montant || 0), 0))}</TableCell>
                     <TableCell colSpan={2} />
                   </TableRow>
                 </TableBody>
@@ -783,17 +783,17 @@ const UtilisationDetail = () => {
         {isDouane && u.statut === "LIQUIDEE" && u.soldeCordonAvant != null && (
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> Traçabilité liquidation</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>
               <Button size="sm" variant="outline" onClick={() => generateLiquidationPdf(u, cert)}>
-                <Download className="h-4 w-4 mr-2" /> Télécharger PDF
+                <Download className="h-4 w-4 me-2" /> {t("utilisations:traceability_liq.download_pdf")}
               </Button>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><p className="text-muted-foreground">Solde Cordon avant</p><p className="font-bold">{f(u.soldeCordonAvant)} MRU</p></div>
-                <div><p className="text-muted-foreground">Montant imputé</p><p className="font-bold text-destructive">- {f(u.montant)} MRU</p></div>
-                <div><p className="text-muted-foreground">Solde Cordon après</p><p className="font-bold text-emerald-600">{f(u.soldeCordonApres)} MRU</p></div>
-                <div><p className="text-muted-foreground">TVA → Stock déductible</p><p className="font-bold text-blue-600">+ {f(u.montantTVADouane)} MRU</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.solde_avant")}</p><p className="font-bold">{fmtAmt(u.soldeCordonAvant)}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.montant_impute")}</p><p className="font-bold text-destructive">- {fmtAmt(u.montant)}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.solde_apres")}</p><p className="font-bold text-emerald-600">{fmtAmt(u.soldeCordonApres)}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.tva_to_stock")}</p><p className="font-bold text-blue-600">+ {fmtAmt(u.montantTVADouane)}</p></div>
               </div>
             </CardContent>
           </Card>
@@ -802,65 +802,70 @@ const UtilisationDetail = () => {
         {/* Traçabilité Apurement TVA */}
         {isTVA && u.statut === "APUREE" && u.tvaNette != null && (
           <Card className="border-l-4 border-l-emerald-500">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CircleDollarSign className="h-5 w-5 text-emerald-500" /> Traçabilité apurement TVA</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><CircleDollarSign className="h-5 w-5 text-emerald-500" /> {t("utilisations:traceability_apur.title")}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                  <div><p className="text-muted-foreground">TVA collectée</p><p className="font-bold">{f(u.montantTVAInterieure)} MRU</p></div>
-                  <div><p className="text-muted-foreground">TVA déductible utilisée</p><p className="font-bold">- {f(u.tvaDeductibleUtilisee)} MRU</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:traceability_apur.tva_collectee")}</p><p className="font-bold">{fmtAmt(u.montantTVAInterieure)}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:traceability_apur.tva_ded_used")}</p><p className="font-bold">- {fmtAmt(u.tvaDeductibleUtilisee)}</p></div>
                   <div>
-                    <p className="text-muted-foreground">TVA nette</p>
+                    <p className="text-muted-foreground">{t("utilisations:traceability_apur.tva_nette")}</p>
                     <p className={`font-bold text-lg ${(u.tvaNette ?? 0) > 0 ? "text-destructive" : (u.tvaNette ?? 0) < 0 ? "text-emerald-600" : ""}`}>
-                      {f(u.tvaNette)} MRU
+                      {fmtAmt(u.tvaNette)}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t pt-3">
-                  <div><p className="text-muted-foreground">Crédit intérieur utilisé</p><p className="font-medium">{f(u.creditInterieurUtilise)} MRU</p></div>
-                  <div><p className="text-muted-foreground">Paiement entreprise</p><p className="font-medium">{f(u.paiementEntreprise)} MRU</p></div>
-                  <div><p className="text-muted-foreground">Report à nouveau</p><p className="font-medium">{f(u.reportANouveau)} MRU</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:traceability_apur.credit_used")}</p><p className="font-medium">{fmtAmt(u.creditInterieurUtilise)}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:traceability_apur.paiement_entreprise")}</p><p className="font-medium">{fmtAmt(u.paiementEntreprise)}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:traceability_apur.report")}</p><p className="font-medium">{fmtAmt(u.reportANouveau)}</p></div>
                   <div>
-                    <p className="text-muted-foreground">Solde TVA</p>
-                    <p className="font-medium">{f(u.soldeTVAAvant)} → <span className="font-bold">{f(u.soldeTVAApres)} MRU</span></p>
+                    <p className="text-muted-foreground">{t("utilisations:traceability_apur.solde_tva")}</p>
+                    <p className="font-medium">{fmtAmt(u.soldeTVAAvant)} → <span className="font-bold">{fmtAmt(u.soldeTVAApres)}</span></p>
                   </div>
                 </div>
-                {/* Cas métier */}
                 <div className={`p-3 rounded-lg text-sm ${(u.tvaNette ?? 0) === 0 ? "bg-muted" : (u.tvaNette ?? 0) > 0 ? "bg-amber-50 border border-amber-200" : "bg-emerald-50 border border-emerald-200"}`}>
-                  {(u.tvaNette ?? 0) === 0 && <p className="flex items-center gap-2"><Minus className="h-4 w-4" /> <strong>Cas 1</strong> — TVA nette nulle : opération neutre, aucun impact sur le solde.</p>}
-                  {(u.tvaNette ?? 0) > 0 && (u.paiementEntreprise ?? 0) === 0 && <p className="flex items-center gap-2"><TrendingDown className="h-4 w-4 text-amber-600" /> <strong>Cas 2a</strong> — TVA nette positive : le solde TVA du certificat a été débité de {f(u.creditInterieurUtilise)} MRU.</p>}
-                  {(u.tvaNette ?? 0) > 0 && (u.paiementEntreprise ?? 0) > 0 && <p className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" /> <strong>Cas 2b</strong> — Solde insuffisant : {f(u.creditInterieurUtilise)} MRU prélevés + {f(u.paiementEntreprise)} MRU à payer en cash par l'entreprise.</p>}
-                  {(u.tvaNette ?? 0) < 0 && <p className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-emerald-600" /> <strong>Cas 3</strong> — Report à nouveau : {f(u.reportANouveau)} MRU ajoutés au solde TVA du certificat.</p>}
+                  {(u.tvaNette ?? 0) === 0 && <p className="flex items-center gap-2"><Minus className="h-4 w-4" /> {t("utilisations:traceability_apur.cas1")}</p>}
+                  {(u.tvaNette ?? 0) > 0 && (u.paiementEntreprise ?? 0) === 0 && (
+                    <p className="flex items-center gap-2"><TrendingDown className="h-4 w-4 text-amber-600" /> {t("utilisations:traceability_apur.cas2a", { montant: fmtAmt(u.creditInterieurUtilise) })}</p>
+                  )}
+                  {(u.tvaNette ?? 0) > 0 && (u.paiementEntreprise ?? 0) > 0 && (
+                    <p className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" /> {t("utilisations:traceability_apur.cas2b", { interne: fmtAmt(u.creditInterieurUtilise), paiement: fmtAmt(u.paiementEntreprise) })}</p>
+                  )}
+                  {(u.tvaNette ?? 0) < 0 && (
+                    <p className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-emerald-600" /> {t("utilisations:traceability_apur.cas3", { montant: fmtAmt(u.reportANouveau) })}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Stock TVA déductible (for DGTCP when preparing apurement) */}
+        {/* Stock TVA */}
         {isTVA && (role === "DGTCP" || role === "ADMIN_SI") && tvaStock.length > 0 && u.statut !== "APUREE" && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Stock TVA déductible disponible — Total : {f(totalStockDisponible)} MRU</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> {t("utilisations:stock_tva.title", { total: fmtAmt(totalStockDisponible) })}</CardTitle></CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Déclaration</TableHead>
-                    <TableHead>Initial</TableHead>
-                    <TableHead>Consommé</TableHead>
-                    <TableHead>Restant</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Épuisé</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_declaration")}</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_initial")}</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_consomme")}</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_restant")}</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_date")}</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tvaStock.map(t => (
-                    <TableRow key={t.id} className={t.epuise ? "opacity-50" : ""}>
-                      <TableCell className="font-medium">{t.numeroDeclaration || `Util #${t.utilisationDouaneId}`}</TableCell>
-                      <TableCell>{f(t.montantInitial)} MRU</TableCell>
-                      <TableCell>{f(t.montantConsomme)} MRU</TableCell>
-                      <TableCell className="font-bold">{f(t.montantRestant)} MRU</TableCell>
-                      <TableCell>{t.dateCreation ? new Date(t.dateCreation).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                      <TableCell>{t.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                  {tvaStock.map(x => (
+                    <TableRow key={x.id} className={x.epuise ? "opacity-50" : ""}>
+                      <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
+                      <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
+                      <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
+                      <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
+                      <TableCell>{formatDate(x.dateCreation)}</TableCell>
+                      <TableCell>{x.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -873,10 +878,13 @@ const UtilisationDetail = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> Documents ({docs.filter(d => d.actif !== false).length})</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                {t("utilisations:documents.title", { count: docs.filter(d => d.actif !== false).length })}
+              </CardTitle>
               {canUploadDoc && (
                 <Button size="sm" variant="outline" onClick={() => setShowUpload(true)}>
-                  <Upload className="h-4 w-4 mr-2" /> Ajouter
+                  <Upload className="h-4 w-4 me-2" /> {t("utilisations:documents.add")}
                 </Button>
               )}
             </div>
@@ -890,17 +898,19 @@ const UtilisationDetail = () => {
                 return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
               });
               return visibleDocs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">Aucun document</p>
+                <p className="text-center text-muted-foreground py-4">{t("utilisations:documents.empty")}</p>
               ) : (
                 <div className="space-y-2">
                   {visibleDocs.map(d => (
                     <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border">
                       <div>
                         <p className="font-medium text-sm">{d.nomFichier}</p>
-                        <p className="text-xs text-muted-foreground">{d.type?.replace(/_/g, " ")} — v{d.version || 1}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tTypeDocument(d.type) || d.type?.replace(/_/g, " ")} — {t("utilisations:documents.version_short", { n: d.version || 1 })}
+                        </p>
                       </div>
                       {d.chemin && (
-                        <Button variant="ghost" size="sm" onClick={() => openFile(d)}>Ouvrir</Button>
+                        <Button variant="ghost" size="sm" onClick={() => openFile(d)}>{t("utilisations:documents.open")}</Button>
                       )}
                     </div>
                   ))}
@@ -913,31 +923,29 @@ const UtilisationDetail = () => {
         {/* Decisions / Rejets */}
         {decisions.length > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Décisions & Rejets ({decisions.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: decisions.length })}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {/* Open rejets first */}
                 {openRejets.map(d => (
                   <div key={d.id} className="p-3 rounded-lg border-2 border-amber-400 bg-amber-50/50 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="destructive" className="text-xs">REJET OUVERT</Badge>
+                      <Badge variant="destructive" className="text-xs">{t("utilisations:decisions_section.rejet_ouvert")}</Badge>
                       <span className="text-sm font-medium">{d.utilisateurNom || d.role}</span>
-                      {d.dateDecision && <span className="text-xs text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                     </div>
                     {d.motifRejet && <p className="text-sm">{d.motifRejet}</p>}
                     {d.documentsDemandes && d.documentsDemandes.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        <span className="text-xs text-muted-foreground">Documents demandés :</span>
-                        {d.documentsDemandes.map(doc => <Badge key={doc} variant="outline" className="text-[10px]">{doc.replace(/_/g, " ")}</Badge>)}
+                        <span className="text-xs text-muted-foreground">{t("utilisations:decisions_section.documents_demandes")}</span>
+                        {d.documentsDemandes.map(doc => <Badge key={doc} variant="outline" className="text-[10px]">{tTypeDocument(doc) || doc.replace(/_/g, " ")}</Badge>)}
                       </div>
                     )}
-                    {/* Responses */}
                     {d.rejetTempResponses && d.rejetTempResponses.length > 0 && (
-                      <div className="ml-4 space-y-1 border-l-2 border-muted pl-3">
-                        {d.rejetTempResponses.map((r, i) => (
+                      <div className="ms-4 space-y-1 border-s-2 border-muted ps-3">
+                        {d.rejetTempResponses.map((r: RejetTempResponseDto, i) => (
                           <div key={i} className="text-sm">
-                            <span className="text-muted-foreground">{r.auteurNom || r.utilisateurNom || "Réponse"} :</span> {r.message}
-                            {r.documentUrl && <Badge className="ml-1 text-[10px]">📎 Doc</Badge>}
+                            <span className="text-muted-foreground">{r.auteurNom || r.utilisateurNom || t("utilisations:decisions_section.default_response_author")} :</span> {r.message}
+                            {r.documentUrl && <Badge className="ms-1 text-[10px]">{t("utilisations:decisions_section.doc_badge")}</Badge>}
                           </div>
                         ))}
                       </div>
@@ -946,40 +954,38 @@ const UtilisationDetail = () => {
                       {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
                         <>
                           <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(false); setResponseMsg(""); setResponseFile(null); setResponseFiles({}); }}>
-                             Répondre
+                            {t("utilisations:decisions_section.respond")}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(true); setResponseMsg(""); setResponseFile(null); setResponseFiles({}); }}>
-                            <Upload className="h-3.5 w-3.5 mr-1" /> Upload doc
+                            <Upload className="h-3.5 w-3.5 me-1" /> {t("utilisations:decisions_section.upload_doc")}
                           </Button>
                         </>
                       )}
                       {d.role === role && (
                         <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => handleResolveRejet(d.id)}>
-                          <CheckCircle2 className="h-4 w-4 mr-1" /> Marquer résolu
+                          <CheckCircle2 className="h-4 w-4 me-1" /> {t("utilisations:decisions_section.mark_resolved")}
                         </Button>
                       )}
                     </div>
                   </div>
                 ))}
-                {/* Visa decisions */}
                 {visaDecisions.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-emerald-300 bg-emerald-50/50">
                     <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-[10px]">VISA</Badge>
+                      <Badge variant="default" className="text-[10px]">{t("utilisations:decisions_section.visa_badge")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
-                      {d.dateDecision && <span className="text-xs text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                     </div>
                     {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
                   </div>
                 ))}
-                {/* Resolved rejets (NOT visas) */}
                 {resolvedRejets.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-muted bg-muted/30">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px]">REJET_TEMP</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{t("utilisations:decisions_section.rejet_temp_badge")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
-                      {d.dateDecision && <span className="text-xs text-muted-foreground">{new Date(d.dateDecision).toLocaleDateString("fr-FR")}</span>}
-                      <Badge className="text-[10px] bg-emerald-100 text-emerald-800">Résolu</Badge>
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
+                      <Badge className="text-[10px] bg-emerald-100 text-emerald-800">{t("utilisations:decisions_section.resolved_badge")}</Badge>
                     </div>
                     {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
                   </div>
@@ -992,18 +998,18 @@ const UtilisationDetail = () => {
         {/* Actions */}
         {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception) && (
           <Card>
-            <CardHeader><CardTitle className="text-base">Actions disponibles</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">{t("utilisations:detail.actions_section")}</CardTitle></CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                {canDGDVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Prendre en charge</Button>}
-                {canDGDReVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
+                {canDGDVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.prendre_en_charge")}</Button>}
+                {canDGDReVerify && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.re_verifier")}</Button>}
                 {canDGDAnnoterEtViser && (
                   <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
                     const init: Record<number, AffectationTaxe> = {};
                     (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
                     setLiqDecisions(init);
                     setShowLiq(true);
-                  }}><Landmark className="h-4 w-4 mr-2" /> Annoter le bulletin & viser</Button>
+                  }}><Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.annoter_viser")}</Button>
                 )}
                 {canEntrepriseCheque && (
                   <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
@@ -1014,12 +1020,12 @@ const UtilisationDetail = () => {
                       dateCheque: "",
                     });
                     setShowCheque(true);
-                  }}><CreditCard className="h-4 w-4 mr-2" /> Saisir le chèque certifié</Button>
+                  }}><CreditCard className="h-4 w-4 me-2" /> {t("utilisations:actions.saisir_cheque")}</Button>
                 )}
                 {canDGTCPEnvoyerTresor && (
                   <Button className="bg-sky-600 hover:bg-sky-700" onClick={handleEnvoyerTresor} disabled={envoiLoading}>
-                    {envoiLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    <Ship className="h-4 w-4 mr-2" /> Envoyer au Trésor
+                    {envoiLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                    <Ship className="h-4 w-4 me-2" /> {t("utilisations:actions.envoyer_tresor")}
                   </Button>
                 )}
                 {canDGTCPQuittances && (
@@ -1036,59 +1042,71 @@ const UtilisationDetail = () => {
                     );
                     setQuittancesFiles({});
                     setShowQuittances(true);
-                  }}><FileText className="h-4 w-4 mr-2" /> {u.quittances && u.quittances.length > 0 ? "Modifier les quittances" : "Saisir les quittances"}</Button>
+                  }}><FileText className="h-4 w-4 me-2" /> {u.quittances && u.quittances.length > 0 ? t("utilisations:actions.modifier_quittances") : t("utilisations:actions.saisir_quittances")}</Button>
                 )}
-                {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Passer en vérification</Button>}
-                {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Re-vérifier</Button>}
-                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Valider</Button>}
+                {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.passer_verification")}</Button>}
+                {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.re_verifier")}</Button>}
+                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
                 {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
-                  {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  <Landmark className="h-4 w-4 mr-2" /> Générer le certificat & liquider
+                  {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                  <Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.liquider_certificat")}
                 </Button>}
                 {canEntrepriseReception && (
                   <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleClotureReception} disabled={receptionLoading}>
-                    {receptionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    <CheckCircle2 className="h-4 w-4 mr-2" /> Accuser réception & clôturer
+                    {receptionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                    <CheckCircle2 className="h-4 w-4 me-2" /> {t("utilisations:actions.accuser_reception")}
                   </Button>
                 )}
-                {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 mr-2" /> Procéder à l'apurement</Button>}
-                {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 mr-1" /> Rejet temporaire</Button>}
-                {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 mr-2" /> Rejeter définitivement</Button>}
+                {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 me-2" /> {t("utilisations:actions.proceder_apurement")}</Button>}
+                {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 me-1" /> {t("utilisations:actions.rejet_temp")}</Button>}
+                {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 me-2" /> {t("utilisations:actions.rejeter_definitivement")}</Button>}
               </div>
               {canDGTCPLiquider && (
-                <p className="text-xs text-muted-foreground mt-3">
-                  La liquidation va débiter le solde cordon de <strong>{f((u.totalPrisEnCharge ?? 0) - (u.montantTVADouane ?? 0))} MRU</strong> (hors TVA), décrémenter le quota TVA importation de <strong>{f(u.montantTVADouane)} MRU</strong> et alimenter le stock TVA déductible.
-                </p>
+                <p
+                  className="text-xs text-muted-foreground mt-3"
+                  dangerouslySetInnerHTML={{
+                    __html: t("utilisations:detail.actions_hint_liquidation", {
+                      hors_tva: fmtAmt((u.totalPrisEnCharge ?? 0) - (u.montantTVADouane ?? 0)),
+                      tva: fmtAmt(u.montantTVADouane),
+                    }),
+                  }}
+                />
               )}
               {role === "DGD" && isDouane && (u.lignes?.length || 0) === 0 && (
-                <p className="text-xs text-amber-700 mt-3">Aucune ligne n'a été saisie par l'entreprise. Demandez via rejet temporaire la complétion du bulletin.</p>
+                <p className="text-xs text-amber-700 mt-3">{t("utilisations:detail.actions_no_lines_hint")}</p>
               )}
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Liquidation Dialog — décision par ligne du bulletin */}
+      {/* Liquidation Dialog — visa DGD */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
         <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Annotation du bulletin & visa DGD — #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:visa_dgd.title", { id: u.id })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Pour chaque ligne du bulletin, choisissez son <strong>affectation</strong> : <Badge variant="outline" className="mx-1">AU CI</Badge> (pris en charge par le crédit extérieur) ou <Badge variant="outline" className="mx-1">À PAYER</Badge> (à régler comptant par l'entreprise). Les lignes à <strong>0 MRU</strong> n'exigent pas d'affectation.
+              {t("utilisations:visa_dgd.intro_prefix")}<strong>{t("utilisations:visa_dgd.intro_affectation")}</strong>{t("utilisations:visa_dgd.intro_middle")}
+              <Badge variant="outline" className="mx-1">{t("utilisations:bulletin.affectation_au_ci")}</Badge>
+              {t("utilisations:visa_dgd.intro_au_ci_note")}
+              <Badge variant="outline" className="mx-1">{t("utilisations:bulletin.affectation_a_payer")}</Badge>
+              {t("utilisations:visa_dgd.intro_a_payer_note")}
+              <strong>{t("utilisations:visa_dgd.intro_zero")}</strong>
+              {t("utilisations:visa_dgd.intro_suffix")}
             </p>
             {(!u.lignes || u.lignes.length === 0) ? (
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-                Aucune ligne de bulletin n'a été saisie pour cette utilisation. Demandez à l'entreprise de compléter le bulletin avant le visa.
+                {t("utilisations:visa_dgd.no_lines")}
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-24">Code taxe</TableHead>
-                    <TableHead>Dénomination taxe</TableHead>
-                    <TableHead className="text-right w-36">Valeur saisie</TableHead>
-                    <TableHead className="text-right w-40">Valeur DGD (override)</TableHead>
-                    <TableHead className="w-48">Affectation</TableHead>
+                    <TableHead className="w-24">{t("utilisations:visa_dgd.col_code")}</TableHead>
+                    <TableHead>{t("utilisations:visa_dgd.col_name")}</TableHead>
+                    <TableHead className="text-end w-36">{t("utilisations:visa_dgd.col_value_saisie")}</TableHead>
+                    <TableHead className="text-end w-40">{t("utilisations:visa_dgd.col_value_override")}</TableHead>
+                    <TableHead className="w-48">{t("utilisations:visa_dgd.col_affectation")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1098,14 +1116,14 @@ const UtilisationDetail = () => {
                       <TableRow key={l.id}>
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
                         <TableCell className="text-sm">{l.libelle}</TableCell>
-                        <TableCell className="text-right font-medium">{f(l.valeur)}</TableCell>
+                        <TableCell className="text-end font-medium">{fmtNum(l.valeur)}</TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             step="0.01"
                             min="0"
-                            className="h-8 text-xs text-right"
-                            placeholder={isZero ? "—" : "Identique"}
+                            className="h-8 text-xs text-end"
+                            placeholder={isZero ? t("utilisations:visa_dgd.override_placeholder_zero") : t("utilisations:visa_dgd.override_placeholder")}
                             disabled={isZero}
                             value={liqValeurs[l.id] ?? ""}
                             onChange={(e) => setLiqValeurs(prev => ({ ...prev, [l.id]: e.target.value }))}
@@ -1118,11 +1136,11 @@ const UtilisationDetail = () => {
                             onValueChange={(v) => setLiqDecisions(prev => ({ ...prev, [l.id]: v as AffectationTaxe }))}
                           >
                             <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder={isZero ? "Non requis (0 MRU)" : "Choisir..."} />
+                              <SelectValue placeholder={isZero ? t("utilisations:visa_dgd.select_placeholder_zero") : t("utilisations:visa_dgd.select_placeholder")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="AU_CI">AU CI (crédit extérieur)</SelectItem>
-                              <SelectItem value="A_PAYER">À PAYER (entreprise)</SelectItem>
+                              <SelectItem value="AU_CI">{t("utilisations:visa_dgd.option_au_ci")}</SelectItem>
+                              <SelectItem value="A_PAYER">{t("utilisations:visa_dgd.option_a_payer")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -1134,13 +1152,13 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">Scan du bulletin annoté (optionnel)</Label>
+                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}</Label>
                 <Input
                   type="file"
                   accept=".pdf,image/*"
                   onChange={(e) => setLiqBulletinFile(e.target.files?.[0] || null)}
                 />
-                {liqBulletinFile && <p className="text-xs text-muted-foreground">Fichier : {liqBulletinFile.name}</p>}
+                {liqBulletinFile && <p className="text-xs text-muted-foreground">{t("utilisations:visa_dgd.upload.file_prefix", { name: liqBulletinFile.name })}</p>}
               </div>
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
@@ -1156,104 +1174,105 @@ const UtilisationDetail = () => {
               const restant = u.lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]).length;
               const codesAPayer = lignesAPayer.map(l => l.code).join(" + ");
               const codesAuCi = lignesAuCi.map(l => l.code).join(" + ");
-              const today = new Date().toLocaleDateString("fr-FR");
+              const today = formatDate(new Date());
               return (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">À payer (entreprise)</p>
-                      <p className="text-2xl font-bold text-amber-800 mt-1">{f(totalAPayer)} MRU</p>
+                      <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold">{t("utilisations:bulletin.a_payer_box")}</p>
+                      <p className="text-2xl font-bold text-amber-800 mt-1">{fmtAmt(totalAPayer)}</p>
                     </div>
                     <div className="rounded-lg border-2 border-primary bg-primary/5 p-4">
-                      <p className="text-xs uppercase tracking-wide text-primary font-semibold">Pris en charge (AU CI)</p>
-                      <p className="text-2xl font-bold text-primary mt-1">{f(totalAuCi)} MRU</p>
+                      <p className="text-xs uppercase tracking-wide text-primary font-semibold">{t("utilisations:bulletin.au_ci_box")}</p>
+                      <p className="text-2xl font-bold text-primary mt-1">{fmtAmt(totalAuCi)}</p>
                     </div>
                   </div>
                   <div className="rounded-lg border bg-muted/30 p-4 space-y-2 font-serif">
-                    <p className="text-sm"><span className="font-semibold">Le {today}</span></p>
+                    <p className="text-sm"><span className="font-semibold">{t("utilisations:bulletin.date_prefix", { date: today })}</span></p>
                     {totalAPayer > 0 && (
                       <p className="text-sm">
-                        <span className="underline font-semibold">À payer</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{f(totalAPayer)}</span>) — <em
+                        <span className="underline font-semibold">{t("utilisations:bulletin.a_payer_line")}</span> {codesAPayer && <>: {codesAPayer}</>} (<span className="font-semibold">{fmtAmt(totalAPayer)}</span>) — <em
                           contentEditable
                           suppressContentEditableWarning
                           onBlur={(e) => setLettresAPayerLiq(e.currentTarget.textContent || "")}
                           className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
-                          title="Cliquez pour modifier le montant en lettres"
+                          title={t("utilisations:bulletin.edit_letters_title")}
                         >{lettresAPayerLiq ?? numberToFrenchWords(totalAPayer)}</em>
                       </p>
                     )}
                     {totalAuCi > 0 && (
                       <p className="text-sm">
-                        <span className="underline font-semibold">Au CI</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{f(totalAuCi)}</span>) — <em
+                        <span className="underline font-semibold">{t("utilisations:bulletin.au_ci_line")}</span> {codesAuCi && <>: {codesAuCi}</>} (<span className="font-semibold">{fmtAmt(totalAuCi)}</span>) — <em
                           contentEditable
                           suppressContentEditableWarning
                           onBlur={(e) => setLettresAuCiLiq(e.currentTarget.textContent || "")}
                           className="outline-none border-b border-dashed border-muted-foreground/40 focus:border-primary cursor-text"
-                          title="Cliquez pour modifier le montant en lettres"
+                          title={t("utilisations:bulletin.edit_letters_title")}
                         >{lettresAuCiLiq ?? numberToFrenchWords(totalAuCi)}</em>
                       </p>
                     )}
                   </div>
-                  {restant > 0 && <div className="text-amber-700 text-xs">{restant} ligne(s) avec un montant &gt; 0 sans affectation.</div>}
+                  {restant > 0 && <div className="text-amber-700 text-xs">{t("utilisations:visa_dgd.lines_pending", { count: restant })}</div>}
                 </div>
               );
             })()}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowLiq(false)}>Annuler</Button>
+              <Button variant="outline" onClick={() => setShowLiq(false)}>{t("utilisations:visa_dgd.cancel")}</Button>
               <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id])} onClick={handleVisaDgd}>
-                {liqLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer le visa
+                {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:visa_dgd.confirm")}
               </Button>
             </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Chèque Dialog (entreprise) */}
+      {/* Chèque Dialog */}
       <Dialog open={showCheque} onOpenChange={setShowCheque}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> Saisir le chèque certifié — #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> {t("utilisations:cheque_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Renseignez les informations du chèque certifié couvrant la part <strong>À PAYER</strong> du bulletin
-              {u.totalAPayer != null && <> (<span className="font-semibold text-amber-700">{f(u.totalAPayer)} MRU</span>)</>}.
+              {u.totalAPayer != null
+                ? t("utilisations:cheque_dialog.intro_with_amount", { montant: fmtAmt(u.totalAPayer) })
+                : t("utilisations:cheque_dialog.intro_no_amount")}
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2"><Label>Banque émettrice *</Label><Input value={chequeForm.banqueNom} onChange={e => setChequeForm(p => ({ ...p, banqueNom: e.target.value }))} placeholder="Banque Nationale de Mauritanie" /></div>
-              <div><Label>N° du chèque *</Label><Input value={chequeForm.numeroCheque} onChange={e => setChequeForm(p => ({ ...p, numeroCheque: e.target.value }))} placeholder="CHQ-2026-0042" /></div>
-              <div><Label>Montant (MRU) *</Label><Input type="number" min="0" step="0.01" value={chequeForm.montantCheque} onChange={e => setChequeForm(p => ({ ...p, montantCheque: e.target.value }))} /></div>
-              <div className="col-span-2"><Label>Date du chèque (optionnel)</Label><Input type="date" value={chequeForm.dateCheque} onChange={e => setChequeForm(p => ({ ...p, dateCheque: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>{t("utilisations:cheque_dialog.banque_label")} *</Label><Input value={chequeForm.banqueNom} onChange={e => setChequeForm(p => ({ ...p, banqueNom: e.target.value }))} placeholder={t("utilisations:cheque_dialog.banque_placeholder")} /></div>
+              <div><Label>{t("utilisations:cheque_dialog.numero_label")} *</Label><Input value={chequeForm.numeroCheque} onChange={e => setChequeForm(p => ({ ...p, numeroCheque: e.target.value }))} placeholder={t("utilisations:cheque_dialog.numero_placeholder")} /></div>
+              <div><Label>{t("utilisations:cheque_dialog.montant_label")} *</Label><Input type="number" min="0" step="0.01" value={chequeForm.montantCheque} onChange={e => setChequeForm(p => ({ ...p, montantCheque: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>{t("utilisations:cheque_dialog.date_label")}</Label><Input type="date" value={chequeForm.dateCheque} onChange={e => setChequeForm(p => ({ ...p, dateCheque: e.target.value }))} /></div>
               <div className="col-span-2">
-                <Label>Scan du chèque certifié * <span className="text-xs text-muted-foreground">(PDF ou image)</span></Label>
+                <Label>{t("utilisations:cheque_dialog.upload.label")} * <span className="text-xs text-muted-foreground">{t("utilisations:cheque_dialog.upload.hint")}</span></Label>
                 <Input type="file" accept="application/pdf,image/*" onChange={e => setChequeFile(e.target.files?.[0] || null)} />
-                {chequeFile && <p className="text-xs text-muted-foreground mt-1">{chequeFile.name} — {(chequeFile.size / 1024).toFixed(1)} Ko</p>}
+                {chequeFile && <p className="text-xs text-muted-foreground mt-1">{t("utilisations:cheque_dialog.upload.size", { name: chequeFile.name, size: (chequeFile.size / 1024).toFixed(1) })}</p>}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowCheque(false); setChequeFile(null); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setShowCheque(false); setChequeFile(null); }}>{t("utilisations:cheque_dialog.cancel")}</Button>
             <Button className="bg-indigo-600 hover:bg-indigo-700" disabled={chequeLoading || !chequeForm.banqueNom.trim() || !chequeForm.numeroCheque.trim() || !chequeForm.montantCheque || !chequeFile} onClick={handleSaisirCheque}>
-              {chequeLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer
+              {chequeLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:cheque_dialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Quittances Dialog (DGTCP) */}
+      {/* Quittances Dialog */}
       <Dialog open={showQuittances} onOpenChange={setShowQuittances}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> Quittances Trésor — #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittances_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Saisie des quittances émises par le Trésor. La liste remplace toujours les précédentes (idempotent).
-              {u.totalAPayer != null && <> Montant attendu : <strong>{f(u.totalAPayer)} MRU</strong>.</>}
+              {t("utilisations:quittances_dialog.intro")}
+              {u.totalAPayer != null && <> {t("utilisations:quittances_dialog.intro_expected", { montant: fmtAmt(u.totalAPayer) })}</>}
             </p>
             {quittancesForm.map((q, idx) => (
               <div key={idx} className="space-y-2 p-2 rounded border">
                 <div className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-3"><Label className="text-xs">N° quittance *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
-                  <div className="col-span-3"><Label className="text-xs">Date *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
-                  <div className="col-span-2"><Label className="text-xs">Montant *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
-                  <div className="col-span-3"><Label className="text-xs">Réf. paiement</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_numero")} *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_date")} *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
+                  <div className="col-span-2"><Label className="text-xs">{t("utilisations:quittances_dialog.col_montant")} *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                  <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_reference")}</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
                   <div className="col-span-1">
                     <Button variant="ghost" size="sm" onClick={() => {
                       setQuittancesForm(arr => arr.filter((_, i) => i !== idx));
@@ -1273,7 +1292,7 @@ const UtilisationDetail = () => {
                 </div>
                 <div className="grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-12">
-                    <Label className="text-xs">Justificatif (PDF / image, optionnel)</Label>
+                    <Label className="text-xs">{t("utilisations:quittances_dialog.upload.label")}</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         type="file"
@@ -1285,7 +1304,7 @@ const UtilisationDetail = () => {
                         <span className="text-xs text-muted-foreground truncate max-w-[200px]">{quittancesFiles[idx]!.name}</span>
                       )}
                       {!quittancesFiles[idx] && q.documentNomFichier && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">Actuel : {q.documentNomFichier}</span>
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">{t("utilisations:quittances_dialog.upload.current", { name: q.documentNomFichier })}</span>
                       )}
                     </div>
                   </div>
@@ -1294,15 +1313,15 @@ const UtilisationDetail = () => {
             ))}
             <div className="flex items-center justify-between pt-1">
               <Button size="sm" variant="outline" onClick={() => setQuittancesForm(arr => [...arr, { numeroQuittance: "", dateQuittance: "", montant: 0, referencePaiement: "" }])}>
-                + Ajouter une quittance
+                {t("utilisations:quittances_dialog.add")}
               </Button>
-              <p className="text-sm">Total saisi : <span className="font-bold">{f(quittancesForm.reduce((s, q) => s + Number(q.montant || 0), 0))} MRU</span></p>
+              <p className="text-sm">{t("utilisations:quittances_dialog.total")} <span className="font-bold">{fmtAmt(quittancesForm.reduce((s, q) => s + Number(q.montant || 0), 0))}</span></p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowQuittances(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setShowQuittances(false)}>{t("utilisations:quittances_dialog.cancel")}</Button>
             <Button className="bg-teal-600 hover:bg-teal-700" disabled={quittancesLoading || quittancesForm.every(q => !q.numeroQuittance.trim() || !q.dateQuittance || !(Number(q.montant) > 0))} onClick={handleSaisirQuittances}>
-              {quittancesLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Enregistrer
+              {quittancesLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:quittances_dialog.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1311,46 +1330,52 @@ const UtilisationDetail = () => {
       {/* Apurement Dialog */}
       <Dialog open={showApur} onOpenChange={setShowApur}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Apurement TVA — Utilisation #{u.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:apurement_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Saisissez la TVA déductible à utiliser. Le système consommera le stock TVA déductible et calculera la TVA nette.</p>
+            <p className="text-sm text-muted-foreground">{t("utilisations:apurement_dialog.intro")}</p>
             {tvaStock.length > 0 && (
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
-                <p className="font-semibold text-blue-800 mb-1">Stock TVA déductible disponible : {f(totalStockDisponible)} MRU</p>
+                <p className="font-semibold text-blue-800 mb-1">{t("utilisations:apurement_dialog.stock_title", { total: fmtAmt(totalStockDisponible) })}</p>
                 <div className="text-xs text-blue-600 space-y-0.5">
-                  {tvaStock.filter(t => !t.epuise).map(t => (
-                    <div key={t.id}>{t.numeroDeclaration || `Util #${t.utilisationDouaneId}`} : {f(t.montantRestant)} MRU</div>
+                  {tvaStock.filter(x => !x.epuise).map(x => (
+                    <div key={x.id}>{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })} : {fmtAmt(x.montantRestant)}</div>
                   ))}
                 </div>
               </div>
             )}
             <div className="p-3 rounded-lg bg-muted text-sm">
-              <div className="flex justify-between"><span>TVA collectée :</span><span className="font-semibold">{f(u.montantTVAInterieure)} MRU</span></div>
+              <div className="flex justify-between"><span>{t("utilisations:apurement_dialog.tva_collectee_label")}</span><span className="font-semibold">{fmtAmt(u.montantTVAInterieure)}</span></div>
             </div>
             <div>
-              <Label>TVA déductible à utiliser (MRU) *</Label>
+              <Label>{t("utilisations:apurement_dialog.tva_ded_label")} *</Label>
               <Input type="number" min="0" value={apurMontant} onChange={e => setApurMontant(e.target.value)} />
             </div>
             {apurMontant && u.montantTVAInterieure != null && (() => {
               const tvaNette = u.montantTVAInterieure - Number(apurMontant);
               return (
                 <div className="p-3 rounded-lg border space-y-1 text-sm">
-                  <div className="flex justify-between"><span>TVA collectée :</span><span>{f(u.montantTVAInterieure)} MRU</span></div>
-                  <div className="flex justify-between"><span>TVA déductible :</span><span>- {f(Number(apurMontant))} MRU</span></div>
+                  <div className="flex justify-between"><span>{t("utilisations:apurement_dialog.tva_collectee_short")}</span><span>{fmtAmt(u.montantTVAInterieure)}</span></div>
+                  <div className="flex justify-between"><span>{t("utilisations:apurement_dialog.tva_ded_short")}</span><span>- {fmtAmt(Number(apurMontant))}</span></div>
                   <div className="border-t pt-1 flex justify-between font-bold">
-                    <span>TVA nette :</span>
-                    <span className={tvaNette > 0 ? "text-destructive" : tvaNette < 0 ? "text-emerald-600" : ""}>{f(tvaNette)} MRU</span>
+                    <span>{t("utilisations:apurement_dialog.tva_nette_short")}</span>
+                    <span className={tvaNette > 0 ? "text-destructive" : tvaNette < 0 ? "text-emerald-600" : ""}>{fmtAmt(tvaNette)}</span>
                   </div>
-                  {tvaNette === 0 && <p className="text-xs text-muted-foreground mt-1">➡ Cas 1 : Opération neutre</p>}
-                  {tvaNette > 0 && <p className="text-xs text-amber-600 mt-1">⚠ Cas 2 : TVA nette positive — solde TVA sera débité{cert && (cert.soldeTVA ?? 0) < tvaNette ? `, paiement cash de ${f(tvaNette - (cert.soldeTVA ?? 0))} MRU requis` : ""}</p>}
-                  {tvaNette < 0 && <p className="text-xs text-emerald-600 mt-1">✅ Cas 3 : Report à nouveau de {f(Math.abs(tvaNette))} MRU → solde TVA augmente</p>}
+                  {tvaNette === 0 && <p className="text-xs text-muted-foreground mt-1">{t("utilisations:apurement_dialog.cas1_short")}</p>}
+                  {tvaNette > 0 && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      {cert && (cert.soldeTVA ?? 0) < tvaNette
+                        ? t("utilisations:apurement_dialog.cas2_with_cash", { montant: fmtAmt(tvaNette - (cert.soldeTVA ?? 0)) })
+                        : t("utilisations:apurement_dialog.cas2_short")}
+                    </p>
+                  )}
+                  {tvaNette < 0 && <p className="text-xs text-emerald-600 mt-1">{t("utilisations:apurement_dialog.cas3_short", { montant: fmtAmt(Math.abs(tvaNette)) })}</p>}
                 </div>
               );
             })()}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowApur(false)}>Annuler</Button>
+              <Button variant="outline" onClick={() => setShowApur(false)}>{t("utilisations:apurement_dialog.cancel")}</Button>
               <Button disabled={apurLoading || !apurMontant || Number(apurMontant) < 0} onClick={handleApurement}>
-                {apurLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer l'apurement
+                {apurLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:apurement_dialog.confirm")}
               </Button>
             </DialogFooter>
           </div>
@@ -1360,11 +1385,14 @@ const UtilisationDetail = () => {
       {/* Rejet Temp Dialog */}
       <Dialog open={showRejet} onOpenChange={setShowRejet}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-500" /> Rejet temporaire</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-500" /> {t("utilisations:rejet_temp_dialog.title")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Motif *</Label><Textarea placeholder="Corrections ou compléments attendus..." value={rejetMotif} onChange={e => setRejetMotif(e.target.value)} className="min-h-[80px]" /></div>
             <div>
-              <Label>Documents à corriger *</Label>
+              <Label>{t("utilisations:rejet_temp_dialog.motif_label")} *</Label>
+              <Textarea placeholder={t("utilisations:rejet_temp_dialog.motif_placeholder")} value={rejetMotif} onChange={e => setRejetMotif(e.target.value)} className="min-h-[80px]" />
+            </div>
+            <div>
+              <Label>{t("utilisations:rejet_temp_dialog.docs_label")} *</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto mt-2">
                 {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(dt => (
                   <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
@@ -1372,14 +1400,13 @@ const UtilisationDetail = () => {
                     <span className="text-sm">{tTypeDocument(dt)}</span>
                   </label>
                 ))}
-
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejet(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setShowRejet(false)}>{t("utilisations:rejet_temp_dialog.cancel")}</Button>
             <Button className="bg-amber-600 hover:bg-amber-700" disabled={rejetLoading || !rejetMotif.trim() || rejetDocs.length === 0} onClick={handleRejetTemp}>
-              {rejetLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirmer
+              {rejetLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:rejet_temp_dialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1388,20 +1415,19 @@ const UtilisationDetail = () => {
       {/* Upload Dialog */}
       <Dialog open={showUpload} onOpenChange={setShowUpload}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Ajouter un document</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:upload_dialog.title")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <Select value={docType} onValueChange={v => setDocType(v as TypeDocumentUtilisation)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(t => (
-                  <SelectItem key={t} value={t}>{tTypeDocument(t)}</SelectItem>
+                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(tp => (
+                  <SelectItem key={tp} value={tp}>{tTypeDocument(tp)}</SelectItem>
                 ))}
-
               </SelectContent>
             </Select>
             <Input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} />
             <Button onClick={handleUpload} disabled={uploading || !docFile} className="w-full">
-              {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Uploader
+              {uploading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:upload_dialog.submit")}
             </Button>
           </div>
         </DialogContent>
@@ -1410,12 +1436,12 @@ const UtilisationDetail = () => {
       {/* Respond to rejet */}
       <Dialog open={respondDecision !== null} onOpenChange={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseFiles({}); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{respondWithUpload ? "Uploader les documents demandés" : "Répondre au rejet temporaire"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{respondWithUpload ? t("utilisations:respond_dialog.title_upload") : t("utilisations:respond_dialog.title_message")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Textarea placeholder="Votre réponse ou justification..." value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
+            <Textarea placeholder={t("utilisations:respond_dialog.message_placeholder")} value={responseMsg} onChange={e => setResponseMsg(e.target.value)} />
             {respondWithUpload && respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Documents demandés ({respondDecision.documentsDemandes.length})</Label>
+                <Label className="text-sm font-medium">{t("utilisations:respond_dialog.documents_demandes", { count: respondDecision.documentsDemandes.length })}</Label>
                 {respondDecision.documentsDemandes.map(dt => {
                   const docLabel = tTypeDocument(dt) || dt.replace(/_/g, " ");
                   const file = responseFiles[dt];
@@ -1423,7 +1449,7 @@ const UtilisationDetail = () => {
                     <div key={dt} className="p-3 rounded-lg border space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">{docLabel}</span>
-                        {file && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">✓ Sélectionné</Badge>}
+                        {file && <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300">{t("utilisations:respond_dialog.selected")}</Badge>}
                       </div>
                       <Input
                         type="file"
@@ -1445,7 +1471,7 @@ const UtilisationDetail = () => {
             )}
             {!respondWithUpload && (
               <div>
-                <Label className="text-sm">Joindre un document (optionnel)</Label>
+                <Label className="text-sm">{t("utilisations:respond_dialog.joindre_optional")}</Label>
                 <Input type="file" className="mt-1" onChange={e => setResponseFile(e.target.files?.[0] || null)} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
                 {responseFile && (
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -1455,13 +1481,13 @@ const UtilisationDetail = () => {
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseFiles({}); }}>Annuler</Button>
+              <Button variant="outline" onClick={() => { setRespondDecision(null); setRespondWithUpload(false); setResponseFile(null); setResponseFiles({}); }}>{t("utilisations:respond_dialog.cancel")}</Button>
               <Button
                 disabled={responding || (!responseMsg.trim() && !responseFile && Object.keys(responseFiles).length === 0) || (respondWithUpload && respondDecision?.documentsDemandes?.length ? Object.keys(responseFiles).length === 0 : false)}
                 onClick={handleRespondRejet}
               >
-                {responding && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {respondWithUpload && Object.keys(responseFiles).length > 1 ? `Envoyer ${Object.keys(responseFiles).length} documents` : "Envoyer"}
+                {responding && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                {respondWithUpload && Object.keys(responseFiles).length > 1 ? t("utilisations:respond_dialog.send_n", { count: Object.keys(responseFiles).length }) : t("utilisations:respond_dialog.send")}
               </Button>
             </DialogFooter>
           </div>
