@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -13,9 +14,12 @@ import { isNationalRole, getRoleLabel } from "@/components/reporting/ReportingRo
 import ReportingFilters from "@/components/reporting/ReportingFilters";
 import ReportingKPIs from "@/components/reporting/ReportingKPIs";
 import ReportingCharts from "@/components/reporting/ReportingCharts";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Reporting = () => {
-  const { user, hasRole } = useAuth();
+  const { t } = useTranslation();
+  usePageTitle("reporting:page.title");
+  const { user } = useAuth();
   const role = user?.role as AppRole;
   const isNational = isNationalRole(role);
 
@@ -65,7 +69,7 @@ const Reporting = () => {
       setTimeseries(ts);
     } catch (e: any) {
       console.error("Reporting load error", e);
-      setError(e?.message || "Impossible de charger les données de reporting");
+      setError(e?.message || (t("reporting:page.load_error_fallback") as string));
       setSummary(null);
       setTimeseries([]);
     } finally {
@@ -91,11 +95,11 @@ const Reporting = () => {
         {/* Header with role context */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Reporting</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("reporting:page.header")}</h1>
             <p className="text-sm text-muted-foreground">
               {getRoleLabel(role)}
               {isNational && summary?.filtersApplied && (
-                <Badge variant="outline" className="ml-2 text-xs">Filtres appliqués</Badge>
+                <Badge variant="outline" className="ms-2 text-xs">{t("reporting:page.filters_applied")}</Badge>
               )}
             </p>
           </div>
@@ -122,9 +126,9 @@ const Reporting = () => {
         {error && !loading && (
           <Card className="border-destructive/50">
             <CardContent className="p-6 text-center">
-              <p className="text-destructive font-medium mb-2">Erreur de chargement</p>
+              <p className="text-destructive font-medium mb-2">{t("reporting:page.load_error_title")}</p>
               <p className="text-sm text-muted-foreground mb-4">{error}</p>
-              <Button variant="outline" onClick={loadData}>Réessayer</Button>
+              <Button variant="outline" onClick={loadData}>{t("reporting:page.retry")}</Button>
             </CardContent>
           </Card>
         )}
