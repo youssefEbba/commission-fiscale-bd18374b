@@ -1,0 +1,68 @@
+{
+  "page": {
+    "title": "Reporting",
+    "header": "Reporting",
+    "filters_applied": "Filtres appliqués",
+    "load_error_title": "Erreur de chargement",
+    "load_error_fallback": "Impossible de charger les données de reporting",
+    "retry": "Réessayer"
+  },
+  "roles": {
+    "PRESIDENT": "Présidence — vue nationale",
+    "ADMIN_SI": "Administration — vue nationale",
+    "DIRECTION_NATIONALE": "Vue nationale (direction)",
+    "AUTORITE_CONTRACTANTE": "Ma collecte — mon autorité contractante",
+    "AUTORITE_DELEGUEE": "Mes marchés délégués",
+    "ENTREPRISE": "Mon entreprise",
+    "SOUS_TRAITANT": "Mon entreprise (sous-traitant)",
+    "DEFAULT": "Reporting"
+  },
+  "filters": {
+    "from": "Du",
+    "to": "Au",
+    "autorite": "Autorité Contractante",
+    "entreprise": "Entreprise",
+    "all_f_plural": "Toutes",
+    "apply": "Appliquer"
+  },
+  "kpis": {
+    "demandes": "Demandes",
+    "certificats": "Certificats",
+    "utilisations": "Utilisations",
+    "transferts": "Transferts",
+    "sous_traitances": "{{count}} sous-traitance(s)",
+    "en_validation_president": "{{count}} en validation Président",
+    "taux_adoption": "Taux d'adoption",
+    "taux_rejet": "Taux de rejet",
+    "solde_cordon": "Solde Cordon",
+    "solde_tva": "Solde TVA"
+  },
+  "charts": {
+    "empty": "Aucune donnée",
+    "empty_audit": "Aucune donnée d'audit",
+    "marches_not_applicable": "Non applicable pour votre profil",
+    "tab_demandes": "Demandes",
+    "tab_certificats": "Certificats",
+    "tab_utilisations": "Utilisations",
+    "tab_referentiel": "Conv / Projets",
+    "tab_audit": "Audit",
+    "demandes_by_statut": "Demandes par statut",
+    "demandes_evolution": "Évolution mensuelle des demandes",
+    "demandes_detail": "Détail par statut",
+    "demandes_legend": "Demandes",
+    "certificats_by_statut": "Certificats par statut",
+    "certificats_amounts": "Montants certificats",
+    "montant_cordon": "Montant Cordon",
+    "montant_tva_int": "Montant TVA Int.",
+    "solde_cordon": "Solde Cordon",
+    "solde_tva": "Solde TVA",
+    "certificats_count": "{{count}} certificat(s) dans le périmètre",
+    "utilisations_by_statut": "Utilisations par statut",
+    "utilisations_by_type": "Utilisations par type",
+    "conventions_title": "Conventions",
+    "referentiels_title": "Référentiels Projet",
+    "marches_title": "Marchés",
+    "audit_actions": "Actions d'audit ({{count}})",
+    "audit_top_entities": "Top entités modifiées"
+  }
+}
