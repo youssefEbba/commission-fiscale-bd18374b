@@ -74,7 +74,7 @@ const Navbar = () => {
             </a>
           ))}
           <div className="mt-4 flex flex-col gap-2">
-            <div className="flex justify-end"><LanguageSwitcher variant="compact" /></div>
+            <div className="flex justify-end"><LanguageSwitcher variant="compact" className="text-primary-foreground hover:bg-primary/20 hover:text-primary-foreground" /></div>
             <Button variant="outline" className="w-full border-gold text-gold hover:bg-gold/20 hover:text-gold" asChild>
               <Link to="/register">{t("nav.register")}</Link>
             </Button>
