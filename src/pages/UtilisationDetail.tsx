@@ -6,11 +6,13 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
   UTILISATION_STATUT_LABELS, utilisationStatutLabel, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA,
-  UTILISATION_DOCUMENT_TYPES, TypeDocumentUtilisation, DocumentDto,
+  TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, DecisionType, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
   LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
+import { tTypeDocument } from "@/i18n/enums";
+
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -881,7 +883,7 @@ const UtilisationDetail = () => {
           </CardHeader>
           <CardContent>
             {(() => {
-              const allowedTvaTypes = isTVA ? new Set(tvaDocTypes.map(t => t.value)) : null;
+              const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
               const visibleDocs = docs.filter(d => {
                 if (d.actif === false) return false;
                 if (!isTVA) return true;
@@ -1365,11 +1367,12 @@ const UtilisationDetail = () => {
               <Label>Documents à corriger *</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto mt-2">
                 {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(dt => (
-                  <label key={dt.value} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox checked={rejetDocs.includes(dt.value)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt.value] : prev.filter(d => d !== dt.value))} />
-                    <span className="text-sm">{dt.label}</span>
+                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                    <Checkbox checked={rejetDocs.includes(dt)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt))} />
+                    <span className="text-sm">{tTypeDocument(dt)}</span>
                   </label>
                 ))}
+
               </div>
             </div>
           </div>
@@ -1391,8 +1394,9 @@ const UtilisationDetail = () => {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(t => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <SelectItem key={t} value={t}>{tTypeDocument(t)}</SelectItem>
                 ))}
+
               </SelectContent>
             </Select>
             <Input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} />
@@ -1413,7 +1417,7 @@ const UtilisationDetail = () => {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Documents demandés ({respondDecision.documentsDemandes.length})</Label>
                 {respondDecision.documentsDemandes.map(dt => {
-                  const docLabel = UTILISATION_DOCUMENT_TYPES.find(t => t.value === dt)?.label || dt.replace(/_/g, " ");
+                  const docLabel = tTypeDocument(dt) || dt.replace(/_/g, " ");
                   const file = responseFiles[dt];
                   return (
                     <div key={dt} className="p-3 rounded-lg border space-y-1.5">
