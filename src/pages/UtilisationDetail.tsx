@@ -1007,7 +1007,11 @@ const UtilisationDetail = () => {
                 {canDGDAnnoterEtViser && (
                   <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
                     const init: Record<number, AffectationTaxe> = {};
-                    (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
+                    (u.lignes || []).forEach(l => {
+                      // Pré-remplissage : proposition entreprise prioritaire (nouveau flux), sinon décision existante.
+                      const pref = l.affectationEntreprise ?? l.affectation;
+                      if (pref) init[l.id] = pref;
+                    });
                     setLiqDecisions(init);
                     setShowLiq(true);
                   }}><Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.annoter_viser")}</Button>
