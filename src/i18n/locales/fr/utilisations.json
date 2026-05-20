@@ -118,7 +118,13 @@
       "mismatch": "La somme des valeurs des taxes ({{total}}) ne correspond pas au montant total saisi ({{amount}}).",
       "montant_total": "Montant total déclaré",
       "montant_total_placeholder": "Montant total saisi par l'utilisateur",
-      "add_tax_btn": "Ajouter"
+      "add_tax_btn": "Ajouter",
+      "col_affectation": "Affectation",
+      "affectation_au_ci_short": "AU CI",
+      "affectation_a_payer_short": "À PAYER",
+      "affectation_au_ci_title": "Pris en charge par le crédit extérieur (cordon)",
+      "affectation_a_payer_title": "À payer comptant par l'entreprise",
+      "affectation_hint": "Pour chaque ligne avec un montant > 0, indiquez si la taxe est prise en charge par le crédit extérieur (AU CI) ou à payer comptant (À PAYER). La DGD peut modifier votre choix lors du visa."
     },
     "tva": {
       "type_achat": "Type d'achat",
@@ -252,7 +258,9 @@
     "scan_required_title": "Scan requis",
     "scan_required_desc": "Veuillez joindre le scan du chèque certifié.",
     "no_valid_quittance_title": "Aucune quittance valide",
-    "no_valid_quittance_desc": "Renseignez au moins une quittance."
+    "no_valid_quittance_desc": "Renseignez au moins une quittance.",
+    "create_affectation_missing_title": "Affectation manquante",
+    "create_affectation_missing_desc": "{{count}} ligne(s) avec un montant > 0 sans affectation (AU CI ou À PAYER)."
   },
   "detail": {
     "title": "Utilisation #{{reference}}",
@@ -319,7 +327,11 @@
     "date_prefix": "Le {{date}}",
     "a_payer_line": "À payer",
     "au_ci_line": "Au CI",
-    "edit_letters_title": "Cliquez pour modifier le montant en lettres"
+    "edit_letters_title": "Cliquez pour modifier le montant en lettres",
+    "col_proposition": "Proposition entreprise",
+    "proposition_none": "Non précisée",
+    "dgd_validated": "Validé par DGD",
+    "dgd_modified": "Modifié par DGD"
   },
   "cheque": {
     "title": "Chèque certifié",
@@ -453,7 +465,11 @@
     "lines_pending_few": "{{count}} lignes avec un montant > 0 sans affectation.",
     "lines_pending_many": "{{count}} lignes avec un montant > 0 sans affectation.",
     "cancel": "Annuler",
-    "confirm": "Confirmer le visa"
+    "confirm": "Confirmer le visa",
+    "col_proposition": "Proposition entreprise",
+    "proposition_au_ci": "Proposé : AU CI",
+    "proposition_a_payer": "Proposé : À PAYER",
+    "proposition_none": "Aucune"
   },
   "cheque_dialog": {
     "title": "Saisir le chèque certifié — #{{id}}",

@@ -635,12 +635,14 @@ const UtilisationDetail = () => {
                     <TableHead className="w-20">{t("utilisations:bulletin.col_code")}</TableHead>
                     <TableHead>{t("utilisations:bulletin.col_name")}</TableHead>
                     <TableHead className="text-end w-40">{t("utilisations:bulletin.col_value")}</TableHead>
-                    <TableHead className="w-36">{t("utilisations:bulletin.col_affectation")}</TableHead>
+                    <TableHead className="w-36">{t("utilisations:bulletin.col_proposition")}</TableHead>
+                    <TableHead className="w-44">{t("utilisations:bulletin.col_affectation")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {u.lignes.map(l => {
                     const val = Number(l.valeur) || 0;
+                    const propose = l.affectationEntreprise ?? null;
                     return (
                       <TableRow key={l.id}>
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
@@ -648,13 +650,34 @@ const UtilisationDetail = () => {
                         <TableCell className="text-end font-medium">{fmtNum(l.valeur)}</TableCell>
                         <TableCell>
                           {val === 0 ? (
-                            <span className="text-[10px] text-muted-foreground">{t("utilisations:bulletin.affectation_not_required")}</span>
-                          ) : l.affectation === "AU_CI" ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{t("utilisations:bulletin.affectation_au_ci")}</Badge>
-                          ) : l.affectation === "A_PAYER" ? (
-                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">{t("utilisations:bulletin.affectation_a_payer")}</Badge>
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          ) : propose === "AU_CI" ? (
+                            <Badge variant="outline" className="border-emerald-300 text-emerald-700 text-[10px]">{t("utilisations:bulletin.affectation_au_ci")}</Badge>
+                          ) : propose === "A_PAYER" ? (
+                            <Badge variant="outline" className="border-amber-300 text-amber-700 text-[10px]">{t("utilisations:bulletin.affectation_a_payer")}</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px]">{t("utilisations:bulletin.affectation_pending")}</Badge>
+                            <span className="text-[10px] text-muted-foreground">{t("utilisations:bulletin.proposition_none")}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {val === 0 ? (
+                            <span className="text-[10px] text-muted-foreground">{t("utilisations:bulletin.affectation_not_required")}</span>
+                          ) : (
+                            <div className="flex flex-col gap-1 items-start">
+                              {l.affectation === "AU_CI" ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{t("utilisations:bulletin.affectation_au_ci")}</Badge>
+                              ) : l.affectation === "A_PAYER" ? (
+                                <Badge className="bg-amber-100 text-amber-800 text-[10px]">{t("utilisations:bulletin.affectation_a_payer")}</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px]">{t("utilisations:bulletin.affectation_pending")}</Badge>
+                              )}
+                              {l.affectationModifieeParDgd === true && (
+                                <span className="text-[10px] text-amber-700 font-medium">{t("utilisations:bulletin.dgd_modified")}</span>
+                              )}
+                              {l.affectationModifieeParDgd === false && (
+                                <span className="text-[10px] text-emerald-700 font-medium">{t("utilisations:bulletin.dgd_validated")}</span>
+                              )}
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
@@ -1007,7 +1030,11 @@ const UtilisationDetail = () => {
                 {canDGDAnnoterEtViser && (
                   <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
                     const init: Record<number, AffectationTaxe> = {};
-                    (u.lignes || []).forEach(l => { if (l.affectation) init[l.id] = l.affectation; });
+                    (u.lignes || []).forEach(l => {
+                      // Pré-remplissage : proposition entreprise prioritaire (nouveau flux), sinon décision existante.
+                      const pref = l.affectationEntreprise ?? l.affectation;
+                      if (pref) init[l.id] = pref;
+                    });
                     setLiqDecisions(init);
                     setShowLiq(true);
                   }}><Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.annoter_viser")}</Button>
@@ -1106,18 +1133,31 @@ const UtilisationDetail = () => {
                     <TableHead className="w-24">{t("utilisations:visa_dgd.col_code")}</TableHead>
                     <TableHead>{t("utilisations:visa_dgd.col_name")}</TableHead>
                     <TableHead className="text-end w-36">{t("utilisations:visa_dgd.col_value_saisie")}</TableHead>
-                    <TableHead className="text-end w-40">{t("utilisations:visa_dgd.col_value_override")}</TableHead>
+                    <TableHead className="w-40">{t("utilisations:visa_dgd.col_proposition")}</TableHead>
+                    <TableHead className="text-end w-36">{t("utilisations:visa_dgd.col_value_override")}</TableHead>
                     <TableHead className="w-48">{t("utilisations:visa_dgd.col_affectation")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {u.lignes.map((l: LigneBulletinDto) => {
                     const isZero = (Number(l.valeur) || 0) === 0;
+                    const propose = l.affectationEntreprise ?? null;
                     return (
                       <TableRow key={l.id}>
                         <TableCell className="font-mono text-xs">{l.code}</TableCell>
                         <TableCell className="text-sm">{l.libelle}</TableCell>
                         <TableCell className="text-end font-medium">{fmtNum(l.valeur)}</TableCell>
+                        <TableCell>
+                          {isZero ? (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          ) : propose === "AU_CI" ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{t("utilisations:visa_dgd.proposition_au_ci")}</Badge>
+                          ) : propose === "A_PAYER" ? (
+                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">{t("utilisations:visa_dgd.proposition_a_payer")}</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">{t("utilisations:visa_dgd.proposition_none")}</Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Input
                             type="number"
