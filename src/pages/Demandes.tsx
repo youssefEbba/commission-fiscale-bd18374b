@@ -463,8 +463,7 @@ const Demandes = () => {
   const transitions = ROLE_TRANSITIONS[role] || [];
   const pageTitle = t(`demandes:list.page_titles.${role}`, { defaultValue: t("demandes:list.page_titles.default") });
 
-  // All document type values (codes from backend); their labels come from ALL_DOCUMENT_TYPES (FR-only).
-  // Per F3a rules, labels coming from backend lists are displayed as-is.
+  // Statuts utilisés par les filtres : codes API (libellés via tStatutDemande).
   const STATUT_KEYS: DemandeStatut[] = ["BROUILLON","RECUE","INCOMPLETE","RECEVABLE","EN_EVALUATION","EN_VALIDATION","ADOPTEE","REJETEE","NOTIFIEE","ANNULEE"];
 
   return (
