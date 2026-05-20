@@ -861,31 +861,70 @@ const Utilisations = () => {
                         <div className="space-y-1.5">
                           <div className="grid grid-cols-12 gap-1.5 items-center px-1">
                             <span className="col-span-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_code")}</span>
-                            <span className="col-span-6 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_name")}</span>
-                            <span className="col-span-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_value")}</span>
+                            <span className="col-span-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_name")}</span>
+                            <span className="col-span-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_value")}</span>
+                            <span className="col-span-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{t("utilisations:create.douane.col_affectation")}</span>
                           </div>
                           {form.lignes.map((ligne, idx) => {
+                            const valNum = Number(ligne.valeurTaxe) || 0;
                             const isEmpty = ligne.valeurTaxe === undefined || ligne.valeurTaxe === null || (ligne.valeurTaxe as any) === "";
+                            const isZero = valNum === 0;
+                            const affMissing = !isZero && !ligne.affectation;
+                            const setAff = (aff: AffectationTaxe | null) => {
+                              const next = [...(form.lignes || [])];
+                              next[idx] = { ...next[idx], affectation: aff };
+                              setForm({ ...form, lignes: next });
+                            };
                             return (
                               <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
                                 {/* `denominationTaxe` provient du référentiel API — non traduit (donnée métier) */}
                                 <Input className="col-span-2 h-8 text-xs uppercase bg-muted/40" value={ligne.codeTaxe} readOnly />
-                                <Input className="col-span-6 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
+                                <Input className="col-span-4 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
                                 <Input
-                                  className={`col-span-4 h-8 text-xs ${isEmpty ? "border-destructive focus-visible:ring-destructive bg-destructive/5" : ""}`}
+                                  className={`col-span-3 h-8 text-xs ${isEmpty ? "border-destructive focus-visible:ring-destructive bg-destructive/5" : ""}`}
                                   type="number"
                                   min="0"
                                   placeholder={t("utilisations:create.douane.value_required")}
                                   value={ligne.valeurTaxe ?? ""}
                                   onChange={e => {
                                     const next = [...(form.lignes || [])];
-                                    next[idx] = { ...next[idx], valeurTaxe: e.target.value === "" ? (undefined as any) : Number(e.target.value) };
+                                    const newVal = e.target.value === "" ? (undefined as any) : Number(e.target.value);
+                                    // Si remis à 0, on efface l'affectation (non requise)
+                                    const newAff = (Number(newVal) || 0) === 0 ? null : next[idx].affectation;
+                                    next[idx] = { ...next[idx], valeurTaxe: newVal, affectation: newAff };
                                     setForm({ ...form, lignes: next });
                                   }}
                                 />
+                                <div className={`col-span-3 flex gap-1 ${affMissing ? "ring-1 ring-destructive rounded-md p-0.5" : ""}`}>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={ligne.affectation === "AU_CI" ? "default" : "outline"}
+                                    disabled={isZero}
+                                    className={`h-8 flex-1 text-[10px] px-1 ${ligne.affectation === "AU_CI" ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                                    onClick={() => setAff(ligne.affectation === "AU_CI" ? null : "AU_CI")}
+                                    title={t("utilisations:create.douane.affectation_au_ci_title")}
+                                  >
+                                    {t("utilisations:create.douane.affectation_au_ci_short")}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={ligne.affectation === "A_PAYER" ? "default" : "outline"}
+                                    disabled={isZero}
+                                    className={`h-8 flex-1 text-[10px] px-1 ${ligne.affectation === "A_PAYER" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
+                                    onClick={() => setAff(ligne.affectation === "A_PAYER" ? null : "A_PAYER")}
+                                    title={t("utilisations:create.douane.affectation_a_payer_title")}
+                                  >
+                                    {t("utilisations:create.douane.affectation_a_payer_short")}
+                                  </Button>
+                                </div>
                               </div>
                             );
                           })}
+                          <p className="text-[10px] text-muted-foreground italic px-1">
+                            {t("utilisations:create.douane.affectation_hint")}
+                          </p>
                           <div className={`text-end text-xs pt-1 border-t ${mismatch ? "text-destructive font-semibold" : ""}`}>
                             {t("utilisations:create.douane.total")} : <strong>{fmtAmt(totalLignes)}</strong>
                             {form.montant !== undefined && form.montant !== null && (
