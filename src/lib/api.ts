@@ -1588,16 +1588,8 @@ export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
 ] as const;
 
 
-export const TRANSFERT_STATUT_LABELS: Record<StatutTransfert, string> = {
-  DEMANDE: "Demandé",
-  EN_COURS: "En cours (pièces déposées)",
-  VALIDE: "Ancien / réservé",
-  INCOMPLETE: "Incomplète (rejet temp.)",
-  A_RECONTROLER: "À recontrôler",
-  TRANSFERE: "Transféré",
-  REJETE: "Rejeté",
-  ANNULEE: "Annulée",
-};
+// TRANSFERT_STATUT_LABELS supprimée (orpheline, détectée en POLISH-1).
+// Libellés via `tStatutTransfert(code)` (cf. `enums.statut_transfert.*`).
 
 export const transfertCreditApi = {
   getAll: () => apiFetch<TransfertCreditDto[]>("/transferts-credit"),
