@@ -56,6 +56,7 @@ export function DiscussionCommissionPanel({ contexte, dossierId, dossierStatut, 
   const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
   const [replying, setReplying] = useState<number | null>(null);
   const [closing, setClosing] = useState<number | null>(null);
+  const [showClosed, setShowClosed] = useState(false);
 
   const isCommissionMember = useMemo(() => {
     if (!user) return false;
