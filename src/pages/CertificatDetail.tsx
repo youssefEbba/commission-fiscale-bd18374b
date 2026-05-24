@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
+import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut,
@@ -522,7 +523,11 @@ const CertificatDetail = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <DiscussionCommissionPanel contexte="CERTIFICAT" dossierId={c.id} dossierStatut={c.statut as string} />
       </div>
+
+
 
       {/* GED Document Dialog */}
       <DocumentGED
