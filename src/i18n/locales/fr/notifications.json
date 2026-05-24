@@ -15,6 +15,7 @@
     "TRANSFERT_STATUT_CHANGE": "Transfert de crédit",
     "DEMANDE_MISE_EN_PLACE_CHANGE": "Mise en place CI",
     "MODIFICATION_STATUT_CHANGE": "Modification",
-    "GED_DOCUMENT_CHANGE": "Document GED"
+    "GED_DOCUMENT_CHANGE": "Document GED",
+    "DEMANDE_EXPLICATION": "Demande d'explication"
   }
 }

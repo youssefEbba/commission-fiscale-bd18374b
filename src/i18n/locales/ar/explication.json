@@ -1,0 +1,45 @@
+{
+  "panel": {
+    "title": "نقاش اللجنة",
+    "subtitle": "تبادلات داخلية (الجمارك، الخزينة، الضرائب، الميزانية، الرئاسة). لا تؤثر على حالة الملف أو التأشيرة.",
+    "empty": "لا توجد طلبات توضيح مفتوحة لهذا الملف.",
+    "loading": "جارٍ التحميل…",
+    "restricted": "مخصص لأعضاء اللجنة فقط."
+  },
+  "destinataire": "المرسل إليه: {{role}}",
+  "auteur_ouverture": "فتح بواسطة {{name}}",
+  "ouvert_le": "فُتح في {{date}}",
+  "ferme_le": "أُغلق في {{date}}",
+  "statut": {
+    "OUVERTE": "مفتوح",
+    "FERMEE": "مغلق"
+  },
+  "action": {
+    "ouvrir": "طلب توضيح",
+    "nouveau_fil": "موضوع جديد",
+    "envoyer": "إرسال",
+    "repondre": "الرد",
+    "fermer": "إغلاق الموضوع",
+    "annuler": "إلغاء"
+  },
+  "form": {
+    "destinataire_label": "الدور المستهدف",
+    "destinataire_placeholder": "اختر دورًا",
+    "message_label": "الرسالة",
+    "message_placeholder": "اكتب طلب التوضيح…",
+    "reponse_placeholder": "ردك…"
+  },
+  "error": {
+    "fermee": "هذا الموضوع مغلق.",
+    "statutDossier": "حالة الملف لا تسمح بفتح موضوع.",
+    "load": "تعذر تحميل النقاش.",
+    "create": "تعذر فتح الموضوع.",
+    "reply": "تعذر إرسال الرد.",
+    "close": "تعذر إغلاق الموضوع."
+  },
+  "success": {
+    "created": "تم فتح الموضوع.",
+    "replied": "تم إرسال الرد.",
+    "closed": "تم إغلاق الموضوع."
+  }
+}

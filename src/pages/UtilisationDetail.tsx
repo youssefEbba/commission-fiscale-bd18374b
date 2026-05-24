@@ -17,6 +17,7 @@ import {
 } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -1106,7 +1107,11 @@ const UtilisationDetail = () => {
             </CardContent>
           </Card>
         )}
+
+        <DiscussionCommissionPanel contexte="UTILISATION" dossierId={u.id} dossierStatut={u.statut as string} />
       </div>
+
+
 
       {/* Liquidation Dialog — visa DGD */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>

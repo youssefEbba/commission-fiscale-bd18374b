@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
@@ -596,6 +597,12 @@ const CorrectionDouaniere = () => {
                       </div>
                     );
                   })()}
+
+                  <div className="mt-6">
+                    <DiscussionCommissionPanel contexte="CORRECTION" dossierId={demande?.id} dossierStatut={demande?.statut as string} />
+                  </div>
+
+
 
                   {(demande?.statut === "ADOPTEE" || demande?.statut === "NOTIFIEE") && <div className="mt-6 pt-4 border-t border-border">
                     <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">

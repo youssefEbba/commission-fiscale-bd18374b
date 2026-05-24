@@ -1,0 +1,45 @@
+{
+  "panel": {
+    "title": "Discussion commission",
+    "subtitle": "Échanges internes (DGD, DGTCP, DGI, DGB, Président). N'impacte ni le statut, ni le visa du dossier.",
+    "empty": "Aucune demande d'explication ouverte pour ce dossier.",
+    "loading": "Chargement…",
+    "restricted": "Réservé aux membres de la commission."
+  },
+  "destinataire": "Destinataire : {{role}}",
+  "auteur_ouverture": "Ouvert par {{name}}",
+  "ouvert_le": "Ouvert le {{date}}",
+  "ferme_le": "Fermé le {{date}}",
+  "statut": {
+    "OUVERTE": "Ouverte",
+    "FERMEE": "Fermée"
+  },
+  "action": {
+    "ouvrir": "Demander une explication",
+    "nouveau_fil": "Nouveau fil",
+    "envoyer": "Envoyer",
+    "repondre": "Répondre",
+    "fermer": "Fermer le fil",
+    "annuler": "Annuler"
+  },
+  "form": {
+    "destinataire_label": "Rôle destinataire",
+    "destinataire_placeholder": "Choisir un rôle",
+    "message_label": "Message",
+    "message_placeholder": "Décrivez votre demande d'explication…",
+    "reponse_placeholder": "Votre réponse…"
+  },
+  "error": {
+    "fermee": "Ce fil est fermé.",
+    "statutDossier": "Le statut du dossier ne permet pas d'ouvrir un fil.",
+    "load": "Impossible de charger la discussion.",
+    "create": "Impossible d'ouvrir le fil.",
+    "reply": "Impossible d'envoyer la réponse.",
+    "close": "Impossible de fermer le fil."
+  },
+  "success": {
+    "created": "Fil ouvert.",
+    "replied": "Réponse envoyée.",
+    "closed": "Fil fermé."
+  }
+}

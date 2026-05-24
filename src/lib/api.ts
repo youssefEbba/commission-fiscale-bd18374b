@@ -1461,7 +1461,54 @@ export const UTILISATION_STATUT_VALUES: readonly UtilisationStatut[] = [
 ] as const;
 
 // Notifications
-export type NotificationType = "CORRECTION_STATUT_CHANGE" | "CORRECTION_DECISION" | "REFERENTIEL_STATUT_CHANGE" | "CONVENTION_STATUT_CHANGE" | "CERTIFICAT_STATUT_CHANGE" | "UTILISATION_STATUT_CHANGE";
+export type NotificationType = "CORRECTION_STATUT_CHANGE" | "CORRECTION_DECISION" | "REFERENTIEL_STATUT_CHANGE" | "CONVENTION_STATUT_CHANGE" | "CERTIFICAT_STATUT_CHANGE" | "UTILISATION_STATUT_CHANGE" | "DEMANDE_EXPLICATION";
+
+// Demandes d'explication (discussion interne commission)
+export type ExplicationContexte = "CORRECTION" | "CERTIFICAT" | "UTILISATION";
+export type ExplicationStatut = "OUVERTE" | "FERMEE";
+export type ExplicationRoleDestinataire = "DGD" | "DGTCP" | "DGI" | "DGB" | "PRESIDENT";
+
+export interface DemandeExplicationMessageDto {
+  id: number;
+  message: string;
+  auteurId: number;
+  auteurNom: string;
+  roleAuteur: string;
+  createdAt: string;
+}
+
+export interface DemandeExplicationDto {
+  id: number;
+  contexte: ExplicationContexte;
+  dossierId: number;
+  roleDestinataire: ExplicationRoleDestinataire;
+  messageInitial: string;
+  statut: ExplicationStatut;
+  auteurId: number;
+  auteurNom: string;
+  roleAuteur: string;
+  dateOuverture: string;
+  dateFermeture?: string;
+  messages: DemandeExplicationMessageDto[];
+}
+
+export interface CreateExplicationRequest {
+  contexte: ExplicationContexte;
+  dossierId: number;
+  roleDestinataire: ExplicationRoleDestinataire;
+  message: string;
+}
+
+export const demandeExplicationApi = {
+  list: (contexte: ExplicationContexte, dossierId: number) =>
+    apiFetch<DemandeExplicationDto[]>(`/demandes-explication?contexte=${contexte}&dossierId=${dossierId}`),
+  create: (body: CreateExplicationRequest) =>
+    apiFetch<DemandeExplicationDto>(`/demandes-explication`, { method: "POST", body }),
+  reply: (id: number, message: string) =>
+    apiFetch<DemandeExplicationDto>(`/demandes-explication/${id}/messages`, { method: "POST", body: { message } }),
+  fermer: (id: number) =>
+    apiFetch<DemandeExplicationDto>(`/demandes-explication/${id}/fermer`, { method: "PUT" }),
+};
 
 export interface NotificationDto {
   id: number;
