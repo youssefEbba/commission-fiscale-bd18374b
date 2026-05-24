@@ -7,5 +7,17 @@
   },
   "detail": {
     "title": "الأدوار والصلاحيات — التفاصيل"
-  }
+  },
+  "PRESIDENT": "الرئيس",
+  "DGD": "الإدارة العامة للجمارك",
+  "DGTCP": "الخزينة العامة",
+  "DGI": "الضرائب",
+  "DGB": "الميزانية",
+  "ADMIN_SI": "مسؤول النظام",
+  "AUTORITE_CONTRACTANTE": "السلطة المتعاقدة",
+  "ENTREPRISE": "المؤسسة",
+  "AUTORITE_UPM": "سلطة UPM",
+  "AUTORITE_UEP": "سلطة UEP",
+  "SOUS_TRAITANT": "المتعاقد من الباطن",
+  "COMMISSION_RELAIS": "لجنة التنسيق"
 }

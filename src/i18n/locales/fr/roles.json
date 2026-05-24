@@ -7,5 +7,17 @@
   },
   "detail": {
     "title": "Rôles & Permissions — Détail"
-  }
+  },
+  "PRESIDENT": "Président",
+  "DGD": "DGD",
+  "DGTCP": "DGTCP",
+  "DGI": "DGI",
+  "DGB": "DGB",
+  "ADMIN_SI": "Admin SI",
+  "AUTORITE_CONTRACTANTE": "Autorité Contractante",
+  "ENTREPRISE": "Entreprise",
+  "AUTORITE_UPM": "Autorité UPM",
+  "AUTORITE_UEP": "Autorité UEP",
+  "SOUS_TRAITANT": "Sous-traitant",
+  "COMMISSION_RELAIS": "Commission Relais"
 }
