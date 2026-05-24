@@ -215,76 +215,103 @@ export function DiscussionCommissionPanel({ contexte, dossierId, dossierStatut, 
           <p className="text-sm text-muted-foreground italic">{t("explication:panel.empty")}</p>
         )}
 
-        {items.map((thread) => {
-          const isOpen = thread.statut === "OUVERTE";
-          const canCloseThread = isOpen && !!user && (user.userId === thread.auteurId || user.role === "PRESIDENT");
-          return (
-            <div key={thread.id} className="rounded-lg border border-border bg-card">
-              <div className="flex items-start gap-3 p-3 border-b bg-muted/20">
-                <MessageCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="text-[10px]">
-                      {t("explication:destinataire", { role: t(`roles:${thread.roleDestinataire}`, thread.roleDestinataire) })}
-                    </Badge>
-                    <Badge className={`text-[10px] ${isOpen ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground"}`}>
-                      {t(`explication:statut.${thread.statut}`)}
-                    </Badge>
+        {(() => {
+          const openThreads = items.filter((it) => it.statut === "OUVERTE");
+          const closedThreads = items.filter((it) => it.statut !== "OUVERTE");
+          const renderThread = (thread: DemandeExplicationDto) => {
+            const isOpen = thread.statut === "OUVERTE";
+            const canCloseThread = isOpen && !!user && (user.userId === thread.auteurId || user.role === "PRESIDENT");
+            return (
+              <div key={thread.id} className="rounded-lg border border-border bg-card">
+                <div className="flex items-start gap-3 p-3 border-b bg-muted/20">
+                  <MessageCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">
+                        {t("explication:destinataire", { role: t(`roles:${thread.roleDestinataire}`, thread.roleDestinataire) })}
+                      </Badge>
+                      <Badge className={`text-[10px] ${isOpen ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground"}`}>
+                        {t(`explication:statut.${thread.statut}`)}
+                      </Badge>
+                    </div>
+                    <p className="text-sm mt-2 whitespace-pre-wrap">{thread.messageInitial}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {t("explication:auteur_ouverture", { name: thread.auteurNom })}
+                      {" · "}
+                      {formatDateTime(thread.dateOuverture)}
+                    </p>
                   </div>
-                  <p className="text-sm mt-2 whitespace-pre-wrap">{thread.messageInitial}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {t("explication:auteur_ouverture", { name: thread.auteurNom })}
-                    {" · "}
-                    {formatDateTime(thread.dateOuverture)}
-                  </p>
+                  {canCloseThread && (
+                    <Button size="sm" variant="ghost" onClick={() => handleClose(thread.id)} disabled={closing === thread.id}>
+                      {closing === thread.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                      <span className="ms-1 text-xs">{t("explication:action.fermer")}</span>
+                    </Button>
+                  )}
                 </div>
-                {canCloseThread && (
-                  <Button size="sm" variant="ghost" onClick={() => handleClose(thread.id)} disabled={closing === thread.id}>
-                    {closing === thread.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
-                    <span className="ms-1 text-xs">{t("explication:action.fermer")}</span>
-                  </Button>
+
+                {thread.messages?.length > 0 && (
+                  <div className="p-3 space-y-2">
+                    {thread.messages.map((m) => (
+                      <div key={m.id} className="rounded border border-muted bg-background p-2">
+                        <p className="text-sm whitespace-pre-wrap">{m.message}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {m.auteurNom} ({t(`roles:${m.roleAuteur}`, m.roleAuteur)}) · {formatDateTime(m.createdAt)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {isOpen && (
+                  <div className="p-3 border-t bg-muted/10 space-y-2">
+                    <Textarea
+                      placeholder={t("explication:form.reponse_placeholder")}
+                      value={replyDrafts[thread.id] || ""}
+                      onChange={(e) => setReplyDrafts((d) => ({ ...d, [thread.id]: e.target.value }))}
+                      className="min-h-[60px]"
+                      maxLength={2000}
+                    />
+                    <div className="flex justify-end">
+                      <Button size="sm" onClick={() => handleReply(thread.id)} disabled={replying === thread.id || !(replyDrafts[thread.id] || "").trim()}>
+                        {replying === thread.id ? <Loader2 className="h-3.5 w-3.5 animate-spin me-1" /> : <Send className="h-3.5 w-3.5 me-1" />}
+                        {t("explication:action.repondre")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isOpen && thread.dateFermeture && (
+                  <div className="px-3 py-2 border-t bg-muted/10 text-[10px] text-muted-foreground flex items-center gap-1">
+                    <X className="h-3 w-3" /> {t("explication:ferme_le", { date: formatDateTime(thread.dateFermeture) })}
+                  </div>
                 )}
               </div>
+            );
+          };
 
-              {thread.messages?.length > 0 && (
-                <div className="p-3 space-y-2">
-                  {thread.messages.map((m) => (
-                    <div key={m.id} className="rounded border border-muted bg-background p-2">
-                      <p className="text-sm whitespace-pre-wrap">{m.message}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {m.auteurNom} ({t(`roles:${m.roleAuteur}`, m.roleAuteur)}) · {formatDateTime(m.createdAt)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+          return (
+            <>
+              {openThreads.map(renderThread)}
 
-              {isOpen && (
-                <div className="p-3 border-t bg-muted/10 space-y-2">
-                  <Textarea
-                    placeholder={t("explication:form.reponse_placeholder")}
-                    value={replyDrafts[thread.id] || ""}
-                    onChange={(e) => setReplyDrafts((d) => ({ ...d, [thread.id]: e.target.value }))}
-                    className="min-h-[60px]"
-                    maxLength={2000}
-                  />
-                  <div className="flex justify-end">
-                    <Button size="sm" onClick={() => handleReply(thread.id)} disabled={replying === thread.id || !(replyDrafts[thread.id] || "").trim()}>
-                      {replying === thread.id ? <Loader2 className="h-3.5 w-3.5 animate-spin me-1" /> : <Send className="h-3.5 w-3.5 me-1" />}
-                      {t("explication:action.repondre")}
+              {closedThreads.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between border-t pt-3">
+                    <span className="text-xs text-muted-foreground">
+                      {t("explication:closed.count", { count: closedThreads.length, defaultValue: "{{count}} fil(s) fermé(s)" })}
+                    </span>
+                    <Button size="sm" variant="ghost" onClick={() => setShowClosed((v) => !v)}>
+                      {showClosed ? <EyeOff className="h-3.5 w-3.5 me-1" /> : <Eye className="h-3.5 w-3.5 me-1" />}
+                      {showClosed
+                        ? t("explication:closed.hide", { defaultValue: "Masquer les fils fermés" })
+                        : t("explication:closed.show", { defaultValue: "Afficher les fils fermés" })}
                     </Button>
                   </div>
+                  {showClosed && closedThreads.map(renderThread)}
                 </div>
               )}
-
-              {!isOpen && thread.dateFermeture && (
-                <div className="px-3 py-2 border-t bg-muted/10 text-[10px] text-muted-foreground flex items-center gap-1">
-                  <X className="h-3 w-3" /> {t("explication:ferme_le", { date: formatDateTime(thread.dateFermeture) })}
-                </div>
-              )}
-            </div>
+            </>
           );
-        })}
+        })()}
       </CardContent>
     </Card>
   );
