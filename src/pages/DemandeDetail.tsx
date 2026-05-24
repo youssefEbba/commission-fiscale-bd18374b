@@ -1023,10 +1023,15 @@ const DemandeDetail = () => {
                   <p className="text-xs text-amber-700 mt-1">{t("demandes:detail.reupload_banner.body")}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
+        )}
+
+        {selected && (
+          <DiscussionCommissionPanel contexte="CORRECTION" dossierId={selected.id} dossierStatut={selected.statut as string} />
         )}
       </div>
+
 
       {/* Upload Dialog */}
       <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) setUploadMessage(""); }}>
