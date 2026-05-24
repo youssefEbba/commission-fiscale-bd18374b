@@ -15,6 +15,7 @@
     "TRANSFERT_STATUT_CHANGE": "تحويل اعتماد",
     "DEMANDE_MISE_EN_PLACE_CHANGE": "وضع الاعتماد",
     "MODIFICATION_STATUT_CHANGE": "تعديل",
-    "GED_DOCUMENT_CHANGE": "وثيقة GED"
+    "GED_DOCUMENT_CHANGE": "وثيقة GED",
+    "DEMANDE_EXPLICATION": "طلب توضيح"
   }
 }
