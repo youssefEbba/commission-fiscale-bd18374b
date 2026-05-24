@@ -12,17 +12,18 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { tNotificationType } from "@/i18n/enums";
 
-const NOTIF_TYPE_ROUTES: Record<string, string> = {
-  CORRECTION_STATUT_CHANGE: "/dashboard/demandes",
-  CORRECTION_DECISION: "/dashboard/demandes",
-  REFERENTIEL_STATUT_CHANGE: "/dashboard/referentiels",
-  CONVENTION_STATUT_CHANGE: "/dashboard/conventions",
-  CERTIFICAT_STATUT_CHANGE: "/dashboard/certificats",
-  UTILISATION_STATUT_CHANGE: "/dashboard/utilisations",
-  TRANSFERT_STATUT_CHANGE: "/dashboard/transferts",
-  MODIFICATION_STATUT_CHANGE: "/dashboard/modifications",
-  DEMANDE_MISE_EN_PLACE_CHANGE: "/dashboard/demandes-mise-en-place",
-  GED_DOCUMENT_CHANGE: "/dashboard/ged-dossiers",
+const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
+  CORRECTION_STATUT_CHANGE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  CORRECTION_DECISION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  REFERENTIEL_STATUT_CHANGE: () => "/dashboard/referentiels",
+  CONVENTION_STATUT_CHANGE: (id) => (id ? `/dashboard/conventions/${id}` : "/dashboard/conventions"),
+  CERTIFICAT_STATUT_CHANGE: (id) => (id ? `/dashboard/certificats/${id}` : "/dashboard/certificats"),
+  UTILISATION_STATUT_CHANGE: (id) => (id ? `/dashboard/utilisations/${id}` : "/dashboard/utilisations"),
+  TRANSFERT_STATUT_CHANGE: (id) => (id ? `/dashboard/transferts/${id}` : "/dashboard/transferts"),
+  MODIFICATION_STATUT_CHANGE: () => "/dashboard/modifications",
+  DEMANDE_MISE_EN_PLACE_CHANGE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
+  GED_DOCUMENT_CHANGE: () => "/dashboard/ged-dossiers",
+  DEMANDE_EXPLICATION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
 };
 
 function NotifItem({ notif, onRead }: { notif: NotificationDto; onRead: (n: NotificationDto) => void }) {
@@ -63,10 +64,10 @@ export default function NotificationBell() {
 
   const handleRead = (notif: NotificationDto) => {
     if (!notif.read) markRead(notif.id);
-    const route = NOTIF_TYPE_ROUTES[notif.type];
-    if (route) {
+    const routeFn = NOTIF_TYPE_ROUTES[notif.type];
+    if (routeFn) {
       setOpen(false);
-      navigate(route);
+      navigate(routeFn(notif.entityId));
     }
   };
 
