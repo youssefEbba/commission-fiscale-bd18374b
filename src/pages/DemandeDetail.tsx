@@ -27,6 +27,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
+import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
