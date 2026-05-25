@@ -372,7 +372,7 @@ const GedConfiguration = () => {
                         <TableBody>
                           {sorted.map((req) => (
                             <TableRow key={req.id}>
-                              <TableCell className="font-medium">{tTypeDocument(req.typeDocument)}</TableCell>
+                              <TableCell className="font-medium">{labelOfCode(req.typeDocument)}</TableCell>
                               <TableCell>
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
                                   {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
