@@ -196,17 +196,33 @@ const GedConfiguration = () => {
   };
 
   const handleSubmit = () => {
-    if (!typeDocument.trim()) {
+    let codeFinal = typeDocument.trim();
+    let libelleInline: string | undefined;
+
+    if (!editItem && newTypeMode) {
+      codeFinal = newTypeCode.trim().toUpperCase();
+      libelleInline = newTypeLibelle.trim();
+      if (!codeFinal || !CODE_PATTERN.test(codeFinal)) {
+        toast({ title: t("ged:config.toast.code_invalid_title"), description: t("ged:config.toast.code_invalid_desc"), variant: "destructive" });
+        return;
+      }
+      if (!libelleInline) {
+        toast({ title: t("ged:config.toast.libelle_required_title"), variant: "destructive" });
+        return;
+      }
+    }
+
+    if (!codeFinal) {
       toast({ title: t("ged:config.toast.type_required_title"), variant: "destructive" });
       return;
     }
-    if (!editItem || editItem.typeDocument !== typeDocument.trim()) {
+    if (!editItem || editItem.typeDocument !== codeFinal) {
       const existing = queriesByProcessus[dialogProcessus]?.data || [];
-      const duplicate = existing.find((r) => r.typeDocument === typeDocument.trim());
+      const duplicate = existing.find((r) => r.typeDocument === codeFinal);
       if (duplicate) {
         toast({
           title: t("ged:config.toast.duplicate_title"),
-          description: t("ged:config.toast.duplicate_desc", { type: tTypeDocument(typeDocument.trim()) }),
+          description: t("ged:config.toast.duplicate_desc", { type: labelOfCode(codeFinal) }),
           variant: "destructive",
         });
         return;
@@ -214,7 +230,9 @@ const GedConfiguration = () => {
     }
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
-      typeDocument: typeDocument.trim(),
+      typeDocument: codeFinal,
+      codeDocument: codeFinal,
+      libelle: libelleInline,
       obligatoire,
       typesAutorises,
       description: description.trim(),
@@ -226,6 +244,7 @@ const GedConfiguration = () => {
       createMutation.mutate(payload);
     }
   };
+
 
   const toggleFormat = (format: FormatFichier) => {
     setTypesAutorises((prev) =>
