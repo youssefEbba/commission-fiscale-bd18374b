@@ -291,9 +291,9 @@ const GedConfiguration = () => {
       toast({ title: t("ged:config.toast.type_required_title"), variant: "destructive" });
       return;
     }
-    if (!editItem || editItem.typeDocument !== codeFinal) {
+    if (!editItem || (editItem.codeDocument || editItem.typeDocument) !== codeFinal) {
       const existing = queriesByProcessus[dialogProcessus]?.data || [];
-      const duplicate = existing.find((r) => r.typeDocument === codeFinal);
+      const duplicate = existing.find((r) => (r.codeDocument || r.typeDocument) === codeFinal);
       if (duplicate) {
         toast({
           title: t("ged:config.toast.duplicate_title"),
