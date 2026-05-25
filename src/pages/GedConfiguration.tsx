@@ -159,7 +159,79 @@ const GedConfiguration = () => {
     onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
   });
 
+  // Catalogue mutations
+  const catCreateMutation = useMutation({
+    mutationFn: (data: { code: string; libelle: string; libelleAr?: string | null; actif?: boolean }) =>
+      referentielTypeDocumentApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referentiel-types-document"] });
+      toast({ title: t("ged:config.toast.cat_added") });
+      closeCatalogueDialog();
+    },
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+  });
+  const catUpdateMutation = useMutation({
+    mutationFn: ({ code, data }: { code: string; data: Partial<{ libelle: string; libelleAr?: string | null; actif?: boolean }> }) =>
+      referentielTypeDocumentApi.update(code, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referentiel-types-document"] });
+      toast({ title: t("ged:config.toast.cat_modified") });
+      closeCatalogueDialog();
+    },
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+  });
+  const catDeleteMutation = useMutation({
+    mutationFn: (code: string) => referentielTypeDocumentApi.delete(code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referentiel-types-document"] });
+      toast({ title: t("ged:config.toast.cat_deleted") });
+    },
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+  });
+
+  const closeCatalogueDialog = () => {
+    setCatalogueDialogOpen(false);
+    setCatalogueEdit(null);
+    setCatCode("");
+    setCatLibelle("");
+    setCatLibelleAr("");
+    setCatActif(true);
+  };
+  const openCatalogueCreate = () => {
+    closeCatalogueDialog();
+    setCatalogueDialogOpen(true);
+  };
+  const openCatalogueEdit = (item: ReferentielTypeDocumentDto) => {
+    setCatalogueEdit(item);
+    setCatCode(item.code);
+    setCatLibelle(item.libelle);
+    setCatLibelleAr(item.libelleAr || "");
+    setCatActif(item.actif);
+    setCatalogueDialogOpen(true);
+  };
+  const submitCatalogue = () => {
+    const libelle = catLibelle.trim();
+    if (!libelle) {
+      toast({ title: t("ged:config.toast.libelle_required_title"), variant: "destructive" });
+      return;
+    }
+    if (catalogueEdit) {
+      catUpdateMutation.mutate({
+        code: catalogueEdit.code,
+        data: { libelle, libelleAr: catLibelleAr.trim() || null, actif: catActif },
+      });
+      return;
+    }
+    const code = catCode.trim().toUpperCase();
+    if (!code || !CODE_PATTERN.test(code)) {
+      toast({ title: t("ged:config.toast.code_invalid_title"), description: t("ged:config.toast.code_invalid_desc"), variant: "destructive" });
+      return;
+    }
+    catCreateMutation.mutate({ code, libelle, libelleAr: catLibelleAr.trim() || null, actif: catActif });
+  };
+
   const closeDialog = () => {
+
     setDialogOpen(false);
     setEditItem(null);
     setTypeDocument("");
