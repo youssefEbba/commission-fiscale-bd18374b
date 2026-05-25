@@ -262,7 +262,7 @@ const GedConfiguration = () => {
   const openEdit = (item: DocumentRequirementDto) => {
     setEditItem(item);
     setDialogProcessus(item.processus as ProcessusType);
-    setTypeDocument(item.typeDocument);
+    setTypeDocument(item.codeDocument || item.typeDocument || "");
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
     setDescription(item.description || "");
@@ -291,9 +291,9 @@ const GedConfiguration = () => {
       toast({ title: t("ged:config.toast.type_required_title"), variant: "destructive" });
       return;
     }
-    if (!editItem || editItem.typeDocument !== codeFinal) {
+    if (!editItem || (editItem.codeDocument || editItem.typeDocument) !== codeFinal) {
       const existing = queriesByProcessus[dialogProcessus]?.data || [];
-      const duplicate = existing.find((r) => r.typeDocument === codeFinal);
+      const duplicate = existing.find((r) => (r.codeDocument || r.typeDocument) === codeFinal);
       if (duplicate) {
         toast({
           title: t("ged:config.toast.duplicate_title"),
@@ -469,7 +469,7 @@ const GedConfiguration = () => {
                         <TableBody>
                           {sorted.map((req) => (
                             <TableRow key={req.id}>
-                              <TableCell className="font-medium">{labelOfCode(req.typeDocument)}</TableCell>
+                              <TableCell className="font-medium">{req.libelle || labelOfCode(req.codeDocument || req.typeDocument)}</TableCell>
                               <TableCell>
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
                                   {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
