@@ -168,7 +168,12 @@ const GedConfiguration = () => {
     setDescription("");
     setOrdreAffichage(1);
     setDialogSousTag("");
+    setNewTypeMode(false);
+    setNewTypeCode("");
+    setNewTypeLibelle("");
+    setNewTypeLibelleAr("");
   };
+
 
   const openCreate = (processus: ProcessusType) => {
     closeDialog();
