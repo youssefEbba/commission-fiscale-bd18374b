@@ -1574,7 +1574,9 @@ export type FormatFichier = "PDF" | "WORD" | "EXCEL" | "IMAGE";
 export interface DocumentRequirementDto {
   id: number;
   processus: ProcessusType;
-  typeDocument: string;
+  typeDocument?: string;
+  codeDocument?: string;
+  libelle?: string;
   obligatoire: boolean;
   typesAutorises: FormatFichier[];
   description?: string;
