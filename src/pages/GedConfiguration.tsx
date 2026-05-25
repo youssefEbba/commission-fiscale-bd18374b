@@ -420,17 +420,70 @@ const GedConfiguration = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("ged:config.dialog.type_label")}</Label>
-              <Select value={typeDocument} onValueChange={setTypeDocument}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("ged:config.dialog.type_placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_DOCUMENT_CODES.map((code) => (
-                    <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between gap-2">
+                <Label>{t("ged:config.dialog.type_label")}</Label>
+                {!editItem && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setNewTypeMode((v) => !v);
+                      setTypeDocument("");
+                      setNewTypeCode("");
+                      setNewTypeLibelle("");
+                      setNewTypeLibelleAr("");
+                    }}
+                  >
+                    {newTypeMode ? t("ged:config.dialog.pick_existing") : t("ged:config.dialog.new_type")}
+                  </Button>
+                )}
+              </div>
+              {!newTypeMode || editItem ? (
+                <Select value={typeDocument} onValueChange={setTypeDocument} disabled={!!editItem}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("ged:config.dialog.type_placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {referentielActif.length === 0 && (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">{t("ged:config.dialog.no_type_yet")}</div>
+                    )}
+                    {referentielActif.map((rt) => (
+                      <SelectItem key={rt.code} value={rt.code}>
+                        {rt.libelle} <span className="text-xs text-muted-foreground ms-1">({rt.code})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="space-y-2 rounded-md border border-dashed p-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("ged:config.dialog.new_type_code")}</Label>
+                    <Input
+                      value={newTypeCode}
+                      onChange={(e) => setNewTypeCode(e.target.value.toUpperCase())}
+                      placeholder="EX: CERTIFICAT_UTILISATION_DOUANE"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("ged:config.dialog.new_type_libelle")}</Label>
+                    <Input
+                      value={newTypeLibelle}
+                      onChange={(e) => setNewTypeLibelle(e.target.value)}
+                      placeholder={t("ged:config.dialog.new_type_libelle_placeholder")}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("ged:config.dialog.new_type_libelle_ar")}</Label>
+                    <Input
+                      value={newTypeLibelleAr}
+                      onChange={(e) => setNewTypeLibelleAr(e.target.value)}
+                      dir="rtl"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("ged:config.dialog.new_type_help")}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Label>{t("ged:config.dialog.required_label")}</Label>
