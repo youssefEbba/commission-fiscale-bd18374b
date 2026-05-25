@@ -262,7 +262,7 @@ const GedConfiguration = () => {
   const openEdit = (item: DocumentRequirementDto) => {
     setEditItem(item);
     setDialogProcessus(item.processus as ProcessusType);
-    setTypeDocument(item.typeDocument);
+    setTypeDocument(item.codeDocument || item.typeDocument || "");
     setObligatoire(item.obligatoire);
     setTypesAutorises(item.typesAutorises || []);
     setDescription(item.description || "");
