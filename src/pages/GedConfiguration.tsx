@@ -337,7 +337,76 @@ const GedConfiguration = () => {
           </p>
         </div>
 
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg text-primary">{t("ged:config.catalogue.title")}</CardTitle>
+            </div>
+            <Button size="sm" onClick={openCatalogueCreate}>
+              <Plus className="h-4 w-4 me-1" /> {t("ged:config.catalogue.add")}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">{t("ged:config.catalogue.subtitle")}</p>
+            {referentielQuery.isLoading ? (
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("ged:config.loading")}</p>
+            ) : referentiel.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("ged:config.catalogue.empty")}</p>
+            ) : (
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[220px]">{t("ged:config.catalogue.code")}</TableHead>
+                      <TableHead className="min-w-[260px]">{t("ged:config.catalogue.libelle")}</TableHead>
+                      <TableHead className="min-w-[160px]">{t("ged:config.catalogue.libelle_ar")}</TableHead>
+                      <TableHead className="w-[100px]">{t("ged:config.catalogue.actif")}</TableHead>
+                      <TableHead className="w-[100px]">{t("ged:config.table.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...referentiel].sort((a, b) => a.code.localeCompare(b.code)).map((rt) => (
+                      <TableRow key={rt.code}>
+                        <TableCell className="font-mono text-xs">{rt.code}</TableCell>
+                        <TableCell>{rt.libelle}</TableCell>
+                        <TableCell dir="rtl" className="text-sm">{rt.libelleAr || "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={rt.actif ? "default" : "secondary"}>
+                            {rt.actif ? t("ged:config.yes") : t("ged:config.no")}
+                          </Badge>
+                          {rt.systeme && (
+                            <Badge variant="outline" className="ms-1 text-[10px]">{t("ged:config.catalogue.systeme")}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openCatalogueEdit(rt)} aria-label={t("ged:config.dialog.submit_edit")}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={rt.systeme}
+                              onClick={() => catDeleteMutation.mutate(rt.code)}
+                              className="text-destructive hover:text-destructive disabled:opacity-30"
+                              aria-label={t("ged:config.toast.deleted")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="space-y-6">
+
           {PROCESSUS_SECTIONS.map((section) => {
             const q = queriesByProcessus[section.processus];
             if (!q) return null;
