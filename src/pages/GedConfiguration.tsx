@@ -46,6 +46,9 @@ const GedConfiguration = () => {
   const [dialogSousTag, setDialogSousTag] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [catalogueExpanded, setCatalogueExpanded] = useState(false);
+  const toggleSection = (key: string) => setExpandedSections((p) => ({ ...p, [key]: !p[key] }));
 
   const [typeDocument, setTypeDocument] = useState("");
   const [newTypeMode, setNewTypeMode] = useState(false);
