@@ -89,6 +89,9 @@
     "add_document": "إضافة وثيقة",
     "loading": "جارٍ التحميل…",
     "empty": "لا توجد أي وثيقة مُعدَّة.",
+    "show_all": "عرض الكل ({{count}})",
+    "hide": "إخفاء",
+    "items_count": "{{count}} وثيقة مُعدَّة",
     "table": {
       "document": "الوثيقة",
       "required": "إلزامية ؟",

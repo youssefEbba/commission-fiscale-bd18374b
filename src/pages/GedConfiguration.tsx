@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto } from "@/lib/api";
 import { tTypeDocument } from "@/i18n/enums";
-import { Plus, Pencil, Trash2, X, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 
 type ProcessusSectionConfig = { key: string; processus: ProcessusType };
 
@@ -46,6 +46,9 @@ const GedConfiguration = () => {
   const [dialogSousTag, setDialogSousTag] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [catalogueExpanded, setCatalogueExpanded] = useState(false);
+  const toggleSection = (key: string) => setExpandedSections((p) => ({ ...p, [key]: !p[key] }));
 
   const [typeDocument, setTypeDocument] = useState("");
   const [newTypeMode, setNewTypeMode] = useState(false);
@@ -342,11 +345,22 @@ const GedConfiguration = () => {
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg text-primary">{t("ged:config.catalogue.title")}</CardTitle>
+              <Badge variant="secondary" className="ms-2">{referentiel.length}</Badge>
             </div>
-            <Button size="sm" onClick={openCatalogueCreate}>
-              <Plus className="h-4 w-4 me-1" /> {t("ged:config.catalogue.add")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setCatalogueExpanded((v) => !v)}>
+                {catalogueExpanded ? (
+                  <><ChevronUp className="h-4 w-4 me-1" />{t("ged:config.hide")}</>
+                ) : (
+                  <><ChevronDown className="h-4 w-4 me-1" />{t("ged:config.show_all", { count: referentiel.length })}</>
+                )}
+              </Button>
+              <Button size="sm" onClick={openCatalogueCreate}>
+                <Plus className="h-4 w-4 me-1" /> {t("ged:config.catalogue.add")}
+              </Button>
+            </div>
           </CardHeader>
+          {catalogueExpanded && (
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">{t("ged:config.catalogue.subtitle")}</p>
             {referentielQuery.isLoading ? (
@@ -403,6 +417,7 @@ const GedConfiguration = () => {
               </div>
             )}
           </CardContent>
+          )}
         </Card>
 
         <div className="space-y-6">
@@ -414,13 +429,26 @@ const GedConfiguration = () => {
             return (
               <Card key={section.key}>
                 <CardHeader className="flex flex-row items-center justify-between pb-4">
-                  <CardTitle className="text-lg text-primary">
-                    {t(`ged:config.modules.${section.processus}`)}
-                  </CardTitle>
-                  <Button size="sm" onClick={() => openCreate(section.processus)}>
-                    <Plus className="h-4 w-4 me-1" /> {t("ged:config.add_document")}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg text-primary">
+                      {t(`ged:config.modules.${section.processus}`)}
+                    </CardTitle>
+                    <Badge variant="secondary" className="ms-2">{sorted.length}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => toggleSection(section.key)} disabled={sorted.length === 0}>
+                      {expandedSections[section.key] ? (
+                        <><ChevronUp className="h-4 w-4 me-1" />{t("ged:config.hide")}</>
+                      ) : (
+                        <><ChevronDown className="h-4 w-4 me-1" />{t("ged:config.show_all", { count: sorted.length })}</>
+                      )}
+                    </Button>
+                    <Button size="sm" onClick={() => openCreate(section.processus)}>
+                      <Plus className="h-4 w-4 me-1" /> {t("ged:config.add_document")}
+                    </Button>
+                  </div>
                 </CardHeader>
+                {expandedSections[section.key] && (
                 <CardContent>
                   {q.isLoading ? (
                     <p className="text-muted-foreground text-sm py-8 text-center">{t("ged:config.loading")}</p>
@@ -476,6 +504,7 @@ const GedConfiguration = () => {
                     </div>
                   )}
                 </CardContent>
+                )}
               </Card>
             );
           })}
