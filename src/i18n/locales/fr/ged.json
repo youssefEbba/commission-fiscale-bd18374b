@@ -89,6 +89,9 @@
     "add_document": "Ajouter un document",
     "loading": "Chargement…",
     "empty": "Aucun document configuré.",
+    "show_all": "Voir tous ({{count}})",
+    "hide": "Masquer",
+    "items_count": "{{count}} document(s) configuré(s)",
     "table": {
       "document": "DOCUMENT",
       "required": "OBLIGATOIRE ?",
