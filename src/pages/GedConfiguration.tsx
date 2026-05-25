@@ -417,6 +417,7 @@ const GedConfiguration = () => {
               </div>
             )}
           </CardContent>
+          )}
         </Card>
 
         <div className="space-y-6">
