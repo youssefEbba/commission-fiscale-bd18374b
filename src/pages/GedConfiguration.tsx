@@ -597,6 +597,49 @@ const GedConfiguration = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={catalogueDialogOpen} onOpenChange={(o) => !o && closeCatalogueDialog()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {catalogueEdit ? t("ged:config.catalogue.edit_title") : t("ged:config.catalogue.create_title")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("ged:config.catalogue.code")}</Label>
+              <Input
+                value={catCode}
+                disabled={!!catalogueEdit}
+                onChange={(e) => setCatCode(e.target.value.toUpperCase())}
+                placeholder="EX: CERTIFICAT_UTILISATION_DOUANE"
+              />
+              {!catalogueEdit && (
+                <p className="text-xs text-muted-foreground">{t("ged:config.catalogue.code_help")}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>{t("ged:config.catalogue.libelle")}</Label>
+              <Input value={catLibelle} onChange={(e) => setCatLibelle(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("ged:config.catalogue.libelle_ar")}</Label>
+              <Input value={catLibelleAr} onChange={(e) => setCatLibelleAr(e.target.value)} dir="rtl" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label>{t("ged:config.catalogue.actif")}</Label>
+              <Switch checked={catActif} onCheckedChange={setCatActif} />
+              <span className="text-sm text-muted-foreground">{catActif ? t("ged:config.yes") : t("ged:config.no")}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeCatalogueDialog}>{t("ged:config.dialog.cancel")}</Button>
+            <Button onClick={submitCatalogue} disabled={catCreateMutation.isPending || catUpdateMutation.isPending}>
+              {catalogueEdit ? t("ged:config.dialog.submit_edit") : t("ged:config.dialog.submit_create")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
