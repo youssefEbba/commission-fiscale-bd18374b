@@ -345,11 +345,22 @@ const GedConfiguration = () => {
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg text-primary">{t("ged:config.catalogue.title")}</CardTitle>
+              <Badge variant="secondary" className="ms-2">{referentiel.length}</Badge>
             </div>
-            <Button size="sm" onClick={openCatalogueCreate}>
-              <Plus className="h-4 w-4 me-1" /> {t("ged:config.catalogue.add")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setCatalogueExpanded((v) => !v)}>
+                {catalogueExpanded ? (
+                  <><ChevronUp className="h-4 w-4 me-1" />{t("ged:config.hide")}</>
+                ) : (
+                  <><ChevronDown className="h-4 w-4 me-1" />{t("ged:config.show_all", { count: referentiel.length })}</>
+                )}
+              </Button>
+              <Button size="sm" onClick={openCatalogueCreate}>
+                <Plus className="h-4 w-4 me-1" /> {t("ged:config.catalogue.add")}
+              </Button>
+            </div>
           </CardHeader>
+          {catalogueExpanded && (
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">{t("ged:config.catalogue.subtitle")}</p>
             {referentielQuery.isLoading ? (
