@@ -14,9 +14,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier } from "@/lib/api";
+import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto } from "@/lib/api";
 import { tTypeDocument } from "@/i18n/enums";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen } from "lucide-react";
 
 type ProcessusSectionConfig = { key: string; processus: ProcessusType };
 
@@ -35,30 +35,7 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
 
 const FORMAT_VALUES: FormatFichier[] = ["WORD", "EXCEL", "IMAGE", "PDF"];
 
-// Liste des codes "type document" pilotés par la GED (la traduction du libellé
-// est faite via tTypeDocument — voir `enums.type_document.*`).
-const TYPE_DOCUMENT_CODES: string[] = [
-  "OFFRE_CORRIGEE", "LETTRE_SAISINE", "PV_OUVERTURE", "ATTESTATION_FISCALE",
-  "OFFRE_FINANCIERE", "TABLEAU_MODELE", "DAO_DQE", "LISTE_ITEMS", "DAO_ANNOTE",
-  "CERTIFICAT_VISITE_DOUANE", "CERTIFICAT_CREDIT_IMPOTS_SYDONIA",
-  "LETTRE_DEMANDE_CREDIT_IMPOTS", "DECLARATION_TVA", "ORDRE_TRANSIT",
-  "IMAGE_DECLARATION_DOUANE", "DEVIS", "LETTRE_DEMANDE_MISE_EN_PLACE_CI",
-  "LETTRE_NOTIFICATION_CONTRAT", "CONTRAT", "CERTIFICAT_NIF",
-  "LETTRE_CORRECTION", "LETTRE_ADOPTION", "BULLETIN_LIQUIDATION",
-  "DECLARATION_DOUANE", "FACTURE", "CONNAISSEMENT", "DECOMPTE",
-  "AUTRE_DOCUMENT", "CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "DEMANDE_MOTIVEE",
-  "DECLARATION_CLOTURE", "JUSTIFICATIFS_CLOTURE_DOUANE",
-  "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", "LETTRE_SOUS_TRAITANCE",
-  "CONVENTION_CONTRAT", "CONVENTION_JOIGNED_DOCUMENT", "AVENANT",
-  "ACCORD_FINANCEMENT", "ANNEXE",
-  "PV_ADJUDICATION", "AVIS_ATTRIBUTION", "CONTRAT_SIGNE",
-  "CERTIFICAT_CREDIT_IMPOTS", "DEMANDE_UTILISATION",
-  "DEMANDE_MOTIVEE_TRANSFERT", "DECLARATION_CLOTURE_DOUANE",
-  "NOTE_SERVICE", "JUSTIFICATIONS_LEGALES", "LETTRES_MOTIVEES",
-  "AVENANT_CONTRAT", "LETTRES_AUTORITE_CONTRACTANTE",
-  "DETAIL_CORRECTIONS_NECESSAIRES", "DOCUMENTS_OFFICIELS",
-  "DECISION_COMMISSION", "LISTE_CREDITS_A_CLOTURER",
-];
+const CODE_PATTERN = /^[A-Z0-9_]+$/;
 
 const GedConfiguration = () => {
   const { t } = useTranslation();
@@ -71,10 +48,37 @@ const GedConfiguration = () => {
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
 
   const [typeDocument, setTypeDocument] = useState("");
+  const [newTypeMode, setNewTypeMode] = useState(false);
+  const [newTypeCode, setNewTypeCode] = useState("");
+  const [newTypeLibelle, setNewTypeLibelle] = useState("");
+  const [newTypeLibelleAr, setNewTypeLibelleAr] = useState("");
   const [obligatoire, setObligatoire] = useState(true);
   const [typesAutorises, setTypesAutorises] = useState<FormatFichier[]>(["PDF", "WORD", "EXCEL", "IMAGE"]);
   const [description, setDescription] = useState("");
   const [ordreAffichage, setOrdreAffichage] = useState(1);
+
+  // Catalogue
+  const referentielQuery = useQuery({
+    queryKey: ["referentiel-types-document"],
+    queryFn: () => referentielTypeDocumentApi.list(false),
+  });
+  const referentiel: ReferentielTypeDocumentDto[] = referentielQuery.data || [];
+  const referentielActif = referentiel.filter((r) => r.actif);
+  const labelOfCode = (code?: string | null) => {
+    if (!code) return "—";
+    const found = referentiel.find((r) => r.code === code);
+    if (found?.libelle) return found.libelle;
+    const enumLabel = tTypeDocument(code);
+    return enumLabel && enumLabel !== "—" ? enumLabel : code;
+  };
+
+  const [catalogueDialogOpen, setCatalogueDialogOpen] = useState(false);
+  const [catalogueEdit, setCatalogueEdit] = useState<ReferentielTypeDocumentDto | null>(null);
+  const [catCode, setCatCode] = useState("");
+  const [catLibelle, setCatLibelle] = useState("");
+  const [catLibelleAr, setCatLibelleAr] = useState("");
+  const [catActif, setCatActif] = useState(true);
+
 
   const conventionReqQuery = useQuery({
     queryKey: ["document-requirements", "CONVENTION"],
@@ -155,7 +159,79 @@ const GedConfiguration = () => {
     onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
   });
 
+  // Catalogue mutations
+  const catCreateMutation = useMutation({
+    mutationFn: (data: { code: string; libelle: string; libelleAr?: string | null; actif?: boolean }) =>
+      referentielTypeDocumentApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referentiel-types-document"] });
+      toast({ title: t("ged:config.toast.cat_added") });
+      closeCatalogueDialog();
+    },
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+  });
+  const catUpdateMutation = useMutation({
+    mutationFn: ({ code, data }: { code: string; data: Partial<{ libelle: string; libelleAr?: string | null; actif?: boolean }> }) =>
+      referentielTypeDocumentApi.update(code, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referentiel-types-document"] });
+      toast({ title: t("ged:config.toast.cat_modified") });
+      closeCatalogueDialog();
+    },
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+  });
+  const catDeleteMutation = useMutation({
+    mutationFn: (code: string) => referentielTypeDocumentApi.delete(code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["referentiel-types-document"] });
+      toast({ title: t("ged:config.toast.cat_deleted") });
+    },
+    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+  });
+
+  const closeCatalogueDialog = () => {
+    setCatalogueDialogOpen(false);
+    setCatalogueEdit(null);
+    setCatCode("");
+    setCatLibelle("");
+    setCatLibelleAr("");
+    setCatActif(true);
+  };
+  const openCatalogueCreate = () => {
+    closeCatalogueDialog();
+    setCatalogueDialogOpen(true);
+  };
+  const openCatalogueEdit = (item: ReferentielTypeDocumentDto) => {
+    setCatalogueEdit(item);
+    setCatCode(item.code);
+    setCatLibelle(item.libelle);
+    setCatLibelleAr(item.libelleAr || "");
+    setCatActif(item.actif);
+    setCatalogueDialogOpen(true);
+  };
+  const submitCatalogue = () => {
+    const libelle = catLibelle.trim();
+    if (!libelle) {
+      toast({ title: t("ged:config.toast.libelle_required_title"), variant: "destructive" });
+      return;
+    }
+    if (catalogueEdit) {
+      catUpdateMutation.mutate({
+        code: catalogueEdit.code,
+        data: { libelle, libelleAr: catLibelleAr.trim() || null, actif: catActif },
+      });
+      return;
+    }
+    const code = catCode.trim().toUpperCase();
+    if (!code || !CODE_PATTERN.test(code)) {
+      toast({ title: t("ged:config.toast.code_invalid_title"), description: t("ged:config.toast.code_invalid_desc"), variant: "destructive" });
+      return;
+    }
+    catCreateMutation.mutate({ code, libelle, libelleAr: catLibelleAr.trim() || null, actif: catActif });
+  };
+
   const closeDialog = () => {
+
     setDialogOpen(false);
     setEditItem(null);
     setTypeDocument("");
@@ -164,7 +240,12 @@ const GedConfiguration = () => {
     setDescription("");
     setOrdreAffichage(1);
     setDialogSousTag("");
+    setNewTypeMode(false);
+    setNewTypeCode("");
+    setNewTypeLibelle("");
+    setNewTypeLibelleAr("");
   };
+
 
   const openCreate = (processus: ProcessusType) => {
     closeDialog();
@@ -187,17 +268,33 @@ const GedConfiguration = () => {
   };
 
   const handleSubmit = () => {
-    if (!typeDocument.trim()) {
+    let codeFinal = typeDocument.trim();
+    let libelleInline: string | undefined;
+
+    if (!editItem && newTypeMode) {
+      codeFinal = newTypeCode.trim().toUpperCase();
+      libelleInline = newTypeLibelle.trim();
+      if (!codeFinal || !CODE_PATTERN.test(codeFinal)) {
+        toast({ title: t("ged:config.toast.code_invalid_title"), description: t("ged:config.toast.code_invalid_desc"), variant: "destructive" });
+        return;
+      }
+      if (!libelleInline) {
+        toast({ title: t("ged:config.toast.libelle_required_title"), variant: "destructive" });
+        return;
+      }
+    }
+
+    if (!codeFinal) {
       toast({ title: t("ged:config.toast.type_required_title"), variant: "destructive" });
       return;
     }
-    if (!editItem || editItem.typeDocument !== typeDocument.trim()) {
+    if (!editItem || editItem.typeDocument !== codeFinal) {
       const existing = queriesByProcessus[dialogProcessus]?.data || [];
-      const duplicate = existing.find((r) => r.typeDocument === typeDocument.trim());
+      const duplicate = existing.find((r) => r.typeDocument === codeFinal);
       if (duplicate) {
         toast({
           title: t("ged:config.toast.duplicate_title"),
-          description: t("ged:config.toast.duplicate_desc", { type: tTypeDocument(typeDocument.trim()) }),
+          description: t("ged:config.toast.duplicate_desc", { type: labelOfCode(codeFinal) }),
           variant: "destructive",
         });
         return;
@@ -205,7 +302,9 @@ const GedConfiguration = () => {
     }
     const payload: CreateDocumentRequirementRequest = {
       processus: dialogProcessus,
-      typeDocument: typeDocument.trim(),
+      typeDocument: codeFinal,
+      codeDocument: codeFinal,
+      libelle: libelleInline,
       obligatoire,
       typesAutorises,
       description: description.trim(),
@@ -217,6 +316,7 @@ const GedConfiguration = () => {
       createMutation.mutate(payload);
     }
   };
+
 
   const toggleFormat = (format: FormatFichier) => {
     setTypesAutorises((prev) =>
@@ -237,7 +337,76 @@ const GedConfiguration = () => {
           </p>
         </div>
 
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg text-primary">{t("ged:config.catalogue.title")}</CardTitle>
+            </div>
+            <Button size="sm" onClick={openCatalogueCreate}>
+              <Plus className="h-4 w-4 me-1" /> {t("ged:config.catalogue.add")}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">{t("ged:config.catalogue.subtitle")}</p>
+            {referentielQuery.isLoading ? (
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("ged:config.loading")}</p>
+            ) : referentiel.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("ged:config.catalogue.empty")}</p>
+            ) : (
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[220px]">{t("ged:config.catalogue.code")}</TableHead>
+                      <TableHead className="min-w-[260px]">{t("ged:config.catalogue.libelle")}</TableHead>
+                      <TableHead className="min-w-[160px]">{t("ged:config.catalogue.libelle_ar")}</TableHead>
+                      <TableHead className="w-[100px]">{t("ged:config.catalogue.actif")}</TableHead>
+                      <TableHead className="w-[100px]">{t("ged:config.table.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...referentiel].sort((a, b) => a.code.localeCompare(b.code)).map((rt) => (
+                      <TableRow key={rt.code}>
+                        <TableCell className="font-mono text-xs">{rt.code}</TableCell>
+                        <TableCell>{rt.libelle}</TableCell>
+                        <TableCell dir="rtl" className="text-sm">{rt.libelleAr || "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={rt.actif ? "default" : "secondary"}>
+                            {rt.actif ? t("ged:config.yes") : t("ged:config.no")}
+                          </Badge>
+                          {rt.systeme && (
+                            <Badge variant="outline" className="ms-1 text-[10px]">{t("ged:config.catalogue.systeme")}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openCatalogueEdit(rt)} aria-label={t("ged:config.dialog.submit_edit")}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={rt.systeme}
+                              onClick={() => catDeleteMutation.mutate(rt.code)}
+                              className="text-destructive hover:text-destructive disabled:opacity-30"
+                              aria-label={t("ged:config.toast.deleted")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="space-y-6">
+
           {PROCESSUS_SECTIONS.map((section) => {
             const q = queriesByProcessus[section.processus];
             if (!q) return null;
@@ -272,7 +441,7 @@ const GedConfiguration = () => {
                         <TableBody>
                           {sorted.map((req) => (
                             <TableRow key={req.id}>
-                              <TableCell className="font-medium">{tTypeDocument(req.typeDocument)}</TableCell>
+                              <TableCell className="font-medium">{labelOfCode(req.typeDocument)}</TableCell>
                               <TableCell>
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
                                   {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
@@ -320,17 +489,70 @@ const GedConfiguration = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("ged:config.dialog.type_label")}</Label>
-              <Select value={typeDocument} onValueChange={setTypeDocument}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("ged:config.dialog.type_placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_DOCUMENT_CODES.map((code) => (
-                    <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between gap-2">
+                <Label>{t("ged:config.dialog.type_label")}</Label>
+                {!editItem && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setNewTypeMode((v) => !v);
+                      setTypeDocument("");
+                      setNewTypeCode("");
+                      setNewTypeLibelle("");
+                      setNewTypeLibelleAr("");
+                    }}
+                  >
+                    {newTypeMode ? t("ged:config.dialog.pick_existing") : t("ged:config.dialog.new_type")}
+                  </Button>
+                )}
+              </div>
+              {!newTypeMode || editItem ? (
+                <Select value={typeDocument} onValueChange={setTypeDocument} disabled={!!editItem}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("ged:config.dialog.type_placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {referentielActif.length === 0 && (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">{t("ged:config.dialog.no_type_yet")}</div>
+                    )}
+                    {referentielActif.map((rt) => (
+                      <SelectItem key={rt.code} value={rt.code}>
+                        {rt.libelle} <span className="text-xs text-muted-foreground ms-1">({rt.code})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="space-y-2 rounded-md border border-dashed p-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("ged:config.dialog.new_type_code")}</Label>
+                    <Input
+                      value={newTypeCode}
+                      onChange={(e) => setNewTypeCode(e.target.value.toUpperCase())}
+                      placeholder="EX: CERTIFICAT_UTILISATION_DOUANE"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("ged:config.dialog.new_type_libelle")}</Label>
+                    <Input
+                      value={newTypeLibelle}
+                      onChange={(e) => setNewTypeLibelle(e.target.value)}
+                      placeholder={t("ged:config.dialog.new_type_libelle_placeholder")}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("ged:config.dialog.new_type_libelle_ar")}</Label>
+                    <Input
+                      value={newTypeLibelleAr}
+                      onChange={(e) => setNewTypeLibelleAr(e.target.value)}
+                      dir="rtl"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("ged:config.dialog.new_type_help")}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Label>{t("ged:config.dialog.required_label")}</Label>
@@ -371,6 +593,49 @@ const GedConfiguration = () => {
             <Button variant="outline" onClick={closeDialog}>{t("ged:config.dialog.cancel")}</Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
               {editItem ? t("ged:config.dialog.submit_edit") : t("ged:config.dialog.submit_create")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={catalogueDialogOpen} onOpenChange={(o) => !o && closeCatalogueDialog()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {catalogueEdit ? t("ged:config.catalogue.edit_title") : t("ged:config.catalogue.create_title")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("ged:config.catalogue.code")}</Label>
+              <Input
+                value={catCode}
+                disabled={!!catalogueEdit}
+                onChange={(e) => setCatCode(e.target.value.toUpperCase())}
+                placeholder="EX: CERTIFICAT_UTILISATION_DOUANE"
+              />
+              {!catalogueEdit && (
+                <p className="text-xs text-muted-foreground">{t("ged:config.catalogue.code_help")}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>{t("ged:config.catalogue.libelle")}</Label>
+              <Input value={catLibelle} onChange={(e) => setCatLibelle(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("ged:config.catalogue.libelle_ar")}</Label>
+              <Input value={catLibelleAr} onChange={(e) => setCatLibelleAr(e.target.value)} dir="rtl" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label>{t("ged:config.catalogue.actif")}</Label>
+              <Switch checked={catActif} onCheckedChange={setCatActif} />
+              <span className="text-sm text-muted-foreground">{catActif ? t("ged:config.yes") : t("ged:config.no")}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeCatalogueDialog}>{t("ged:config.dialog.cancel")}</Button>
+            <Button onClick={submitCatalogue} disabled={catCreateMutation.isPending || catUpdateMutation.isPending}>
+              {catalogueEdit ? t("ged:config.dialog.submit_edit") : t("ged:config.dialog.submit_create")}
             </Button>
           </DialogFooter>
         </DialogContent>

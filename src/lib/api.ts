@@ -1583,7 +1583,9 @@ export interface DocumentRequirementDto {
 
 export interface CreateDocumentRequirementRequest {
   processus: ProcessusType;
-  typeDocument: string;
+  typeDocument?: string;
+  codeDocument?: string;
+  libelle?: string; // création inline d'un nouveau type dans le référentiel
   obligatoire: boolean;
   typesAutorises: FormatFichier[];
   description?: string;
@@ -1599,6 +1601,35 @@ export const documentRequirementApi = {
     apiFetch<DocumentRequirementDto>(`/document-requirements/${id}`, { method: "PUT", body: data }),
   delete: (id: number) =>
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
+};
+
+// Référentiel des types de documents (catalogue global, paramétrable)
+export interface ReferentielTypeDocumentDto {
+  code: string;
+  libelle: string;
+  libelleAr?: string | null;
+  actif: boolean;
+  systeme?: boolean;
+}
+
+export interface CreateReferentielTypeDocumentRequest {
+  code: string;
+  libelle: string;
+  libelleAr?: string | null;
+  actif?: boolean;
+}
+
+export const referentielTypeDocumentApi = {
+  list: (actifOnly = false) =>
+    apiFetch<ReferentielTypeDocumentDto[]>(`/referentiel/types-document${actifOnly ? "?actif=true" : ""}`),
+  get: (code: string) =>
+    apiFetch<ReferentielTypeDocumentDto>(`/referentiel/types-document/${encodeURIComponent(code)}`),
+  create: (data: CreateReferentielTypeDocumentRequest) =>
+    apiFetch<ReferentielTypeDocumentDto>("/referentiel/types-document", { method: "POST", body: data }),
+  update: (code: string, data: Partial<CreateReferentielTypeDocumentRequest>) =>
+    apiFetch<ReferentielTypeDocumentDto>(`/referentiel/types-document/${encodeURIComponent(code)}`, { method: "PUT", body: data }),
+  delete: (code: string) =>
+    apiFetch<void>(`/referentiel/types-document/${encodeURIComponent(code)}`, { method: "DELETE" }),
 };
 
 // Transferts de crédit (P9)
