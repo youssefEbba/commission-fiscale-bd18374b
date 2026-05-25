@@ -429,13 +429,26 @@ const GedConfiguration = () => {
             return (
               <Card key={section.key}>
                 <CardHeader className="flex flex-row items-center justify-between pb-4">
-                  <CardTitle className="text-lg text-primary">
-                    {t(`ged:config.modules.${section.processus}`)}
-                  </CardTitle>
-                  <Button size="sm" onClick={() => openCreate(section.processus)}>
-                    <Plus className="h-4 w-4 me-1" /> {t("ged:config.add_document")}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg text-primary">
+                      {t(`ged:config.modules.${section.processus}`)}
+                    </CardTitle>
+                    <Badge variant="secondary" className="ms-2">{sorted.length}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => toggleSection(section.key)} disabled={sorted.length === 0}>
+                      {expandedSections[section.key] ? (
+                        <><ChevronUp className="h-4 w-4 me-1" />{t("ged:config.hide")}</>
+                      ) : (
+                        <><ChevronDown className="h-4 w-4 me-1" />{t("ged:config.show_all", { count: sorted.length })}</>
+                      )}
+                    </Button>
+                    <Button size="sm" onClick={() => openCreate(section.processus)}>
+                      <Plus className="h-4 w-4 me-1" /> {t("ged:config.add_document")}
+                    </Button>
+                  </div>
                 </CardHeader>
+                {expandedSections[section.key] && (
                 <CardContent>
                   {q.isLoading ? (
                     <p className="text-muted-foreground text-sm py-8 text-center">{t("ged:config.loading")}</p>
@@ -491,6 +504,7 @@ const GedConfiguration = () => {
                     </div>
                   )}
                 </CardContent>
+                )}
               </Card>
             );
           })}
