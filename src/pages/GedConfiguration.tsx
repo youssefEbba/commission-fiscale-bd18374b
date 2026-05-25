@@ -48,10 +48,37 @@ const GedConfiguration = () => {
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
 
   const [typeDocument, setTypeDocument] = useState("");
+  const [newTypeMode, setNewTypeMode] = useState(false);
+  const [newTypeCode, setNewTypeCode] = useState("");
+  const [newTypeLibelle, setNewTypeLibelle] = useState("");
+  const [newTypeLibelleAr, setNewTypeLibelleAr] = useState("");
   const [obligatoire, setObligatoire] = useState(true);
   const [typesAutorises, setTypesAutorises] = useState<FormatFichier[]>(["PDF", "WORD", "EXCEL", "IMAGE"]);
   const [description, setDescription] = useState("");
   const [ordreAffichage, setOrdreAffichage] = useState(1);
+
+  // Catalogue
+  const referentielQuery = useQuery({
+    queryKey: ["referentiel-types-document"],
+    queryFn: () => referentielTypeDocumentApi.list(false),
+  });
+  const referentiel: ReferentielTypeDocumentDto[] = referentielQuery.data || [];
+  const referentielActif = referentiel.filter((r) => r.actif);
+  const labelOfCode = (code?: string | null) => {
+    if (!code) return "—";
+    const found = referentiel.find((r) => r.code === code);
+    if (found?.libelle) return found.libelle;
+    const enumLabel = tTypeDocument(code);
+    return enumLabel && enumLabel !== "—" ? enumLabel : code;
+  };
+
+  const [catalogueDialogOpen, setCatalogueDialogOpen] = useState(false);
+  const [catalogueEdit, setCatalogueEdit] = useState<ReferentielTypeDocumentDto | null>(null);
+  const [catCode, setCatCode] = useState("");
+  const [catLibelle, setCatLibelle] = useState("");
+  const [catLibelleAr, setCatLibelleAr] = useState("");
+  const [catActif, setCatActif] = useState(true);
+
 
   const conventionReqQuery = useQuery({
     queryKey: ["document-requirements", "CONVENTION"],
