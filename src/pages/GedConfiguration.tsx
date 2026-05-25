@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto } from "@/lib/api";
 import { tTypeDocument } from "@/i18n/enums";
-import { Plus, Pencil, Trash2, X, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 
 type ProcessusSectionConfig = { key: string; processus: ProcessusType };
 
