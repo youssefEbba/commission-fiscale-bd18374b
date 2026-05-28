@@ -202,10 +202,28 @@ export const authApi = {
   login: (data: LoginRequest) => apiFetch<LoginResponse>("/auth/login", { method: "POST", body: data }),
   register: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
   me: () => apiFetch<Record<string, unknown>>("/auth/me"),
+  passwordResetCheckEmail: (email: string) =>
+    apiFetch<{ exists: boolean }>("/auth/password-reset/check-email", { method: "POST", body: { email } }),
+  passwordResetRequest: (email: string) =>
+    apiFetch<{ message: string }>("/auth/password-reset/request", { method: "POST", body: { email } }),
 };
 
 export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
 
+export type DemandeResetStatut = "EN_ATTENTE" | "APPROUVEE" | "REFUSEE";
+export interface DemandeResetPasswordDto {
+  id: number;
+  utilisateurId: number;
+  username: string;
+  nomComplet?: string;
+  email?: string;
+  statut: DemandeResetStatut;
+  dateCreation: string;
+  dateTraitement?: string | null;
+  traiteParId?: number | null;
+  traiteParUsername?: string | null;
+  motifRefus?: string | null;
+}
 
 export const utilisateurApi = {
   getAll: () => apiFetch<UtilisateurDto[]>("/utilisateurs"),
@@ -219,7 +237,14 @@ export const utilisateurApi = {
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
   resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
+  listPasswordResetRequests: (statut: DemandeResetStatut = "EN_ATTENTE") =>
+    apiFetch<DemandeResetPasswordDto[]>(`/utilisateurs/password-reset-requests?statut=${statut}`),
+  approvePasswordResetRequest: (id: number) =>
+    apiFetch<DemandeResetPasswordDto>(`/utilisateurs/password-reset-requests/${id}/approve`, { method: "PATCH" }),
+  rejectPasswordResetRequest: (id: number, motif?: string) =>
+    apiFetch<DemandeResetPasswordDto>(`/utilisateurs/password-reset-requests/${id}/reject`, { method: "PATCH", body: { motif: motif ?? "" } }),
 };
+
 
 // Permissions
 export interface PermissionDto { id: number; code: string; description: string; processus?: string; }
