@@ -542,6 +542,33 @@ const Utilisateurs = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Reject reset request dialog */}
+      <Dialog open={rejectReqOpen} onOpenChange={setRejectReqOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Refuser la demande de réinitialisation</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Refuser la demande de <strong>{rejectReq?.nomComplet || rejectReq?.username}</strong>.
+          </p>
+          <form onSubmit={handleRejectReset} className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>Motif (optionnel)</Label>
+              <Textarea
+                value={rejectMotif}
+                onChange={(e) => setRejectMotif(e.target.value)}
+                placeholder="Ex: identité non vérifiée"
+                rows={3}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRejectReqOpen(false)}>Annuler</Button>
+              <Button type="submit" disabled={rejectingReq} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {rejectingReq ? "Refus..." : "Confirmer le refus"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
