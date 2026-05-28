@@ -420,6 +420,71 @@ const Utilisateurs = () => {
           </div>
           <TabsContent value="all" className="mt-4"><UserTable data={filtered} /></TabsContent>
           <TabsContent value="pending" className="mt-4"><UserTable data={pending} /></TabsContent>
+          {canManageResetRequests && (
+            <TabsContent value="reset" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">{resetRequests.length} demande(s) en attente</p>
+                <Button variant="outline" size="sm" onClick={fetchResetRequests} disabled={resetReqLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${resetReqLoading ? "animate-spin" : ""}`} /> Actualiser
+                </Button>
+              </div>
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Identifiant</TableHead>
+                      <TableHead>Nom complet</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {resetRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Aucune demande en attente
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      resetRequests.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-muted-foreground">{r.username}</TableCell>
+                          <TableCell className="font-medium text-foreground">{r.nomComplet || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{r.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {r.dateCreation ? new Date(r.dateCreation).toLocaleString("fr-FR") : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveReset(r)}
+                                disabled={approvingReqId === r.id}
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                              >
+                                {approvingReqId === r.id
+                                  ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> ...</>
+                                  : <><MailCheck className="h-3 w-3 mr-1" /> Approuver</>}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openRejectReset(r)}
+                                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                              >
+                                <X className="h-3 w-3 mr-1" /> Refuser
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
