@@ -174,10 +174,30 @@ const Utilisateurs = () => {
     } finally { setCreating(false); }
   };
 
-  const openEdit = (u: UtilisateurDto) => {
+  const AC_ROLES = ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"];
+  const ENT_ROLES = ["ENTREPRISE", "SOUS_TRAITANT"];
+
+  const openEdit = async (u: UtilisateurDto) => {
     setEditUser(u);
-    setEditForm({ username: u.username, nomComplet: u.nomComplet, email: u.email, role: u.role });
+    setEditForm({
+      nomComplet: u.nomComplet || "",
+      email: u.email || "",
+      role: u.role,
+      autoriteContractanteId: u.autoriteContractanteId ?? undefined,
+      entrepriseId: u.entrepriseId ?? undefined,
+      newPassword: "",
+    });
+    setShowEditPwd(false);
     setEditOpen(true);
+    // Charger les référentiels en parallèle si pas déjà chargés
+    try {
+      const [acs, ents] = await Promise.allSettled([
+        acList.length ? Promise.resolve(acList) : autoriteContractanteApi.getAll(),
+        entreprisesList.length ? Promise.resolve(entreprisesList) : entrepriseApi.getAll(),
+      ]);
+      if (acs.status === "fulfilled") setAcList(acs.value);
+      if (ents.status === "fulfilled") setEntreprisesList(ents.value);
+    } catch { /* silencieux */ }
   };
 
   const handleEdit = async (e: React.FormEvent) => {
