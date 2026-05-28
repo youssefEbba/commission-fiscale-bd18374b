@@ -78,7 +78,56 @@ const Utilisateurs = () => {
     }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  const fetchResetRequests = async () => {
+    if (!canManageResetRequests) return;
+    setResetReqLoading(true);
+    try {
+      const data = await utilisateurApi.listPasswordResetRequests("EN_ATTENTE");
+      setResetRequests(data);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les demandes de réinitialisation", variant: "destructive" });
+    } finally {
+      setResetReqLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchAll(); fetchResetRequests(); }, []);
+
+  const handleApproveReset = async (req: DemandeResetPasswordDto) => {
+    setApprovingReqId(req.id);
+    try {
+      await utilisateurApi.approvePasswordResetRequest(req.id);
+      toast({ title: "Demande approuvée", description: "Un e-mail a été envoyé à l'utilisateur." });
+      fetchResetRequests();
+    } catch (err) {
+      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Approbation impossible", variant: "destructive" });
+    } finally {
+      setApprovingReqId(null);
+    }
+  };
+
+  const openRejectReset = (req: DemandeResetPasswordDto) => {
+    setRejectReq(req);
+    setRejectMotif("");
+    setRejectReqOpen(true);
+  };
+
+  const handleRejectReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectReq) return;
+    setRejectingReq(true);
+    try {
+      await utilisateurApi.rejectPasswordResetRequest(rejectReq.id, rejectMotif || undefined);
+      toast({ title: "Demande refusée", description: "L'utilisateur a été notifié." });
+      setRejectReqOpen(false);
+      fetchResetRequests();
+    } catch (err) {
+      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Refus impossible", variant: "destructive" });
+    } finally {
+      setRejectingReq(false);
+    }
+  };
+
 
   const toggleActif = async (id: number, actif: boolean) => {
     setToggling(id);
