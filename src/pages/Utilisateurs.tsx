@@ -1,28 +1,41 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { utilisateurApi, autoriteContractanteApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest } from "@/lib/api";
+import { utilisateurApi, autoriteContractanteApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Users, Search, CheckCircle, XCircle, RefreshCw, Clock, UserPlus, Eye, EyeOff, Pencil, Trash2, KeyRound, MoreHorizontal } from "lucide-react";
+import { Users, Search, CheckCircle, XCircle, RefreshCw, Clock, UserPlus, Eye, EyeOff, Pencil, Trash2, KeyRound, MoreHorizontal, Check, X, MailCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Utilisateurs = () => {
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
+  const [resetRequests, setResetRequests] = useState<DemandeResetPasswordDto[]>([]);
+  const [resetReqLoading, setResetReqLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
+  const canManageResetRequests = hasPermission("user.reset");
+
+  // Reject reset request dialog
+  const [rejectReqOpen, setRejectReqOpen] = useState(false);
+  const [rejectReq, setRejectReq] = useState<DemandeResetPasswordDto | null>(null);
+  const [rejectMotif, setRejectMotif] = useState("");
+  const [rejectingReq, setRejectingReq] = useState(false);
+  const [approvingReqId, setApprovingReqId] = useState<number | null>(null);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -65,7 +78,56 @@ const Utilisateurs = () => {
     }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  const fetchResetRequests = async () => {
+    if (!canManageResetRequests) return;
+    setResetReqLoading(true);
+    try {
+      const data = await utilisateurApi.listPasswordResetRequests("EN_ATTENTE");
+      setResetRequests(data);
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de charger les demandes de réinitialisation", variant: "destructive" });
+    } finally {
+      setResetReqLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchAll(); fetchResetRequests(); }, []);
+
+  const handleApproveReset = async (req: DemandeResetPasswordDto) => {
+    setApprovingReqId(req.id);
+    try {
+      await utilisateurApi.approvePasswordResetRequest(req.id);
+      toast({ title: "Demande approuvée", description: "Un e-mail a été envoyé à l'utilisateur." });
+      fetchResetRequests();
+    } catch (err) {
+      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Approbation impossible", variant: "destructive" });
+    } finally {
+      setApprovingReqId(null);
+    }
+  };
+
+  const openRejectReset = (req: DemandeResetPasswordDto) => {
+    setRejectReq(req);
+    setRejectMotif("");
+    setRejectReqOpen(true);
+  };
+
+  const handleRejectReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectReq) return;
+    setRejectingReq(true);
+    try {
+      await utilisateurApi.rejectPasswordResetRequest(rejectReq.id, rejectMotif || undefined);
+      toast({ title: "Demande refusée", description: "L'utilisateur a été notifié." });
+      setRejectReqOpen(false);
+      fetchResetRequests();
+    } catch (err) {
+      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Refus impossible", variant: "destructive" });
+    } finally {
+      setRejectingReq(false);
+    }
+  };
+
 
   const toggleActif = async (id: number, actif: boolean) => {
     setToggling(id);
@@ -323,6 +385,11 @@ const Utilisateurs = () => {
           <TabsList>
             <TabsTrigger value="all">Tous ({users.length})</TabsTrigger>
             <TabsTrigger value="pending"><Clock className="h-3 w-3 mr-1" /> En attente ({pending.length})</TabsTrigger>
+            {canManageResetRequests && (
+              <TabsTrigger value="reset">
+                <KeyRound className="h-3 w-3 mr-1" /> Demandes de reset ({resetRequests.length})
+              </TabsTrigger>
+            )}
           </TabsList>
           <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <div className="relative max-w-sm flex-1">
@@ -353,6 +420,71 @@ const Utilisateurs = () => {
           </div>
           <TabsContent value="all" className="mt-4"><UserTable data={filtered} /></TabsContent>
           <TabsContent value="pending" className="mt-4"><UserTable data={pending} /></TabsContent>
+          {canManageResetRequests && (
+            <TabsContent value="reset" className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">{resetRequests.length} demande(s) en attente</p>
+                <Button variant="outline" size="sm" onClick={fetchResetRequests} disabled={resetReqLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${resetReqLoading ? "animate-spin" : ""}`} /> Actualiser
+                </Button>
+              </div>
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Identifiant</TableHead>
+                      <TableHead>Nom complet</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {resetRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Aucune demande en attente
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      resetRequests.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-muted-foreground">{r.username}</TableCell>
+                          <TableCell className="font-medium text-foreground">{r.nomComplet || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{r.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {r.dateCreation ? new Date(r.dateCreation).toLocaleString("fr-FR") : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveReset(r)}
+                                disabled={approvingReqId === r.id}
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                              >
+                                {approvingReqId === r.id
+                                  ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> ...</>
+                                  : <><MailCheck className="h-3 w-3 mr-1" /> Approuver</>}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openRejectReset(r)}
+                                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                              >
+                                <X className="h-3 w-3 mr-1" /> Refuser
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
@@ -405,6 +537,33 @@ const Utilisateurs = () => {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>Annuler</Button>
               <Button type="submit" disabled={resetting || !resetPassword}>{resetting ? "Réinitialisation..." : "Réinitialiser"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject reset request dialog */}
+      <Dialog open={rejectReqOpen} onOpenChange={setRejectReqOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Refuser la demande de réinitialisation</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Refuser la demande de <strong>{rejectReq?.nomComplet || rejectReq?.username}</strong>.
+          </p>
+          <form onSubmit={handleRejectReset} className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>Motif (optionnel)</Label>
+              <Textarea
+                value={rejectMotif}
+                onChange={(e) => setRejectMotif(e.target.value)}
+                placeholder="Ex: identité non vérifiée"
+                rows={3}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRejectReqOpen(false)}>Annuler</Button>
+              <Button type="submit" disabled={rejectingReq} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {rejectingReq ? "Refus..." : "Confirmer le refus"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
