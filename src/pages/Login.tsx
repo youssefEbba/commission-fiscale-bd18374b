@@ -143,6 +143,12 @@ const Login = () => {
             </Button>
           </form>
 
+          <div className="text-center mt-4">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              {t("login.forgot_password")}
+            </Link>
+          </div>
+
           <p className="text-center text-sm text-muted-foreground mt-6">
             {t("login.no_account")}{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">
