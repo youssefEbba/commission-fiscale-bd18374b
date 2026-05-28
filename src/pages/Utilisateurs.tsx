@@ -544,33 +544,83 @@ const Utilisateurs = () => {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifier l'utilisateur</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 mt-2">
             <div className="space-y-2">
+              <Label>Identifiant</Label>
+              <Input value={editUser?.username || ""} disabled />
+            </div>
+            <div className="space-y-2">
               <Label>Nom complet</Label>
-              <Input value={editForm.nomComplet || ""} onChange={(e) => setEditForm((p) => ({ ...p, nomComplet: e.target.value }))} required />
+              <Input value={editForm.nomComplet || ""} onChange={(e) => setEditForm((p) => ({ ...p, nomComplet: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} required />
+              <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
             </div>
+            {canAssignRole && (
+              <div className="space-y-2">
+                <Label>Rôle</Label>
+                <Select value={editForm.role || ""} onValueChange={(v) => setEditForm((p) => ({ ...p, role: v, autoriteContractanteId: AC_ROLES.includes(v) ? p.autoriteContractanteId : undefined, entrepriseId: ENT_ROLES.includes(v) ? p.entrepriseId : undefined }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {AC_ROLES.includes(editForm.role || editUser?.role || "") && (
+              <div className="space-y-2">
+                <Label>Autorité Contractante *</Label>
+                <Select
+                  value={editForm.autoriteContractanteId ? String(editForm.autoriteContractanteId) : ""}
+                  onValueChange={(v) => setEditForm((p) => ({ ...p, autoriteContractanteId: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Sélectionnez une AC" /></SelectTrigger>
+                  <SelectContent>
+                    {acList.map((ac) => (
+                      <SelectItem key={ac.id} value={String(ac.id)}>{ac.nom}{ac.sigle ? ` (${ac.sigle})` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {ENT_ROLES.includes(editForm.role || editUser?.role || "") && (
+              <div className="space-y-2">
+                <Label>Entreprise *</Label>
+                <Select
+                  value={editForm.entrepriseId ? String(editForm.entrepriseId) : ""}
+                  onValueChange={(v) => setEditForm((p) => ({ ...p, entrepriseId: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Sélectionnez une entreprise" /></SelectTrigger>
+                  <SelectContent>
+                    {entreprisesList.map((ent) => (
+                      <SelectItem key={ent.id} value={String(ent.id)}>{ent.raisonSociale}{ent.nif ? ` — ${ent.nif}` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
-              <Label>Identifiant</Label>
-              <Input value={editForm.username || ""} onChange={(e) => setEditForm((p) => ({ ...p, username: e.target.value }))} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Rôle</Label>
-              <Select value={editForm.role || ""} onValueChange={(v) => setEditForm((p) => ({ ...p, role: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Label>Nouveau mot de passe (optionnel)</Label>
+              <div className="relative">
+                <Input
+                  type={showEditPwd ? "text" : "password"}
+                  value={editForm.newPassword || ""}
+                  onChange={(e) => setEditForm((p) => ({ ...p, newPassword: e.target.value }))}
+                  placeholder="Laisser vide pour ne pas changer"
+                  minLength={8}
+                />
+                <button type="button" onClick={() => setShowEditPwd(!showEditPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showEditPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">8 caractères minimum.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
-              <Button type="submit" disabled={editing}>{editing ? "Enregistrement..." : "Enregistrer"}</Button>
+              <Button type="submit" disabled={editing || !canUpdate}>{editing ? "Enregistrement..." : "Enregistrer"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
