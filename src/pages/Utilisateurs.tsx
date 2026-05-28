@@ -385,6 +385,11 @@ const Utilisateurs = () => {
           <TabsList>
             <TabsTrigger value="all">Tous ({users.length})</TabsTrigger>
             <TabsTrigger value="pending"><Clock className="h-3 w-3 mr-1" /> En attente ({pending.length})</TabsTrigger>
+            {canManageResetRequests && (
+              <TabsTrigger value="reset">
+                <KeyRound className="h-3 w-3 mr-1" /> Demandes de reset ({resetRequests.length})
+              </TabsTrigger>
+            )}
           </TabsList>
           <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <div className="relative max-w-sm flex-1">
