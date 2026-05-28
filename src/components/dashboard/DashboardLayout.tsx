@@ -256,6 +256,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                   <p className="text-xs text-muted-foreground">{tRole(user?.role)}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/dashboard/profil")} className="cursor-pointer">
+                  <User className="h-4 w-4 me-2" /> Mon profil
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
                   <LogOut className="h-4 w-4 me-2" /> {t("common:session.logout")}
                 </DropdownMenuItem>
