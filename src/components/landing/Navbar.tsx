@@ -17,7 +17,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="fixed top-0 start-0 end-0 z-50 border-b border-primary/10 bg-dark-green/95 backdrop-blur-md">
+    <nav className="fixed top-0 start-0 end-0 z-50 border-b-2 border-gold bg-primary/95 backdrop-blur-md shadow-lg">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <a href="#" className="flex items-center gap-2">
           <img src={logo} alt={t("footer.tagline")} className="h-8 w-8" />
@@ -62,7 +62,7 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-primary/10 bg-dark-green px-6 pb-6 pt-4 md:hidden">
+        <div className="border-t border-gold/30 bg-primary px-6 pb-6 pt-4 md:hidden">
           {navLinks.map((l) => (
             <a
               key={l.label}
