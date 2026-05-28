@@ -203,9 +203,37 @@ const Utilisateurs = () => {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
+    const role = editForm.role || editUser.role;
+    // Validation rattachement
+    if (AC_ROLES.includes(role) && !editForm.autoriteContractanteId) {
+      toast({ title: "Erreur", description: "Une Autorité Contractante est requise pour ce rôle.", variant: "destructive" });
+      return;
+    }
+    if (ENT_ROLES.includes(role) && !editForm.entrepriseId) {
+      toast({ title: "Erreur", description: "Une entreprise est requise pour ce rôle.", variant: "destructive" });
+      return;
+    }
+    // Construire le payload — n'envoyer que les champs renseignés/modifiés
+    const payload: UpdateUtilisateurRequest = {};
+    if ((editForm.nomComplet || "") !== (editUser.nomComplet || "")) payload.nomComplet = editForm.nomComplet || "";
+    if ((editForm.email || "") !== (editUser.email || "")) payload.email = editForm.email || "";
+    if (canAssignRole && editForm.role && editForm.role !== editUser.role) payload.role = editForm.role;
+    if (AC_ROLES.includes(role)) payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
+    if (ENT_ROLES.includes(role)) payload.entrepriseId = editForm.entrepriseId ?? null;
+    if (editForm.newPassword && editForm.newPassword.trim().length > 0) {
+      if (editForm.newPassword.length < 8) {
+        toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 8 caractères.", variant: "destructive" });
+        return;
+      }
+      payload.newPassword = editForm.newPassword;
+    }
+    if (Object.keys(payload).length === 0) {
+      toast({ title: "Aucune modification", description: "Aucun champ n'a été modifié." });
+      return;
+    }
     setEditing(true);
     try {
-      await utilisateurApi.update(editUser.id, editForm);
+      await utilisateurApi.update(editUser.id, payload);
       toast({ title: "Succès", description: "Utilisateur modifié" });
       setEditOpen(false);
       fetchAll();
