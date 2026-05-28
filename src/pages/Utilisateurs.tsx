@@ -19,12 +19,23 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 const Utilisateurs = () => {
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
+  const [resetRequests, setResetRequests] = useState<DemandeResetPasswordDto[]>([]);
+  const [resetReqLoading, setResetReqLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
+  const canManageResetRequests = hasPermission("user.reset");
+
+  // Reject reset request dialog
+  const [rejectReqOpen, setRejectReqOpen] = useState(false);
+  const [rejectReq, setRejectReq] = useState<DemandeResetPasswordDto | null>(null);
+  const [rejectMotif, setRejectMotif] = useState("");
+  const [rejectingReq, setRejectingReq] = useState(false);
+  const [approvingReqId, setApprovingReqId] = useState<number | null>(null);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
