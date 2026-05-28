@@ -226,6 +226,16 @@ export const authApi = {
 
 export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
 
+export interface UpdateUtilisateurRequest {
+  username?: string;
+  nomComplet?: string | null;
+  email?: string | null;
+  role?: string | null;
+  autoriteContractanteId?: number | null;
+  entrepriseId?: number | null;
+  newPassword?: string | null;
+}
+
 export type DemandeResetStatut = "EN_ATTENTE" | "APPROUVEE" | "REFUSEE";
 export interface DemandeResetPasswordDto {
   id: number;
@@ -247,9 +257,12 @@ export const utilisateurApi = {
   getSousTraitants: () => apiFetch<EntrepriseDto[]>("/utilisateurs/sous-traitants"),
   getEntreprisesSousTraitantes: () => apiFetch<EntrepriseDto[]>("/sous-traitances/entreprises-sous-traitantes"),
   getPending: () => apiFetch<UtilisateurDto[]>("/utilisateurs/pending"),
+  getById: (id: number) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`),
+  getMe: () => apiFetch<UtilisateurDto>("/utilisateurs/me"),
+  updateMyProfile: (data: UpdateMyProfileRequest) =>
+    apiFetch<UtilisateurDto>("/utilisateurs/me", { method: "PATCH", body: data }),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
-  // NOT SUPPORTED BY BACKEND — kept for future use
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
   resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
