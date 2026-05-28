@@ -1233,27 +1233,30 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     <p className="text-sm text-muted-foreground italic py-4 text-center">{t("demandes:wizard.fields.pieces_empty")}</p>
                   ) : (
                     <div className="space-y-2">
-                      {gedDocTypes.map(dt => (
+                      {gedDocTypes.map(dt => {
+                        const code = (dt.codeDocument || dt.typeDocument || "") as string;
+                        const label = dt.libelle || tTypeDocument(code as any);
+                        return (
                         <div
                           key={dt.id}
                           className={`flex items-center gap-2 rounded-lg border p-2 transition-colors ${
-                            dragOverType === dt.typeDocument
+                            dragOverType === code
                               ? "border-primary bg-primary/5 border-dashed"
                               : "border-border"
                           }`}
-                          onDragOver={e => handleDragOver(e, dt.typeDocument)}
+                          onDragOver={e => handleDragOver(e, code)}
                           onDragLeave={handleDragLeave}
-                          onDrop={e => handleDrop(e, dt.typeDocument)}
+                          onDrop={e => handleDrop(e, code)}
                         >
-                          {docFiles[dt.typeDocument] ? (
+                          {docFiles[code] ? (
                             <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                          ) : existingDocs[dt.typeDocument] ? (
+                          ) : existingDocs[code] ? (
                             <CheckCircle className="h-4 w-4 text-primary shrink-0" />
                           ) : (
                             <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
-                          <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? "font-medium" : "text-muted-foreground"}`}>
-                            {tTypeDocument(dt.typeDocument)}
+                          <span className={`flex-1 text-sm flex items-center gap-1 ${docFiles[code] || existingDocs[code] ? "font-medium" : "text-muted-foreground"}`}>
+                            {label}
                             {dt.obligatoire && <span className="text-destructive ms-1">*</span>}
                             {dt.description && (
                               <Tooltip>
@@ -1266,11 +1269,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               </Tooltip>
                             )}
                           </span>
-                          {docFiles[dt.typeDocument] ? (
-                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[dt.typeDocument].name}</span>
-                          ) : existingDocs[dt.typeDocument] ? (
-                            <span className="text-xs text-primary truncate max-w-[180px]" title={existingDocs[dt.typeDocument].nomFichier}>
-                              {t("demandes:wizard.fields.already_provided", { name: existingDocs[dt.typeDocument].nomFichier })}
+                          {docFiles[code] ? (
+                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[code].name}</span>
+                          ) : existingDocs[code] ? (
+                            <span className="text-xs text-primary truncate max-w-[180px]" title={existingDocs[code].nomFichier}>
+                              {t("demandes:wizard.fields.already_provided", { name: existingDocs[code].nomFichier })}
                             </span>
                           ) : (
                             <span className="text-[11px] text-muted-foreground hidden sm:inline">
@@ -1284,15 +1287,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               accept={dt.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : "image/*").join(",")}
                               onChange={(e) => {
                                 const f = e.target.files?.[0];
-                                if (f) setDocFiles(prev => ({ ...prev, [dt.typeDocument]: f }));
+                                if (f) setDocFiles(prev => ({ ...prev, [code]: f }));
                               }}
                             />
                             <span className="text-xs text-primary hover:underline">
-                              {docFiles[dt.typeDocument] || existingDocs[dt.typeDocument] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
+                              {docFiles[code] || existingDocs[code] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
                             </span>
                           </label>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
