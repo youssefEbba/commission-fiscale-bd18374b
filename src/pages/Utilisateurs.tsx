@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { utilisateurApi, autoriteContractanteApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto } from "@/lib/api";
+import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,12 @@ const Utilisateurs = () => {
   const { toast } = useToast();
   const { hasPermission } = useAuth();
   const canManageResetRequests = hasPermission("user.reset");
+  const canAssignRole = hasPermission("user.role.assign");
+  const canUpdate = hasPermission("user.update");
+  const canDisable = hasPermission("user.disable");
+  const [acList, setAcList] = useState<AutoriteContractanteDto[]>([]);
+  const [entreprisesList, setEntreprisesList] = useState<EntrepriseDto[]>([]);
+  const [showEditPwd, setShowEditPwd] = useState(false);
 
   // Reject reset request dialog
   const [rejectReqOpen, setRejectReqOpen] = useState(false);
@@ -168,18 +174,66 @@ const Utilisateurs = () => {
     } finally { setCreating(false); }
   };
 
-  const openEdit = (u: UtilisateurDto) => {
+  const AC_ROLES = ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"];
+  const ENT_ROLES = ["ENTREPRISE", "SOUS_TRAITANT"];
+
+  const openEdit = async (u: UtilisateurDto) => {
     setEditUser(u);
-    setEditForm({ username: u.username, nomComplet: u.nomComplet, email: u.email, role: u.role });
+    setEditForm({
+      nomComplet: u.nomComplet || "",
+      email: u.email || "",
+      role: u.role,
+      autoriteContractanteId: u.autoriteContractanteId ?? undefined,
+      entrepriseId: u.entrepriseId ?? undefined,
+      newPassword: "",
+    });
+    setShowEditPwd(false);
     setEditOpen(true);
+    // Charger les référentiels en parallèle si pas déjà chargés
+    try {
+      const [acs, ents] = await Promise.allSettled([
+        acList.length ? Promise.resolve(acList) : autoriteContractanteApi.getAll(),
+        entreprisesList.length ? Promise.resolve(entreprisesList) : entrepriseApi.getAll(),
+      ]);
+      if (acs.status === "fulfilled") setAcList(acs.value);
+      if (ents.status === "fulfilled") setEntreprisesList(ents.value);
+    } catch { /* silencieux */ }
   };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
+    const role = editForm.role || editUser.role;
+    // Validation rattachement
+    if (AC_ROLES.includes(role) && !editForm.autoriteContractanteId) {
+      toast({ title: "Erreur", description: "Une Autorité Contractante est requise pour ce rôle.", variant: "destructive" });
+      return;
+    }
+    if (ENT_ROLES.includes(role) && !editForm.entrepriseId) {
+      toast({ title: "Erreur", description: "Une entreprise est requise pour ce rôle.", variant: "destructive" });
+      return;
+    }
+    // Construire le payload — n'envoyer que les champs renseignés/modifiés
+    const payload: UpdateUtilisateurRequest = {};
+    if ((editForm.nomComplet || "") !== (editUser.nomComplet || "")) payload.nomComplet = editForm.nomComplet || "";
+    if ((editForm.email || "") !== (editUser.email || "")) payload.email = editForm.email || "";
+    if (canAssignRole && editForm.role && editForm.role !== editUser.role) payload.role = editForm.role;
+    if (AC_ROLES.includes(role)) payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
+    if (ENT_ROLES.includes(role)) payload.entrepriseId = editForm.entrepriseId ?? null;
+    if (editForm.newPassword && editForm.newPassword.trim().length > 0) {
+      if (editForm.newPassword.length < 8) {
+        toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 8 caractères.", variant: "destructive" });
+        return;
+      }
+      payload.newPassword = editForm.newPassword;
+    }
+    if (Object.keys(payload).length === 0) {
+      toast({ title: "Aucune modification", description: "Aucun champ n'a été modifié." });
+      return;
+    }
     setEditing(true);
     try {
-      await utilisateurApi.update(editUser.id, editForm);
+      await utilisateurApi.update(editUser.id, payload);
       toast({ title: "Succès", description: "Utilisateur modifié" });
       setEditOpen(false);
       fetchAll();
@@ -490,33 +544,83 @@ const Utilisateurs = () => {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifier l'utilisateur</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 mt-2">
             <div className="space-y-2">
+              <Label>Identifiant</Label>
+              <Input value={editUser?.username || ""} disabled />
+            </div>
+            <div className="space-y-2">
               <Label>Nom complet</Label>
-              <Input value={editForm.nomComplet || ""} onChange={(e) => setEditForm((p) => ({ ...p, nomComplet: e.target.value }))} required />
+              <Input value={editForm.nomComplet || ""} onChange={(e) => setEditForm((p) => ({ ...p, nomComplet: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} required />
+              <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
             </div>
+            {canAssignRole && (
+              <div className="space-y-2">
+                <Label>Rôle</Label>
+                <Select value={editForm.role || ""} onValueChange={(v) => setEditForm((p) => ({ ...p, role: v, autoriteContractanteId: AC_ROLES.includes(v) ? p.autoriteContractanteId : undefined, entrepriseId: ENT_ROLES.includes(v) ? p.entrepriseId : undefined }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {AC_ROLES.includes(editForm.role || editUser?.role || "") && (
+              <div className="space-y-2">
+                <Label>Autorité Contractante *</Label>
+                <Select
+                  value={editForm.autoriteContractanteId ? String(editForm.autoriteContractanteId) : ""}
+                  onValueChange={(v) => setEditForm((p) => ({ ...p, autoriteContractanteId: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Sélectionnez une AC" /></SelectTrigger>
+                  <SelectContent>
+                    {acList.map((ac) => (
+                      <SelectItem key={ac.id} value={String(ac.id)}>{ac.nom}{ac.sigle ? ` (${ac.sigle})` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {ENT_ROLES.includes(editForm.role || editUser?.role || "") && (
+              <div className="space-y-2">
+                <Label>Entreprise *</Label>
+                <Select
+                  value={editForm.entrepriseId ? String(editForm.entrepriseId) : ""}
+                  onValueChange={(v) => setEditForm((p) => ({ ...p, entrepriseId: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Sélectionnez une entreprise" /></SelectTrigger>
+                  <SelectContent>
+                    {entreprisesList.map((ent) => (
+                      <SelectItem key={ent.id} value={String(ent.id)}>{ent.raisonSociale}{ent.nif ? ` — ${ent.nif}` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
-              <Label>Identifiant</Label>
-              <Input value={editForm.username || ""} onChange={(e) => setEditForm((p) => ({ ...p, username: e.target.value }))} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Rôle</Label>
-              <Select value={editForm.role || ""} onValueChange={(v) => setEditForm((p) => ({ ...p, role: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Label>Nouveau mot de passe (optionnel)</Label>
+              <div className="relative">
+                <Input
+                  type={showEditPwd ? "text" : "password"}
+                  value={editForm.newPassword || ""}
+                  onChange={(e) => setEditForm((p) => ({ ...p, newPassword: e.target.value }))}
+                  placeholder="Laisser vide pour ne pas changer"
+                  minLength={8}
+                />
+                <button type="button" onClick={() => setShowEditPwd(!showEditPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showEditPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">8 caractères minimum.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
-              <Button type="submit" disabled={editing}>{editing ? "Enregistrement..." : "Enregistrer"}</Button>
+              <Button type="submit" disabled={editing || !canUpdate}>{editing ? "Enregistrement..." : "Enregistrer"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -16,6 +16,7 @@ import Certificats from "./pages/Certificats";
 import DemandesMiseEnPlace from "./pages/DemandesMiseEnPlace";
 import Utilisations from "./pages/Utilisations";
 import Utilisateurs from "./pages/Utilisateurs";
+import MonProfil from "./pages/MonProfil";
 import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
 import Simulation from "./pages/Simulation";
@@ -161,6 +162,7 @@ const App = () => (
                 <CertificatDetail />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/profil" element={<ProtectedRoute><MonProfil /></ProtectedRoute>} />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
