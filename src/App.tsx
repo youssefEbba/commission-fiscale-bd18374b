@@ -162,6 +162,7 @@ const App = () => (
                 <CertificatDetail />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/profil" element={<ProtectedRoute><MonProfil /></ProtectedRoute>} />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
