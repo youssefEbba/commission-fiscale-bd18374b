@@ -169,7 +169,23 @@ export const commissionRelaisApi = {
   release: () => apiFetch<LoginResponse>("/commission-relais/release", { method: "POST" }),
 };
 
-export interface UtilisateurDto { id: number; username: string; role: string; nomComplet: string; email: string; actif: boolean; entrepriseId?: number; }
+export interface UtilisateurDto {
+  id: number;
+  username: string;
+  role: string;
+  nomComplet?: string | null;
+  email?: string | null;
+  actif?: boolean | null;
+  autoriteContractanteId?: number | null;
+  autoriteContractanteNom?: string | null;
+  entrepriseId?: number | null;
+  entrepriseRaisonSociale?: string | null;
+}
+
+export interface UpdateMyProfileRequest {
+  nomComplet?: string | null;
+  email?: string | null;
+}
 
 export const ROLE_OPTIONS = [
   { value: "ENTREPRISE", label: "Entreprise" },
