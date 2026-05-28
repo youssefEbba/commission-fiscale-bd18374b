@@ -6,73 +6,75 @@
 
 @layer base {
   :root {
-    --background: 140 20% 97%;
-    --foreground: 160 30% 8%;
+    /* Mauritania official palette: Green #00A95C, Gold #FFD700, Red #D01C1F */
+    --background: 150 30% 97%;
+    --foreground: 151 80% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 160 30% 8%;
+    --card-foreground: 151 80% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 160 30% 8%;
+    --popover-foreground: 151 80% 8%;
 
-    --primary: 153 60% 28%;
+    --primary: 151 100% 33%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 145 30% 92%;
-    --secondary-foreground: 153 60% 20%;
+    --secondary: 151 40% 92%;
+    --secondary-foreground: 151 100% 22%;
 
-    --muted: 140 15% 94%;
-    --muted-foreground: 160 10% 45%;
+    --muted: 150 20% 94%;
+    --muted-foreground: 151 15% 40%;
 
-    --accent: 43 90% 55%;
-    --accent-foreground: 160 30% 8%;
+    --accent: 51 100% 50%;
+    --accent-foreground: 151 80% 8%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 359 76% 46%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 145 20% 88%;
-    --input: 145 20% 88%;
-    --ring: 153 60% 28%;
+    --border: 151 25% 88%;
+    --input: 151 25% 88%;
+    --ring: 151 100% 33%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 153 60% 12%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 43 90% 55%;
-    --sidebar-primary-foreground: 160 30% 8%;
-    --sidebar-accent: 153 40% 18%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 153 30% 22%;
-    --sidebar-ring: 43 90% 55%;
+    --sidebar-background: 151 100% 14%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 151 80% 8%;
+    --sidebar-accent: 151 80% 22%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 151 60% 26%;
+    --sidebar-ring: 51 100% 50%;
 
     /* Custom tokens */
-    --hero-gradient: linear-gradient(135deg, hsl(153, 60%, 22%) 0%, hsl(160, 50%, 12%) 50%, hsl(153, 60%, 28%) 100%);
-    --gold: 43 90% 55%;
-    --gold-light: 43 80% 70%;
-    --dark-green: 153 60% 12%;
-    --green-glow: 153 60% 35%;
+    --hero-gradient: linear-gradient(135deg, hsl(151, 100%, 28%) 0%, hsl(151, 100%, 14%) 50%, hsl(151, 100%, 33%) 100%);
+    --gold: 51 100% 50%;
+    --gold-light: 51 100% 65%;
+    --dark-green: 151 100% 14%;
+    --green-glow: 151 100% 40%;
+    --mr-red: 359 76% 46%;
   }
 
   .dark {
-    --background: 160 30% 5%;
-    --foreground: 0 0% 95%;
-    --card: 160 25% 8%;
-    --card-foreground: 0 0% 95%;
-    --popover: 160 25% 8%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 153 55% 40%;
+    --background: 151 60% 5%;
+    --foreground: 0 0% 96%;
+    --card: 151 50% 8%;
+    --card-foreground: 0 0% 96%;
+    --popover: 151 50% 8%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 151 100% 40%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 153 30% 15%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 160 20% 15%;
-    --muted-foreground: 160 10% 60%;
-    --accent: 43 90% 55%;
-    --accent-foreground: 160 30% 8%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 160 20% 18%;
-    --input: 160 20% 18%;
-    --ring: 153 55% 40%;
+    --secondary: 151 40% 15%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 151 30% 15%;
+    --muted-foreground: 151 15% 65%;
+    --accent: 51 100% 50%;
+    --accent-foreground: 151 80% 8%;
+    --destructive: 359 76% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 151 30% 18%;
+    --input: 151 30% 18%;
+    --ring: 151 100% 40%;
   }
 }
 
@@ -93,7 +95,7 @@
 
 @layer utilities {
   .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(43, 90%, 55%), hsl(43, 80%, 70%));
+    background: linear-gradient(135deg, hsl(51, 100%, 50%), hsl(51, 100%, 65%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
