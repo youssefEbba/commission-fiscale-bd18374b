@@ -59,8 +59,8 @@ const ForgotPassword = () => {
       setExists(null);
       setEmail("");
     } catch (err) {
-      if (err instanceof ApiRequestError && err.error.status === 409) {
-        const msg = err.error.message || "";
+      if (err instanceof ApiRequestError && err.status === 409) {
+        const msg = err.message || "";
         if (msg.toLowerCase().includes("ambig")) {
           setError("Adresse ambiguë : contactez l'administrateur.");
         } else {
