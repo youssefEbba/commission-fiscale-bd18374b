@@ -29,6 +29,12 @@ const Utilisateurs = () => {
   const { toast } = useToast();
   const { hasPermission } = useAuth();
   const canManageResetRequests = hasPermission("user.reset");
+  const canAssignRole = hasPermission("user.role.assign");
+  const canUpdate = hasPermission("user.update");
+  const canDisable = hasPermission("user.disable");
+  const [acList, setAcList] = useState<AutoriteContractanteDto[]>([]);
+  const [entreprisesList, setEntreprisesList] = useState<EntrepriseDto[]>([]);
+  const [showEditPwd, setShowEditPwd] = useState(false);
 
   // Reject reset request dialog
   const [rejectReqOpen, setRejectReqOpen] = useState(false);
