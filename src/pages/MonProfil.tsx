@@ -202,6 +202,75 @@ const MonProfil = () => {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-primary" />
+              Changer mon mot de passe
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={submitPassword} className="space-y-5">
+              <div className="space-y-2">
+                <Label>Mot de passe actuel</Label>
+                <div className="relative">
+                  <Input
+                    type={showCurrent ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={pwdForm.current}
+                    onChange={(e) => setPwdForm((p) => ({ ...p, current: e.target.value }))}
+                    className="pr-10"
+                  />
+                  <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nouveau mot de passe</Label>
+                  <div className="relative">
+                    <Input
+                      type={showNext ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={pwdForm.next}
+                      onChange={(e) => setPwdForm((p) => ({ ...p, next: e.target.value }))}
+                      className="pr-10"
+                    />
+                    <button type="button" onClick={() => setShowNext((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showNext ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Minimum 8 caractères, différent de l'actuel.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Confirmer</Label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirm ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={pwdForm.confirm}
+                      onChange={(e) => setPwdForm((p) => ({ ...p, confirm: e.target.value }))}
+                      className="pr-10"
+                    />
+                    <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={pwdSaving}>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  {pwdSaving ? "Modification…" : "Modifier le mot de passe"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
