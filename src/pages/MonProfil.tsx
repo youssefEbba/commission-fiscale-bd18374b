@@ -17,6 +17,42 @@ const MonProfil = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ nomComplet: "", email: "" });
+  const [pwdForm, setPwdForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNext, setShowNext] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const submitPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pwdForm.current || !pwdForm.next) {
+      toast({ title: "Champs requis", description: "Renseignez tous les champs.", variant: "destructive" });
+      return;
+    }
+    if (pwdForm.next.length < 8) {
+      toast({ title: "Mot de passe trop court", description: "Minimum 8 caractères.", variant: "destructive" });
+      return;
+    }
+    if (pwdForm.next === pwdForm.current) {
+      toast({ title: "Mot de passe identique", description: "Le nouveau mot de passe doit être différent.", variant: "destructive" });
+      return;
+    }
+    if (pwdForm.next !== pwdForm.confirm) {
+      toast({ title: "Confirmation invalide", description: "Les deux mots de passe ne correspondent pas.", variant: "destructive" });
+      return;
+    }
+    setPwdSaving(true);
+    try {
+      await utilisateurApi.changeMyPassword(pwdForm.current, pwdForm.next);
+      toast({ title: "Mot de passe modifié", description: "Votre mot de passe a été mis à jour." });
+      setPwdForm({ current: "", next: "", confirm: "" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Impossible de modifier le mot de passe";
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
+    } finally {
+      setPwdSaving(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
