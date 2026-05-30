@@ -261,6 +261,8 @@ export const utilisateurApi = {
   getMe: () => apiFetch<UtilisateurDto>("/utilisateurs/me"),
   updateMyProfile: (data: UpdateMyProfileRequest) =>
     apiFetch<UtilisateurDto>("/utilisateurs/me", { method: "PATCH", body: data }),
+  changeMyPassword: (currentPassword: string, newPassword: string) =>
+    apiFetch<void>("/utilisateurs/me/password", { method: "PATCH", body: { currentPassword, newPassword } }),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
   create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
