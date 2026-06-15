@@ -128,11 +128,15 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
       apiError = { status: res.status, code: "UNKNOWN", message: `Erreur ${res.status}` };
     }
 
-    // Auth redirect on 401
+    // Auth redirect on 401 (avoid spurious full-page refreshes)
     if (res.status === 401 && !options.skipAuthRedirect) {
+      const hadToken = !!localStorage.getItem("auth_token");
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
-      window.location.href = "/login";
+      // Only redirect if we actually had a session and are not already on /login
+      if (hadToken && typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
       throw new ApiRequestError(apiError);
     }
 
