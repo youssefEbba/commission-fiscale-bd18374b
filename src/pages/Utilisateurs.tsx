@@ -284,71 +284,105 @@ const Utilisateurs = () => {
     return matchSearch && matchRole && matchStatus;
   });
 
-  const UserTable = ({ data }: { data: UtilisateurDto[] }) => (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom complet</TableHead>
-            <TableHead>Identifiant</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Rôle</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun utilisateur trouvé</TableCell>
-            </TableRow>
-          ) : (
-            data.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="font-medium text-foreground">{u.nomComplet || "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{u.username}</TableCell>
-                <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="text-xs">{ROLE_LABELS[u.role] || u.role}</Badge>
-                </TableCell>
-                <TableCell>
-                  {u.actif ? (
-                    <Badge className="bg-primary/10 text-primary border-primary/20"><CheckCircle className="h-3 w-3 mr-1" /> Actif</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground"><XCircle className="h-3 w-3 mr-1" /> Inactif</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(u)}>
-                        <Pencil className="h-4 w-4 mr-2" /> Modifier
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openReset(u)}>
-                        <KeyRound className="h-4 w-4 mr-2" /> Réinitialiser MDP
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => toggleActif(u.id, !u.actif)} disabled={toggling === u.id}>
-                        {u.actif ? <><XCircle className="h-4 w-4 mr-2" /> Désactiver</> : <><CheckCircle className="h-4 w-4 mr-2" /> Activer</>}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => openDelete(u)} className="text-destructive focus:text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" /> Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+  // Pagination
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter, pageSize]);
+
+  const UserTable = ({ data, paginated = false }: { data: UtilisateurDto[]; paginated?: boolean }) => {
+    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const pageData = paginated ? data.slice((currentPage - 1) * pageSize, currentPage * pageSize) : data;
+    const from = data.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    const to = Math.min(currentPage * pageSize, data.length);
+    return (
+      <div className="space-y-3">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom complet</TableHead>
+                <TableHead>Identifiant</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Rôle</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
+            </TableHeader>
+            <TableBody>
+              {pageData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun utilisateur trouvé</TableCell>
+                </TableRow>
+              ) : (
+                pageData.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium text-foreground">{u.nomComplet || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{u.username}</TableCell>
+                    <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">{ROLE_LABELS[u.role] || u.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {u.actif ? (
+                        <Badge className="bg-primary/10 text-primary border-primary/20"><CheckCircle className="h-3 w-3 mr-1" /> Actif</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground"><XCircle className="h-3 w-3 mr-1" /> Inactif</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(u)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toggleActif(u.id, !u.actif)} disabled={toggling === u.id}>
+                            {u.actif ? <><XCircle className="h-4 w-4 mr-2" /> Désactiver</> : <><CheckCircle className="h-4 w-4 mr-2" /> Activer</>}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {paginated && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+            <div className="text-muted-foreground">
+              {data.length === 0 ? "Aucun résultat" : `Affichage ${from}–${to} sur ${data.length}`}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Par page</span>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZE_OPTIONS.map((s) => (<SelectItem key={s} value={String(s)}>{s}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(1)}>«</Button>
+                <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>‹</Button>
+                <span className="px-2 text-muted-foreground">Page {currentPage} / {totalPages}</span>
+                <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>›</Button>
+                <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(totalPages)}>»</Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   return (
     <DashboardLayout>
@@ -475,8 +509,9 @@ const Utilisateurs = () => {
               </SelectContent>
             </Select>
           </div>
-          <TabsContent value="all" className="mt-4"><UserTable data={filtered} /></TabsContent>
+          <TabsContent value="all" className="mt-4"><UserTable data={filtered} paginated /></TabsContent>
           <TabsContent value="pending" className="mt-4"><UserTable data={pending} /></TabsContent>
+
           {canManageResetRequests && (
             <TabsContent value="reset" className="mt-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
