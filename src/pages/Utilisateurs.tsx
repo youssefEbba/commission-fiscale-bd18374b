@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
+import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, DemandeResetStatut, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ const Utilisateurs = () => {
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
   const [resetRequests, setResetRequests] = useState<DemandeResetPasswordDto[]>([]);
   const [resetReqLoading, setResetReqLoading] = useState(false);
+  const [resetStatusFilter, setResetStatusFilter] = useState<"ALL" | DemandeResetStatut>("EN_ATTENTE");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -84,11 +85,13 @@ const Utilisateurs = () => {
     }
   };
 
-  const fetchResetRequests = async () => {
+  const fetchResetRequests = async (statut: "ALL" | DemandeResetStatut = resetStatusFilter) => {
     if (!canManageResetRequests) return;
     setResetReqLoading(true);
     try {
-      const data = await utilisateurApi.listPasswordResetRequests("EN_ATTENTE");
+      const data = await utilisateurApi.listPasswordResetRequests(statut === "ALL" ? undefined : statut);
+      // tri date décroissante (sécurité côté client)
+      data.sort((a, b) => new Date(b.dateCreation).getTime() - new Date(a.dateCreation).getTime());
       setResetRequests(data);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes de réinitialisation", variant: "destructive" });
@@ -97,7 +100,8 @@ const Utilisateurs = () => {
     }
   };
 
-  useEffect(() => { fetchAll(); fetchResetRequests(); }, []);
+  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchResetRequests(resetStatusFilter); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [resetStatusFilter, canManageResetRequests]);
 
   const handleApproveReset = async (req: DemandeResetPasswordDto) => {
     setApprovingReqId(req.id);
@@ -476,11 +480,21 @@ const Utilisateurs = () => {
           <TabsContent value="pending" className="mt-4"><UserTable data={pending} /></TabsContent>
           {canManageResetRequests && (
             <TabsContent value="reset" className="mt-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-muted-foreground">{resetRequests.length} demande(s) en attente</p>
-                <Button variant="outline" size="sm" onClick={fetchResetRequests} disabled={resetReqLoading}>
-                  <RefreshCw className={`h-4 w-4 mr-2 ${resetReqLoading ? "animate-spin" : ""}`} /> Actualiser
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <Tabs value={resetStatusFilter} onValueChange={(v) => setResetStatusFilter(v as "ALL" | DemandeResetStatut)}>
+                  <TabsList>
+                    <TabsTrigger value="ALL">Toutes</TabsTrigger>
+                    <TabsTrigger value="EN_ATTENTE">En attente</TabsTrigger>
+                    <TabsTrigger value="APPROUVEE">Approuvées</TabsTrigger>
+                    <TabsTrigger value="REFUSEE">Refusées</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm text-muted-foreground">{resetRequests.length} demande(s)</p>
+                  <Button variant="outline" size="sm" onClick={() => fetchResetRequests()} disabled={resetReqLoading}>
+                    <RefreshCw className={`h-4 w-4 mr-2 ${resetReqLoading ? "animate-spin" : ""}`} /> Actualiser
+                  </Button>
+                </div>
               </div>
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <Table>
@@ -489,50 +503,80 @@ const Utilisateurs = () => {
                       <TableHead>Identifiant</TableHead>
                       <TableHead>Nom complet</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Demandé le</TableHead>
+                      <TableHead>Traité le</TableHead>
+                      <TableHead>Traité par</TableHead>
+                      <TableHead>Statut</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {resetRequests.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                          Aucune demande en attente
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          Aucune demande
                         </TableCell>
                       </TableRow>
                     ) : (
-                      resetRequests.map((r) => (
-                        <TableRow key={r.id}>
-                          <TableCell className="text-muted-foreground">{r.username}</TableCell>
-                          <TableCell className="font-medium text-foreground">{r.nomComplet || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground">{r.email || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {r.dateCreation ? new Date(r.dateCreation).toLocaleString("fr-FR") : "—"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="inline-flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleApproveReset(r)}
-                                disabled={approvingReqId === r.id}
-                                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                              >
-                                {approvingReqId === r.id
-                                  ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> ...</>
-                                  : <><MailCheck className="h-3 w-3 mr-1" /> Approuver</>}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openRejectReset(r)}
-                                className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                              >
-                                <X className="h-3 w-3 mr-1" /> Refuser
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      resetRequests.map((r) => {
+                        const statutBadge = r.statut === "EN_ATTENTE"
+                          ? <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"><Clock className="h-3 w-3 mr-1" /> En attente</Badge>
+                          : r.statut === "APPROUVEE"
+                            ? <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10"><CheckCircle className="h-3 w-3 mr-1" /> Approuvée</Badge>
+                            : <Badge className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/10"><XCircle className="h-3 w-3 mr-1" /> Refusée</Badge>;
+                        return (
+                          <TableRow key={r.id}>
+                            <TableCell className="text-muted-foreground">{r.username}</TableCell>
+                            <TableCell className="font-medium text-foreground">{r.nomComplet || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground">{r.email || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {r.dateCreation ? new Date(r.dateCreation).toLocaleString("fr-FR") : "—"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {r.dateTraitement ? new Date(r.dateTraitement).toLocaleString("fr-FR") : "—"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {r.traiteParUsername || "—"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                {statutBadge}
+                                {r.statut === "REFUSEE" && r.motifRefus && (
+                                  <span className="text-xs text-muted-foreground italic" title={r.motifRefus}>
+                                    {r.motifRefus.length > 40 ? r.motifRefus.slice(0, 40) + "…" : r.motifRefus}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {r.statut === "EN_ATTENTE" ? (
+                                <div className="inline-flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleApproveReset(r)}
+                                    disabled={approvingReqId === r.id}
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                  >
+                                    {approvingReqId === r.id
+                                      ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> ...</>
+                                      : <><MailCheck className="h-3 w-3 mr-1" /> Approuver</>}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openRejectReset(r)}
+                                    className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                                  >
+                                    <X className="h-3 w-3 mr-1" /> Refuser
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
