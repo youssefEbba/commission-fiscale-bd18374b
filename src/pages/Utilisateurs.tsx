@@ -36,6 +36,9 @@ const Utilisateurs = () => {
   const [acList, setAcList] = useState<AutoriteContractanteDto[]>([]);
   const [entreprisesList, setEntreprisesList] = useState<EntrepriseDto[]>([]);
   const [showEditPwd, setShowEditPwd] = useState(false);
+  const [acSearch, setAcSearch] = useState("");
+  const [entSearch, setEntSearch] = useState("");
+
 
   // Reject reset request dialog
   const [rejectReqOpen, setRejectReqOpen] = useState(false);
