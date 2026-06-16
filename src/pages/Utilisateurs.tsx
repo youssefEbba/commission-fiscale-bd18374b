@@ -85,11 +85,13 @@ const Utilisateurs = () => {
     }
   };
 
-  const fetchResetRequests = async () => {
+  const fetchResetRequests = async (statut: "ALL" | DemandeResetStatut = resetStatusFilter) => {
     if (!canManageResetRequests) return;
     setResetReqLoading(true);
     try {
-      const data = await utilisateurApi.listPasswordResetRequests("EN_ATTENTE");
+      const data = await utilisateurApi.listPasswordResetRequests(statut === "ALL" ? undefined : statut);
+      // tri date décroissante (sécurité côté client)
+      data.sort((a, b) => new Date(b.dateCreation).getTime() - new Date(a.dateCreation).getTime());
       setResetRequests(data);
     } catch {
       toast({ title: "Erreur", description: "Impossible de charger les demandes de réinitialisation", variant: "destructive" });
@@ -98,7 +100,8 @@ const Utilisateurs = () => {
     }
   };
 
-  useEffect(() => { fetchAll(); fetchResetRequests(); }, []);
+  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchResetRequests(resetStatusFilter); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [resetStatusFilter, canManageResetRequests]);
 
   const handleApproveReset = async (req: DemandeResetPasswordDto) => {
     setApprovingReqId(req.id);
