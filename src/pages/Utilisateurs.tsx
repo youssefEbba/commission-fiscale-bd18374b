@@ -186,7 +186,6 @@ const Utilisateurs = () => {
     setEditForm({
       nomComplet: u.nomComplet || "",
       email: u.email || "",
-      role: u.role,
       autoriteContractanteId: u.autoriteContractanteId ?? undefined,
       entrepriseId: u.entrepriseId ?? undefined,
       newPassword: "",
@@ -207,7 +206,7 @@ const Utilisateurs = () => {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
-    const role = editForm.role || editUser.role;
+    const role = editUser.role;
     // Validation rattachement
     if (AC_ROLES.includes(role) && !editForm.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Une Autorité Contractante est requise pour ce rôle.", variant: "destructive" });
@@ -218,10 +217,10 @@ const Utilisateurs = () => {
       return;
     }
     // Construire le payload — n'envoyer que les champs renseignés/modifiés
+    // Le rôle est figé après création et n'est plus modifiable via cet endpoint
     const payload: UpdateUtilisateurRequest = {};
     if ((editForm.nomComplet || "") !== (editUser.nomComplet || "")) payload.nomComplet = editForm.nomComplet || "";
     if ((editForm.email || "") !== (editUser.email || "")) payload.email = editForm.email || "";
-    if (canAssignRole && editForm.role && editForm.role !== editUser.role) payload.role = editForm.role;
     if (AC_ROLES.includes(role)) payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
     if (ENT_ROLES.includes(role)) payload.entrepriseId = editForm.entrepriseId ?? null;
     if (editForm.newPassword && editForm.newPassword.trim().length > 0) {
@@ -603,18 +602,12 @@ const Utilisateurs = () => {
               <Label>Email</Label>
               <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
             </div>
-            {canAssignRole && (
-              <div className="space-y-2">
-                <Label>Rôle</Label>
-                <Select value={editForm.role || ""} onValueChange={(v) => setEditForm((p) => ({ ...p, role: v, autoriteContractanteId: AC_ROLES.includes(v) ? p.autoriteContractanteId : undefined, entrepriseId: ENT_ROLES.includes(v) ? p.entrepriseId : undefined }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            {AC_ROLES.includes(editForm.role || editUser?.role || "") && (
+            <div className="space-y-2">
+              <Label>Rôle</Label>
+              <Input value={ROLE_OPTIONS.find((r) => r.value === editUser?.role)?.label || editUser?.role || ""} disabled readOnly />
+              <p className="text-xs text-muted-foreground">Le rôle est figé à la création et ne peut pas être modifié.</p>
+            </div>
+            {AC_ROLES.includes(editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Autorité Contractante *</Label>
                 <Select
@@ -630,7 +623,7 @@ const Utilisateurs = () => {
                 </Select>
               </div>
             )}
-            {ENT_ROLES.includes(editForm.role || editUser?.role || "") && (
+            {ENT_ROLES.includes(editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Entreprise *</Label>
                 <Select
