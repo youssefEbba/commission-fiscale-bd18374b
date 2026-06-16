@@ -774,7 +774,7 @@ export const demandeCorrectionApi = {
     const formData = new FormData();
     formData.append("file", file);
     if (message) formData.append("message", message);
-    return apiFetch<DocumentDto>(`/demandes-correction/${id}/documents?type=${encodeURIComponent(type)}`, {
+    return apiFetch<DocumentDto>(`/demandes-correction/${id}/documents?codeDocument=${encodeURIComponent(type)}`, {
       method: "POST",
       rawBody: formData,
     });
