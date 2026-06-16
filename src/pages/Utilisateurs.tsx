@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
+import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, DemandeResetStatut, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
