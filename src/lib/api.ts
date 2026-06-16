@@ -228,13 +228,9 @@ export const authApi = {
     apiFetch<{ message: string }>("/auth/password-reset/request", { method: "POST", body: { email } }),
 };
 
-export interface UpdateUtilisateurRequest { username?: string; nomComplet?: string; email?: string; role?: string; }
-
 export interface UpdateUtilisateurRequest {
-  username?: string;
   nomComplet?: string | null;
   email?: string | null;
-  role?: string | null;
   autoriteContractanteId?: number | null;
   entrepriseId?: number | null;
   newPassword?: string | null;
