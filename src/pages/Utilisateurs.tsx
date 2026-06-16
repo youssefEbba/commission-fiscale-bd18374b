@@ -602,18 +602,12 @@ const Utilisateurs = () => {
               <Label>Email</Label>
               <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} />
             </div>
-            {canAssignRole && (
-              <div className="space-y-2">
-                <Label>Rôle</Label>
-                <Select value={editForm.role || ""} onValueChange={(v) => setEditForm((p) => ({ ...p, role: v, autoriteContractanteId: AC_ROLES.includes(v) ? p.autoriteContractanteId : undefined, entrepriseId: ENT_ROLES.includes(v) ? p.entrepriseId : undefined }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            {AC_ROLES.includes(editForm.role || editUser?.role || "") && (
+            <div className="space-y-2">
+              <Label>Rôle</Label>
+              <Input value={ROLE_OPTIONS.find((r) => r.value === editUser?.role)?.label || editUser?.role || ""} disabled readOnly />
+              <p className="text-xs text-muted-foreground">Le rôle est figé à la création et ne peut pas être modifié.</p>
+            </div>
+            {AC_ROLES.includes(editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Autorité Contractante *</Label>
                 <Select
@@ -629,7 +623,7 @@ const Utilisateurs = () => {
                 </Select>
               </div>
             )}
-            {ENT_ROLES.includes(editForm.role || editUser?.role || "") && (
+            {ENT_ROLES.includes(editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Entreprise *</Label>
                 <Select
