@@ -622,7 +622,7 @@ const Utilisateurs = () => {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifier l'utilisateur</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 mt-2">
             <div className="space-y-2">
