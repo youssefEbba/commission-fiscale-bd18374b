@@ -186,7 +186,6 @@ const Utilisateurs = () => {
     setEditForm({
       nomComplet: u.nomComplet || "",
       email: u.email || "",
-      role: u.role,
       autoriteContractanteId: u.autoriteContractanteId ?? undefined,
       entrepriseId: u.entrepriseId ?? undefined,
       newPassword: "",
