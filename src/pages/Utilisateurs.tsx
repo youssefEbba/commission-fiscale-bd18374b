@@ -206,7 +206,7 @@ const Utilisateurs = () => {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
-    const role = editForm.role || editUser.role;
+    const role = editUser.role;
     // Validation rattachement
     if (AC_ROLES.includes(role) && !editForm.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Une Autorité Contractante est requise pour ce rôle.", variant: "destructive" });
@@ -217,10 +217,10 @@ const Utilisateurs = () => {
       return;
     }
     // Construire le payload — n'envoyer que les champs renseignés/modifiés
+    // Le rôle est figé après création et n'est plus modifiable via cet endpoint
     const payload: UpdateUtilisateurRequest = {};
     if ((editForm.nomComplet || "") !== (editUser.nomComplet || "")) payload.nomComplet = editForm.nomComplet || "";
     if ((editForm.email || "") !== (editUser.email || "")) payload.email = editForm.email || "";
-    if (canAssignRole && editForm.role && editForm.role !== editUser.role) payload.role = editForm.role;
     if (AC_ROLES.includes(role)) payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
     if (ENT_ROLES.includes(role)) payload.entrepriseId = editForm.entrepriseId ?? null;
     if (editForm.newPassword && editForm.newPassword.trim().length > 0) {
