@@ -36,6 +36,9 @@ const Utilisateurs = () => {
   const [acList, setAcList] = useState<AutoriteContractanteDto[]>([]);
   const [entreprisesList, setEntreprisesList] = useState<EntrepriseDto[]>([]);
   const [showEditPwd, setShowEditPwd] = useState(false);
+  const [acSearch, setAcSearch] = useState("");
+  const [entSearch, setEntSearch] = useState("");
+
 
   // Reject reset request dialog
   const [rejectReqOpen, setRejectReqOpen] = useState(false);
@@ -622,7 +625,7 @@ const Utilisateurs = () => {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifier l'utilisateur</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 mt-2">
             <div className="space-y-2">
@@ -649,11 +652,28 @@ const Utilisateurs = () => {
                   value={editForm.autoriteContractanteId ? String(editForm.autoriteContractanteId) : ""}
                   onValueChange={(v) => setEditForm((p) => ({ ...p, autoriteContractanteId: Number(v) }))}
                 >
-                  <SelectTrigger><SelectValue placeholder="Sélectionnez une AC" /></SelectTrigger>
-                  <SelectContent>
-                    {acList.map((ac) => (
-                      <SelectItem key={ac.id} value={String(ac.id)}>{ac.nom}{ac.sigle ? ` (${ac.sigle})` : ""}</SelectItem>
-                    ))}
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionnez une AC" /></SelectTrigger>
+                  <SelectContent className="max-h-[320px] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                    <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+                      <Input
+                        placeholder="Rechercher une AC..."
+                        value={acSearch}
+                        onChange={(e) => setAcSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
+                    </div>
+                    {acList
+                      .filter((ac) => {
+                        const q = acSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (ac.nom || "").toLowerCase().includes(q) || (ac.sigle || "").toLowerCase().includes(q);
+                      })
+                      .map((ac) => (
+                        <SelectItem key={ac.id} value={String(ac.id)} className="whitespace-normal break-words">
+                          {ac.nom}{ac.sigle ? ` (${ac.sigle})` : ""}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -665,11 +685,28 @@ const Utilisateurs = () => {
                   value={editForm.entrepriseId ? String(editForm.entrepriseId) : ""}
                   onValueChange={(v) => setEditForm((p) => ({ ...p, entrepriseId: Number(v) }))}
                 >
-                  <SelectTrigger><SelectValue placeholder="Sélectionnez une entreprise" /></SelectTrigger>
-                  <SelectContent>
-                    {entreprisesList.map((ent) => (
-                      <SelectItem key={ent.id} value={String(ent.id)}>{ent.raisonSociale}{ent.nif ? ` — ${ent.nif}` : ""}</SelectItem>
-                    ))}
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionnez une entreprise" /></SelectTrigger>
+                  <SelectContent className="max-h-[320px] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                    <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+                      <Input
+                        placeholder="Rechercher une entreprise..."
+                        value={entSearch}
+                        onChange={(e) => setEntSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
+                    </div>
+                    {entreprisesList
+                      .filter((ent) => {
+                        const q = entSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (ent.raisonSociale || "").toLowerCase().includes(q) || (ent.nif || "").toLowerCase().includes(q);
+                      })
+                      .map((ent) => (
+                        <SelectItem key={ent.id} value={String(ent.id)} className="whitespace-normal break-words">
+                          {ent.raisonSociale}{ent.nif ? ` — ${ent.nif}` : ""}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
