@@ -21,6 +21,7 @@ const Utilisateurs = () => {
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
   const [resetRequests, setResetRequests] = useState<DemandeResetPasswordDto[]>([]);
   const [resetReqLoading, setResetReqLoading] = useState(false);
+  const [resetStatusFilter, setResetStatusFilter] = useState<"ALL" | DemandeResetStatut>("EN_ATTENTE");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
