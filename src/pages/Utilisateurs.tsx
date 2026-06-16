@@ -509,8 +509,9 @@ const Utilisateurs = () => {
               </SelectContent>
             </Select>
           </div>
-          <TabsContent value="all" className="mt-4"><UserTable data={filtered} /></TabsContent>
+          <TabsContent value="all" className="mt-4"><UserTable data={filtered} paginated /></TabsContent>
           <TabsContent value="pending" className="mt-4"><UserTable data={pending} /></TabsContent>
+
           {canManageResetRequests && (
             <TabsContent value="reset" className="mt-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
