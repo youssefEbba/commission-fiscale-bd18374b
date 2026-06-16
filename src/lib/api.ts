@@ -272,8 +272,14 @@ export const utilisateurApi = {
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
   resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
-  listPasswordResetRequests: (statut: DemandeResetStatut = "EN_ATTENTE") =>
-    apiFetch<DemandeResetPasswordDto[]>(`/utilisateurs/password-reset-requests?statut=${statut}`),
+  listPasswordResetRequests: (statut?: DemandeResetStatut) =>
+    apiFetch<DemandeResetPasswordDto[]>(
+      statut
+        ? `/utilisateurs/password-reset-requests?statut=${statut}`
+        : `/utilisateurs/password-reset-requests`
+    ),
+  getPasswordResetRequest: (id: number) =>
+    apiFetch<DemandeResetPasswordDto>(`/utilisateurs/password-reset-requests/${id}`),
   approvePasswordResetRequest: (id: number) =>
     apiFetch<DemandeResetPasswordDto>(`/utilisateurs/password-reset-requests/${id}/approve`, { method: "PATCH" }),
   rejectPasswordResetRequest: (id: number, motif?: string) =>
