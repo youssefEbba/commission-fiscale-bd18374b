@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
-import { dossierGedApi, DossierGedDto, demandeCorrectionApi, marcheApi } from "@/lib/api";
+import { dossierGedApi, DossierGedDto, demandeCorrectionApi, marcheApi, documentRequirementApi, ProcessusType } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,21 @@ const ETAPE_DOC_CODES: Record<string, string[]> = {
   CLOTURE_CREDIT: ["DOCUMENT_CLOTURE"],
   MODIFICATION_AVENANT: ["AVENANT"],
   SOUS_TRAITANCE: ["CONTRAT_SOUS_TRAITANCE"],
+};
+
+/** Mapping étape de dossier → processus GED (pour récupérer les types de documents paramétrés). */
+const ETAPE_TO_PROCESSUS: Record<string, ProcessusType> = {
+  DEMANDE_CORRECTION: "CORRECTION_OFFRE_FISCALE",
+  TRAITEMENT_CORRECTION: "CORRECTION_OFFRE_FISCALE",
+  RETOUR_CORRECTION: "CORRECTION_OFFRE_FISCALE",
+  DEMANDE_CREDIT_IMPOT: "MISE_EN_PLACE_CI",
+  EMISSION_CERTIFICAT: "MISE_EN_PLACE_CI",
+  UTILISATION_DOUANE: "UTILISATION_CI_EXTERIEUR",
+  UTILISATION_TVA: "UTILISATION_CI_INTERIEUR",
+  TRANSFERT_CREDIT: "TRANSFERT_CREDIT",
+  CLOTURE_CREDIT: "CLOTURE_CI",
+  MODIFICATION_AVENANT: "MODIFICATION_CI",
+  SOUS_TRAITANCE: "SOUS_TRAITANCE",
 };
 
 import { API_BASE } from "@/lib/apiConfig";
@@ -257,12 +272,29 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
 
   const openInject = (etape: string) => {
     setInjectEtape(etape);
-    const presets = ETAPE_DOC_CODES[etape] || [];
-    setInjectCode(presets[0] || "");
+    setInjectCode("");
     setInjectCustomCode("");
     setInjectTargetId("");
     setInjectFile(null);
   };
+
+  const injectProcessus = injectEtape ? ETAPE_TO_PROCESSUS[injectEtape] : undefined;
+  const requirementsQuery = useQuery({
+    queryKey: ["document-requirements", injectProcessus],
+    queryFn: () => documentRequirementApi.getByProcessus(injectProcessus!),
+    enabled: !!injectProcessus,
+    staleTime: 5 * 60 * 1000,
+  });
+  const requirementCodes = useMemo(() => {
+    const reqs = requirementsQuery.data || [];
+    const codes = reqs
+      .slice()
+      .sort((a, b) => (a.ordreAffichage ?? 9999) - (b.ordreAffichage ?? 9999))
+      .map((r) => r.codeDocument || r.typeDocument)
+      .filter((c): c is string => !!c);
+    if (codes.length > 0) return Array.from(new Set(codes));
+    return ETAPE_DOC_CODES[injectEtape || ""] || [];
+  }, [requirementsQuery.data, injectEtape]);
 
   const closeInject = () => {
     setInjectEtape(null);
@@ -519,12 +551,14 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
 
             <div className="space-y-2">
               <Label htmlFor="inject-code">{t("ged:dossiers.inject.code", { defaultValue: "Type de document" })} *</Label>
-              <Select value={injectCode} onValueChange={setInjectCode}>
+              <Select value={injectCode} onValueChange={setInjectCode} disabled={requirementsQuery.isLoading}>
                 <SelectTrigger id="inject-code">
-                  <SelectValue placeholder={t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
+                  <SelectValue placeholder={requirementsQuery.isLoading
+                    ? t("ged:dossiers.inject.code_loading", { defaultValue: "Chargement..." })
+                    : t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(ETAPE_DOC_CODES[injectEtape || ""] || []).map((code) => (
+                  {requirementCodes.map((code) => (
                     <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
                   ))}
                   <SelectItem value="__custom__">{t("ged:dossiers.inject.custom", { defaultValue: "Autre (saisir le code)" })}</SelectItem>
