@@ -330,6 +330,19 @@ const DemandesMiseEnPlace = () => {
     } finally { setSubmittingId(null); }
   };
 
+  const confirmVisa = async () => {
+    if (visaConfirmId == null) return;
+    setVisaLoading(true);
+    try {
+      await certificatCreditApi.postDecision(visaConfirmId, "VISA");
+      okToast(t("mise_en_place:toast.visa_apposed"));
+      if (selected && selected.id === visaConfirmId) openDetail(selected);
+      fetchCertificats();
+    } catch (e: unknown) {
+      errToast(tErr(e, t("mise_en_place:toast.visa_apposed")));
+    } finally { setVisaLoading(false); setVisaConfirmOpen(false); }
+  };
+
   const handleDeleteBrouillon = async () => {
     if (!deletingTarget) return;
     setDeletingLoading(true);
