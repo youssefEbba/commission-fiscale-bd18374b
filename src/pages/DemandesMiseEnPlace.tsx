@@ -1149,6 +1149,21 @@ const DemandesMiseEnPlace = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
