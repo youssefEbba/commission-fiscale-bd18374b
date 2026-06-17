@@ -194,11 +194,13 @@ const App = () => (
                 <ExtractionDGD />
               </ProtectedRoute>
             } />
+            {/* Route chatbot-dgd désactivée — sera activée dans une version ultérieure
             <Route path="/dashboard/chatbot-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ChatbotDGD />
               </ProtectedRoute>
             } />
+            */}
             <Route path="/dashboard/relais" element={
               <ProtectedRoute allowedRoles={["COMMISSION_RELAIS"]}>
                 <CommissionRelais />

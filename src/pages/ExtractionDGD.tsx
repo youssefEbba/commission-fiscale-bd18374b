@@ -263,7 +263,7 @@ const ExtractionDGD = () => {
           </CardContent>
         </Card>
 
-        {/* Action: Go to chatbots */}
+        {/* Accès aux chatbots IA désactivé — sera activé dans une version ultérieure
         <div className="flex justify-end">
           <Button
             size="lg"
@@ -276,6 +276,7 @@ const ExtractionDGD = () => {
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
+        */}
       </div>
     </DashboardLayout>
   );
