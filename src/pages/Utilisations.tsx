@@ -1160,7 +1160,11 @@ const Utilisations = () => {
                 <Save className="h-4 w-4 me-2" />
                 {editingId != null ? t("utilisations:create.actions.save_edit") : t("utilisations:create.actions.save_draft")}
               </Button>
-              <Button onClick={() => handleSave("submit")} disabled={creating}>
+              <Button
+                onClick={() => handleSave("submit")}
+                disabled={creating || eligibiliteLoading || !canSubmit}
+                title={!canSubmit ? preSubmitErrors.join(" • ") : undefined}
+              >
                 {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                 <Send className="h-4 w-4 me-2" />
                 {editingId != null ? t("utilisations:create.actions.submit_edit") : t("utilisations:create.actions.submit_new")}
