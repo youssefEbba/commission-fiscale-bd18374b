@@ -103,6 +103,8 @@ const Demandes = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);

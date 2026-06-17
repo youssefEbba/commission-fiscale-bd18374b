@@ -98,6 +98,8 @@ const DemandesMiseEnPlace = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [deletingTarget, setDeletingTarget] = useState<CertificatCreditDto | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
