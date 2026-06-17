@@ -8,6 +8,7 @@ import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
+  conventionApi, ConventionDto,
   DecisionCorrectionDto,
   documentRequirementApi,
 } from "@/lib/api";
@@ -87,6 +88,7 @@ const MiseEnPlaceDetail = () => {
   const [entreprise, setEntreprise] = useState<EntrepriseDto | null>(null);
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [marche, setMarche] = useState<MarcheDto | null>(null);
+  const [convention, setConvention] = useState<ConventionDto | null>(null);
 
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -154,7 +156,21 @@ const MiseEnPlaceDetail = () => {
       const promises: Promise<any>[] = [];
       if (cert.entrepriseId) promises.push(entrepriseApi.getById(cert.entrepriseId).then(setEntreprise).catch(() => {}));
       if (cert.demandeCorrectionId) promises.push(demandeCorrectionApi.getById(cert.demandeCorrectionId).then(setCorrection).catch(() => {}));
-      if (cert.marcheId) promises.push(marcheApi.getById(cert.marcheId).then(setMarche).catch(() => {}));
+      if (cert.marcheId) {
+        promises.push(
+          marcheApi.getById(cert.marcheId)
+            .then(async (m) => {
+              setMarche(m);
+              if (m?.conventionId) {
+                try {
+                  const conv = await conventionApi.getById(m.conventionId);
+                  setConvention(conv);
+                } catch { /* ignore */ }
+              }
+            })
+            .catch(() => {})
+        );
+      }
       await Promise.all(promises);
     } catch {
       errToast(t("mise_en_place:detail.load_error"));
@@ -553,7 +569,7 @@ const MiseEnPlaceDetail = () => {
                           type="button"
                           variant="outline"
                           className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() => generateCertificatToSignPdf(c)}
+                          onClick={() => generateCertificatToSignPdf(c, { entreprise, marche, convention })}
                         >
                           <Download className="h-4 w-4 me-1" /> Télécharger le certificat à signer
                         </Button>
