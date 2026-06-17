@@ -6,7 +6,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
   CreateUtilisationCreditRequest, UTILISATION_STATUT_VALUES,
-  certificatCreditApi, CertificatCreditDto,
+  certificatCreditApi, CertificatCreditDto, CertificatUtilisationEligibilityDto,
   UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
   TypeDocumentUtilisation, DocumentDto,
   documentRequirementApi, DocumentRequirementDto,
