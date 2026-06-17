@@ -128,7 +128,11 @@ const CorrectionDouaniere = () => {
   const fetchDocs = async () => {
     if (!id) return;
     setDocsLoading(true);
-    try { setDocs(await demandeCorrectionApi.getDocuments(Number(id))); }
+    try {
+      const list = await demandeCorrectionApi.getDocuments(Number(id));
+      // Normalisation: le backend renvoie désormais `codeDocument`, on garde `type` pour la compat UI.
+      setDocs(list.map(d => ({ ...d, type: d.codeDocument ?? d.type })));
+    }
     catch { setDocs([]); }
     finally { setDocsLoading(false); }
   };
