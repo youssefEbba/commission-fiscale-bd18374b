@@ -931,7 +931,8 @@ const UtilisationDetail = () => {
                       <div>
                         <p className="font-medium text-sm">{d.nomFichier}</p>
                         <p className="text-xs text-muted-foreground">
-                          {tTypeDocument(d.type) || d.type?.replace(/_/g, " ")} — {t("utilisations:documents.version_short", { n: d.version || 1 })}
+                          {d.type ? `${tTypeDocument(d.type) || d.type.replace(/_/g, " ")} · ` : ""}
+                          {t("utilisations:documents.version_short", { n: d.version || 1 })}
                         </p>
                       </div>
                       {d.chemin && (
