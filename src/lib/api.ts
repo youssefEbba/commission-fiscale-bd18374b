@@ -2120,17 +2120,24 @@ export const referentielTaxeApi = {
 
 // ── Dossiers GED ──
 
+export interface DossierDocumentGed {
+  id: number;
+  nom: string;
+  type: string;
+  codeDocument?: string;
+  dateUpload?: string;
+  taille?: number;
+  url?: string;
+  version?: number;
+  actif?: boolean;
+  versionCourante?: boolean;
+  injectionPresident?: boolean;
+}
+
 export interface DossierEtapeGed {
   etape: string;
   label: string;
-  documents: Array<{
-    id: number;
-    nom: string;
-    type: string;
-    dateUpload?: string;
-    taille?: number;
-    url?: string;
-  }>;
+  documents: DossierDocumentGed[];
 }
 
 export interface DossierGedDto {
@@ -2150,7 +2157,26 @@ export interface DossierGedDto {
   etapes: DossierEtapeGed[];
 }
 
+export interface InjectDossierDocumentParams {
+  etape: string;
+  codeDocument: string;
+  file: File;
+  targetId?: number;
+}
+
 export const dossierGedApi = {
   getAll: () => apiFetch<DossierGedDto[]>("/dossiers"),
   getById: (id: number) => apiFetch<DossierGedDto>(`/dossiers/${id}`),
+  /** Injection GED par le Président — POST multipart, contourne les restrictions de statut. */
+  injectDocument: (dossierId: number, params: InjectDossierDocumentParams) => {
+    const form = new FormData();
+    form.append("etape", params.etape);
+    form.append("codeDocument", params.codeDocument);
+    form.append("file", params.file);
+    if (params.targetId != null) form.append("targetId", String(params.targetId));
+    return apiFetch<DossierDocumentGed>(`/dossiers/${dossierId}/documents`, {
+      method: "POST",
+      rawBody: form,
+    });
+  },
 };
