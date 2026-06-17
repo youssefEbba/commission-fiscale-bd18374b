@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
   AlertTriangle, History, DollarSign, Upload, MessageSquare, Send,
@@ -122,6 +123,7 @@ const MiseEnPlaceDetail = () => {
   const [respondingLoading, setRespondingLoading] = useState(false);
 
   const [showAnnulation, setShowAnnulation] = useState(false);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
 
   const okToast = (description: string) =>
     toast({ title: t("common:states.success"), description });
@@ -236,6 +238,11 @@ const MiseEnPlaceDetail = () => {
       errToast(e.message);
       fetchData();
     } finally { setVisaLoading(false); }
+  };
+
+  const confirmVisa = () => {
+    setVisaConfirmOpen(false);
+    handleVisa();
   };
 
   const handleRejetTemp = async () => {
@@ -479,7 +486,7 @@ const MiseEnPlaceDetail = () => {
               )}
 
               {canDoVisa && !dgtcpMontantsRequired && (
-                <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={handleVisa}>
+                <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={() => setVisaConfirmOpen(true)}>
                   <ShieldCheck className="h-4 w-4 me-1" /> {t("mise_en_place:actions.visa")}
                 </Button>
               )}
@@ -647,7 +654,7 @@ const MiseEnPlaceDetail = () => {
               {isMyTab && !isClosed && !tabHasVisa && (
                 <div className="flex gap-2 mt-3 justify-center">
                   {tabCanVisa && (
-                    <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={handleVisa}>
+                    <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={() => setVisaConfirmOpen(true)}>
                       <CheckCircle className="h-3.5 w-3.5 me-1" /> {t("mise_en_place:actions.visa")}
                     </Button>
                   )}
@@ -946,6 +953,21 @@ const MiseEnPlaceDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

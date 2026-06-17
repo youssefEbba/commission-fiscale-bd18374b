@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
@@ -111,6 +112,7 @@ const CorrectionDouaniere = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
 
   const errTitle = t("common:errors.generic_title", { defaultValue: "Erreur" });
   const okTitle = t("common:success.generic_title", { defaultValue: "Succès" });
@@ -255,6 +257,11 @@ const CorrectionDouaniere = () => {
     } catch (e: any) {
       toast({ title: errTitle, description: e.message, variant: "destructive" });
     } finally { setActionLoading(false); }
+  };
+
+  const confirmVisa = () => {
+    setVisaConfirmOpen(false);
+    handleTempVisa();
   };
 
   const handleTempReject = async () => {
@@ -786,7 +793,7 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
+                    <Button className="w-full" onClick={() => setVisaConfirmOpen(true)} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <CheckCircle className="h-4 w-4 me-2" />}
                       {myHasVisa ? t("correction_douaniere:actions.visa_done_short") : myOpenRejets.length > 0 ? t("correction_douaniere:actions.solve_rejets_first") : t("correction_douaniere:actions.apposer_visa")}
                     </Button>
@@ -1281,6 +1288,21 @@ const CorrectionDouaniere = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

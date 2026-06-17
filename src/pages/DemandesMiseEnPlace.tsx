@@ -98,6 +98,8 @@ const DemandesMiseEnPlace = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [deletingTarget, setDeletingTarget] = useState<CertificatCreditDto | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
@@ -326,6 +328,19 @@ const DemandesMiseEnPlace = () => {
     } catch (e: unknown) {
       errToast(tErr(e, t("mise_en_place:toast.submitted_envoyee_to_encontrole")));
     } finally { setSubmittingId(null); }
+  };
+
+  const confirmVisa = async () => {
+    if (visaConfirmId == null) return;
+    setVisaLoading(true);
+    try {
+      await certificatCreditApi.postDecision(visaConfirmId, "VISA");
+      okToast(t("mise_en_place:toast.visa_apposed"));
+      if (selected && selected.id === visaConfirmId) openDetail(selected);
+      fetchCertificats();
+    } catch (e: unknown) {
+      errToast(tErr(e, t("mise_en_place:toast.visa_apposed")));
+    } finally { setVisaLoading(false); setVisaConfirmOpen(false); }
   };
 
   const handleDeleteBrouillon = async () => {
@@ -639,16 +654,7 @@ const DemandesMiseEnPlace = () => {
                       )}
                       {isMyRole && !["OUVERT", "ANNULE", "CLOTURE"].includes(selected.statut) && (
                         <div className="flex gap-2 mt-3 justify-center">
-                          <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={async () => {
-                            setVisaLoading(true);
-                            try {
-                              await certificatCreditApi.postDecision(selected.id, "VISA");
-                              okToast(t("mise_en_place:toast.visa_apposed"));
-                              openDetail(selected);
-                            } catch (e: unknown) {
-                              errToast(tErr(e, t("mise_en_place:toast.visa_apposed")));
-                            } finally { setVisaLoading(false); }
-                          }}>
+                          <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={() => { setVisaConfirmId(selected.id); setVisaConfirmOpen(true); }}>
                             <CheckCircle className="h-3.5 w-3.5 me-1" /> {t("mise_en_place:actions.visa")}
                           </Button>
                           <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={() => { setShowRejetTemp(selected); setRejetTempMotif(""); setRejetTempDocs([]); }}>
@@ -1143,6 +1149,21 @@ const DemandesMiseEnPlace = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

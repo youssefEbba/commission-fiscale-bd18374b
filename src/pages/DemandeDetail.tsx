@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileText, ArrowLeft, Upload, Loader2, Plus,
@@ -166,6 +167,8 @@ const DemandeDetail = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
   // Document à uploader obligatoirement avant le visa, selon le rôle.
   // Libellé via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
@@ -258,6 +261,11 @@ const DemandeDetail = () => {
       } catch { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
     }
     await handleTempVisa(demandeId);
+  };
+
+  const confirmVisa = () => {
+    if (visaConfirmId != null) checkAndHandleVisa(visaConfirmId);
+    setVisaConfirmOpen(false);
   };
 
   const handleOffreCorrigeeUploadAndVisa = async () => {
@@ -850,7 +858,7 @@ const DemandeDetail = () => {
                           if (isVisaAction && (myHasVisa || myOpenRejets.length > 0)) return null;
                           if (isRejetAction && myHasVisa) return null;
                           return (
-                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}>
+                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : (setVisaConfirmId(selected.id), setVisaConfirmOpen(true))}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
                             {tTransition(tr.labelKey)}
                           </Button>
@@ -1294,6 +1302,21 @@ const DemandeDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

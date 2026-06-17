@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
@@ -102,6 +103,8 @@ const Demandes = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
@@ -278,6 +281,11 @@ const Demandes = () => {
       }
     }
     await handleTempVisa(id);
+  };
+
+  const confirmVisa = () => {
+    if (visaConfirmId != null) checkAndHandleVisa(visaConfirmId);
+    setVisaConfirmOpen(false);
   };
 
   const handleOffreCorrigeeUploadAndVisa = async () => {
@@ -731,7 +739,7 @@ const Demandes = () => {
 
                                     const actionItems = [
                                       ...visaTransitions.map((tr, idx) => (
-                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => checkAndHandleVisa(d.id)}>
+                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => { setVisaConfirmId(d.id); setVisaConfirmOpen(true); }}>
                                           <tr.icon className="h-4 w-4 me-2" />
                                           {tTransition(tr.labelKey)}
                                         </DropdownMenuItem>
@@ -1059,6 +1067,21 @@ const Demandes = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

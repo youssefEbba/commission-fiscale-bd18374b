@@ -1263,10 +1263,18 @@ const UtilisationDetail = () => {
               );
             })()}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowLiq(false)}>{t("utilisations:visa_dgd.cancel")}</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id])} onClick={handleVisaDgd}>
-                {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:visa_dgd.confirm")}
-              </Button>
+              <div className="flex flex-col items-start gap-2 w-full">
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 w-full">
+                  <AlertTriangle className="h-3.5 w-3.5 inline me-1" />
+                  Attention : le visa est une action irréversible.
+                </p>
+                <div className="flex gap-2 justify-end w-full">
+                  <Button variant="outline" onClick={() => setShowLiq(false)}>{t("utilisations:visa_dgd.cancel")}</Button>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id])} onClick={handleVisaDgd}>
+                    {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:visa_dgd.confirm")}
+                  </Button>
+                </div>
+              </div>
             </DialogFooter>
           </div>
         </DialogContent>
