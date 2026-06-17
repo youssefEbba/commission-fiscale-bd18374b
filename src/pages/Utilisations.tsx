@@ -6,7 +6,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
   CreateUtilisationCreditRequest, UTILISATION_STATUT_VALUES,
-  certificatCreditApi, CertificatCreditDto,
+  certificatCreditApi, CertificatCreditDto, CertificatUtilisationEligibilityDto,
   UTILISATION_DOCUMENT_TYPES, UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA,
   TypeDocumentUtilisation, DocumentDto,
   documentRequirementApi, DocumentRequirementDto,
@@ -136,6 +136,25 @@ const Utilisations = () => {
 
   // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
   const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
+
+  // Éligibilité du certificat sélectionné (rafraîchi à chaque changement de cert/type)
+  const [eligibilite, setEligibilite] = useState<CertificatUtilisationEligibilityDto | null>(null);
+  const [eligibiliteLoading, setEligibiliteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showCreate || !form.certificatCreditId) {
+      setEligibilite(null);
+      return;
+    }
+    let cancelled = false;
+    setEligibiliteLoading(true);
+    certificatCreditApi
+      .getEligibiliteUtilisation(form.certificatCreditId, createType)
+      .then((res) => { if (!cancelled) setEligibilite(res); })
+      .catch(() => { if (!cancelled) setEligibilite(null); })
+      .finally(() => { if (!cancelled) setEligibiliteLoading(false); });
+    return () => { cancelled = true; };
+  }, [showCreate, form.certificatCreditId, createType]);
 
   // Référentiel des taxes (admin-managed)
   const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
@@ -328,6 +347,48 @@ const Utilisations = () => {
 
   const errorTitle = () => t("common:errors.title", { defaultValue: "Erreur" });
 
+  // Totaux AU_CI (cordon vs TVA) pour validation côté front
+  const sumAuCi = (lignes: LigneBulletinRequest[] | undefined): { cordon: number; tva: number } => {
+    let cordon = 0, tva = 0;
+    for (const l of (lignes || [])) {
+      const v = Number(l.valeurTaxe) || 0;
+      if (l.affectation !== "AU_CI" || v <= 0) continue;
+      if ((l.codeTaxe || "").toUpperCase() === "TVA") tva += v;
+      else cordon += v;
+    }
+    return { cordon, tva };
+  };
+
+  /** Erreurs bloquantes pré-soumission (combine éligibilité serveur + soldes locaux). */
+  const computePreSubmitErrors = (): string[] => {
+    const errors: string[] = [];
+    if (!form.certificatCreditId) return errors;
+    const elig = eligibilite;
+    if (elig && !elig.eligible) errors.push(...(elig.motifs ?? []));
+    if (createType === "DOUANIER") {
+      if (elig?.transfertExecute) errors.push(t("utilisations:validation.transfert_executed", { defaultValue: "Transfert exécuté — utilisations douanières interdites" }));
+      const lignes = form.lignes || [];
+      if (lignes.length === 0) errors.push(t("utilisations:validation.lignes_required", { defaultValue: "Au moins une ligne de bulletin requise" }));
+      const { cordon, tva } = sumAuCi(lignes);
+      const soldeCordon = elig?.soldeCordon ?? 0;
+      const quotaTva = elig?.tvaImportationDouane ?? 0;
+      if (elig && cordon > soldeCordon) {
+        errors.push(t("utilisations:validation.solde_cordon_insuffisant", { defaultValue: `Solde cordon insuffisant (disponible=${soldeCordon}, requis=${cordon})`, disponible: soldeCordon, requis: cordon }));
+      }
+      if (elig && quotaTva > 0 && tva > quotaTva) {
+        errors.push(t("utilisations:validation.quota_tva_insuffisant", { defaultValue: `Quota TVA import insuffisant (disponible=${quotaTva}, requis=${tva})`, disponible: quotaTva, requis: tva }));
+      }
+    } else if (createType === "TVA_INTERIEURE") {
+      const m = Number(form.montantTVAInterieure) || 0;
+      if (m <= 0) errors.push(t("utilisations:validation.montant_tva_required", { defaultValue: "Montant TVA intérieure > 0 requis" }));
+    }
+    return errors;
+  };
+
+  const preSubmitErrors = computePreSubmitErrors();
+  const canSubmit = preSubmitErrors.length === 0;
+
+
   const handleSave = async (mode: "brouillon" | "submit") => {
     if (!form.certificatCreditId) {
       toast({ title: errorTitle(), description: t("utilisations:toast.cert_required"), variant: "destructive" });
@@ -342,6 +403,15 @@ const Utilisations = () => {
       return;
     }
     if (mode === "submit") {
+      const errs = computePreSubmitErrors();
+      if (errs.length > 0) {
+        toast({
+          title: t("utilisations:validation.title", { defaultValue: "Validation impossible" }),
+          description: errs.join(" • "),
+          variant: "destructive",
+        });
+        return;
+      }
       const missing = getMissingObligatoryDocs();
       if (missing.length > 0) {
         toast({
@@ -819,7 +889,45 @@ const Utilisations = () => {
                   <div>{t("utilisations:create.transfert_warning")}</div>
                 </div>
               )}
+              {form.certificatCreditId && eligibilite && !eligibilite.eligible && (
+                <div className="mt-2 p-2.5 rounded-md border border-destructive/40 bg-destructive/10 text-xs text-destructive flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="font-semibold">
+                      {t("utilisations:validation.cert_not_eligible", { defaultValue: "Certificat non éligible pour une nouvelle utilisation" })}
+                      {eligibilite.statutCertificat ? ` (${eligibilite.statutCertificat})` : ""}
+                    </div>
+                    {eligibilite.motifs?.length > 0 && (
+                      <ul className="list-disc pl-4">
+                        {eligibilite.motifs.map((m, i) => <li key={i}>{m}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+              {form.certificatCreditId && eligibilite?.eligible && (
+                <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+                  {createType === "DOUANIER" && (
+                    <>
+                      <div>{t("utilisations:validation.solde_cordon_label", { defaultValue: "Solde cordon" })}: <strong>{formatAmount(eligibilite.soldeCordon ?? 0)}</strong></div>
+                      <div>{t("utilisations:validation.quota_tva_label", { defaultValue: "Quota TVA import" })}: <strong>{formatAmount(eligibilite.tvaImportationDouane ?? 0)}</strong></div>
+                    </>
+                  )}
+                  {createType === "TVA_INTERIEURE" && (
+                    <div>{t("utilisations:validation.solde_tva_label", { defaultValue: "Solde TVA" })}: <strong>{formatAmount(eligibilite.soldeTVA ?? 0)}</strong></div>
+                  )}
+                </div>
+              )}
+              {form.certificatCreditId && !eligibiliteLoading && preSubmitErrors.length > 0 && eligibilite?.eligible && (
+                <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    {preSubmitErrors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
             </div>
+
 
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">{t("utilisations:create.type_label")}</Label>
@@ -1052,7 +1160,11 @@ const Utilisations = () => {
                 <Save className="h-4 w-4 me-2" />
                 {editingId != null ? t("utilisations:create.actions.save_edit") : t("utilisations:create.actions.save_draft")}
               </Button>
-              <Button onClick={() => handleSave("submit")} disabled={creating}>
+              <Button
+                onClick={() => handleSave("submit")}
+                disabled={creating || eligibiliteLoading || !canSubmit}
+                title={!canSubmit ? preSubmitErrors.join(" • ") : undefined}
+              >
                 {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                 <Send className="h-4 w-4 me-2" />
                 {editingId != null ? t("utilisations:create.actions.submit_edit") : t("utilisations:create.actions.submit_new")}
