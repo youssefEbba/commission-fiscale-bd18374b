@@ -822,7 +822,7 @@ const MiseEnPlaceDetail = () => {
               <Label>{t("mise_en_place:dialogs.rejet_temp.docs_label")}</Label>
               <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.rejet_temp.docs_hint")}</p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {DOC_TYPES_DEMANDABLES.map((dt) => (
+                {docTypesDemandables.map((dt) => (
                   <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
                     <Checkbox checked={rejetTempDocs.includes(dt)} onCheckedChange={(checked) => {
                       setRejetTempDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt));
