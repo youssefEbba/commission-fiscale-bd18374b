@@ -176,6 +176,9 @@ const DemandeDetail = () => {
     DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
     DGI: { docType: "CREDIT_INTERIEUR" },
   };
+  const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
+    PRESIDENT: { docType: "LETTRE_ADOPTION" },
+  } as const;
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
   const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
@@ -304,6 +307,29 @@ const DemandeDetail = () => {
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally { setActionLoading(null); }
+  };
+
+  const handleAdoptDirect = async (demandeId: number) => {
+    setActionLoading(demandeId);
+    try {
+      await demandeCorrectionApi.updateStatut(demandeId, "ADOPTEE", undefined, true);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } finally { setActionLoading(null); }
+  };
+
+  const checkAndHandlePresidentValidate = async (demandeId: number) => {
+    try {
+      const documents = await demandeCorrectionApi.getDocuments(demandeId);
+      const hasLettre = documents.some(d => ((d as any).codeDocument ?? d.type) === UPLOAD_BEFORE_PRESIDENT_VALIDATE.PRESIDENT.docType && d.actif !== false);
+      if (hasLettre) {
+        await handleAdoptDirect(demandeId);
+        return;
+      }
+    } catch { /* fallthrough to modal */ }
+    setAdoptionOpen(true);
   };
 
   const handleAdoptWithLetter = async () => {
@@ -893,7 +919,13 @@ const DemandeDetail = () => {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {transitions.filter(tr => tr.isDecisionFinale && tr.from.includes(selected.statut)).map((tr, idx) => (
-                          <Button key={`final-${idx}`} variant={tr.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : setAdoptionOpen(true)}>
+                          <Button
+                            key={`final-${idx}`}
+                            variant={tr.to === "REJETEE" ? "destructive" : "default"}
+                            disabled={actionLoading === selected.id || (tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION")}
+                            title={tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION" ? t("demandes:detail.workflow.adopt_requires_en_validation", { defaultValue: "Disponible quand le dossier est en validation." }) : undefined}
+                            onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : checkAndHandlePresidentValidate(selected.id)}
+                          >
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
                             {tTransition(tr.labelKey)}
                           </Button>
