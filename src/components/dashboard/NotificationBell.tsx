@@ -44,21 +44,33 @@ const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   DEMANDE_MISE_EN_PLACE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
 };
 
+function parsePayload(raw: unknown): Record<string, any> | null {
+  if (!raw) return null;
+  if (typeof raw === "object") return raw as Record<string, any>;
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+  return null;
+}
+
 function resolveRoute(notif: NotificationDto): string | null {
-  // DEMANDE_EXPLICATION : payload contient (normalement) dossierId + contexte
-  if (notif.type === "DEMANDE_EXPLICATION" && notif.payload) {
-    try {
-      const p = JSON.parse(notif.payload) as { dossierId?: number; contexte?: string; redirectPath?: string };
+  // DEMANDE_EXPLICATION : payload contient (normalement) dossierId + contexte + redirectPath
+  if (notif.type === "DEMANDE_EXPLICATION") {
+    const p = parsePayload(notif.payload);
+    if (p) {
       if (typeof p.redirectPath === "string" && p.redirectPath.startsWith("/")) {
         return p.redirectPath;
       }
-      if (p.dossierId != null) {
-        const ctx = (p.contexte || "").toUpperCase();
-        if (ctx === "CERTIFICAT") return `/dashboard/certificats/${p.dossierId}`;
-        if (ctx === "UTILISATION") return `/dashboard/utilisations/${p.dossierId}`;
-        return `/dashboard/demandes/${p.dossierId}`;
+      const dossierId = p.dossierId ?? p.dossier_id ?? p.targetId;
+      const ctx = String(p.contexte || p.context || "").toUpperCase();
+      if (dossierId != null) {
+        if (ctx === "CERTIFICAT") return `/dashboard/certificats/${dossierId}`;
+        if (ctx === "UTILISATION") return `/dashboard/utilisations/${dossierId}`;
+        return `/dashboard/demandes/${dossierId}`;
       }
-    } catch { /* fallback classique */ }
+    }
+    // Payload absent (anciennes notifications) : fallback liste sûre
+    return "/dashboard/demandes";
   }
 
   const byType = NOTIF_TYPE_ROUTES[notif.type];
