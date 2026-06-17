@@ -171,7 +171,7 @@ export default function NotificationBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[380px] p-0 overflow-hidden flex flex-col max-h-[min(80vh,560px)]"
+        className="w-[380px] p-0 overflow-hidden"
         align="end"
       >
         {/* Header */}
@@ -215,7 +215,7 @@ export default function NotificationBell() {
         </div>
 
         {/* List */}
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="h-[440px]">
           {list.length === 0 ? (
             <div className="py-10 px-6 text-center">
               <div className="mx-auto h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-2">
