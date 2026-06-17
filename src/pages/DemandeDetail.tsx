@@ -185,6 +185,13 @@ const DemandeDetail = () => {
     setLoading(true);
     try {
       const full = await demandeCorrectionApi.getById(Number(id));
+      // Récupérer les décisions séparément pour garantir la fraîcheur (visas tous organismes)
+      try {
+        const freshDecisions = await demandeCorrectionApi.getDecisions(Number(id));
+        if (Array.isArray(freshDecisions)) {
+          (full as any).decisions = freshDecisions;
+        }
+      } catch { /* fallback sur full.decisions */ }
       setSelected(full);
       try {
         const documents = await demandeCorrectionApi.getDocuments(Number(id));
