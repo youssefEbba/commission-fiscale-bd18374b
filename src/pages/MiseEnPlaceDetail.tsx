@@ -49,22 +49,14 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Types de documents demandables en rejet temp — valeurs brutes alignées sur l'enum TypeDocument backend.
+// Types de documents demandables en rejet temp — paramétrage GED back pour MISE_EN_PLACE_CI.
 const DOC_TYPES_DEMANDABLES = [
-  "ATTESTATION_FISCALE",
-  "BULLETIN_PAIEMENT",
-  "CONVENTION",
-  "MARCHE",
-  "FACTURE",
-  "BORDEREAU_LIVRAISON",
-  "PROCES_VERBAL",
-  "ORDRE_SERVICE",
-  "AVENANT",
-  "ATTESTATION_BONNE_EXECUTION",
-  "CERTIFICAT_ORIGINE",
-  "DECLARATION_IMPORTATION",
-  "QUITTANCE_DOUANE",
-  "AUTRE",
+  "LETTRE_SAISINE",
+  "CONTRAT",
+  "LETTRE_NOTIFICATION_CONTRAT",
+  "CERTIFICAT_NIF",
+  "LETTRE_CORRECTION",
+  "CERTIFICAT_CREDIT_IMPOTS",
 ];
 
 const DECISION_ROLES_LIST = ["DGI", "DGD", "DGTCP", "PRESIDENT"];
