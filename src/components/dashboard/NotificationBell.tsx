@@ -47,7 +47,10 @@ function resolveRoute(notif: NotificationDto): string | null {
   // DEMANDE_EXPLICATION : payload contient (normalement) dossierId + contexte
   if (notif.type === "DEMANDE_EXPLICATION" && notif.payload) {
     try {
-      const p = JSON.parse(notif.payload) as { dossierId?: number; contexte?: string };
+      const p = JSON.parse(notif.payload) as { dossierId?: number; contexte?: string; redirectPath?: string };
+      if (typeof p.redirectPath === "string" && p.redirectPath.startsWith("/")) {
+        return p.redirectPath;
+      }
       if (p.dossierId != null) {
         const ctx = (p.contexte || "").toUpperCase();
         if (ctx === "CERTIFICAT") return `/dashboard/certificats/${p.dossierId}`;
