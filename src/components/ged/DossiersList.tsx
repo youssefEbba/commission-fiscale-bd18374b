@@ -393,6 +393,19 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                 </div>
               </AccordionTrigger>
               <AccordionContent>
+                {isPresident && (
+                  <div className="flex justify-end pb-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openInject(etape.etape)}
+                      className="gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {t("ged:dossiers.inject.button", { defaultValue: "Ajouter / remplacer un document" })}
+                    </Button>
+                  </div>
+                )}
                 {!etape.documents || etape.documents.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-3 text-center italic">
                     {t("ged:dossiers.table.empty_etape")}
@@ -408,52 +421,73 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {etape.documents.map((doc) => (
-                        <TableRow key={doc.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              {doc.nom}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">{tTypeDocument(doc.type)}</Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {doc.dateUpload ? formatDate(doc.dateUpload) : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" aria-label={t("ged:dossiers.table.action")}>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                  <a
-                                    href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Eye className="h-4 w-4 me-2" />
-                                    {t("ged:dossiers.table.open")}
-                                  </a>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                  <a
-                                    href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
-                                    download={doc.nom}
-                                  >
-                                    <Download className="h-4 w-4 me-2" />
-                                    {t("ged:dossiers.table.download")}
-                                  </a>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {[...etape.documents]
+                        .sort((a, b) => {
+                          const va = a.version ?? 0;
+                          const vb = b.version ?? 0;
+                          if (vb !== va) return vb - va;
+                          return (b.dateUpload || "").localeCompare(a.dateUpload || "");
+                        })
+                        .map((doc) => {
+                          const isActive = doc.actif ?? doc.versionCourante ?? true;
+                          return (
+                            <TableRow key={doc.id} className={isActive ? "" : "opacity-60"}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span>{doc.nom}</span>
+                                  {doc.version != null && (
+                                    <Badge variant={isActive ? "default" : "secondary"} className="text-[10px]">
+                                      v{doc.version}{isActive ? " · Actif" : " · Archivé"}
+                                    </Badge>
+                                  )}
+                                  {doc.injectionPresident && (
+                                    <Badge variant="outline" className="text-[10px] gap-1 border-amber-500 text-amber-700 dark:text-amber-300">
+                                      <ShieldCheck className="h-3 w-3" />
+                                      {t("ged:dossiers.inject.badge", { defaultValue: "Déposé par le Président" })}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">{tTypeDocument(doc.codeDocument || doc.type)}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {doc.dateUpload ? formatDate(doc.dateUpload) : "—"}
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" aria-label={t("ged:dossiers.table.action")}>
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <a
+                                        href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <Eye className="h-4 w-4 me-2" />
+                                        {t("ged:dossiers.table.open")}
+                                      </a>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <a
+                                        href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
+                                        download={doc.nom}
+                                      >
+                                        <Download className="h-4 w-4 me-2" />
+                                        {t("ged:dossiers.table.download")}
+                                      </a>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                     </TableBody>
                   </Table>
                 )}
@@ -462,6 +496,84 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
           ))}
         </Accordion>
       </ScrollArea>
+
+      <Dialog open={injectEtape !== null} onOpenChange={(open) => { if (!open) closeInject(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-amber-600" />
+              {t("ged:dossiers.inject.title", { defaultValue: "Injection GED – Président" })}
+            </DialogTitle>
+            <DialogDescription>
+              {t("ged:dossiers.inject.description", {
+                defaultValue: "Compléter ou remplacer un document du dossier. Cette action crée une nouvelle version active et contourne les restrictions de statut.",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{t("ged:dossiers.inject.etape", { defaultValue: "Étape" })}</Label>
+              <p className="text-sm font-medium">{injectEtape}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="inject-code">{t("ged:dossiers.inject.code", { defaultValue: "Type de document" })} *</Label>
+              <Select value={injectCode} onValueChange={setInjectCode}>
+                <SelectTrigger id="inject-code">
+                  <SelectValue placeholder={t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(ETAPE_DOC_CODES[injectEtape || ""] || []).map((code) => (
+                    <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
+                  ))}
+                  <SelectItem value="__custom__">{t("ged:dossiers.inject.custom", { defaultValue: "Autre (saisir le code)" })}</SelectItem>
+                </SelectContent>
+              </Select>
+              {injectCode === "__custom__" && (
+                <Input
+                  placeholder="CODE_DOCUMENT"
+                  value={injectCustomCode}
+                  onChange={(e) => setInjectCustomCode(e.target.value.toUpperCase())}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="inject-target">{t("ged:dossiers.inject.target", { defaultValue: "Cible (targetId) — optionnel" })}</Label>
+              <Input
+                id="inject-target"
+                type="number"
+                placeholder={t("ged:dossiers.inject.target_placeholder", { defaultValue: "Id utilisation / transfert / avenant" })}
+                value={injectTargetId}
+                onChange={(e) => setInjectTargetId(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="inject-file">{t("ged:dossiers.inject.file", { defaultValue: "Fichier" })} *</Label>
+              <Input
+                id="inject-file"
+                ref={fileInputRef}
+                type="file"
+                onChange={(e) => setInjectFile(e.target.files?.[0] || null)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeInject} disabled={injecting}>
+              {t("common:cancel", { defaultValue: "Annuler" })}
+            </Button>
+            <Button onClick={handleInject} disabled={injecting || !injectFile}>
+              <Upload className="h-4 w-4 me-2" />
+              {injecting
+                ? t("ged:dossiers.inject.submitting", { defaultValue: "Injection..." })
+                : t("ged:dossiers.inject.submit", { defaultValue: "Injecter" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
