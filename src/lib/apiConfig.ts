@@ -7,7 +7,7 @@
 export const API_BASE = "https://2f1b-197-231-0-182.ngrok-free.app/api";
 
 /** WebSocket backend */
-export const WS_BASE = "https://60bb-197-231-13-56.ngrok-free.app/ws";
+export const WS_BASE = "https://2f1b-197-231-0-182.ngrok-free.app/ws";
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
