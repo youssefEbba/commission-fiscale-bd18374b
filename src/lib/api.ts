@@ -1767,7 +1767,7 @@ export const transfertCreditApi = {
   annuler: (id: number) =>
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/annuler`, { method: "POST" }),
   getDocuments: (id: number) =>
-    apiFetch<DocumentTransfertCreditDto[]>(`/transferts-credit/${id}/documents`),
+    apiFetch<DocumentTransfertCreditDto[]>(`/transferts-credit/${id}/documents`).then(normalizeDocs),
   /**
    * Upload d'une pièce. `message` est obligatoire si la pièce est exigée
    * par un rejet temporaire OUVERT (traçabilité côté décisions).
