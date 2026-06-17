@@ -1057,9 +1057,26 @@ export interface UpdateCertificatCreditMontantsRequest extends CertificatRecapFi
   montantTVAInterieure: number;
 }
 
+/** Réponse de l'endpoint d'éligibilité d'utilisation d'un certificat de crédit. */
+export interface CertificatUtilisationEligibilityDto {
+  eligible: boolean;
+  statutCertificat?: string;
+  motifs: string[];
+  soldeCordon?: number;
+  tvaImportationDouane?: number;
+  soldeTVA?: number;
+  transfertExecute?: boolean;
+  clotureEnCours?: boolean;
+  dateValidite?: string;
+  expire?: boolean;
+}
+
 export const certificatCreditApi = {
   getAll: () => apiFetch<CertificatCreditDto[]>("/certificats-credit"),
   getById: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`),
+  /** Éligibilité du certificat pour une nouvelle utilisation (DOUANIER ou TVA_INTERIEURE). */
+  getEligibiliteUtilisation: (id: number, type: UtilisationType) =>
+    apiFetch<CertificatUtilisationEligibilityDto>(`/certificats-credit/${id}/eligibilite-utilisation?type=${type}`),
   getByStatut: (statut: CertificatStatut) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-statut?statut=${statut}`),
   getByEntreprise: (entrepriseId: number) => apiFetch<CertificatCreditDto[]>(`/certificats-credit/by-entreprise/${entrepriseId}`),
   create: (data: CreateCertificatCreditRequest) => apiFetch<CertificatCreditDto>("/certificats-credit", { method: "POST", body: data }),
