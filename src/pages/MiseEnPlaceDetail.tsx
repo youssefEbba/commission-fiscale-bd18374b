@@ -283,6 +283,23 @@ const MiseEnPlaceDetail = () => {
     } finally { setRespondingLoading(false); }
   };
 
+  const handleUploadComplement = async (codeDoc: string) => {
+    const file = complementFiles[codeDoc];
+    const msg = (complementMessages[codeDoc] || "").trim();
+    if (!file || !msg) return;
+    setComplementLoading(prev => ({ ...prev, [codeDoc]: true }));
+    try {
+      await certificatCreditApi.uploadDocument(c.id, codeDoc, file, msg);
+      okToast(t("mise_en_place:toast.complement_uploaded", { defaultValue: "Complément déposé" }));
+      setComplementFiles(prev => ({ ...prev, [codeDoc]: null }));
+      setComplementMessages(prev => ({ ...prev, [codeDoc]: "" }));
+      fetchData();
+    } catch (e: any) {
+      errToast(e.message);
+    } finally {
+      setComplementLoading(prev => ({ ...prev, [codeDoc]: false }));
+    }
+
   const handleReject = async () => {
     if (!motifRejet.trim()) return;
     setRejecting(true);
