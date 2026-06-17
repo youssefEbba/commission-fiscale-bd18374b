@@ -919,7 +919,13 @@ const DemandeDetail = () => {
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {transitions.filter(tr => tr.isDecisionFinale && tr.from.includes(selected.statut)).map((tr, idx) => (
-                          <Button key={`final-${idx}`} variant={tr.to === "REJETEE" ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : setAdoptionOpen(true)}>
+                          <Button
+                            key={`final-${idx}`}
+                            variant={tr.to === "REJETEE" ? "destructive" : "default"}
+                            disabled={actionLoading === selected.id || (tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION")}
+                            title={tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION" ? t("demandes:detail.workflow.adopt_requires_en_validation", { defaultValue: "Disponible quand le dossier est en validation." }) : undefined}
+                            onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : checkAndHandlePresidentValidate(selected.id)}
+                          >
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
                             {tTransition(tr.labelKey)}
                           </Button>
