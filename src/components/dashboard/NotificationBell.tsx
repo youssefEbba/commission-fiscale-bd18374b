@@ -26,7 +26,8 @@ const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   MODIFICATION_STATUT_CHANGE: () => "/dashboard/modifications",
   DEMANDE_MISE_EN_PLACE_CHANGE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
   GED_DOCUMENT_CHANGE: () => "/dashboard/ged-dossiers",
-  DEMANDE_EXPLICATION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  // DEMANDE_EXPLICATION: entityId = id du fil (PAS du dossier). Ne pas l'utiliser pour router.
+  DEMANDE_EXPLICATION: () => "/dashboard/demandes",
 };
 
 // Fallback : déduire la route depuis entityType si le type de notification n'est pas mappé
