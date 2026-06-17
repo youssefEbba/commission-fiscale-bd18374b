@@ -182,11 +182,13 @@ const App = () => (
                 <CorrectionDouaniere />
               </ProtectedRoute>
             } />
+            {/* Route assistance-ia désactivée — sera activée dans une version ultérieure
             <Route path="/dashboard/assistance-ia/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <AssistanceIA />
               </ProtectedRoute>
             } />
+            */}
             <Route path="/dashboard/extraction-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ExtractionDGD />
