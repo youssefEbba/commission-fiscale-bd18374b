@@ -95,6 +95,7 @@ const MiseEnPlaceDetail = () => {
   const [showRejetTemp, setShowRejetTemp] = useState(false);
   const [rejetTempMotif, setRejetTempMotif] = useState("");
   const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
+  const [docTypesDemandables, setDocTypesDemandables] = useState<string[]>(DOC_TYPES_FALLBACK);
   const [rejetTempLoading, setRejetTempLoading] = useState(false);
 
   const [showMontants, setShowMontants] = useState(false);
