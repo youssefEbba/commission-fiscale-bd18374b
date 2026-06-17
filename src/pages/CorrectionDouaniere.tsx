@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import {
   FileText, ArrowLeft, Loader2, CheckCircle, XCircle,
-  Download, ExternalLink, Bot, Upload, History, RefreshCw,
+  Download, ExternalLink, /*Bot,*/ Upload, History, RefreshCw,
   FileDown, ShieldCheck, AlertTriangle, Plus,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -989,6 +989,7 @@ const CorrectionDouaniere = () => {
                 </Card>
               )}
 
+              {/* Assistance intelligente désactivée — sera activée dans une version ultérieure
               <Card className="border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -1002,6 +1003,7 @@ const CorrectionDouaniere = () => {
                   </Button>
                 </CardContent>
               </Card>
+              */}
             </div>
           </div>
         )}

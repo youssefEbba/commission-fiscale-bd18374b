@@ -22,8 +22,8 @@ import AuditLogs from "./pages/AuditLogs";
 import Simulation from "./pages/Simulation";
 import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
-import AssistanceIA from "./pages/AssistanceIA";
-import ChatbotDGD from "./pages/ChatbotDGD";
+  // import AssistanceIA from "./pages/AssistanceIA";
+  // import ChatbotDGD from "./pages/ChatbotDGD";
 import ExtractionDGD from "./pages/ExtractionDGD";
 import Marches from "./pages/Marches";
 import Delegues from "./pages/Delegues";
@@ -182,21 +182,25 @@ const App = () => (
                 <CorrectionDouaniere />
               </ProtectedRoute>
             } />
+            {/* Route assistance-ia désactivée — sera activée dans une version ultérieure
             <Route path="/dashboard/assistance-ia/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <AssistanceIA />
               </ProtectedRoute>
             } />
+            */}
             <Route path="/dashboard/extraction-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ExtractionDGD />
               </ProtectedRoute>
             } />
+            {/* Route chatbot-dgd désactivée — sera activée dans une version ultérieure
             <Route path="/dashboard/chatbot-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ChatbotDGD />
               </ProtectedRoute>
             } />
+            */}
             <Route path="/dashboard/relais" element={
               <ProtectedRoute allowedRoles={["COMMISSION_RELAIS"]}>
                 <CommissionRelais />
