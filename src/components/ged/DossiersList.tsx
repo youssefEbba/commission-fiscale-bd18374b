@@ -229,9 +229,9 @@ interface DossierDetailProps {
 
 const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  // Écran lecture seule — le Président dépose ses pièces depuis les fiches métier.
-  void user;
+  // Écran lecture seule — l'injection GED Président a été supprimée (voir UPLOAD_STORAGE_FAIL_FAST_FRONT.md).
+
+
 
 
 
