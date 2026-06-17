@@ -15,6 +15,9 @@ import { tNotificationType } from "@/i18n/enums";
 const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   CORRECTION_STATUT_CHANGE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   CORRECTION_DECISION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  CORRECTION_REJET_TEMPORAIRE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  CORRECTION_REJET_TEMP: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  REJET_TEMPORAIRE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   REFERENTIEL_STATUT_CHANGE: () => "/dashboard/referentiels",
   CONVENTION_STATUT_CHANGE: (id) => (id ? `/dashboard/conventions/${id}` : "/dashboard/conventions"),
   CERTIFICAT_STATUT_CHANGE: (id) => (id ? `/dashboard/certificats/${id}` : "/dashboard/certificats"),
@@ -25,6 +28,34 @@ const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   GED_DOCUMENT_CHANGE: () => "/dashboard/ged-dossiers",
   DEMANDE_EXPLICATION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
 };
+
+// Fallback : déduire la route depuis entityType si le type de notification n'est pas mappé
+const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
+  CORRECTION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  DEMANDE_CORRECTION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  DEMANDE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
+  CONVENTION: (id) => (id ? `/dashboard/conventions/${id}` : "/dashboard/conventions"),
+  CERTIFICAT: (id) => (id ? `/dashboard/certificats/${id}` : "/dashboard/certificats"),
+  CERTIFICAT_CREDIT: (id) => (id ? `/dashboard/certificats/${id}` : "/dashboard/certificats"),
+  UTILISATION: (id) => (id ? `/dashboard/utilisations/${id}` : "/dashboard/utilisations"),
+  TRANSFERT: (id) => (id ? `/dashboard/transferts/${id}` : "/dashboard/transferts"),
+  MISE_EN_PLACE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
+  DEMANDE_MISE_EN_PLACE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
+};
+
+function resolveRoute(notif: NotificationDto): string | null {
+  const byType = NOTIF_TYPE_ROUTES[notif.type];
+  if (byType) return byType(notif.entityId);
+  const t = String(notif.type || "").toUpperCase();
+  // Tout type contenant CORRECTION ou REJET pointe sur la demande de correction
+  if (t.includes("CORRECTION") || t.includes("REJET")) {
+    return notif.entityId ? `/dashboard/demandes/${notif.entityId}` : "/dashboard/demandes";
+  }
+  const ent = (notif.entityType || "").toUpperCase();
+  const byEntity = ENTITY_TYPE_ROUTES[ent];
+  if (byEntity) return byEntity(notif.entityId);
+  return null;
+}
 
 function NotifItem({ notif, onRead }: { notif: NotificationDto; onRead: (n: NotificationDto) => void }) {
   const { i18n } = useTranslation();
@@ -64,10 +95,10 @@ export default function NotificationBell() {
 
   const handleRead = (notif: NotificationDto) => {
     if (!notif.read) markRead(notif.id);
-    const routeFn = NOTIF_TYPE_ROUTES[notif.type];
-    if (routeFn) {
+    const route = resolveRoute(notif);
+    if (route) {
       setOpen(false);
-      navigate(routeFn(notif.entityId));
+      navigate(route);
     }
   };
 
