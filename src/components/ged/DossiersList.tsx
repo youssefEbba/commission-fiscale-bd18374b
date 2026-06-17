@@ -234,73 +234,10 @@ interface DossierDetailProps {
 const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const isPresident = user?.role === "PRESIDENT";
+  // Écran lecture seule — le Président dépose ses pièces depuis les fiches métier.
+  void user;
 
-  const [injectEtape, setInjectEtape] = useState<string | null>(null);
-  const [injectCode, setInjectCode] = useState<string>("");
-  const [injectCustomCode, setInjectCustomCode] = useState<string>("");
-  const [injectTargetId, setInjectTargetId] = useState<string>("");
-  const [injectFile, setInjectFile] = useState<File | null>(null);
-  const [injecting, setInjecting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const openInject = (etape: string) => {
-    setInjectEtape(etape);
-    setInjectCode("");
-    setInjectCustomCode("");
-    setInjectTargetId("");
-    setInjectFile(null);
-  };
-
-  const injectProcessus = injectEtape ? ETAPE_TO_PROCESSUS[injectEtape] : undefined;
-  const requirementsQuery = useQuery({
-    queryKey: ["document-requirements", injectProcessus],
-    queryFn: () => documentRequirementApi.getByProcessus(injectProcessus!),
-    enabled: !!injectProcessus,
-    staleTime: 5 * 60 * 1000,
-  });
-  const requirementCodes = useMemo(() => {
-    const reqs = requirementsQuery.data || [];
-    const codes = reqs
-      .slice()
-      .sort((a, b) => (a.ordreAffichage ?? 9999) - (b.ordreAffichage ?? 9999))
-      .map((r) => r.codeDocument || r.typeDocument)
-      .filter((c): c is string => !!c);
-    if (codes.length > 0) return Array.from(new Set(codes));
-    return ETAPE_DOC_CODES[injectEtape || ""] || [];
-  }, [requirementsQuery.data, injectEtape]);
-
-  const closeInject = () => {
-    setInjectEtape(null);
-    setInjectFile(null);
-  };
-
-  const handleInject = async () => {
-    if (!dossier || !injectEtape || !injectFile) return;
-    const codeDocument = (injectCode === "__custom__" ? injectCustomCode : injectCode).trim();
-    if (!codeDocument) {
-      toast.error(t("ged:dossiers.inject.error_code_required", { defaultValue: "Code document requis" }));
-      return;
-    }
-    setInjecting(true);
-    try {
-      await dossierGedApi.injectDocument(dossier.id, {
-        etape: injectEtape,
-        codeDocument,
-        file: injectFile,
-        targetId: injectTargetId ? Number(injectTargetId) : undefined,
-      });
-      toast.success(t("ged:dossiers.inject.success", { defaultValue: "Document injecté (nouvelle version active)" }));
-      await queryClient.invalidateQueries({ queryKey: ["dossier-ged", dossier.id] });
-      await queryClient.invalidateQueries({ queryKey: ["dossiers-ged"] });
-      closeInject();
-    } catch (err: any) {
-      toast.error(err?.message || t("ged:dossiers.inject.error", { defaultValue: "Échec de l'injection" }));
-    } finally {
-      setInjecting(false);
-    }
-  };
 
 
   if (isLoading) {
