@@ -296,6 +296,12 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
     return ETAPE_DOC_CODES[injectEtape || ""] || [];
   }, [requirementsQuery.data, injectEtape]);
 
+  const closeInject = () => {
+    setInjectEtape(null);
+    setInjectFile(null);
+  };
+
+  const handleInject = async () => {
     if (!dossier || !injectEtape || !injectFile) return;
     const codeDocument = (injectCode === "__custom__" ? injectCustomCode : injectCode).trim();
     if (!codeDocument) {
