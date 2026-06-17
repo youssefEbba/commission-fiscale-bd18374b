@@ -263,6 +263,11 @@ const DemandeDetail = () => {
     await handleTempVisa(demandeId);
   };
 
+  const confirmVisa = () => {
+    if (visaConfirmId != null) checkAndHandleVisa(visaConfirmId);
+    setVisaConfirmOpen(false);
+  };
+
   const handleOffreCorrigeeUploadAndVisa = async () => {
     if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
     setOffreCorrigeeUploading(true);

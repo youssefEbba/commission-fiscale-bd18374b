@@ -240,6 +240,11 @@ const MiseEnPlaceDetail = () => {
     } finally { setVisaLoading(false); }
   };
 
+  const confirmVisa = () => {
+    setVisaConfirmOpen(false);
+    handleVisa();
+  };
+
   const handleRejetTemp = async () => {
     if (!rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
     setRejetTempLoading(true);

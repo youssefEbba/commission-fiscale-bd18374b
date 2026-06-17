@@ -259,6 +259,11 @@ const CorrectionDouaniere = () => {
     } finally { setActionLoading(false); }
   };
 
+  const confirmVisa = () => {
+    setVisaConfirmOpen(false);
+    handleTempVisa();
+  };
+
   const handleTempReject = async () => {
     if (!demande || !rejectMotif.trim() || rejectDocsDemandes.length === 0) return;
     setRejectOpen(false); setActionLoading(true);
