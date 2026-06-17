@@ -66,10 +66,10 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     labelKey: "ged",
     icon: FolderOpen,
-    roles: ["ADMIN_SI"],
+    roles: ["ADMIN_SI", "PRESIDENT"],
     children: [
       { labelKey: "ged_configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
-      { labelKey: "ged_dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI"] },
+      { labelKey: "ged_dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI", "PRESIDENT"] },
     ],
   },
   {
