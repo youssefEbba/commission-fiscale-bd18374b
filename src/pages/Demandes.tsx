@@ -260,6 +260,7 @@ const Demandes = () => {
   // Le libellé est traduit via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
     DGD: { docType: "CREDIT_EXTERIEUR" },
+    DGI: { docType: "CREDIT_INTERIEUR" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
   const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
@@ -268,7 +269,7 @@ const Demandes = () => {
     if (uploadBeforeVisa) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => d.type === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
           setOffreCorrigeeOpen(true);
