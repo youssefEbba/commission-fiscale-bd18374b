@@ -309,6 +309,29 @@ const DemandeDetail = () => {
     } finally { setActionLoading(null); }
   };
 
+  const handleAdoptDirect = async (demandeId: number) => {
+    setActionLoading(demandeId);
+    try {
+      await demandeCorrectionApi.updateStatut(demandeId, "ADOPTEE", undefined, true);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } finally { setActionLoading(null); }
+  };
+
+  const checkAndHandlePresidentValidate = async (demandeId: number) => {
+    try {
+      const documents = await demandeCorrectionApi.getDocuments(demandeId);
+      const hasLettre = documents.some(d => ((d as any).codeDocument ?? d.type) === UPLOAD_BEFORE_PRESIDENT_VALIDATE.PRESIDENT.docType && d.actif !== false);
+      if (hasLettre) {
+        await handleAdoptDirect(demandeId);
+        return;
+      }
+    } catch { /* fallthrough to modal */ }
+    setAdoptionOpen(true);
+  };
+
   const handleAdoptWithLetter = async () => {
     if (!selected || !adoptionFile) return;
     setAdoptionUploading(true);
