@@ -95,10 +95,10 @@ export default function NotificationBell() {
 
   const handleRead = (notif: NotificationDto) => {
     if (!notif.read) markRead(notif.id);
-    const routeFn = NOTIF_TYPE_ROUTES[notif.type];
-    if (routeFn) {
+    const route = resolveRoute(notif);
+    if (route) {
       setOpen(false);
-      navigate(routeFn(notif.entityId));
+      navigate(route);
     }
   };
 
