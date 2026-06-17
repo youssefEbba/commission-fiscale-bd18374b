@@ -1076,10 +1076,11 @@ export const certificatCreditApi = {
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/certificats-credit/${id}/documents`).then(normalizeDocs),
-  uploadDocument: (id: number, type: string, file: File) => {
+  uploadDocument: (id: number, type: string, file: File, message?: string) => {
     const formData = new FormData();
     formData.append("codeDocument", type);
     formData.append("file", file);
+    if (message) formData.append("message", message);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
   // Stock TVA déductible

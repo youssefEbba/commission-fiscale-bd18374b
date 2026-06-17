@@ -49,22 +49,14 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Types de documents demandables en rejet temp — valeurs brutes alignées sur l'enum TypeDocument backend.
+// Types de documents demandables en rejet temp — paramétrage GED back pour MISE_EN_PLACE_CI.
 const DOC_TYPES_DEMANDABLES = [
-  "ATTESTATION_FISCALE",
-  "BULLETIN_PAIEMENT",
-  "CONVENTION",
-  "MARCHE",
-  "FACTURE",
-  "BORDEREAU_LIVRAISON",
-  "PROCES_VERBAL",
-  "ORDRE_SERVICE",
-  "AVENANT",
-  "ATTESTATION_BONNE_EXECUTION",
-  "CERTIFICAT_ORIGINE",
-  "DECLARATION_IMPORTATION",
-  "QUITTANCE_DOUANE",
-  "AUTRE",
+  "LETTRE_SAISINE",
+  "CONTRAT",
+  "LETTRE_NOTIFICATION_CONTRAT",
+  "CERTIFICAT_NIF",
+  "LETTRE_CORRECTION",
+  "CERTIFICAT_CREDIT_IMPOTS",
 ];
 
 const DECISION_ROLES_LIST = ["DGI", "DGD", "DGTCP", "PRESIDENT"];
@@ -121,6 +113,11 @@ const MiseEnPlaceDetail = () => {
   const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
   const [responseMessage, setResponseMessage] = useState("");
   const [respondingLoading, setRespondingLoading] = useState(false);
+
+  // Compléments AC/Entreprise (upload GED en réponse aux rejets ouverts)
+  const [complementFiles, setComplementFiles] = useState<Record<string, File | null>>({});
+  const [complementMessages, setComplementMessages] = useState<Record<string, string>>({});
+  const [complementLoading, setComplementLoading] = useState<Record<string, boolean>>({});
 
   const [showAnnulation, setShowAnnulation] = useState(false);
   const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
@@ -285,6 +282,26 @@ const MiseEnPlaceDetail = () => {
       errToast(e.message);
     } finally { setRespondingLoading(false); }
   };
+
+  const handleUploadComplement = async (codeDoc: string) => {
+    const file = complementFiles[codeDoc];
+    const msg = (complementMessages[codeDoc] || "").trim();
+    if (!file || !msg) return;
+    setComplementLoading(prev => ({ ...prev, [codeDoc]: true }));
+    try {
+      await certificatCreditApi.uploadDocument(c.id, codeDoc, file, msg);
+      okToast(t("mise_en_place:toast.complement_uploaded", { defaultValue: "Complément déposé" }));
+      setComplementFiles(prev => ({ ...prev, [codeDoc]: null }));
+      setComplementMessages(prev => ({ ...prev, [codeDoc]: "" }));
+      fetchData();
+    } catch (e: any) {
+      errToast(e.message);
+    } finally {
+      setComplementLoading(prev => ({ ...prev, [codeDoc]: false }));
+    }
+  };
+
+
 
   const handleReject = async () => {
     if (!motifRejet.trim()) return;
@@ -702,7 +719,55 @@ const MiseEnPlaceDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Bandeau compléments AC/Entreprise — uploads GED en réponse aux rejets ouverts */}
+        {isACOrEntreprise && c.statut === "INCOMPLETE" && (() => {
+          const openCodes = Array.from(new Set(
+            decisions
+              .filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT")
+              .flatMap(d => d.documentsDemandes ?? [])
+          ));
+          if (openCodes.length === 0) return null;
+          return (
+            <Card className="border-amber-200 bg-amber-50/40">
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-amber-800">
+                  <Upload className="h-4 w-4" /> {t("mise_en_place:detail.complements.title", { defaultValue: "Déposer les compléments demandés" })}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t("mise_en_place:detail.complements.hint", { defaultValue: "Pour chaque pièce demandée, joindre le fichier et un message explicatif (obligatoire)." })}
+                </p>
+                <div className="space-y-3">
+                  {openCodes.map((code) => (
+                    <div key={code} className="rounded border border-amber-200 bg-background p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{tTypeDocument(code)}</Badge>
+                      </div>
+                      <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        onChange={(e) => setComplementFiles(prev => ({ ...prev, [code]: e.target.files?.[0] || null }))} />
+                      <Textarea
+                        placeholder={t("mise_en_place:detail.complements.message_placeholder", { defaultValue: "Message explicatif (obligatoire)" })}
+                        value={complementMessages[code] || ""}
+                        onChange={(e) => setComplementMessages(prev => ({ ...prev, [code]: e.target.value }))}
+                        className="min-h-[60px] text-sm"
+                      />
+                      <div className="flex justify-end">
+                        <Button size="sm"
+                          disabled={!complementFiles[code] || !(complementMessages[code] || "").trim() || complementLoading[code]}
+                          onClick={() => handleUploadComplement(code)}>
+                          {complementLoading[code] ? <Loader2 className="h-3.5 w-3.5 me-1 animate-spin" /> : <Send className="h-3.5 w-3.5 me-1" />}
+                          {t("mise_en_place:detail.complements.submit", { defaultValue: "Envoyer" })}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Documents */}
+
         <Card>
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2"><FileText className="h-4 w-4" /> {t("mise_en_place:detail.documents.title")}</h3>
