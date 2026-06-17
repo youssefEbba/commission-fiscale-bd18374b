@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft, Loader2, CheckCircle, XCircle, Play, RefreshCw, Zap, Bot, ArrowRight,
+  ArrowLeft, Loader2, CheckCircle, XCircle, Play, RefreshCw, Zap, /*Bot,*/ ArrowRight,
 } from "lucide-react";
 
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
