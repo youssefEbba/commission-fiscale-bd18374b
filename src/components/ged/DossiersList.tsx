@@ -1,18 +1,37 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { dossierGedApi, DossierGedDto, demandeCorrectionApi, marcheApi } from "@/lib/api";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
+import { dossierGedApi, DossierGedDto, DossierDocumentGed, demandeCorrectionApi, marcheApi, apiErrorMessage } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, Building2, Landmark, ShoppingCart } from "lucide-react";
+import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, Building2, Landmark, ShoppingCart, Upload, ShieldCheck } from "lucide-react";
 import { formatDate } from "@/i18n/format";
 import { tTypeDocument } from "@/i18n/enums";
+import { toast } from "sonner";
+
+/** Codes documents proposés par étape pour l'injection GED Président. */
+const ETAPE_DOC_CODES: Record<string, string[]> = {
+  DEMANDE_CORRECTION: ["LETTRE_SAISINE", "OFFRE_FISCALE", "DAO_DQE", "DECOMPOSITION_PRIX", "CONVENTION", "MARCHE"],
+  TRAITEMENT_CORRECTION: ["OFFRE_FISCALE_CORRIGEE", "CREDIT_INTERIEUR", "CREDIT_EXTERIEUR"],
+  RETOUR_CORRECTION: ["LETTRE_ADOPTION"],
+  EMISSION_CERTIFICAT: ["CERTIFICAT_CREDIT_IMPOTS", "LETTRE_CORRECTION"],
+  UTILISATION_DOUANE: ["BULLETIN_LIQUIDATION", "DECLARATION_DOUANE"],
+  UTILISATION_TVA: ["FACTURE", "DECLARATION_TVA", "DECOMPTE"],
+  TRANSFERT_CREDIT: ["DEMANDE_MOTIVEE_TRANSFERT"],
+  CLOTURE_CREDIT: ["DOCUMENT_CLOTURE"],
+  MODIFICATION_AVENANT: ["AVENANT"],
+  SOUS_TRAITANCE: ["CONTRAT_SOUS_TRAITANCE"],
+};
 
 import { API_BASE } from "@/lib/apiConfig";
 
