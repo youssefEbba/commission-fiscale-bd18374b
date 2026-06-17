@@ -243,6 +243,58 @@ interface DossierDetailProps {
 
 const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const isPresident = user?.role === "PRESIDENT";
+
+  const [injectEtape, setInjectEtape] = useState<string | null>(null);
+  const [injectCode, setInjectCode] = useState<string>("");
+  const [injectCustomCode, setInjectCustomCode] = useState<string>("");
+  const [injectTargetId, setInjectTargetId] = useState<string>("");
+  const [injectFile, setInjectFile] = useState<File | null>(null);
+  const [injecting, setInjecting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const openInject = (etape: string) => {
+    setInjectEtape(etape);
+    const presets = ETAPE_DOC_CODES[etape] || [];
+    setInjectCode(presets[0] || "");
+    setInjectCustomCode("");
+    setInjectTargetId("");
+    setInjectFile(null);
+  };
+
+  const closeInject = () => {
+    setInjectEtape(null);
+    setInjectFile(null);
+  };
+
+  const handleInject = async () => {
+    if (!dossier || !injectEtape || !injectFile) return;
+    const codeDocument = (injectCode === "__custom__" ? injectCustomCode : injectCode).trim();
+    if (!codeDocument) {
+      toast.error(t("ged:dossiers.inject.error_code_required", { defaultValue: "Code document requis" }));
+      return;
+    }
+    setInjecting(true);
+    try {
+      await dossierGedApi.injectDocument(dossier.id, {
+        etape: injectEtape,
+        codeDocument,
+        file: injectFile,
+        targetId: injectTargetId ? Number(injectTargetId) : undefined,
+      });
+      toast.success(t("ged:dossiers.inject.success", { defaultValue: "Document injecté (nouvelle version active)" }));
+      await queryClient.invalidateQueries({ queryKey: ["dossier-ged", dossier.id] });
+      await queryClient.invalidateQueries({ queryKey: ["dossiers-ged"] });
+      closeInject();
+    } catch (err: any) {
+      toast.error(err?.message || t("ged:dossiers.inject.error", { defaultValue: "Échec de l'injection" }));
+    } finally {
+      setInjecting(false);
+    }
+  };
+
 
   if (isLoading) {
     return (
