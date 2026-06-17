@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
@@ -111,6 +112,7 @@ const CorrectionDouaniere = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
 
   const errTitle = t("common:errors.generic_title", { defaultValue: "Erreur" });
   const okTitle = t("common:success.generic_title", { defaultValue: "Succès" });

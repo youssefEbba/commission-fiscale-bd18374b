@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
   AlertTriangle, History, DollarSign, Upload, MessageSquare, Send,
@@ -122,6 +123,7 @@ const MiseEnPlaceDetail = () => {
   const [respondingLoading, setRespondingLoading] = useState(false);
 
   const [showAnnulation, setShowAnnulation] = useState(false);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
 
   const okToast = (description: string) =>
     toast({ title: t("common:states.success"), description });

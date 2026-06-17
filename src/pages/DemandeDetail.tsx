@@ -167,6 +167,8 @@ const DemandeDetail = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
+  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
   // Document à uploader obligatoirement avant le visa, selon le rôle.
   // Libellé via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
