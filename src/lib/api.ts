@@ -73,9 +73,18 @@ export function formatApiErrorMessage(err: unknown, fallback = "Une erreur est s
     case "MARCHE_DEJA_LIE_CORRECTION":
     case "MARCHE_DEMANDE_ACTIVE":
       return "Ce marché est déjà associé à une demande de correction active.";
+    case "OBJECT_STORAGE_UNAVAILABLE":
+    case "STORAGE_UPLOAD_FAILED":
+      return "Stockage indisponible. Aucune modification n'a été enregistrée — veuillez réessayer.";
     default:
       return err.message || fallback;
   }
+}
+
+/** True si l'erreur correspond à une panne de stockage objet (MinIO) — rollback côté backend. */
+export function isStorageUnavailableError(err: unknown): boolean {
+  const code = getApiErrorBusinessCode(err);
+  return code === "OBJECT_STORAGE_UNAVAILABLE" || code === "STORAGE_UPLOAD_FAILED";
 }
 
 export function isApiError(err: unknown): err is ApiRequestError {
