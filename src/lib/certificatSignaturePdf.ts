@@ -1,10 +1,19 @@
 import jsPDF from "jspdf";
-import type { CertificatCreditDto } from "@/lib/api";
+import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto } from "@/lib/api";
 
 const fmt = (v: any) =>
   v != null && !isNaN(Number(v))
     ? Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     : "";
+
+const fmtDate = (v?: string) => {
+  if (!v) return "";
+  try {
+    return new Date(v).toLocaleDateString("fr-FR");
+  } catch {
+    return "";
+  }
+};
 
 const line = (
   doc: jsPDF,
@@ -23,6 +32,23 @@ const line = (
   doc.line(x + lw + 2, y + 0.8, x + width, y + 0.8);
 };
 
+const inlineField = (
+  doc: jsPDF,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+  endX: number,
+) => {
+  doc.setFont("helvetica", "bold");
+  doc.text(label, x, y);
+  const lw = doc.getTextWidth(label);
+  doc.setFont("helvetica", "normal");
+  if (value) doc.text(value, x + lw + 2, y);
+  doc.setLineWidth(0.2);
+  doc.line(x + lw + 2, y + 0.8, endX, y + 0.8);
+};
+
 const section = (
   doc: jsPDF,
   title: string,
@@ -33,7 +59,6 @@ const section = (
 ) => {
   doc.setLineWidth(0.4);
   doc.rect(x, y, w, h);
-  // title band
   doc.setFillColor(255, 255, 255);
   doc.rect(x + 2, y - 2.5, doc.getTextWidth(title) + 4, 5, "F");
   doc.setFont("helvetica", "bold");
@@ -41,11 +66,21 @@ const section = (
   doc.text(title, x + 4, y + 1.2);
 };
 
+export interface CertificatPdfContext {
+  entreprise?: EntrepriseDto | null;
+  marche?: MarcheDto | null;
+  convention?: ConventionDto | null;
+}
+
 /**
  * Génère un PDF "Certificat de Crédit d'Impôts" pré-rempli, à signer par le Président.
  * Reproduit la trame officielle: identification entreprise / marché / avenant / certificat.
  */
-export function generateCertificatToSignPdf(c: CertificatCreditDto) {
+export function generateCertificatToSignPdf(
+  c: CertificatCreditDto,
+  ctx: CertificatPdfContext = {},
+) {
+  const { entreprise, marche, convention } = ctx;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const M = 12;
@@ -62,7 +97,6 @@ export function generateCertificatToSignPdf(c: CertificatCreditDto) {
   doc.setFontSize(11);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", pageW / 2, 32, { align: "center" });
   doc.text("CERTIFICAT DE CREDIT D'IMPÔTS", pageW / 2, 38, { align: "center" });
-  // underline both
   doc.setLineWidth(0.3);
   const t1 = doc.getTextWidth("MARCHES PUBLICS A FINANCEMENT EXTERIEUR");
   doc.line(pageW / 2 - t1 / 2, 33, pageW / 2 + t1 / 2, 33);
@@ -81,77 +115,126 @@ export function generateCertificatToSignPdf(c: CertificatCreditDto) {
 
   let y = 56;
 
-  // I - Identification entreprise
+  // ---------- I - Identification entreprise ----------
   const h1 = 38;
   section(doc, "I – IDENTIFICATION  DE L'ENTREPRISE", M, y, W, h1);
   doc.setFontSize(9);
   let yy = y + 8;
-  // NIF (cases)
+
+  const nifRaw = entreprise?.nif || (c as any).entrepriseNif || "";
+  const nifChars = String(nifRaw).padEnd(10, " ").slice(0, 10);
   doc.setFont("helvetica", "bold");
   doc.text("NIF", M + 4, yy);
   doc.setFont("helvetica", "normal");
-  const nifChars = (c as any).entrepriseNif ? String((c as any).entrepriseNif).padEnd(10, " ").slice(0, 10) : "          ";
   for (let i = 0; i < 10; i++) {
     const bx = M + 12 + i * 8;
     doc.line(bx, yy + 1, bx + 6, yy + 1);
-    doc.text(nifChars[i] || "", bx + 3, yy, { align: "center" });
+    const ch = nifChars[i] && nifChars[i] !== " " ? nifChars[i] : "";
+    if (ch) doc.text(ch, bx + 3, yy, { align: "center" });
     doc.text("/", bx + 7, yy);
   }
   yy += 7;
-  line(doc, "NOM et PRENOM  OU RAISON SOCIALE", c.entrepriseRaisonSociale || c.entrepriseNom || "", M + 4, yy, M + W - 4);
+  inlineField(
+    doc,
+    "NOM et PRENOM  OU RAISON SOCIALE",
+    entreprise?.raisonSociale || c.entrepriseRaisonSociale || c.entrepriseNom || "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
   yy += 7;
-  line(doc, "ADRESSE : SIEGE", "", M + 4, yy, M + W - 4);
+  inlineField(doc, "ADRESSE : SIEGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
   yy += 7;
-  // BP / TEL / FAX / E-mail
   doc.setFont("helvetica", "bold");
   doc.text("BP", M + 4, yy);
   doc.line(M + 10, yy + 0.8, M + 40, yy + 0.8);
   doc.text("TEL", M + 44, yy);
+  doc.setFont("helvetica", "normal");
+  if (entreprise?.telephone) doc.text(String(entreprise.telephone), M + 53, yy);
   doc.line(M + 52, yy + 0.8, M + 100, yy + 0.8);
+  doc.setFont("helvetica", "bold");
   doc.text("FAX", M + 104, yy);
   doc.line(M + 112, yy + 0.8, M + 140, yy + 0.8);
   doc.text("E-mail", M + 144, yy);
+  doc.setFont("helvetica", "normal");
+  if (entreprise?.email) doc.text(String(entreprise.email), M + 159, yy);
   doc.line(M + 158, yy + 0.8, M + W - 4, yy + 0.8);
 
   y += h1 + 4;
 
-  // II - Identification marché
-  const h2 = 50;
+  // ---------- II - Identification marché ----------
+  const h2 = 58;
   section(doc, "II – IDENTIFICATION  DU MARCHE", M, y, W, h2);
   yy = y + 8;
-  line(doc, "OBJET DU MARCHE", c.marcheIntitule || "", M + 4, yy, M + W - 4);
+  const objet = [marche?.numeroMarche, marche?.intitule || c.marcheIntitule]
+    .filter(Boolean)
+    .join(" - ");
+  inlineField(doc, "OBJET DU MARCHE", objet, M + 4, yy, M + W - 4);
   yy += 7;
-  line(doc, "COLLECTIVITE BENEFICIAIRE  DU MARCHE", "", M + 4, yy, M + W - 4);
+  inlineField(
+    doc,
+    "MONTANT DU MARCHE (HT)",
+    marche?.montantContratHt != null ? `${fmt(marche.montantContratHt)} MRU` : "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
+  yy += 7;
+  inlineField(
+    doc,
+    "DATE DE SIGNATURE",
+    fmtDate(marche?.dateSignature),
+    M + 4,
+    yy,
+    M + W - 4,
+  );
+  yy += 7;
+  inlineField(
+    doc,
+    "COLLECTIVITE BENEFICIAIRE  DU MARCHE",
+    convention?.autoriteContractanteNom || "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
   yy += 7;
   doc.setFont("helvetica", "bold");
   doc.text("ORGANISME DE FINANCEMENT (NOM, ADRESSE ET TELEPHONE)", M + 4, yy);
   yy += 7;
-  line(doc, "NOM", "", M + 4, yy, M + W - 4);
+  inlineField(
+    doc,
+    "NOM",
+    convention?.bailleurNom || convention?.bailleur || "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
   yy += 7;
-  line(doc, "ADRESSE", "", M + 4, yy, M + W - 4);
-  yy += 7;
-  line(doc, "TEL", "", M + 4, yy, M + W - 4);
+  inlineField(
+    doc,
+    "REFERENCE CONVENTION",
+    convention?.reference || convention?.projectReference || "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
 
   y += h2 + 4;
 
-  // III - Avenant
-  const h3 = 36;
+  // ---------- III - Avenant ----------
+  const h3 = 30;
   section(doc, "III- AVENANT N°", M, y, W, h3);
   yy = y + 8;
   doc.setFontSize(9);
-  line(doc, "Objet :", "", M + 4, yy, M + W - 4);
+  inlineField(doc, "Objet :", "", M + 4, yy, M + W - 4);
   yy += 7;
-  line(doc, "Source de financement", "", M + 4, yy, M + W - 4);
+  inlineField(doc, "Crédit Douanier  Supplémentaire  =", "", M + 4, yy, M + W - 4);
   yy += 7;
-  line(doc, "Crédit Douanier  Supplémentaire  =", "", M + 4, yy, M + W - 4);
-  yy += 7;
-  line(doc, "Crédit Intérieur  Supplémentaire  =", "", M + 4, yy, M + W - 4);
-  yy += 7;
-  line(doc, "TOTAL   III  =", "", M + 4, yy, M + W - 4);
+  inlineField(doc, "Crédit Intérieur  Supplémentaire  =", "", M + 4, yy, M + W - 4);
 
   y += h3 + 4;
 
-  // IV - Certificat
+  // ---------- IV - Certificat ----------
   const h4 = 70;
   section(doc, "IV – CERTIFICAT", M, y, W, h4);
   yy = y + 8;
@@ -171,20 +254,23 @@ export function generateCertificatToSignPdf(c: CertificatCreditDto) {
         (Number(c.montantInterieur ?? c.montantTVAInterieure) || 0)),
   );
   doc.text("-", M + 4, yy);
-  line(doc, "d'un crédit d'impôt douanier de", douane ? `${douane} MRU` : "", M + 8, yy, M + W - 4);
+  inlineField(doc, "d'un crédit d'impôt douanier de", douane ? `${douane} MRU` : "", M + 8, yy, M + W - 4);
   yy += 7;
   doc.text("-", M + 4, yy);
-  line(doc, "d'un crédit d'impôt intérieur de", interieur ? `${interieur} MRU` : "", M + 8, yy, M + W - 4);
+  inlineField(doc, "d'un crédit d'impôt intérieur de", interieur ? `${interieur} MRU` : "", M + 8, yy, M + W - 4);
   yy += 7;
   doc.text("-", M + 4, yy);
-  line(doc, "TOTAL du Crédit d'impôt (III + Crédit initial)", total ? `${total} MRU` : "", M + 8, yy, M + W - 4);
+  inlineField(doc, "TOTAL du Crédit d'impôt (III + Crédit initial)", total ? `${total} MRU` : "", M + 8, yy, M + W - 4);
   yy += 8;
   doc.setFont("helvetica", "normal");
   doc.text("Ces crédits sont disponibles à compter du", M + 4, yy);
+  doc.setFont("helvetica", "normal");
+  doc.text(fmtDate(c.dateEmission) || fmtDate(c.dateCreation) || "", M + 62, yy);
   doc.line(M + 62, yy + 0.8, M + W - 4, yy + 0.8);
-  yy += 5;
-  doc.text("Délai d'exécution du marché :", M + 4, yy);
-  doc.line(M + 50, yy + 0.8, M + W - 4, yy + 0.8);
+  yy += 6;
+  doc.text("Date de validité :", M + 4, yy);
+  doc.text(fmtDate(c.dateValidite) || "", M + 35, yy);
+  doc.line(M + 35, yy + 0.8, M + W - 4, yy + 0.8);
   yy += 10;
   const today = new Date().toLocaleDateString("fr-FR");
   doc.setFont("helvetica", "bold");
