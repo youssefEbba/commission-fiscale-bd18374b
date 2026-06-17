@@ -197,6 +197,11 @@ const DemandesMiseEnPlace = () => {
     }
   };
 
+  /** Clé stable d'une exigence documentaire — évite que plusieurs lignes sans `typeDocument`
+   *  partagent la même clé `undefined` dans `docFiles` (sinon un fichier remplit toutes les lignes). */
+  const reqKey = (req: { id?: number | string; typeDocument?: string | null; codeDocument?: string | null }) =>
+    req.codeDocument || req.typeDocument || `req-${req.id ?? "anon"}`;
+
   const uploadDocsFor = async (certId: number) => {
     if (Object.keys(docFiles).length === 0) return;
     setUploadingDocs(true);
