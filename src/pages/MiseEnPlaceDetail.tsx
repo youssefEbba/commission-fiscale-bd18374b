@@ -719,7 +719,55 @@ const MiseEnPlaceDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Bandeau compléments AC/Entreprise — uploads GED en réponse aux rejets ouverts */}
+        {isACOrEntreprise && c.statut === "INCOMPLETE" && (() => {
+          const openCodes = Array.from(new Set(
+            decisions
+              .filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT")
+              .flatMap(d => d.documentsDemandes ?? [])
+          ));
+          if (openCodes.length === 0) return null;
+          return (
+            <Card className="border-amber-200 bg-amber-50/40">
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-amber-800">
+                  <Upload className="h-4 w-4" /> {t("mise_en_place:detail.complements.title", { defaultValue: "Déposer les compléments demandés" })}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t("mise_en_place:detail.complements.hint", { defaultValue: "Pour chaque pièce demandée, joindre le fichier et un message explicatif (obligatoire)." })}
+                </p>
+                <div className="space-y-3">
+                  {openCodes.map((code) => (
+                    <div key={code} className="rounded border border-amber-200 bg-background p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{tTypeDocument(code)}</Badge>
+                      </div>
+                      <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        onChange={(e) => setComplementFiles(prev => ({ ...prev, [code]: e.target.files?.[0] || null }))} />
+                      <Textarea
+                        placeholder={t("mise_en_place:detail.complements.message_placeholder", { defaultValue: "Message explicatif (obligatoire)" })}
+                        value={complementMessages[code] || ""}
+                        onChange={(e) => setComplementMessages(prev => ({ ...prev, [code]: e.target.value }))}
+                        className="min-h-[60px] text-sm"
+                      />
+                      <div className="flex justify-end">
+                        <Button size="sm"
+                          disabled={!complementFiles[code] || !(complementMessages[code] || "").trim() || complementLoading[code]}
+                          onClick={() => handleUploadComplement(code)}>
+                          {complementLoading[code] ? <Loader2 className="h-3.5 w-3.5 me-1 animate-spin" /> : <Send className="h-3.5 w-3.5 me-1" />}
+                          {t("mise_en_place:detail.complements.submit", { defaultValue: "Envoyer" })}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Documents */}
+
         <Card>
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2"><FileText className="h-4 w-4" /> {t("mise_en_place:detail.documents.title")}</h3>
