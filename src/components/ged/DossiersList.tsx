@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
-import { dossierGedApi, DossierGedDto, DossierDocumentGed, demandeCorrectionApi, marcheApi } from "@/lib/api";
+import { dossierGedApi, DossierGedDto, demandeCorrectionApi, marcheApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
