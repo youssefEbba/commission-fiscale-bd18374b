@@ -153,7 +153,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/ged/dossiers" element={
-              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
                 <GedDossiers />
               </ProtectedRoute>
             } />
