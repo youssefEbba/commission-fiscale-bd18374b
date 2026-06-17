@@ -347,6 +347,48 @@ const Utilisations = () => {
 
   const errorTitle = () => t("common:errors.title", { defaultValue: "Erreur" });
 
+  // Totaux AU_CI (cordon vs TVA) pour validation côté front
+  const sumAuCi = (lignes: LigneBulletinRequest[] | undefined): { cordon: number; tva: number } => {
+    let cordon = 0, tva = 0;
+    for (const l of (lignes || [])) {
+      const v = Number(l.valeurTaxe) || 0;
+      if (l.affectation !== "AU_CI" || v <= 0) continue;
+      if ((l.codeTaxe || "").toUpperCase() === "TVA") tva += v;
+      else cordon += v;
+    }
+    return { cordon, tva };
+  };
+
+  /** Erreurs bloquantes pré-soumission (combine éligibilité serveur + soldes locaux). */
+  const computePreSubmitErrors = (): string[] => {
+    const errors: string[] = [];
+    if (!form.certificatCreditId) return errors;
+    const elig = eligibilite;
+    if (elig && !elig.eligible) errors.push(...(elig.motifs ?? []));
+    if (createType === "DOUANIER") {
+      if (elig?.transfertExecute) errors.push(t("utilisations:validation.transfert_executed", { defaultValue: "Transfert exécuté — utilisations douanières interdites" }));
+      const lignes = form.lignes || [];
+      if (lignes.length === 0) errors.push(t("utilisations:validation.lignes_required", { defaultValue: "Au moins une ligne de bulletin requise" }));
+      const { cordon, tva } = sumAuCi(lignes);
+      const soldeCordon = elig?.soldeCordon ?? 0;
+      const quotaTva = elig?.tvaImportationDouane ?? 0;
+      if (elig && cordon > soldeCordon) {
+        errors.push(t("utilisations:validation.solde_cordon_insuffisant", { defaultValue: `Solde cordon insuffisant (disponible=${soldeCordon}, requis=${cordon})`, disponible: soldeCordon, requis: cordon }));
+      }
+      if (elig && quotaTva > 0 && tva > quotaTva) {
+        errors.push(t("utilisations:validation.quota_tva_insuffisant", { defaultValue: `Quota TVA import insuffisant (disponible=${quotaTva}, requis=${tva})`, disponible: quotaTva, requis: tva }));
+      }
+    } else if (createType === "TVA_INTERIEURE") {
+      const m = Number(form.montantTVAInterieure) || 0;
+      if (m <= 0) errors.push(t("utilisations:validation.montant_tva_required", { defaultValue: "Montant TVA intérieure > 0 requis" }));
+    }
+    return errors;
+  };
+
+  const preSubmitErrors = computePreSubmitErrors();
+  const canSubmit = preSubmitErrors.length === 0;
+
+
   const handleSave = async (mode: "brouillon" | "submit") => {
     if (!form.certificatCreditId) {
       toast({ title: errorTitle(), description: t("utilisations:toast.cert_required"), variant: "destructive" });
