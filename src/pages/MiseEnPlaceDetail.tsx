@@ -481,7 +481,7 @@ const MiseEnPlaceDetail = () => {
               )}
 
               {canDoVisa && !dgtcpMontantsRequired && (
-                <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={handleVisa}>
+                <Button variant="outline" className="text-green-600 border-green-300" disabled={visaLoading} onClick={() => setVisaConfirmOpen(true)}>
                   <ShieldCheck className="h-4 w-4 me-1" /> {t("mise_en_place:actions.visa")}
                 </Button>
               )}
@@ -649,7 +649,7 @@ const MiseEnPlaceDetail = () => {
               {isMyTab && !isClosed && !tabHasVisa && (
                 <div className="flex gap-2 mt-3 justify-center">
                   {tabCanVisa && (
-                    <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={handleVisa}>
+                    <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={() => setVisaConfirmOpen(true)}>
                       <CheckCircle className="h-3.5 w-3.5 me-1" /> {t("mise_en_place:actions.visa")}
                     </Button>
                   )}

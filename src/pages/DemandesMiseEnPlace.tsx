@@ -641,16 +641,7 @@ const DemandesMiseEnPlace = () => {
                       )}
                       {isMyRole && !["OUVERT", "ANNULE", "CLOTURE"].includes(selected.statut) && (
                         <div className="flex gap-2 mt-3 justify-center">
-                          <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={async () => {
-                            setVisaLoading(true);
-                            try {
-                              await certificatCreditApi.postDecision(selected.id, "VISA");
-                              okToast(t("mise_en_place:toast.visa_apposed"));
-                              openDetail(selected);
-                            } catch (e: unknown) {
-                              errToast(tErr(e, t("mise_en_place:toast.visa_apposed")));
-                            } finally { setVisaLoading(false); }
-                          }}>
+                          <Button variant="default" size="sm" className="h-7 text-xs" disabled={visaLoading} onClick={() => { setVisaConfirmId(selected.id); setVisaConfirmOpen(true); }}>
                             <CheckCircle className="h-3.5 w-3.5 me-1" /> {t("mise_en_place:actions.visa")}
                           </Button>
                           <Button variant="destructive" size="sm" className="h-7 text-xs" onClick={() => { setShowRejetTemp(selected); setRejetTempMotif(""); setRejetTempDocs([]); }}>

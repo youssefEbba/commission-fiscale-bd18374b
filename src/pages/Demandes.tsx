@@ -734,7 +734,7 @@ const Demandes = () => {
 
                                     const actionItems = [
                                       ...visaTransitions.map((tr, idx) => (
-                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => checkAndHandleVisa(d.id)}>
+                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => { setVisaConfirmId(d.id); setVisaConfirmOpen(true); }}>
                                           <tr.icon className="h-4 w-4 me-2" />
                                           {tTransition(tr.labelKey)}
                                         </DropdownMenuItem>

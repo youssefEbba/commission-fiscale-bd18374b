@@ -788,7 +788,7 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    <Button className="w-full" onClick={handleTempVisa} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
+                    <Button className="w-full" onClick={() => setVisaConfirmOpen(true)} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <CheckCircle className="h-4 w-4 me-2" />}
                       {myHasVisa ? t("correction_douaniere:actions.visa_done_short") : myOpenRejets.length > 0 ? t("correction_douaniere:actions.solve_rejets_first") : t("correction_douaniere:actions.apposer_visa")}
                     </Button>
