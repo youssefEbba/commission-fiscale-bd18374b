@@ -24,8 +24,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, DollarSign, Upload, MessageSquare, Send,
+  AlertTriangle, History, DollarSign, Upload, MessageSquare, Send, Download,
 } from "lucide-react";
+import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -546,18 +547,33 @@ const MiseEnPlaceDetail = () => {
               {role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (
                 <div className="w-full space-y-3">
                   {!hasCertDoc && (
-                    <div className="flex items-center gap-3">
-                      <label className="cursor-pointer">
-                        <input type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setCertFile(e.target.files?.[0] || null)} />
-                        <div className="flex items-center gap-2 px-3 py-2 rounded border border-dashed border-muted-foreground/40 hover:border-primary text-sm text-muted-foreground hover:text-primary transition-colors">
-                          <Upload className="h-4 w-4" />
-                          {certFile ? certFile.name : t("mise_en_place:detail.president.upload_label")}
-                        </div>
-                      </label>
-                      {!certFile && (
-                        <p className="text-xs text-amber-600">⚠️ {t("mise_en_place:detail.president.upload_warning")}</p>
-                      )}
-                    </div>
+                    <>
+                      <div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => generateCertificatToSignPdf(c)}
+                        >
+                          <Download className="h-4 w-4 me-1" /> Télécharger le certificat à signer
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Téléchargez le certificat pré-rempli, signez-le, puis téléversez le document signé ci-dessous.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="cursor-pointer">
+                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setCertFile(e.target.files?.[0] || null)} />
+                          <div className="flex items-center gap-2 px-3 py-2 rounded border border-dashed border-muted-foreground/40 hover:border-primary text-sm text-muted-foreground hover:text-primary transition-colors">
+                            <Upload className="h-4 w-4" />
+                            {certFile ? certFile.name : t("mise_en_place:detail.president.upload_label")}
+                          </div>
+                        </label>
+                        {!certFile && (
+                          <p className="text-xs text-amber-600">⚠️ {t("mise_en_place:detail.president.upload_warning")}</p>
+                        )}
+                      </div>
+                    </>
                   )}
                   {hasCertDoc && !certFile && (
                     <div className="flex items-center gap-2 text-sm text-emerald-600">
