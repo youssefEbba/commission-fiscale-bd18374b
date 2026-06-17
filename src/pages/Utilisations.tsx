@@ -137,6 +137,25 @@ const Utilisations = () => {
   // Certificats avec un transfert déjà exécuté (TRANSFERE) → utilisations DOUANIERES bloquées
   const [transferredCertIds, setTransferredCertIds] = useState<Set<number>>(new Set());
 
+  // Éligibilité du certificat sélectionné (rafraîchi à chaque changement de cert/type)
+  const [eligibilite, setEligibilite] = useState<CertificatUtilisationEligibilityDto | null>(null);
+  const [eligibiliteLoading, setEligibiliteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showCreate || !form.certificatCreditId) {
+      setEligibilite(null);
+      return;
+    }
+    let cancelled = false;
+    setEligibiliteLoading(true);
+    certificatCreditApi
+      .getEligibiliteUtilisation(form.certificatCreditId, createType)
+      .then((res) => { if (!cancelled) setEligibilite(res); })
+      .catch(() => { if (!cancelled) setEligibilite(null); })
+      .finally(() => { if (!cancelled) setEligibiliteLoading(false); });
+    return () => { cancelled = true; };
+  }, [showCreate, form.certificatCreditId, createType]);
+
   // Référentiel des taxes (admin-managed)
   const [referentielTaxes, setReferentielTaxes] = useState<ReferentielTaxeDto[]>([]);
   const [referentielTaxesLoading, setReferentielTaxesLoading] = useState(false);
