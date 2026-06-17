@@ -795,7 +795,8 @@ const DemandeDetail = () => {
                     const uploaded = sorted.find(d => d.actif === true) || sorted[0];
                     const fileUrl = uploaded ? getDocFileUrl(uploaded) : null;
                     const olderVersions = sorted.filter(d => d.id !== uploaded?.id);
-                    const label = tTypeDocument(type);
+                    const docType = uploaded?.type || type;
+                    const label = (docType && docType.trim()) ? tTypeDocument(docType) : (uploaded?.nomFichier || "—");
                     const isLocked = isIncomplete && allowedDocTypes !== null && !allowedDocTypes.includes(type);
                     const isUnlocked = isIncomplete && allowedDocTypes !== null && allowedDocTypes.includes(type);
 
