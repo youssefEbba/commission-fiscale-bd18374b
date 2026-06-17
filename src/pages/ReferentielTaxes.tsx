@@ -61,7 +61,7 @@ const ReferentielTaxes = () => {
     setForm({
       codeTaxe: t.codeTaxe,
       denominationTaxe: t.denominationTaxe,
-      valeurTaxe: t.valeurTaxe ?? null,
+      valeurTaxe: (t.valeurTaxe ?? (t as any).valeurIndicative ?? (t as any).valeur ?? (t as any).tauxIndicatif ?? (t as any).taux) ?? null,
       ordreAffichage: t.ordreAffichage ?? null,
       active: t.active,
     });
