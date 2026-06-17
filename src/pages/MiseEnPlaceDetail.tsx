@@ -8,6 +8,7 @@ import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
+  conventionApi, ConventionDto,
   DecisionCorrectionDto,
   documentRequirementApi,
 } from "@/lib/api";
