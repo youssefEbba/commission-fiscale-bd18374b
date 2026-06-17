@@ -257,7 +257,7 @@ const DemandeDetail = () => {
     if (uploadBeforeVisa) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(demandeId);
-        const hasDoc = documents.some(d => d.type === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
         if (!hasDoc) { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
       } catch { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
     }
