@@ -171,9 +171,9 @@ const DemandeDetail = () => {
   const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
   // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Libellé via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
+  // Libellé via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "CREDIT_EXTERIEUR" },
+    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
     DGI: { docType: "CREDIT_INTERIEUR" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
