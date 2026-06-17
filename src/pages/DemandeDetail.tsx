@@ -174,6 +174,7 @@ const DemandeDetail = () => {
   // Libellé via `tTypeDocument` (enums.type_document.CREDIT_EXTERIEUR).
   const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
     DGD: { docType: "CREDIT_EXTERIEUR" },
+    DGI: { docType: "CREDIT_INTERIEUR" },
   };
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
   const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
