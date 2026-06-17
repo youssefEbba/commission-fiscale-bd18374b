@@ -428,87 +428,8 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
           ))}
         </Accordion>
       </ScrollArea>
-
-      <Dialog open={injectEtape !== null} onOpenChange={(open) => { if (!open) closeInject(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-amber-600" />
-              {t("ged:dossiers.inject.title", { defaultValue: "Injection GED – Président" })}
-            </DialogTitle>
-            <DialogDescription>
-              {t("ged:dossiers.inject.description", {
-                defaultValue: "Compléter ou remplacer un document du dossier. Cette action crée une nouvelle version active et contourne les restrictions de statut.",
-              })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{t("ged:dossiers.inject.etape", { defaultValue: "Étape" })}</Label>
-              <p className="text-sm font-medium">{injectEtape}</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inject-code">{t("ged:dossiers.inject.code", { defaultValue: "Type de document" })} *</Label>
-              <Select value={injectCode} onValueChange={setInjectCode} disabled={requirementsQuery.isLoading}>
-                <SelectTrigger id="inject-code">
-                  <SelectValue placeholder={requirementsQuery.isLoading
-                    ? t("ged:dossiers.inject.code_loading", { defaultValue: "Chargement..." })
-                    : t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
-                </SelectTrigger>
-                <SelectContent>
-                  {requirementCodes.map((code) => (
-                    <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
-                  ))}
-                  <SelectItem value="__custom__">{t("ged:dossiers.inject.custom", { defaultValue: "Autre (saisir le code)" })}</SelectItem>
-                </SelectContent>
-              </Select>
-              {injectCode === "__custom__" && (
-                <Input
-                  placeholder="CODE_DOCUMENT"
-                  value={injectCustomCode}
-                  onChange={(e) => setInjectCustomCode(e.target.value.toUpperCase())}
-                />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inject-target">{t("ged:dossiers.inject.target", { defaultValue: "Cible (targetId) — optionnel" })}</Label>
-              <Input
-                id="inject-target"
-                type="number"
-                placeholder={t("ged:dossiers.inject.target_placeholder", { defaultValue: "Id utilisation / transfert / avenant" })}
-                value={injectTargetId}
-                onChange={(e) => setInjectTargetId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inject-file">{t("ged:dossiers.inject.file", { defaultValue: "Fichier" })} *</Label>
-              <Input
-                id="inject-file"
-                ref={fileInputRef}
-                type="file"
-                onChange={(e) => setInjectFile(e.target.files?.[0] || null)}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={closeInject} disabled={injecting}>
-              {t("common:cancel", { defaultValue: "Annuler" })}
-            </Button>
-            <Button onClick={handleInject} disabled={injecting || !injectFile}>
-              <Upload className="h-4 w-4 me-2" />
-              {injecting
-                ? t("ged:dossiers.inject.submitting", { defaultValue: "Injection..." })
-                : t("ged:dossiers.inject.submit", { defaultValue: "Injecter" })}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
+
   );
 };
 
