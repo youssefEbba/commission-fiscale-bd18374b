@@ -778,12 +778,14 @@ const DemandesMiseEnPlace = () => {
               ) : (
                 <div className="space-y-2">
                   {docRequirements.map((req) => {
-                    const hasFile = !!docFiles[req.typeDocument];
+                    const key = reqKey(req);
+                    const label = req.codeDocument || req.typeDocument;
+                    const hasFile = !!docFiles[key];
                     return (
-                      <div key={req.id} className="flex items-center gap-3 p-2 rounded border bg-background">
+                      <div key={req.id ?? key} className="flex items-center gap-3 p-2 rounded border bg-background">
                         <div className="flex-1">
                           <p className="text-sm font-medium flex items-center gap-1">
-                            {tTypeDocument(req.typeDocument)}
+                            {label ? tTypeDocument(label) : (req.libelle || key)}
                             {req.obligatoire && <span className="text-destructive ms-1">*</span>}
                             {req.description && (
                               <Tooltip>
@@ -797,7 +799,7 @@ const DemandesMiseEnPlace = () => {
                           </p>
                           {hasFile && (
                             <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
-                              <CheckCircle className="h-3 w-3" /> {docFiles[req.typeDocument].name}
+                              <CheckCircle className="h-3 w-3" /> {docFiles[key].name}
                             </p>
                           )}
                         </div>
@@ -805,7 +807,7 @@ const DemandesMiseEnPlace = () => {
                           <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (file) setDocFiles(prev => ({ ...prev, [req.typeDocument]: file }));
+                              if (file) setDocFiles(prev => ({ ...prev, [key]: file }));
                             }} />
                           <div className="flex items-center gap-1 text-xs text-primary hover:underline">
                             <Upload className="h-3 w-3" />
