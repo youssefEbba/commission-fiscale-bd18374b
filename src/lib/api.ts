@@ -662,6 +662,13 @@ export interface DocumentDto {
   actif?: boolean;
 }
 
+/**
+ * Le backend renvoie désormais `codeDocument` au lieu de `type` pour les documents.
+ * On normalise ici pour garder `type` rempli (compat UI existante).
+ */
+export const normalizeDocs = <T extends { type?: string; codeDocument?: string }>(list: T[]): T[] =>
+  (list ?? []).map(d => ({ ...d, type: (d.codeDocument ?? d.type ?? "") as string }));
+
 
 // Décisions temporaires par acteur
 export type DecisionType = "VISA" | "REJET_TEMP";
