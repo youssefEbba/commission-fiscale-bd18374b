@@ -773,8 +773,9 @@ const DemandeDetail = () => {
                   const SPECIAL_TYPES = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
                   const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type));
                   const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
-                    if (!acc[d.type]) acc[d.type] = [];
-                    acc[d.type].push(d);
+                    const key = (d.type && d.type.trim()) ? d.type : `__doc_${d.id}`;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(d);
                     return acc;
                   }, {});
 
