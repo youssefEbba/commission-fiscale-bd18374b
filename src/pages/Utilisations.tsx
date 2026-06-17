@@ -889,7 +889,45 @@ const Utilisations = () => {
                   <div>{t("utilisations:create.transfert_warning")}</div>
                 </div>
               )}
+              {form.certificatCreditId && eligibilite && !eligibilite.eligible && (
+                <div className="mt-2 p-2.5 rounded-md border border-destructive/40 bg-destructive/10 text-xs text-destructive flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="font-semibold">
+                      {t("utilisations:validation.cert_not_eligible", { defaultValue: "Certificat non éligible pour une nouvelle utilisation" })}
+                      {eligibilite.statutCertificat ? ` (${eligibilite.statutCertificat})` : ""}
+                    </div>
+                    {eligibilite.motifs?.length > 0 && (
+                      <ul className="list-disc pl-4">
+                        {eligibilite.motifs.map((m, i) => <li key={i}>{m}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+              {form.certificatCreditId && eligibilite?.eligible && (
+                <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+                  {createType === "DOUANIER" && (
+                    <>
+                      <div>{t("utilisations:validation.solde_cordon_label", { defaultValue: "Solde cordon" })}: <strong>{formatAmount(eligibilite.soldeCordon ?? 0)}</strong></div>
+                      <div>{t("utilisations:validation.quota_tva_label", { defaultValue: "Quota TVA import" })}: <strong>{formatAmount(eligibilite.tvaImportationDouane ?? 0)}</strong></div>
+                    </>
+                  )}
+                  {createType === "TVA_INTERIEURE" && (
+                    <div>{t("utilisations:validation.solde_tva_label", { defaultValue: "Solde TVA" })}: <strong>{formatAmount(eligibilite.soldeTVA ?? 0)}</strong></div>
+                  )}
+                </div>
+              )}
+              {form.certificatCreditId && !eligibiliteLoading && preSubmitErrors.length > 0 && eligibilite?.eligible && (
+                <div className="mt-2 p-2.5 rounded-md border border-amber-300 bg-amber-50 text-xs text-amber-800 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    {preSubmitErrors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
             </div>
+
 
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">{t("utilisations:create.type_label")}</Label>
