@@ -403,6 +403,15 @@ const Utilisations = () => {
       return;
     }
     if (mode === "submit") {
+      const errs = computePreSubmitErrors();
+      if (errs.length > 0) {
+        toast({
+          title: t("utilisations:validation.title", { defaultValue: "Validation impossible" }),
+          description: errs.join(" • "),
+          variant: "destructive",
+        });
+        return;
+      }
       const missing = getMissingObligatoryDocs();
       if (missing.length > 0) {
         toast({
