@@ -299,6 +299,9 @@ const MiseEnPlaceDetail = () => {
     } finally {
       setComplementLoading(prev => ({ ...prev, [codeDoc]: false }));
     }
+  };
+
+
 
   const handleReject = async () => {
     if (!motifRejet.trim()) return;
