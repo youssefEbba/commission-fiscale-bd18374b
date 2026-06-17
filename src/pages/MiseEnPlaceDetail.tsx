@@ -50,8 +50,8 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Types de documents demandables en rejet temp — paramétrage GED back pour MISE_EN_PLACE_CI.
-const DOC_TYPES_DEMANDABLES = [
+// Fallback si l'API de paramétrage GED est indisponible — codes connus pour MISE_EN_PLACE_CI.
+const DOC_TYPES_FALLBACK = [
   "LETTRE_SAISINE",
   "CONTRAT",
   "LETTRE_NOTIFICATION_CONTRAT",
