@@ -272,19 +272,30 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
 
   const openInject = (etape: string) => {
     setInjectEtape(etape);
-    const presets = ETAPE_DOC_CODES[etape] || [];
-    setInjectCode(presets[0] || "");
+    setInjectCode("");
     setInjectCustomCode("");
     setInjectTargetId("");
     setInjectFile(null);
   };
 
-  const closeInject = () => {
-    setInjectEtape(null);
-    setInjectFile(null);
-  };
+  const injectProcessus = injectEtape ? ETAPE_TO_PROCESSUS[injectEtape] : undefined;
+  const requirementsQuery = useQuery({
+    queryKey: ["document-requirements", injectProcessus],
+    queryFn: () => documentRequirementApi.getByProcessus(injectProcessus!),
+    enabled: !!injectProcessus,
+    staleTime: 5 * 60 * 1000,
+  });
+  const requirementCodes = useMemo(() => {
+    const reqs = requirementsQuery.data || [];
+    const codes = reqs
+      .slice()
+      .sort((a, b) => (a.ordreAffichage ?? 9999) - (b.ordreAffichage ?? 9999))
+      .map((r) => r.codeDocument || r.typeDocument)
+      .filter((c): c is string => !!c);
+    if (codes.length > 0) return Array.from(new Set(codes));
+    return ETAPE_DOC_CODES[injectEtape || ""] || [];
+  }, [requirementsQuery.data, injectEtape]);
 
-  const handleInject = async () => {
     if (!dossier || !injectEtape || !injectFile) return;
     const codeDocument = (injectCode === "__custom__" ? injectCustomCode : injectCode).trim();
     if (!codeDocument) {
