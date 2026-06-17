@@ -164,6 +164,19 @@ const MiseEnPlaceDetail = () => {
 
   useEffect(() => { fetchData(); }, [id]);
 
+  useEffect(() => {
+    documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI")
+      .then((reqs) => {
+        const codes = Array.from(new Set(
+          (reqs || [])
+            .map(r => r.codeDocument || r.typeDocument || "")
+            .filter(Boolean)
+        ));
+        if (codes.length > 0) setDocTypesDemandables(codes);
+      })
+      .catch(() => { /* fallback déjà en place */ });
+  }, []);
+
   usePageTitle("mise_en_place:detail.title", { ref: certificat?.reference || (id ? `#${id}` : "") });
 
   if (loading) {
