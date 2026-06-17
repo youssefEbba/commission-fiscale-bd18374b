@@ -853,7 +853,7 @@ const DemandeDetail = () => {
                           if (isVisaAction && (myHasVisa || myOpenRejets.length > 0)) return null;
                           if (isRejetAction && myHasVisa) return null;
                           return (
-                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : checkAndHandleVisa(selected.id)}>
+                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : (setVisaConfirmId(selected.id), setVisaConfirmOpen(true))}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
                             {tTransition(tr.labelKey)}
                           </Button>
