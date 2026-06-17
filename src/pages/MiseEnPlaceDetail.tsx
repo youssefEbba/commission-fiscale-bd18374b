@@ -114,6 +114,11 @@ const MiseEnPlaceDetail = () => {
   const [responseMessage, setResponseMessage] = useState("");
   const [respondingLoading, setRespondingLoading] = useState(false);
 
+  // Compléments AC/Entreprise (upload GED en réponse aux rejets ouverts)
+  const [complementFiles, setComplementFiles] = useState<Record<string, File | null>>({});
+  const [complementMessages, setComplementMessages] = useState<Record<string, string>>({});
+  const [complementLoading, setComplementLoading] = useState<Record<string, boolean>>({});
+
   const [showAnnulation, setShowAnnulation] = useState(false);
   const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
 
