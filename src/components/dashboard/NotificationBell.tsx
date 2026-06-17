@@ -44,6 +44,19 @@ const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
 };
 
 function resolveRoute(notif: NotificationDto): string | null {
+  // DEMANDE_EXPLICATION : payload contient (normalement) dossierId + contexte
+  if (notif.type === "DEMANDE_EXPLICATION" && notif.payload) {
+    try {
+      const p = JSON.parse(notif.payload) as { dossierId?: number; contexte?: string };
+      if (p.dossierId != null) {
+        const ctx = (p.contexte || "").toUpperCase();
+        if (ctx === "CERTIFICAT") return `/dashboard/certificats/${p.dossierId}`;
+        if (ctx === "UTILISATION") return `/dashboard/utilisations/${p.dossierId}`;
+        return `/dashboard/demandes/${p.dossierId}`;
+      }
+    } catch { /* fallback classique */ }
+  }
+
   const byType = NOTIF_TYPE_ROUTES[notif.type];
   if (byType) return byType(notif.entityId);
   const t = String(notif.type || "").toUpperCase();
