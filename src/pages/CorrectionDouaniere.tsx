@@ -670,7 +670,13 @@ const CorrectionDouaniere = () => {
                   {docsLoading ? (
                     <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                   ) : (() => {
-                    const regularDocs = docs.filter(d => !SPECIAL_DOC_TYPES.includes(d.type));
+                    // Les "docs spéciaux" (offre fiscale corrigée, lettre d'adoption, crédits...)
+                    // ne sont affichés dans leur grille dédiée que lorsque le dossier est ADOPTEE/NOTIFIEE.
+                    // Sinon on les liste ici pour qu'ils restent visibles dès l'upload.
+                    const specialGridVisible = demande?.statut === "ADOPTEE" || demande?.statut === "NOTIFIEE";
+                    const regularDocs = specialGridVisible
+                      ? docs.filter(d => !SPECIAL_DOC_TYPES.includes(d.type))
+                      : docs;
                     const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
                       if (!acc[d.type]) acc[d.type] = [];
                       acc[d.type].push(d);
