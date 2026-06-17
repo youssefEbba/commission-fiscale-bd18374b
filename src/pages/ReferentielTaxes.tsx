@@ -177,9 +177,12 @@ const ReferentielTaxes = () => {
                       <TableCell className="font-mono font-semibold uppercase">{t.codeTaxe}</TableCell>
                       <TableCell>{t.denominationTaxe}</TableCell>
                       <TableCell className="text-right">
-                        {t.valeurTaxe !== null && t.valeurTaxe !== undefined
-                          ? Number(t.valeurTaxe).toLocaleString("fr-FR")
-                          : <span className="text-muted-foreground italic">—</span>}
+                        {(() => {
+                          const v = (t as any).valeurTaxe ?? (t as any).valeurIndicative ?? (t as any).valeur ?? (t as any).tauxIndicatif ?? (t as any).taux;
+                          return v !== null && v !== undefined && v !== ""
+                            ? Number(v).toLocaleString("fr-FR")
+                            : <span className="text-muted-foreground italic">—</span>;
+                        })()}
                       </TableCell>
                       <TableCell>
                         {t.active ? (
