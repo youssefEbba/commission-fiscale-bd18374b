@@ -399,7 +399,7 @@ export const referentielProjetApi = {
   getByAutorite: (autoriteId: number) => apiFetch<ReferentielProjetDto[]>(`/referentiels-projet/by-autorite/${autoriteId}`),
   create: (data: CreateReferentielProjetRequest) => apiFetch<ReferentielProjetDto>("/referentiels-projet", { method: "POST", body: data }),
   updateStatut: (id: number, statut: "VALIDE" | "REJETE" | "ANNULE", motifRejet?: string) => apiFetch<ReferentielProjetDto>(`/referentiels-projet/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
-  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/referentiels-projet/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: TypeDocumentProjet, file: File) => {
     const formData = new FormData();
     formData.append("type", type);
@@ -502,7 +502,7 @@ export const conventionApi = {
   // NOT SUPPORTED BY BACKEND — kept for future use
   update: (id: number, data: CreateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
-  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`).then(normalizeDocs),
   deleteDocument: (conventionId: number, docId: number) => apiFetch<void>(`/conventions/${conventionId}/documents/${docId}`, { method: "DELETE" }),
   replaceDocument: (conventionId: number, docId: number, file: File) => {
     const formData = new FormData();
@@ -779,7 +779,7 @@ export const demandeCorrectionApi = {
   /** Suppression définitive — réservée au statut BROUILLON. */
   remove: (id: number) => apiFetch<void>(`/demandes-correction/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}${decisionFinale ? `&decisionFinale=true` : ""}`, { method: "PATCH" }),
-  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: string, file: File, message?: string) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -909,7 +909,7 @@ export const marcheApi = {
   assign: (id: number, delegueId: number) => apiFetch<MarcheDto>(`/marches/${id}/assign`, { method: "PATCH", body: { delegueId } }),
   addDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues`, { method: "POST", body: { delegueId } }),
   removeDelegue: (id: number, delegueId: number) => apiFetch<void>(`/marches/${id}/delegues/${delegueId}`, { method: "DELETE" }),
-  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/marches/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/marches/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: TypeDocumentMarche, file: File) => {
     const formData = new FormData();
     formData.append("type", type);
@@ -1071,7 +1071,7 @@ export const certificatCreditApi = {
     }),
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
-  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/certificats-credit/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/certificats-credit/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: string, file: File) => {
     const formData = new FormData();
     formData.append("codeDocument", type);
@@ -1420,7 +1420,7 @@ export const utilisationCreditApi = {
       method: "POST",
       body: { tvaDeductibleUtilisee },
     }),
-  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -1945,7 +1945,7 @@ export const clotureCreditApi = {
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/rejeter`, { method: "POST" }),
   finaliser: (id: number) =>
     apiFetch<ClotureCreditDto>(`/clotures-credit/${id}/finaliser`, { method: "POST" }),
-  getDocuments: (id: number) => apiFetch<any[]>(`/clotures-credit/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<any[]>(`/clotures-credit/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -2000,7 +2000,7 @@ export type TypeDocumentAvenant =
 
 export const avenantApi = {
   // getAll and getById removed — backend only supports document endpoints
-  getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`),
+  getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: TypeDocumentAvenant, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
