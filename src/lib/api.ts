@@ -1890,7 +1890,7 @@ export const sousTraitanceApi = {
   refuser: (id: number) =>
     apiFetch<SousTraitanceDto>(`/sous-traitances/${id}/refuser`, { method: "POST" }),
   getDocuments: (id: number) =>
-    apiFetch<DocumentSousTraitanceDto[]>(`/sous-traitances/${id}/documents`),
+    apiFetch<DocumentSousTraitanceDto[]>(`/sous-traitances/${id}/documents`).then(normalizeDocs),
   uploadDocument: (id: number, type: TypeDocumentSousTraitance, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
