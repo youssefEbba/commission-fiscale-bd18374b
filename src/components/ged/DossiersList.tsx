@@ -337,19 +337,7 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                {isPresident && (
-                  <div className="flex justify-end pb-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openInject(etape.etape)}
-                      className="gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      {t("ged:dossiers.inject.button", { defaultValue: "Ajouter / remplacer un document" })}
-                    </Button>
-                  </div>
-                )}
+
                 {!etape.documents || etape.documents.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-3 text-center italic">
                     {t("ged:dossiers.table.empty_etape")}
