@@ -1064,7 +1064,7 @@ export const certificatCreditApi = {
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/certificats-credit/${id}/documents`),
   uploadDocument: (id: number, type: string, file: File) => {
     const formData = new FormData();
-    formData.append("type", type);
+    formData.append("codeDocument", type);
     formData.append("file", file);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
@@ -1414,7 +1414,7 @@ export const utilisationCreditApi = {
   uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    return apiFetch<DocumentDto>(`/utilisations-credit/${id}/documents?type=${encodeURIComponent(type)}`, {
+    return apiFetch<DocumentDto>(`/utilisations-credit/${id}/documents?codeDocument=${encodeURIComponent(type)}`, {
       method: "POST",
       rawBody: formData,
     });
@@ -1435,7 +1435,7 @@ export const utilisationCreditApi = {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("message", message);
-      if (typeDocument) formData.append("typeDocument", typeDocument);
+      if (typeDocument) formData.append("codeDocument", typeDocument);
       return apiFetch<RejetTempResponseDto>(`/utilisations-credit/decisions/${decisionId}/rejet-temp/reponses`, {
         method: "POST",
         rawBody: formData,
@@ -1767,7 +1767,7 @@ export const transfertCreditApi = {
     formData.append("file", file);
     if (message) formData.append("message", message);
     return apiFetch<DocumentTransfertCreditDto>(
-      `/transferts-credit/${id}/documents?type=${encodeURIComponent(type)}`,
+      `/transferts-credit/${id}/documents?codeDocument=${encodeURIComponent(type)}`,
       { method: "POST", rawBody: formData }
     );
   },
@@ -1788,7 +1788,7 @@ export const transfertCreditApi = {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("message", message);
-      if (typeDocument) formData.append("typeDocument", typeDocument);
+      if (typeDocument) formData.append("codeDocument", typeDocument);
       return apiFetch<RejetTempResponseDto>(`/transferts-credit/decisions/${decisionId}/rejet-temp/reponses`, {
         method: "POST",
         rawBody: formData,
@@ -1885,7 +1885,7 @@ export const sousTraitanceApi = {
     const formData = new FormData();
     formData.append("file", file);
     return apiFetch<DocumentSousTraitanceDto>(
-      `/sous-traitances/${id}/documents?type=${encodeURIComponent(type)}`,
+      `/sous-traitances/${id}/documents?codeDocument=${encodeURIComponent(type)}`,
       { method: "POST", rawBody: formData }
     );
   },
@@ -1940,7 +1940,7 @@ export const clotureCreditApi = {
     const formData = new FormData();
     formData.append("file", file);
     return apiFetch<any>(
-      `/clotures-credit/${id}/documents?type=${encodeURIComponent(type)}`,
+      `/clotures-credit/${id}/documents?codeDocument=${encodeURIComponent(type)}`,
       { method: "POST", rawBody: formData }
     );
   },
@@ -1995,7 +1995,7 @@ export const avenantApi = {
     const formData = new FormData();
     formData.append("file", file);
     return apiFetch<DocumentAvenantDto>(
-      `/avenants/${id}/documents?type=${encodeURIComponent(type)}`,
+      `/avenants/${id}/documents?codeDocument=${encodeURIComponent(type)}`,
       { method: "POST", rawBody: formData }
     );
   },
