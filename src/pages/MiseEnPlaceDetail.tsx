@@ -88,6 +88,7 @@ const MiseEnPlaceDetail = () => {
   const [entreprise, setEntreprise] = useState<EntrepriseDto | null>(null);
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [marche, setMarche] = useState<MarcheDto | null>(null);
+  const [convention, setConvention] = useState<ConventionDto | null>(null);
 
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
