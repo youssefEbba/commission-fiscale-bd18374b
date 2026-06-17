@@ -156,7 +156,21 @@ const MiseEnPlaceDetail = () => {
       const promises: Promise<any>[] = [];
       if (cert.entrepriseId) promises.push(entrepriseApi.getById(cert.entrepriseId).then(setEntreprise).catch(() => {}));
       if (cert.demandeCorrectionId) promises.push(demandeCorrectionApi.getById(cert.demandeCorrectionId).then(setCorrection).catch(() => {}));
-      if (cert.marcheId) promises.push(marcheApi.getById(cert.marcheId).then(setMarche).catch(() => {}));
+      if (cert.marcheId) {
+        promises.push(
+          marcheApi.getById(cert.marcheId)
+            .then(async (m) => {
+              setMarche(m);
+              if (m?.conventionId) {
+                try {
+                  const conv = await conventionApi.getById(m.conventionId);
+                  setConvention(conv);
+                } catch { /* ignore */ }
+              }
+            })
+            .catch(() => {})
+        );
+      }
       await Promise.all(promises);
     } catch {
       errToast(t("mise_en_place:detail.load_error"));
