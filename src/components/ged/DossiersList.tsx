@@ -551,12 +551,14 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
 
             <div className="space-y-2">
               <Label htmlFor="inject-code">{t("ged:dossiers.inject.code", { defaultValue: "Type de document" })} *</Label>
-              <Select value={injectCode} onValueChange={setInjectCode}>
+              <Select value={injectCode} onValueChange={setInjectCode} disabled={requirementsQuery.isLoading}>
                 <SelectTrigger id="inject-code">
-                  <SelectValue placeholder={t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
+                  <SelectValue placeholder={requirementsQuery.isLoading
+                    ? t("ged:dossiers.inject.code_loading", { defaultValue: "Chargement..." })
+                    : t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(ETAPE_DOC_CODES[injectEtape || ""] || []).map((code) => (
+                  {requirementCodes.map((code) => (
                     <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
                   ))}
                   <SelectItem value="__custom__">{t("ged:dossiers.inject.custom", { defaultValue: "Autre (saisir le code)" })}</SelectItem>
