@@ -54,13 +54,16 @@ function parsePayload(raw: unknown): Record<string, any> | null {
 }
 
 function resolveRoute(notif: NotificationDto): string | null {
-  // DEMANDE_EXPLICATION : payload contient (normalement) dossierId + contexte + redirectPath
+  // Règle d'or : toutes les notifications workflow récentes incluent payload.redirectPath.
+  // Voir NOTIFICATIONS_NAVIGATION_FRONT.md
+  const p = parsePayload(notif.payload);
+  if (p && typeof p.redirectPath === "string" && p.redirectPath.startsWith("/")) {
+    return p.redirectPath;
+  }
+
+  // DEMANDE_EXPLICATION : entityId = id du fil, pas du dossier → fallback contextuel
   if (notif.type === "DEMANDE_EXPLICATION") {
-    const p = parsePayload(notif.payload);
     if (p) {
-      if (typeof p.redirectPath === "string" && p.redirectPath.startsWith("/")) {
-        return p.redirectPath;
-      }
       const dossierId = p.dossierId ?? p.dossier_id ?? p.targetId;
       const ctx = String(p.contexte || p.context || "").toUpperCase();
       if (dossierId != null) {
@@ -69,20 +72,24 @@ function resolveRoute(notif: NotificationDto): string | null {
         return `/dashboard/demandes/${dossierId}`;
       }
     }
-    // Payload absent (anciennes notifications) : fallback liste sûre
     return "/dashboard/demandes";
   }
 
+  // Fallback anciennes notifications sans redirectPath
   const byType = NOTIF_TYPE_ROUTES[notif.type];
   if (byType) return byType(notif.entityId);
   const t = String(notif.type || "").toUpperCase();
-  // Tout type contenant CORRECTION ou REJET pointe sur la demande de correction
   if (t.includes("CORRECTION") || t.includes("REJET")) {
     return notif.entityId ? `/dashboard/demandes/${notif.entityId}` : "/dashboard/demandes";
   }
   const ent = (notif.entityType || "").toUpperCase();
   const byEntity = ENTITY_TYPE_ROUTES[ent];
   if (byEntity) return byEntity(notif.entityId);
+  // Mapping additionnel par entityType backend (matrice doc)
+  if (ent === "CLOTURECREDIT" || ent === "CLOTURE_CREDIT") {
+    const cid = p?.certificatCreditId;
+    if (cid != null) return `/dashboard/certificats/${cid}`;
+  }
   return null;
 }
 
