@@ -651,7 +651,9 @@ export interface CreateDemandeCorrectionRequest {
 
 export interface DocumentDto {
   id: number;
+  /** @deprecated utiliser `codeDocument`. Conservé pour compatibilité ascendante. */
   type: string;
+  codeDocument?: string;
   nomFichier: string;
   chemin?: string;
   dateUpload?: string;
@@ -659,6 +661,7 @@ export interface DocumentDto {
   version?: number;
   actif?: boolean;
 }
+
 
 // Décisions temporaires par acteur
 export type DecisionType = "VISA" | "REJET_TEMP";
