@@ -9,6 +9,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
   DecisionCorrectionDto,
+  documentRequirementApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -49,8 +50,8 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Types de documents demandables en rejet temp — paramétrage GED back pour MISE_EN_PLACE_CI.
-const DOC_TYPES_DEMANDABLES = [
+// Fallback si l'API de paramétrage GED est indisponible — codes connus pour MISE_EN_PLACE_CI.
+const DOC_TYPES_FALLBACK = [
   "LETTRE_SAISINE",
   "CONTRAT",
   "LETTRE_NOTIFICATION_CONTRAT",
@@ -94,6 +95,7 @@ const MiseEnPlaceDetail = () => {
   const [showRejetTemp, setShowRejetTemp] = useState(false);
   const [rejetTempMotif, setRejetTempMotif] = useState("");
   const [rejetTempDocs, setRejetTempDocs] = useState<string[]>([]);
+  const [docTypesDemandables, setDocTypesDemandables] = useState<string[]>(DOC_TYPES_FALLBACK);
   const [rejetTempLoading, setRejetTempLoading] = useState(false);
 
   const [showMontants, setShowMontants] = useState(false);
@@ -161,6 +163,19 @@ const MiseEnPlaceDetail = () => {
   };
 
   useEffect(() => { fetchData(); }, [id]);
+
+  useEffect(() => {
+    documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI")
+      .then((reqs) => {
+        const codes = Array.from(new Set(
+          (reqs || [])
+            .map(r => r.codeDocument || r.typeDocument || "")
+            .filter(Boolean)
+        ));
+        if (codes.length > 0) setDocTypesDemandables(codes);
+      })
+      .catch(() => { /* fallback déjà en place */ });
+  }, []);
 
   usePageTitle("mise_en_place:detail.title", { ref: certificat?.reference || (id ? `#${id}` : "") });
 
@@ -820,7 +835,7 @@ const MiseEnPlaceDetail = () => {
               <Label>{t("mise_en_place:dialogs.rejet_temp.docs_label")}</Label>
               <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.rejet_temp.docs_hint")}</p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {DOC_TYPES_DEMANDABLES.map((dt) => (
+                {docTypesDemandables.map((dt) => (
                   <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
                     <Checkbox checked={rejetTempDocs.includes(dt)} onCheckedChange={(checked) => {
                       setRejetTempDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt));
