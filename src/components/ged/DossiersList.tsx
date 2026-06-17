@@ -1,52 +1,23 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
-import { dossierGedApi, DossierGedDto, demandeCorrectionApi, marcheApi, documentRequirementApi, ProcessusType } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { dossierGedApi, DossierGedDto, demandeCorrectionApi, marcheApi } from "@/lib/api";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, Building2, Landmark, ShoppingCart, Upload, ShieldCheck } from "lucide-react";
+import { FolderOpen, FileText, Search, ArrowLeft, Download, ChevronRight, Eye, MoreHorizontal, Building2, Landmark, ShoppingCart, ShieldCheck } from "lucide-react";
 import { formatDate } from "@/i18n/format";
 import { tTypeDocument } from "@/i18n/enums";
-import { toast } from "sonner";
 
-/** Codes documents proposés par étape pour l'injection GED Président. */
-const ETAPE_DOC_CODES: Record<string, string[]> = {
-  DEMANDE_CORRECTION: ["LETTRE_SAISINE", "OFFRE_FISCALE", "DAO_DQE", "DECOMPOSITION_PRIX", "CONVENTION", "MARCHE"],
-  TRAITEMENT_CORRECTION: ["OFFRE_FISCALE_CORRIGEE", "CREDIT_INTERIEUR", "CREDIT_EXTERIEUR"],
-  RETOUR_CORRECTION: ["LETTRE_ADOPTION"],
-  EMISSION_CERTIFICAT: ["CERTIFICAT_CREDIT_IMPOTS", "LETTRE_CORRECTION"],
-  UTILISATION_DOUANE: ["BULLETIN_LIQUIDATION", "DECLARATION_DOUANE"],
-  UTILISATION_TVA: ["FACTURE", "DECLARATION_TVA", "DECOMPTE"],
-  TRANSFERT_CREDIT: ["DEMANDE_MOTIVEE_TRANSFERT"],
-  CLOTURE_CREDIT: ["DOCUMENT_CLOTURE"],
-  MODIFICATION_AVENANT: ["AVENANT"],
-  SOUS_TRAITANCE: ["CONTRAT_SOUS_TRAITANCE"],
-};
-
-/** Mapping étape de dossier → processus GED (pour récupérer les types de documents paramétrés). */
-const ETAPE_TO_PROCESSUS: Record<string, ProcessusType> = {
-  DEMANDE_CORRECTION: "CORRECTION_OFFRE_FISCALE",
-  TRAITEMENT_CORRECTION: "CORRECTION_OFFRE_FISCALE",
-  RETOUR_CORRECTION: "CORRECTION_OFFRE_FISCALE",
-  DEMANDE_CREDIT_IMPOT: "MISE_EN_PLACE_CI",
-  EMISSION_CERTIFICAT: "MISE_EN_PLACE_CI",
-  UTILISATION_DOUANE: "UTILISATION_CI_EXTERIEUR",
-  UTILISATION_TVA: "UTILISATION_CI_INTERIEUR",
-  TRANSFERT_CREDIT: "TRANSFERT_CREDIT",
-  CLOTURE_CREDIT: "CLOTURE_CI",
-  MODIFICATION_AVENANT: "MODIFICATION_CI",
-  SOUS_TRAITANCE: "SOUS_TRAITANCE",
-};
+// Écran dossier GED en lecture seule. L'injection Président
+// (POST /api/dossiers/{id}/documents) a été supprimée — voir guide
+// UPLOAD_STORAGE_FAIL_FAST_FRONT.md.
 
 import { API_BASE } from "@/lib/apiConfig";
 
@@ -258,74 +229,11 @@ interface DossierDetailProps {
 
 const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const isPresident = user?.role === "PRESIDENT";
+  // Écran lecture seule — l'injection GED Président a été supprimée (voir UPLOAD_STORAGE_FAIL_FAST_FRONT.md).
 
-  const [injectEtape, setInjectEtape] = useState<string | null>(null);
-  const [injectCode, setInjectCode] = useState<string>("");
-  const [injectCustomCode, setInjectCustomCode] = useState<string>("");
-  const [injectTargetId, setInjectTargetId] = useState<string>("");
-  const [injectFile, setInjectFile] = useState<File | null>(null);
-  const [injecting, setInjecting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const openInject = (etape: string) => {
-    setInjectEtape(etape);
-    setInjectCode("");
-    setInjectCustomCode("");
-    setInjectTargetId("");
-    setInjectFile(null);
-  };
 
-  const injectProcessus = injectEtape ? ETAPE_TO_PROCESSUS[injectEtape] : undefined;
-  const requirementsQuery = useQuery({
-    queryKey: ["document-requirements", injectProcessus],
-    queryFn: () => documentRequirementApi.getByProcessus(injectProcessus!),
-    enabled: !!injectProcessus,
-    staleTime: 5 * 60 * 1000,
-  });
-  const requirementCodes = useMemo(() => {
-    const reqs = requirementsQuery.data || [];
-    const codes = reqs
-      .slice()
-      .sort((a, b) => (a.ordreAffichage ?? 9999) - (b.ordreAffichage ?? 9999))
-      .map((r) => r.codeDocument || r.typeDocument)
-      .filter((c): c is string => !!c);
-    if (codes.length > 0) return Array.from(new Set(codes));
-    return ETAPE_DOC_CODES[injectEtape || ""] || [];
-  }, [requirementsQuery.data, injectEtape]);
 
-  const closeInject = () => {
-    setInjectEtape(null);
-    setInjectFile(null);
-  };
-
-  const handleInject = async () => {
-    if (!dossier || !injectEtape || !injectFile) return;
-    const codeDocument = (injectCode === "__custom__" ? injectCustomCode : injectCode).trim();
-    if (!codeDocument) {
-      toast.error(t("ged:dossiers.inject.error_code_required", { defaultValue: "Code document requis" }));
-      return;
-    }
-    setInjecting(true);
-    try {
-      await dossierGedApi.injectDocument(dossier.id, {
-        etape: injectEtape,
-        codeDocument,
-        file: injectFile,
-        targetId: injectTargetId ? Number(injectTargetId) : undefined,
-      });
-      toast.success(t("ged:dossiers.inject.success", { defaultValue: "Document injecté (nouvelle version active)" }));
-      await queryClient.invalidateQueries({ queryKey: ["dossier-ged", dossier.id] });
-      await queryClient.invalidateQueries({ queryKey: ["dossiers-ged"] });
-      closeInject();
-    } catch (err: any) {
-      toast.error(err?.message || t("ged:dossiers.inject.error", { defaultValue: "Échec de l'injection" }));
-    } finally {
-      setInjecting(false);
-    }
-  };
 
 
   if (isLoading) {
@@ -425,19 +333,7 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                {isPresident && (
-                  <div className="flex justify-end pb-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openInject(etape.etape)}
-                      className="gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      {t("ged:dossiers.inject.button", { defaultValue: "Ajouter / remplacer un document" })}
-                    </Button>
-                  </div>
-                )}
+
                 {!etape.documents || etape.documents.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-3 text-center italic">
                     {t("ged:dossiers.table.empty_etape")}
@@ -528,87 +424,8 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
           ))}
         </Accordion>
       </ScrollArea>
-
-      <Dialog open={injectEtape !== null} onOpenChange={(open) => { if (!open) closeInject(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-amber-600" />
-              {t("ged:dossiers.inject.title", { defaultValue: "Injection GED – Président" })}
-            </DialogTitle>
-            <DialogDescription>
-              {t("ged:dossiers.inject.description", {
-                defaultValue: "Compléter ou remplacer un document du dossier. Cette action crée une nouvelle version active et contourne les restrictions de statut.",
-              })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{t("ged:dossiers.inject.etape", { defaultValue: "Étape" })}</Label>
-              <p className="text-sm font-medium">{injectEtape}</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inject-code">{t("ged:dossiers.inject.code", { defaultValue: "Type de document" })} *</Label>
-              <Select value={injectCode} onValueChange={setInjectCode} disabled={requirementsQuery.isLoading}>
-                <SelectTrigger id="inject-code">
-                  <SelectValue placeholder={requirementsQuery.isLoading
-                    ? t("ged:dossiers.inject.code_loading", { defaultValue: "Chargement..." })
-                    : t("ged:dossiers.inject.code_placeholder", { defaultValue: "Choisir un type" })} />
-                </SelectTrigger>
-                <SelectContent>
-                  {requirementCodes.map((code) => (
-                    <SelectItem key={code} value={code}>{tTypeDocument(code)}</SelectItem>
-                  ))}
-                  <SelectItem value="__custom__">{t("ged:dossiers.inject.custom", { defaultValue: "Autre (saisir le code)" })}</SelectItem>
-                </SelectContent>
-              </Select>
-              {injectCode === "__custom__" && (
-                <Input
-                  placeholder="CODE_DOCUMENT"
-                  value={injectCustomCode}
-                  onChange={(e) => setInjectCustomCode(e.target.value.toUpperCase())}
-                />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inject-target">{t("ged:dossiers.inject.target", { defaultValue: "Cible (targetId) — optionnel" })}</Label>
-              <Input
-                id="inject-target"
-                type="number"
-                placeholder={t("ged:dossiers.inject.target_placeholder", { defaultValue: "Id utilisation / transfert / avenant" })}
-                value={injectTargetId}
-                onChange={(e) => setInjectTargetId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inject-file">{t("ged:dossiers.inject.file", { defaultValue: "Fichier" })} *</Label>
-              <Input
-                id="inject-file"
-                ref={fileInputRef}
-                type="file"
-                onChange={(e) => setInjectFile(e.target.files?.[0] || null)}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={closeInject} disabled={injecting}>
-              {t("common:cancel", { defaultValue: "Annuler" })}
-            </Button>
-            <Button onClick={handleInject} disabled={injecting || !injectFile}>
-              <Upload className="h-4 w-4 me-2" />
-              {injecting
-                ? t("ged:dossiers.inject.submitting", { defaultValue: "Injection..." })
-                : t("ged:dossiers.inject.submit", { defaultValue: "Injecter" })}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
+
   );
 };
 

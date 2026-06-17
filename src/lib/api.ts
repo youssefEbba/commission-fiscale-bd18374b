@@ -73,9 +73,18 @@ export function formatApiErrorMessage(err: unknown, fallback = "Une erreur est s
     case "MARCHE_DEJA_LIE_CORRECTION":
     case "MARCHE_DEMANDE_ACTIVE":
       return "Ce marché est déjà associé à une demande de correction active.";
+    case "OBJECT_STORAGE_UNAVAILABLE":
+    case "STORAGE_UPLOAD_FAILED":
+      return "Stockage indisponible. Aucune modification n'a été enregistrée — veuillez réessayer.";
     default:
       return err.message || fallback;
   }
+}
+
+/** True si l'erreur correspond à une panne de stockage objet (MinIO) — rollback côté backend. */
+export function isStorageUnavailableError(err: unknown): boolean {
+  const code = getApiErrorBusinessCode(err);
+  return code === "OBJECT_STORAGE_UNAVAILABLE" || code === "STORAGE_UPLOAD_FAILED";
 }
 
 export function isApiError(err: unknown): err is ApiRequestError {
@@ -2162,26 +2171,12 @@ export interface DossierGedDto {
   etapes: DossierEtapeGed[];
 }
 
-export interface InjectDossierDocumentParams {
-  etape: string;
-  codeDocument: string;
-  file: File;
-  targetId?: number;
-}
+// NOTE: l'endpoint POST /api/dossiers/{id}/documents (injection GED Président)
+// a été supprimé côté backend. Le Président dépose désormais ses pièces via les
+// fiches métier (correction → LETTRE_ADOPTION, certificat → signature, etc.).
+// L'écran dossier GED est en lecture seule.
 
 export const dossierGedApi = {
   getAll: () => apiFetch<DossierGedDto[]>("/dossiers"),
   getById: (id: number) => apiFetch<DossierGedDto>(`/dossiers/${id}`),
-  /** Injection GED par le Président — POST multipart, contourne les restrictions de statut. */
-  injectDocument: (dossierId: number, params: InjectDossierDocumentParams) => {
-    const form = new FormData();
-    form.append("etape", params.etape);
-    form.append("codeDocument", params.codeDocument);
-    form.append("file", params.file);
-    if (params.targetId != null) form.append("targetId", String(params.targetId));
-    return apiFetch<DossierDocumentGed>(`/dossiers/${dossierId}/documents`, {
-      method: "POST",
-      rawBody: form,
-    });
-  },
 };
