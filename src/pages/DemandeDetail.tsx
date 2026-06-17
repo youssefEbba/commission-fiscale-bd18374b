@@ -176,6 +176,9 @@ const DemandeDetail = () => {
     DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
     DGI: { docType: "CREDIT_INTERIEUR" },
   };
+  const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
+    PRESIDENT: { docType: "LETTRE_ADOPTION" },
+  } as const;
   const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
   const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
