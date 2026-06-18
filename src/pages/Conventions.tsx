@@ -195,9 +195,12 @@ const Conventions = () => {
       setGedReqLoading(true);
       documentRequirementApi.getByProcessus("CONVENTION")
         .then(reqs => {
-          setGedRequirements(reqs);
-          if (reqs.length > 0) {
-            setCreateDocType(reqs[0].typeDocument as TypeDocumentConvention);
+          // Filter out requirements without a valid typeDocument (back may return empty rows)
+          const valid = (reqs || []).filter(r => !!r.typeDocument);
+          setGedRequirements(valid);
+          const firstValid = valid.find(r => !!r.typeDocument);
+          if (firstValid) {
+            setCreateDocType(firstValid.typeDocument as TypeDocumentConvention);
           }
         })
         .catch(() => setGedRequirements([]))
