@@ -240,6 +240,7 @@ export const authApi = {
 export interface UpdateUtilisateurRequest {
   nomComplet?: string | null;
   email?: string | null;
+  role?: string | null;
   autoriteContractanteId?: number | null;
   entrepriseId?: number | null;
   newPassword?: string | null;

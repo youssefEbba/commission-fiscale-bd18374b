@@ -189,6 +189,7 @@ const Utilisateurs = () => {
     setEditForm({
       nomComplet: u.nomComplet || "",
       email: u.email || "",
+      role: u.role,
       autoriteContractanteId: u.autoriteContractanteId ?? undefined,
       entrepriseId: u.entrepriseId ?? undefined,
       newPassword: "",
@@ -209,7 +210,8 @@ const Utilisateurs = () => {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
-    const role = editUser.role;
+    const role = editForm.role || editUser.role;
+    const roleChanged = canAssignRole && role !== editUser.role;
     // Validation rattachement
     if (AC_ROLES.includes(role) && !editForm.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Une Autorité Contractante est requise pour ce rôle.", variant: "destructive" });
@@ -220,12 +222,21 @@ const Utilisateurs = () => {
       return;
     }
     // Construire le payload — n'envoyer que les champs renseignés/modifiés
-    // Le rôle est figé après création et n'est plus modifiable via cet endpoint
     const payload: UpdateUtilisateurRequest = {};
     if ((editForm.nomComplet || "") !== (editUser.nomComplet || "")) payload.nomComplet = editForm.nomComplet || "";
     if ((editForm.email || "") !== (editUser.email || "")) payload.email = editForm.email || "";
-    if (AC_ROLES.includes(role)) payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
-    if (ENT_ROLES.includes(role)) payload.entrepriseId = editForm.entrepriseId ?? null;
+    if (roleChanged) payload.role = role;
+    if (AC_ROLES.includes(role)) {
+      payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
+      if (roleChanged) payload.entrepriseId = null;
+    } else if (ENT_ROLES.includes(role)) {
+      payload.entrepriseId = editForm.entrepriseId ?? null;
+      if (roleChanged) payload.autoriteContractanteId = null;
+    } else if (roleChanged) {
+      // Rôle commission : interdit AC et entreprise
+      payload.autoriteContractanteId = null;
+      payload.entrepriseId = null;
+    }
     if (editForm.newPassword && editForm.newPassword.trim().length > 0) {
       if (editForm.newPassword.length < 8) {
         toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 8 caractères.", variant: "destructive" });
@@ -642,10 +653,32 @@ const Utilisateurs = () => {
             </div>
             <div className="space-y-2">
               <Label>Rôle</Label>
-              <Input value={ROLE_OPTIONS.find((r) => r.value === editUser?.role)?.label || editUser?.role || ""} disabled readOnly />
-              <p className="text-xs text-muted-foreground">Le rôle est figé à la création et ne peut pas être modifié.</p>
+              {canAssignRole ? (
+                <Select
+                  value={editForm.role || editUser?.role || ""}
+                  onValueChange={(v) => setEditForm((p) => ({
+                    ...p,
+                    role: v,
+                    // Réinitialiser les rattachements quand on change de rôle
+                    autoriteContractanteId: AC_ROLES.includes(v) ? p.autoriteContractanteId ?? undefined : undefined,
+                    entrepriseId: ENT_ROLES.includes(v) ? p.entrepriseId ?? undefined : undefined,
+                  }))}
+                >
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionnez un rôle" /></SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <>
+                  <Input value={ROLE_OPTIONS.find((r) => r.value === editUser?.role)?.label || editUser?.role || ""} disabled readOnly />
+                  <p className="text-xs text-muted-foreground">Vous n'avez pas la permission de modifier le rôle.</p>
+                </>
+              )}
             </div>
-            {AC_ROLES.includes(editUser?.role || "") && (
+            {AC_ROLES.includes(editForm.role || editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Autorité Contractante *</Label>
                 <Select
@@ -678,7 +711,7 @@ const Utilisateurs = () => {
                 </Select>
               </div>
             )}
-            {ENT_ROLES.includes(editUser?.role || "") && (
+            {ENT_ROLES.includes(editForm.role || editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Entreprise *</Label>
                 <Select
