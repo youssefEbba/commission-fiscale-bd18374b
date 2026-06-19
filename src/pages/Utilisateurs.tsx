@@ -653,10 +653,32 @@ const Utilisateurs = () => {
             </div>
             <div className="space-y-2">
               <Label>Rôle</Label>
-              <Input value={ROLE_OPTIONS.find((r) => r.value === editUser?.role)?.label || editUser?.role || ""} disabled readOnly />
-              <p className="text-xs text-muted-foreground">Le rôle est figé à la création et ne peut pas être modifié.</p>
+              {canAssignRole ? (
+                <Select
+                  value={editForm.role || editUser?.role || ""}
+                  onValueChange={(v) => setEditForm((p) => ({
+                    ...p,
+                    role: v,
+                    // Réinitialiser les rattachements quand on change de rôle
+                    autoriteContractanteId: AC_ROLES.includes(v) ? p.autoriteContractanteId ?? undefined : undefined,
+                    entrepriseId: ENT_ROLES.includes(v) ? p.entrepriseId ?? undefined : undefined,
+                  }))}
+                >
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionnez un rôle" /></SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <>
+                  <Input value={ROLE_OPTIONS.find((r) => r.value === editUser?.role)?.label || editUser?.role || ""} disabled readOnly />
+                  <p className="text-xs text-muted-foreground">Vous n'avez pas la permission de modifier le rôle.</p>
+                </>
+              )}
             </div>
-            {AC_ROLES.includes(editUser?.role || "") && (
+            {AC_ROLES.includes(editForm.role || editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Autorité Contractante *</Label>
                 <Select
@@ -689,7 +711,7 @@ const Utilisateurs = () => {
                 </Select>
               </div>
             )}
-            {ENT_ROLES.includes(editUser?.role || "") && (
+            {ENT_ROLES.includes(editForm.role || editUser?.role || "") && (
               <div className="space-y-2">
                 <Label>Entreprise *</Label>
                 <Select
