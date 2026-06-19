@@ -189,6 +189,7 @@ const Utilisateurs = () => {
     setEditForm({
       nomComplet: u.nomComplet || "",
       email: u.email || "",
+      role: u.role,
       autoriteContractanteId: u.autoriteContractanteId ?? undefined,
       entrepriseId: u.entrepriseId ?? undefined,
       newPassword: "",
@@ -209,7 +210,8 @@ const Utilisateurs = () => {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
-    const role = editUser.role;
+    const role = editForm.role || editUser.role;
+    const roleChanged = canAssignRole && role !== editUser.role;
     // Validation rattachement
     if (AC_ROLES.includes(role) && !editForm.autoriteContractanteId) {
       toast({ title: "Erreur", description: "Une Autorité Contractante est requise pour ce rôle.", variant: "destructive" });
@@ -220,12 +222,21 @@ const Utilisateurs = () => {
       return;
     }
     // Construire le payload — n'envoyer que les champs renseignés/modifiés
-    // Le rôle est figé après création et n'est plus modifiable via cet endpoint
     const payload: UpdateUtilisateurRequest = {};
     if ((editForm.nomComplet || "") !== (editUser.nomComplet || "")) payload.nomComplet = editForm.nomComplet || "";
     if ((editForm.email || "") !== (editUser.email || "")) payload.email = editForm.email || "";
-    if (AC_ROLES.includes(role)) payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
-    if (ENT_ROLES.includes(role)) payload.entrepriseId = editForm.entrepriseId ?? null;
+    if (roleChanged) payload.role = role;
+    if (AC_ROLES.includes(role)) {
+      payload.autoriteContractanteId = editForm.autoriteContractanteId ?? null;
+      if (roleChanged) payload.entrepriseId = null;
+    } else if (ENT_ROLES.includes(role)) {
+      payload.entrepriseId = editForm.entrepriseId ?? null;
+      if (roleChanged) payload.autoriteContractanteId = null;
+    } else if (roleChanged) {
+      // Rôle commission : interdit AC et entreprise
+      payload.autoriteContractanteId = null;
+      payload.entrepriseId = null;
+    }
     if (editForm.newPassword && editForm.newPassword.trim().length > 0) {
       if (editForm.newPassword.length < 8) {
         toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 8 caractères.", variant: "destructive" });
