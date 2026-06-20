@@ -1,13 +1,12 @@
-// ══════════════════════════════════════════════════════════════
+// ================================
 // Configuration centralisée des URLs API
-// Modifier uniquement ce fichier lors d'un changement de tunnel ngrok
-// ══════════════════════════════════════════════════════════════
+// ================================
 
 /** Backend principal (Spring Boot) */
-export const API_BASE = "https://cf29-197-231-0-182.ngrok-free.app/api";
+export const API_BASE = "/api";
 
 /** WebSocket backend */
-export const WS_BASE = "https://cf29-197-231-0-182.ngrok-free.app/ws";
+export const WS_BASE = "/ws";
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
