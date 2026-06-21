@@ -964,7 +964,8 @@ const Utilisations = () => {
                     ) : (() => {
                       const totalLignes = (form.lignes || []).reduce((s, l) => s + (Number(l.valeurTaxe) || 0), 0);
                       const montantSaisi = Number(form.montant) || 0;
-                      const mismatch = form.montant !== undefined && form.montant !== null && Math.abs(totalLignes - montantSaisi) > 0.001;
+                      // Tolérance 0,01 MRU (1 centime) pour éviter les faux positifs dus aux erreurs d'arrondi flottant lors de la somme des taxes
+                      const mismatch = form.montant !== undefined && form.montant !== null && Math.abs(Math.round(totalLignes * 100) - Math.round(montantSaisi * 100)) > 1;
                       return (
                         <div className="space-y-1.5">
                           <div className="grid grid-cols-12 gap-1.5 items-center px-1">
