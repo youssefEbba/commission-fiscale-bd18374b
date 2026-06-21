@@ -151,6 +151,8 @@ const DemandeDetail = () => {
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
+  const [conventionDialogOpen, setConventionDialogOpen] = useState(false);
+  const [marcheDialogOpen, setMarcheDialogOpen] = useState(false);
 
   const [adoptionOpen, setAdoptionOpen] = useState(false);
   const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
@@ -518,7 +520,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => navigate(`/dashboard/conventions/${selected.conventionId}`)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setConventionDialogOpen(true)}>
                     {selected.conventionReference || selected.conventionIntitule || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
                   </button>
                 ) : (
@@ -528,7 +530,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => navigate(`/dashboard/marches`)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setMarcheDialogOpen(true)}>
                     {selected.marcheNumero || selected.marcheIntitule || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
                   </button>
                 ) : selected.marcheIdTrace ? (
@@ -1237,6 +1239,52 @@ const DemandeDetail = () => {
           ) : (
             <p className="text-center text-muted-foreground py-4">{t("demandes:dialogs.entreprise_info.empty")}</p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Convention info */}
+      <Dialog open={conventionDialogOpen} onOpenChange={setConventionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Informations de la convention</DialogTitle></DialogHeader>
+          {selected.conventionId ? (
+            <div className="grid grid-cols-1 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{selected.conventionReference || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.conventionIntitule || "—"}</p></div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">—</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConventionDialogOpen(false)}>Fermer</Button>
+            {selected.conventionId && (
+              <Button onClick={() => { setConventionDialogOpen(false); navigate(`/dashboard/conventions/${selected.conventionId}`); }}>
+                <ExternalLink className="h-4 w-4 me-1" /> Plus de détails
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Marché info */}
+      <Dialog open={marcheDialogOpen} onOpenChange={setMarcheDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Informations du marché</DialogTitle></DialogHeader>
+          {selected.marcheId ? (
+            <div className="grid grid-cols-1 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{selected.marcheNumero || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.marcheIntitule || "—"}</p></div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">—</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMarcheDialogOpen(false)}>Fermer</Button>
+            {selected.marcheId && (
+              <Button onClick={() => { setMarcheDialogOpen(false); navigate(`/dashboard/marches/${selected.marcheId}`); }}>
+                <ExternalLink className="h-4 w-4 me-1" /> Plus de détails
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
