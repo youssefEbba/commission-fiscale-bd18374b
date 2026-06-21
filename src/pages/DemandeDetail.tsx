@@ -520,7 +520,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => navigate(`/dashboard/conventions/${selected.conventionId}`)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setConventionDialogOpen(true)}>
                     {selected.conventionReference || selected.conventionIntitule || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
                   </button>
                 ) : (
@@ -530,7 +530,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => navigate(`/dashboard/marches`)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setMarcheDialogOpen(true)}>
                     {selected.marcheNumero || selected.marcheIntitule || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
                   </button>
                 ) : selected.marcheIdTrace ? (
