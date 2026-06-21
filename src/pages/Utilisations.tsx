@@ -416,7 +416,7 @@ const Utilisations = () => {
       if (missing.length > 0) {
         toast({
           title: t("utilisations:toast.missing_docs_title"),
-          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => tTypeDocument(m.typeDocument)).join(", ") }),
+          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => tDocRequirementLabel(m)).join(", ") }),
           variant: "destructive",
         });
         return;
