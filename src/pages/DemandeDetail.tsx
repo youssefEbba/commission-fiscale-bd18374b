@@ -9,8 +9,7 @@ import {
   ReclamationDemandeCorrectionDto,
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
-import { formatDate as fmtDate } from "@/i18n/format";
-import { formatCurrency } from "@/i18n/format";
+import { formatAmount } from "@/i18n/format";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
