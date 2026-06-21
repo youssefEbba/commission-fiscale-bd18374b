@@ -146,7 +146,7 @@ const CertificatDetail = () => {
     // Load GED document requirements
     documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI")
       .then((reqs) => {
-        setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: tTypeDocument(r.typeDocument) })));
+        setGedDocTypes(reqs.map(r => ({ value: r.typeDocument || r.codeDocument || "", label: tDocRequirementLabel(r) })).filter(o => o.value));
       })
       .catch(() => {
         setGedDocTypes([
