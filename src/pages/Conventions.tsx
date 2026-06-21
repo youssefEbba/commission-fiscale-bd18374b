@@ -35,7 +35,7 @@ import {
   Trash2, Ban, ShieldCheck, ShieldX,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
+import { tStatutConvention, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
