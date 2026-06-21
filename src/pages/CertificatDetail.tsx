@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, CheckCircle2, XCircle, Info } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource } from "@/i18n/enums";
+import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource, tDocRequirementLabel } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
@@ -146,7 +146,7 @@ const CertificatDetail = () => {
     // Load GED document requirements
     documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI")
       .then((reqs) => {
-        setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: tTypeDocument(r.typeDocument) })));
+        setGedDocTypes(reqs.map(r => ({ value: r.typeDocument || r.codeDocument || "", label: tDocRequirementLabel(r) })).filter(o => o.value));
       })
       .catch(() => {
         setGedDocTypes([

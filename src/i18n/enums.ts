@@ -38,6 +38,28 @@ export const tStatutSousTraitance = (v?: string | null) => tEnum("statut_sous_tr
 export const tStatutModification = (v?: string | null) => tEnum("statut_modification", v ?? undefined);
 export const tRole = (v?: string | null) => tEnum("role", v ?? undefined);
 export const tTypeDocument = (v?: string | null) => tEnum("type_document", v ?? undefined);
+/**
+ * Libellé robuste d'une exigence documentaire (DocumentRequirementDto / variantes) :
+ * priorité `libelle` saisi → `typeDocument` traduit → `codeDocument` brut → "—".
+ * À utiliser partout où l'on affiche le nom d'un document requis pour éviter les "—" vides.
+ */
+export const tDocRequirementLabel = (req?: {
+  libelle?: string | null;
+  typeDocument?: string | null;
+  codeDocument?: string | null;
+  documentType?: string | null;
+  description?: string | null;
+} | null): string => {
+  if (!req) return "—";
+  if (req.libelle && req.libelle.trim()) return req.libelle.trim();
+  const code = req.typeDocument || req.documentType || req.codeDocument;
+  if (code) {
+    const tr = tEnum("type_document", code, code);
+    if (tr && tr !== "—") return tr;
+  }
+  if (req.description && req.description.trim()) return req.description.trim();
+  return "—";
+};
 export const tTypeUtilisation = (v?: string | null) => tEnum("type_utilisation", v ?? undefined);
 export const tTypeOperation = (v?: string | null) => tEnum("type_operation", v ?? undefined);
 export const tDecisionType = (v?: string | null) => tEnum("decision_type", v ?? undefined);

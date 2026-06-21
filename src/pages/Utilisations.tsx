@@ -16,7 +16,7 @@ import {
   referentielTaxeApi, ReferentielTaxeDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { tStatutUtilisation, tTypeDocument } from "@/i18n/enums";
+import { tStatutUtilisation, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
 import { formatAmount, formatDate, formatNumber } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
@@ -416,7 +416,7 @@ const Utilisations = () => {
       if (missing.length > 0) {
         toast({
           title: t("utilisations:toast.missing_docs_title"),
-          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => tTypeDocument(m.typeDocument)).join(", ") }),
+          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => tDocRequirementLabel(m)).join(", ") }),
           variant: "destructive",
         });
         return;
@@ -1117,7 +1117,7 @@ const Utilisations = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             {hasFile ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /> : req.obligatoire ? <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                            <span className="font-medium truncate">{tTypeDocument(req.typeDocument)}</span>
+                            <span className="font-medium truncate">{tDocRequirementLabel(req)}</span>
                             {req.obligatoire && <Badge variant="destructive" className="text-[10px] px-1 py-0 shrink-0">{t("utilisations:create.docs.obligatoire_badge")}</Badge>}
                             {req.description && (
                               <TooltipProvider>
