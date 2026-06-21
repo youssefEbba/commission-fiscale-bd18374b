@@ -18,7 +18,7 @@ import { Settings, Search, RefreshCw, Loader2, Filter, FileText } from "lucide-r
 import DocumentGED from "@/components/ged/DocumentGED";
 import type { GEDDocumentType } from "@/components/ged/DocumentGED";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutAvenant, tTypeDocument } from "@/i18n/enums";
+import { tStatutAvenant, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 
 const STATUT_COLORS: Record<StatutAvenant, string> = {
