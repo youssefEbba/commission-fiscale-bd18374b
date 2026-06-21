@@ -1242,6 +1242,62 @@ const DemandeDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Convention info */}
+      <Dialog open={conventionDialogOpen} onOpenChange={setConventionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Informations de la convention</DialogTitle></DialogHeader>
+          {selected.conventionId ? (
+            <div className="grid grid-cols-1 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{selected.conventionReference || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.conventionIntitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Bailleur</span><p className="font-medium">{selected.conventionBailleur || "—"}</p></div>
+              {selected.conventionDateSignature && (
+                <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date de signature</span><p className="font-medium">{formatDate(selected.conventionDateSignature)}</p></div>
+              )}
+              {(selected.conventionDateDebut || selected.conventionDateFin) && (
+                <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Période</span><p className="font-medium">{selected.conventionDateDebut ? formatDate(selected.conventionDateDebut) : "—"} → {selected.conventionDateFin ? formatDate(selected.conventionDateFin) : "—"}</p></div>
+              )}
+              {selected.conventionMontantMru != null && (
+                <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant (MRU)</span><p className="font-medium">{formatAmount(selected.conventionMontantMru)}</p></div>
+              )}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">—</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConventionDialogOpen(false)}>Fermer</Button>
+            {selected.conventionId && (
+              <Button onClick={() => { setConventionDialogOpen(false); navigate(`/dashboard/conventions/${selected.conventionId}`); }}>
+                <ExternalLink className="h-4 w-4 me-1" /> Plus de détails
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Marché info */}
+      <Dialog open={marcheDialogOpen} onOpenChange={setMarcheDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Informations du marché</DialogTitle></DialogHeader>
+          {selected.marcheId ? (
+            <div className="grid grid-cols-1 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{selected.marcheNumero || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.marcheIntitule || "—"}</p></div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">—</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMarcheDialogOpen(false)}>Fermer</Button>
+            {selected.marcheId && (
+              <Button onClick={() => { setMarcheDialogOpen(false); navigate(`/dashboard/marches/${selected.marcheId}`); }}>
+                <ExternalLink className="h-4 w-4 me-1" /> Plus de détails
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Adoption Dialog */}
       <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) setAdoptionFile(null); }}>
         <DialogContent className="sm:max-w-md">
