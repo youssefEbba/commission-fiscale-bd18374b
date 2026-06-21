@@ -249,6 +249,28 @@ const DemandeDetail = () => {
     } finally { setEntrepriseLoading(false); }
   };
 
+  const openConventionDetail = async (conventionId: number) => {
+    setConventionDialogOpen(true);
+    setConventionDetail(null);
+    setConventionLoading(true);
+    try {
+      setConventionDetail(await conventionApi.getById(conventionId));
+    } catch {
+      toast({ title: t("demandes:toast.error"), description: "Impossible de charger la convention", variant: "destructive" });
+    } finally { setConventionLoading(false); }
+  };
+
+  const openMarcheDetail = async (marcheId: number) => {
+    setMarcheDialogOpen(true);
+    setMarcheDetail(null);
+    setMarcheLoading(true);
+    try {
+      setMarcheDetail(await marcheApi.getById(marcheId));
+    } catch {
+      toast({ title: t("demandes:toast.error"), description: "Impossible de charger le marché", variant: "destructive" });
+    } finally { setMarcheLoading(false); }
+  };
+
   const handleTempVisa = async (demandeId: number) => {
     setActionLoading(demandeId);
     try {
