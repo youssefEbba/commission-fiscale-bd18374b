@@ -85,7 +85,7 @@ const Modifications = () => {
       .then((reqs: DocumentRequirementDto[]) => {
         if (reqs.length > 0) {
           // Backend description is a referential value — do not translate
-          setGedDocTypes(reqs.map(r => ({ value: r.typeDocument, label: r.description || tTypeDocument(r.typeDocument) })));
+          setGedDocTypes(reqs.map(r => ({ value: r.typeDocument || r.codeDocument || "", label: tDocRequirementLabel(r) })).filter(o => o.value));
         } else {
           setGedDocTypes(defaultDocTypes());
         }
