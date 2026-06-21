@@ -16,7 +16,7 @@ import {
   referentielTaxeApi, ReferentielTaxeDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { tStatutUtilisation, tTypeDocument } from "@/i18n/enums";
+import { tStatutUtilisation, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
 import { formatAmount, formatDate, formatNumber } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
