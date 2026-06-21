@@ -558,7 +558,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setMarcheDialogOpen(true)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openMarcheDetail(selected.marcheId!)}>
                     {selected.marcheNumero || selected.marcheIntitule || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
                   </button>
                 ) : selected.marcheIdTrace ? (
