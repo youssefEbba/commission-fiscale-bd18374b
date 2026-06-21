@@ -1091,7 +1091,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         return (
                                           <div key={req.id} className={`flex items-center gap-1 text-[11px] rounded px-1.5 py-0.5 ${req.obligatoire && !hasDoc ? "bg-destructive/10" : hasDoc ? "bg-green-50" : "bg-muted/30"}`}>
                                             {hasDoc ? <CheckCircle className="h-3 w-3 text-green-600 shrink-0" /> : <XCircle className={`h-3 w-3 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />}
-                                            <span>{tTypeDocument(req.typeDocument)}</span>
+                                            <span>{tDocRequirementLabel(req)}</span>
                                             {req.obligatoire && <span className="text-destructive">*</span>}
                                           </div>
                                         );
