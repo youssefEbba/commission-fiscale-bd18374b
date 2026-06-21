@@ -151,6 +151,8 @@ const DemandeDetail = () => {
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
+  const [conventionDialogOpen, setConventionDialogOpen] = useState(false);
+  const [marcheDialogOpen, setMarcheDialogOpen] = useState(false);
 
   const [adoptionOpen, setAdoptionOpen] = useState(false);
   const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
