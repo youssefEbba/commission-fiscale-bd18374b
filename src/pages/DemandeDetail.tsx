@@ -1272,12 +1272,22 @@ const DemandeDetail = () => {
 
       {/* Convention info */}
       <Dialog open={conventionDialogOpen} onOpenChange={setConventionDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Informations de la convention</DialogTitle></DialogHeader>
-          {selected.conventionId ? (
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{selected.conventionReference || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.conventionIntitule || "—"}</p></div>
+          {conventionLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : conventionDetail ? (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{conventionDetail.reference || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence projet</span><p className="font-medium">{conventionDetail.projectReference || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{conventionDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Bailleur</span><p className="font-medium">{conventionDetail.bailleurNom || conventionDetail.bailleur || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Autorité contractante</span><p className="font-medium">{conventionDetail.autoriteContractanteNom || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{conventionDetail.dateSignature ? formatDate(conventionDetail.dateSignature) : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date fin</span><p className="font-medium">{conventionDetail.dateFin ? formatDate(conventionDetail.dateFin) : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant (devise)</span><p className="font-medium">{conventionDetail.montantDevise != null ? `${formatAmount(conventionDetail.montantDevise)} ${conventionDetail.deviseOrigine || ""}`.trim() : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant (MRU)</span><p className="font-medium">{conventionDetail.montantMru != null ? `${formatAmount(conventionDetail.montantMru)} MRU` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{conventionDetail.statut || "—"}</p></div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">—</p>
@@ -1295,12 +1305,18 @@ const DemandeDetail = () => {
 
       {/* Marché info */}
       <Dialog open={marcheDialogOpen} onOpenChange={setMarcheDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Informations du marché</DialogTitle></DialogHeader>
-          {selected.marcheId ? (
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{selected.marcheNumero || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.marcheIntitule || "—"}</p></div>
+          {marcheLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : marcheDetail ? (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{marcheDetail.numeroMarche || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{marcheDetail.statut || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">—</p>
@@ -1315,6 +1331,7 @@ const DemandeDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {/* Adoption Dialog */}
       <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) setAdoptionFile(null); }}>
