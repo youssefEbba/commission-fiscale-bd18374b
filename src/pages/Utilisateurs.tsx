@@ -487,7 +487,7 @@ const Utilisateurs = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="all">
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams((sp) => { sp.set("tab", v); return sp; }, { replace: true })}>
           <TabsList>
             <TabsTrigger value="all">Tous ({users.length})</TabsTrigger>
             <TabsTrigger value="pending"><Clock className="h-3 w-3 mr-1" /> En attente ({pending.length})</TabsTrigger>
