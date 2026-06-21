@@ -56,7 +56,14 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
 };
 
 const fmtAmt = (v: any) => formatAmount(v, { currency: "MRU", maximumFractionDigits: 2 });
-const fmtNum = (v: any) => (v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("fr-FR"));
+const fmtNum = (v: any) => {
+  if (v == null || isNaN(Number(v))) return "—";
+  const n = Number(v);
+  // Préserve les décimales (centimes) si présentes, pour éviter les écarts d'arrondi
+  // entre la somme des lignes et le Montant total.
+  const hasDecimals = Math.abs(n - Math.round(n)) > 1e-9;
+  return n.toLocaleString("fr-FR", hasDecimals ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 });
+};
 
 // Conversion d'un nombre en lettres (français) — usage bulletin de liquidation.
 // REVIEW: conservé en FR uniquement ; la traduction des montants en lettres en AR
