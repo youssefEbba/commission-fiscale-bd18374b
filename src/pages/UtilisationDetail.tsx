@@ -557,22 +557,39 @@ const UtilisationDetail = () => {
             </CardContent>
           </Card>
 
-          {isDouane && (
-            <>
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.total_au_ci")}</p>
-                  <p className="text-lg font-bold text-primary">{fmtAmt(u.totalPrisEnCharge)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.total_a_payer")}</p>
-                  <p className="text-lg font-bold text-amber-700">{fmtAmt(u.totalAPayer)}</p>
-                </CardContent>
-              </Card>
-            </>
-          )}
+          {isDouane && (() => {
+            // Si les totaux finaux ne sont pas encore figés par la DGD, on affiche
+            // un aperçu basé sur la proposition de l'entreprise pour ne pas montrer "0".
+            const beforeVisa = ["BROUILLON","DEMANDEE","INCOMPLETE","A_RECONTROLER","EN_VERIFICATION"].includes(u.statut);
+            const lignes = u.lignes || [];
+            const propAuCi = lignes.filter(l => l.affectationEntreprise === "AU_CI").reduce((s,l)=>s+(Number(l.valeur)||0),0);
+            const propAPayer = lignes.filter(l => l.affectationEntreprise === "A_PAYER").reduce((s,l)=>s+(Number(l.valeur)||0),0);
+            const showCi = (u.totalPrisEnCharge != null && u.totalPrisEnCharge > 0) ? u.totalPrisEnCharge : (beforeVisa ? propAuCi : (u.totalPrisEnCharge ?? 0));
+            const showAP = (u.totalAPayer != null && u.totalAPayer > 0) ? u.totalAPayer : (beforeVisa ? propAPayer : (u.totalAPayer ?? 0));
+            const isPreview = beforeVisa && (propAuCi > 0 || propAPayer > 0) && (!u.totalPrisEnCharge && !u.totalAPayer);
+            return (
+              <>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground">
+                      {t("utilisations:detail.kpi.total_au_ci")}
+                      {isPreview && <span className="ms-1 text-[10px] text-muted-foreground/80">({t("utilisations:bulletin.proposition_none", { defaultValue: "proposition" })})</span>}
+                    </p>
+                    <p className="text-lg font-bold text-primary">{fmtAmt(showCi)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground">
+                      {t("utilisations:detail.kpi.total_a_payer")}
+                      {isPreview && <span className="ms-1 text-[10px] text-muted-foreground/80">({t("utilisations:bulletin.proposition_none", { defaultValue: "proposition" })})</span>}
+                    </p>
+                    <p className="text-lg font-bold text-amber-700">{fmtAmt(showAP)}</p>
+                  </CardContent>
+                </Card>
+              </>
+            );
+          })()}
 
           {isTVA && (
             <Card>
