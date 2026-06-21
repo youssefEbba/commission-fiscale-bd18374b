@@ -582,7 +582,7 @@ const UtilisationDetail = () => {
                   <CardContent className="pt-6">
                     <p className="text-xs text-muted-foreground">
                       {t("utilisations:detail.kpi.total_a_payer")}
-                      {isPreview && <span className="ms-1 text-[10px] text-muted-foreground/80">({t("utilisations:bulletin.proposition_none", { defaultValue: "proposition" })})</span>}
+                      {isPreview && <span className="ms-1 text-[10px] italic text-muted-foreground/80">(aperçu — proposition entreprise)</span>}
                     </p>
                     <p className="text-lg font-bold text-amber-700">{fmtAmt(showAP)}</p>
                   </CardContent>
