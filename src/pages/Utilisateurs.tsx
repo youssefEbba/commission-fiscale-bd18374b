@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, DemandeResetStatut, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
