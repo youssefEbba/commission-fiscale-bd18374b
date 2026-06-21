@@ -838,14 +838,6 @@ const Demandes = () => {
                   <span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.adresse")}</span>
                   <p className="font-medium">{entrepriseDetail.adresse || "—"}</p>
                 </div>
-                <div className="rounded-lg border border-border p-3">
-                  <span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.situation_fiscale")}</span>
-                  <p>
-                    <Badge className={entrepriseDetail.situationFiscale === "REGULIERE" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
-                      {entrepriseDetail.situationFiscale || "—"}
-                    </Badge>
-                  </p>
-                </div>
               </div>
             </div>
           ) : (
