@@ -820,7 +820,7 @@ const Conventions = () => {
                             <XCircle className={`h-3.5 w-3.5 shrink-0 ${req.obligatoire ? "text-destructive" : "text-muted-foreground"}`} />
                           )}
                           <span className={req.obligatoire && !hasDoc ? "text-destructive font-medium" : ""}>
-                            {tTypeDocument(req.typeDocument)}
+                            {tDocRequirementLabel(req)}
                           </span>
                           {hasDoc && <span className="text-muted-foreground">{t("conventions:docs.files_count", { count: docsForType.length })}</span>}
                           {req.obligatoire && (
