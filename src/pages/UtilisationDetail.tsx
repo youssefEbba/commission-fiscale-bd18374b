@@ -551,11 +551,16 @@ const UtilisationDetail = () => {
                 <div className="p-2 rounded-lg bg-primary/10"><CreditCard className="h-5 w-5 text-primary" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.montant_total")}</p>
-                  <p className="text-lg font-bold">{fmtAmt(u.montant)}</p>
+                  <p className="text-lg font-bold">{fmtAmt(
+                    isDouane && (u.lignes?.length ?? 0) > 0
+                      ? (u.lignes || []).reduce((s, l) => s + (Number(l.valeur) || 0), 0)
+                      : u.montant
+                  )}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
 
           {isDouane && (() => {
             // Si les totaux finaux ne sont pas encore figés par la DGD, on affiche
