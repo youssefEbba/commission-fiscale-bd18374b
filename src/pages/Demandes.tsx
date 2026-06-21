@@ -565,110 +565,16 @@ const Demandes = () => {
                             const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
 
                             const badgeContent = blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs cursor-pointer">{t("demandes:stade.waiting_dgd_visa")}</Badge>
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_dgd_visa")}</Badge>
                               : myHasVisa
-                              ? <Badge className="bg-green-100 text-green-800 text-xs cursor-pointer">{t("demandes:stade.visa_applied")}</Badge>
+                              ? <Badge className="bg-green-100 text-green-800 text-xs">{t("demandes:stade.visa_applied")}</Badge>
                               : hasRejet && !allRejetsResolved
-                              ? <Badge className="bg-red-100 text-red-800 text-xs cursor-pointer">{t("demandes:stade.rejet_in_progress")}</Badge>
+                              ? <Badge className="bg-red-100 text-red-800 text-xs">{t("demandes:stade.rejet_in_progress")}</Badge>
                               : allRejetsResolved
-                              ? <Badge className="bg-emerald-100 text-emerald-800 text-xs cursor-pointer">{t("demandes:stade.rejets_resolved")}</Badge>
+                              ? <Badge className="bg-emerald-100 text-emerald-800 text-xs">{t("demandes:stade.rejets_resolved")}</Badge>
                               : <span className="text-muted-foreground text-xs">—</span>;
 
-                            const allRejets = [
-                              ...rejets.map(r => ({
-                                role: r.role,
-                                motif: r.motifRejet || "—",
-                                docs: r.documentsDemandes || [],
-                                date: r.dateDecision,
-                                status: r.rejetTempStatus,
-                              })),
-                              ...((d.rejets && (!decs.length)) ? d.rejets.map(r => ({
-                                role: "—",
-                                motif: r.motifRejet || "—",
-                                docs: [] as string[],
-                                date: r.dateRejet,
-                                status: undefined as string | undefined,
-                              })) : []),
-                            ];
-
-                            if (allRejets.length === 0 && decs.length === 0) return badgeContent;
-
-                            return (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button className="inline-flex">{badgeContent}</button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 p-0" align="start">
-                                  <div className="p-3 border-b">
-                                    <h4 className="text-sm font-semibold flex items-center gap-1.5">
-                                      <Info className="h-4 w-4 text-primary" />
-                                      {t("demandes:stade.details_title")}
-                                    </h4>
-                                  </div>
-                                  <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
-                                    {decs.filter(dec => dec.decision === "VISA").map((v, i) => (
-                                      <div key={`v-${i}`} className="flex items-center gap-2 text-xs rounded border border-green-200 bg-green-50 p-2">
-                                        <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                                        <div>
-                                          <span className="font-medium">{v.role}</span> — {t("demandes:stade.visa_applied")}
-                                          {v.dateDecision && <span className="text-muted-foreground ms-1">({formatDate(v.dateDecision)})</span>}
-                                        </div>
-                                      </div>
-                                    ))}
-                                    {allRejets.length > 0 ? allRejets.map((r, i) => (
-                                      <div key={`r-${i}`} className="rounded border border-red-200 bg-red-50 p-2 text-xs space-y-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
-                                          <span className="font-medium">{r.role}</span>
-                                          {r.status && (
-                                            <Badge className={`text-[9px] ${r.status === "OUVERT" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
-                                              {r.status === "OUVERT" ? t("demandes:stade.rejet_open") : t("demandes:stade.rejet_resolved")}
-                                            </Badge>
-                                          )}
-                                          {r.date && <span className="text-muted-foreground ms-auto text-[10px]">{formatDate(r.date)}</span>}
-                                        </div>
-                                        <p className="text-muted-foreground ms-5">{r.motif}</p>
-                                        {r.docs.length > 0 && (
-                                          <div className="ms-5 space-y-1">
-                                            <span className="text-[10px] text-muted-foreground">{t("demandes:stade.docs_requis")}</span>
-                                            <div className="flex flex-wrap gap-1">
-                                              {r.docs.map(dt => (
-                                                <Badge key={dt} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                                  {tTypeDocument(dt)}
-                                                </Badge>
-                                              ))}
-                                            </div>
-                                            {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
-                                              <div className="flex flex-wrap gap-1 mt-1">
-                                                {r.docs.map(dt => (
-                                                  <Button
-                                                    key={`upload-${dt}`}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-[10px]"
-                                                    onClick={() => navigate(`/dashboard/demandes/${d.id}`)}
-                                                  >
-                                                    <Upload className="h-3 w-3 me-1" />
-                                                    {tTypeDocument(dt)}
-                                                  </Button>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )) : (
-                                      <p className="text-xs text-muted-foreground text-center py-2">{t("demandes:stade.no_rejet")}</p>
-                                    )}
-                                    {blocked && (
-                                      <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                                        {t("demandes:stade.dgd_first")}
-                                      </div>
-                                    )}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            );
+                            return badgeContent;
                           })()}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
