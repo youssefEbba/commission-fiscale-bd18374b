@@ -1250,16 +1250,6 @@ const DemandeDetail = () => {
             <div className="grid grid-cols-1 gap-3 text-sm">
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{selected.conventionReference || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.conventionIntitule || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Bailleur</span><p className="font-medium">{selected.conventionBailleur || "—"}</p></div>
-              {selected.conventionDateSignature && (
-                <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date de signature</span><p className="font-medium">{formatDate(selected.conventionDateSignature)}</p></div>
-              )}
-              {(selected.conventionDateDebut || selected.conventionDateFin) && (
-                <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Période</span><p className="font-medium">{selected.conventionDateDebut ? formatDate(selected.conventionDateDebut) : "—"} → {selected.conventionDateFin ? formatDate(selected.conventionDateFin) : "—"}</p></div>
-              )}
-              {selected.conventionMontantMru != null && (
-                <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant (MRU)</span><p className="font-medium">{formatAmount(selected.conventionMontantMru)}</p></div>
-              )}
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">—</p>
