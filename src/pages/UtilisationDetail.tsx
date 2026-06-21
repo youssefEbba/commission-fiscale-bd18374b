@@ -551,11 +551,16 @@ const UtilisationDetail = () => {
                 <div className="p-2 rounded-lg bg-primary/10"><CreditCard className="h-5 w-5 text-primary" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.montant_total")}</p>
-                  <p className="text-lg font-bold">{fmtAmt(u.montant)}</p>
+                  <p className="text-lg font-bold">{fmtAmt(
+                    isDouane && (u.lignes?.length ?? 0) > 0
+                      ? (u.lignes || []).reduce((s, l) => s + (Number(l.valeur) || 0), 0)
+                      : u.montant
+                  )}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
 
           {isDouane && (() => {
             // Si les totaux finaux ne sont pas encore figés par la DGD, on affiche
@@ -573,7 +578,7 @@ const UtilisationDetail = () => {
                   <CardContent className="pt-6">
                     <p className="text-xs text-muted-foreground">
                       {t("utilisations:detail.kpi.total_au_ci")}
-                      {isPreview && <span className="ms-1 text-[10px] text-muted-foreground/80">({t("utilisations:bulletin.proposition_none", { defaultValue: "proposition" })})</span>}
+                      {isPreview && <span className="ms-1 text-[10px] italic text-muted-foreground/80">(aperçu — proposition entreprise)</span>}
                     </p>
                     <p className="text-lg font-bold text-primary">{fmtAmt(showCi)}</p>
                   </CardContent>
@@ -582,7 +587,7 @@ const UtilisationDetail = () => {
                   <CardContent className="pt-6">
                     <p className="text-xs text-muted-foreground">
                       {t("utilisations:detail.kpi.total_a_payer")}
-                      {isPreview && <span className="ms-1 text-[10px] text-muted-foreground/80">({t("utilisations:bulletin.proposition_none", { defaultValue: "proposition" })})</span>}
+                      {isPreview && <span className="ms-1 text-[10px] italic text-muted-foreground/80">(aperçu — proposition entreprise)</span>}
                     </p>
                     <p className="text-lg font-bold text-amber-700">{fmtAmt(showAP)}</p>
                   </CardContent>
