@@ -78,6 +78,9 @@ function resolveRoute(notif: NotificationDto): string | null {
   if (t.includes("CORRECTION") || t.includes("REJET")) {
     return notif.entityId ? `/dashboard/demandes/${notif.entityId}` : "/dashboard/demandes";
   }
+  if (t.includes("RESET") || t.includes("PASSWORD")) {
+    return "/dashboard/utilisateurs?tab=reset";
+  }
   const ent = (notif.entityType || "").toUpperCase();
   const byEntity = ENTITY_TYPE_ROUTES[ent];
   if (byEntity) return byEntity(notif.entityId);
