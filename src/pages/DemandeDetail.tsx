@@ -7,7 +7,9 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DocumentDto, ALL_DOCUMENT_TYPES_VALUES, RejetTempResponseDto,
   ReclamationDemandeCorrectionDto,
+  conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
+import { formatAmount } from "@/i18n/format";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -152,7 +154,11 @@ const DemandeDetail = () => {
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
   const [conventionDialogOpen, setConventionDialogOpen] = useState(false);
+  const [conventionDetail, setConventionDetail] = useState<ConventionDto | null>(null);
+  const [conventionLoading, setConventionLoading] = useState(false);
   const [marcheDialogOpen, setMarcheDialogOpen] = useState(false);
+  const [marcheDetail, setMarcheDetail] = useState<MarcheDto | null>(null);
+  const [marcheLoading, setMarcheLoading] = useState(false);
 
   const [adoptionOpen, setAdoptionOpen] = useState(false);
   const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
@@ -241,6 +247,28 @@ const DemandeDetail = () => {
         toast({ title: t("demandes:toast.error"), description: t("demandes:toast.load_entreprise_error"), variant: "destructive" });
       }
     } finally { setEntrepriseLoading(false); }
+  };
+
+  const openConventionDetail = async (conventionId: number) => {
+    setConventionDialogOpen(true);
+    setConventionDetail(null);
+    setConventionLoading(true);
+    try {
+      setConventionDetail(await conventionApi.getById(conventionId));
+    } catch {
+      toast({ title: t("demandes:toast.error"), description: "Impossible de charger la convention", variant: "destructive" });
+    } finally { setConventionLoading(false); }
+  };
+
+  const openMarcheDetail = async (marcheId: number) => {
+    setMarcheDialogOpen(true);
+    setMarcheDetail(null);
+    setMarcheLoading(true);
+    try {
+      setMarcheDetail(await marcheApi.getById(marcheId));
+    } catch {
+      toast({ title: t("demandes:toast.error"), description: "Impossible de charger le marché", variant: "destructive" });
+    } finally { setMarcheLoading(false); }
   };
 
   const handleTempVisa = async (demandeId: number) => {
@@ -520,7 +548,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setConventionDialogOpen(true)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openConventionDetail(selected.conventionId!)}>
                     {selected.conventionReference || selected.conventionIntitule || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
                   </button>
                 ) : (
@@ -530,7 +558,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setMarcheDialogOpen(true)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openMarcheDetail(selected.marcheId!)}>
                     {selected.marcheNumero || selected.marcheIntitule || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
                   </button>
                 ) : selected.marcheIdTrace ? (
@@ -1244,12 +1272,22 @@ const DemandeDetail = () => {
 
       {/* Convention info */}
       <Dialog open={conventionDialogOpen} onOpenChange={setConventionDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Informations de la convention</DialogTitle></DialogHeader>
-          {selected.conventionId ? (
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{selected.conventionReference || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.conventionIntitule || "—"}</p></div>
+          {conventionLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : conventionDetail ? (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence</span><p className="font-medium">{conventionDetail.reference || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Référence projet</span><p className="font-medium">{conventionDetail.projectReference || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{conventionDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Bailleur</span><p className="font-medium">{conventionDetail.bailleurNom || conventionDetail.bailleur || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Autorité contractante</span><p className="font-medium">{conventionDetail.autoriteContractanteNom || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{conventionDetail.dateSignature ? formatDate(conventionDetail.dateSignature) : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date fin</span><p className="font-medium">{conventionDetail.dateFin ? formatDate(conventionDetail.dateFin) : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant (devise)</span><p className="font-medium">{conventionDetail.montantDevise != null ? `${formatAmount(conventionDetail.montantDevise)} ${conventionDetail.deviseOrigine || ""}`.trim() : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant (MRU)</span><p className="font-medium">{conventionDetail.montantMru != null ? `${formatAmount(conventionDetail.montantMru)} MRU` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{conventionDetail.statut || "—"}</p></div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">—</p>
@@ -1267,12 +1305,18 @@ const DemandeDetail = () => {
 
       {/* Marché info */}
       <Dialog open={marcheDialogOpen} onOpenChange={setMarcheDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Informations du marché</DialogTitle></DialogHeader>
-          {selected.marcheId ? (
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{selected.marcheNumero || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{selected.marcheIntitule || "—"}</p></div>
+          {marcheLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : marcheDetail ? (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{marcheDetail.numeroMarche || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{marcheDetail.statut || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">—</p>
@@ -1287,6 +1331,7 @@ const DemandeDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {/* Adoption Dialog */}
       <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) setAdoptionFile(null); }}>
