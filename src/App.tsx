@@ -19,7 +19,8 @@ import Utilisateurs from "./pages/Utilisateurs";
 import MonProfil from "./pages/MonProfil";
 import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
-import Simulation from "./pages/Simulation";
+// TODO: réactiver quand la simulation sera activée ultérieurement
+// import Simulation from "./pages/Simulation";
 import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
   // import AssistanceIA from "./pages/AssistanceIA";
@@ -173,11 +174,12 @@ const App = () => (
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
             <Route path="/dashboard/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
+            {/* TODO: réactiver quand la simulation sera activée ultérieurement
             <Route path="/dashboard/simulation" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "ADMIN_SI"]}>
                 <Simulation />
               </ProtectedRoute>
-            } />
+            } /> */}
             <Route path="/dashboard/demandes/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <DemandeDetail />
