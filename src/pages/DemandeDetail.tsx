@@ -154,7 +154,11 @@ const DemandeDetail = () => {
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
   const [entrepriseDialogOpen, setEntrepriseDialogOpen] = useState(false);
   const [conventionDialogOpen, setConventionDialogOpen] = useState(false);
+  const [conventionDetail, setConventionDetail] = useState<ConventionDto | null>(null);
+  const [conventionLoading, setConventionLoading] = useState(false);
   const [marcheDialogOpen, setMarcheDialogOpen] = useState(false);
+  const [marcheDetail, setMarcheDetail] = useState<MarcheDto | null>(null);
+  const [marcheLoading, setMarcheLoading] = useState(false);
 
   const [adoptionOpen, setAdoptionOpen] = useState(false);
   const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
