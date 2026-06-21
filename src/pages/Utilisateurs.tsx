@@ -18,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Utilisateurs = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "reset" || searchParams.get("tab") === "pending" ? searchParams.get("tab")! : "all";
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
   const [resetRequests, setResetRequests] = useState<DemandeResetPasswordDto[]>([]);
