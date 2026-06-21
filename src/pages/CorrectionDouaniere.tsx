@@ -1198,14 +1198,6 @@ const CorrectionDouaniere = () => {
                 <span className="text-muted-foreground text-xs">{t("correction_douaniere:dialog.entreprise.adresse")}</span>
                 <p className="font-medium">{entrepriseDetail.adresse || dash}</p>
               </div>
-              <div className="rounded-lg border border-border p-3">
-                <span className="text-muted-foreground text-xs">{t("correction_douaniere:dialog.entreprise.situation")}</span>
-                <p>
-                  <Badge className={entrepriseDetail.situationFiscale === "REGULIERE" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
-                    {entrepriseDetail.situationFiscale || dash}
-                  </Badge>
-                </p>
-              </div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">{t("correction_douaniere:dialog.entreprise.empty")}</p>
