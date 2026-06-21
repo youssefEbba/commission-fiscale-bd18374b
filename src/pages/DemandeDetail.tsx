@@ -548,7 +548,7 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
-                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => setConventionDialogOpen(true)}>
+                  <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openConventionDetail(selected.conventionId!)}>
                     {selected.conventionReference || selected.conventionIntitule || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
                   </button>
                 ) : (
