@@ -26,7 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
-import { formatDate, formatAmount } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 
