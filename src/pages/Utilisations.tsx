@@ -105,13 +105,8 @@ const Utilisations = () => {
   const [deletingTarget, setDeletingTarget] = useState<UtilisationCreditDto | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
-  // Detail dialog (code mort actuellement — pas de setSelected, conservé pour parité)
-  const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
-
-  // Apurement TVA dialog (code mort — pas de setApurementTarget, conservé pour parité)
-  const [apurementTarget, setApurementTarget] = useState<UtilisationCreditDto | null>(null);
-  const [apurMontant, setApurMontant] = useState("");
-  const [apurLoading, setApurLoading] = useState(false);
+  // (Dialogs détail & apurement TVA retirés — l'affichage détaillé et l'apurement
+  // sont gérés dans UtilisationDetail.tsx.)
 
   // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
@@ -516,18 +511,6 @@ const Utilisations = () => {
     }
   };
 
-  // Dead code (handler not bound to any UI). Conservé tel quel — supprimé en H2 si confirmé.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleStatut = async (id: number, statut: UtilisationStatut) => {
-    setActionLoading(id);
-    try {
-      await utilisationCreditApi.updateStatut(id, statut);
-      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
-    } finally { setActionLoading(null); }
-  };
 
   const handleRejetTemp = async () => {
     if (!showRejetTemp || !rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
@@ -560,7 +543,10 @@ const Utilisations = () => {
       setDocFile(null);
       setDocs(await utilisationCreditApi.getDocuments(docDialog));
     } catch (e: any) {
-      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
+      const description = isStorageUnavailableError(e)
+        ? t("errors:storage_unavailable")
+        : formatApiErrorMessage(e, e?.message);
+      toast({ title: errorTitle(), description, variant: "destructive" });
     } finally { setUploading(false); }
   };
 
