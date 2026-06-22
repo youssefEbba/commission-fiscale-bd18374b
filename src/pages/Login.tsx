@@ -60,7 +60,7 @@ const Login = () => {
         title: t("login.success_title"),
         description: t("login.success_description", { name: data.nomComplet || data.username }),
       });
-      navigate("/dashboard");
+      navigate("/");
     } catch {
       setError(t("login.errors.network"));
     } finally {
