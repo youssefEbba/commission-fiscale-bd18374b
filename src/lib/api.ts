@@ -107,11 +107,24 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: options.method || "GET",
-    headers,
-    body: options.rawBody ? options.rawBody : options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, {
+      method: options.method || "GET",
+      headers,
+      body: options.rawBody ? options.rawBody : options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (networkErr) {
+    // Backend unreachable (network error, CORS, DNS, ngrok down...) → retour à l'accueil
+    if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
+    throw new ApiRequestError({
+      status: 0,
+      code: "BACKEND_UNREACHABLE",
+      message: "Backend inaccessible. Retour à la page d'accueil.",
+    });
+  }
 
   if (!res.ok) {
     // Try to parse structured error response
