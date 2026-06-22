@@ -14,6 +14,7 @@ import {
   transfertCreditApi,
   LigneBulletinRequest, TypeLigneTaxe, AffectationTaxe,
   referentielTaxeApi, ReferentielTaxeDto,
+  isStorageUnavailableError, formatApiErrorMessage,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { tStatutUtilisation, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
@@ -105,13 +106,8 @@ const Utilisations = () => {
   const [deletingTarget, setDeletingTarget] = useState<UtilisationCreditDto | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
-  // Detail dialog (code mort actuellement — pas de setSelected, conservé pour parité)
-  const [selected, setSelected] = useState<UtilisationCreditDto | null>(null);
-
-  // Apurement TVA dialog (code mort — pas de setApurementTarget, conservé pour parité)
-  const [apurementTarget, setApurementTarget] = useState<UtilisationCreditDto | null>(null);
-  const [apurMontant, setApurMontant] = useState("");
-  const [apurLoading, setApurLoading] = useState(false);
+  // (Dialogs détail & apurement TVA retirés — l'affichage détaillé et l'apurement
+  // sont gérés dans UtilisationDetail.tsx.)
 
   // Document upload (existing utilisation)
   const [docDialog, setDocDialog] = useState<number | null>(null);
@@ -516,18 +512,6 @@ const Utilisations = () => {
     }
   };
 
-  // Dead code (handler not bound to any UI). Conservé tel quel — supprimé en H2 si confirmé.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleStatut = async (id: number, statut: UtilisationStatut) => {
-    setActionLoading(id);
-    try {
-      await utilisationCreditApi.updateStatut(id, statut);
-      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
-    } finally { setActionLoading(null); }
-  };
 
   const handleRejetTemp = async () => {
     if (!showRejetTemp || !rejetTempMotif.trim() || rejetTempDocs.length === 0) return;
@@ -560,7 +544,10 @@ const Utilisations = () => {
       setDocFile(null);
       setDocs(await utilisationCreditApi.getDocuments(docDialog));
     } catch (e: any) {
-      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
+      const description = isStorageUnavailableError(e)
+        ? t("errors:storage_unavailable")
+        : formatApiErrorMessage(e, e?.message);
+      toast({ title: errorTitle(), description, variant: "destructive" });
     } finally { setUploading(false); }
   };
 
@@ -764,91 +751,6 @@ const Utilisations = () => {
         </Card>
       </div>
 
-      {/* Detail dialog (jamais ouvert actuellement — conservé pour parité ; voir page Détail dédiée) */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("utilisations:list.detail_dialog.title", { id: selected?.id ?? "" })}</DialogTitle></DialogHeader>
-          {selected && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.type_label")}</span><p className="font-medium">{selected.type === "DOUANIER" ? t("utilisations:list.detail_dialog.type_value_douane") : t("utilisations:list.detail_dialog.type_value_tva")}</p></div>
-                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutContextuel(selected.statut, selected.type)}</Badge></p></div>
-                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.certificat")}</span><p className="font-medium">{selected.certificatReference || `#${selected.certificatCreditId}`}</p></div>
-                <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.montant")}</span><p className="font-bold text-primary">{fmtAmt(selected.montant)}</p></div>
-                {selected.entrepriseNom && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.demandeur")}</span><p>{selected.entrepriseNom}{selected.demandeurEstSousTraitant && <Badge variant="outline" className="ms-1.5 text-[10px] border-orange-300 text-orange-700 bg-orange-50">{t("utilisations:list.sous_traite_badge")}</Badge>}</p></div>}
-                {selected.demandeurEstSousTraitant && selected.certificatTitulaireRaisonSociale && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.titulaire_cert")}</span><p className="font-medium">{selected.certificatTitulaireRaisonSociale}</p></div>}
-                {selected.dateCreation && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_creation")}</span><p>{formatDate(selected.dateCreation)}</p></div>}
-                {selected.dateLiquidation && <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_liquidation")}</span><p>{formatDate(selected.dateLiquidation)}</p></div>}
-              </div>
-              {selected.type === "DOUANIER" && (
-                <div className="border-t pt-3 mt-3">
-                  <h4 className="font-semibold mb-2">{t("utilisations:list.detail_dialog.douane_section")}</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_declaration")}</span><p>{selected.numeroDeclaration || "—"}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_bulletin")}</span><p>{selected.numeroBulletin || "—"}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_declaration")}</span><p>{formatDate(selected.dateDeclaration)}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.droits")}</span><p>{fmtAmt(selected.montantDroits)}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_douane")}</span><p>{fmtAmt(selected.montantTVADouane)}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.sydonia")}</span><p>{selected.enregistreeSYDONIA ? t("utilisations:list.detail_dialog.sydonia_yes") : t("utilisations:list.detail_dialog.sydonia_no")}</p></div>
-                  </div>
-                </div>
-              )}
-              {selected.type === "TVA_INTERIEURE" && (
-                <div className="border-t pt-3 mt-3">
-                  <h4 className="font-semibold mb-2">{t("utilisations:list.detail_dialog.tva_section")}</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.type_achat")}</span><p>{selected.typeAchat || "—"}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_facture")}</span><p>{selected.numeroFacture || "—"}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.date_facture")}</span><p>{formatDate(selected.dateFacture)}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_interieure")}</span><p>{fmtAmt(selected.montantTVAInterieure)}</p></div>
-                    <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.numero_decompte")}</span><p>{selected.numeroDecompte || "—"}</p></div>
-                  </div>
-                  {selected.statut === "APUREE" && selected.tvaNette != null && (
-                    <div className="mt-3 p-3 rounded-lg border bg-muted/50 space-y-2">
-                      <h5 className="font-semibold text-sm flex items-center gap-1"><Info className="h-4 w-4" /> {t("utilisations:list.detail_dialog.tracabilite_title")}</h5>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_deductible_utilisee")}</span><p className="font-medium">{fmtAmt(selected.tvaDeductibleUtilisee)}</p></div>
-                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.tva_nette")}</span><p className={`font-bold ${(selected.tvaNette ?? 0) > 0 ? "text-destructive" : (selected.tvaNette ?? 0) < 0 ? "text-emerald-600" : ""}`}>{fmtAmt(selected.tvaNette)}</p></div>
-                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.credit_interieur_utilise")}</span><p className="font-medium">{fmtAmt(selected.creditInterieurUtilise)}</p></div>
-                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.paiement_entreprise")}</span><p className="font-medium">{fmtAmt(selected.paiementEntreprise)}</p></div>
-                        <div><span className="text-muted-foreground">{t("utilisations:list.detail_dialog.report_a_nouveau")}</span><p className="font-medium">{fmtAmt(selected.reportANouveau)}</p></div>
-                        <div className="col-span-2 border-t pt-1 flex justify-between">
-                          <span className="text-muted-foreground">{t("utilisations:list.detail_dialog.solde_tva", { avant: fmtAmt(selected.soldeTVAAvant), apres: fmtAmt(selected.soldeTVAApres) })}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {decisions.length > 0 && (
-                <div className="border-t pt-3 mt-3">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> {t("utilisations:list.detail_dialog.decisions_title")}</h4>
-                  <div className="space-y-2">
-                    {decisions.map((d) => (
-                      <div key={d.id} className={`p-2 rounded border text-xs ${d.decision === "REJET_TEMP" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant={d.decision === "REJET_TEMP" ? "destructive" : "default"} className="text-[10px]">{d.decision}</Badge>
-                          <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
-                          {d.dateDecision && <span className="text-muted-foreground">{formatDate(d.dateDecision)}</span>}
-                        </div>
-                        {d.motifRejet && <p className="text-muted-foreground mb-1">{d.motifRejet}</p>}
-                        {d.documentsDemandes && d.documentsDemandes.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            <span className="text-muted-foreground">{t("utilisations:list.detail_dialog.documents_demandes")}</span>
-                            {d.documentsDemandes.map((doc) => (
-                              <Badge key={doc} variant="outline" className="text-[10px]">{tTypeDocument(doc)}</Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Create dialog */}
       <Dialog open={showCreate} onOpenChange={(o) => { setShowCreate(o); if (!o) setEditingId(null); }}>
@@ -872,7 +774,7 @@ const Utilisations = () => {
                 placeholder={t("utilisations:create.certificat_placeholder")}
                 searchPlaceholder={t("utilisations:create.certificat_search")}
                 options={certificats
-                  .filter(c => editingId != null || c.statut === "OUVERT")
+                  .filter(c => editingId != null || c.statut === "OUVERT" || c.statut === "MODIFIE")
                   .map(c => {
                     const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
                     return {
@@ -1222,81 +1124,6 @@ const Utilisations = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Apurement TVA dialog (jamais ouvert actuellement — conservé pour parité) */}
-      <Dialog open={!!apurementTarget} onOpenChange={() => setApurementTarget(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("utilisations:apurement_tva.title", { id: apurementTarget?.id ?? "" })}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">{t("utilisations:apurement_tva.intro")}</p>
-            {apurementTarget && (
-              <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
-                <div className="flex justify-between"><span className="text-muted-foreground">{t("utilisations:apurement_tva.tva_collectee")}</span><span className="font-semibold">{fmtAmt(apurementTarget.montantTVAInterieure)}</span></div>
-              </div>
-            )}
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="apur-tva-ded">{t("utilisations:apurement_tva.tva_ded_label")} *</Label>
-                <Input
-                  id="apur-tva-ded"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={apurMontant}
-                  onChange={(e) => setApurMontant(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">{t("utilisations:apurement_tva.tva_ded_hint")}</p>
-              </div>
-              {apurMontant && apurementTarget?.montantTVAInterieure != null && (
-                <div className="p-3 rounded-lg border space-y-1 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("utilisations:apurement_tva.tva_collectee_short")}</span><span>{fmtAmt(apurementTarget.montantTVAInterieure)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("utilisations:apurement_tva.tva_ded_short")}</span><span>- {fmtAmt(Number(apurMontant))}</span></div>
-                  <div className="border-t pt-1 flex justify-between font-bold">
-                    <span>{t("utilisations:apurement_tva.tva_nette")}</span>
-                    <span className={
-                      (apurementTarget.montantTVAInterieure - Number(apurMontant)) > 0 ? "text-destructive" :
-                      (apurementTarget.montantTVAInterieure - Number(apurMontant)) < 0 ? "text-emerald-600" : "text-muted-foreground"
-                    }>
-                      {fmtAmt(apurementTarget.montantTVAInterieure - Number(apurMontant))}
-                    </span>
-                  </div>
-                  {(apurementTarget.montantTVAInterieure - Number(apurMontant)) > 0 && (
-                    <p className="text-xs text-amber-600 mt-1">{t("utilisations:apurement_tva.cas2")}</p>
-                  )}
-                  {(apurementTarget.montantTVAInterieure - Number(apurMontant)) < 0 && (
-                    <p className="text-xs text-emerald-600 mt-1">{t("utilisations:apurement_tva.cas3")}</p>
-                  )}
-                  {(apurementTarget.montantTVAInterieure - Number(apurMontant)) === 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">{t("utilisations:apurement_tva.cas1")}</p>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setApurementTarget(null)}>{t("common:actions.cancel")}</Button>
-              <Button
-                disabled={apurLoading || !apurMontant || Number(apurMontant) < 0}
-                onClick={async () => {
-                  if (!apurementTarget) return;
-                  setApurLoading(true);
-                  try {
-                    await utilisationCreditApi.apurerTVA(apurementTarget.id, Number(apurMontant));
-                    toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.apurement_done") });
-                    setApurementTarget(null);
-                    fetchData();
-                  } catch (e: any) {
-                    toast({ title: errorTitle(), description: e.message, variant: "destructive" });
-                  } finally { setApurLoading(false); }
-                }}
-              >
-                {apurLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
-                {t("utilisations:apurement_tva.confirm")}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* REJET_TEMP Dialog */}
       <Dialog open={!!showRejetTemp} onOpenChange={() => setShowRejetTemp(null)}>
