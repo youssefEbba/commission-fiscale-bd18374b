@@ -451,8 +451,11 @@ const Utilisations = () => {
       }
 
       const uploadEntries = Object.entries(createDocFiles);
-      for (const [type, file] of uploadEntries) {
-        await utilisationCreditApi.uploadDocument(target.id, type as TypeDocumentUtilisation, file);
+      const reqById = new Map(gedRequirements.map(r => [String(r.id), r]));
+      for (const [key, file] of uploadEntries) {
+        const req = reqById.get(key);
+        const type = (req?.typeDocument ?? key) as TypeDocumentUtilisation;
+        await utilisationCreditApi.uploadDocument(target.id, type, file);
       }
 
       if (mode === "submit" && editingId != null && target.statut === "BROUILLON") {
