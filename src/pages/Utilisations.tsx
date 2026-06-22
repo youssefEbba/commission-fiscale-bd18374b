@@ -454,8 +454,9 @@ const Utilisations = () => {
       const reqById = new Map(gedRequirements.map(r => [String(r.id), r]));
       for (const [key, file] of uploadEntries) {
         const req = reqById.get(key);
-        const type = (req?.typeDocument ?? key) as TypeDocumentUtilisation;
-        await utilisationCreditApi.uploadDocument(target.id, type, file);
+        const code = (req?.codeDocument ?? req?.typeDocument) as TypeDocumentUtilisation | undefined;
+        if (!code) continue;
+        await utilisationCreditApi.uploadDocument(target.id, code, file);
       }
 
       if (mode === "submit" && editingId != null && target.statut === "BROUILLON") {
