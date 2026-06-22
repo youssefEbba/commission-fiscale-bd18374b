@@ -14,6 +14,7 @@ import {
   transfertCreditApi,
   LigneBulletinRequest, TypeLigneTaxe, AffectationTaxe,
   referentielTaxeApi, ReferentielTaxeDto,
+  isStorageUnavailableError, formatApiErrorMessage,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { tStatutUtilisation, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
@@ -773,7 +774,7 @@ const Utilisations = () => {
                 placeholder={t("utilisations:create.certificat_placeholder")}
                 searchPlaceholder={t("utilisations:create.certificat_search")}
                 options={certificats
-                  .filter(c => editingId != null || c.statut === "OUVERT")
+                  .filter(c => editingId != null || c.statut === "OUVERT" || c.statut === "MODIFIE")
                   .map(c => {
                     const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
                     return {
