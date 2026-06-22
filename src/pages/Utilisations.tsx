@@ -338,7 +338,7 @@ const Utilisations = () => {
   };
 
   const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
-    return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[r.typeDocument]);
+    return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[String(r.id)]);
   };
 
   const errorTitle = () => t("common:errors.title", { defaultValue: "Erreur" });
