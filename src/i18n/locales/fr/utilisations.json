@@ -4,11 +4,14 @@
     "subtitle": "Douane (SYDONIA) & TVA Intérieure",
     "title_by_role": {
       "AUTORITE_CONTRACTANTE": "Utilisations – Suivi des certificats",
+      "AUTORITE_UPM": "Utilisations – Suivi des certificats",
+      "AUTORITE_UEP": "Utilisations – Suivi des certificats",
       "ENTREPRISE": "Mes utilisations de crédit",
       "SOUS_TRAITANT": "Mes utilisations (sous-traitant)",
       "DGD": "Utilisations Douane – Vérification",
       "DGTCP": "Utilisations – Imputation & apurement",
       "DGI": "Utilisations – Consultation",
+      "PRESIDENT": "Utilisations – Consultation",
       "ADMIN_SI": "Toutes les utilisations (Audit)"
     },
     "search_placeholder": "Rechercher…",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { utilisateurApi, autoriteContractanteApi, entrepriseApi, UtilisateurDto, ROLE_LABELS, ROLE_OPTIONS, UpdateUtilisateurRequest, DemandeResetPasswordDto, DemandeResetStatut, AutoriteContractanteDto, EntrepriseDto } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Utilisateurs = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "reset" || searchParams.get("tab") === "pending" ? searchParams.get("tab")! : "all";
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [pending, setPending] = useState<UtilisateurDto[]>([]);
   const [resetRequests, setResetRequests] = useState<DemandeResetPasswordDto[]>([]);
@@ -486,7 +489,7 @@ const Utilisateurs = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="all">
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams((sp) => { sp.set("tab", v); return sp; }, { replace: true })}>
           <TabsList>
             <TabsTrigger value="all">Tous ({users.length})</TabsTrigger>
             <TabsTrigger value="pending"><Clock className="h-3 w-3 mr-1" /> En attente ({pending.length})</TabsTrigger>

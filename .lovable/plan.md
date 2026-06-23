@@ -1,20 +1,39 @@
-## Problèmes constatés
+## Objectif
 
-1. **Menu actif illisible** — Dans `src/components/dashboard/DashboardLayout.tsx` (ligne 122-127), la classe active applique `bg-sidebar-accent text-sidebar-primary`. Or `--sidebar-primary` est défini comme le jaune/doré (la même couleur que `--sidebar-accent`), donc le texte et l'icône deviennent invisibles sur le fond jaune (cas visible sur la capture : "Tableau de bord" sélectionné = barre jaune vide).
+Masquer temporairement les modules dont le back-end n'est pas encore développé, sans supprimer le code (juste le commenter pour pouvoir le réactiver facilement plus tard).
 
-2. **Aperçu de lien partagé** — `index.html` (lignes 15 et 19) référence l'image OpenGraph par défaut de Lovable (`https://lovable.dev/opengraph-image-p98pqg.png`), ce qui fait apparaître le logo Lovable sur WhatsApp/réseaux sociaux.
+Note : aucune référence à "Groupement" n'a été trouvée dans le code (ni page, ni route, ni entrée de menu). Il n'y a donc rien à commenter pour cette partie.
 
-## Modifications proposées
+## Modifications à effectuer
 
-### 1. `src/components/dashboard/DashboardLayout.tsx`
-- Remplacer dans `linkClass` la classe active `bg-sidebar-accent text-sidebar-primary` par `bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm` afin que l'item sélectionné affiche un fond doré net avec un texte vert foncé lisible (en respectant les tokens du design system, sans couleur en dur).
+### 1. Sous-traitance
 
-### 2. `index.html`
-- Supprimer les deux balises pointant vers `lovable.dev/opengraph-image-...` (`og:image` et `twitter:image`).
-- Retirer `twitter:site = @Lovable`.
-- Laisser le titre et la description (déjà personnalisés Commission Fiscale).
+- `src/components/dashboard/DashboardLayout.tsx` (ligne 62) : commenter l'entrée de menu `sous_traitance`.
+- `src/App.tsx` :
+  - ligne 35 : commenter l'import `import SousTraitance from "./pages/SousTraitance";`
+  - lignes 135-137 environ : commenter la `<Route path="/dashboard/sous-traitance" .../>`.
 
-Résultat : l'aperçu WhatsApp affichera uniquement le titre/description « Commission Fiscale — Gestion des Crédits d'Impôt » sans visuel Lovable. (Si vous souhaitez un visuel propre plus tard, on pourra générer une image OG aux couleurs vert/or.)
+### 2. Modifications / Avenants
 
-## Hors scope
-Aucun changement de logique métier, ni de tokens CSS, ni d'autres pages.
+La page `Modifications` est entièrement dédiée aux avenants — la « partie avenant des modifications » correspond donc à toute la page. Je la masque entièrement.
+
+- `src/components/dashboard/DashboardLayout.tsx` (ligne 60) : commenter l'entrée de menu `modifications`.
+- `src/App.tsx` :
+  - ligne 40 : commenter l'import `import Modifications from "./pages/Modifications";`
+  - lignes 145-147 environ : commenter la `<Route path="/dashboard/modifications" .../>`.
+
+### 3. Ce qui n'est PAS touché
+
+- Les fichiers `src/pages/SousTraitance.tsx` et `src/pages/Modifications.tsx` restent intacts.
+- Les traductions (`fr/ar/sous_traitance.json`, `fr/ar/modifications.json`, clés `nav`) restent intactes.
+- Les références à `avenantApi` dans `src/lib/api.ts` et `tStatutAvenant` dans `src/i18n/enums.ts` restent intactes (non visibles côté UI).
+
+Ainsi, pour réactiver les modules après livraison du back-end, il suffira de décommenter 6 lignes au total (2 entrées de menu + 2 imports + 2 routes).
+
+## Détails techniques
+
+Style de commentaire utilisé :
+- JSX/TSX dans routes et menu : `{/* ... */}`
+- Imports TypeScript : `//`
+
+Chaque bloc commenté sera précédé d'une courte note `// TODO: réactiver quand le back-end ...` pour faciliter la recherche ultérieure.

@@ -19,7 +19,8 @@ import Utilisateurs from "./pages/Utilisateurs";
 import MonProfil from "./pages/MonProfil";
 import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
-import Simulation from "./pages/Simulation";
+// TODO: réactiver quand la simulation sera activée ultérieurement
+// import Simulation from "./pages/Simulation";
 import Register from "./pages/Register";
 import CorrectionDouaniere from "./pages/CorrectionDouaniere";
   // import AssistanceIA from "./pages/AssistanceIA";
@@ -32,12 +33,14 @@ import GedDossiers from "./pages/GedDossiers";
 import NotFound from "./pages/NotFound";
 import Transferts from "./pages/Transferts";
 import TransfertDetail from "./pages/TransfertDetail";
-import SousTraitance from "./pages/SousTraitance";
+// TODO: réactiver quand le back-end Sous-traitance sera disponible
+// import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
-import Modifications from "./pages/Modifications";
+// TODO: réactiver quand le back-end Modifications/Avenants sera disponible
+// import Modifications from "./pages/Modifications";
 import DemandeDetail from "./pages/DemandeDetail";
 import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
@@ -132,21 +135,25 @@ const App = () => (
                 <TransfertDetail />
               </ProtectedRoute>
             } />
+            {/* TODO: réactiver quand le back-end Sous-traitance sera disponible
             <Route path="/dashboard/sous-traitance" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <SousTraitance />
               </ProtectedRoute>
             } />
+            */}
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Cloture />
               </ProtectedRoute>
             } />
+            {/* TODO: réactiver quand le back-end Modifications/Avenants sera disponible
             <Route path="/dashboard/modifications" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Modifications />
               </ProtectedRoute>
             } />
+            */}
             <Route path="/dashboard/ged/configuration" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <GedConfiguration />
@@ -167,11 +174,12 @@ const App = () => (
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
             <Route path="/dashboard/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
+            {/* TODO: réactiver quand la simulation sera activée ultérieurement
             <Route path="/dashboard/simulation" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "ADMIN_SI"]}>
                 <Simulation />
               </ProtectedRoute>
-            } />
+            } /> */}
             <Route path="/dashboard/demandes/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <DemandeDetail />

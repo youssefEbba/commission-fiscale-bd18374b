@@ -27,6 +27,10 @@ const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   DEMANDE_MISE_EN_PLACE_CHANGE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
   GED_DOCUMENT_CHANGE: () => "/dashboard/ged-dossiers",
   DEMANDE_EXPLICATION: () => "/dashboard/demandes",
+  PASSWORD_RESET_REQUEST: () => "/dashboard/utilisateurs?tab=reset",
+  DEMANDE_RESET_PASSWORD: () => "/dashboard/utilisateurs?tab=reset",
+  RESET_PASSWORD_REQUEST: () => "/dashboard/utilisateurs?tab=reset",
+  PASSWORD_RESET: () => "/dashboard/utilisateurs?tab=reset",
 };
 
 const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
@@ -73,6 +77,9 @@ function resolveRoute(notif: NotificationDto): string | null {
   const t = String(notif.type || "").toUpperCase();
   if (t.includes("CORRECTION") || t.includes("REJET")) {
     return notif.entityId ? `/dashboard/demandes/${notif.entityId}` : "/dashboard/demandes";
+  }
+  if (t.includes("RESET") || t.includes("PASSWORD")) {
+    return "/dashboard/utilisateurs?tab=reset";
   }
   const ent = (notif.entityType || "").toUpperCase();
   const byEntity = ENTITY_TYPE_ROUTES[ent];

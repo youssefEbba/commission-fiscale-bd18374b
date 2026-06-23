@@ -1063,7 +1063,7 @@ const DemandesMiseEnPlace = () => {
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.adresse")}</span><p>{ent.adresse || "—"}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.telephone")}</span><p>{ent.telephone || "—"}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.email")}</span><p>{ent.email || "—"}</p></div>
-                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.situation_fiscale")}</span><p>{ent.situationFiscale || "—"}</p></div>
+                  
                 </div>
               </div>
             );
