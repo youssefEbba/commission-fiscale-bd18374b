@@ -16,18 +16,25 @@ jobs:
 
           cd /home/mf/commission-fiscale-bd18374b
 
-          cp src/lib/apiConfig.ts /home/mf/apiConfig.ts.frontend.server || true
-          cp nginx.conf /home/mf/nginx.conf.frontend.server || true
-          cp Dockerfile /home/mf/Dockerfile.frontend.server || true
+          mkdir -p /home/mf/deploy-backups
 
-          git fetch origin main
-          git reset --hard origin/main
+          # Sauvegarder les fichiers locaux du serveur
+          cp src/lib/apiConfig.ts /home/mf/deploy-backups/apiConfig.ts.frontend.server || true
+          cp nginx.conf /home/mf/deploy-backups/nginx.conf.frontend.server || true
+          cp Dockerfile /home/mf/deploy-backups/Dockerfile.frontend.server || true
 
-          cp /home/mf/apiConfig.ts.frontend.server src/lib/apiConfig.ts || true
-          cp /home/mf/nginx.conf.frontend.server nginx.conf || true
-          cp /home/mf/Dockerfile.frontend.server Dockerfile || true
+          # Mettre à jour le code depuis GitHub avec token
+          git fetch https://x-access-token:${{ secrets.GH_PAT }}@github.com/youssefEbba/commission-fiscale-bd18374b.git main
+          git reset --hard FETCH_HEAD
 
+          # Remettre les fichiers de configuration locale serveur
+          cp /home/mf/deploy-backups/apiConfig.ts.frontend.server src/lib/apiConfig.ts || true
+          cp /home/mf/deploy-backups/nginx.conf.frontend.server nginx.conf || true
+          cp /home/mf/deploy-backups/Dockerfile.frontend.server Dockerfile || true
+
+          # Rebuild et redémarrage frontend
           cd /home/mf/commission-fiscale-deploy
           sudo docker compose up -d --build frontend
+
           sudo docker ps
           curl -I http://127.0.0.1:8082 || true
