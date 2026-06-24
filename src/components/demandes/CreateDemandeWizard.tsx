@@ -127,7 +127,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Create marché inline
   const [showCreateMarche, setShowCreateMarche] = useState(false);
-  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number; dateSignature?: string }>({ numeroMarche: "" });
+  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratHt?: number; dateSignature?: string }>({ numeroMarche: "" });
   const [creatingMarche, setCreatingMarche] = useState(false);
 
   // Bailleurs référentiel
