@@ -483,6 +483,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_first"), variant: "destructive" });
       return;
     }
+    if (!newMarche.montantContratTtc || newMarche.montantContratTtc <= 0) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.montant_ttc_required"), variant: "destructive" });
+      return;
+    }
     if (!newMarche.dateSignature) {
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.date_attribution_required"), variant: "destructive" });
       return;
