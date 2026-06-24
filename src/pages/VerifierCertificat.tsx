@@ -198,6 +198,22 @@ export default function VerifierCertificat() {
             </div>
             <Badge className={badgeClass(result.severiteUi)}>{result.etatVerification}</Badge>
           </CardHeader>
+          {result.trouve && result.certificatId && (
+            <div className="px-6 -mt-2 pb-2">
+              <Button
+                onClick={generatePdf}
+                disabled={generating}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white"
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin me-2" />
+                ) : (
+                  <Download className="h-4 w-4 me-2" />
+                )}
+                Générer le certificat (PDF)
+              </Button>
+            </div>
+          )}
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
