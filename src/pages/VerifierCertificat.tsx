@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw, Download } from "lucide-react";
+import { apiFetch, certificatCreditApi, marcheApi, entrepriseApi, conventionApi } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
+import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import { useToast } from "@/hooks/use-toast";
 
 const formatCurrency = (n: number) => `${formatAmount(n)} Ouguiya`;
 
