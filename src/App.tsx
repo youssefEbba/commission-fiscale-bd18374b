@@ -46,6 +46,7 @@ import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
+import InjectionCertificats from "./pages/InjectionCertificats";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import { ErrorDialog } from "@/components/ErrorDialog";
@@ -217,6 +218,11 @@ const App = () => (
             <Route path="/dashboard/referentiel-taxes" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <ReferentielTaxes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/admin/injection-certificats" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <InjectionCertificats />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
