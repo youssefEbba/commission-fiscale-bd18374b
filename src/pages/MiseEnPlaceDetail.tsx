@@ -569,7 +569,7 @@ const MiseEnPlaceDetail = () => {
                           type="button"
                           variant="outline"
                           className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() => generateCertificatToSignPdf(c, { entreprise, marche, convention })}
+                          onClick={() => { void generateCertificatToSignPdf(c, { entreprise, marche, convention }); }}
                         >
                           <Download className="h-4 w-4 me-1" /> Télécharger le certificat à signer
                         </Button>
