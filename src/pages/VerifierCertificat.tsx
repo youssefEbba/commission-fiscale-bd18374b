@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { formatCurrency } from "@/i18n/format";
+import { formatAmount } from "@/i18n/format";
+
+const formatCurrency = (n: number) => `${formatAmount(n)} Ouguiya`;
 
 type EtatVerificationCertificat =
   | "INCONNU"
