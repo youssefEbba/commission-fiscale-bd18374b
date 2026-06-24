@@ -76,7 +76,19 @@ export default function VerifierCertificat() {
       );
       setResult(dto);
     } catch (e: any) {
-      setError(e?.message || "Vérification impossible");
+      const msg = String(e?.message || "");
+      const isNetwork =
+        msg.includes("Failed to fetch") ||
+        msg.includes("NetworkError") ||
+        msg.includes("Network request failed") ||
+        e?.name === "TypeError";
+      if (isNetwork) {
+        setError(
+          "Service de vérification indisponible : impossible de joindre le serveur backend. Veuillez vérifier votre connexion ou réessayer dans quelques instants.",
+        );
+      } else {
+        setError(msg || "Vérification impossible");
+      }
     } finally {
       setLoading(false);
     }
@@ -128,8 +140,19 @@ export default function VerifierCertificat() {
 
       {error && (
         <Card className="border-red-300">
-          <CardContent className="pt-6 text-red-700 flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5" /> {error}
+          <CardContent className="pt-6 text-red-700 flex items-start gap-2">
+            <ShieldAlert className="h-5 w-5 mt-0.5 shrink-0" />
+            <div className="space-y-2">
+              <div>{error}</div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => verify(numero)}
+                disabled={loading || !numero.trim()}
+              >
+                <RefreshCw className="h-4 w-4 me-1" /> Réessayer
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
