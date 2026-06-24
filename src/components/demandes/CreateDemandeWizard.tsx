@@ -887,14 +887,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         searchPlaceholder={t("demandes:wizard.fields.search_marche")}
                         options={marches.map(m => {
                           const isBusy = busyMarcheIds.has(m.id);
-                          const baseLabel = t("demandes:wizard.fields.marche_amount_value", {
-                            numero: m.numeroMarche || `#${m.id}`,
-                            amount: formatAmount(m.montantContratTtc ?? 0, { currency: "MRU" }),
-                          });
+                          const baseLabel = m.numeroMarche || `#${m.id}`;
+                          const amountDesc = m.montantContratTtc != null
+                            ? formatAmount(m.montantContratTtc, { currency: "MRU" })
+                            : undefined;
+                          const busyDesc = isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined;
                           return {
                             value: String(m.id),
                             label: isBusy ? `${baseLabel} ${t("demandes:wizard.fields.marche_busy_suffix")}` : baseLabel,
-                            description: isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined,
+                            description: [amountDesc, busyDesc].filter(Boolean).join(" — ") || undefined,
                             keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
                             disabled: isBusy,
                           };
