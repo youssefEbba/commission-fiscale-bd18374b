@@ -83,6 +83,7 @@ const NAV_ENTRIES: NavEntry[] = [
       { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
       { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag },
       { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
+      { labelKey: "injection_certificats_legacy", href: "/dashboard/admin/injection-certificats", icon: ShieldCheck },
       { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3 },
     ],
   },
