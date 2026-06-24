@@ -77,6 +77,26 @@ const InjectionCertificats = () => {
   const [submittingStep1, setSubmittingStep1] = useState(false);
   const [step1Result, setStep1Result] = useState<AdminProvisionDemandeResponse | null>(null);
 
+  // ---------- Listes pour sélection d'entités existantes ----------
+  const [acList, setAcList] = useState<AutoriteContractanteDto[]>([]);
+  const [entList, setEntList] = useState<EntrepriseDto[]>([]);
+  const [convList, setConvList] = useState<ConventionDto[]>([]);
+  const [marcheList, setMarcheList] = useState<MarcheDto[]>([]);
+  const [loadingLists, setLoadingLists] = useState<Record<string, boolean>>({});
+
+  const loadList = async <T,>(key: string, fn: () => Promise<T[]>, setter: (v: T[]) => void) => {
+    setLoadingLists((s) => ({ ...s, [key]: true }));
+    try {
+      const data = await fn();
+      setter(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showApiError(err, `Impossible de charger la liste (${key})`);
+    } finally {
+      setLoadingLists((s) => ({ ...s, [key]: false }));
+    }
+  };
+
+
   // ---------- Étape 2 — state ----------
   const [eligibles, setEligibles] = useState<AdminProvisionEligibleDemandeDto[]>([]);
   const [loadingEligibles, setLoadingEligibles] = useState(false);
