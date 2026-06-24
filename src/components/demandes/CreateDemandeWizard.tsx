@@ -1194,7 +1194,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 size="sm"
                                 className="w-full"
                                 onClick={handleCreateMarche}
-                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature}
+                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature || !newMarche.montantContratTtc || newMarche.montantContratTtc <= 0}
                               >
                                 {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                                 {t("demandes:wizard.fields.create_marche")}
