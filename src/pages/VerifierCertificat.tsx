@@ -65,6 +65,32 @@ export default function VerifierCertificat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CertificatVerificationDto | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
+
+  const generatePdf = useCallback(async () => {
+    if (!result?.certificatId) return;
+    setGenerating(true);
+    try {
+      const cert = await certificatCreditApi.getById(result.certificatId);
+      const [entreprise, marche] = await Promise.all([
+        cert.entrepriseId ? entrepriseApi.getById(cert.entrepriseId).catch(() => null) : Promise.resolve(null),
+        cert.marcheId ? marcheApi.getById(cert.marcheId).catch(() => null) : Promise.resolve(null),
+      ]);
+      const convention = marche?.conventionId
+        ? await conventionApi.getById(marche.conventionId).catch(() => null)
+        : null;
+      await generateCertificatToSignPdf(cert, { entreprise, marche, convention });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Génération impossible",
+        description: e?.message || "Impossible de générer le certificat",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }, [result, toast]);
 
   const verify = useCallback(async (raw: string) => {
     const value = raw.trim();
