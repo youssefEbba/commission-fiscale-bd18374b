@@ -756,44 +756,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       </Button>
                     </Label>
                     {!showCreateEntreprise ? (
-                      <Popover open={entrepriseOpen} onOpenChange={setEntrepriseOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={entrepriseOpen}
-                            className="w-full justify-between font-normal"
-                          >
-                            {selectedEntreprise
-                              ? t("demandes:wizard.fields.entreprise_label_value", { name: selectedEntreprise.raisonSociale, nif: selectedEntreprise.nif })
-                              : t("demandes:wizard.fields.entreprise_search_placeholder")}
-                            <Search className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")} />
-                            <CommandList>
-                              <CommandEmpty>{t("demandes:wizard.fields.entreprise_empty")}</CommandEmpty>
-                              <CommandGroup>
-                                {entreprises.map(e => (
-                                  <CommandItem
-                                    key={e.id}
-                                    value={`${e.raisonSociale} ${e.nif}`}
-                                    onSelect={() => {
-                                      setEntrepriseId(String(e.id));
-                                      setEntrepriseOpen(false);
-                                    }}
-                                  >
-                                    <Check className={`me-2 h-4 w-4 ${entrepriseId === String(e.id) ? "opacity-100" : "opacity-0"}`} />
-                                    {t("demandes:wizard.fields.entreprise_label_value", { name: e.raisonSociale, nif: e.nif })}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <SearchableSelect
+                        value={entrepriseId}
+                        onValueChange={(v) => setEntrepriseId(v)}
+                        placeholder={t("demandes:wizard.fields.entreprise_search_placeholder")}
+                        searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
+                        emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
+                        options={entreprises.map(e => ({
+                          value: String(e.id),
+                          label: e.raisonSociale || `#${e.id}`,
+                          description: e.nif ? `NIF : ${e.nif}` : undefined,
+                          keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
+                        }))}
+                      />
                     ) : (
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-3">
