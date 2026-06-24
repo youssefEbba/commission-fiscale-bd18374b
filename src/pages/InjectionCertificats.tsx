@@ -416,19 +416,50 @@ const InjectionCertificats = () => {
                 {renderRefSection("Autorité Contractante", ac, setAc, [
                   { key: "code", label: "Code" },
                   { key: "nom", label: "Nom" },
-                ])}
+                ], {
+                  listKey: "ac",
+                  options: acList
+                    .filter((a) => a.id != null)
+                    .map((a) => ({
+                      value: String(a.id),
+                      label: a.nom,
+                      description: `ID ${a.id}${a.sigle ? ` · ${a.sigle}` : ""}`,
+                      keywords: `${a.sigle ?? ""} ${a.id}`,
+                    })),
+                  load: () => loadList("ac", () => autoriteContractanteApi.getAll(), setAcList),
+                })}
                 <Separator />
                 {renderRefSection("Entreprise", ent, setEnt, [
                   { key: "nif", label: "NIF" },
                   { key: "raisonSociale", label: "Raison sociale" },
                   { key: "situationFiscale", label: "Situation fiscale", placeholder: "REGULIERE" },
-                ])}
+                ], {
+                  listKey: "ent",
+                  options: entList
+                    .filter((e) => e.id != null)
+                    .map((e) => ({
+                      value: String(e.id),
+                      label: e.raisonSociale,
+                      description: `ID ${e.id} · NIF ${e.nif}`,
+                      keywords: `${e.nif} ${e.id}`,
+                    })),
+                  load: () => loadList("ent", () => entrepriseApi.getAll(), setEntList),
+                })}
                 <Separator />
                 {renderRefSection("Convention", conv, setConv, [
                   { key: "reference", label: "Référence" },
                   { key: "intitule", label: "Intitulé" },
                   { key: "projectReference", label: "Référence projet (optionnel)" },
-                ])}
+                ], {
+                  listKey: "conv",
+                  options: convList.map((c) => ({
+                    value: String(c.id),
+                    label: c.intitule || c.reference || `Convention #${c.id}`,
+                    description: `ID ${c.id}${c.reference ? ` · ${c.reference}` : ""}${c.autoriteContractanteNom ? ` · ${c.autoriteContractanteNom}` : ""}`,
+                    keywords: `${c.reference ?? ""} ${c.projectReference ?? ""}`,
+                  })),
+                  load: () => loadList("conv", () => conventionApi.getAll(), setConvList),
+                })}
                 {conv.mode === "create" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {fileField("Contrat convention (PDF)", convContrat, setConvContrat)}
@@ -440,7 +471,16 @@ const InjectionCertificats = () => {
                   { key: "dateSignature", label: "Date signature", type: "date" },
                   { key: "montantContratHt", label: "Montant HT", type: "number" },
                   { key: "statut", label: "Statut", placeholder: "EN_COURS" },
-                ])}
+                ], {
+                  listKey: "marche",
+                  options: marcheList.map((m) => ({
+                    value: String(m.id),
+                    label: m.numeroMarche || m.intitule || `Marché #${m.id}`,
+                    description: `ID ${m.id}${m.intitule ? ` · ${m.intitule}` : ""} · ${m.statut}`,
+                    keywords: `${m.intitule ?? ""}`,
+                  })),
+                  load: () => loadList("marche", () => marcheApi.getAll(), setMarcheList),
+                })}
                 {marche.mode === "create" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {fileField("Contrat signé (PDF)", marcheContrat, setMarcheContrat)}
