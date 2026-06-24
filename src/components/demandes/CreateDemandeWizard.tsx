@@ -483,8 +483,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_first"), variant: "destructive" });
       return;
     }
-    if (!newMarche.montantContratTtc || newMarche.montantContratTtc <= 0) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.montant_ttc_required"), variant: "destructive" });
+    if (!newMarche.montantContratHt || newMarche.montantContratHt <= 0) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.montant_ht_required"), variant: "destructive" });
       return;
     }
     if (!newMarche.dateSignature) {
@@ -502,7 +502,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const created = await marcheApi.create({
         conventionId: Number(conventionId),
         numeroMarche: newMarche.numeroMarche,
-        montantContratTtc: newMarche.montantContratTtc,
+        montantContratHt: newMarche.montantContratHt,
         dateSignature: toInstant(newMarche.dateSignature),
         statut: "EN_COURS",
       });
