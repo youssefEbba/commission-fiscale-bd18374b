@@ -613,21 +613,19 @@ const RefBlock = ({
           <TabsTrigger value="create">Créer inline</TabsTrigger>
         </TabsList>
         <TabsContent value="select" className="pt-4">
-          <Select
+          <SearchableSelect
+            options={options.map((o) => ({
+              value: String(o.id),
+              label: o.label,
+              keywords: stripDiacritics(o.label),
+            }))}
             value={selectedId ? String(selectedId) : undefined}
-            onValueChange={(v) => onSelect(Number(v))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="— Choisir —" />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((o) => (
-                <SelectItem key={o.id} value={String(o.id)}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={(v) => v && onSelect(Number(v))}
+            placeholder="— Choisir —"
+            searchPlaceholder="Rechercher (insensible à la casse)..."
+            emptyMessage="Aucun résultat."
+            clearable
+          />
         </TabsContent>
         <TabsContent value="create" className="pt-4">
           {children}
