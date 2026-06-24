@@ -48,6 +48,7 @@ import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
+import VerifierCertificat from "./pages/VerifierCertificat";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
@@ -68,7 +69,9 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/register" element={<Register />} />
             <Route path="/presentation" element={<Presentation />} />
+            <Route path="/verifier-certificat" element={<ProtectedRoute><VerifierCertificat /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
             <Route path="/dashboard/conventions" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Conventions />
