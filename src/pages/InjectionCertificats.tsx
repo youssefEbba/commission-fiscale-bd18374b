@@ -16,7 +16,16 @@ import {
   AdminProvisionEligibleDemandeDto,
   AdminProvisionDemandeResponse,
   AdminProvisionCertificatResponse,
+  autoriteContractanteApi,
+  entrepriseApi,
+  conventionApi,
+  marcheApi,
+  AutoriteContractanteDto,
+  EntrepriseDto,
+  ConventionDto,
+  MarcheDto,
 } from "@/lib/api";
+import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
 import { showApiError, showSuccess } from "@/lib/feedback";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
