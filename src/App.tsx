@@ -48,6 +48,7 @@ import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
+import InjectionCertificatLegacy from "./pages/InjectionCertificatLegacy";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
