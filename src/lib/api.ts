@@ -2198,3 +2198,87 @@ export const dossierGedApi = {
   getAll: () => apiFetch<DossierGedDto[]>("/dossiers"),
   getById: (id: number) => apiFetch<DossierGedDto>(`/dossiers/${id}`),
 };
+
+// ============================================================
+// Admin Provision — Injection certificat (solution provisoire)
+// Endpoint backend : /api/admin/provision/**
+// Permission requise : admin.certificat.provision (rôle ADMIN_SI)
+// ============================================================
+
+export interface AdminProvisionStep {
+  step: string;
+  actorRole?: string | null;
+  detail?: string | null;
+}
+
+export interface AdminProvisionEligibleDemandeDto {
+  demandeCorrectionId: number;
+  numero: string;
+  statut: string;
+  dateDepot: string;
+  entrepriseId: number;
+  entrepriseRaisonSociale: string;
+  autoriteContractanteId: number;
+  autoriteContractanteNom: string;
+  marcheId: number;
+  marcheNumero: string;
+}
+
+export interface AdminProvisionDemandeResponse {
+  autoriteContractanteId: number;
+  entrepriseId: number;
+  conventionId: number;
+  marcheId: number;
+  demandeCorrectionId: number;
+  demandeNumero: string;
+  statut: string;
+  steps: AdminProvisionStep[];
+}
+
+export interface AdminProvisionCertificatResponse {
+  certificatCreditId: number;
+  certificatNumero: string;
+  statut: string;
+  montantCordon: number;
+  montantTVAInterieure: number;
+  soldeCordon: number;
+  soldeTVA: number;
+  demandeCorrectionId: number;
+  steps: AdminProvisionStep[];
+}
+
+export interface AdminProvisionCertificatRequest {
+  demandeCorrectionId: number;
+  montantCordon: number;
+  montantTVAInterieure: number;
+  valeurDouaneFournitures?: number;
+  droitsEtTaxesDouaneHorsTva?: number;
+  tvaImportationDouane?: number;
+  montantMarcheHt?: number;
+  tvaCollecteeTravaux?: number;
+}
+
+export const adminProvisionApi = {
+  /** Étape 1 — création de la demande de correction (ADOPTEE) avec ses référentiels. */
+  createDemandeCorrection: (payload: unknown, files: Record<string, File>) => {
+    const fd = new FormData();
+    fd.append("payload", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+    Object.entries(files).forEach(([key, file]) => {
+      if (file) fd.append(key, file);
+    });
+    return apiFetch<AdminProvisionDemandeResponse>("/admin/provision/demandes-correction", {
+      method: "POST",
+      rawBody: fd,
+    });
+  },
+  /** Liste des demandes éligibles pour l'étape 2 (ADOPTEE/NOTIFIEE, sans certificat actif). */
+  listEligibles: () =>
+    apiFetch<AdminProvisionEligibleDemandeDto[]>("/admin/provision/demandes-correction/eligibles"),
+  /** Étape 2 — création du certificat de crédit (statut OUVERT). */
+  createCertificat: (body: AdminProvisionCertificatRequest) =>
+    apiFetch<AdminProvisionCertificatResponse>("/admin/provision/certificats-credit", {
+      method: "POST",
+      body,
+    }),
+};
+
