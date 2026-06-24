@@ -1172,7 +1172,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ttc")}</Label>
+                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ttc")} <span className="text-destructive">*</span></Label>
                                 <Input
                                   placeholder={t("demandes:wizard.fields.montant_ttc_placeholder")}
                                   type="number"
