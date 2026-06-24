@@ -473,6 +473,7 @@
       "nif_required": "Le NIF doit contenir exactement 8 caractères",
       "ref_intitule_required": "Référence et intitulé sont obligatoires",
       "numero_marche_required": "Le numéro de marché est obligatoire",
+      "montant_ttc_required": "Le montant TTC du marché est obligatoire",
       "convention_first": "Veuillez d'abord sélectionner une convention",
       "date_attribution_required": "La date d'attribution est obligatoire",
       "date_attribution_past": "La date d'attribution doit être antérieure à la date du jour",
