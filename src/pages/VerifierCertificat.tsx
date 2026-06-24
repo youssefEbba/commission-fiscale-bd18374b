@@ -76,7 +76,19 @@ export default function VerifierCertificat() {
       );
       setResult(dto);
     } catch (e: any) {
-      setError(e?.message || "Vérification impossible");
+      const msg = String(e?.message || "");
+      const isNetwork =
+        msg.includes("Failed to fetch") ||
+        msg.includes("NetworkError") ||
+        msg.includes("Network request failed") ||
+        e?.name === "TypeError";
+      if (isNetwork) {
+        setError(
+          "Service de vérification indisponible : impossible de joindre le serveur backend. Veuillez vérifier votre connexion ou réessayer dans quelques instants.",
+        );
+      } else {
+        setError(msg || "Vérification impossible");
+      }
     } finally {
       setLoading(false);
     }
