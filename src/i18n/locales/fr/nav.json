@@ -23,6 +23,5 @@
   "roles_permissions": "Rôles & Permissions",
   "referentiel_taxes": "Référentiel Taxes",
   "audit": "Journal d'audit",
-  "commission_relais": "Commission relais",
-  "injection_certificats_legacy": "Injection certificats (legacy)"
+  "commission_relais": "Commission relais"
 }

@@ -48,7 +48,6 @@ import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
-import InjectionCertificatLegacy from "./pages/InjectionCertificatLegacy";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
@@ -218,11 +217,6 @@ const App = () => (
             <Route path="/dashboard/referentiel-taxes" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <ReferentielTaxes />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/admin/injection-certificats" element={
-              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
-                <InjectionCertificatLegacy />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
