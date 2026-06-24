@@ -22,6 +22,7 @@
   "utilisateurs": "Utilisateurs",
   "roles_permissions": "Rôles & Permissions",
   "referentiel_taxes": "Référentiel Taxes",
+  "injection_certificats": "Injection certificat",
   "audit": "Journal d'audit",
   "commission_relais": "Commission relais"
 }
