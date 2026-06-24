@@ -1172,12 +1172,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ttc")} <span className="text-destructive">*</span></Label>
+                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ht")} <span className="text-destructive">*</span></Label>
                                 <Input
-                                  placeholder={t("demandes:wizard.fields.montant_ttc_placeholder")}
+                                  placeholder={t("demandes:wizard.fields.montant_ht_placeholder")}
                                   type="number"
-                                  value={newMarche.montantContratTtc || ""}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                                  value={newMarche.montantContratHt || ""}
+                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))}
                                 />
                               </div>
                               <div className="space-y-1">
@@ -1194,7 +1194,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 size="sm"
                                 className="w-full"
                                 onClick={handleCreateMarche}
-                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature || !newMarche.montantContratTtc || newMarche.montantContratTtc <= 0}
+                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature || !newMarche.montantContratHt || newMarche.montantContratHt <= 0}
                               >
                                 {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                                 {t("demandes:wizard.fields.create_marche")}
