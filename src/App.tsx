@@ -220,6 +220,11 @@ const App = () => (
                 <ReferentielTaxes />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/admin/injection-certificats" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <InjectionCertificatLegacy />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
