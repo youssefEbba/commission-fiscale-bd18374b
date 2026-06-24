@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw, Download } from "lucide-react";
+import { apiFetch, certificatCreditApi, marcheApi, entrepriseApi, conventionApi } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
+import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import { useToast } from "@/hooks/use-toast";
 
 const formatCurrency = (n: number) => `${formatAmount(n)} Ouguiya`;
 
@@ -63,6 +65,32 @@ export default function VerifierCertificat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CertificatVerificationDto | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
+
+  const generatePdf = useCallback(async () => {
+    if (!result?.certificatId) return;
+    setGenerating(true);
+    try {
+      const cert = await certificatCreditApi.getById(result.certificatId);
+      const [entreprise, marche] = await Promise.all([
+        cert.entrepriseId ? entrepriseApi.getById(cert.entrepriseId).catch(() => null) : Promise.resolve(null),
+        cert.marcheId ? marcheApi.getById(cert.marcheId).catch(() => null) : Promise.resolve(null),
+      ]);
+      const convention = marche?.conventionId
+        ? await conventionApi.getById(marche.conventionId).catch(() => null)
+        : null;
+      await generateCertificatToSignPdf(cert, { entreprise, marche, convention });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Génération impossible",
+        description: e?.message || "Impossible de générer le certificat",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }, [result, toast]);
 
   const verify = useCallback(async (raw: string) => {
     const value = raw.trim();
@@ -170,6 +198,22 @@ export default function VerifierCertificat() {
             </div>
             <Badge className={badgeClass(result.severiteUi)}>{result.etatVerification}</Badge>
           </CardHeader>
+          {result.trouve && result.certificatId && (
+            <div className="px-6 -mt-2 pb-2">
+              <Button
+                onClick={generatePdf}
+                disabled={generating}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white"
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin me-2" />
+                ) : (
+                  <Download className="h-4 w-4 me-2" />
+                )}
+                Générer le certificat (PDF)
+              </Button>
+            </div>
+          )}
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
