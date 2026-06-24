@@ -16,7 +16,16 @@ import {
   AdminProvisionEligibleDemandeDto,
   AdminProvisionDemandeResponse,
   AdminProvisionCertificatResponse,
+  autoriteContractanteApi,
+  entrepriseApi,
+  conventionApi,
+  marcheApi,
+  AutoriteContractanteDto,
+  EntrepriseDto,
+  ConventionDto,
+  MarcheDto,
 } from "@/lib/api";
+import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
 import { showApiError, showSuccess } from "@/lib/feedback";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -67,6 +76,26 @@ const InjectionCertificats = () => {
 
   const [submittingStep1, setSubmittingStep1] = useState(false);
   const [step1Result, setStep1Result] = useState<AdminProvisionDemandeResponse | null>(null);
+
+  // ---------- Listes pour sélection d'entités existantes ----------
+  const [acList, setAcList] = useState<AutoriteContractanteDto[]>([]);
+  const [entList, setEntList] = useState<EntrepriseDto[]>([]);
+  const [convList, setConvList] = useState<ConventionDto[]>([]);
+  const [marcheList, setMarcheList] = useState<MarcheDto[]>([]);
+  const [loadingLists, setLoadingLists] = useState<Record<string, boolean>>({});
+
+  const loadList = async <T,>(key: string, fn: () => Promise<T[]>, setter: (v: T[]) => void) => {
+    setLoadingLists((s) => ({ ...s, [key]: true }));
+    try {
+      const data = await fn();
+      setter(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showApiError(err, `Impossible de charger la liste (${key})`);
+    } finally {
+      setLoadingLists((s) => ({ ...s, [key]: false }));
+    }
+  };
+
 
   // ---------- Étape 2 — state ----------
   const [eligibles, setEligibles] = useState<AdminProvisionEligibleDemandeDto[]>([]);
@@ -254,6 +283,11 @@ const InjectionCertificats = () => {
     ref: RefState,
     setter: (s: RefState) => void,
     fields: { key: string; label: string; type?: string; placeholder?: string }[],
+    lookup?: {
+      listKey: string;
+      options: SearchableSelectOption[];
+      load: () => void;
+    },
   ) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -266,20 +300,50 @@ const InjectionCertificats = () => {
           >Créer</button>
           <button
             type="button"
-            onClick={() => setter({ ...ref, mode: "id" })}
+            onClick={() => {
+              setter({ ...ref, mode: "id" });
+              if (lookup && lookup.options.length === 0) lookup.load();
+            }}
             className={`px-2 py-1 rounded ${ref.mode === "id" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-          >Existant (id)</button>
+          >Sélectionner existant</button>
         </div>
       </div>
       {ref.mode === "id" ? (
-        <div>
-          <Label className="text-xs">Identifiant existant</Label>
-          <Input
-            type="number"
-            value={ref.id ?? ""}
-            onChange={(e) => setter({ ...ref, id: e.target.value === "" ? "" : Number(e.target.value) })}
-            placeholder="ex. 12"
-          />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs">Choisir dans la liste</Label>
+            {lookup && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={lookup.load}
+                disabled={loadingLists[lookup.listKey]}
+              >
+                {loadingLists[lookup.listKey] ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              </Button>
+            )}
+          </div>
+          {lookup ? (
+            <SearchableSelect
+              options={lookup.options}
+              value={ref.id ? String(ref.id) : ""}
+              onValueChange={(v) => setter({ ...ref, id: v === "" ? "" : Number(v) })}
+              placeholder={loadingLists[lookup.listKey] ? "Chargement…" : "Rechercher…"}
+              searchPlaceholder="Filtrer…"
+              emptyMessage={loadingLists[lookup.listKey] ? "Chargement…" : "Aucun élément."}
+              clearable
+            />
+          ) : (
+            <Input
+              type="number"
+              value={ref.id ?? ""}
+              onChange={(e) => setter({ ...ref, id: e.target.value === "" ? "" : Number(e.target.value) })}
+              placeholder="ex. 12"
+            />
+          )}
+          {ref.id && <p className="text-[11px] text-muted-foreground">ID sélectionné : <strong>{ref.id}</strong></p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -298,6 +362,7 @@ const InjectionCertificats = () => {
       )}
     </div>
   );
+
 
   const fileField = (label: string, file: File | null, setFile: (f: File | null) => void, required?: boolean) => (
     <div>
@@ -351,19 +416,50 @@ const InjectionCertificats = () => {
                 {renderRefSection("Autorité Contractante", ac, setAc, [
                   { key: "code", label: "Code" },
                   { key: "nom", label: "Nom" },
-                ])}
+                ], {
+                  listKey: "ac",
+                  options: acList
+                    .filter((a) => a.id != null)
+                    .map((a) => ({
+                      value: String(a.id),
+                      label: a.nom,
+                      description: `ID ${a.id}${a.sigle ? ` · ${a.sigle}` : ""}`,
+                      keywords: `${a.sigle ?? ""} ${a.id}`,
+                    })),
+                  load: () => loadList("ac", () => autoriteContractanteApi.getAll(), setAcList),
+                })}
                 <Separator />
                 {renderRefSection("Entreprise", ent, setEnt, [
                   { key: "nif", label: "NIF" },
                   { key: "raisonSociale", label: "Raison sociale" },
                   { key: "situationFiscale", label: "Situation fiscale", placeholder: "REGULIERE" },
-                ])}
+                ], {
+                  listKey: "ent",
+                  options: entList
+                    .filter((e) => e.id != null)
+                    .map((e) => ({
+                      value: String(e.id),
+                      label: e.raisonSociale,
+                      description: `ID ${e.id} · NIF ${e.nif}`,
+                      keywords: `${e.nif} ${e.id}`,
+                    })),
+                  load: () => loadList("ent", () => entrepriseApi.getAll(), setEntList),
+                })}
                 <Separator />
                 {renderRefSection("Convention", conv, setConv, [
                   { key: "reference", label: "Référence" },
                   { key: "intitule", label: "Intitulé" },
                   { key: "projectReference", label: "Référence projet (optionnel)" },
-                ])}
+                ], {
+                  listKey: "conv",
+                  options: convList.map((c) => ({
+                    value: String(c.id),
+                    label: c.intitule || c.reference || `Convention #${c.id}`,
+                    description: `ID ${c.id}${c.reference ? ` · ${c.reference}` : ""}${c.autoriteContractanteNom ? ` · ${c.autoriteContractanteNom}` : ""}`,
+                    keywords: `${c.reference ?? ""} ${c.projectReference ?? ""}`,
+                  })),
+                  load: () => loadList("conv", () => conventionApi.getAll(), setConvList),
+                })}
                 {conv.mode === "create" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {fileField("Contrat convention (PDF)", convContrat, setConvContrat)}
@@ -375,7 +471,16 @@ const InjectionCertificats = () => {
                   { key: "dateSignature", label: "Date signature", type: "date" },
                   { key: "montantContratHt", label: "Montant HT", type: "number" },
                   { key: "statut", label: "Statut", placeholder: "EN_COURS" },
-                ])}
+                ], {
+                  listKey: "marche",
+                  options: marcheList.map((m) => ({
+                    value: String(m.id),
+                    label: m.numeroMarche || m.intitule || `Marché #${m.id}`,
+                    description: `ID ${m.id}${m.intitule ? ` · ${m.intitule}` : ""} · ${m.statut}`,
+                    keywords: `${m.intitule ?? ""}`,
+                  })),
+                  load: () => loadList("marche", () => marcheApi.getAll(), setMarcheList),
+                })}
                 {marche.mode === "create" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {fileField("Contrat signé (PDF)", marcheContrat, setMarcheContrat)}
