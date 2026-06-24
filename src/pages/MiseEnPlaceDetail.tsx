@@ -25,7 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, DollarSign, Upload, MessageSquare, Send, Download,
+  AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download,
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
 
@@ -447,7 +447,7 @@ const MiseEnPlaceDetail = () => {
         {(c.montantCordon != null || c.montantTVAInterieure != null) && (
           <Card>
             <CardContent className="p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4" /> {t("mise_en_place:detail.montants.title")}</h3>
+              <h3 className="font-semibold mb-3 flex items-center gap-2"><Wallet className="h-4 w-4" /> {t("mise_en_place:detail.montants.title")}</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div><span className="text-muted-foreground">{t("mise_en_place:detail.montants.cordon")}</span><p className="font-bold">{fmtAmt(c.montantCordon)}</p></div>
                 <div><span className="text-muted-foreground">{t("mise_en_place:detail.montants.tva_interieure")}</span><p className="font-bold">{fmtAmt(c.montantTVAInterieure)}</p></div>
@@ -465,7 +465,7 @@ const MiseEnPlaceDetail = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" /> {t("mise_en_place:detail.recap.title")}
+                <Wallet className="h-5 w-5 text-primary" /> {t("mise_en_place:detail.recap.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -556,7 +556,7 @@ const MiseEnPlaceDetail = () => {
                   setRecapD(c.tvaImportationDouane != null ? String(c.tvaImportationDouane) : "");
                   setRecapG(c.tvaCollecteeTravaux != null ? String(c.tvaCollecteeTravaux) : "");
                 }}>
-                  <DollarSign className="h-4 w-4 me-1" /> {t("mise_en_place:actions.set_montants")}
+                  <Wallet className="h-4 w-4 me-1" /> {t("mise_en_place:actions.set_montants")}
                 </Button>
               )}
 
@@ -893,7 +893,7 @@ const MiseEnPlaceDetail = () => {
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <Wallet className="h-5 w-5 text-primary" />
               {t("mise_en_place:dialogs.montants.title_dgtcp")}
             </DialogTitle>
           </DialogHeader>
@@ -906,13 +906,12 @@ const MiseEnPlaceDetail = () => {
             const cVal = recapC === "" ? null : Number(recapC);
             const d = recapD === "" ? null : Number(recapD);
             const g = recapG === "" ? null : Number(recapG);
-            const tol = 1;
             const cordonExpected = b != null && d != null ? b + d : null;
             const tvaExpected = g != null && d != null ? g - d : null;
-            const cordonMismatch = cordonExpected != null && Number.isFinite(cordonNum) && Math.abs(cordonNum - cordonExpected) > tol;
-            const tvaMismatch = tvaExpected != null && Number.isFinite(tvaNum) && Math.abs(tvaNum - tvaExpected) > tol;
+            const cordonMismatch = false;
+            const tvaMismatch = false;
             const baseValid = montantCordon !== "" && montantTVAInt !== "" && cordonNum >= 0 && tvaNum >= 0;
-            const canSave = baseValid && !cordonMismatch && !tvaMismatch && !savingMontants;
+            const canSave = baseValid && !savingMontants;
 
             return (
               <>
@@ -921,7 +920,7 @@ const MiseEnPlaceDetail = () => {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.cordon_label")}</Label>
                       <div className="relative">
-                        <DollarSign className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Wallet className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantCordon} onChange={(e) => setMontantCordon(e.target.value)} className="ps-9 text-base font-medium" />
                       </div>
                       {cordonMismatch && (
@@ -931,7 +930,7 @@ const MiseEnPlaceDetail = () => {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.tva_label")}</Label>
                       <div className="relative">
-                        <DollarSign className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Wallet className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input type="number" min="0" step="0.01" placeholder="0.00" value={montantTVAInt} onChange={(e) => setMontantTVAInt(e.target.value)} className="ps-9 text-base font-medium" />
                       </div>
                       {tvaMismatch && (
@@ -1000,7 +999,7 @@ const MiseEnPlaceDetail = () => {
                     } finally { setSavingMontants(false); }
                   }}>
                     {savingMontants && <Loader2 className="h-4 w-4 animate-spin me-2" />}
-                    <DollarSign className="h-4 w-4 me-1" />
+                    <Wallet className="h-4 w-4 me-1" />
                     {t("mise_en_place:dialogs.montants.save_only")}
                   </Button>
                 </DialogFooter>
