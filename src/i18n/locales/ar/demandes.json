@@ -473,6 +473,7 @@
       "nif_required": "يجب أن يحتوي رقم التعريف الجبائي على 8 أحرف بالضبط",
       "ref_intitule_required": "المرجع والعنوان إلزاميان",
       "numero_marche_required": "رقم الصفقة إلزامي",
+      "montant_ttc_required": "المبلغ شامل الضريبة للصفقة إلزامي",
       "convention_first": "يرجى اختيار اتفاقية أولاً",
       "date_attribution_required": "تاريخ الإسناد إلزامي",
       "date_attribution_past": "يجب أن يكون تاريخ الإسناد سابقاً لتاريخ اليوم",
