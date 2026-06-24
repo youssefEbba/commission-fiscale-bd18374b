@@ -759,22 +759,19 @@ const UploadGroup = ({
     <div className="rounded-md border p-3 space-y-2">
       <div className="text-sm font-medium">{title}</div>
       <div className="flex flex-col sm:flex-row gap-2">
-        <Select value={code} onValueChange={setCode}>
-          <SelectTrigger className="sm:w-72">
-            <SelectValue placeholder="Type / code document" />
-          </SelectTrigger>
-          <SelectContent>
-            {options.length === 0 ? (
-              <div className="px-2 py-1 text-xs text-muted-foreground">Aucun type disponible</div>
-            ) : (
-              options.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={options.map((o) => ({
+            value: o.value,
+            label: o.label,
+            keywords: stripDiacritics(`${o.label} ${o.value}`),
+          }))}
+          value={code}
+          onValueChange={setCode}
+          placeholder="Type / code document"
+          searchPlaceholder="Rechercher (insensible à la casse)..."
+          emptyMessage="Aucun type disponible"
+          className="sm:w-72"
+        />
         <label className="inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm cursor-pointer hover:bg-accent">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
           <span>Téléverser…</span>
