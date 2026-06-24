@@ -906,13 +906,12 @@ const MiseEnPlaceDetail = () => {
             const cVal = recapC === "" ? null : Number(recapC);
             const d = recapD === "" ? null : Number(recapD);
             const g = recapG === "" ? null : Number(recapG);
-            const tol = 1;
             const cordonExpected = b != null && d != null ? b + d : null;
             const tvaExpected = g != null && d != null ? g - d : null;
-            const cordonMismatch = cordonExpected != null && Number.isFinite(cordonNum) && Math.abs(cordonNum - cordonExpected) > tol;
-            const tvaMismatch = tvaExpected != null && Number.isFinite(tvaNum) && Math.abs(tvaNum - tvaExpected) > tol;
+            const cordonMismatch = false;
+            const tvaMismatch = false;
             const baseValid = montantCordon !== "" && montantTVAInt !== "" && cordonNum >= 0 && tvaNum >= 0;
-            const canSave = baseValid && !cordonMismatch && !tvaMismatch && !savingMontants;
+            const canSave = baseValid && !savingMontants;
 
             return (
               <>
