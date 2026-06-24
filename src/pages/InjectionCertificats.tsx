@@ -283,6 +283,11 @@ const InjectionCertificats = () => {
     ref: RefState,
     setter: (s: RefState) => void,
     fields: { key: string; label: string; type?: string; placeholder?: string }[],
+    lookup?: {
+      listKey: string;
+      options: SearchableSelectOption[];
+      load: () => void;
+    },
   ) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -295,20 +300,50 @@ const InjectionCertificats = () => {
           >Créer</button>
           <button
             type="button"
-            onClick={() => setter({ ...ref, mode: "id" })}
+            onClick={() => {
+              setter({ ...ref, mode: "id" });
+              if (lookup && lookup.options.length === 0) lookup.load();
+            }}
             className={`px-2 py-1 rounded ${ref.mode === "id" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-          >Existant (id)</button>
+          >Sélectionner existant</button>
         </div>
       </div>
       {ref.mode === "id" ? (
-        <div>
-          <Label className="text-xs">Identifiant existant</Label>
-          <Input
-            type="number"
-            value={ref.id ?? ""}
-            onChange={(e) => setter({ ...ref, id: e.target.value === "" ? "" : Number(e.target.value) })}
-            placeholder="ex. 12"
-          />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs">Choisir dans la liste</Label>
+            {lookup && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={lookup.load}
+                disabled={loadingLists[lookup.listKey]}
+              >
+                {loadingLists[lookup.listKey] ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              </Button>
+            )}
+          </div>
+          {lookup ? (
+            <SearchableSelect
+              options={lookup.options}
+              value={ref.id ? String(ref.id) : ""}
+              onValueChange={(v) => setter({ ...ref, id: v === "" ? "" : Number(v) })}
+              placeholder={loadingLists[lookup.listKey] ? "Chargement…" : "Rechercher…"}
+              searchPlaceholder="Filtrer…"
+              emptyMessage={loadingLists[lookup.listKey] ? "Chargement…" : "Aucun élément."}
+              clearable
+            />
+          ) : (
+            <Input
+              type="number"
+              value={ref.id ?? ""}
+              onChange={(e) => setter({ ...ref, id: e.target.value === "" ? "" : Number(e.target.value) })}
+              placeholder="ex. 12"
+            />
+          )}
+          {ref.id && <p className="text-[11px] text-muted-foreground">ID sélectionné : <strong>{ref.id}</strong></p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -327,6 +362,7 @@ const InjectionCertificats = () => {
       )}
     </div>
   );
+
 
   const fileField = (label: string, file: File | null, setFile: (f: File | null) => void, required?: boolean) => (
     <div>
