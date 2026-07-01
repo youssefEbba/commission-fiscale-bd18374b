@@ -231,6 +231,19 @@ interface DossierDetailProps {
 
 const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const handleOpen = async (doc: any) => {
+    try { await openDocument(doc); }
+    catch (e: any) {
+      toast({ title: t("common:errors.title", "Erreur"), description: e?.message || "Ouverture impossible", variant: "destructive" });
+    }
+  };
+  const handleDownload = async (doc: any) => {
+    try { await downloadDocument(doc); }
+    catch (e: any) {
+      toast({ title: t("common:errors.title", "Erreur"), description: e?.message || "Téléchargement impossible", variant: "destructive" });
+    }
+  };
   // Écran lecture seule — l'injection GED Président a été supprimée (voir UPLOAD_STORAGE_FAIL_FAST_FRONT.md).
 
 
