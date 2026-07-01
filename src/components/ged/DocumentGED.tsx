@@ -101,17 +101,40 @@ const DocumentGED = ({
     }
   };
 
-  const openFile = (doc: GEDDocument) => {
+  const openFile = async (doc: GEDDocument) => {
     if (!doc.chemin) return;
     let url = doc.chemin;
     if (!/^https?:\/\//i.test(url)) {
       const apiOrigin = API_BASE.replace(/\/api\/?$/, "");
       url = apiOrigin + (url.startsWith("/") ? "" : "/") + url;
     }
-    if (url.includes("ngrok")) {
-      url += (url.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true";
+    // Récupération authentifiée + bypass ngrok warning, puis ouverture via blob
+    try {
+      const token = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = { "ngrok-skip-browser-warning": "true" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, "_blank", "noopener,noreferrer");
+      if (!win) {
+        // Fallback téléchargement si popup bloqué
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = doc.nomFichier || "document";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (e: any) {
+      toast({
+        title: t("ged:toast.error_title"),
+        description: t("ged:toast.open_error", { defaultValue: "Impossible d'ouvrir le document. Vérifiez que le tunnel backend est actif." }) + (e?.message ? ` (${e.message})` : ""),
+        variant: "destructive",
+      });
     }
-    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleReplaceDoc = async () => {
