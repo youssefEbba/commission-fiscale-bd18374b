@@ -406,24 +406,13 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem asChild>
-                                      <a
-                                        href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <Eye className="h-4 w-4 me-2" />
-                                        {t("ged:dossiers.table.open")}
-                                      </a>
+                                    <DropdownMenuItem onClick={() => handleOpen(doc)}>
+                                      <Eye className="h-4 w-4 me-2" />
+                                      {t("ged:dossiers.table.open")}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                      <a
-                                        href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
-                                        download={doc.nom}
-                                      >
-                                        <Download className="h-4 w-4 me-2" />
-                                        {t("ged:dossiers.table.download")}
-                                      </a>
+                                    <DropdownMenuItem onClick={() => handleDownload(doc)}>
+                                      <Download className="h-4 w-4 me-2" />
+                                      {t("ged:dossiers.table.download")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
