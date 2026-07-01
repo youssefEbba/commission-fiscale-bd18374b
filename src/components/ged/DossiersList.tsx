@@ -20,6 +20,8 @@ import { tTypeDocument } from "@/i18n/enums";
 // UPLOAD_STORAGE_FAIL_FAST_FRONT.md.
 
 import { API_BASE } from "@/lib/apiConfig";
+import { openDocument, downloadDocument } from "@/lib/openDocument";
+import { useToast } from "@/hooks/use-toast";
 
 const ETAPE_COLORS: Record<string, string> = {
   DEMANDE_CORRECTION: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
