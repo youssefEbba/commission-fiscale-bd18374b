@@ -20,6 +20,8 @@ import { tTypeDocument } from "@/i18n/enums";
 // UPLOAD_STORAGE_FAIL_FAST_FRONT.md.
 
 import { API_BASE } from "@/lib/apiConfig";
+import { openDocument, downloadDocument } from "@/lib/openDocument";
+import { useToast } from "@/hooks/use-toast";
 
 const ETAPE_COLORS: Record<string, string> = {
   DEMANDE_CORRECTION: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -229,6 +231,19 @@ interface DossierDetailProps {
 
 const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetailProps) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const handleOpen = async (doc: any) => {
+    try { await openDocument(doc); }
+    catch (e: any) {
+      toast({ title: t("common:errors.title", "Erreur"), description: e?.message || "Ouverture impossible", variant: "destructive" });
+    }
+  };
+  const handleDownload = async (doc: any) => {
+    try { await downloadDocument(doc); }
+    catch (e: any) {
+      toast({ title: t("common:errors.title", "Erreur"), description: e?.message || "Téléchargement impossible", variant: "destructive" });
+    }
+  };
   // Écran lecture seule — l'injection GED Président a été supprimée (voir UPLOAD_STORAGE_FAIL_FAST_FRONT.md).
 
 
@@ -391,24 +406,13 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem asChild>
-                                      <a
-                                        href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <Eye className="h-4 w-4 me-2" />
-                                        {t("ged:dossiers.table.open")}
-                                      </a>
+                                    <DropdownMenuItem onClick={() => handleOpen(doc)}>
+                                      <Eye className="h-4 w-4 me-2" />
+                                      {t("ged:dossiers.table.open")}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                      <a
-                                        href={doc.url || `${API_BASE}/documents/${doc.id}/download`}
-                                        download={doc.nom}
-                                      >
-                                        <Download className="h-4 w-4 me-2" />
-                                        {t("ged:dossiers.table.download")}
-                                      </a>
+                                    <DropdownMenuItem onClick={() => handleDownload(doc)}>
+                                      <Download className="h-4 w-4 me-2" />
+                                      {t("ged:dossiers.table.download")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
