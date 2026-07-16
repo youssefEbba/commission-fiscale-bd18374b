@@ -127,7 +127,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Create marché inline
   const [showCreateMarche, setShowCreateMarche] = useState(false);
-  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratTtc?: number; dateSignature?: string }>({ numeroMarche: "" });
+  const [newMarche, setNewMarche] = useState<{ numeroMarche: string; montantContratHt?: number; dateSignature?: string }>({ numeroMarche: "" });
   const [creatingMarche, setCreatingMarche] = useState(false);
 
   // Bailleurs référentiel
@@ -483,6 +483,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_first"), variant: "destructive" });
       return;
     }
+    if (!newMarche.montantContratHt || newMarche.montantContratHt <= 0) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.montant_ht_required"), variant: "destructive" });
+      return;
+    }
     if (!newMarche.dateSignature) {
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.date_attribution_required"), variant: "destructive" });
       return;
@@ -498,7 +502,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const created = await marcheApi.create({
         conventionId: Number(conventionId),
         numeroMarche: newMarche.numeroMarche,
-        montantContratTtc: newMarche.montantContratTtc,
+        montantContratHt: newMarche.montantContratHt,
         dateSignature: toInstant(newMarche.dateSignature),
         statut: "EN_COURS",
       });
@@ -756,44 +760,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       </Button>
                     </Label>
                     {!showCreateEntreprise ? (
-                      <Popover open={entrepriseOpen} onOpenChange={setEntrepriseOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={entrepriseOpen}
-                            className="w-full justify-between font-normal"
-                          >
-                            {selectedEntreprise
-                              ? t("demandes:wizard.fields.entreprise_label_value", { name: selectedEntreprise.raisonSociale, nif: selectedEntreprise.nif })
-                              : t("demandes:wizard.fields.entreprise_search_placeholder")}
-                            <Search className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")} />
-                            <CommandList>
-                              <CommandEmpty>{t("demandes:wizard.fields.entreprise_empty")}</CommandEmpty>
-                              <CommandGroup>
-                                {entreprises.map(e => (
-                                  <CommandItem
-                                    key={e.id}
-                                    value={`${e.raisonSociale} ${e.nif}`}
-                                    onSelect={() => {
-                                      setEntrepriseId(String(e.id));
-                                      setEntrepriseOpen(false);
-                                    }}
-                                  >
-                                    <Check className={`me-2 h-4 w-4 ${entrepriseId === String(e.id) ? "opacity-100" : "opacity-0"}`} />
-                                    {t("demandes:wizard.fields.entreprise_label_value", { name: e.raisonSociale, nif: e.nif })}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <SearchableSelect
+                        value={entrepriseId}
+                        onValueChange={(v) => setEntrepriseId(v)}
+                        placeholder={t("demandes:wizard.fields.entreprise_search_placeholder")}
+                        searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
+                        emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
+                        options={entreprises.map(e => ({
+                          value: String(e.id),
+                          label: e.raisonSociale || `#${e.id}`,
+                          description: e.nif ? `NIF : ${e.nif}` : undefined,
+                          keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
+                        }))}
+                      />
                     ) : (
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-3">
@@ -912,14 +891,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         searchPlaceholder={t("demandes:wizard.fields.search_marche")}
                         options={marches.map(m => {
                           const isBusy = busyMarcheIds.has(m.id);
-                          const baseLabel = t("demandes:wizard.fields.marche_amount_value", {
-                            numero: m.numeroMarche || `#${m.id}`,
-                            amount: formatAmount(m.montantContratTtc ?? 0, { currency: "MRU" }),
-                          });
+                          const baseLabel = m.numeroMarche || `#${m.id}`;
+                          const amountDesc = m.montantContratTtc != null
+                            ? formatAmount(m.montantContratTtc, { currency: "MRU" })
+                            : undefined;
+                          const busyDesc = isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined;
                           return {
                             value: String(m.id),
                             label: isBusy ? `${baseLabel} ${t("demandes:wizard.fields.marche_busy_suffix")}` : baseLabel,
-                            description: isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined,
+                            description: [amountDesc, busyDesc].filter(Boolean).join(" — ") || undefined,
                             keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
                             disabled: isBusy,
                           };
@@ -1192,12 +1172,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ttc")}</Label>
+                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ht")} <span className="text-destructive">*</span></Label>
                                 <Input
-                                  placeholder={t("demandes:wizard.fields.montant_ttc_placeholder")}
+                                  placeholder={t("demandes:wizard.fields.montant_ht_placeholder")}
                                   type="number"
-                                  value={newMarche.montantContratTtc || ""}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                                  value={newMarche.montantContratHt || ""}
+                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))}
                                 />
                               </div>
                               <div className="space-y-1">
@@ -1214,7 +1194,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 size="sm"
                                 className="w-full"
                                 onClick={handleCreateMarche}
-                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature}
+                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature || !newMarche.montantContratHt || newMarche.montantContratHt <= 0}
                               >
                                 {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                                 {t("demandes:wizard.fields.create_marche")}
