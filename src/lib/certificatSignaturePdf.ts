@@ -44,9 +44,19 @@ const inlineField = (
   doc.text(label, x, y);
   const lw = doc.getTextWidth(label);
   doc.setFont("helvetica", "normal");
-  if (value) doc.text(value, x + lw + 2, y);
+  const valueX = x + lw + 2;
+  const available = Math.max(0, endX - valueX);
+  if (value) {
+    let v = safe(String(value));
+    // shrink long values to fit the underline
+    while (v.length > 3 && doc.getTextWidth(v) > available) {
+      v = v.slice(0, -2);
+    }
+    if (v !== safe(String(value))) v = v.replace(/.$/, "…");
+    doc.text(v, valueX, y);
+  }
   doc.setLineWidth(0.2);
-  doc.line(x + lw + 2, y + 0.8, endX, y + 0.8);
+  doc.line(valueX, y + 0.8, endX, y + 0.8);
 };
 
 const section = (
