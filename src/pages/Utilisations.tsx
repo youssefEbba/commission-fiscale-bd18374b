@@ -1020,43 +1020,29 @@ const Utilisations = () => {
                   {getFilteredRequirements().map((req) => {
                     const fileKey = String(req.id);
                     const inputId = `doc-${fileKey}`;
-                    const hasFile = !!createDocFiles[fileKey];
+                    const currentFile = createDocFiles[fileKey];
+                    const accept = req.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : f === "IMAGE" ? ".jpg,.jpeg,.png" : "").join(",");
                     return (
-                      <div key={fileKey} className={`flex items-center gap-3 p-2.5 rounded-lg border text-sm ${hasFile ? "border-emerald-300 bg-emerald-50/50" : req.obligatoire ? "border-orange-300 bg-orange-50/50" : "border-border"}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            {hasFile ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /> : req.obligatoire ? <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                            <span className="font-medium truncate">{tDocRequirementLabel(req)}</span>
-                            {req.obligatoire && <Badge variant="destructive" className="text-[10px] px-1 py-0 shrink-0">{t("utilisations:create.docs.obligatoire_badge")}</Badge>}
-                            {req.description && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild><Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" /></TooltipTrigger>
-                                  <TooltipContent><p className="max-w-xs text-xs">{req.description}</p></TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                          {hasFile && <span className="text-xs text-emerald-600 ms-5">{createDocFiles[fileKey].name}</span>}
-                        </div>
-                        <div className="shrink-0">
-                          <Label htmlFor={inputId} className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors">
-                            <Upload className="h-3 w-3" />
-                            {hasFile ? t("utilisations:create.docs.btn_replace") : t("utilisations:create.docs.btn_choose")}
-                          </Label>
-                          <input
-                            id={inputId}
-                            type="file"
-                            className="hidden"
-                            accept={req.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : f === "IMAGE" ? ".jpg,.jpeg,.png" : "").join(",")}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) setCreateDocFiles((prev) => ({ ...prev, [fileKey]: file }));
-                              e.target.value = "";
-                            }}
-                          />
-                        </div>
-                      </div>
+                      <UploadRow
+                        key={fileKey}
+                        id={inputId}
+                        label={tDocRequirementLabel(req)}
+                        required={req.obligatoire}
+                        accept={accept}
+                        file={currentFile || null}
+                        onFileChange={(f) => {
+                          setCreateDocFiles((prev) => {
+                            const next = { ...prev };
+                            if (f) next[fileKey] = f;
+                            else delete next[fileKey];
+                            return next;
+                          });
+                        }}
+                        helperText={req.description}
+                        browseLabel={t("utilisations:create.docs.btn_choose") as string}
+                        replaceLabel={t("utilisations:create.docs.btn_replace") as string}
+                        rightSlot={req.obligatoire ? <Badge variant="destructive" className="text-[10px] px-1 py-0">{t("utilisations:create.docs.obligatoire_badge")}</Badge> : undefined}
+                      />
                     );
                   })}
                 </div>
