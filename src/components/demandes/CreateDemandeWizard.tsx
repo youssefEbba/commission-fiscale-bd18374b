@@ -766,12 +766,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         placeholder={t("demandes:wizard.fields.entreprise_search_placeholder")}
                         searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
                         emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
-                        options={entreprises.map(e => ({
-                          value: String(e.id),
-                          label: e.raisonSociale || `#${e.id}`,
-                          description: e.nif ? `NIF : ${e.nif}` : undefined,
-                          keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
-                        }))}
+                        options={[...entreprises]
+                          .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                          .map(e => ({
+                            value: String(e.id),
+                            label: e.raisonSociale || `#${e.id}`,
+                            description: e.nif ? `NIF : ${e.nif}` : undefined,
+                            keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
+                          }))}
                       />
                     ) : (
                       <Card className="border-primary/30">
