@@ -1,13 +1,21 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto } from "@/lib/api";
-import emblem from "@/assets/mauritania-emblem.png";
+import emblem from "@/assets/logo-official.png";
 
 const CURRENCY = "Ouguiya";
 
+// Sanitize a string for jsPDF's built-in (Helvetica) fonts, which don't ship
+// some Unicode whitespace/dashes. In particular the narrow no-break space
+// (U+202F / U+00A0) produced by fr-FR locale formatting renders as "/".
+const safe = (s: string) =>
+  s
+    .replace(/[\u00A0\u202F\u2007]/g, " ") // narrow/no-break spaces -> normal space
+    .replace(/[\u2013\u2014]/g, "-");       // en/em dash -> hyphen
+
 const fmt = (v: any) =>
   v != null && !isNaN(Number(v))
-    ? Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    ? safe(Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
     : "";
 
 const fmtMontant = (v: any) => {
@@ -36,9 +44,19 @@ const inlineField = (
   doc.text(label, x, y);
   const lw = doc.getTextWidth(label);
   doc.setFont("helvetica", "normal");
-  if (value) doc.text(value, x + lw + 2, y);
+  const valueX = x + lw + 2;
+  const available = Math.max(0, endX - valueX);
+  if (value) {
+    let v = safe(String(value));
+    // shrink long values to fit the underline
+    while (v.length > 3 && doc.getTextWidth(v) > available) {
+      v = v.slice(0, -2);
+    }
+    if (v !== safe(String(value))) v = v.replace(/.$/, "…");
+    doc.text(v, valueX, y);
+  }
   doc.setLineWidth(0.2);
-  doc.line(x + lw + 2, y + 0.8, endX, y + 0.8);
+  doc.line(valueX, y + 0.8, endX, y + 0.8);
 };
 
 const section = (
@@ -273,9 +291,9 @@ export async function generateCertificatToSignPdf(
       width: 256,
       color: { dark: "#006633", light: "#ffffff" },
     });
-    const qrSize = 30;
+    const qrSize = 28;
     const qrX = M + W - qrSize - 4;
-    const qrY = y + h3 - qrSize - 6;
+    const qrY = y + h3 - qrSize - 10;
     doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     doc.setFontSize(7);
     doc.setFont("helvetica", "italic");
