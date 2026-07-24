@@ -39,24 +39,25 @@ const inlineField = (
   x: number,
   y: number,
   endX: number,
-) => {
+): number => {
   doc.setFont("helvetica", "bold");
   doc.text(label, x, y);
   const lw = doc.getTextWidth(label);
   doc.setFont("helvetica", "normal");
   const valueX = x + lw + 2;
-  const available = Math.max(0, endX - valueX);
-  if (value) {
-    let v = safe(String(value));
-    // shrink long values to fit the underline
-    while (v.length > 3 && doc.getTextWidth(v) > available) {
-      v = v.slice(0, -2);
-    }
-    if (v !== safe(String(value))) v = v.replace(/.$/, "…");
-    doc.text(v, valueX, y);
-  }
+  const available = Math.max(10, endX - valueX);
+  const v = value ? safe(String(value)) : "";
+  const lines: string[] = v ? (doc.splitTextToSize(v, available) as string[]) : [""];
+  if (v) doc.text(lines[0], valueX, y);
   doc.setLineWidth(0.2);
   doc.line(valueX, y + 0.8, endX, y + 0.8);
+  let cy = y;
+  for (let i = 1; i < lines.length; i++) {
+    cy += 5;
+    doc.text(lines[i], x, cy);
+    doc.line(x, cy + 0.8, endX, cy + 0.8);
+  }
+  return cy - y;
 };
 
 const section = (
@@ -173,7 +174,7 @@ export async function generateCertificatToSignPdf(
     doc.text("/", bx + 7, yy);
   }
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "NOM et PRÉNOM OU RAISON SOCIALE",
     entreprise?.raisonSociale || c.entrepriseRaisonSociale || c.entrepriseNom || "",
@@ -182,7 +183,7 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
   yy += 7;
   doc.setFont("helvetica", "bold");
   doc.text("BP", M + 4, yy);
@@ -202,15 +203,15 @@ export async function generateCertificatToSignPdf(
   y += h1 + 6;
 
   // ---------- II - Identification marché ----------
-  const h2 = 58;
+  const h2 = 74;
   section(doc, "II – IDENTIFICATION DU MARCHÉ", M, y, W, h2);
   yy = y + 8;
   const objet = [marche?.numeroMarche, marche?.intitule || c.marcheIntitule]
     .filter(Boolean)
     .join(" - ");
-  inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "MONTANT DU MARCHÉ (HT)",
     fmtMontant(marche?.montantContratHt),
@@ -219,9 +220,9 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  inlineField(doc, "DATE DE SIGNATURE", fmtDate(marche?.dateSignature), M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "DATE DE SIGNATURE", fmtDate(marche?.dateSignature), M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "COLLECTIVITÉ BÉNÉFICIAIRE DU MARCHÉ",
     convention?.autoriteContractanteNom || "",
@@ -233,9 +234,9 @@ export async function generateCertificatToSignPdf(
   doc.setFont("helvetica", "bold");
   doc.text("ORGANISME DE FINANCEMENT (NOM, ADRESSE ET TÉLÉPHONE)", M + 4, yy);
   yy += 7;
-  inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "RÉFÉRENCE CONVENTION",
     convention?.reference || convention?.projectReference || "",
