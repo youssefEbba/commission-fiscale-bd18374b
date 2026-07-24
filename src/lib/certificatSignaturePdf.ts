@@ -291,9 +291,9 @@ export async function generateCertificatToSignPdf(
       width: 256,
       color: { dark: "#006633", light: "#ffffff" },
     });
-    const qrSize = 30;
+    const qrSize = 28;
     const qrX = M + W - qrSize - 4;
-    const qrY = y + h3 - qrSize - 6;
+    const qrY = y + h3 - qrSize - 10;
     doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     doc.setFontSize(7);
     doc.setFont("helvetica", "italic");
