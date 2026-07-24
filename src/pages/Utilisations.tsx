@@ -1109,7 +1109,13 @@ const Utilisations = () => {
                   })()}
                 </SelectContent>
               </Select>
-              <Input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
+              <UploadRow
+                id="util-doc-add"
+                label={t("utilisations:docs_dialog.add_title") as string}
+                file={docFile}
+                onFileChange={setDocFile}
+                helperText={t("utilisations:docs_dialog.upload_btn") as string}
+              />
               <Button onClick={handleUpload} disabled={uploading || !docFile} className="w-full">
                 {uploading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:docs_dialog.upload_btn")}
               </Button>

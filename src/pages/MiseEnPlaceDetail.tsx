@@ -577,14 +577,14 @@ const MiseEnPlaceDetail = () => {
                           Téléchargez le certificat pré-rempli, signez-le, puis téléversez le document signé ci-dessous.
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <label className="cursor-pointer">
-                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setCertFile(e.target.files?.[0] || null)} />
-                          <div className="flex items-center gap-2 px-3 py-2 rounded border border-dashed border-muted-foreground/40 hover:border-primary text-sm text-muted-foreground hover:text-primary transition-colors">
-                            <Upload className="h-4 w-4" />
-                            {certFile ? certFile.name : t("mise_en_place:detail.president.upload_label")}
-                          </div>
-                        </label>
+                      <div className="space-y-2">
+                        <UploadRow
+                          id="mep-cert-upload"
+                          label={t("mise_en_place:detail.president.upload_label") as string}
+                          file={certFile}
+                          onFileChange={setCertFile}
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        />
                         {!certFile && (
                           <p className="text-xs text-amber-600">⚠️ {t("mise_en_place:detail.president.upload_warning")}</p>
                         )}
@@ -789,8 +789,13 @@ const MiseEnPlaceDetail = () => {
                       <div className="flex items-center justify-between gap-2">
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{tTypeDocument(code)}</Badge>
                       </div>
-                      <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                        onChange={(e) => setComplementFiles(prev => ({ ...prev, [code]: e.target.files?.[0] || null }))} />
+                      <UploadRow
+                        id={`mep-complement-${code}`}
+                        label={tTypeDocument(code)}
+                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        file={complementFiles[code] || null}
+                        onFileChange={(f) => setComplementFiles(prev => ({ ...prev, [code]: f }))}
+                      />
                       <Textarea
                         placeholder={t("mise_en_place:detail.complements.message_placeholder", { defaultValue: "Message explicatif (obligatoire)" })}
                         value={complementMessages[code] || ""}
