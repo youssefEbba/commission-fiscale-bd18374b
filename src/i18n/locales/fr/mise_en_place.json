@@ -76,7 +76,7 @@
       "no_action_for_role": "Aucune action disponible pour votre rôle."
     },
     "orgs": {
-      "title": "Statut par organisme",
+      "title": "Statut par membre",
       "labels": {
         "DGI": "DGI – Impôts",
         "DGD": "DGD – Douanes",
