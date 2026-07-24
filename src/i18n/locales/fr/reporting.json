@@ -7,6 +7,10 @@
     "load_error_fallback": "Impossible de charger les données de reporting",
     "retry": "Réessayer"
   },
+  "tabs": {
+    "app": "Reporting applicatif",
+    "stats": "Statistiques crédits d'impôt"
+  },
   "roles": {
     "PRESIDENT": "Présidence — vue nationale",
     "ADMIN_SI": "Administration — vue nationale",
