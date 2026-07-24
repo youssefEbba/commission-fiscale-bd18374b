@@ -174,7 +174,7 @@ export async function generateCertificatToSignPdf(
     doc.text("/", bx + 7, yy);
   }
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "NOM et PRÉNOM OU RAISON SOCIALE",
     entreprise?.raisonSociale || c.entrepriseRaisonSociale || c.entrepriseNom || "",
@@ -183,7 +183,7 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
   yy += 7;
   doc.setFont("helvetica", "bold");
   doc.text("BP", M + 4, yy);
