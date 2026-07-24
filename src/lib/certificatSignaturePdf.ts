@@ -203,15 +203,15 @@ export async function generateCertificatToSignPdf(
   y += h1 + 6;
 
   // ---------- II - Identification marché ----------
-  const h2 = 58;
+  const h2 = 74;
   section(doc, "II – IDENTIFICATION DU MARCHÉ", M, y, W, h2);
   yy = y + 8;
   const objet = [marche?.numeroMarche, marche?.intitule || c.marcheIntitule]
     .filter(Boolean)
     .join(" - ");
-  inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "MONTANT DU MARCHÉ (HT)",
     fmtMontant(marche?.montantContratHt),
@@ -220,9 +220,9 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  inlineField(doc, "DATE DE SIGNATURE", fmtDate(marche?.dateSignature), M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "DATE DE SIGNATURE", fmtDate(marche?.dateSignature), M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "COLLECTIVITÉ BÉNÉFICIAIRE DU MARCHÉ",
     convention?.autoriteContractanteNom || "",
@@ -234,9 +234,9 @@ export async function generateCertificatToSignPdf(
   doc.setFont("helvetica", "bold");
   doc.text("ORGANISME DE FINANCEMENT (NOM, ADRESSE ET TÉLÉPHONE)", M + 4, yy);
   yy += 7;
-  inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "RÉFÉRENCE CONVENTION",
     convention?.reference || convention?.projectReference || "",
