@@ -60,7 +60,7 @@
       "marche_detached": "Marché #{{id}} (détaché)"
     },
     "org_status": {
-      "title": "Statut par organisme",
+      "title": "Statut par membre",
       "hint": "Les rejets ne sont pas modifiables.",
       "roles": {
         "DGD": "DGD – Douanes",
@@ -114,7 +114,7 @@
       "blocked_title": "⏳ En attente du visa DGD",
       "blocked_description": "Le DGD doit valider cette demande en premier.",
       "final_decision": "Décision finale :",
-      "missing_visas": "⚠️ Tous les organismes doivent apposer leur visa avant la décision finale.",
+      "missing_visas": "⚠️ Tous les membres doivent apposer leur visa avant la décision finale.",
       "missing_roles": "Manquant : {{roles}}"
     },
     "reclamations": {

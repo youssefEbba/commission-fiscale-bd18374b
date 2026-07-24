@@ -766,12 +766,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         placeholder={t("demandes:wizard.fields.entreprise_search_placeholder")}
                         searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
                         emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
-                        options={entreprises.map(e => ({
-                          value: String(e.id),
-                          label: e.raisonSociale || `#${e.id}`,
-                          description: e.nif ? `NIF : ${e.nif}` : undefined,
-                          keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
-                        }))}
+                        options={[...entreprises]
+                          .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                          .map(e => ({
+                            value: String(e.id),
+                            label: e.raisonSociale || `#${e.id}`,
+                            description: e.nif ? `NIF : ${e.nif}` : undefined,
+                            keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
+                          }))}
                       />
                     ) : (
                       <Card className="border-primary/30">
@@ -1217,12 +1219,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         const code = (dt.codeDocument || dt.typeDocument || "") as string;
                         const label = dt.libelle || tTypeDocument(code as any);
                         return (
-                        <div
+                        <label
                           key={dt.id}
-                          className={`flex items-center gap-2 rounded-lg border p-2 transition-colors ${
+                          htmlFor={`wizard-doc-${dt.id}`}
+                          className={`group flex items-center gap-2 rounded-lg border p-2 transition-colors cursor-pointer hover:bg-accent/40 focus-within:ring-2 focus-within:ring-ring ${
                             dragOverType === code
                               ? "border-primary bg-primary/5 border-dashed"
-                              : "border-border"
+                              : docFiles[code]
+                                ? "border-emerald-300 bg-emerald-50/40"
+                                : "border-border"
                           }`}
                           onDragOver={e => handleDragOver(e, code)}
                           onDragLeave={handleDragLeave}
@@ -1241,7 +1246,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             {dt.description && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+                                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" onClick={e => e.preventDefault()} />
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-[250px] text-xs">
                                   {dt.description}
@@ -1250,7 +1255,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             )}
                           </span>
                           {docFiles[code] ? (
-                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[code].name}</span>
+                            <span className="text-xs text-emerald-700 truncate max-w-[150px]">{docFiles[code].name}</span>
                           ) : existingDocs[code] ? (
                             <span className="text-xs text-primary truncate max-w-[180px]" title={existingDocs[code].nomFichier}>
                               {t("demandes:wizard.fields.already_provided", { name: existingDocs[code].nomFichier })}
@@ -1260,21 +1265,39 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               {t("demandes:wizard.actions.drop_hint")}
                             </span>
                           )}
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              className="hidden"
-                              accept={dt.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : "image/*").join(",")}
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) setDocFiles(prev => ({ ...prev, [code]: f }));
+                          {docFiles[code] && (
+                            <button
+                              type="button"
+                              aria-label={t("demandes:wizard.actions.remove", { defaultValue: "Retirer" }) as string}
+                              className="rounded-full p-1 hover:bg-destructive/10 text-destructive"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDocFiles(prev => {
+                                  const next = { ...prev };
+                                  delete next[code];
+                                  return next;
+                                });
                               }}
-                            />
-                            <span className="text-xs text-primary hover:underline">
-                              {docFiles[code] || existingDocs[code] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
-                            </span>
-                          </label>
-                        </div>
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <input
+                            id={`wizard-doc-${dt.id}`}
+                            type="file"
+                            className="sr-only"
+                            accept={dt.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : "image/*").join(",")}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) setDocFiles(prev => ({ ...prev, [code]: f }));
+                              e.target.value = "";
+                            }}
+                          />
+                          <span className="text-xs text-primary underline-offset-2 group-hover:underline shrink-0">
+                            {docFiles[code] || existingDocs[code] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
+                          </span>
+                        </label>
                         );
                       })}
                     </div>

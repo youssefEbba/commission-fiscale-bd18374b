@@ -16,7 +16,7 @@
     "dash": "—"
   },
   "decisions": {
-    "card_title": "Décisions par organisme",
+    "card_title": "Décisions par membre",
     "refresh_aria": "Rafraîchir les décisions",
     "waiting_title": "En attente",
     "waiting_subtitle": "Aucune décision de {{role}} pour le moment.",
@@ -141,7 +141,7 @@
     },
     "response": {
       "title": "Répondre au rejet",
-      "description": "Envoyez un message de justification à l'organisme ayant émis le rejet.",
+      "description": "Envoyez un message de justification à le membre ayant émis le rejet.",
       "requested_docs": "📋 Documents demandés par ce rejet :",
       "motif_label": "Motif : {{motif}}",
       "message_placeholder": "Votre message de justification...",

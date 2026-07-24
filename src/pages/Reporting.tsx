@@ -7,13 +7,15 @@ import {
   autoriteContractanteApi, entrepriseApi, AutoriteContractanteDto, EntrepriseDto,
 } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Activity, Award } from "lucide-react";
 import { isNationalRole, getRoleLabel } from "@/components/reporting/ReportingRoleConfig";
 import ReportingFilters from "@/components/reporting/ReportingFilters";
 import ReportingKPIs from "@/components/reporting/ReportingKPIs";
 import ReportingCharts from "@/components/reporting/ReportingCharts";
+import { formatAmount } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Reporting = () => {
@@ -134,10 +136,96 @@ const Reporting = () => {
         )}
 
         {summary && (
-          <>
-            <ReportingKPIs summary={summary} role={role} />
-            <ReportingCharts summary={summary} timeseries={timeseries} role={role} />
-          </>
+          <Tabs defaultValue="app" className="space-y-4">
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="app">
+                <Activity className="h-4 w-4 me-1" />
+                {t("reporting:tabs.app", { defaultValue: "Reporting applicatif" })}
+              </TabsTrigger>
+              <TabsTrigger value="stats">
+                <Award className="h-4 w-4 me-1" />
+                {t("reporting:tabs.stats", { defaultValue: "Statistiques crédits d'impôt" })}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="app" className="space-y-6">
+              <ReportingKPIs summary={summary} role={role} />
+              <ReportingCharts summary={summary} timeseries={timeseries} role={role} />
+            </TabsContent>
+
+            <TabsContent value="stats" className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.certificats")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{summary.certificatsTotal}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:charts.montant_cordon")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xl font-bold">{formatAmount(summary.certificatFinancials.sumMontantCordon)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:charts.montant_tva_int")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xl font-bold">{formatAmount(summary.certificatFinancials.sumMontantTvaInterieure)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.solde_cordon")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xl font-bold">{formatAmount(summary.certificatFinancials.sumSoldeCordon)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.solde_tva")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xl font-bold">{formatAmount(summary.certificatFinancials.sumSoldeTva)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.taux_adoption")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{summary.demandes.tauxAdoptionPct != null ? `${summary.demandes.tauxAdoptionPct.toFixed(1)}%` : "—"}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.taux_rejet")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{summary.demandes.tauxRejetPct != null ? `${summary.demandes.tauxRejetPct.toFixed(1)}%` : "—"}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.utilisations")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{summary.utilisationsTotal}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                {t("reporting:charts.certificats_count", { count: summary.certificatFinancials.certificatCount })}
+              </p>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </DashboardLayout>

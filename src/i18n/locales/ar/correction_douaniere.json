@@ -16,7 +16,7 @@
     "dash": "—"
   },
   "decisions": {
-    "card_title": "القرارات حسب الجهة",
+    "card_title": "القرارات حسب العضو",
     "refresh_aria": "تحديث القرارات",
     "waiting_title": "في الانتظار",
     "waiting_subtitle": "لا يوجد قرار من {{role}} في الوقت الحالي.",
@@ -141,7 +141,7 @@
     },
     "response": {
       "title": "الرد على الرفض",
-      "description": "أرسل رسالة تبرير إلى الجهة التي أصدرت الرفض.",
+      "description": "أرسل رسالة تبرير إلى العضو الذي أصدر الرفض.",
       "requested_docs": "📋 الوثائق المطلوبة لهذا الرفض:",
       "motif_label": "السبب: {{motif}}",
       "message_placeholder": "رسالة التبرير الخاصة بك...",
