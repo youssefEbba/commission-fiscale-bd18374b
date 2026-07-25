@@ -914,7 +914,26 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           };
                         })}
                       />
-                    ) : (
+                    )}
+
+                    {/* Intitulé libre du marché — Phase A : requis si aucun marché sélectionné (créé à la mise en place). */}
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-sm">
+                        Intitulé du marché
+                        {!marcheId && <span className="text-destructive ms-1">*</span>}
+                      </Label>
+                      <Input
+                        value={intituleMarche}
+                        onChange={(e) => setIntituleMarche(e.target.value)}
+                        placeholder="Ex : Construction du barrage de..."
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Le marché sera créé lors de la mise en place.
+                      </p>
+                    </div>
+                    {false && (
+                      <div />
+                    {/* NOTE: fermeture originale du bloc SearchableSelect ci-dessous conservée. */}
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-primary">
