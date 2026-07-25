@@ -1213,6 +1213,22 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         </CardContent>
                       </Card>
                     )}
+
+                    {/* Phase A — Intitulé libre du marché (le marché sera créé à la mise en place). */}
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-sm">
+                        Intitulé du marché
+                        {!marcheId && <span className="text-destructive ms-1">*</span>}
+                      </Label>
+                      <Input
+                        value={intituleMarche}
+                        onChange={(e) => setIntituleMarche(e.target.value)}
+                        placeholder="Ex : Construction du barrage de..."
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Utilisé si aucun marché existant n'est sélectionné.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
