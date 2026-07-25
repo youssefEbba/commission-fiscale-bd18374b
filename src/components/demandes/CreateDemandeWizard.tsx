@@ -691,7 +691,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
-          "demande:entrepriseId", "demande:conventionId", "demande:marcheId",
+          "demande:entrepriseId", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
           "demande:typeProjet", "demande:refDossier",
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
