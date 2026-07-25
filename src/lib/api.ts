@@ -1174,6 +1174,70 @@ export const certificatCreditApi = {
     }),
 };
 
+// ============= Consultation crédits (Phase E) =============
+
+export interface CertificatCreditSearchParams {
+  nif?: string;
+  numeroMarche?: string;
+  conventionRef?: string;
+  projet?: string;
+  autoriteContractanteId?: number;
+  statut?: CertificatStatut;
+  from?: string; // ISO Instant
+  to?: string;   // ISO Instant
+  page?: number;
+  size?: number;
+}
+
+export interface CertificatCreditJournalDto {
+  certificats: PageResponse<CertificatCreditDto>;
+  nombreCredits: number;
+  totalMontantCordon: number;
+  totalMontantTVAInterieure: number;
+  totalSoldeCordon: number;
+  totalSoldeTVA: number;
+}
+
+export interface CertificatCreditFicheDto {
+  certificat: CertificatCreditDto;
+  entreprise?: EntrepriseDto;
+  convention?: ConventionDto;
+  marche?: MarcheDto;
+  autoriteContractante?: AutoriteContractanteDto;
+  intituleMarche?: string;
+  documents?: DocumentDto[];
+  utilisations?: UtilisationCreditDto[];
+  tvaStock?: TvaDeductibleStockDto[];
+}
+
+export const certificatCreditConsultation = {
+  search: (params: CertificatCreditSearchParams = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const query = qs.toString();
+    return apiFetch<PageResponse<CertificatCreditDto>>(
+      `/certificats-credit/search${query ? `?${query}` : ""}`
+    );
+  },
+  journal: (params: { from?: string; to?: string; page?: number; size?: number } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const query = qs.toString();
+    return apiFetch<CertificatCreditJournalDto>(
+      `/certificats-credit/journal${query ? `?${query}` : ""}`
+    );
+  },
+  /** Référence contenant "/" — passée en query param, encodée automatiquement. */
+  fiche: (reference: string) =>
+    apiFetch<CertificatCreditFicheDto>(
+      `/certificats-credit/fiche?reference=${encodeURIComponent(reference)}`
+    ),
+};
+
 // Utilisations de crédit (P4/P5)
 export type UtilisationStatut =
   | "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION"
