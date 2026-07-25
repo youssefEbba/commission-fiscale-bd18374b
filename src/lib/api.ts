@@ -892,6 +892,8 @@ export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE" | "ANNULE";
 
 export interface MarcheDto {
   id: number;
+  /** Référence lisible (`DM-NN/AAAA`). */
+  reference?: string;
   conventionId?: number;
   demandeCorrectionId?: number;
   numeroMarche?: string;
