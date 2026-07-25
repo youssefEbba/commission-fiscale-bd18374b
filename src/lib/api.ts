@@ -1058,6 +1058,8 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   soldeTVA?: number;
   dateCreation?: string;
   dateEmission?: string;
+  /** Date de mise en place effective (posée au passage OUVERT). Utilisée par le journal daté. */
+  dateMiseEnPlace?: string;
   dateMiseAJour?: string;
   dateValidite?: string;
   lettreCorrectionId?: number;
