@@ -1261,6 +1261,8 @@ export interface DecisionLigneRequest {
 
 export interface UtilisationCreditDto {
   id: number;
+  /** Référence lisible (`DU-NN/AAAA`). */
+  reference?: string;
   certificatCreditId: number;
   type?: UtilisationType;
   montant?: number;
