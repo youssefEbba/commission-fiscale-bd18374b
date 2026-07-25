@@ -90,6 +90,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
   const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
   const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
+  // Intitulé libre du marché (Phase A — remplace la création de marché dans le wizard de correction).
+  const [intituleMarche, setIntituleMarche, clearIntituleMarche] = usePersistedState<string>("demande:intituleMarche", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
   const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
   const [loadingData, setLoadingData] = useState(false);
