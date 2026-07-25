@@ -284,6 +284,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
+    setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
     const mf = editingDemande.modeleFiscal;
     if (mf) {
       if (mf.typeProjet) setTypeProjet(mf.typeProjet);
