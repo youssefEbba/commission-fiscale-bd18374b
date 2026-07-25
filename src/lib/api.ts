@@ -680,7 +680,13 @@ export interface CreateDemandeCorrectionRequest {
   autoriteContractanteId?: number;
   entrepriseId: number;
   conventionId?: number;
+  /** Optionnel (rétro-compat). Le marché réel est créé lors de la mise en place. */
   marcheId?: number;
+  /** Intitulé libre du marché — requis lorsque `marcheId` n'est pas fourni. */
+  intituleMarche?: string;
+  /** Défaut 0 côté back. Au moins un des deux crédits doit être > 0 à la soumission. */
+  creditExterieur?: number;
+  creditInterieur?: number;
   modeleFiscal?: ModeleFiscal;
   dqe?: Dqe;
   /** Si true, la demande reste au statut BROUILLON sans notifier les services. */
