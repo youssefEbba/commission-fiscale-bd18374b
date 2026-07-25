@@ -158,7 +158,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
 // Auth
 export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; entrepriseNomCommercial?: string; entrepriseActivite?: string; entrepriseAutre?: string; autoriteContractanteId?: number; }
+export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; entrepriseNomCommercial?: string; entrepriseActivite?: string; entrepriseAutre?: string; autoriteContractanteId?: number; acMinistereTutelleNom?: string; acMinistereTutelleCode?: string; entrepriseEtrangere?: boolean; entrepriseRegistreCommerceEtranger?: string; entrepriseGroupement?: boolean; entrepriseChefDeFileId?: number; }
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
 
 // Commission Relais (impersonation)
@@ -305,7 +305,27 @@ export const permissionApi = {
 };
 
 // Entreprises
-export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; situationFiscale?: string; nomCommercial?: string; activite?: string; autre?: string; }
+export interface EntrepriseDto {
+  id?: number;
+  raisonSociale: string;
+  nif: string;
+  adresse?: string;
+  telephone?: string;
+  email?: string;
+  situationFiscale?: string;
+  nomCommercial?: string;
+  activite?: string;
+  autre?: string;
+  /** Entreprise étrangère : NIF facultatif, `registreCommerceEtranger` requis. */
+  entrepriseEtrangere?: boolean;
+  registreCommerceEtranger?: string;
+  /** Groupement : NIF hérité du chef de file si `chefDeFileId` fourni. */
+  groupement?: boolean;
+  chefDeFileId?: number;
+  chefDeFileRaisonSociale?: string;
+  /** Lecture seule : NIF affichable (chef de file si groupement rattaché, sinon NIF propre). */
+  nifAffiche?: string;
+}
 
 export const entrepriseApi = {
   getAll: () => apiFetch<EntrepriseDto[]>("/entreprises"),
@@ -316,7 +336,7 @@ export const entrepriseApi = {
 };
 
 // Autorités Contractantes
-export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; }
+export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; ministereTutelleNom?: string; ministereTutelleCode?: string; }
 
 export const autoriteContractanteApi = {
   getAll: () => apiFetch<AutoriteContractanteDto[]>("/autorites-contractantes"),
@@ -538,6 +558,14 @@ export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" |
 export interface DemandeCorrectionDto {
   id: number;
   numero?: string;
+  /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
+  reference?: string;
+  /** Intitulé libre du marché (remplace la création de marché dans le wizard de correction). */
+  intituleMarche?: string;
+  /** Enveloppe crédit extérieur (douane). Si 0 → DGD exclue du workflow. */
+  creditExterieur?: number;
+  /** Enveloppe crédit intérieur (TVA int.). Si 0 → DGI exclue du workflow. */
+  creditInterieur?: number;
   statut: DemandeStatut;
   dateDepot?: string;
   autoriteContractanteId?: number;
@@ -652,7 +680,13 @@ export interface CreateDemandeCorrectionRequest {
   autoriteContractanteId?: number;
   entrepriseId: number;
   conventionId?: number;
+  /** Optionnel (rétro-compat). Le marché réel est créé lors de la mise en place. */
   marcheId?: number;
+  /** Intitulé libre du marché — requis lorsque `marcheId` n'est pas fourni. */
+  intituleMarche?: string;
+  /** Défaut 0 côté back. Au moins un des deux crédits doit être > 0 à la soumission. */
+  creditExterieur?: number;
+  creditInterieur?: number;
   modeleFiscal?: ModeleFiscal;
   dqe?: Dqe;
   /** Si true, la demande reste au statut BROUILLON sans notifier les services. */
@@ -858,6 +892,8 @@ export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE" | "ANNULE";
 
 export interface MarcheDto {
   id: number;
+  /** Référence lisible (`DM-NN/AAAA`). */
+  reference?: string;
   conventionId?: number;
   demandeCorrectionId?: number;
   numeroMarche?: string;
@@ -1022,6 +1058,8 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   soldeTVA?: number;
   dateCreation?: string;
   dateEmission?: string;
+  /** Date de mise en place effective (posée au passage OUVERT). Utilisée par le journal daté. */
+  dateMiseEnPlace?: string;
   dateMiseAJour?: string;
   dateValidite?: string;
   lettreCorrectionId?: number;
@@ -1136,6 +1174,70 @@ export const certificatCreditApi = {
     }),
 };
 
+// ============= Consultation crédits (Phase E) =============
+
+export interface CertificatCreditSearchParams {
+  nif?: string;
+  numeroMarche?: string;
+  conventionRef?: string;
+  projet?: string;
+  autoriteContractanteId?: number;
+  statut?: CertificatStatut;
+  from?: string; // ISO Instant
+  to?: string;   // ISO Instant
+  page?: number;
+  size?: number;
+}
+
+export interface CertificatCreditJournalDto {
+  certificats: PageResponse<CertificatCreditDto>;
+  nombreCredits: number;
+  totalMontantCordon: number;
+  totalMontantTVAInterieure: number;
+  totalSoldeCordon: number;
+  totalSoldeTVA: number;
+}
+
+export interface CertificatCreditFicheDto {
+  certificat: CertificatCreditDto;
+  entreprise?: EntrepriseDto;
+  convention?: ConventionDto;
+  marche?: MarcheDto;
+  autoriteContractante?: AutoriteContractanteDto;
+  intituleMarche?: string;
+  documents?: DocumentDto[];
+  utilisations?: UtilisationCreditDto[];
+  tvaStock?: TvaDeductibleStockDto[];
+}
+
+export const certificatCreditConsultation = {
+  search: (params: CertificatCreditSearchParams = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const query = qs.toString();
+    return apiFetch<PageResponse<CertificatCreditDto>>(
+      `/certificats-credit/search${query ? `?${query}` : ""}`
+    );
+  },
+  journal: (params: { from?: string; to?: string; page?: number; size?: number } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const query = qs.toString();
+    return apiFetch<CertificatCreditJournalDto>(
+      `/certificats-credit/journal${query ? `?${query}` : ""}`
+    );
+  },
+  /** Référence contenant "/" — passée en query param, encodée automatiquement. */
+  fiche: (reference: string) =>
+    apiFetch<CertificatCreditFicheDto>(
+      `/certificats-credit/fiche?reference=${encodeURIComponent(reference)}`
+    ),
+};
+
 // Utilisations de crédit (P4/P5)
 export type UtilisationStatut =
   | "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION"
@@ -1223,6 +1325,8 @@ export interface DecisionLigneRequest {
 
 export interface UtilisationCreditDto {
   id: number;
+  /** Référence lisible (`DU-NN/AAAA`). */
+  reference?: string;
   certificatCreditId: number;
   type?: UtilisationType;
   montant?: number;

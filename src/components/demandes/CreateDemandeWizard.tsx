@@ -90,6 +90,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
   const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
   const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
+  // Intitulé libre du marché (Phase A — remplace la création de marché dans le wizard de correction).
+  const [intituleMarche, setIntituleMarche, clearIntituleMarche] = usePersistedState<string>("demande:intituleMarche", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
   const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
   const [loadingData, setLoadingData] = useState(false);
@@ -282,6 +284,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
+    setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
     const mf = editingDemande.modeleFiscal;
     if (mf) {
       if (mf.typeProjet) setTypeProjet(mf.typeProjet);
@@ -612,6 +615,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         entrepriseId: Number(entrepriseId),
         conventionId: finalConventionId,
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
+        // Phase A : intitulé libre + enveloppes crédit (routing dynamique des visas côté back).
+        intituleMarche: intituleMarche?.trim() || selectedMarche?.intitule || undefined,
+        creditExterieur: Number(creditExterieur) || 0,
+        creditInterieur: Number(fiscalite.creditInterieur) || 0,
         modeleFiscal: {
           referenceDossier,
           typeProjet,
@@ -684,7 +691,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
-          "demande:entrepriseId", "demande:conventionId", "demande:marcheId",
+          "demande:entrepriseId", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
           "demande:typeProjet", "demande:refDossier",
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
@@ -1206,6 +1213,22 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         </CardContent>
                       </Card>
                     )}
+
+                    {/* Phase A — Intitulé libre du marché (le marché sera créé à la mise en place). */}
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-sm">
+                        Intitulé du marché
+                        {!marcheId && <span className="text-destructive ms-1">*</span>}
+                      </Label>
+                      <Input
+                        value={intituleMarche}
+                        onChange={(e) => setIntituleMarche(e.target.value)}
+                        placeholder="Ex : Construction du barrage de..."
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Utilisé si aucun marché existant n'est sélectionné.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
