@@ -336,7 +336,7 @@ export const entrepriseApi = {
 };
 
 // Autorités Contractantes
-export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; }
+export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; ministereTutelleNom?: string; ministereTutelleCode?: string; }
 
 export const autoriteContractanteApi = {
   getAll: () => apiFetch<AutoriteContractanteDto[]>("/autorites-contractantes"),
