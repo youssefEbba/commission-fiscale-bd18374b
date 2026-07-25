@@ -614,6 +614,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         entrepriseId: Number(entrepriseId),
         conventionId: finalConventionId,
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
+        // Phase A : intitulé libre + enveloppes crédit (routing dynamique des visas côté back).
+        intituleMarche: intituleMarche?.trim() || selectedMarche?.intitule || undefined,
+        creditExterieur: Number(creditExterieur) || 0,
+        creditInterieur: Number(fiscalite.creditInterieur) || 0,
         modeleFiscal: {
           referenceDossier,
           typeProjet,
