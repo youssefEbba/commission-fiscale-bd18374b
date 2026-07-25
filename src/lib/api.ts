@@ -558,6 +558,14 @@ export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" |
 export interface DemandeCorrectionDto {
   id: number;
   numero?: string;
+  /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
+  reference?: string;
+  /** Intitulé libre du marché (remplace la création de marché dans le wizard de correction). */
+  intituleMarche?: string;
+  /** Enveloppe crédit extérieur (douane). Si 0 → DGD exclue du workflow. */
+  creditExterieur?: number;
+  /** Enveloppe crédit intérieur (TVA int.). Si 0 → DGI exclue du workflow. */
+  creditInterieur?: number;
   statut: DemandeStatut;
   dateDepot?: string;
   autoriteContractanteId?: number;
