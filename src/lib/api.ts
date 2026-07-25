@@ -305,7 +305,27 @@ export const permissionApi = {
 };
 
 // Entreprises
-export interface EntrepriseDto { id?: number; raisonSociale: string; nif: string; adresse?: string; telephone?: string; email?: string; situationFiscale?: string; nomCommercial?: string; activite?: string; autre?: string; }
+export interface EntrepriseDto {
+  id?: number;
+  raisonSociale: string;
+  nif: string;
+  adresse?: string;
+  telephone?: string;
+  email?: string;
+  situationFiscale?: string;
+  nomCommercial?: string;
+  activite?: string;
+  autre?: string;
+  /** Entreprise étrangère : NIF facultatif, `registreCommerceEtranger` requis. */
+  entrepriseEtrangere?: boolean;
+  registreCommerceEtranger?: string;
+  /** Groupement : NIF hérité du chef de file si `chefDeFileId` fourni. */
+  groupement?: boolean;
+  chefDeFileId?: number;
+  chefDeFileRaisonSociale?: string;
+  /** Lecture seule : NIF affichable (chef de file si groupement rattaché, sinon NIF propre). */
+  nifAffiche?: string;
+}
 
 export const entrepriseApi = {
   getAll: () => apiFetch<EntrepriseDto[]>("/entreprises"),
