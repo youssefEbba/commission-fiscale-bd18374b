@@ -276,10 +276,12 @@ const Demandes = () => {
   const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
-    if (uploadBeforeVisa) {
+    const demande = demandes.find(d => d.id === id) || selected;
+    const requiredDoc = uploadBeforeVisaForDemande(demande);
+    if (requiredDoc) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === requiredDoc.docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
           setOffreCorrigeeOpen(true);
