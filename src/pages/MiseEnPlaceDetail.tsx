@@ -11,6 +11,8 @@ import {
   conventionApi, ConventionDto,
   DecisionCorrectionDto,
   documentRequirementApi,
+  autoriteContractanteApi,
+  type AutoriteContractanteDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -91,6 +93,7 @@ const MiseEnPlaceDetail = () => {
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [marche, setMarche] = useState<MarcheDto | null>(null);
   const [convention, setConvention] = useState<ConventionDto | null>(null);
+  const [autorite, setAutorite] = useState<AutoriteContractanteDto | null>(null);
 
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
