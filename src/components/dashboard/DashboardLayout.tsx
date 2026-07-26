@@ -84,6 +84,7 @@ const NAV_ENTRIES: NavEntry[] = [
       { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
       { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag },
       { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
+      { labelKey: "groupements", href: "/dashboard/groupements", icon: Users, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3 },
     ],
   },
