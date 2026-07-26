@@ -973,7 +973,16 @@ const DemandeDetail = () => {
                 const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
                 const isCurrentDGD = (role as string) === "DGD";
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                const dgdRequired = requiredVisas.includes("DGD");
+                const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
+                if (currentRoleExcluded) {
+                  return (
+                    <div className="rounded-lg bg-muted/40 border border-border p-3 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">{t("demandes:detail.workflow.not_required_title")}</p>
+                      <p className="mt-1">{t("demandes:detail.workflow.not_required_description")}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (
