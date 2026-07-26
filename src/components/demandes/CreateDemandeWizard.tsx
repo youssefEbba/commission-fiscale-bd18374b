@@ -376,7 +376,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.rc_etranger_required"), variant: "destructive" });
         return;
       }
-    } else if (!newEntreprise.groupement || !newEntreprise.chefDeFileId) {
+    } else {
       if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
         toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
         return;
