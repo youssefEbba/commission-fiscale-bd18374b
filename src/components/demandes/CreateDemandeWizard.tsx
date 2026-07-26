@@ -40,6 +40,7 @@ import {
   XCircle, Merge, ArrowUp, ArrowDown, File, Paperclip, Search, Check, AlertCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 
 // ── helpers ──
 const emptyImportation = (): ImportationLigne => ({
@@ -112,6 +113,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       .then(list => setGroupements(list || []))
       .catch(() => setGroupements([]));
   }, [open]);
+
+  // Create groupement inline
+  const [showCreateGroupement, setShowCreateGroupement] = useState(false);
 
   // Create enterprise inline
   const [showCreateEntreprise, setShowCreateEntreprise] = useState(false);
@@ -847,7 +851,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {titulaireType === "GROUPEMENT" ? (
                     <div className="space-y-2">
-                      <Label>{t("demandes:wizard.fields.groupement")} *</Label>
+                      <Label className="flex items-center justify-between">
+                        <span>{t("demandes:wizard.fields.groupement")} *</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-primary"
+                          onClick={() => setShowCreateGroupement(true)}
+                        >
+                          <Plus className="h-3 w-3 me-1" />
+                          {t("demandes:wizard.actions.create_short")}
+                        </Button>
+                      </Label>
                       <SearchableSelect
                         value={groupementId}
                         onValueChange={(v) => setGroupementId(v)}
@@ -1719,6 +1735,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Création d'un groupement (avec création d'entreprise membre à la volée) */}
+    <GroupementFormDialog
+      open={showCreateGroupement}
+      onOpenChange={setShowCreateGroupement}
+      onSaved={(g) => {
+        setGroupements(prev => [...prev.filter(x => x.id !== g.id), g]);
+        if (g.id) { setTitulaireType("GROUPEMENT"); setGroupementId(String(g.id)); }
+      }}
+    />
     </>
   );
 }
