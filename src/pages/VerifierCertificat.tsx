@@ -80,7 +80,10 @@ export default function VerifierCertificat() {
       const convention = marche?.conventionId
         ? await conventionApi.getById(marche.conventionId).catch(() => null)
         : null;
-      await generateCertificatToSignPdf(cert, { entreprise, marche, convention });
+      const autorite = convention?.autoriteContractanteId
+        ? await autoriteContractanteApi.getById(convention.autoriteContractanteId).catch(() => null)
+        : null;
+      await generateCertificatToSignPdf(cert, { entreprise, marche, convention, autorite });
     } catch (e: any) {
       toast({
         variant: "destructive",
