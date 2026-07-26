@@ -37,6 +37,8 @@ import TransfertDetail from "./pages/TransfertDetail";
 // import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
+import CreditsRecherche from "./pages/CreditsRecherche";
+import CreditFiche from "./pages/CreditFiche";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
 // TODO: réactiver quand le back-end Modifications/Avenants sera disponible
@@ -111,6 +113,16 @@ const App = () => (
             <Route path="/dashboard/mise-en-place/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <MiseEnPlaceDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/credits/recherche" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <CreditsRecherche />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/credits/fiche/:reference" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <CreditFiche />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={

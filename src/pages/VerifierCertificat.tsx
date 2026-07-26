@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw, Download } from "lucide-react";
-import { apiFetch, certificatCreditApi, marcheApi, entrepriseApi, conventionApi } from "@/lib/api";
+import { apiFetch, certificatCreditApi, marcheApi, entrepriseApi, conventionApi, autoriteContractanteApi } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
 import { useToast } from "@/hooks/use-toast";
@@ -80,7 +80,10 @@ export default function VerifierCertificat() {
       const convention = marche?.conventionId
         ? await conventionApi.getById(marche.conventionId).catch(() => null)
         : null;
-      await generateCertificatToSignPdf(cert, { entreprise, marche, convention });
+      const autorite = convention?.autoriteContractanteId
+        ? await autoriteContractanteApi.getById(convention.autoriteContractanteId).catch(() => null)
+        : null;
+      await generateCertificatToSignPdf(cert, { entreprise, marche, convention, autorite });
     } catch (e: any) {
       toast({
         variant: "destructive",

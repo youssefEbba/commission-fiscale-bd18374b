@@ -23,6 +23,7 @@ import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -370,9 +371,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.raison_sociale_required"), variant: "destructive" });
       return;
     }
-    if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
-      return;
+    if (newEntreprise.entrepriseEtrangere) {
+      if (!newEntreprise.registreCommerceEtranger?.trim()) {
+        toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.rc_etranger_required"), variant: "destructive" });
+        return;
+      }
+    } else if (!newEntreprise.groupement || !newEntreprise.chefDeFileId) {
+      if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
+        toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
+        return;
+      }
     }
     setCreatingEntreprise(true);
     try {
@@ -812,8 +820,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           .map(e => ({
                             value: String(e.id),
                             label: e.raisonSociale || `#${e.id}`,
-                            description: e.nif ? `NIF : ${e.nif}` : undefined,
-                            keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
+                            description: (e.nifAffiche || e.nif) ? `NIF : ${e.nifAffiche || e.nif}` : (e.registreCommerceEtranger ? `RC étranger : ${e.registreCommerceEtranger}` : undefined),
+                            keywords: `${e.raisonSociale || ""} ${e.nifAffiche || ""} ${e.nif || ""} ${e.registreCommerceEtranger || ""}`,
                           }))}
                       />
                     ) : (
@@ -831,15 +839,65 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               onChange={e => setNewEntreprise(prev => ({ ...prev, raisonSociale: e.target.value }))}
                             />
                           </div>
+                          <div className="flex flex-wrap items-center gap-4">
+                            <label className="flex items-center gap-2 text-xs">
+                              <Checkbox
+                                checked={!!newEntreprise.entrepriseEtrangere}
+                                onCheckedChange={(v) => setNewEntreprise(prev => ({ ...prev, entrepriseEtrangere: !!v }))}
+                              />
+                              {t("demandes:wizard.fields.entreprise_etrangere")}
+                            </label>
+                            <label className="flex items-center gap-2 text-xs">
+                              <Checkbox
+                                checked={!!newEntreprise.groupement}
+                                onCheckedChange={(v) => setNewEntreprise(prev => ({ ...prev, groupement: !!v, chefDeFileId: v ? prev.chefDeFileId : undefined }))}
+                              />
+                              {t("demandes:wizard.fields.groupement")}
+                            </label>
+                          </div>
+                          {newEntreprise.entrepriseEtrangere && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">{t("demandes:wizard.fields.rc_etranger")} <span className="text-destructive">*</span></Label>
+                              <Input
+                                placeholder={t("demandes:wizard.fields.rc_etranger_placeholder")}
+                                value={newEntreprise.registreCommerceEtranger || ""}
+                                onChange={e => setNewEntreprise(prev => ({ ...prev, registreCommerceEtranger: e.target.value }))}
+                              />
+                            </div>
+                          )}
+                          {newEntreprise.groupement && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">{t("demandes:wizard.fields.chef_de_file")}</Label>
+                              <SearchableSelect
+                                value={newEntreprise.chefDeFileId ? String(newEntreprise.chefDeFileId) : ""}
+                                onValueChange={(v) => setNewEntreprise(prev => ({ ...prev, chefDeFileId: v ? Number(v) : undefined }))}
+                                placeholder={t("demandes:wizard.fields.chef_de_file_placeholder")}
+                                searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
+                                emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
+                                options={[...entreprises]
+                                  .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                                  .map(e => ({
+                                    value: String(e.id),
+                                    label: e.raisonSociale || `#${e.id}`,
+                                    description: (e.nifAffiche || e.nif) ? `NIF : ${e.nifAffiche || e.nif}` : undefined,
+                                    keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
+                                  }))}
+                              />
+                            </div>
+                          )}
                           <div className="space-y-1">
-                            <Label className="text-xs">{t("demandes:wizard.fields.nif")} <span className="text-destructive">*</span> <span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span></Label>
+                            <Label className="text-xs">
+                              {t("demandes:wizard.fields.nif")}
+                              {!newEntreprise.entrepriseEtrangere && !(newEntreprise.groupement && newEntreprise.chefDeFileId) && <span className="text-destructive"> *</span>}
+                              {" "}<span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span>
+                            </Label>
                             <Input
                               placeholder={t("demandes:wizard.fields.nif_placeholder")}
                               value={newEntreprise.nif}
                               maxLength={8}
                               onChange={e => setNewEntreprise(prev => ({ ...prev, nif: e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) }))}
                             />
-                            {newEntreprise.nif && newEntreprise.nif.length !== 8 && (
+                            {!!newEntreprise.nif && newEntreprise.nif.length !== 8 && (
                               <p className="text-xs text-destructive flex items-center gap-1">
                                 <AlertCircle className="h-3 w-3" />
                                 {t("demandes:wizard.fields.nif_count", { count: newEntreprise.nif.length })}
@@ -873,7 +931,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             size="sm"
                             className="w-full"
                             onClick={handleCreateEntreprise}
-                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || newEntreprise.nif.length !== 8}
+                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || (newEntreprise.entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger?.trim() : (newEntreprise.groupement && !!newEntreprise.chefDeFileId ? false : (newEntreprise.nif || "").length !== 8))}
                           >
                             {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                             {t("demandes:wizard.fields.create_entreprise")}

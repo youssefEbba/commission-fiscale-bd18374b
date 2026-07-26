@@ -398,7 +398,13 @@
       "reference_dossier": "مرجع الملف",
       "reference_dossier_placeholder": "REF-001",
       "type_projet": "نوع المشروع",
-      "nomenclature_douaniere": "التسمية الجمركية"
+      "nomenclature_douaniere": "التسمية الجمركية",
+      "entreprise_etrangere": "شركة أجنبية",
+      "groupement": "تجمّع",
+      "rc_etranger": "السجل التجاري الأجنبي",
+      "rc_etranger_placeholder": "رقم السجل التجاري الأجنبي",
+      "chef_de_file": "الشركة الرائدة",
+      "chef_de_file_placeholder": "اختر الشركة الرائدة"
     },
     "modele_fiscal": {
       "section_parameters": "النموذج الضريبي — المعطيات",
@@ -438,7 +444,6 @@
         "tva_nette": "ض.ق.م الصافية",
         "credit_interieur": "الاعتماد الداخلي"
       }
-      
     },
     "dqe_form": {
       "section": "نموذج الجدول الكمي التقديري",
@@ -494,7 +499,8 @@
       "marche_busy_title": "الصفقة غير متاحة",
       "marche_busy_with_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط (الحالة: {{statut}}). يرجى اختيار صفقة أخرى.",
       "marche_busy_no_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط. يرجى اختيار صفقة أخرى.",
-      "credit_required": "يجب أن يكون أحد الرصيدين (الداخلي أو الخارجي) أكبر من الصفر"
+      "credit_required": "يجب أن يكون أحد الرصيدين (الداخلي أو الخارجي) أكبر من الصفر",
+      "rc_etranger_required": "السجل التجاري الأجنبي إلزامي للشركة الأجنبية."
     },
     "toast": {
       "entreprise_created": "تم إنشاء المؤسسة",

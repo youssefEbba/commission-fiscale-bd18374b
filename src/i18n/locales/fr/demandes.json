@@ -398,7 +398,13 @@
       "reference_dossier": "Référence dossier",
       "reference_dossier_placeholder": "REF-001",
       "type_projet": "Type de projet",
-      "nomenclature_douaniere": "Nomenclature douanière"
+      "nomenclature_douaniere": "Nomenclature douanière",
+      "entreprise_etrangere": "Entreprise étrangère",
+      "groupement": "Groupement",
+      "rc_etranger": "Registre de commerce étranger",
+      "rc_etranger_placeholder": "N° de registre de commerce étranger",
+      "chef_de_file": "Chef de file",
+      "chef_de_file_placeholder": "Sélectionner le chef de file"
     },
     "modele_fiscal": {
       "section_parameters": "Modèle fiscal — Paramètres",
@@ -438,7 +444,6 @@
         "tva_nette": "TVA nette",
         "credit_interieur": "Crédit intérieur"
       }
-      
     },
     "dqe_form": {
       "section": "Formulaire DQE",
@@ -494,7 +499,8 @@
       "marche_busy_title": "Marché indisponible",
       "marche_busy_with_status": "Ce marché est déjà associé à une demande de correction active (statut : {{statut}}). Veuillez en choisir un autre.",
       "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre.",
-      "credit_required": "Au moins un crédit (intérieur ou extérieur) doit être strictement supérieur à zéro"
+      "credit_required": "Au moins un crédit (intérieur ou extérieur) doit être strictement supérieur à zéro",
+      "rc_etranger_required": "Le registre de commerce étranger est obligatoire pour une entreprise étrangère."
     },
     "toast": {
       "entreprise_created": "Entreprise créée",

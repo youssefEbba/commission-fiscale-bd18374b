@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
-import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto } from "@/lib/api";
+import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 
 const CURRENCY = "Ouguiya";
@@ -90,6 +90,8 @@ export interface CertificatPdfContext {
   entreprise?: EntrepriseDto | null;
   marche?: MarcheDto | null;
   convention?: ConventionDto | null;
+  /** Autorité contractante (pour l'affichage du ministère de tutelle). */
+  autorite?: AutoriteContractanteDto | null;
 }
 
 /**
@@ -102,7 +104,7 @@ export async function generateCertificatToSignPdf(
   c: CertificatCreditDto,
   ctx: CertificatPdfContext = {},
 ) {
-  const { entreprise, marche, convention } = ctx;
+  const { entreprise, marche, convention, autorite } = ctx;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const M = 12;
@@ -148,8 +150,9 @@ export async function generateCertificatToSignPdf(
   doc.setFontSize(11);
   doc.text("N°", pageW - M - 60, 54);
   doc.setFont("helvetica", "normal");
-  const numero = c.numero || c.reference || "";
-  doc.text(numero, pageW - M - 50, 54);
+  const numero = c.numero || "";
+  const refLisible = c.reference || c.numero || "";
+  doc.text(refLisible, pageW - M - 50, 54);
   doc.setLineWidth(0.2);
   doc.line(pageW - M - 50, 55, pageW - M - 4, 55);
 
@@ -161,7 +164,7 @@ export async function generateCertificatToSignPdf(
   doc.setFontSize(9);
   let yy = y + 8;
 
-  const nifRaw = entreprise?.nif || (c as any).entrepriseNif || "";
+  const nifRaw = entreprise?.nifAffiche || entreprise?.nif || (c as any).entrepriseNif || "";
   const nifChars = String(nifRaw).padEnd(10, " ").slice(0, 10);
   doc.setFont("helvetica", "bold");
   doc.text("NIF", M + 4, yy);
@@ -203,7 +206,7 @@ export async function generateCertificatToSignPdf(
   y += h1 + 6;
 
   // ---------- II - Identification marché ----------
-  const h2 = 74;
+  const h2 = 81;
   section(doc, "II – IDENTIFICATION DU MARCHÉ", M, y, W, h2);
   yy = y + 8;
   const objet = [marche?.numeroMarche, marche?.intitule || c.marcheIntitule]
@@ -225,7 +228,18 @@ export async function generateCertificatToSignPdf(
   yy += inlineField(
     doc,
     "COLLECTIVITÉ BÉNÉFICIAIRE DU MARCHÉ",
-    convention?.autoriteContractanteNom || "",
+    convention?.autoriteContractanteNom || autorite?.nom || "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
+  yy += 7;
+  yy += inlineField(
+    doc,
+    "MINISTÈRE DE TUTELLE",
+    [autorite?.ministereTutelleNom, autorite?.ministereTutelleCode ? `(${autorite.ministereTutelleCode})` : ""]
+      .filter(Boolean)
+      .join(" "),
     M + 4,
     yy,
     M + W - 4,

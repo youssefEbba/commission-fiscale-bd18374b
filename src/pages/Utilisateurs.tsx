@@ -55,7 +55,7 @@ const Utilisateurs = () => {
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", password: "", nomComplet: "", email: "", role: "" });
-  const [acForm, setAcForm] = useState({ nom: "", sigle: "", adresse: "", telephone: "", email: "" });
+  const [acForm, setAcForm] = useState({ nom: "", sigle: "", adresse: "", telephone: "", email: "", ministereTutelleNom: "", ministereTutelleCode: "" });
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -168,13 +168,13 @@ const Utilisateurs = () => {
     try {
       let autoriteContractanteId: number | undefined;
       if (newUser.role === "AUTORITE_CONTRACTANTE") {
-        const ac = await autoriteContractanteApi.create({ nom: acForm.nom, sigle: acForm.sigle || undefined, adresse: acForm.adresse || undefined, telephone: acForm.telephone || undefined, email: acForm.email || undefined });
+        const ac = await autoriteContractanteApi.create({ nom: acForm.nom, sigle: acForm.sigle || undefined, adresse: acForm.adresse || undefined, telephone: acForm.telephone || undefined, email: acForm.email || undefined, ministereTutelleNom: acForm.ministereTutelleNom || undefined, ministereTutelleCode: acForm.ministereTutelleCode || undefined });
         autoriteContractanteId = ac.id;
       }
       await utilisateurApi.create({ username: newUser.username, password: newUser.password, role: newUser.role, nomComplet: newUser.nomComplet, email: newUser.email, autoriteContractanteId });
       toast({ title: "Succès", description: "Compte créé avec succès" });
       setNewUser({ username: "", password: "", nomComplet: "", email: "", role: "" });
-      setAcForm({ nom: "", sigle: "", adresse: "", telephone: "", email: "" });
+      setAcForm({ nom: "", sigle: "", adresse: "", telephone: "", email: "", ministereTutelleNom: "", ministereTutelleCode: "" });
       setCreateOpen(false);
       await fetchAll();
     } catch (err: any) {
@@ -457,6 +457,14 @@ const Utilisateurs = () => {
                       <div className="space-y-2">
                         <Label>Adresse</Label>
                         <Input value={acForm.adresse} onChange={(e) => setAcForm((p) => ({ ...p, adresse: e.target.value }))} placeholder="Adresse" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Ministère de tutelle</Label>
+                        <Input value={acForm.ministereTutelleNom} onChange={(e) => setAcForm((p) => ({ ...p, ministereTutelleNom: e.target.value }))} placeholder="Ex: Ministère des Finances" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Code ministère</Label>
+                        <Input value={acForm.ministereTutelleCode} onChange={(e) => setAcForm((p) => ({ ...p, ministereTutelleCode: e.target.value }))} placeholder="Ex: MF" />
                       </div>
                       <div className="space-y-2">
                         <Label>Téléphone</Label>

@@ -11,6 +11,8 @@ import {
   conventionApi, ConventionDto,
   DecisionCorrectionDto,
   documentRequirementApi,
+  autoriteContractanteApi,
+  type AutoriteContractanteDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -91,6 +93,7 @@ const MiseEnPlaceDetail = () => {
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [marche, setMarche] = useState<MarcheDto | null>(null);
   const [convention, setConvention] = useState<ConventionDto | null>(null);
+  const [autorite, setAutorite] = useState<AutoriteContractanteDto | null>(null);
 
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -167,6 +170,9 @@ const MiseEnPlaceDetail = () => {
                 try {
                   const conv = await conventionApi.getById(m.conventionId);
                   setConvention(conv);
+                  if (conv?.autoriteContractanteId) {
+                    autoriteContractanteApi.getById(conv.autoriteContractanteId).then(setAutorite).catch(() => {});
+                  }
                 } catch { /* ignore */ }
               }
             })
@@ -571,7 +577,7 @@ const MiseEnPlaceDetail = () => {
                           type="button"
                           variant="outline"
                           className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() => { void generateCertificatToSignPdf(c, { entreprise, marche, convention }); }}
+                          onClick={() => { void generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }); }}
                         >
                           <Download className="h-4 w-4 me-1" /> Télécharger le certificat à signer
                         </Button>

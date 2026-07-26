@@ -18,6 +18,7 @@ import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -49,7 +50,7 @@ const MarcheDetail = () => {
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
-  usePageTitle("marches:detail.title", { ref: marche?.numeroMarche || `#${marche?.id ?? ""}` });
+  usePageTitle("marches:detail.title", { ref: marche ? displayRef(marche) : "" });
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
@@ -128,7 +129,7 @@ const MarcheDetail = () => {
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <Gavel className="h-6 w-6 text-primary" />
-                {marche.numeroMarche || t("marches:detail.title_fallback", { id: marche.id })}
+                {displayRef(marche)}
               </h1>
               <p className="text-muted-foreground text-sm mt-1">{marche.intitule || "—"}</p>
             </div>
@@ -206,7 +207,7 @@ const MarcheDetail = () => {
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={t("marches:ged.title", { ref: marche.numeroMarche || `#${marche.id}` })}
+        title={t("marches:ged.title", { ref: displayRef(marche) })}
         dossierId={marche.id}
         documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
