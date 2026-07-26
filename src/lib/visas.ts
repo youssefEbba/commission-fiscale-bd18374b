@@ -70,18 +70,15 @@ export function isRoleExcluded(role: string | null | undefined, d: CreditsSource
   return false;
 }
 
-/** Document à uploader obligatoirement avant le visa, selon le rôle et le circuit dynamique.
- *  - DGD upload l'Offre Fiscale Corrigée quand il est requis.
- *  - DGI upload l'Offre Fiscale Corrigée quand il est requis ET que le DGD est exclu ;
- *    sinon il upload le Crédit Intérieur.
+/** Document à uploader obligatoirement avant le visa, selon le rôle.
+ *  - DGD : Offre Fiscale Corrigée.
+ *  - DGI : uniquement Crédit Intérieur.
  */
 export function getPreVisaDocument(role: string | null | undefined, d: CreditsSource | null | undefined): { docType: string } | undefined {
   if (!role) return undefined;
   const required = requiredVisasCorrection(d);
-  const dgdRequired = required.includes("DGD");
-  const dgiRequired = required.includes("DGI");
-  if (role === "DGD" && dgdRequired) return { docType: "OFFRE_FISCALE_CORRIGEE" };
-  if (role === "DGI" && dgiRequired) return { docType: dgdRequired ? "CREDIT_INTERIEUR" : "OFFRE_FISCALE_CORRIGEE" };
+  if (role === "DGD" && required.includes("DGD")) return { docType: "OFFRE_FISCALE_CORRIGEE" };
+  if (role === "DGI" && required.includes("DGI")) return { docType: "CREDIT_INTERIEUR" };
   return undefined;
 }
 
