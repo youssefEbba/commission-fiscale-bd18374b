@@ -59,6 +59,7 @@
       "marche_fallback": "Marché #{{id}}",
       "marche_detached": "Marché #{{id}} (détaché)"
     },
+    "generate_adoption_letter": "Télécharger la lettre d'adoption",
     "org_status": {
       "title": "Statut par membre",
       "hint": "Les rejets ne sont pas modifiables.",
