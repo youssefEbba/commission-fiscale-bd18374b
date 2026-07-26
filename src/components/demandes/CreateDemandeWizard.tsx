@@ -1378,22 +1378,36 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_recap")}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</p>
-                    <p className="text-lg font-bold">{fmt(creditExterieur)}</p>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={creditExtManuel}
+                      placeholder={String(creditExterieurCalc || 0)}
+                      onChange={e => setCreditExtManuel(e.target.value)}
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_interieur")}</p>
-                    <p className="text-lg font-bold">{fmt(fiscalite.creditInterieur)}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_interieur")}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={creditIntManuel}
+                      placeholder={String(fiscalite.creditInterieur || 0)}
+                      onChange={e => setCreditIntManuel(e.target.value)}
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</p>
-                    <p className="text-xl font-bold text-primary">{fmt(creditTotal)}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</Label>
+                    <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.credit_hint")}</p>
               </CardContent>
+
             </Card>
           </div>
         )}
