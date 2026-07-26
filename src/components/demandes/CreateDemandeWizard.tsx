@@ -1316,6 +1316,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
                     </div>
                   </div>
+                  {(() => {
+                    const visas = requiredVisasCorrection({ creditInterieur, creditExterieur });
+                    const exclus = (["DGD", "DGI"] as const).filter(o => !visas.includes(o));
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        {t("demandes:wizard.modele_fiscal.visas_preview", { list: visas.join(", ") })}
+                        {exclus.length > 0 && ` — ${t("demandes:wizard.modele_fiscal.visas_excluded", { list: exclus.join(", ") })}`}
+                      </p>
+                    );
+                  })()}
                 </div>
 
 
