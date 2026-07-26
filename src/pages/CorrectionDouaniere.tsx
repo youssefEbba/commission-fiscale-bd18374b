@@ -225,7 +225,7 @@ const CorrectionDouaniere = () => {
   };
 
   const userRole = user?.role;
-  const uploadReq = userRole ? UPLOAD_REQUIRED_ROLES[userRole] : null;
+  const uploadReq = getPreVisaDocument(userRole, demande);
   const uploadReqLabel = uploadReq ? tTypeDocument(uploadReq.docType) : "";
   const hasUploadedRequiredDoc = uploadReq ? docs.some(d => d.type === uploadReq.docType) : true;
 
