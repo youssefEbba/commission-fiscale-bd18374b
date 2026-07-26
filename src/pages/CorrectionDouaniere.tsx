@@ -42,6 +42,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 import { API_BASE } from "@/lib/apiConfig";
+import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
