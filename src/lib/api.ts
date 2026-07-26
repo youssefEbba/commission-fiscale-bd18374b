@@ -319,11 +319,7 @@ export interface EntrepriseDto {
   /** Entreprise étrangère : NIF facultatif, `registreCommerceEtranger` requis. */
   entrepriseEtrangere?: boolean;
   registreCommerceEtranger?: string;
-  /** Groupement : NIF hérité du chef de file si `chefDeFileId` fourni. */
-  groupement?: boolean;
-  chefDeFileId?: number;
-  chefDeFileRaisonSociale?: string;
-  /** Lecture seule : NIF affichable (chef de file si groupement rattaché, sinon NIF propre). */
+  /** Lecture seule : NIF affichable. */
   nifAffiche?: string;
 }
 
@@ -334,6 +330,39 @@ export const entrepriseApi = {
   update: (id: number, data: EntrepriseDto) => apiFetch<EntrepriseDto>(`/entreprises/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/entreprises/${id}`, { method: "DELETE" }),
 };
+
+// Groupements d'entreprises
+export interface GroupementDto {
+  id?: number;
+  raisonSociale: string;
+  nomCommercial?: string;
+  adresse?: string;
+  autre?: string;
+  situationFiscale?: string;
+  actif?: boolean;
+  chefDeFileId: number;
+  membreIds: number[];
+  /** Lecture seule */
+  chefDeFileRaisonSociale?: string;
+  membres?: EntrepriseDto[];
+  /** Lecture seule : NIF du chef de file. */
+  nifAffiche?: string;
+  dateCreation?: string;
+  dateModification?: string;
+}
+
+export type GroupementWriteDto = Pick<GroupementDto,
+  "raisonSociale" | "nomCommercial" | "adresse" | "autre" | "situationFiscale" | "actif" | "chefDeFileId" | "membreIds">;
+
+export const groupementApi = {
+  getAll: (actifs?: boolean) =>
+    apiFetch<GroupementDto[]>(`/groupements${actifs ? "?actifs=true" : ""}`),
+  getById: (id: number) => apiFetch<GroupementDto>(`/groupements/${id}`),
+  create: (data: GroupementWriteDto) => apiFetch<GroupementDto>("/groupements", { method: "POST", body: data }),
+  update: (id: number, data: GroupementWriteDto) => apiFetch<GroupementDto>(`/groupements/${id}`, { method: "PUT", body: data }),
+  delete: (id: number) => apiFetch<void>(`/groupements/${id}`, { method: "DELETE" }),
+};
+
 
 // Autorités Contractantes
 export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; ministereTutelleNom?: string; ministereTutelleCode?: string; }
