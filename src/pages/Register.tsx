@@ -6,6 +6,7 @@ import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
@@ -47,7 +48,9 @@ const Register = () => {
     email: "",
     activite: "",
     autre: "",
+    registreCommerceEtranger: "",
   });
+  const [entrepriseEtrangere, setEntrepriseEtrangere] = useState(false);
 
   const [newAC, setNewAC] = useState({
     nom: "",
@@ -55,6 +58,8 @@ const Register = () => {
     adresse: "",
     telephone: "",
     email: "",
+    ministereTutelleNom: "",
+    ministereTutelleCode: "",
   });
 
   const validatePhone = (phone: string) => {
@@ -93,13 +98,17 @@ const Register = () => {
       };
 
       if (form.role === "ENTREPRISE") {
-        if (!newEntreprise.raisonSociale || !newEntreprise.nif) {
+        if (!newEntreprise.raisonSociale || (entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger : !newEntreprise.nif)) {
           toast({ title: t("register.errors.title"), description: t("register.errors.entreprise_required"), variant: "destructive" });
           setLoading(false);
           return;
         }
         registerData.entrepriseRaisonSociale = newEntreprise.raisonSociale;
-        registerData.entrepriseNif = newEntreprise.nif;
+        registerData.entrepriseNif = newEntreprise.nif || undefined;
+        if (entrepriseEtrangere) {
+          registerData.entrepriseEtrangere = true;
+          registerData.entrepriseRegistreCommerceEtranger = newEntreprise.registreCommerceEtranger;
+        }
         registerData.entrepriseAdresse = newEntreprise.adresse;
         registerData.entrepriseSituationFiscale = "";
         if (newEntreprise.nomCommercial) registerData.entrepriseNomCommercial = newEntreprise.nomCommercial;
@@ -118,6 +127,8 @@ const Register = () => {
         registerData.acAdresse = newAC.adresse;
         registerData.acTelephone = newAC.telephone;
         registerData.acEmail = newAC.email;
+        if (newAC.ministereTutelleNom) registerData.acMinistereTutelleNom = newAC.ministereTutelleNom;
+        if (newAC.ministereTutelleCode) registerData.acMinistereTutelleCode = newAC.ministereTutelleCode;
       }
 
       await authApi.register(registerData);
@@ -210,10 +221,21 @@ const Register = () => {
                     <Label className="text-xs">{t("register.entreprise.nom_commercial")}</Label>
                     <Input value={newEntreprise.nomCommercial} onChange={(e) => updateEntreprise("nomCommercial", e.target.value)} placeholder={t("register.entreprise.nom_commercial_placeholder")} />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.entreprise.nif")}</Label>
-                    <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder={t("register.entreprise.nif_placeholder")} required />
-                  </div>
+                  <label className="flex items-center gap-2 text-xs">
+                    <Checkbox checked={entrepriseEtrangere} onCheckedChange={(v) => setEntrepriseEtrangere(!!v)} />
+                    {t("register.entreprise.etrangere")}
+                  </label>
+                  {entrepriseEtrangere ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("register.entreprise.rc_etranger")}</Label>
+                      <Input value={newEntreprise.registreCommerceEtranger} onChange={(e) => updateEntreprise("registreCommerceEtranger", e.target.value)} placeholder={t("register.entreprise.rc_etranger_placeholder")} required />
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("register.entreprise.nif")}</Label>
+                      <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder={t("register.entreprise.nif_placeholder")} required />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs">{t("register.entreprise.activite")}</Label>
                     <Input value={newEntreprise.activite} onChange={(e) => updateEntreprise("activite", e.target.value)} placeholder={t("register.entreprise.activite_placeholder")} />
@@ -255,6 +277,16 @@ const Register = () => {
                   <div className="space-y-1">
                     <Label className="text-xs">{t("register.ac.sigle")}</Label>
                     <Input value={newAC.sigle} onChange={(e) => updateAC("sigle", e.target.value)} placeholder={t("register.ac.sigle_placeholder")} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("register.ac.ministere_nom")}</Label>
+                      <Input value={newAC.ministereTutelleNom} onChange={(e) => updateAC("ministereTutelleNom", e.target.value)} placeholder={t("register.ac.ministere_nom_placeholder")} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("register.ac.ministere_code")}</Label>
+                      <Input value={newAC.ministereTutelleCode} onChange={(e) => updateAC("ministereTutelleCode", e.target.value)} placeholder={t("register.ac.ministere_code_placeholder")} />
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("register.ac.adresse")}</Label>
