@@ -10,6 +10,7 @@ import {
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
+import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection } from "@/lib/visas";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
