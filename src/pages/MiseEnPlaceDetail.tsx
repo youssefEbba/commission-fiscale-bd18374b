@@ -34,6 +34,7 @@ import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -220,7 +221,7 @@ const MiseEnPlaceDetail = () => {
 
   const c = certificat;
   const entrepriseName = c.entrepriseNom || entreprise?.raisonSociale || "—";
-  const correctionRef = c.demandeCorrectionNumero || (correction ? correction.numero || `#${correction.id}` : "—");
+  const correctionRef = (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
   const marcheRef = c.marcheIntitule || marche?.numeroMarche || "—";
   // Devise affichée pour les montants — celle du marché si dispo, sinon MRU.
   const currency = (marche as any)?.deviseOrigine || "MRU";

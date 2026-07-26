@@ -20,6 +20,7 @@ import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCar
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource, tDocRequirementLabel } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -76,7 +77,7 @@ const CertificatDetail = () => {
   const role = (user as any)?.role;
   const canUpload = role === "ENTREPRISE" || role === "ADMIN_SI" || role === "DGTCP";
 
-  const certRef = certificat?.numero || certificat?.reference || (certificat ? `#${certificat.id}` : "");
+  const certRef = certificat ? displayRef(certificat) : "";
   usePageTitle("certificats:detail.title", { ref: certRef });
 
   useEffect(() => {

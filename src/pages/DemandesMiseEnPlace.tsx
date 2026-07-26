@@ -33,6 +33,7 @@ import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -418,7 +419,7 @@ const DemandesMiseEnPlace = () => {
   });
 
   const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId && entrepriseCache[c.entrepriseId]?.raisonSociale) || "—";
-  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId]?.numero) || "—";
+  const getCorrectionName = (c: CertificatCreditDto) => (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId] ? displayRef(correctionCache[c.demandeCorrectionId]) : c.demandeCorrectionNumero) || "—";
   const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
@@ -743,8 +744,8 @@ const DemandesMiseEnPlace = () => {
                   const locked = lockedCorrectionIds.has(c.id);
                   return {
                     value: String(c.id),
-                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
-                    keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
+                    label: `${displayRef(c)} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
+                    keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
                     disabled: locked,
                   };
                 })}
@@ -762,7 +763,7 @@ const DemandesMiseEnPlace = () => {
                 <CardContent className="p-3 text-sm">
                   <p className="font-semibold mb-1">{t("mise_en_place:dialogs.create.selected_title")}</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
@@ -859,8 +860,8 @@ const DemandesMiseEnPlace = () => {
                   const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
                   return {
                     value: String(c.id),
-                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
-                    keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
+                    label: `${displayRef(c)} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
+                    keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
                     disabled: locked,
                   };
                 })}
@@ -872,7 +873,7 @@ const DemandesMiseEnPlace = () => {
                 <CardContent className="p-3 text-sm">
                   <p className="font-semibold mb-1">{t("mise_en_place:dialogs.create.selected_title")}</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
@@ -1074,7 +1075,7 @@ const DemandesMiseEnPlace = () => {
             return (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.numero")}</span><p className="font-medium">{corr.numero || `#${corr.id}`}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.numero")}</span><p className="font-medium">{displayRef(corr)}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{corr.statut}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.entreprise")}</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.ac")}</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
