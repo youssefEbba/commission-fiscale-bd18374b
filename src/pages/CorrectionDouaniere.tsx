@@ -11,6 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
+import { displayRef } from "@/lib/displayRef";
 import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
@@ -321,7 +322,13 @@ const CorrectionDouaniere = () => {
     } finally { setResponseLoading(false); }
   };
 
-  const isDirection = userRole && DECISION_ROLES.includes(userRole);
+  // Phase A — routing dynamique : un organisme dont l'enveloppe est nulle est exclu du workflow.
+  const dgdRequired = Number(demande?.creditExterieur ?? 0) > 0;
+  const dgiRequired = Number(demande?.creditInterieur ?? 0) > 0;
+  const visibleDecisionRoles = DECISION_ROLES.filter(r => (r !== "DGD" || dgdRequired) && (r !== "DGI" || dgiRequired));
+  const isRoleConcerned = !userRole || ((userRole !== "DGD" || dgdRequired) && (userRole !== "DGI" || dgiRequired));
+  const effectiveActiveOrg = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
+  const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";
   const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE" || demande?.statut === "ANNULEE";
@@ -335,7 +342,7 @@ const CorrectionDouaniere = () => {
   const dgdHasVisa = decisions.some(d => d.role === "DGD" && d.decision === "VISA");
   const isDGD = userRole === "DGD";
   const isPresident = userRole === "PRESIDENT";
-  const blockedByDgd = !isDGD && !isPresident && !dgdHasVisa;
+  const blockedByDgd = dgdRequired && !isDGD && !isPresident && !dgdHasVisa;
 
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
   const dash = t("correction_douaniere:info.dash");
@@ -350,7 +357,7 @@ const CorrectionDouaniere = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              {t("correction_douaniere:page.title_with_number", { numero: demande?.numero || `#${id}` })}
+              {t("correction_douaniere:page.title_with_number", { numero: demande ? displayRef(demande) : `#${id}` })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">{t("correction_douaniere:page.subtitle")}</p>
           </div>
@@ -369,7 +376,7 @@ const CorrectionDouaniere = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">{t("correction_douaniere:info.numero")}</span>
-                      <p className="font-medium">{demande.numero || `#${demande.id}`}</p>
+                      <p className="font-medium">{displayRef(demande)}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">{t("correction_douaniere:info.statut")}</span>
@@ -406,7 +413,7 @@ const CorrectionDouaniere = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex border-b border-border mb-4 overflow-x-auto">
-                    {DECISION_ROLES.map((role) => {
+                    {visibleDecisionRoles.map((role) => {
                       const roleDecs = decisions.filter(d => d.role === role);
                       const orgHasVisa = roleDecs.some(d => d.decision === "VISA");
                       const orgHasRejets = roleDecs.some(d => d.decision === "REJET_TEMP");
@@ -416,7 +423,7 @@ const CorrectionDouaniere = () => {
                           key={role}
                           onClick={() => setActiveOrg(role)}
                           className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                            activeOrg === role ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                            effectiveActiveOrg === role ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                           }`}
                         >
                           {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" />
@@ -430,7 +437,7 @@ const CorrectionDouaniere = () => {
 
                   {(() => {
                     const roleDecs = decisions
-                      .filter(d => d.role === activeOrg)
+                      .filter(d => d.role === effectiveActiveOrg)
                       .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime());
                     const activeDecs = roleDecs.filter(d => d.decision === "VISA" || (d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU"));
                     const resolvedDecs = roleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
@@ -440,7 +447,7 @@ const CorrectionDouaniere = () => {
                         <div className="text-center py-8 text-muted-foreground">
                           <div className="h-10 w-10 rounded-full border-2 border-muted-foreground/20 mx-auto mb-3" />
                           <p className="text-sm font-medium">{t("correction_douaniere:decisions.waiting_title")}</p>
-                          <p className="text-xs mt-1">{t("correction_douaniere:decisions.waiting_subtitle", { role: t(`correction_douaniere:decision_roles.${activeOrg}`) })}</p>
+                          <p className="text-xs mt-1">{t("correction_douaniere:decisions.waiting_subtitle", { role: t(`correction_douaniere:decision_roles.${effectiveActiveOrg}`) })}</p>
                         </div>
                       );
                     }

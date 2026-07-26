@@ -31,6 +31,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -460,7 +461,11 @@ const Demandes = () => {
   const filtered = demandes.filter((d) => {
     if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) return false;
     if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) return false;
+    // Phase A — routing dynamique des visas : un organisme dont l'enveloppe est nulle est exclu du workflow.
+    if (role === "DGD" && Number(d.creditExterieur ?? 0) <= 0) return false;
+    if (role === "DGI" && Number(d.creditInterieur ?? 0) <= 0) return false;
     const matchSearch =
+      displayRef(d).toLowerCase().includes(search.toLowerCase()) ||
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.autoriteContractanteNom || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.entrepriseRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -542,7 +547,7 @@ const Demandes = () => {
                   ) : (
                     filtered.map((d) => (
                       <TableRow key={d.id}>
-                        <TableCell className="font-medium">{d.numero || `#${d.id}`}</TableCell>
+                        <TableCell className="font-medium">{displayRef(d)}</TableCell>
                         <TableCell className="text-muted-foreground">{d.autoriteContractanteNom || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{d.entrepriseRaisonSociale || "—"}</TableCell>
                         <TableCell>
@@ -556,7 +561,8 @@ const Demandes = () => {
                             const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
                             const isCurrentDGD = (role as string) === "DGD";
                             const isPres = (role as string) === "PRESIDENT";
-                            const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                            const dgdRequired = Number(d.creditExterieur ?? 0) > 0;
+                            const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
                             const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
