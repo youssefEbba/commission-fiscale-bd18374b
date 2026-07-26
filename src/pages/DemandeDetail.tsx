@@ -1007,7 +1007,7 @@ const DemandeDetail = () => {
               {(() => {
                 const hasFinalTransitions = transitions.some(tr => tr.isDecisionFinale && tr.from.includes(selected.statut));
                 if (!hasFinalTransitions) return null;
-                const REQUIRED_ROLES = ["DGD", "DGTCP", "DGI", "DGB"];
+                const REQUIRED_ROLES = requiredVisasCorrection(selected as any) as string[];
                 const allValidated = REQUIRED_ROLES.every(rr => decs.some(d => d.role === rr && d.decision === "VISA"));
                 const missingRoles = REQUIRED_ROLES.filter(rr => !decs.some(d => d.role === rr && d.decision === "VISA"));
                 return (
