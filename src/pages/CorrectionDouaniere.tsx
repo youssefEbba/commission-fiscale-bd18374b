@@ -423,7 +423,7 @@ const CorrectionDouaniere = () => {
                           key={role}
                           onClick={() => setActiveOrg(role)}
                           className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                            activeOrg === role ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                            effectiveActiveOrg === role ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                           }`}
                         >
                           {orgHasVisa ? <CheckCircle className="h-3.5 w-3.5 text-green-600" />
@@ -437,7 +437,7 @@ const CorrectionDouaniere = () => {
 
                   {(() => {
                     const roleDecs = decisions
-                      .filter(d => d.role === activeOrg)
+                      .filter(d => d.role === effectiveActiveOrg)
                       .sort((a, b) => new Date(b.dateDecision || 0).getTime() - new Date(a.dateDecision || 0).getTime());
                     const activeDecs = roleDecs.filter(d => d.decision === "VISA" || (d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU"));
                     const resolvedDecs = roleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
@@ -447,7 +447,7 @@ const CorrectionDouaniere = () => {
                         <div className="text-center py-8 text-muted-foreground">
                           <div className="h-10 w-10 rounded-full border-2 border-muted-foreground/20 mx-auto mb-3" />
                           <p className="text-sm font-medium">{t("correction_douaniere:decisions.waiting_title")}</p>
-                          <p className="text-xs mt-1">{t("correction_douaniere:decisions.waiting_subtitle", { role: t(`correction_douaniere:decision_roles.${activeOrg}`) })}</p>
+                          <p className="text-xs mt-1">{t("correction_douaniere:decisions.waiting_subtitle", { role: t(`correction_douaniere:decision_roles.${effectiveActiveOrg}`) })}</p>
                         </div>
                       );
                     }
