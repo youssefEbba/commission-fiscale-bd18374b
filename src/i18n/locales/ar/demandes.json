@@ -480,6 +480,7 @@
       "no_ac_associated": "حسابك ليس مرتبطاً بعد بسلطة متعاقدة. يرجى الاتصال بالمسؤول.",
       "entreprise_required": "يرجى اختيار مؤسسة",
       "convention_or_marche_required": "يرجى اختيار اتفاقية أو صفقة",
+      "intitule_marche_required": "يرجى إدخال عنوان الصفقة",
       "save_failed": "فشل الحفظ",
       "submit_failed": "فشل الإرسال",
       "merge_impossible_title": "تعذر الدمج",

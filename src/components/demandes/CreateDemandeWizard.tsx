@@ -599,11 +599,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.entreprise_required"), variant: "destructive" });
       return;
     }
-    // En soumission ferme, conv/marché obligatoire ; en brouillon on est plus tolérant.
-    if (!asBrouillon && !conventionId && !marcheId) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_or_marche_required"), variant: "destructive" });
+    // Phase A : plus de création de marché obligatoire. En soumission ferme,
+    // il faut soit un marché/convention lié, soit un intitulé de marché libre.
+    if (!asBrouillon && !conventionId && !marcheId && !intituleMarche?.trim()) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.intitule_marche_required"), variant: "destructive" });
       return;
     }
+
 
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
