@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
-import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto } from "@/lib/api";
+import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 
 const CURRENCY = "Ouguiya";
@@ -206,7 +206,7 @@ export async function generateCertificatToSignPdf(
   y += h1 + 6;
 
   // ---------- II - Identification marché ----------
-  const h2 = 74;
+  const h2 = 81;
   section(doc, "II – IDENTIFICATION DU MARCHÉ", M, y, W, h2);
   yy = y + 8;
   const objet = [marche?.numeroMarche, marche?.intitule || c.marcheIntitule]
