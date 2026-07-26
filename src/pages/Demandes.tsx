@@ -615,6 +615,11 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 me-2" /> {t("demandes:actions.view")}
                                   </DropdownMenuItem>
+                                  {role === "PRESIDENT" && d.statut === "EN_VALIDATION" && !d.documents?.some(doc => ((doc as any).codeDocument ?? doc.type) === "LETTRE_ADOPTION" && doc.actif !== false) && (
+                                    <DropdownMenuItem onClick={() => handleGenerateAdoptionLetter(d)}>
+                                      <Download className="h-4 w-4 me-2" /> {t("demandes:actions.generate_adoption_letter")}
+                                    </DropdownMenuItem>
+                                  )}
                                   {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
                                     <>
                                       <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>
