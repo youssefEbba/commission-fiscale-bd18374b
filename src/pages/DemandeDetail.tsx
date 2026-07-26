@@ -549,7 +549,7 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
                   <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openConventionDetail(selected.conventionId!)}>
-                    {selected.conventionReference || selected.conventionIntitule || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
+                    {selected.conventionIntitule || selected.conventionReference || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
                   </button>
                 ) : (
                   <p className="font-medium text-muted-foreground">—</p>
@@ -559,8 +559,12 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
                   <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openMarcheDetail(selected.marcheId!)}>
-                    {selected.marcheNumero || selected.marcheIntitule || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
+                    {selected.marcheIntitule || (selected as any).intituleMarche || selected.marcheNumero || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
                   </button>
+                ) : (selected as any).intituleMarche ? (
+                  <p className="font-medium">{(selected as any).intituleMarche}</p>
+                ) : selected.marcheIntitule ? (
+                  <p className="font-medium">{selected.marcheIntitule}</p>
                 ) : selected.marcheIdTrace ? (
                   <p className="font-medium text-muted-foreground italic">
                     {t("demandes:detail.fields.marche_detached", { id: selected.marcheIdTrace })}
@@ -569,6 +573,7 @@ const DemandeDetail = () => {
                   <p className="font-medium text-muted-foreground">—</p>
                 )}
               </div>
+
             </div>
           </CardContent>
         </Card>
