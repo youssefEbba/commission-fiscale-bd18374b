@@ -19,6 +19,7 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   formatApiErrorMessage,
 } from "@/lib/api";
+import { requiredVisasCorrection } from "@/lib/visas";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
