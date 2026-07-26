@@ -1031,6 +1031,12 @@ const DemandeDetail = () => {
                             {tTransition(tr.labelKey)}
                           </Button>
                         ))}
+                        {role === "PRESIDENT" && selected.statut === "EN_VALIDATION" && !docs.some(d => ((d as any).codeDocument ?? d.type) === "LETTRE_ADOPTION" && d.actif !== false) && (
+                          <Button variant="outline" onClick={handleGenerateAdoptionLetter}>
+                            <Download className="h-4 w-4 me-1" />
+                            {t("demandes:detail.generate_adoption_letter")}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
