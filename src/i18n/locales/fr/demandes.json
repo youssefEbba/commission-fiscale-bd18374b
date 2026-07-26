@@ -448,7 +448,9 @@
         "tva_deductible": "TVA déductible (douane)",
         "tva_nette": "TVA nette",
         "credit_interieur": "Crédit intérieur"
-      }
+      },
+      "visas_preview": "Visas requis : {{list}}",
+      "visas_excluded": "{{list}} non concernée(s)"
     },
     "dqe_form": {
       "section": "Formulaire DQE",

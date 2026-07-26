@@ -42,6 +42,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 import { API_BASE } from "@/lib/apiConfig";
+import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -323,10 +324,11 @@ const CorrectionDouaniere = () => {
   };
 
   // Phase A — routing dynamique : un organisme dont l'enveloppe est nulle est exclu du workflow.
-  const dgdRequired = Number(demande?.creditExterieur ?? 0) > 0;
-  const dgiRequired = Number(demande?.creditInterieur ?? 0) > 0;
-  const visibleDecisionRoles = DECISION_ROLES.filter(r => (r !== "DGD" || dgdRequired) && (r !== "DGI" || dgiRequired));
-  const isRoleConcerned = !userRole || ((userRole !== "DGD" || dgdRequired) && (userRole !== "DGI" || dgiRequired));
+  const requiredVisas = requiredVisasCorrection(demande);
+  const dgdRequired = requiredVisas.includes("DGD");
+  const dgiRequired = requiredVisas.includes("DGI");
+  const visibleDecisionRoles = DECISION_ROLES.filter(r => r === "PRESIDENT" || requiredVisas.includes(r as any));
+  const isRoleConcerned = !userRole || !isRoleExcluded(userRole, demande);
   const effectiveActiveOrg = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";

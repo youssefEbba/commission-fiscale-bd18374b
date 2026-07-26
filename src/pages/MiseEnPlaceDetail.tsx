@@ -37,6 +37,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -237,8 +238,15 @@ const MiseEnPlaceDetail = () => {
   const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const myHasOpenRejet = myOpenRejets.length > 0;
 
-  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string);
-  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string);
+  // Routing dynamique des visas : les crédits proviennent de la demande de correction liée.
+  const requiredVisas = requiredVisasCertificat(correction);
+  const dgdRequired = requiredVisas.includes("DGD");
+  const dgiRequired = requiredVisas.includes("DGI");
+  const visibleDecisionRoles = DECISION_ROLES_LIST.filter(r => r === "PRESIDENT" || requiredVisas.includes(r as any));
+  const roleExcluded = isRoleExcluded(role as string, correction);
+
+  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string) && !roleExcluded;
+  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string) && !roleExcluded;
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
 
@@ -373,8 +381,8 @@ const MiseEnPlaceDetail = () => {
     } finally { setUploadingCert(false); }
   };
 
-  // ====== Tab d'organisme actif ======
-  const r = activeOrg;
+  // ====== Tab d'organisme actif (les organismes exclus ne sont pas affichés) ======
+  const r = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const roleDecs = decisions.filter(d => d.role === r);
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
@@ -629,13 +637,13 @@ const MiseEnPlaceDetail = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">{t("mise_en_place:detail.orgs.title")}</h3>
             <div className="flex border-b border-border mb-3 gap-0">
-              {DECISION_ROLES_LIST.map((orgRole) => {
+              {visibleDecisionRoles.map((orgRole) => {
                 const orgDecs = decisions.filter(d => d.role === orgRole);
                 const orgHasVisa = orgDecs.some(d => d.decision === "VISA");
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
-                const isActive = activeOrg === orgRole;
+                const isActive = r === orgRole;
                 const orgValidated = orgRole === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut);
                 return (
                   <button key={orgRole} onClick={() => setActiveOrg(orgRole)}
@@ -923,13 +931,17 @@ const MiseEnPlaceDetail = () => {
             const tvaExpected = g != null && d != null ? g - d : null;
             const cordonMismatch = false;
             const tvaMismatch = false;
-            const baseValid = montantCordon !== "" && montantTVAInt !== "" && cordonNum >= 0 && tvaNum >= 0;
+            // Une enveloppe n'est obligatoire que si l'organisme correspondant est concerné.
+            const baseValid =
+              (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
+              (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
             const canSave = baseValid && !savingMontants;
 
             return (
               <>
                 <div className="space-y-4 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {dgdRequired && (
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.cordon_label")}</Label>
                       <div className="relative">
@@ -940,6 +952,8 @@ const MiseEnPlaceDetail = () => {
                         <p className="text-xs text-destructive">{t("mise_en_place:dialogs.montants.cordon_mismatch", { value: formatNumber(cordonExpected!) })}</p>
                       )}
                     </div>
+                    )}
+                    {dgiRequired && (
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.tva_label")}</Label>
                       <div className="relative">
@@ -950,6 +964,7 @@ const MiseEnPlaceDetail = () => {
                         <p className="text-xs text-destructive">{t("mise_en_place:dialogs.montants.tva_mismatch", { value: formatNumber(tvaExpected!) })}</p>
                       )}
                     </div>
+                    )}
                   </div>
 
                   <div className="rounded-lg border p-3 space-y-3">

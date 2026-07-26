@@ -32,6 +32,7 @@ import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
+import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -462,8 +463,7 @@ const Demandes = () => {
     if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) return false;
     if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) return false;
     // Phase A — routing dynamique des visas : un organisme dont l'enveloppe est nulle est exclu du workflow.
-    if (role === "DGD" && Number(d.creditExterieur ?? 0) <= 0) return false;
-    if (role === "DGI" && Number(d.creditInterieur ?? 0) <= 0) return false;
+    if (isRoleExcluded(role as string, d)) return false;
     const matchSearch =
       displayRef(d).toLowerCase().includes(search.toLowerCase()) ||
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -561,7 +561,7 @@ const Demandes = () => {
                             const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
                             const isCurrentDGD = (role as string) === "DGD";
                             const isPres = (role as string) === "PRESIDENT";
-                            const dgdRequired = Number(d.creditExterieur ?? 0) > 0;
+                            const dgdRequired = requiredVisasCorrection(d).includes("DGD");
                             const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
