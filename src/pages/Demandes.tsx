@@ -285,11 +285,13 @@ const Demandes = () => {
         const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === requiredDoc.docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
+          setOffreCorrigeePendingDocType(requiredDoc.docType);
           setOffreCorrigeeOpen(true);
           return;
         }
       } catch {
         setOffreCorrigeePendingId(id);
+        setOffreCorrigeePendingDocType(requiredDoc.docType);
         setOffreCorrigeeOpen(true);
         return;
       }
