@@ -381,8 +381,8 @@ const MiseEnPlaceDetail = () => {
     } finally { setUploadingCert(false); }
   };
 
-  // ====== Tab d'organisme actif ======
-  const r = activeOrg;
+  // ====== Tab d'organisme actif (les organismes exclus ne sont pas affichés) ======
+  const r = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const roleDecs = decisions.filter(d => d.role === r);
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
