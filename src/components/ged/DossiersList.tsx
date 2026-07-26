@@ -327,7 +327,7 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">{t("ged:dossiers.marche")}</p>
-                  <p className="font-medium text-foreground">{marcheNum}{marcheIntitule && ` – ${marcheIntitule}`}</p>
+                  <p className="font-medium text-foreground">{marcheIntitule || marcheNum}</p>
                 </div>
               </div>
             )}
