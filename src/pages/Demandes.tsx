@@ -928,23 +928,30 @@ const Demandes = () => {
       </Dialog>
 
       {/* Offre Corrigée Upload Dialog */}
-      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
+      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); setOffreCorrigeePendingDocType(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
-            <DialogDescription>
-              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
-            </DialogDescription>
+            {(() => {
+              const dialogLabel = offreCorrigeePendingDocType ? tTypeDocument(offreCorrigeePendingDocType) : (uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback"));
+              return (
+                <>
+                  <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: dialogLabel })}</DialogTitle>
+                  <DialogDescription>
+                    {t("demandes:dialogs.offre_corrigee.description", { label: dialogLabel })}
+                  </DialogDescription>
+                </>
+              );
+            })()}
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
+              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: offreCorrigeePendingDocType ? tTypeDocument(offreCorrigeePendingDocType) : (uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback")) })}</Label>
               <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
-            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
+            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); setOffreCorrigeePendingDocType(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
+            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile || !offreCorrigeePendingDocType}>
               {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
               {t("demandes:dialogs.offre_corrigee.submit")}
             </Button>
