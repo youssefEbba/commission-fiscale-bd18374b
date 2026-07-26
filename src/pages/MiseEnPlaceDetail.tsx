@@ -637,7 +637,7 @@ const MiseEnPlaceDetail = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">{t("mise_en_place:detail.orgs.title")}</h3>
             <div className="flex border-b border-border mb-3 gap-0">
-              {DECISION_ROLES_LIST.map((orgRole) => {
+              {visibleDecisionRoles.map((orgRole) => {
                 const orgDecs = decisions.filter(d => d.role === orgRole);
                 const orgHasVisa = orgDecs.some(d => d.decision === "VISA");
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
