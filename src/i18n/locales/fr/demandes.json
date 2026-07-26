@@ -274,6 +274,8 @@
     "demande_cancelled": "Demande annulée avec succès",
     "cancel_error": "Erreur lors de l'annulation",
     "demande_adopted": "Demande adoptée et lettre d'adoption enregistrée",
+    "letter_generated": "Lettre d'adoption générée avec succès",
+    "letter_generate_error": "Erreur lors de la génération de la lettre d'adoption",
     "message_required_title": "Message requis",
     "message_required_desc": "Ce document répond à un rejet temporaire. Veuillez saisir un message.",
     "response_sent": "Réponse envoyée",
