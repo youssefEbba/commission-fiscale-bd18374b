@@ -32,7 +32,7 @@ import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
-import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
+import { requiredVisasCorrection, isRoleExcluded, getPreVisaDocument } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -128,6 +128,7 @@ const Demandes = () => {
   const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
+  const [offreCorrigeePendingDocType, setOffreCorrigeePendingDocType] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
@@ -270,27 +271,27 @@ const Demandes = () => {
     }
   };
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Le libellé est traduit via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
+  // Document à uploader obligatoirement avant le visa, selon le rôle et le circuit dynamique de la demande.
+  const uploadBeforeVisaForDemande = (demande?: DemandeCorrectionDto | null) => getPreVisaDocument(role as string, demande);
+  const uploadBeforeVisa = uploadBeforeVisaForDemande(selected);
   const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
-    if (uploadBeforeVisa) {
+    const demande = demandes.find(d => d.id === id) || selected;
+    const requiredDoc = uploadBeforeVisaForDemande(demande);
+    if (requiredDoc) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === requiredDoc.docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
+          setOffreCorrigeePendingDocType(requiredDoc.docType);
           setOffreCorrigeeOpen(true);
           return;
         }
       } catch {
         setOffreCorrigeePendingId(id);
+        setOffreCorrigeePendingDocType(requiredDoc.docType);
         setOffreCorrigeeOpen(true);
         return;
       }
@@ -304,13 +305,14 @@ const Demandes = () => {
   };
 
   const handleOffreCorrigeeUploadAndVisa = async () => {
-    if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
+    if (!offreCorrigeePendingId || !offreCorrigeeFile || !offreCorrigeePendingDocType) return;
     setOffreCorrigeeUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, offreCorrigeePendingDocType, offreCorrigeeFile);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: tTypeDocument(offreCorrigeePendingDocType) }) });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
+      setOffreCorrigeePendingDocType(null);
       await handleTempVisa(offreCorrigeePendingId);
       if (selected?.id === offreCorrigeePendingId) {
         const documents = await demandeCorrectionApi.getDocuments(offreCorrigeePendingId);
@@ -926,23 +928,30 @@ const Demandes = () => {
       </Dialog>
 
       {/* Offre Corrigée Upload Dialog */}
-      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
+      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); setOffreCorrigeePendingDocType(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
-            <DialogDescription>
-              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
-            </DialogDescription>
+            {(() => {
+              const dialogLabel = offreCorrigeePendingDocType ? tTypeDocument(offreCorrigeePendingDocType) : (uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback"));
+              return (
+                <>
+                  <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: dialogLabel })}</DialogTitle>
+                  <DialogDescription>
+                    {t("demandes:dialogs.offre_corrigee.description", { label: dialogLabel })}
+                  </DialogDescription>
+                </>
+              );
+            })()}
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
+              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: offreCorrigeePendingDocType ? tTypeDocument(offreCorrigeePendingDocType) : (uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback")) })}</Label>
               <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
-            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
+            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); setOffreCorrigeePendingDocType(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
+            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile || !offreCorrigeePendingDocType}>
               {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
               {t("demandes:dialogs.offre_corrigee.submit")}
             </Button>

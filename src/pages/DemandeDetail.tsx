@@ -10,7 +10,7 @@ import {
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
-import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
+import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, isRoleExcluded, getPreVisaDocument } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -180,17 +180,12 @@ const DemandeDetail = () => {
   const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
   const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Libellé via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
+  // Document à uploader obligatoirement avant le visa, selon le rôle et le circuit dynamique.
+  const uploadBeforeVisa = getPreVisaDocument(role as string, selected);
+  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
   const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
     PRESIDENT: { docType: "LETTRE_ADOPTION" },
   } as const;
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
-  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
