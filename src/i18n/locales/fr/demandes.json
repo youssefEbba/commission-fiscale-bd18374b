@@ -437,7 +437,8 @@
         "tva_deductible": "TVA déductible (douane)",
         "tva_nette": "TVA nette",
         "credit_interieur": "Crédit intérieur"
-      }
+      },
+      "credit_hint": "Les montants sont pré-calculés à partir des importations et de la fiscalité. Vous pouvez les ajuster manuellement ; au moins un crédit doit être supérieur à zéro."
     },
     "dqe_form": {
       "section": "Formulaire DQE",
@@ -492,7 +493,8 @@
       "merge_error": "Erreur de fusion",
       "marche_busy_title": "Marché indisponible",
       "marche_busy_with_status": "Ce marché est déjà associé à une demande de correction active (statut : {{statut}}). Veuillez en choisir un autre.",
-      "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre."
+      "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre.",
+      "credit_required": "Au moins un crédit (intérieur ou extérieur) doit être strictement supérieur à zéro"
     },
     "toast": {
       "entreprise_created": "Entreprise créée",
