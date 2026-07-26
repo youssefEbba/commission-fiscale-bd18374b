@@ -480,6 +480,7 @@
       "no_ac_associated": "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.",
       "entreprise_required": "Veuillez sélectionner une entreprise",
       "convention_or_marche_required": "Veuillez sélectionner une convention ou un marché",
+      "intitule_marche_required": "Veuillez saisir l'intitulé du marché",
       "save_failed": "Échec de l'enregistrement",
       "submit_failed": "Échec de la soumission",
       "merge_impossible_title": "Fusion impossible",
