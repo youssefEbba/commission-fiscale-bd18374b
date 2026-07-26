@@ -989,6 +989,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       </Card>
                     )}
                   </div>
+                  )}
+
 
                   {/* Convention porteuse — le marché n'est plus créé/sélectionné ici. */}
                   <div className="space-y-2">
