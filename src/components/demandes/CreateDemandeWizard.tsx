@@ -537,7 +537,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const totalDD = importations.reduce((s, l) => s + l.dd, 0);
   const totalTVADouane = importations.reduce((s, l) => s + l.tvaDouane, 0);
   const totalTaxes = importations.reduce((s, l) => s + l.totalTaxes, 0);
-  const creditExterieur = totalTaxes;
+  const creditExterieurCalc = totalTaxes;
+  const creditExterieur = creditExtManuel.trim() !== "" ? (parseFloat(creditExtManuel) || 0) : creditExterieurCalc;
 
   const updateFiscalite = (field: keyof FiscaliteInterieure, value: number) => {
     setFiscalite(prev => {
