@@ -158,7 +158,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
 // Auth
 export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; entrepriseNomCommercial?: string; entrepriseActivite?: string; entrepriseAutre?: string; autoriteContractanteId?: number; acMinistereTutelleNom?: string; acMinistereTutelleCode?: string; entrepriseEtrangere?: boolean; entrepriseRegistreCommerceEtranger?: string; entrepriseGroupement?: boolean; entrepriseChefDeFileId?: number; }
+export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; entrepriseNomCommercial?: string; entrepriseActivite?: string; entrepriseAutre?: string; autoriteContractanteId?: number; acMinistereTutelleNom?: string; acMinistereTutelleCode?: string; entrepriseEtrangere?: boolean; entrepriseRegistreCommerceEtranger?: string; }
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
 
 // Commission Relais (impersonation)
@@ -601,6 +601,12 @@ export interface DemandeCorrectionDto {
   autoriteContractanteNom?: string;
   entrepriseId?: number;
   entrepriseRaisonSociale?: string;
+  entrepriseNif?: string;
+  /** Groupement porteur (null = demande individuelle). */
+  groupementId?: number | null;
+  groupementRaisonSociale?: string | null;
+  /** NIF du chef de file du groupement. */
+  groupementNifAffiche?: string | null;
   conventionId?: number;
   conventionReference?: string;
   conventionIntitule?: string;
@@ -707,7 +713,10 @@ export interface Dqe {
 
 export interface CreateDemandeCorrectionRequest {
   autoriteContractanteId?: number;
-  entrepriseId: number;
+  /** Requis si `groupementId` absent (XOR logique). */
+  entrepriseId?: number;
+  /** Requis si `entrepriseId` absent. Prime sur `entrepriseId` si les deux sont envoyés. */
+  groupementId?: number;
   conventionId?: number;
   /** Optionnel (rétro-compat). Le marché réel est créé lors de la mise en place. */
   marcheId?: number;
@@ -1230,6 +1239,7 @@ export interface CertificatCreditJournalDto {
 export interface CertificatCreditFicheDto {
   certificat: CertificatCreditDto;
   entreprise?: EntrepriseDto;
+  groupement?: GroupementDto | null;
   convention?: ConventionDto;
   marche?: MarcheDto;
   autoriteContractante?: AutoriteContractanteDto;
