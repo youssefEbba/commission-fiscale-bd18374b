@@ -208,7 +208,7 @@ const DossiersList = () => {
                     {(dossier._marcheNum || dossier._marcheIntitule) && (
                       <span className="flex items-center gap-1">
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {dossier._marcheNum || dossier._marcheIntitule}
+                        {dossier._marcheIntitule || dossier._marcheNum}
                       </span>
                     )}
                   </div>
