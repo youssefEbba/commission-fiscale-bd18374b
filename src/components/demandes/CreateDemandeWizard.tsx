@@ -819,9 +819,57 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
               <>
+                {/* Titulaire : entreprise seule ou groupement */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t("demandes:wizard.fields.titulaire")} :</span>
+                  <div className="inline-flex rounded-md border p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={titulaireType === "ENTREPRISE" ? "default" : "ghost"}
+                      className="h-7 text-xs"
+                      onClick={() => { setTitulaireType("ENTREPRISE"); setGroupementId(""); }}
+                    >
+                      {t("demandes:wizard.fields.titulaire_entreprise")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={titulaireType === "GROUPEMENT" ? "default" : "ghost"}
+                      className="h-7 text-xs"
+                      onClick={() => { setTitulaireType("GROUPEMENT"); setShowCreateEntreprise(false); }}
+                    >
+                      {t("demandes:wizard.fields.titulaire_groupement")}
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Entreprise with searchable combobox */}
+                  {titulaireType === "GROUPEMENT" ? (
+                    <div className="space-y-2">
+                      <Label>{t("demandes:wizard.fields.groupement")} *</Label>
+                      <SearchableSelect
+                        value={groupementId}
+                        onValueChange={(v) => setGroupementId(v)}
+                        placeholder={t("demandes:wizard.fields.groupement_placeholder")}
+                        searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
+                        emptyMessage={t("demandes:wizard.fields.groupement_empty")}
+                        options={[...groupements]
+                          .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                          .map(g => ({
+                            value: String(g.id),
+                            label: g.raisonSociale || `#${g.id}`,
+                            description: g.nifAffiche
+                              ? `NIF (chef de file) : ${g.nifAffiche}${g.chefDeFileRaisonSociale ? ` — ${g.chefDeFileRaisonSociale}` : ""}`
+                              : g.chefDeFileRaisonSociale || undefined,
+                            keywords: `${g.raisonSociale || ""} ${g.nifAffiche || ""} ${g.chefDeFileRaisonSociale || ""}`,
+                          }))}
+                      />
+                    </div>
+                  ) : (
+                  /* Entreprise with searchable combobox */
                   <div className="space-y-2">
+
                     <Label className="flex items-center justify-between">
                       <span>{t("demandes:wizard.fields.entreprise_required")} *</span>
                       <Button
