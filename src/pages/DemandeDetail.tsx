@@ -660,7 +660,7 @@ const DemandeDetail = () => {
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
-                const isActive = activeOrg === orgRole;
+                const isActive = r === orgRole;
                 return (
                   <button
                     key={orgRole}
