@@ -847,13 +847,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               />
                               {t("demandes:wizard.fields.entreprise_etrangere")}
                             </label>
-                            <label className="flex items-center gap-2 text-xs">
-                              <Checkbox
-                                checked={!!newEntreprise.groupement}
-                                onCheckedChange={(v) => setNewEntreprise(prev => ({ ...prev, groupement: !!v, chefDeFileId: v ? prev.chefDeFileId : undefined }))}
-                              />
-                              {t("demandes:wizard.fields.groupement")}
-                            </label>
                           </div>
                           {newEntreprise.entrepriseEtrangere && (
                             <div className="space-y-1">
@@ -865,26 +858,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               />
                             </div>
                           )}
-                          {newEntreprise.groupement && (
-                            <div className="space-y-1">
-                              <Label className="text-xs">{t("demandes:wizard.fields.chef_de_file")}</Label>
-                              <SearchableSelect
-                                value={newEntreprise.chefDeFileId ? String(newEntreprise.chefDeFileId) : ""}
-                                onValueChange={(v) => setNewEntreprise(prev => ({ ...prev, chefDeFileId: v ? Number(v) : undefined }))}
-                                placeholder={t("demandes:wizard.fields.chef_de_file_placeholder")}
-                                searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
-                                emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
-                                options={[...entreprises]
-                                  .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
-                                  .map(e => ({
-                                    value: String(e.id),
-                                    label: e.raisonSociale || `#${e.id}`,
-                                    description: (e.nifAffiche || e.nif) ? `NIF : ${e.nifAffiche || e.nif}` : undefined,
-                                    keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
-                                  }))}
-                              />
-                            </div>
-                          )}
+
                           <div className="space-y-1">
                             <Label className="text-xs">
                               {t("demandes:wizard.fields.nif")}
