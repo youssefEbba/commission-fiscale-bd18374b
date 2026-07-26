@@ -305,8 +305,10 @@ const Demandes = () => {
     if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
     setOffreCorrigeeUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
+      const pendingDemande = demandes.find(d => d.id === offreCorrigeePendingId) || selected;
+      const requiredDoc = uploadBeforeVisaForDemande(pendingDemande);
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, requiredDoc?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: requiredDoc ? tTypeDocument(requiredDoc.docType) : t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
       await handleTempVisa(offreCorrigeePendingId);
