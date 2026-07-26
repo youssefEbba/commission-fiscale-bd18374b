@@ -37,6 +37,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
