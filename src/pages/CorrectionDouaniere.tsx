@@ -55,9 +55,6 @@ function getDocFileUrl(doc: DocumentDto): string {
 
 const DECISION_ROLES = ["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"];
 const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION", "OFFRE_FISCALE_CORRIGEE"];
-const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string }> = {
-  DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-};
 
 const CorrectionDouaniere = () => {
   const { id } = useParams<{ id: string }>();
