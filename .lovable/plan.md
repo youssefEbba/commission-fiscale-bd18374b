@@ -1,26 +1,58 @@
-## Problème
+## Contexte
 
-Sur le détail d'une demande de correction (`/dashboard/demandes/:id`, `src/pages/DemandeDetail.tsx`), l'UI ignore encore les contraintes de visa dynamiques :
+Actuellement, l'upload obligatoire avant visa est codé en dur :
 
-- La liste des organismes (onglets « Statut par organisme ») est codée en dur : `["DGD", "DGTCP", "DGI", "DGB"]` — le DGD apparaît même sur une demande 100 % crédit intérieur (et inversement le DGI sur une demande 100 % extérieur).
-- Le blocage d'action est codé en dur sur le visa DGD : `blocked = !isCurrentDGD && !isPres && !dgdVisa` — donc un DGI voit « En attente du visa DGD » alors que le DGD n'est pas dans le circuit.
-- L'onglet actif par défaut est `"DGD"`, même quand le DGD est exclu, d'où l'affichage « DGD – Douanes / En attente de décision ».
+- **DGD** → `OFFRE_FISCALE_CORRIGEE`
+- **DGI** → `CREDIT_INTERIEUR`
 
-Le helper `src/lib/visas.ts` (`requiredVisasCorrection`, `isRoleExcluded`) existe déjà et est utilisé pour la carte « Crédits demandés » et la décision finale — il suffit de l'appliquer aux trois points ci-dessus.
+Cela pose problème quand une demande est **100 % crédit intérieur** : le DGD est exclu du circuit, mais le DGI est toujours obligé d'uploader un « Crédit intérieur » au lieu de l'**Offre Fiscale Corrigée**. L'utilisateur a confirmé que, dans ce cas, c'est le **DGI** qui doit uploader l'Offre Fiscale Corrigée avant de viser.
 
-## Changements prévus (frontend uniquement)
+## Règle métier retenue
 
-**`src/pages/DemandeDetail.tsx`**
+| Type de crédit | Organismes requis | Qui upload `OFFRE_FISCALE_CORRIGEE` avant visa |
+|---|---|---|
+| Extérieur seul | DGD, DGTCP, DGB | **DGD** |
+| Intérieur seul | DGI, DGTCP, DGB | **DGI** |
+| Mixte | DGD, DGI, DGTCP, DGB | **DGD** (DGI conserve `CREDIT_INTERIEUR`) |
+| Legacy (non renseigné) | Tous | **DGD** (DGI conserve `CREDIT_INTERIEUR`) |
 
-1. Remplacer `DECISION_ROLES_LIST` statique par la liste dérivée de `requiredVisasCorrection(selected)` (sans `PRESIDENT`). Les onglets n'affichent donc que les organismes réellement requis.
-2. Initialiser / corriger l'onglet actif : si `activeOrg` n'appartient pas à la liste requise, basculer automatiquement sur le rôle de l'utilisateur s'il est requis, sinon sur le premier de la liste (via un `useEffect` ou une valeur effective calculée, comme déjà fait dans `CorrectionDouaniere.tsx`).
-3. Rendre le blocage conditionnel : ne bloquer sur le visa DGD que si `requiredVisasCorrection(...)` contient `DGD`. Sinon, aucun message d'attente et les boutons visa/rejet restent disponibles.
-4. Si l'utilisateur connecté a un rôle exclu du circuit (`isRoleExcluded`), masquer la zone d'actions visa/rejet et afficher un encart neutre « Votre visa n'est pas requis pour cette demande » (consultation seule).
+## Fichiers concernés
 
-**Vérification de cohérence** (lecture, correction seulement si nécessaire) sur `src/pages/CorrectionDouaniere.tsx` : l'onglet par défaut `activeOrg = "DGD"` et le message `blocked_by_dgd` y sont déjà conditionnés par `dgdRequired`/`visibleDecisionRoles` ; je m'assure que l'onglet initial retombe bien sur un organisme requis et que les documents spécifiques DGD (offre fiscale corrigée) ne sont pas exigés quand le DGD est hors circuit.
+### 1. `src/pages/DemandeDetail.tsx`
 
-**i18n** : ajout d'une clé pour l'encart « visa non requis » dans `src/i18n/locales/fr/demandes.json` et `ar/demandes.json` (et équivalent `correction_douaniere.json` si utilisé là aussi).
+Remplacer le mapping statique `UPLOAD_BEFORE_VISA` par une dérivation dynamique :
+
+```text
+const required = requiredVisasCorrection(selected);
+const dgdRequired = required.includes("DGD");
+const dgiRequired = required.includes("DGI");
+const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
+  ...(dgdRequired ? { DGD: { docType: "OFFRE_FISCALE_CORRIGEE" } } : {}),
+  ...(dgiRequired ? { DGI: { docType: dgdRequired ? "CREDIT_INTERIEUR" : "OFFRE_FISCALE_CORRIGEE" } } : {}),
+};
+```
+
+Adapter `checkAndHandleVisa`, `handleOffreCorrigeeUploadAndVisa` et le libellé du dialog pour utiliser ce mapping.
+
+### 2. `src/pages/Demandes.tsx`
+
+Même transformation du `UPLOAD_BEFORE_VISA` statique dans la liste/liste-actions des demandes.
+
+### 3. `src/pages/CorrectionDouaniere.tsx`
+
+Remplacer `UPLOAD_REQUIRED_ROLES` statique par la même logique conditionnée à `requiredVisasCorrection(demande)`.
+
+### 4. i18n (si nécessaire)
+
+Vérifier que les libellés `demandes:dialogs.offre_corrigee.*` et `correction_douaniere:actions.*` restent corrects pour un upload effectué par le DGI. Aucune nouvelle clé n'est requise si les textes sont génériques.
+
+## Vérification
+
+- Demande 100 % crédit intérieur connectée en tant que DGI : le dialog d'upload pré-visa propose bien « Offre Fiscale Corrigée ».
+- Demande 100 % crédit extérieur connectée en tant que DGD : le dialog propose « Offre Fiscale Corrigée ».
+- Demande mixte : DGD a OFC, DGI a Crédit Intérieur.
+- Demande legacy : comportement inchangé (DGD → OFC, DGI → Crédit Intérieur).
 
 ## Hors périmètre
 
-Aucune modification de la logique métier back-end ni des règles de `visas.ts` — uniquement l'affichage et les gardes UI.
+Aucune modification des règles de visas (`src/lib/visas.ts`) ni de l'API back-end. Seul le mapping front de l'upload pré-visa est ajusté.
