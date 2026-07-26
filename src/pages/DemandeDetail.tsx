@@ -10,7 +10,7 @@ import {
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
-import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection } from "@/lib/visas";
+import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -507,9 +507,15 @@ const DemandeDetail = () => {
   }
 
   const decs = selected.decisions || [];
-  const DECISION_ROLES_LIST = ["DGD", "DGTCP", "DGI", "DGB"];
+  const requiredVisas = requiredVisasCorrection(selected as any) as string[];
+  const DECISION_ROLES_LIST = requiredVisas.filter(rr => rr !== "PRESIDENT");
+  const currentRoleExcluded = isRoleExcluded(role as string, selected as any);
 
-  const r = activeOrg;
+  // Onglet effectif : si l'organisme sélectionné n'est pas requis, retomber sur
+  // le rôle de l'utilisateur (s'il est requis) sinon sur le premier requis.
+  const r = DECISION_ROLES_LIST.includes(activeOrg)
+    ? activeOrg
+    : (DECISION_ROLES_LIST.includes(role as string) ? (role as string) : (DECISION_ROLES_LIST[0] ?? activeOrg));
   const roleDecs = decs.filter(d => d.role === r);
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
@@ -654,7 +660,7 @@ const DemandeDetail = () => {
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
-                const isActive = activeOrg === orgRole;
+                const isActive = r === orgRole;
                 return (
                   <button
                     key={orgRole}
@@ -967,7 +973,16 @@ const DemandeDetail = () => {
                 const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
                 const isCurrentDGD = (role as string) === "DGD";
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                const dgdRequired = requiredVisas.includes("DGD");
+                const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
+                if (currentRoleExcluded) {
+                  return (
+                    <div className="rounded-lg bg-muted/40 border border-border p-3 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">{t("demandes:detail.workflow.not_required_title")}</p>
+                      <p className="mt-1">{t("demandes:detail.workflow.not_required_description")}</p>
+                    </div>
+                  );
+                }
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (

@@ -114,6 +114,8 @@
       "open_rejets_warning_other": "{{count}} rejets ouverts — Résolvez-les avant de viser",
       "blocked_title": "⏳ En attente du visa DGD",
       "blocked_description": "Le DGD doit valider cette demande en premier.",
+      "not_required_title": "Votre visa n'est pas requis pour cette demande",
+      "not_required_description": "Selon les crédits demandés (intérieur / extérieur), votre organisme n'intervient pas dans ce circuit. Accès en consultation uniquement.",
       "final_decision": "Décision finale :",
       "missing_visas": "⚠️ Tous les membres doivent apposer leur visa avant la décision finale.",
       "missing_roles": "Manquant : {{roles}}"
