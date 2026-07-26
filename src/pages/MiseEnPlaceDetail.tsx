@@ -229,7 +229,7 @@ const MiseEnPlaceDetail = () => {
   const c = certificat;
   const entrepriseName = c.entrepriseNom || entreprise?.raisonSociale || "—";
   const correctionRef = (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
-  const marcheRef = c.marcheIntitule || marche?.numeroMarche || "—";
+  const marcheRef = c.marcheIntitule || marche?.intitule || marche?.numeroMarche || "—";
   // Devise affichée pour les montants — celle du marché si dispo, sinon MRU.
   const currency = (marche as any)?.deviseOrigine || "MRU";
 
