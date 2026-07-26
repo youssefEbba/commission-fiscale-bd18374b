@@ -1140,6 +1140,43 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   </div>
                 </div>
 
+                {/* Enveloppes crédit — au moins une doit être > 0 */}
+                <div className="rounded-lg border border-primary/30 p-3 space-y-3">
+                  <h3 className="text-sm font-semibold">{t("demandes:wizard.modele_fiscal.section_recap")}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        {t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={creditExtManuel}
+                        placeholder={String(creditExterieurCalc || 0)}
+                        onChange={e => setCreditExtManuel(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        {t("demandes:wizard.modele_fiscal.totals.credit_interieur")}
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={creditIntManuel}
+                        placeholder={String(fiscalite.creditInterieur || 0)}
+                        onChange={e => setCreditIntManuel(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</Label>
+                      <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.credit_hint")}</p>
+                </div>
+
+
                 <div>
                   <h3 className="text-sm font-semibold mb-2">{t("demandes:wizard.fields.pieces_to_attach")} <span className="text-muted-foreground text-xs">{t("demandes:wizard.fields.pieces_ged_hint")}</span></h3>
                   {gedDocTypes.length === 0 ? (
