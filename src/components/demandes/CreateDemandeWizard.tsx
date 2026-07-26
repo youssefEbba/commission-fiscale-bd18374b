@@ -40,6 +40,7 @@ import {
   XCircle, Merge, ArrowUp, ArrowDown, File, Paperclip, Search, Check, AlertCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 
 // ── helpers ──
 const emptyImportation = (): ImportationLigne => ({
@@ -112,6 +113,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       .then(list => setGroupements(list || []))
       .catch(() => setGroupements([]));
   }, [open]);
+
+  // Create groupement inline
+  const [showCreateGroupement, setShowCreateGroupement] = useState(false);
 
   // Create enterprise inline
   const [showCreateEntreprise, setShowCreateEntreprise] = useState(false);
@@ -1731,6 +1735,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Création d'un groupement (avec création d'entreprise membre à la volée) */}
+    <GroupementFormDialog
+      open={showCreateGroupement}
+      onOpenChange={setShowCreateGroupement}
+      onSaved={(g) => {
+        setGroupements(prev => [...prev.filter(x => x.id !== g.id), g]);
+        if (g.id) { setTitulaireType("GROUPEMENT"); setGroupementId(String(g.id)); }
+      }}
+    />
     </>
   );
 }
