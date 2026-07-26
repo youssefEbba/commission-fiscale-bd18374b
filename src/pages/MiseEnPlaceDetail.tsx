@@ -643,7 +643,7 @@ const MiseEnPlaceDetail = () => {
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
-                const isActive = activeOrg === orgRole;
+                const isActive = r === orgRole;
                 const orgValidated = orgRole === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut);
                 return (
                   <button key={orgRole} onClick={() => setActiveOrg(orgRole)}
