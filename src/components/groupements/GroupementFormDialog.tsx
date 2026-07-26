@@ -163,10 +163,25 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
 
   const membresFiltres = useMemo(() => {
     const q = membreSearch.trim().toLowerCase();
-    if (!q) return entreprises;
-    return entreprises.filter(e =>
-      `${e.raisonSociale || ""} ${e.nif || ""} ${e.nifAffiche || ""}`.toLowerCase().includes(q));
-  }, [entreprises, membreSearch]);
+    const list = q
+      ? entreprises.filter(e =>
+          `${e.raisonSociale || ""} ${e.nif || ""} ${e.nifAffiche || ""}`.toLowerCase().includes(q))
+      : [...entreprises];
+    // Les membres sélectionnés remontent toujours en haut et apparaissent groupés
+    return list.sort((a, b) => {
+      const aSelected = form.membreIds.includes(a.id!);
+      const bSelected = form.membreIds.includes(b.id!);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" });
+    });
+  }, [entreprises, membreSearch, form.membreIds]);
+
+  const selectedEntreprises = useMemo(() => {
+    return form.membreIds
+      .map(id => entreprises.find(e => e.id === id))
+      .filter(Boolean) as EntrepriseDto[];
+  }, [form.membreIds, entreprises]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -261,23 +276,62 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
               </div>
             )}
 
+            {/* Récapitulatif visuel des membres sélectionnés */}
+            <div className="rounded-md border bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Membres sélectionnés</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {form.membreIds.length}
+                </span>
+              </div>
+              {selectedEntreprises.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Aucune entreprise sélectionnée.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {selectedEntreprises.map(e => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => toggleMembre(e.id!, false)}
+                      className="inline-flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 text-xs hover:bg-destructive/10 hover:border-destructive/30 transition-colors"
+                      title="Retirer ce membre"
+                    >
+                      <span className="font-medium truncate max-w-[12rem]">{e.raisonSociale}</span>
+                      <span className="font-mono text-muted-foreground">{e.nifAffiche || e.nif || "—"}</span>
+                      <X className="h-3 w-3 text-destructive" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <Input placeholder="Filtrer les entreprises…" value={membreSearch} onChange={e => setMembreSearch(e.target.value)} />
             <div className="max-h-56 overflow-y-auto rounded-md border divide-y">
-              {membresFiltres.map(e => (
-                <label key={e.id} className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50">
-                  <Checkbox
-                    checked={form.membreIds.includes(e.id!)}
-                    onCheckedChange={v => toggleMembre(e.id!, !!v)}
-                  />
-                  <span className="flex-1">{e.raisonSociale}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{e.nifAffiche || e.nif || "—"}</span>
-                </label>
-              ))}
+              {membresFiltres.map(e => {
+                const selected = form.membreIds.includes(e.id!);
+                return (
+                  <label
+                    key={e.id}
+                    className={`flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors ${
+                      selected
+                        ? "bg-primary/10 hover:bg-primary/15 border-s-4 border-s-primary"
+                        : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <Checkbox
+                      checked={selected}
+                      onCheckedChange={v => toggleMembre(e.id!, !!v)}
+                    />
+                    <span className={`flex-1 ${selected ? "font-medium" : ""}`}>{e.raisonSociale}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{e.nifAffiche || e.nif || "—"}</span>
+                    {selected && <Badge variant="outline" className="text-[10px] h-5">Sélectionnée</Badge>}
+                  </label>
+                );
+              })}
               {membresFiltres.length === 0 && (
                 <p className="px-3 py-4 text-sm text-muted-foreground">Aucune entreprise.</p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">{form.membreIds.length} membre(s) sélectionné(s)</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
