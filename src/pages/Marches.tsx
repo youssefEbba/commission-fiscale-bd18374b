@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",

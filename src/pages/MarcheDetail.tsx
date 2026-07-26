@@ -18,6 +18,7 @@ import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
