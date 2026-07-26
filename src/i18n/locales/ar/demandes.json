@@ -59,6 +59,7 @@
       "marche_fallback": "صفقة #{{id}}",
       "marche_detached": "صفقة #{{id}} (منفصلة)"
     },
+    "generate_adoption_letter": "تحميل رسالة الاعتماد",
     "org_status": {
       "title": "الحالة حسب العضو",
       "hint": "لا يمكن تعديل حالات الرفض.",
