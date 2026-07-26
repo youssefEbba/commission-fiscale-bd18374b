@@ -150,6 +150,17 @@ const Demandes = () => {
     }
   };
 
+  const handleGenerateAdoptionLetter = async (d: DemandeCorrectionDto) => {
+    try {
+      const blob = await generateAdoptionLetterPdf(d);
+      const ref = d.reference || d.numero || String(d.id);
+      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    }
+  };
+
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
