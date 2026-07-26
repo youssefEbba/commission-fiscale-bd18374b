@@ -274,6 +274,8 @@
     "demande_cancelled": "تم إلغاء الطلب بنجاح",
     "cancel_error": "خطأ أثناء الإلغاء",
     "demande_adopted": "تم اعتماد الطلب وتسجيل رسالة الاعتماد",
+    "letter_generated": "تم إنشاء رسالة الاعتماد بنجاح",
+    "letter_generate_error": "خطأ أثناء إنشاء رسالة الاعتماد",
     "message_required_title": "الرسالة مطلوبة",
     "message_required_desc": "هذا المستند يرد على رفض مؤقت. يرجى إدخال رسالة.",
     "response_sent": "تم إرسال الرد",
