@@ -68,7 +68,8 @@ export default function CreditFiche() {
                   <Field label="Raison sociale" value={fiche?.entreprise?.raisonSociale || c.entrepriseRaisonSociale} />
                   <Field label="NIF" value={fiche?.entreprise?.nifAffiche || fiche?.entreprise?.nif} />
                   <Field label="RC étranger" value={fiche?.entreprise?.registreCommerceEtranger} />
-                  <Field label="Chef de file" value={fiche?.entreprise?.chefDeFileRaisonSociale} />
+                  <Field label="Groupement" value={fiche?.groupement?.raisonSociale} />
+                  <Field label="Chef de file" value={fiche?.groupement?.chefDeFileRaisonSociale} />
                   <Field label="Adresse" value={fiche?.entreprise?.adresse} />
                   <Field label="Email" value={fiche?.entreprise?.email} />
                 </CardContent>

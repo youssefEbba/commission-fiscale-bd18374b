@@ -862,7 +862,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           <div className="space-y-1">
                             <Label className="text-xs">
                               {t("demandes:wizard.fields.nif")}
-                              {!newEntreprise.entrepriseEtrangere && !(newEntreprise.groupement && newEntreprise.chefDeFileId) && <span className="text-destructive"> *</span>}
+                              {!newEntreprise.entrepriseEtrangere && <span className="text-destructive"> *</span>}
                               {" "}<span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span>
                             </Label>
                             <Input
@@ -905,7 +905,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             size="sm"
                             className="w-full"
                             onClick={handleCreateEntreprise}
-                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || (newEntreprise.entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger?.trim() : (newEntreprise.groupement && !!newEntreprise.chefDeFileId ? false : (newEntreprise.nif || "").length !== 8))}
+                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || (newEntreprise.entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger?.trim() : (newEntreprise.nif || "").length !== 8)}
                           >
                             {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                             {t("demandes:wizard.fields.create_entreprise")}
