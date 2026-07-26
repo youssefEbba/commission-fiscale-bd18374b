@@ -507,9 +507,15 @@ const DemandeDetail = () => {
   }
 
   const decs = selected.decisions || [];
-  const DECISION_ROLES_LIST = ["DGD", "DGTCP", "DGI", "DGB"];
+  const requiredVisas = requiredVisasCorrection(selected as any) as string[];
+  const DECISION_ROLES_LIST = requiredVisas.filter(rr => rr !== "PRESIDENT");
+  const currentRoleExcluded = isRoleExcluded(role as string, selected as any);
 
-  const r = activeOrg;
+  // Onglet effectif : si l'organisme sélectionné n'est pas requis, retomber sur
+  // le rôle de l'utilisateur (s'il est requis) sinon sur le premier requis.
+  const r = DECISION_ROLES_LIST.includes(activeOrg)
+    ? activeOrg
+    : (DECISION_ROLES_LIST.includes(role as string) ? (role as string) : (DECISION_ROLES_LIST[0] ?? activeOrg));
   const roleDecs = decs.filter(d => d.role === r);
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
