@@ -599,9 +599,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.entreprise_required"), variant: "destructive" });
       return;
     }
-    // Phase A : plus de création de marché obligatoire. En soumission ferme,
-    // il faut soit un marché/convention lié, soit un intitulé de marché libre.
-    if (!asBrouillon && !conventionId && !marcheId && !intituleMarche?.trim()) {
+    // Le back actuel accepte la demande sans création de marché, mais exige encore
+    // une convention porteuse. On bloque côté front pour éviter l'erreur API générique.
+    if (!asBrouillon && !conventionId) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_required"), variant: "destructive" });
+      return;
+    }
+    if (!asBrouillon && !marcheId && !intituleMarche?.trim()) {
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.intitule_marche_required"), variant: "destructive" });
       return;
     }
@@ -851,107 +855,46 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     )}
                   </div>
 
-                  {/* Attribution / Adjudication */}
+                  {/* Convention porteuse — le marché n'est plus créé/sélectionné ici. */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
-                      <span>{t("demandes:wizard.fields.attribution")}</span>
+                      <span>{t("demandes:wizard.fields.convention")} <span className="text-destructive">*</span></span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-6 text-xs text-primary"
-                        onClick={() => { setShowCreateMarche(!showCreateMarche); if (showCreateMarche) { setShowCreateConvention(false); } }}
+                        onClick={() => setShowCreateConvention(!showCreateConvention)}
                       >
                         <Plus className="h-3 w-3 me-1" />
-                        {showCreateMarche ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
+                        {showCreateConvention ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                       </Button>
                     </Label>
 
-                    {!showCreateMarche ? (
+                    {!showCreateConvention ? (
                       <SearchableSelect
-                        value={marcheId}
-                        onValueChange={(v) => {
-                          setMarcheId(v);
-                          const idNum = Number(v);
-                          if (!Number.isFinite(idNum) || idNum <= 0) return;
-                          // Vérification serveur : le marché a-t-il une demande de correction active ?
-                          marcheApi.getDemandeCorrectionActive(idNum)
-                            .then((res) => {
-                              if (!res?.hasActiveDemandeCorrection) return;
-                              // En mode édition, on ignore la propre demande en cours.
-                              if (editingId && res.demandeCorrectionId === editingId) return;
-                              setBusyMarcheIds(prev => {
-                                if (prev.has(idNum)) return prev;
-                                const next = new Set(prev);
-                                next.add(idNum);
-                                return next;
-                              });
-                              toast({
-                                title: t("demandes:wizard.errors.marche_busy_title"),
-                                description: res.demandeCorrectionStatut
-                                  ? t("demandes:wizard.errors.marche_busy_with_status", { statut: res.demandeCorrectionStatut })
-                                  : t("demandes:wizard.errors.marche_busy_no_status"),
-                                variant: "destructive",
-                              });
-                              // On désélectionne pour forcer un nouveau choix
-                              setMarcheId("");
-                            })
-                            .catch(() => { /* silencieux : fallback sur busyMarcheIds existants */ });
+                        value={conventionId}
+                        onValueChange={v => {
+                          setConventionId(v);
+                          setMarcheId("");
                         }}
-                        placeholder={t("demandes:wizard.fields.select_marche")}
-                        searchPlaceholder={t("demandes:wizard.fields.search_marche")}
-                        options={marches.map(m => {
-                          const isBusy = busyMarcheIds.has(m.id);
-                          const baseLabel = m.numeroMarche || `#${m.id}`;
-                          const amountDesc = m.montantContratTtc != null
-                            ? formatAmount(m.montantContratTtc, { currency: "MRU" })
-                            : undefined;
-                          const busyDesc = isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined;
-                          return {
-                            value: String(m.id),
-                            label: isBusy ? `${baseLabel} ${t("demandes:wizard.fields.marche_busy_suffix")}` : baseLabel,
-                            description: [amountDesc, busyDesc].filter(Boolean).join(" — ") || undefined,
-                            keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
-                            disabled: isBusy,
-                          };
-                        })}
+                        placeholder={t("demandes:wizard.fields.select_convention")}
+                        searchPlaceholder={t("demandes:wizard.fields.search_convention")}
+                        options={conventions.map(c => ({
+                          value: String(c.id),
+                          label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
+                          keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
+                        }))}
                       />
                     ) : (
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-primary">
                             <FileText className="h-4 w-4" />
-                            {t("demandes:wizard.fields.new_marche")}
+                            {t("demandes:wizard.fields.create_convention")}
                           </div>
 
-                          {/* Convention selector */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                              <span>{t("demandes:wizard.fields.convention")} <span className="text-destructive">*</span></span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 text-xs text-primary p-0"
-                                onClick={() => setShowCreateConvention(!showCreateConvention)}
-                              >
-                                <Plus className="h-3 w-3 me-0.5" />
-                                {showCreateConvention ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
-                              </Button>
-                            </Label>
-                            {!showCreateConvention ? (
-                              <SearchableSelect
-                                value={conventionId}
-                                onValueChange={v => { setConventionId(v); }}
-                                placeholder={t("demandes:wizard.fields.select_convention")}
-                                searchPlaceholder={t("demandes:wizard.fields.search_convention")}
-                                options={conventions.map(c => ({
-                                  value: String(c.id),
-                                  label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
-                                  keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
-                                }))}
-                              />
-                            ) : (
                               <div className="space-y-3 border border-dashed border-border rounded-md p-3 max-h-[50vh] overflow-y-auto">
                                 <Input
                                   placeholder={t("demandes:wizard.fields.reference_placeholder")}
@@ -1164,71 +1107,24 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                   {t("demandes:wizard.fields.create_convention")}
                                 </Button>
                               </div>
-                            )}
                           </div>
-
-                          {/* Marché fields — enabled after convention */}
-                          {!conventionId ? (
-                            <p className="text-xs text-muted-foreground italic border border-dashed border-border rounded-md p-2 text-center">
-                              {t("demandes:wizard.fields.convention_choose_first")}
-                            </p>
-                          ) : (
-                            <>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.numero_marche")} <span className="text-destructive">*</span></Label>
-                                <Input
-                                  placeholder={t("demandes:wizard.fields.numero_marche_placeholder")}
-                                  value={newMarche.numeroMarche}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, numeroMarche: e.target.value }))}
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ht")} <span className="text-destructive">*</span></Label>
-                                <Input
-                                  placeholder={t("demandes:wizard.fields.montant_ht_placeholder")}
-                                  type="number"
-                                  value={newMarche.montantContratHt || ""}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.date_attribution")} <span className="text-destructive">*</span></Label>
-                                <Input
-                                  type="date"
-                                  max={new Date().toISOString().split("T")[0]}
-                                  value={newMarche.dateSignature || ""}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, dateSignature: e.target.value }))}
-                                />
-                                <p className="text-[11px] text-muted-foreground">{t("demandes:wizard.fields.date_attribution_hint")}</p>
-                              </div>
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={handleCreateMarche}
-                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature || !newMarche.montantContratHt || newMarche.montantContratHt <= 0}
-                              >
-                                {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
-                                {t("demandes:wizard.fields.create_marche")}
-                              </Button>
-                            </>
-                          )}
                         </CardContent>
                       </Card>
                     )}
 
-                    {/* Phase A — Intitulé libre du marché (le marché sera créé à la mise en place). */}
+                    {/* Phase A — Intitulé libre du marché (aucune création de marché ici). */}
                     <div className="space-y-1 mt-2">
                       <Label className="text-sm">
-                        Intitulé du marché
-                        {!marcheId && <span className="text-destructive ms-1">*</span>}
+                        {t("demandes:wizard.fields.intitule_marche")}
+                        <span className="text-destructive ms-1">*</span>
                       </Label>
                       <Input
                         value={intituleMarche}
                         onChange={(e) => setIntituleMarche(e.target.value)}
-                        placeholder="Ex : Construction du barrage de..."
+                        placeholder={t("demandes:wizard.fields.intitule_marche_placeholder")}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Utilisé si aucun marché existant n'est sélectionné.
+                        {t("demandes:wizard.fields.intitule_marche_hint")}
                       </p>
                     </div>
                   </div>
