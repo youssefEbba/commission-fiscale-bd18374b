@@ -7,6 +7,7 @@ import { PDFDocument } from "pdf-lib";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
+  groupementApi, GroupementDto,
   conventionApi, ConventionDto, CreateConventionRequest,
   TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
   demandeCorrectionApi, DemandeCorrectionDto, ModeleFiscal, Dqe,
@@ -91,6 +92,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
   const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
   const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
+  // Titulaire : entreprise seule ou groupement (XOR côté back).
+  const [titulaireType, setTitulaireType] = usePersistedState<"ENTREPRISE" | "GROUPEMENT">("demande:titulaireType", "ENTREPRISE");
+  const [groupementId, setGroupementId] = usePersistedState<string>("demande:groupementId", "");
+  const [groupements, setGroupements] = useState<GroupementDto[]>([]);
   // Intitulé libre du marché (Phase A — remplace la création de marché dans le wizard de correction).
   const [intituleMarche, setIntituleMarche, clearIntituleMarche] = usePersistedState<string>("demande:intituleMarche", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
@@ -99,6 +104,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Entreprise search combobox
   const [entrepriseOpen, setEntrepriseOpen] = useState(false);
+
+  // Chargement des groupements actifs (titulaire alternatif).
+  useEffect(() => {
+    if (!open) return;
+    groupementApi.getAll(true)
+      .then(list => setGroupements(list || []))
+      .catch(() => setGroupements([]));
+  }, [open]);
 
   // Create enterprise inline
   const [showCreateEntreprise, setShowCreateEntreprise] = useState(false);
@@ -273,6 +286,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         // Nouvelle demande : réinitialiser complètement le formulaire.
         if (!editingId && !editingDemande) {
           setEntrepriseId("");
+          setTitulaireType("ENTREPRISE");
+          setGroupementId("");
           setConventionId("");
           setMarcheId("");
           setIntituleMarche("");
@@ -304,6 +319,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   useEffect(() => {
     if (!open || !editingDemande) return;
     setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
+    setGroupementId(editingDemande.groupementId ? String(editingDemande.groupementId) : "");
+    setTitulaireType(editingDemande.groupementId ? "GROUPEMENT" : "ENTREPRISE");
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
@@ -376,7 +393,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.rc_etranger_required"), variant: "destructive" });
         return;
       }
-    } else if (!newEntreprise.groupement || !newEntreprise.chefDeFileId) {
+    } else {
       if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
         toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
         return;
@@ -626,8 +643,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.no_ac_associated"), variant: "destructive" });
       return;
     }
-    if (!entrepriseId) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.entreprise_required"), variant: "destructive" });
+    const isGroupement = titulaireType === "GROUPEMENT";
+    if (isGroupement ? !groupementId : !entrepriseId) {
+      toast({
+        title: t("demandes:toast.error"),
+        description: isGroupement
+          ? t("demandes:wizard.errors.groupement_required")
+          : t("demandes:wizard.errors.entreprise_required"),
+        variant: "destructive",
+      });
       return;
     }
     // Le back actuel accepte la demande sans création de marché, mais exige encore
@@ -653,7 +677,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     try {
       const payload = {
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
-        entrepriseId: Number(entrepriseId),
+        // XOR : groupementId prime côté back (titulaire = chef de file).
+        entrepriseId: isGroupement ? undefined : Number(entrepriseId),
+        groupementId: isGroupement ? Number(groupementId) : undefined,
         conventionId: finalConventionId,
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
         // Phase A : intitulé libre + enveloppes crédit (routing dynamique des visas côté back).
@@ -732,7 +758,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
-          "demande:entrepriseId", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
+          "demande:entrepriseId", "demande:groupementId", "demande:titulaireType", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
           "demande:typeProjet", "demande:refDossier",
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
@@ -757,6 +783,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   ];
 
   const selectedEntreprise = entreprises.find(e => String(e.id) === entrepriseId);
+  const titulaireSelected = titulaireType === "GROUPEMENT" ? !!groupementId : !!entrepriseId;
 
   return (
     <>
@@ -792,9 +819,57 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
               <>
+                {/* Titulaire : entreprise seule ou groupement */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t("demandes:wizard.fields.titulaire")} :</span>
+                  <div className="inline-flex rounded-md border p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={titulaireType === "ENTREPRISE" ? "default" : "ghost"}
+                      className="h-7 text-xs"
+                      onClick={() => { setTitulaireType("ENTREPRISE"); setGroupementId(""); }}
+                    >
+                      {t("demandes:wizard.fields.titulaire_entreprise")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={titulaireType === "GROUPEMENT" ? "default" : "ghost"}
+                      className="h-7 text-xs"
+                      onClick={() => { setTitulaireType("GROUPEMENT"); setShowCreateEntreprise(false); }}
+                    >
+                      {t("demandes:wizard.fields.titulaire_groupement")}
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Entreprise with searchable combobox */}
+                  {titulaireType === "GROUPEMENT" ? (
+                    <div className="space-y-2">
+                      <Label>{t("demandes:wizard.fields.groupement")} *</Label>
+                      <SearchableSelect
+                        value={groupementId}
+                        onValueChange={(v) => setGroupementId(v)}
+                        placeholder={t("demandes:wizard.fields.groupement_placeholder")}
+                        searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
+                        emptyMessage={t("demandes:wizard.fields.groupement_empty")}
+                        options={[...groupements]
+                          .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                          .map(g => ({
+                            value: String(g.id),
+                            label: g.raisonSociale || `#${g.id}`,
+                            description: g.nifAffiche
+                              ? `NIF (chef de file) : ${g.nifAffiche}${g.chefDeFileRaisonSociale ? ` — ${g.chefDeFileRaisonSociale}` : ""}`
+                              : g.chefDeFileRaisonSociale || undefined,
+                            keywords: `${g.raisonSociale || ""} ${g.nifAffiche || ""} ${g.chefDeFileRaisonSociale || ""}`,
+                          }))}
+                      />
+                    </div>
+                  ) : (
+                  /* Entreprise with searchable combobox */
                   <div className="space-y-2">
+
                     <Label className="flex items-center justify-between">
                       <span>{t("demandes:wizard.fields.entreprise_required")} *</span>
                       <Button
@@ -847,13 +922,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               />
                               {t("demandes:wizard.fields.entreprise_etrangere")}
                             </label>
-                            <label className="flex items-center gap-2 text-xs">
-                              <Checkbox
-                                checked={!!newEntreprise.groupement}
-                                onCheckedChange={(v) => setNewEntreprise(prev => ({ ...prev, groupement: !!v, chefDeFileId: v ? prev.chefDeFileId : undefined }))}
-                              />
-                              {t("demandes:wizard.fields.groupement")}
-                            </label>
                           </div>
                           {newEntreprise.entrepriseEtrangere && (
                             <div className="space-y-1">
@@ -865,30 +933,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               />
                             </div>
                           )}
-                          {newEntreprise.groupement && (
-                            <div className="space-y-1">
-                              <Label className="text-xs">{t("demandes:wizard.fields.chef_de_file")}</Label>
-                              <SearchableSelect
-                                value={newEntreprise.chefDeFileId ? String(newEntreprise.chefDeFileId) : ""}
-                                onValueChange={(v) => setNewEntreprise(prev => ({ ...prev, chefDeFileId: v ? Number(v) : undefined }))}
-                                placeholder={t("demandes:wizard.fields.chef_de_file_placeholder")}
-                                searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
-                                emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
-                                options={[...entreprises]
-                                  .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
-                                  .map(e => ({
-                                    value: String(e.id),
-                                    label: e.raisonSociale || `#${e.id}`,
-                                    description: (e.nifAffiche || e.nif) ? `NIF : ${e.nifAffiche || e.nif}` : undefined,
-                                    keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
-                                  }))}
-                              />
-                            </div>
-                          )}
+
                           <div className="space-y-1">
                             <Label className="text-xs">
                               {t("demandes:wizard.fields.nif")}
-                              {!newEntreprise.entrepriseEtrangere && !(newEntreprise.groupement && newEntreprise.chefDeFileId) && <span className="text-destructive"> *</span>}
+                              {!newEntreprise.entrepriseEtrangere && <span className="text-destructive"> *</span>}
                               {" "}<span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span>
                             </Label>
                             <Input
@@ -931,7 +980,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             size="sm"
                             className="w-full"
                             onClick={handleCreateEntreprise}
-                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || (newEntreprise.entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger?.trim() : (newEntreprise.groupement && !!newEntreprise.chefDeFileId ? false : (newEntreprise.nif || "").length !== 8))}
+                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || (newEntreprise.entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger?.trim() : (newEntreprise.nif || "").length !== 8)}
                           >
                             {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                             {t("demandes:wizard.fields.create_entreprise")}
@@ -940,6 +989,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       </Card>
                     )}
                   </div>
+                  )}
+
 
                   {/* Convention porteuse — le marché n'est plus créé/sélectionné ici. */}
                   <div className="space-y-2">
@@ -1611,7 +1662,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onOpenChange(false)}>{t("demandes:wizard.actions.cancel")}</Button>
             {step < steps.length - 1 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !titulaireSelected}>
                 {t("demandes:wizard.actions.next")} <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
               </Button>
             ) : (
@@ -1620,14 +1671,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   <Button
                     variant="secondary"
                     onClick={() => handleSubmit(true)}
-                    disabled={savingDraft || submitting || !entrepriseId}
+                    disabled={savingDraft || submitting || !titulaireSelected}
                     title={t("demandes:wizard.actions.save_draft_tooltip")}
                   >
                     {savingDraft ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <FileText className="h-4 w-4 me-1" />}
                     {t("demandes:wizard.actions.save_draft")}
                   </Button>
                 )}
-                <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
+                <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !titulaireSelected}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Send className="h-4 w-4 me-1" />}
                   {isEditing ? t("demandes:wizard.actions.submit") : t("demandes:wizard.actions.submit_full")}
                 </Button>
