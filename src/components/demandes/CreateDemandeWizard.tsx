@@ -614,6 +614,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.intitule_marche_required"), variant: "destructive" });
       return;
     }
+    if (!asBrouillon && creditExterieur <= 0 && creditInterieur <= 0) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.credit_required"), variant: "destructive" });
+      return;
+    }
 
 
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
