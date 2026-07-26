@@ -264,14 +264,32 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const isFreshOpen = !wasOpenRef.current;
       wasOpenRef.current = true;
       if (isFreshOpen) {
-        // Au premier rendu, ne PAS écraser les états persistés (entrepriseId, conventionId,
-        // marcheId, importations, dqe, fiscalite, docFiles, etc.) — l'utilisateur peut être
-        // de retour après une bascule mobile et on veut restaurer sa saisie.
         setStep(0);
         setShowCreateEntreprise(false);
         setNewEntreprise({ raisonSociale: "", nif: "" });
         setShowCreateConvention(false);
         setShowCreateMarche(false);
+        // Nouvelle demande : réinitialiser complètement le formulaire.
+        if (!editingId && !editingDemande) {
+          setEntrepriseId("");
+          setConventionId("");
+          setMarcheId("");
+          setIntituleMarche("");
+          setTypeProjet("BTP");
+          setReferenceDossier("");
+          setImportations([emptyImportation()]);
+          setFiscalite({ montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0, tvaDeductible: 0, tvaNette: 0, creditInterieur: 0 });
+          setCreditExtManuel("");
+          setCreditIntManuel("");
+          setDqeNumero("");
+          setDqeProjet("");
+          setDqeLot("");
+          setDqeTauxTVA(16);
+          setDqeLignes([emptyDqeLigne()]);
+          setExistingDocs({});
+          clearDocFiles();
+          setDocFiles({});
+        }
       }
       loadInitialData();
     } else {
