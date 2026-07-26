@@ -462,8 +462,7 @@ const Demandes = () => {
     if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) return false;
     if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) return false;
     // Phase A — routing dynamique des visas : un organisme dont l'enveloppe est nulle est exclu du workflow.
-    if (role === "DGD" && Number(d.creditExterieur ?? 0) <= 0) return false;
-    if (role === "DGI" && Number(d.creditInterieur ?? 0) <= 0) return false;
+    if (isRoleExcluded(role as string, d)) return false;
     const matchSearch =
       displayRef(d).toLowerCase().includes(search.toLowerCase()) ||
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
