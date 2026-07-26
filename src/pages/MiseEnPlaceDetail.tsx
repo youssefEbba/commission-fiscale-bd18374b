@@ -237,8 +237,15 @@ const MiseEnPlaceDetail = () => {
   const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const myHasOpenRejet = myOpenRejets.length > 0;
 
-  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string);
-  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string);
+  // Routing dynamique des visas : les crédits proviennent de la demande de correction liée.
+  const requiredVisas = requiredVisasCertificat(correction);
+  const dgdRequired = requiredVisas.includes("DGD");
+  const dgiRequired = requiredVisas.includes("DGI");
+  const visibleDecisionRoles = DECISION_ROLES_LIST.filter(r => r === "PRESIDENT" || requiredVisas.includes(r as any));
+  const roleExcluded = isRoleExcluded(role as string, correction);
+
+  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string) && !roleExcluded;
+  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string) && !roleExcluded;
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
 
