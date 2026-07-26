@@ -551,7 +551,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     });
   };
 
-  const creditTotal = creditExterieur + fiscalite.creditInterieur;
+  const creditInterieur = creditIntManuel.trim() !== "" ? (parseFloat(creditIntManuel) || 0) : fiscalite.creditInterieur;
+  const creditTotal = creditExterieur + creditInterieur;
 
   // ── DQE helpers ──
   const updateDqeLigne = (idx: number, field: keyof DqeLigne, value: string | number) => {
