@@ -420,7 +420,7 @@ const DemandesMiseEnPlace = () => {
 
   const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId && entrepriseCache[c.entrepriseId]?.raisonSociale) || "—";
   const getCorrectionName = (c: CertificatCreditDto) => (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId] ? displayRef(correctionCache[c.demandeCorrectionId]) : c.demandeCorrectionNumero) || "—";
-  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
+  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && (marcheCache[c.marcheId]?.intitule || marcheCache[c.marcheId]?.numeroMarche)) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
   const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
