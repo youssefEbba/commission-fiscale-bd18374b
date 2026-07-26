@@ -327,6 +327,7 @@ const CorrectionDouaniere = () => {
   const dgiRequired = Number(demande?.creditInterieur ?? 0) > 0;
   const visibleDecisionRoles = DECISION_ROLES.filter(r => (r !== "DGD" || dgdRequired) && (r !== "DGI" || dgiRequired));
   const isRoleConcerned = !userRole || ((userRole !== "DGD" || dgdRequired) && (userRole !== "DGI" || dgiRequired));
+  const effectiveActiveOrg = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";
   const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
