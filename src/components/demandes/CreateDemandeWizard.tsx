@@ -1173,7 +1173,6 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.credit_hint")}</p>
                 </div>
 
 
@@ -1443,7 +1442,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.credit_hint")}</p>
+                
               </CardContent>
 
             </Card>

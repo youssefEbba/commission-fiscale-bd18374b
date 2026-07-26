@@ -438,7 +438,7 @@
         "tva_nette": "TVA nette",
         "credit_interieur": "Crédit intérieur"
       },
-      "credit_hint": "Les montants sont pré-calculés à partir des importations et de la fiscalité. Vous pouvez les ajuster manuellement ; au moins un crédit doit être supérieur à zéro."
+      
     },
     "dqe_form": {
       "section": "Formulaire DQE",
