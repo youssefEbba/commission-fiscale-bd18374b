@@ -966,7 +966,6 @@ const MiseEnPlaceDetail = () => {
                     </div>
                     )}
                   </div>
-                  </div>
 
                   <div className="rounded-lg border p-3 space-y-3">
                     <div className="flex items-center justify-between">
