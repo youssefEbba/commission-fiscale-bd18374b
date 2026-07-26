@@ -11,6 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
+import { displayRef } from "@/lib/displayRef";
 import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
@@ -321,7 +322,12 @@ const CorrectionDouaniere = () => {
     } finally { setResponseLoading(false); }
   };
 
-  const isDirection = userRole && DECISION_ROLES.includes(userRole);
+  // Phase A — routing dynamique : un organisme dont l'enveloppe est nulle est exclu du workflow.
+  const dgdRequired = Number(demande?.creditExterieur ?? 0) > 0;
+  const dgiRequired = Number(demande?.creditInterieur ?? 0) > 0;
+  const visibleDecisionRoles = DECISION_ROLES.filter(r => (r !== "DGD" || dgdRequired) && (r !== "DGI" || dgiRequired));
+  const isRoleConcerned = !userRole || ((userRole !== "DGD" || dgdRequired) && (userRole !== "DGI" || dgiRequired));
+  const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";
   const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE" || demande?.statut === "ANNULEE";
@@ -335,7 +341,7 @@ const CorrectionDouaniere = () => {
   const dgdHasVisa = decisions.some(d => d.role === "DGD" && d.decision === "VISA");
   const isDGD = userRole === "DGD";
   const isPresident = userRole === "PRESIDENT";
-  const blockedByDgd = !isDGD && !isPresident && !dgdHasVisa;
+  const blockedByDgd = dgdRequired && !isDGD && !isPresident && !dgdHasVisa;
 
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
   const dash = t("correction_douaniere:info.dash");
@@ -350,7 +356,7 @@ const CorrectionDouaniere = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              {t("correction_douaniere:page.title_with_number", { numero: demande?.numero || `#${id}` })}
+              {t("correction_douaniere:page.title_with_number", { numero: demande ? displayRef(demande) : `#${id}` })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">{t("correction_douaniere:page.subtitle")}</p>
           </div>
@@ -369,7 +375,7 @@ const CorrectionDouaniere = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">{t("correction_douaniere:info.numero")}</span>
-                      <p className="font-medium">{demande.numero || `#${demande.id}`}</p>
+                      <p className="font-medium">{displayRef(demande)}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">{t("correction_douaniere:info.statut")}</span>
@@ -406,7 +412,7 @@ const CorrectionDouaniere = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex border-b border-border mb-4 overflow-x-auto">
-                    {DECISION_ROLES.map((role) => {
+                    {visibleDecisionRoles.map((role) => {
                       const roleDecs = decisions.filter(d => d.role === role);
                       const orgHasVisa = roleDecs.some(d => d.decision === "VISA");
                       const orgHasRejets = roleDecs.some(d => d.decision === "REJET_TEMP");
