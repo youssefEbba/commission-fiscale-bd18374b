@@ -102,7 +102,7 @@ export default function CreditFiche() {
                   <Field label="Montant cordon" value={formatAmount(c.montantCordon)} />
                   <Field label="Solde cordon" value={formatAmount(c.soldeCordon)} />
                   <Field label="Montant TVA intérieure" value={formatAmount(c.montantTVAInterieure)} />
-                  <Field label="Solde TVA intérieure" value={formatAmount(c.soldeTVAInterieure)} />
+                  <Field label="Solde TVA intérieure" value={formatAmount(c.soldeTVA)} />
                   <Field label="Date d'émission" value={c.dateEmission ? formatDate(c.dateEmission) : undefined} />
                   <Field label="Date de mise en place" value={c.dateMiseEnPlace ? formatDate(c.dateMiseEnPlace) : undefined} />
                 </CardContent>
@@ -119,11 +119,11 @@ export default function CreditFiche() {
                       <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Aucun document</TableCell></TableRow>
                     ) : fiche!.documents!.map(d => (
                       <TableRow key={d.id}>
-                        <TableCell>{d.typeDocument ? tTypeDocument(d.typeDocument) : "—"}</TableCell>
+                        <TableCell>{d.type ? tTypeDocument(d.type) : "—"}</TableCell>
                         <TableCell className="max-w-[280px] truncate">{d.nomFichier || "—"}</TableCell>
                         <TableCell>{d.dateUpload ? formatDate(d.dateUpload) : "—"}</TableCell>
                         <TableCell className="text-end">
-                          <Button size="sm" variant="outline" onClick={() => void openDocument(d.id!)}>Ouvrir</Button>
+                          <Button size="sm" variant="outline" onClick={() => void openDocument(d)}>Ouvrir</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -144,9 +144,9 @@ export default function CreditFiche() {
                       ) : fiche!.utilisations!.map(u => (
                         <TableRow key={u.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                           <TableCell className="font-medium">{displayRef(u)}</TableCell>
-                          <TableCell>{u.typeUtilisation || "—"}</TableCell>
+                          <TableCell>{u.type || "—"}</TableCell>
                           <TableCell><Badge variant="outline" className="text-xs">{tStatutUtilisation(u.statut)}</Badge></TableCell>
-                          <TableCell className="text-end">{formatAmount(u.montantTVAInterieure ?? u.montantDroitsDouane)}</TableCell>
+                          <TableCell className="text-end">{formatAmount(u.montant ?? u.montantDroits)}</TableCell>
                           <TableCell>{u.dateCreation ? formatDate(u.dateCreation) : "—"}</TableCell>
                         </TableRow>
                       ))}
@@ -165,9 +165,9 @@ export default function CreditFiche() {
                     <TableBody>
                       {fiche!.tvaStock!.map((s, i) => (
                         <TableRow key={s.id ?? i}>
-                          <TableCell>{s.source || "—"}</TableCell>
-                          <TableCell className="text-end">{formatAmount(s.montant)}</TableCell>
-                          <TableCell className="text-end">{formatAmount(s.solde)}</TableCell>
+                          <TableCell>{s.numeroDeclaration || s.source || "—"}</TableCell>
+                          <TableCell className="text-end">{formatAmount(s.montantInitial)}</TableCell>
+                          <TableCell className="text-end">{formatAmount(s.montantRestant)}</TableCell>
                           <TableCell>{s.dateCreation ? formatDate(s.dateCreation) : "—"}</TableCell>
                         </TableRow>
                       ))}
