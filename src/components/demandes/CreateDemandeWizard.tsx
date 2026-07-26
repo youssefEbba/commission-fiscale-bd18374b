@@ -711,6 +711,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
           "demande:dqeTauxTVA", "demande:dqeLignes",
+          "demande:creditExtManuel", "demande:creditIntManuel",
         ];
         keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
       } catch { /* noop */ }
