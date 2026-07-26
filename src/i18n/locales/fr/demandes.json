@@ -144,6 +144,7 @@
     "cancel_demande": "Annuler la demande",
     "correction_douaniere": "Correction douanière",
     "new_rejet_temp": "Nouveau rejet temporaire",
+    "generate_adoption_letter": "Générer la lettre d'adoption",
     "more": "Plus d'actions"
   },
   "dialogs": {
