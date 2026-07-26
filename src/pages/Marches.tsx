@@ -270,6 +270,7 @@ const Marches = () => {
     const s = search.toLowerCase();
     if (!s) return true;
     return (
+      (m.reference || "").toLowerCase().includes(s) ||
       (m.numeroMarche || "").toLowerCase().includes(s) ||
       (m.intitule || "").toLowerCase().includes(s) ||
       String(m.id).includes(s)
@@ -337,7 +338,7 @@ const Marches = () => {
                     ) : (
                       filtered.map(m => (
                         <TableRow key={m.id}>
-                          <TableCell className="font-medium whitespace-nowrap">{m.numeroMarche || `#${m.id}`}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{displayRef(m)}</TableCell>
                           <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
                             {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
