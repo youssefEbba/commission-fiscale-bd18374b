@@ -931,13 +931,17 @@ const MiseEnPlaceDetail = () => {
             const tvaExpected = g != null && d != null ? g - d : null;
             const cordonMismatch = false;
             const tvaMismatch = false;
-            const baseValid = montantCordon !== "" && montantTVAInt !== "" && cordonNum >= 0 && tvaNum >= 0;
+            // Une enveloppe n'est obligatoire que si l'organisme correspondant est concerné.
+            const baseValid =
+              (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
+              (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
             const canSave = baseValid && !savingMontants;
 
             return (
               <>
                 <div className="space-y-4 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {dgdRequired && (
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.cordon_label")}</Label>
                       <div className="relative">
@@ -948,6 +952,8 @@ const MiseEnPlaceDetail = () => {
                         <p className="text-xs text-destructive">{t("mise_en_place:dialogs.montants.cordon_mismatch", { value: formatNumber(cordonExpected!) })}</p>
                       )}
                     </div>
+                    )}
+                    {dgiRequired && (
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.tva_label")}</Label>
                       <div className="relative">
@@ -958,6 +964,8 @@ const MiseEnPlaceDetail = () => {
                         <p className="text-xs text-destructive">{t("mise_en_place:dialogs.montants.tva_mismatch", { value: formatNumber(tvaExpected!) })}</p>
                       )}
                     </div>
+                    )}
+                  </div>
                   </div>
 
                   <div className="rounded-lg border p-3 space-y-3">
