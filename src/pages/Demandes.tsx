@@ -33,6 +33,7 @@ import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
+import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
