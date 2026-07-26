@@ -23,6 +23,7 @@ import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 
 import { API_BASE } from "@/lib/apiConfig";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -231,7 +232,7 @@ const Certificats = () => {
                   ) : filtered.map((c) => (
                      <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
                        <TableCell className="font-medium">
-                         {c.numero || c.reference || `#${c.id}`}
+                         {displayRef(c)}
                          {sousTraiteCertIds.has(c.id) && (
                            <Badge className="ms-2 text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">{t("certificats:list.badge.sous_traite")}</Badge>
                          )}
