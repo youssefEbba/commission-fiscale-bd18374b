@@ -400,11 +400,16 @@
       "type_projet": "نوع المشروع",
       "nomenclature_douaniere": "التسمية الجمركية",
       "entreprise_etrangere": "شركة أجنبية",
-      "groupement": "تجمّع",
+      "groupement": "تجمع",
       "rc_etranger": "السجل التجاري الأجنبي",
       "rc_etranger_placeholder": "رقم السجل التجاري الأجنبي",
       "chef_de_file": "الشركة الرائدة",
-      "chef_de_file_placeholder": "اختر الشركة الرائدة"
+      "chef_de_file_placeholder": "اختر الشركة الرائدة",
+      "titulaire": "صاحب الحق",
+      "titulaire_entreprise": "مؤسسة",
+      "titulaire_groupement": "تجمع",
+      "groupement_placeholder": "اختر تجمعاً",
+      "groupement_empty": "لا يوجد تجمع"
     },
     "modele_fiscal": {
       "section_parameters": "النموذج الضريبي — المعطيات",
@@ -500,7 +505,8 @@
       "marche_busy_with_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط (الحالة: {{statut}}). يرجى اختيار صفقة أخرى.",
       "marche_busy_no_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط. يرجى اختيار صفقة أخرى.",
       "credit_required": "يجب أن يكون أحد الرصيدين (الداخلي أو الخارجي) أكبر من الصفر",
-      "rc_etranger_required": "السجل التجاري الأجنبي إلزامي للشركة الأجنبية."
+      "rc_etranger_required": "السجل التجاري الأجنبي إلزامي للشركة الأجنبية.",
+      "groupement_required": "يرجى اختيار تجمع"
     },
     "toast": {
       "entreprise_created": "تم إنشاء المؤسسة",

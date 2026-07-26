@@ -404,7 +404,12 @@
       "rc_etranger": "Registre de commerce étranger",
       "rc_etranger_placeholder": "N° de registre de commerce étranger",
       "chef_de_file": "Chef de file",
-      "chef_de_file_placeholder": "Sélectionner le chef de file"
+      "chef_de_file_placeholder": "Sélectionner le chef de file",
+      "titulaire": "Titulaire",
+      "titulaire_entreprise": "Entreprise",
+      "titulaire_groupement": "Groupement",
+      "groupement_placeholder": "Sélectionner un groupement",
+      "groupement_empty": "Aucun groupement"
     },
     "modele_fiscal": {
       "section_parameters": "Modèle fiscal — Paramètres",
@@ -500,7 +505,8 @@
       "marche_busy_with_status": "Ce marché est déjà associé à une demande de correction active (statut : {{statut}}). Veuillez en choisir un autre.",
       "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre.",
       "credit_required": "Au moins un crédit (intérieur ou extérieur) doit être strictement supérieur à zéro",
-      "rc_etranger_required": "Le registre de commerce étranger est obligatoire pour une entreprise étrangère."
+      "rc_etranger_required": "Le registre de commerce étranger est obligatoire pour une entreprise étrangère.",
+      "groupement_required": "Veuillez sélectionner un groupement"
     },
     "toast": {
       "entreprise_created": "Entreprise créée",
