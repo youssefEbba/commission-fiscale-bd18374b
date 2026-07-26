@@ -156,6 +156,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0,
     tvaDeductible: 0, tvaNette: 0, creditInterieur: 0,
   });
+  // Enveloppes crédit saisissables (override du calcul auto) — le back exige au moins une > 0
+  const [creditExtManuel, setCreditExtManuel] = usePersistedState<string>("demande:creditExtManuel", "");
+  const [creditIntManuel, setCreditIntManuel] = usePersistedState<string>("demande:creditIntManuel", "");
 
   // Step 2: DQE — persistés
   const [dqeNumero, setDqeNumero] = usePersistedState<string>("demande:dqeNumero", "");
