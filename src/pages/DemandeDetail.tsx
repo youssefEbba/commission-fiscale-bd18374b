@@ -378,6 +378,22 @@ const DemandeDetail = () => {
     } finally { setAdoptionUploading(false); }
   };
 
+  const handleGenerateAdoptionLetter = async () => {
+    if (!selected) return;
+    try {
+      const blob = await generateAdoptionLetterPdf(selected, {
+        entreprise: entrepriseDetail,
+        marche: marcheDetail,
+        convention: conventionDetail,
+      });
+      const ref = selected.reference || selected.numero || String(selected.id);
+      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    }
+  };
+
   const handleCreateReclamation = async () => {
     if (!selected || !reclamationTexte.trim() || !reclamationFile) return;
     setReclamationSubmitting(true);
