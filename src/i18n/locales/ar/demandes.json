@@ -144,6 +144,7 @@
     "cancel_demande": "إلغاء الطلب",
     "correction_douaniere": "التصحيح الجمركي",
     "new_rejet_temp": "رفض مؤقت جديد",
+    "generate_adoption_letter": "إنشاء رسالة الاعتماد",
     "more": "إجراءات أخرى"
   },
   "dialogs": {
