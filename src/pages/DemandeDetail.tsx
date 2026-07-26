@@ -578,6 +578,52 @@ const DemandeDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Crédits demandés */}
+        {(() => {
+          const hasInt = hasCreditInterieur(selected as any);
+          const hasExt = hasCreditExterieur(selected as any);
+          const nature = hasInt && hasExt ? "Mixte" : hasInt ? "Intérieur" : hasExt ? "Extérieur" : "Non renseigné";
+          const natureClass = hasInt && hasExt
+            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+            : hasInt || hasExt
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground";
+          const ci = Number((selected as any).creditInterieur ?? 0) || 0;
+          const ce = Number((selected as any).creditExterieur ?? 0) || 0;
+          const visas = requiredVisasCorrection(selected as any);
+          return (
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Crédits demandés</h3>
+                  <Badge className={`text-xs ${natureClass}`}>{nature}</Badge>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3 text-sm">
+                  <div className="rounded-lg border border-border p-3">
+                    <span className="text-muted-foreground text-xs">Crédit intérieur (DGI)</span>
+                    <p className="font-medium">{hasInt ? `${formatAmount(ci)} MRU` : "—"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <span className="text-muted-foreground text-xs">Crédit extérieur (DGD)</span>
+                    <p className="font-medium">{hasExt ? `${formatAmount(ce)} MRU` : "—"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <span className="text-muted-foreground text-xs">Total</span>
+                    <p className="font-semibold">{hasInt || hasExt ? `${formatAmount(ci + ce)} MRU` : "—"}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Visas requis :</span>
+                  {visas.map((v) => (
+                    <Badge key={v} variant="outline" className="text-[10px]">{v}</Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+
         {/* Statut par organisme */}
         <Card>
           <CardContent className="p-6">
