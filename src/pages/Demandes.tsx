@@ -561,7 +561,7 @@ const Demandes = () => {
                             const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
                             const isCurrentDGD = (role as string) === "DGD";
                             const isPres = (role as string) === "PRESIDENT";
-                            const dgdRequired = Number(d.creditExterieur ?? 0) > 0;
+                            const dgdRequired = requiredVisasCorrection(d).includes("DGD");
                             const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
