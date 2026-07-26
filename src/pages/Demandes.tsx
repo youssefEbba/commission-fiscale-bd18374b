@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter,
-  AlertTriangle, MoreHorizontal, Info,
+  AlertTriangle, MoreHorizontal, Info, Download,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,6 +33,7 @@ import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
+import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -146,6 +147,17 @@ const Demandes = () => {
       setEditingDemande(d);
     } finally {
       setLoadingEditId(null);
+    }
+  };
+
+  const handleGenerateAdoptionLetter = async (d: DemandeCorrectionDto) => {
+    try {
+      const blob = await generateAdoptionLetterPdf(d);
+      const ref = d.reference || d.numero || String(d.id);
+      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
     }
   };
 
@@ -603,6 +615,11 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 me-2" /> {t("demandes:actions.view")}
                                   </DropdownMenuItem>
+                                  {role === "PRESIDENT" && d.statut === "EN_VALIDATION" && !d.documents?.some(doc => ((doc as any).codeDocument ?? doc.type) === "LETTRE_ADOPTION" && doc.actif !== false) && (
+                                    <DropdownMenuItem onClick={() => handleGenerateAdoptionLetter(d)}>
+                                      <Download className="h-4 w-4 me-2" /> {t("demandes:actions.generate_adoption_letter")}
+                                    </DropdownMenuItem>
+                                  )}
                                   {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
                                     <>
                                       <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>

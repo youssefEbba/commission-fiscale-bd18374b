@@ -59,6 +59,7 @@
       "marche_fallback": "Marché #{{id}}",
       "marche_detached": "Marché #{{id}} (détaché)"
     },
+    "generate_adoption_letter": "Télécharger la lettre d'adoption",
     "org_status": {
       "title": "Statut par membre",
       "hint": "Les rejets ne sont pas modifiables.",
@@ -144,6 +145,7 @@
     "cancel_demande": "Annuler la demande",
     "correction_douaniere": "Correction douanière",
     "new_rejet_temp": "Nouveau rejet temporaire",
+    "generate_adoption_letter": "Générer la lettre d'adoption",
     "more": "Plus d'actions"
   },
   "dialogs": {
@@ -272,6 +274,8 @@
     "demande_cancelled": "Demande annulée avec succès",
     "cancel_error": "Erreur lors de l'annulation",
     "demande_adopted": "Demande adoptée et lettre d'adoption enregistrée",
+    "letter_generated": "Lettre d'adoption générée avec succès",
+    "letter_generate_error": "Erreur lors de la génération de la lettre d'adoption",
     "message_required_title": "Message requis",
     "message_required_desc": "Ce document répond à un rejet temporaire. Veuillez saisir un message.",
     "response_sent": "Réponse envoyée",

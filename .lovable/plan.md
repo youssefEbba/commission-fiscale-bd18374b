@@ -1,124 +1,93 @@
-# Alignement Front — Contrats back-end commission
+Objectif : permettre au Président de générer une lettre d'adoption pré-remplie (PDF institutionnel) avant de l'uploader et d'adopter la demande.
 
-Livrable front consommant les 5 phases livrées côté back. Découpé en chantiers indépendants, testables un par un.
+````text
+Flux actuel :
+  EN_VALIDATION → clic "Adopter" → modale upload LETTRE_ADOPTION → ADOPTEE
 
----
+Flux cible :
+  EN_VALIDATION → bouton "Générer la lettre d'adoption" → PDF téléchargeable
+                → modale upload LETTRE_ADOPTION (pré-remplissable) → ADOPTEE
+````
 
-## Phase A — Demande de correction : marché optionnel + crédits + routing visas
+## 1. Générateur PDF `src/lib/adoptionLetterPdf.ts`
 
-### A1. Wizard correction (`CreateDemandeWizard.tsx`)
-- Retirer l'étape/section "création de marché".
-- Ajouter un champ texte libre `intituleMarche` (obligatoire).
-- Ajouter deux champs numériques `creditInterieur` et `creditExterieur` (défaut 0, min 0).
-- Validation front avant soumission : `creditInterieur + creditExterieur > 0`, sinon bloquer avec message clair.
-- Ne plus envoyer `marcheId` (sauf mode édition d'une demande liée à un marché existant, à conserver pour rétro-compat).
-- Payload : `{ intituleMarche, creditInterieur, creditExterieur, ... }`.
+Créer un générateur jsPDF reprenant le style institutionnel du certificat :
+- En-tête : République Islamique de Mauritanie, Ministère des Finances, Commission Fiscale, emblème officiel (`logo-official.png`).
+- Titre : « LETTRE D'ADOPTION ».
+- Corps pré-rempli avec les données de la demande :
+  - Référence demande (`reference` fallback `numero`).
+  - Date du jour.
+  - Entreprise / Groupement (raison sociale, NIF affiché).
+  - Convention (référence + intitulé) et/ou Marché (numéro + intitulé).
+  - Crédits demandés : extérieur, intérieur, total, nature (intérieur / extérieur / mixte).
+  - Mention d'adoption : "La Commission Fiscale, réunie en session, a examiné la demande de correction [...] et a décidé de l'adopter."
+  - Signature Président (ligne pointillée + libellé).
+- Pied de page : référence technique, date.
+- Pas de QR code (pas de vérification publique requise pour une lettre interne).
 
-### A2. Types (`src/lib/api.ts`)
-- Étendre `DemandeCorrectionDto`, `CreateDemandeCorrectionRequest`, `UpdateDemandeCorrectionRequest` avec `intituleMarche`, `creditInterieur`, `creditExterieur`.
-- `marcheId` devient optionnel.
+Fonction exportée :
+```ts
+export async function generateAdoptionLetterPdf(
+  demande: DemandeCorrectionDto,
+  ctx?: { convention?: ConventionDto | null; marche?: MarcheDto | null; entreprise?: EntrepriseDto | null; autorite?: AutoriteContractanteDto | null; }
+): Promise<Blob>
+```
 
-### A3. Détail demande (`DemandeDetail.tsx`, `CorrectionDouaniere.tsx`)
-- Afficher `intituleMarche` en tête si présent (sinon fallback sur marché lié).
-- Afficher les 2 enveloppes crédit (Intérieur / Extérieur) avec `formatAmount`.
-- Masquer visuellement la ligne / colonne d'un membre exclu :
-  - DGI masquée si `creditInterieur == 0`.
-  - DGD masquée si `creditExterieur == 0`.
-- Appliquer la même règle dans `MiseEnPlaceDetail.tsx` pour visas et champs montants (masquer champ Cordon si DGD exclue, champ TVA intérieure si DGI exclue).
+## 2. Bouton de génération dans les écrans de demande
 
-### A4. Notifications / listes de tâches
-- Ne pas afficher de bandeau "en attente DGI/DGD" pour l'utilisateur d'un rôle exclu (utiliser les crédits pour filtrer côté affichage).
+### `src/pages/DemandeDetail.tsx`
+- Ajouter un bouton « Télécharger la lettre d'adoption » (icône `Download`) à côté du bouton « Adopter », visible uniquement :
+  - rôle `PRESIDENT` (ou rôle effectif via commission-relais),
+  - statut `EN_VALIDATION`,
+  - pas de lettre d'adoption déjà uploadée.
+- Au clic : appel `generateAdoptionLetterPdf(selected, ctx)` puis `URL.createObjectURL` + téléchargement via ancre invisible.
 
----
+### `src/pages/Demandes.tsx`
+- Ajouter la même action dans la ligne/tableau ou dans la modale d'adoption (selon l'emplacement du bouton "Adopter").
+- Mêmes règles de visibilité.
 
-## Phase B — Références lisibles `PREFIXE-NN/AAAA`
+## 3. Intégration avec la modale d'adoption existante
 
-### B1. Types (`src/lib/api.ts`)
-Ajouter `reference?: string` à `DemandeCorrectionDto`, `CertificatCreditDto`, `MarcheDto`, `UtilisationCreditDto`.
+Option retenue : **génération séparée, upload manuel ensuite** (plus sûr, l'utilisateur contrôle le document).
+- La modale d'upload reste inchangée dans un premier temps.
+- Le bouton de génération affiche un hint : « Générez le projet de lettre, imprimez-le, signez-le, puis uploadez-le ici. »
+- Si faisable sans risque : pré-remplir le champ `file` de la modale d'adoption avec le Blob généré (optionnel, à évaluer lors de l'implémentation).
 
-### B2. Affichage
-Priorité `reference` sinon fallback `numero` (helper `displayRef(entity) => entity.reference ?? entity.numero`) dans :
-- Listes : `Demandes.tsx`, `DemandesMiseEnPlace.tsx`, `Certificats.tsx`, `Utilisations.tsx`, `Marches.tsx`, `CorrectionDouaniere.tsx`.
-- Détails : `DemandeDetail.tsx`, `CertificatDetail.tsx`, `UtilisationDetail.tsx`, `MarcheDetail.tsx`, `MiseEnPlaceDetail.tsx`.
-- PDF : `certificatSignaturePdf.ts`, `liquidationPdf.ts` (afficher `reference` en en-tête, garder `numero` en pied technique).
-- Notifications : `NotificationBell.tsx` (utiliser `reference` dans le libellé lorsque disponible dans le payload).
+## 4. Types et helpers
 
----
+- Réutiliser `hasCreditInterieur` / `hasCreditExterieur` de `src/lib/visas.ts` pour déterminer la nature du crédit.
+- Réutiliser `displayRef(demande)` pour la référence lisible.
+- Réutiliser `formatAmount` pour les montants (affichage Ouguiya).
 
-## Phase C — Entreprise & Autorité
+## 5. Traductions
 
-### C1. Types + API
-- `EntrepriseDto` : ajouter `entrepriseEtrangere`, `registreCommerceEtranger`, `groupement`, `chefDeFileId`, `chefDeFileRaisonSociale`, `nifAffiche`.
-- `AutoriteContractanteDto` : ajouter `ministereTutelleNom`, `ministereTutelleCode`.
-- `RegisterRequest` : champs optionnels `acMinistereTutelleNom`, `acMinistereTutelleCode`.
+Ajouter dans `src/i18n/locales/fr/demandes.json` et `ar/demandes.json` :
+- `demandes:detail.generate_adoption_letter`
+- `demandes:detail.generate_adoption_letter_hint`
+- `demandes:detail.adoption_letter_title`
 
-### C2. Formulaire entreprise (création + édition, `Utilisateurs.tsx` / `Register.tsx` / création entreprise dans wizard)
-- Case à cocher "Entreprise étrangère" → cache le NIF, montre `registreCommerceEtranger` (requis).
-- Case "Groupement" → sélecteur d'entreprise "Chef de file" (exclure l'entreprise en cours d'édition).
-- Validation front alignée sur les règles back.
+## 6. QA
 
-### C3. Affichage NIF
-- Dans les listes/détails entreprise et les sélecteurs (`SearchableSelect`), afficher `nifAffiche` (fallback `nif`).
+- Générer un PDF de test à partir d'une demande fictive.
+- Convertir en image (`pdftoppm`) et inspecter :
+  - pas de chevauchement,
+  - marges correctes,
+  - texte tronqué,
+  - emblème présent,
+  - montants et références corrects.
+- Vérifier que le bouton n'apparaît que pour `PRESIDENT` en `EN_VALIDATION`.
 
-### C4. Ministère de tutelle
-- Formulaire inscription AC (`Register.tsx`) : ajouter 2 champs optionnels ministère (nom + code).
-- Écran AC (liste + fiche) : afficher ministère.
-- En-têtes PDF (certificat, liquidation) : afficher le ministère de tutelle de l'AC.
+## Fichiers impactés
 
----
-
-## Phase D — Intitulé
-
-- `MarcheDto.intitule` et `ConventionDto.intitule` : afficher en priorité dans les listes/détails.
-- `DemandeCorrectionDto` : afficher `conventionReference` + `conventionIntitule` dans la liste corrections et sur la fiche.
-
----
-
-## Phase E — Consultation CI (search / journal / fiche)
-
-Nouveau module frontal "Consultation crédits" accessible aux rôles nationaux + AC/Entreprise (périmètre appliqué côté back).
-
-### E1. Client API (`src/lib/api.ts`)
-- `certificatCreditApi.search(params)` → `GET /api/certificats-credit/search` avec pagination (`PageResponse<CertificatCreditDto>`).
-- `certificatCreditApi.journal({ from, to, page, size })` → `GET /api/certificats-credit/journal` → `CertificatCreditJournalDto`.
-- `certificatCreditApi.fiche(reference)` → `GET /api/certificats-credit/fiche?reference=...` → `CertificatCreditFicheDto` (encoder la référence, elle contient `/`).
-- Types : `PageResponse<T>`, `CertificatCreditJournalDto`, `CertificatCreditFicheDto`.
-
-### E2. UI Recherche multi-critères
-Nouvel écran `src/pages/CreditsRecherche.tsx` :
-- Formulaire : NIF, N° marché, Réf convention, Projet, AC (select), Statut, période from/to.
-- Table paginée résultats.
-- Ligne cliquable → fiche (E3).
-
-### E3. Fiche par référence
-`src/pages/CreditFiche.tsx` ou dialog : bloc entreprise (nifAffiche), convention, marché, AC (+ministère), intituleMarche, documents, utilisations, TVA stock.
-
-### E4. Journal daté
-Nouvel onglet dans `Reporting.tsx` "Statistiques crédits d'impôt" (déjà scindé) :
-- Ajout d'une sous-section "Journal" avec filtres date + tableau paginé + agrégats (nombre, totaux Cordon / TVA / soldes).
-- Utilise `dateMiseEnPlace` (fallback `dateEmission`) déjà géré côté back.
-
-### E5. Routing (`App.tsx`) + navigation (`DashboardLayout.tsx`)
-- Route `/dashboard/credits/recherche` et `/dashboard/credits/fiche/:reference` (référence URL-encodée).
-- Entrée menu "Consultation crédits" (rôles concernés).
-
----
-
-## Ordre d'implémentation proposé
-
-1. **Types & api client** (Phase A2, B1, C1, E1) — foundation, non visible mais débloque tout.
-2. **Phase B (références)** — impact large mais mécanique (helper `displayRef`).
-3. **Phase A** — wizard + détails + masquage membres exclus.
-4. **Phase D** — intitulé conventions/marchés.
-5. **Phase C** — entreprise étrangère / groupement / ministère.
-6. **Phase E** — module Consultation CI (search + fiche + journal).
-
-Chaque phase est livrée indépendamment ; le back tolère l'absence des nouveaux champs (rétro-compat).
-
----
+- `src/lib/adoptionLetterPdf.ts` (nouveau)
+- `src/pages/DemandeDetail.tsx`
+- `src/pages/Demandes.tsx`
+- `src/i18n/locales/fr/demandes.json`
+- `src/i18n/locales/ar/demandes.json`
 
 ## Hors périmètre
 
-- Modification des workflows back / permissions / RLS.
-- Génération de références (côté back).
-- Migration `numero` → `reference` : les deux cohabitent, `reference` est prioritaire à l'affichage.
+- Modification du workflow back (statuts, permissions).
+- Signature électronique.
+- Envoi automatique de la lettre par email.
+- Archivage spécifique de la lettre générée (le document uploadé reste le document de référence).

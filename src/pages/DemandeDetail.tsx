@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
 import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection } from "@/lib/visas";
+import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -375,6 +376,22 @@ const DemandeDetail = () => {
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally { setAdoptionUploading(false); }
+  };
+
+  const handleGenerateAdoptionLetter = async () => {
+    if (!selected) return;
+    try {
+      const blob = await generateAdoptionLetterPdf(selected, {
+        entreprise: entrepriseDetail,
+        marche: marcheDetail,
+        convention: conventionDetail,
+      });
+      const ref = selected.reference || selected.numero || String(selected.id);
+      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    }
   };
 
   const handleCreateReclamation = async () => {
@@ -1014,6 +1031,12 @@ const DemandeDetail = () => {
                             {tTransition(tr.labelKey)}
                           </Button>
                         ))}
+                        {role === "PRESIDENT" && selected.statut === "EN_VALIDATION" && !docs.some(d => ((d as any).codeDocument ?? d.type) === "LETTRE_ADOPTION" && d.actif !== false) && (
+                          <Button variant="outline" onClick={handleGenerateAdoptionLetter}>
+                            <Download className="h-4 w-4 me-1" />
+                            {t("demandes:detail.generate_adoption_letter")}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
