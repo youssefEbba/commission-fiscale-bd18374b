@@ -42,7 +42,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 import { API_BASE } from "@/lib/apiConfig";
-import { requiredVisasCorrection, isRoleExcluded, getPreVisaDocument } from "@/lib/visas";
+import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -55,6 +55,9 @@ function getDocFileUrl(doc: DocumentDto): string {
 
 const DECISION_ROLES = ["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"];
 const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION", "OFFRE_FISCALE_CORRIGEE"];
+const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string }> = {
+  DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
+};
 
 const CorrectionDouaniere = () => {
   const { id } = useParams<{ id: string }>();
@@ -225,7 +228,7 @@ const CorrectionDouaniere = () => {
   };
 
   const userRole = user?.role;
-  const uploadReq = getPreVisaDocument(userRole, demande);
+  const uploadReq = userRole ? UPLOAD_REQUIRED_ROLES[userRole] : null;
   const uploadReqLabel = uploadReq ? tTypeDocument(uploadReq.docType) : "";
   const hasUploadedRequiredDoc = uploadReq ? docs.some(d => d.type === uploadReq.docType) : true;
 
