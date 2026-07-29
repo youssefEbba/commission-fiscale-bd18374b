@@ -1013,33 +1013,42 @@ const DemandeDetail = () => {
                 return (
                   <div className="pt-2 border-t border-dashed border-border space-y-2">
                     <span className="text-xs font-semibold text-muted-foreground">{t("demandes:detail.workflow.final_decision")}</span>
-                    {!allValidated ? (
+                    {!allValidated && (
                       <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
                         {t("demandes:detail.workflow.missing_visas")}<br />{t("demandes:detail.workflow.missing_roles", { roles: missingRoles.join(", ") })}
                       </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {transitions.filter(tr => tr.isDecisionFinale && tr.from.includes(selected.statut)).map((tr, idx) => (
-                          <Button
-                            key={`final-${idx}`}
-                            variant={tr.to === "REJETEE" ? "destructive" : "default"}
-                            disabled={actionLoading === selected.id || (tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION")}
-                            title={tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION" ? t("demandes:detail.workflow.adopt_requires_en_validation", { defaultValue: "Disponible quand le dossier est en validation." }) : undefined}
-                            onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : checkAndHandlePresidentValidate(selected.id)}
-                          >
-                            {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
-                            {tTransition(tr.labelKey)}
-                          </Button>
-                        ))}
-                        {role === "PRESIDENT" && selected.statut === "EN_VALIDATION" && !docs.some(d => ((d as any).codeDocument ?? d.type) === "LETTRE_ADOPTION" && d.actif !== false) && (
-                          <Button variant="outline" onClick={handleGenerateAdoptionLetter}>
-                            <Download className="h-4 w-4 me-1" />
-                            {t("demandes:detail.generate_adoption_letter")}
-                          </Button>
-                        )}
-                      </div>
                     )}
+                    <div className="flex flex-wrap gap-2">
+                      {transitions.filter(tr => tr.isDecisionFinale && tr.from.includes(selected.statut)).map((tr, idx) => (
+                        <Button
+                          key={`final-${idx}`}
+                          variant={tr.to === "REJETEE" ? "destructive" : "default"}
+                          disabled={
+                            actionLoading === selected.id ||
+                            (tr.to === "ADOPTEE" && (selected.statut !== "EN_VALIDATION" || !allValidated))
+                          }
+                          title={
+                            tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION"
+                              ? t("demandes:detail.workflow.adopt_requires_en_validation", { defaultValue: "Disponible quand le dossier est en validation." })
+                              : tr.to === "ADOPTEE" && !allValidated
+                                ? t("demandes:detail.workflow.missing_roles", { roles: missingRoles.join(", ") })
+                                : undefined
+                          }
+                          onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : checkAndHandlePresidentValidate(selected.id)}
+                        >
+                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
+                          {tTransition(tr.labelKey)}
+                        </Button>
+                      ))}
+                      {role === "PRESIDENT" && selected.statut === "EN_VALIDATION" && !docs.some(d => ((d as any).codeDocument ?? d.type) === "LETTRE_ADOPTION" && d.actif !== false) && (
+                        <Button variant="outline" onClick={handleGenerateAdoptionLetter}>
+                          <Download className="h-4 w-4 me-1" />
+                          {t("demandes:detail.generate_adoption_letter")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
+
                 );
               })()}
             </CardContent>
