@@ -10,7 +10,7 @@ import {
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
-import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection } from "@/lib/visas";
+import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -598,17 +598,18 @@ const DemandeDetail = () => {
 
         {/* Crédits demandés */}
         {(() => {
-          const hasInt = hasCreditInterieur(selected as any);
-          const hasExt = hasCreditExterieur(selected as any);
+          const credits = resolveCredits(selected as any);
+          const hasInt = hasCreditInterieur(credits);
+          const hasExt = hasCreditExterieur(credits);
           const nature = hasInt && hasExt ? "Mixte" : hasInt ? "Intérieur" : hasExt ? "Extérieur" : "Non renseigné";
           const natureClass = hasInt && hasExt
             ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
             : hasInt || hasExt
               ? "bg-primary/10 text-primary"
               : "bg-muted text-muted-foreground";
-          const ci = Number((selected as any).creditInterieur ?? 0) || 0;
-          const ce = Number((selected as any).creditExterieur ?? 0) || 0;
-          const visas = requiredVisasCorrection(selected as any);
+          const ci = Number(credits.creditInterieur ?? 0) || 0;
+          const ce = Number(credits.creditExterieur ?? 0) || 0;
+          const visas = requiredVisasCorrection(credits);
           return (
             <Card>
               <CardContent className="p-6 space-y-4">
@@ -1007,7 +1008,7 @@ const DemandeDetail = () => {
               {(() => {
                 const hasFinalTransitions = transitions.some(tr => tr.isDecisionFinale && tr.from.includes(selected.statut));
                 if (!hasFinalTransitions) return null;
-                const REQUIRED_ROLES = requiredVisasCorrection(selected as any) as string[];
+                const REQUIRED_ROLES = requiredVisasCorrection(resolveCredits(selected as any)) as string[];
                 const allValidated = REQUIRED_ROLES.every(rr => decs.some(d => d.role === rr && d.decision === "VISA"));
                 const missingRoles = REQUIRED_ROLES.filter(rr => !decs.some(d => d.role === rr && d.decision === "VISA"));
                 return (
