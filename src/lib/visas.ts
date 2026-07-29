@@ -20,6 +20,26 @@ export function isPositive(v: number | string | null | undefined): boolean {
   return v != null && v !== "" && Number(v) > 0;
 }
 
+/**
+ * Résout les crédits d'un dossier : le back n'expose pas toujours
+ * `creditInterieur` / `creditExterieur` à la racine (cas des demandes de
+ * correction), ils se trouvent alors dans `modeleFiscal.recapitulatif`.
+ */
+export function resolveCredits(d?: any): CreditsSource {
+  const recap = d?.modeleFiscal?.recapitulatif;
+  const fiscInt = d?.modeleFiscal?.fiscaliteInterieure;
+  const creditInterieur = isPositive(d?.creditInterieur)
+    ? d.creditInterieur
+    : isPositive(recap?.creditInterieur)
+      ? recap.creditInterieur
+      : fiscInt?.creditInterieur ?? d?.creditInterieur ?? null;
+  const creditExterieur = isPositive(d?.creditExterieur)
+    ? d.creditExterieur
+    : recap?.creditExterieur ?? d?.creditExterieur ?? null;
+  return { creditInterieur, creditExterieur };
+}
+
+
 export function hasCreditInterieur(d?: CreditsSource | null): boolean {
   return isPositive(d?.creditInterieur);
 }
