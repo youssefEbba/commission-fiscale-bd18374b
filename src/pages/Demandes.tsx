@@ -32,7 +32,7 @@ import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
-import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
+import { requiredVisasCorrection } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -474,8 +474,8 @@ const Demandes = () => {
   const filtered = demandes.filter((d) => {
     if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) return false;
     if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) return false;
-    // Phase A — routing dynamique des visas : un organisme dont l'enveloppe est nulle est exclu du workflow.
-    if (isRoleExcluded(role as string, d)) return false;
+    // Correction : les 4 acteurs (DGD/DGTCP/DGI/DGB) visent toujours, aucun filtrage par montant.
+    // correction : plus de filtrage par montant, les 4 acteurs visent toujours
     const matchSearch =
       displayRef(d).toLowerCase().includes(search.toLowerCase()) ||
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||

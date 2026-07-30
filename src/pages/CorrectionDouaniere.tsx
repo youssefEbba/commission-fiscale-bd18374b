@@ -42,7 +42,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 import { API_BASE } from "@/lib/apiConfig";
-import { requiredVisasCorrection, isRoleExcluded } from "@/lib/visas";
+import { requiredVisasCorrection, requiredPreVisaDocCorrection, resolveCredits } from "@/lib/visas";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -55,9 +55,6 @@ function getDocFileUrl(doc: DocumentDto): string {
 
 const DECISION_ROLES = ["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT"];
 const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPTION", "OFFRE_FISCALE_CORRIGEE"];
-const UPLOAD_REQUIRED_ROLES: Record<string, { docType: string }> = {
-  DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-};
 
 const CorrectionDouaniere = () => {
   const { id } = useParams<{ id: string }>();
@@ -228,9 +225,13 @@ const CorrectionDouaniere = () => {
   };
 
   const userRole = user?.role;
-  const uploadReq = userRole ? UPLOAD_REQUIRED_ROLES[userRole] : null;
+  // Le document pré-visa dépend uniquement des montants (DGD → offre corrigée si crédit ext. > 0,
+  // DGI → crédit intérieur si crédit ext. = 0 et crédit int. > 0).
+  const preVisaDocType = requiredPreVisaDocCorrection(userRole, resolveCredits(demande));
+  const uploadReq = preVisaDocType ? { docType: preVisaDocType } : null;
   const uploadReqLabel = uploadReq ? tTypeDocument(uploadReq.docType) : "";
   const hasUploadedRequiredDoc = uploadReq ? docs.some(d => d.type === uploadReq.docType) : true;
+
 
   const handlePreVisaUpload = async () => {
     if (!demande || !uploadReq || !preVisaFile) return;
@@ -322,13 +323,13 @@ const CorrectionDouaniere = () => {
       toast({ title: errTitle, description: e.message, variant: "destructive" });
     } finally { setResponseLoading(false); }
   };
-
+  // Correction : les 4 acteurs visent toujours ; seuls les documents pré-visa dépendent des montants.
   // Phase A — routing dynamique : un organisme dont l'enveloppe est nulle est exclu du workflow.
   const requiredVisas = requiredVisasCorrection(demande);
   const dgdRequired = requiredVisas.includes("DGD");
   const dgiRequired = requiredVisas.includes("DGI");
   const visibleDecisionRoles = DECISION_ROLES.filter(r => r === "PRESIDENT" || requiredVisas.includes(r as any));
-  const isRoleConcerned = !userRole || !isRoleExcluded(userRole, demande);
+  const isRoleConcerned = true; // correction : les 4 acteurs sont toujours concernés
   const effectiveActiveOrg = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";
