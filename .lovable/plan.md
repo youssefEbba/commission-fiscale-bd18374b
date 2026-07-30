@@ -1,93 +1,51 @@
-Objectif : permettre au Président de générer une lettre d'adoption pré-remplie (PDF institutionnel) avant de l'uploader et d'adopter la demande.
+# État des lieux — Tâches commission (consolidé sans distinction front/back)
 
-````text
-Flux actuel :
-  EN_VALIDATION → clic "Adopter" → modale upload LETTRE_ADOPTION → ADOPTEE
+## Déjà réalisé
 
-Flux cible :
-  EN_VALIDATION → bouton "Générer la lettre d'adoption" → PDF téléchargeable
-                → modale upload LETTRE_ADOPTION (pré-remplissable) → ADOPTEE
-````
+1. Ligne d'upload cliquable sur les documents.
+2. Tri A→Z des entreprises + renommage « Organisme » → « Membre ».
+3. Reporting scindé en deux onglets (applicatif / statistiques crédits d'impôt).
+4. Refonte de la page d'accueil (Hero, Process, CTA).
+5. Demande de correction sans création de marché (`intituleMarche`).
+6. Crédits intérieur / extérieur sur la correction avec validation « au moins un > 0 ».
+7. Entreprise étrangère (NIF facultatif, registre de commerce étranger).
+8. Ministère de tutelle affiché et injecté dans les PDF officiels.
+9. Groupements d'entreprises avec chef de file persistant + page de gestion + création inline.
+10. Références lisibles `DC-NN/AAAA`, `DM-NN/AAAA`, etc. propagées dans listes, détails, PDF et notifications.
+11. Journal / fiche / recherche de crédits d'impôt (NIF, marché, convention/projet).
+12. Visas dynamiques et ordre de visa mis à jour : les 4 acteurs visent toujours, document pré-visa conditionnel selon les montants.
+13. Génération PDF de la lettre d'adoption pour le Président.
+14. Certificat de crédit d'impôts : design Ouguiya, logo officiel, QR code de vérification.
+15. Page publique de vérification de certificat avec génération PDF.
+16. Navigation profonde (deep-link) depuis les notifications workflow.
+17. Gestion utilisateurs : modification profil, administration comptes, permissions `user.*`, demandes de reset.
+18. Upload fail-fast MinIO avec rollback en cas d'erreur 503.
+19. Injection des documents selon la configuration GED.
+20. Info dialogs « Plus de détails » sur convention/marché sans quitter l'écran.
+21. Retrait de la situation fiscale des affichages entreprise.
+22. Modules masqués temporairement : simulation, sous-traitance, modifications/avenants.
+23. Correction des libellés de documents requis (remplacement des « — »).
+24. Corrections de précision/arrondi sur les montants (utilisations, mise en place).
+25. Certificat téléchargeable par le Président avant signature/upload.
+26. Vérification de l'éligibilité du certificat avant soumission d'utilisation.
+27. Optimisation de l'affichage et du scrolling des notifications.
+28. Commission relais : impersonation Entreprise / AC avec bandeau et release.
+29. Divers ajustements UX (badges statut non cliquables, intitulés marché/convention, etc.).
 
-## 1. Générateur PDF `src/lib/adoptionLetterPdf.ts`
+## Reste à faire
 
-Créer un générateur jsPDF reprenant le style institutionnel du certificat :
-- En-tête : République Islamique de Mauritanie, Ministère des Finances, Commission Fiscale, emblème officiel (`logo-official.png`).
-- Titre : « LETTRE D'ADOPTION ».
-- Corps pré-rempli avec les données de la demande :
-  - Référence demande (`reference` fallback `numero`).
-  - Date du jour.
-  - Entreprise / Groupement (raison sociale, NIF affiché).
-  - Convention (référence + intitulé) et/ou Marché (numéro + intitulé).
-  - Crédits demandés : extérieur, intérieur, total, nature (intérieur / extérieur / mixte).
-  - Mention d'adoption : "La Commission Fiscale, réunie en session, a examiné la demande de correction [...] et a décidé de l'adopter."
-  - Signature Président (ligne pointillée + libellé).
-- Pied de page : référence technique, date.
-- Pas de QR code (pas de vérification publique requise pour une lettre interne).
+1. Bouton « Retirer » sur chaque fichier sélectionné avant soumission.
+2. Respect de la charte graphique officielle de l'État mauritanien (tokens couleurs/typo).
+3. Révision des statuts dans tous les circuits workflow.
+4. Révision du workflow de Mise en place pour le rendre conforme au processus attendu.
+5. Affichage des montants de crédit dans l'écran de visa DGD / DGI.
+6. Possibilité de modifier les montants des crédits après leur saisie.
+7. Clarification du point « Les crédits intérieurs ne doivent pas être chargés ».
+8. Possibilité pour le profil Commission Relais de créer une autorité contractante.
+9. Développement d'un script de validation des workflows.
+10. Mise en place d'un historique des utilisations (journal des actions).
+11. Mécanisme permettant de lier les demandes existantes à un numéro de crédit déjà existant.
 
-Fonction exportée :
-```ts
-export async function generateAdoptionLetterPdf(
-  demande: DemandeCorrectionDto,
-  ctx?: { convention?: ConventionDto | null; marche?: MarcheDto | null; entreprise?: EntrepriseDto | null; autorite?: AutoriteContractanteDto | null; }
-): Promise<Blob>
-```
+## Prochain lot recommandé
 
-## 2. Bouton de génération dans les écrans de demande
-
-### `src/pages/DemandeDetail.tsx`
-- Ajouter un bouton « Télécharger la lettre d'adoption » (icône `Download`) à côté du bouton « Adopter », visible uniquement :
-  - rôle `PRESIDENT` (ou rôle effectif via commission-relais),
-  - statut `EN_VALIDATION`,
-  - pas de lettre d'adoption déjà uploadée.
-- Au clic : appel `generateAdoptionLetterPdf(selected, ctx)` puis `URL.createObjectURL` + téléchargement via ancre invisible.
-
-### `src/pages/Demandes.tsx`
-- Ajouter la même action dans la ligne/tableau ou dans la modale d'adoption (selon l'emplacement du bouton "Adopter").
-- Mêmes règles de visibilité.
-
-## 3. Intégration avec la modale d'adoption existante
-
-Option retenue : **génération séparée, upload manuel ensuite** (plus sûr, l'utilisateur contrôle le document).
-- La modale d'upload reste inchangée dans un premier temps.
-- Le bouton de génération affiche un hint : « Générez le projet de lettre, imprimez-le, signez-le, puis uploadez-le ici. »
-- Si faisable sans risque : pré-remplir le champ `file` de la modale d'adoption avec le Blob généré (optionnel, à évaluer lors de l'implémentation).
-
-## 4. Types et helpers
-
-- Réutiliser `hasCreditInterieur` / `hasCreditExterieur` de `src/lib/visas.ts` pour déterminer la nature du crédit.
-- Réutiliser `displayRef(demande)` pour la référence lisible.
-- Réutiliser `formatAmount` pour les montants (affichage Ouguiya).
-
-## 5. Traductions
-
-Ajouter dans `src/i18n/locales/fr/demandes.json` et `ar/demandes.json` :
-- `demandes:detail.generate_adoption_letter`
-- `demandes:detail.generate_adoption_letter_hint`
-- `demandes:detail.adoption_letter_title`
-
-## 6. QA
-
-- Générer un PDF de test à partir d'une demande fictive.
-- Convertir en image (`pdftoppm`) et inspecter :
-  - pas de chevauchement,
-  - marges correctes,
-  - texte tronqué,
-  - emblème présent,
-  - montants et références corrects.
-- Vérifier que le bouton n'apparaît que pour `PRESIDENT` en `EN_VALIDATION`.
-
-## Fichiers impactés
-
-- `src/lib/adoptionLetterPdf.ts` (nouveau)
-- `src/pages/DemandeDetail.tsx`
-- `src/pages/Demandes.tsx`
-- `src/i18n/locales/fr/demandes.json`
-- `src/i18n/locales/ar/demandes.json`
-
-## Hors périmètre
-
-- Modification du workflow back (statuts, permissions).
-- Signature électronique.
-- Envoi automatique de la lettre par email.
-- Archivage spécifique de la lettre générée (le document uploadé reste le document de référence).
+Commencer par les points 1, 5 et 2 (front immédiat / visuel) dès que la charte graphique est disponible, puis passer aux points 6, 8, 10 et 11 qui nécessitent un contrat back, enfin 3, 4, 7 et 9 en coordination avec le back.
