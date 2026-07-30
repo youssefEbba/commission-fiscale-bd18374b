@@ -53,14 +53,31 @@ function isLegacy(d?: CreditsSource | null): boolean {
   return !hasCreditInterieur(d) && !hasCreditExterieur(d);
 }
 
-/** Organismes dont le visa est requis pour la CORRECTION. */
-export function requiredVisasCorrection(d?: CreditsSource | null): VisaOrg[] {
-  if (isLegacy(d)) return ["DGD", "DGTCP", "DGI", "DGB"];
-  const roles: VisaOrg[] = ["DGTCP", "DGB"];
-  if (hasCreditExterieur(d)) roles.unshift("DGD");
-  if (hasCreditInterieur(d)) roles.push("DGI");
-  return roles;
+/**
+ * Organismes dont le visa est requis pour la CORRECTION.
+ * Nouvelle règle métier : les 4 acteurs visent TOUJOURS, quels que soient les montants.
+ */
+export function requiredVisasCorrection(_d?: CreditsSource | null): VisaOrg[] {
+  return ["DGD", "DGTCP", "DGI", "DGB"];
 }
+
+/**
+ * Document à uploader avant de pouvoir viser (correction), conditionné par les montants :
+ *  - DGD : « Offre fiscale corrigée » si creditExterieur > 0
+ *  - DGI : « Crédit intérieur » si creditExterieur == 0 ET creditInterieur > 0
+ *  - DGTCP / DGB : aucun
+ */
+export function requiredPreVisaDocCorrection(
+  role: string | null | undefined,
+  d: CreditsSource | null | undefined,
+): string | null {
+  const ext = hasCreditExterieur(d);
+  const int = hasCreditInterieur(d);
+  if (role === "DGD") return ext ? "OFFRE_FISCALE_CORRIGEE" : null;
+  if (role === "DGI") return !ext && int ? "CREDIT_INTERIEUR" : null;
+  return null;
+}
+
 
 /** Organismes dont le visa est requis pour la MISE EN PLACE du certificat. */
 export function requiredVisasCertificat(d?: CreditsSource | null): VisaOrg[] {
