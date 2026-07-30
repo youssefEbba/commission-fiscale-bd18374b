@@ -342,10 +342,12 @@ const CorrectionDouaniere = () => {
   const myHasVisa = myRoleDecs.some(d => d.decision === "VISA");
   const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
 
-  const dgdHasVisa = decisions.some(d => d.role === "DGD" && d.decision === "VISA");
-  const isDGD = userRole === "DGD";
   const isPresident = userRole === "PRESIDENT";
-  const blockedByDgd = dgdRequired && !isDGD && !isPresident && !dgdHasVisa;
+  // Le rôle qui doit viser en premier est celui qui a un document pré-visa à fournir
+  // (DGD si crédit extérieur > 0, sinon DGI si crédit intérieur > 0).
+  const firstVisaRole = firstVisaRoleCorrection(resolveCredits(demande));
+  const firstVisaDone = !firstVisaRole || decisions.some(d => d.role === firstVisaRole && d.decision === "VISA");
+  const blockedByFirst = !!firstVisaRole && userRole !== firstVisaRole && !isPresident && !firstVisaDone;
 
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
   const dash = t("correction_douaniere:info.dash");
