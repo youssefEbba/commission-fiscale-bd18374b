@@ -78,6 +78,22 @@ export function requiredPreVisaDocCorrection(
   return null;
 }
 
+/**
+ * Rôle devant apposer son visa EN PREMIER pour la correction.
+ * Règle : celui qui a un document pré-visa à fournir.
+ *  - creditExterieur > 0            → DGD
+ *  - creditExterieur == 0 && int > 0 → DGI
+ *  - sinon                          → aucun (pas d'ordre imposé)
+ * Les deux cas sont mutuellement exclusifs.
+ */
+export function firstVisaRoleCorrection(d: CreditsSource | null | undefined): VisaOrg | null {
+  if (hasCreditExterieur(d)) return "DGD";
+  if (hasCreditInterieur(d)) return "DGI";
+  return null;
+}
+
+
+
 
 /** Organismes dont le visa est requis pour la MISE EN PLACE du certificat. */
 export function requiredVisasCertificat(d?: CreditsSource | null): VisaOrg[] {
