@@ -60,7 +60,9 @@
     "solve_rejets_first": "يجب معالجة الرفوض أولاً",
     "rejeter_temp_first": "رفض مؤقت",
     "rejeter_temp_again": "رفض مؤقت جديد",
-    "visa_already": "التأشيرة موضوعة بالفعل"
+    "visa_already": "التأشيرة موضوعة بالفعل",
+    "blocked_by_first_title": "⏳ في انتظار تأشيرة {{role}}",
+    "blocked_by_first_body": "يجب على {{role}} التأشير أولاً قبل أن تتمكن من إبداء رأيك."
   },
   "final": {
     "card_title": "القرار النهائي",

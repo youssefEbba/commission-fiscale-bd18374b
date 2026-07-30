@@ -10,7 +10,7 @@ import {
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
-import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits } from "@/lib/visas";
+import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits, firstVisaRoleCorrection } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -965,10 +965,10 @@ const DemandeDetail = () => {
               {(() => {
                 const myHasVisa = decs.some(d => d.role === role && d.decision === "VISA");
                 const myOpenRejets = decs.filter(d => d.role === role && d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-                const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
-                const isCurrentDGD = (role as string) === "DGD";
+                const firstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
+                const firstVisaDone = !firstRole || decs.some(d => d.role === firstRole && d.decision === "VISA");
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (
@@ -983,8 +983,8 @@ const DemandeDetail = () => {
                     )}
                     {blocked ? (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">{t("demandes:detail.workflow.blocked_title")}</p>
-                        <p className="mt-1">{t("demandes:detail.workflow.blocked_description")}</p>
+                        <p className="font-medium">{t("demandes:detail.workflow.blocked_first_title", { role: firstRole })}</p>
+                        <p className="mt-1">{t("demandes:detail.workflow.blocked_first_description", { role: firstRole })}</p>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">

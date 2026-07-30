@@ -32,7 +32,7 @@ import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
-import { requiredVisasCorrection } from "@/lib/visas";
+import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -570,11 +570,11 @@ const Demandes = () => {
                         <TableCell>
                           {(() => {
                             const decs = d.decisions || [];
-                            const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
-                            const isCurrentDGD = (role as string) === "DGD";
+                            const firstRole = firstVisaRoleCorrection(resolveCredits(d));
+                            const firstVisaDone = !firstRole || decs.some(dec => dec.role === firstRole && dec.decision === "VISA");
                             const isPres = (role as string) === "PRESIDENT";
-                            const dgdRequired = requiredVisasCorrection(d).includes("DGD");
-                            const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
+                            const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
+
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
                             const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
@@ -583,7 +583,7 @@ const Demandes = () => {
                             const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
 
                             const badgeContent = blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_dgd_visa")}</Badge>
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_first_visa", { role: firstRole })}</Badge>
                               : myHasVisa
                               ? <Badge className="bg-green-100 text-green-800 text-xs">{t("demandes:stade.visa_applied")}</Badge>
                               : hasRejet && !allRejetsResolved
