@@ -789,8 +789,8 @@ const CorrectionDouaniere = () => {
 
                     {blockedByFirst && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">{t("correction_douaniere:actions.blocked_by_dgd_title")}</p>
-                        <p className="mt-1">{t("correction_douaniere:actions.blocked_by_dgd_body")}</p>
+                        <p className="font-medium">{t("correction_douaniere:actions.blocked_by_first_title", { role: firstVisaRole })}</p>
+                        <p className="mt-1">{t("correction_douaniere:actions.blocked_by_first_body", { role: firstVisaRole })}</p>
                       </div>
                     )}
 

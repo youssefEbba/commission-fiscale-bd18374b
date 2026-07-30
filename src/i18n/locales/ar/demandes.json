@@ -40,7 +40,8 @@
     "dgd_first": "⏳ يجب أن تصادق الجمارك أولاً.",
     "docs_requis": "المستندات المطلوبة:",
     "rejet_open": "مفتوح",
-    "rejet_resolved": "تم الحل"
+    "rejet_resolved": "تم الحل",
+    "waiting_first_visa": "⏳ تأشيرة {{role}}"
   },
   "detail": {
     "title": "الطلب {{numero}}",
@@ -116,7 +117,9 @@
       "blocked_description": "يجب أن تصادق الجمارك على هذا الطلب أولاً.",
       "final_decision": "القرار النهائي:",
       "missing_visas": "⚠️ يجب أن تضع جميع الجهات تأشيراتها قبل القرار النهائي.",
-      "missing_roles": "ناقص: {{roles}}"
+      "missing_roles": "ناقص: {{roles}}",
+      "blocked_first_title": "⏳ في انتظار تأشيرة {{role}}",
+      "blocked_first_description": "يجب على {{role}} التأشير على هذا الطلب أولاً."
     },
     "reclamations": {
       "title": "الشكاوى",

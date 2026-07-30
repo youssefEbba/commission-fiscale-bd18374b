@@ -40,7 +40,8 @@
     "dgd_first": "⏳ Le DGD doit valider en premier.",
     "docs_requis": "Docs requis :",
     "rejet_open": "Ouvert",
-    "rejet_resolved": "Résolu"
+    "rejet_resolved": "Résolu",
+    "waiting_first_visa": "⏳ Visa {{role}}"
   },
   "detail": {
     "title": "Demande {{numero}}",
@@ -116,7 +117,9 @@
       "blocked_description": "Le DGD doit valider cette demande en premier.",
       "final_decision": "Décision finale :",
       "missing_visas": "⚠️ Tous les membres doivent apposer leur visa avant la décision finale.",
-      "missing_roles": "Manquant : {{roles}}"
+      "missing_roles": "Manquant : {{roles}}",
+      "blocked_first_title": "⏳ En attente du visa {{role}}",
+      "blocked_first_description": "Le {{role}} doit viser cette demande en premier."
     },
     "reclamations": {
       "title": "Réclamations",

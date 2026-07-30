@@ -60,7 +60,9 @@
     "solve_rejets_first": "Résoudre les rejets d'abord",
     "rejeter_temp_first": "Rejeter temporairement",
     "rejeter_temp_again": "Nouveau rejet temporaire",
-    "visa_already": "Visa déjà apposé"
+    "visa_already": "Visa déjà apposé",
+    "blocked_by_first_title": "⏳ En attente du visa {{role}}",
+    "blocked_by_first_body": "Le {{role}} doit apposer son visa en premier avant que vous puissiez vous prononcer."
   },
   "final": {
     "card_title": "Décision finale",
