@@ -3,10 +3,10 @@
 // ================================
 
 /** Backend principal (Spring Boot) */
-export const API_BASE = "http://commission-fiscale.gov.mr/api";
+export const API_BASE = "https://stateless-dryadic-marylouise.ngrok-free.dev/api";
 
 /** WebSocket backend */
-export const WS_BASE = "http://commission-fiscale.gov.mr/ws";
+export const WS_BASE = "https://stateless-dryadic-marylouise.ngrok-free.dev/ws";
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
