@@ -583,7 +583,7 @@ const Demandes = () => {
                             const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
 
                             const badgeContent = blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_dgd_visa")}</Badge>
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_first_visa", { role: firstRole })}</Badge>
                               : myHasVisa
                               ? <Badge className="bg-green-100 text-green-800 text-xs">{t("demandes:stade.visa_applied")}</Badge>
                               : hasRejet && !allRejetsResolved
