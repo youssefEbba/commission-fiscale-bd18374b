@@ -42,7 +42,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 import { API_BASE } from "@/lib/apiConfig";
-import { requiredVisasCorrection, requiredPreVisaDocCorrection, resolveCredits } from "@/lib/visas";
+import { requiredVisasCorrection, requiredPreVisaDocCorrection, resolveCredits, firstVisaRoleCorrection } from "@/lib/visas";
 
 function getDocFileUrl(doc: DocumentDto): string {
   if (doc.chemin) {
@@ -342,6 +342,7 @@ const CorrectionDouaniere = () => {
   const myHasVisa = myRoleDecs.some(d => d.decision === "VISA");
   const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
 
+  const isDGD = userRole === "DGD";
   const isPresident = userRole === "PRESIDENT";
   // Le rôle qui doit viser en premier est celui qui a un document pré-visa à fournir
   // (DGD si crédit extérieur > 0, sinon DGI si crédit intérieur > 0).
@@ -786,14 +787,14 @@ const CorrectionDouaniere = () => {
                       </div>
                     ) : null}
 
-                    {blockedByDgd && (
+                    {blockedByFirst && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
                         <p className="font-medium">{t("correction_douaniere:actions.blocked_by_dgd_title")}</p>
                         <p className="mt-1">{t("correction_douaniere:actions.blocked_by_dgd_body")}</p>
                       </div>
                     )}
 
-                    {!blockedByDgd && uploadReq && !hasUploadedRequiredDoc && (
+                    {!blockedByFirst && uploadReq && !hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
                         <p className="font-medium">{t("correction_douaniere:actions.upload_required_title")}</p>
                         <p className="mt-1">{t("correction_douaniere:actions.upload_required_body", { label: uploadReqLabel })}</p>
@@ -804,18 +805,18 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    {!blockedByDgd && uploadReq && hasUploadedRequiredDoc && (
+                    {!blockedByFirst && uploadReq && hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
                         <span>{t("correction_douaniere:actions.upload_done", { label: uploadReqLabel })}</span>
                       </div>
                     )}
 
-                    <Button className="w-full" onClick={() => setVisaConfirmOpen(true)} disabled={actionLoading || blockedByDgd || myHasVisa || myOpenRejets.length > 0}>
+                    <Button className="w-full" onClick={() => setVisaConfirmOpen(true)} disabled={actionLoading || blockedByFirst || myHasVisa || myOpenRejets.length > 0}>
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <CheckCircle className="h-4 w-4 me-2" />}
                       {myHasVisa ? t("correction_douaniere:actions.visa_done_short") : myOpenRejets.length > 0 ? t("correction_douaniere:actions.solve_rejets_first") : t("correction_douaniere:actions.apposer_visa")}
                     </Button>
-                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByDgd || myHasVisa}>
+                    <Button variant="destructive" className="w-full" onClick={() => { setRejectMotif(""); setRejectDocsDemandes([]); setRejectOpen(true); }} disabled={actionLoading || blockedByFirst || myHasVisa}>
                       <XCircle className="h-4 w-4 me-2" />
                       {myHasVisa ? t("correction_douaniere:actions.visa_already") : myRoleDecs.some(d => d.decision === "REJET_TEMP") ? t("correction_douaniere:actions.rejeter_temp_again") : t("correction_douaniere:actions.rejeter_temp_first")}
                     </Button>
