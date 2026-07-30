@@ -323,7 +323,7 @@ const CorrectionDouaniere = () => {
       toast({ title: errTitle, description: e.message, variant: "destructive" });
     } finally { setResponseLoading(false); }
   };
-
+  // Correction : les 4 acteurs visent toujours ; seuls les documents pré-visa dépendent des montants.
   // Phase A — routing dynamique : un organisme dont l'enveloppe est nulle est exclu du workflow.
   const requiredVisas = requiredVisasCorrection(demande);
   const dgdRequired = requiredVisas.includes("DGD");
