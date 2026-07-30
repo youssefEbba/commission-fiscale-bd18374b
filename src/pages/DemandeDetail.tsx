@@ -965,10 +965,10 @@ const DemandeDetail = () => {
               {(() => {
                 const myHasVisa = decs.some(d => d.role === role && d.decision === "VISA");
                 const myOpenRejets = decs.filter(d => d.role === role && d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-                const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
-                const isCurrentDGD = (role as string) === "DGD";
+                const firstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
+                const firstVisaDone = !firstRole || decs.some(d => d.role === firstRole && d.decision === "VISA");
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (
