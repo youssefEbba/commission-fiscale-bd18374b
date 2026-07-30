@@ -983,8 +983,8 @@ const DemandeDetail = () => {
                     )}
                     {blocked ? (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">{t("demandes:detail.workflow.blocked_title")}</p>
-                        <p className="mt-1">{t("demandes:detail.workflow.blocked_description")}</p>
+                        <p className="font-medium">{t("demandes:detail.workflow.blocked_first_title", { role: firstRole })}</p>
+                        <p className="mt-1">{t("demandes:detail.workflow.blocked_first_description", { role: firstRole })}</p>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
