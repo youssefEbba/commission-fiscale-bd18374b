@@ -157,7 +157,8 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
   doc.text("relatif au", cx, y);
   y += 16;
 
-  labelDottedValue(doc, M, y, "MAITRE D'OUVRAGE :", u.certificatReference ? "" : "", 360); y += 14;
+  labelDottedValue(doc, M, y, "MAITRE D'OUVRAGE :", cert?.autoriteContractanteNom || "", 360); y += 14;
+  labelDottedValue(doc, M, y, "MINISTÈRE DE TUTELLE :", cert?.autoriteContractanteMinistereTutelleNom || "", 360); y += 14;
   const lettres = numberToFrenchWords(Math.round(montantTotal));
   doc.setFont("helvetica", "bold").setFontSize(9);
   doc.text("LA SOMME DE :", M, y);

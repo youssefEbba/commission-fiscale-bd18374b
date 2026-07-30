@@ -599,6 +599,8 @@ export interface DemandeCorrectionDto {
   dateDepot?: string;
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
+  autoriteContractanteMinistereTutelleNom?: string;
+  autoriteContractanteMinistereTutelleCode?: string;
   entrepriseId?: number;
   entrepriseRaisonSociale?: string;
   entrepriseNif?: string;
@@ -1083,6 +1085,9 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   id: number;
   reference?: string;
   numero?: string;
+  autoriteContractanteNom?: string;
+  autoriteContractanteMinistereTutelleNom?: string;
+  autoriteContractanteMinistereTutelleCode?: string;
   entrepriseId?: number;
   entrepriseNom?: string;
   entrepriseRaisonSociale?: string;

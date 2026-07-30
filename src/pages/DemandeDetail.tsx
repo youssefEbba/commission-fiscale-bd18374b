@@ -544,6 +544,9 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.ac")}</span>
                 <p className="font-medium">{selected.autoriteContractanteNom || "—"}</p>
+                {selected.autoriteContractanteMinistereTutelleNom && (
+                  <p className="text-xs text-muted-foreground">{selected.autoriteContractanteMinistereTutelleNom}</p>
+                )}
               </div>
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.entreprise")}</span>

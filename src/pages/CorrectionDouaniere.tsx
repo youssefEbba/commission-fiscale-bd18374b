@@ -391,6 +391,9 @@ const CorrectionDouaniere = () => {
                     <div>
                       <span className="text-muted-foreground">{t("correction_douaniere:info.autorite")}</span>
                       <p className="font-medium">{demande.autoriteContractanteNom || dash}</p>
+                      {demande.autoriteContractanteMinistereTutelleNom && (
+                        <p className="text-xs text-muted-foreground">{demande.autoriteContractanteMinistereTutelleNom}</p>
+                      )}
                     </div>
                     <div>
                       <span className="text-muted-foreground">{t("correction_douaniere:info.entreprise")}</span>

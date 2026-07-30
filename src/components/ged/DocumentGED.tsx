@@ -4,6 +4,7 @@ import { API_BASE } from "@/lib/apiConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { UploadRow } from "@/components/ui/upload-row";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -299,7 +300,14 @@ const DocumentGED = ({
 
             {replaceDocId && (
               <div className="flex items-center gap-2 border border-border rounded-lg p-2">
-                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <UploadRow
+                  id="ged-replace-file"
+                  className="flex-1"
+                  label={t("ged:document.replace", { defaultValue: "Remplacer le document" })}
+                  file={replaceFile}
+                  onFileChange={setReplaceFile}
+                  browseLabel={t("ged:document.browse", { defaultValue: "Parcourir" }) as string}
+                />
                 <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
                   {replacing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Replace className="h-4 w-4 me-1" />}
                   {t("ged:document.confirm")}
