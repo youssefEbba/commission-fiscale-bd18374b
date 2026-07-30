@@ -228,9 +228,13 @@ const CorrectionDouaniere = () => {
   };
 
   const userRole = user?.role;
-  const uploadReq = userRole ? UPLOAD_REQUIRED_ROLES[userRole] : null;
+  // Le document pré-visa dépend uniquement des montants (DGD → offre corrigée si crédit ext. > 0,
+  // DGI → crédit intérieur si crédit ext. = 0 et crédit int. > 0).
+  const preVisaDocType = requiredPreVisaDocCorrection(userRole, resolveCredits(demande));
+  const uploadReq = preVisaDocType ? { docType: preVisaDocType } : null;
   const uploadReqLabel = uploadReq ? tTypeDocument(uploadReq.docType) : "";
   const hasUploadedRequiredDoc = uploadReq ? docs.some(d => d.type === uploadReq.docType) : true;
+
 
   const handlePreVisaUpload = async () => {
     if (!demande || !uploadReq || !preVisaFile) return;
