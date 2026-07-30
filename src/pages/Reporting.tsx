@@ -44,8 +44,12 @@ const Reporting = () => {
 
   useEffect(() => {
     if (isNational) {
-      autoriteContractanteApi.getAll().then(setAutorites).catch(() => {});
-      entrepriseApi.getAll().then(setEntreprises).catch(() => {});
+      autoriteContractanteApi.getAll()
+        .then((list) => setAutorites([...list].sort((a, b) => (a.nom || "").localeCompare(b.nom || "", "fr", { sensitivity: "base" }))))
+        .catch(() => {});
+      entrepriseApi.getAll()
+        .then((list) => setEntreprises([...list].sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))))
+        .catch(() => {});
     }
   }, [isNational]);
 

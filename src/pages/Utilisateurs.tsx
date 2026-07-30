@@ -206,7 +206,7 @@ const Utilisateurs = () => {
         entreprisesList.length ? Promise.resolve(entreprisesList) : entrepriseApi.getAll(),
       ]);
       if (acs.status === "fulfilled") setAcList(acs.value);
-      if (ents.status === "fulfilled") setEntreprisesList(ents.value);
+      if (ents.status === "fulfilled") setEntreprisesList([...ents.value].sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" })));
     } catch { /* silencieux */ }
   };
 

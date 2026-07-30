@@ -766,7 +766,7 @@ const DemandesMiseEnPlace = () => {
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -876,7 +876,7 @@ const DemandesMiseEnPlace = () => {
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -1078,7 +1078,7 @@ const DemandesMiseEnPlace = () => {
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.numero")}</span><p className="font-medium">{displayRef(corr)}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{corr.statut}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.entreprise")}</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
-                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.ac")}</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.ac")}</span><p>{corr.autoriteContractanteNom || "—"}</p>{corr.autoriteContractanteMinistereTutelleNom && <p className="text-xs text-muted-foreground">{corr.autoriteContractanteMinistereTutelleNom}</p>}</div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_depot")}</span><p>{formatDate(corr.dateDepot)}</p></div>
                   {corr.motifRejet && <div className="col-span-2"><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.motif_rejet")}</span><p className="text-destructive">{corr.motifRejet}</p></div>}
                 </div>
