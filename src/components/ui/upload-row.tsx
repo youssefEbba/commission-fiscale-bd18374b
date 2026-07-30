@@ -17,6 +17,9 @@ export interface UploadRowProps {
   /** Button/text shown to indicate the file picker action */
   browseLabel?: string;
   replaceLabel?: string;
+  /** Sélection multiple : appelle onFilesChange avec la liste choisie. */
+  multiple?: boolean;
+  onFilesChange?: (files: File[]) => void;
 }
 
 /**
@@ -37,6 +40,8 @@ export const UploadRow: React.FC<UploadRowProps> = ({
   rightSlot,
   browseLabel = "Parcourir",
   replaceLabel = "Remplacer",
+  multiple,
+  onFilesChange,
 }) => {
   return (
     <label
@@ -92,9 +97,14 @@ export const UploadRow: React.FC<UploadRowProps> = ({
         className="sr-only"
         accept={accept}
         disabled={disabled}
+        multiple={multiple}
         onChange={(e) => {
-          const f = e.target.files?.[0] || null;
-          onFileChange(f);
+          const list = Array.from(e.target.files || []);
+          if (multiple && onFilesChange) {
+            if (list.length) onFilesChange(list);
+          } else {
+            onFileChange(list[0] || null);
+          }
           e.target.value = "";
         }}
       />
