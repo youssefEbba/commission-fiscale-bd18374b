@@ -570,11 +570,11 @@ const Demandes = () => {
                         <TableCell>
                           {(() => {
                             const decs = d.decisions || [];
-                            const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
-                            const isCurrentDGD = (role as string) === "DGD";
+                            const firstRole = firstVisaRoleCorrection(resolveCredits(d));
+                            const firstVisaDone = !firstRole || decs.some(dec => dec.role === firstRole && dec.decision === "VISA");
                             const isPres = (role as string) === "PRESIDENT";
-                            const dgdRequired = requiredVisasCorrection(d).includes("DGD");
-                            const blocked = dgdRequired && !isCurrentDGD && !isPres && !dgdVisa;
+                            const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
+
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
                             const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
