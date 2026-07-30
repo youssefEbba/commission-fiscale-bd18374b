@@ -794,17 +794,6 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    {!blockedByFirst && uploadReq && !hasUploadedRequiredDoc && (
-                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">{t("correction_douaniere:actions.upload_required_title")}</p>
-                        <p className="mt-1">{t("correction_douaniere:actions.upload_required_body", { label: uploadReqLabel })}</p>
-                        <Button size="sm" variant="outline" className="mt-2 w-full border-amber-300 text-amber-800 hover:bg-amber-100"
-                          onClick={() => { setPreVisaFile(null); setPreVisaUploadOpen(true); }}>
-                          <Upload className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:actions.upload_required_button", { label: uploadReqLabel })}
-                        </Button>
-                      </div>
-                    )}
-
                     {!blockedByFirst && uploadReq && hasUploadedRequiredDoc && (
                       <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
@@ -812,7 +801,14 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
-                    <Button className="w-full" onClick={() => setVisaConfirmOpen(true)} disabled={actionLoading || blockedByFirst || myHasVisa || myOpenRejets.length > 0}>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        if (uploadReq && !hasUploadedRequiredDoc) { setPreVisaFile(null); setPreVisaUploadOpen(true); }
+                        else setVisaConfirmOpen(true);
+                      }}
+                      disabled={actionLoading || blockedByFirst || myHasVisa || myOpenRejets.length > 0}
+                    >
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <CheckCircle className="h-4 w-4 me-2" />}
                       {myHasVisa ? t("correction_douaniere:actions.visa_done_short") : myOpenRejets.length > 0 ? t("correction_douaniere:actions.solve_rejets_first") : t("correction_douaniere:actions.apposer_visa")}
                     </Button>
