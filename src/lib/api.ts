@@ -1085,6 +1085,9 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   id: number;
   reference?: string;
   numero?: string;
+  autoriteContractanteNom?: string;
+  autoriteContractanteMinistereTutelleNom?: string;
+  autoriteContractanteMinistereTutelleCode?: string;
   entrepriseId?: number;
   entrepriseNom?: string;
   entrepriseRaisonSociale?: string;
