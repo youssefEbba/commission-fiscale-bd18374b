@@ -100,12 +100,16 @@ export function isVisaRequired(
   return list.includes(role as VisaOrg);
 }
 
-/** Un rôle non-visa (AC, entreprise, président, admin…) n'est jamais « exclu ». */
+/**
+ * Exclusion d'un organisme du circuit — ne s'applique QU'À la mise en place (certificat).
+ * Pour la correction, les 4 acteurs sont toujours concernés.
+ */
 export function isRoleExcluded(role: string | null | undefined, d: CreditsSource | null | undefined): boolean {
   if (role === "DGD") return !isLegacy(d) && !hasCreditExterieur(d);
   if (role === "DGI") return !isLegacy(d) && !hasCreditInterieur(d);
   return false;
 }
+
 
 /** `true` si tous les visas requis sont posés. */
 export function allRequiredVisasPosed(
