@@ -329,7 +329,7 @@ const CorrectionDouaniere = () => {
   const dgdRequired = requiredVisas.includes("DGD");
   const dgiRequired = requiredVisas.includes("DGI");
   const visibleDecisionRoles = DECISION_ROLES.filter(r => r === "PRESIDENT" || requiredVisas.includes(r as any));
-  const isRoleConcerned = !userRole || !isRoleExcluded(userRole, demande);
+  const isRoleConcerned = true; // correction : les 4 acteurs sont toujours concernés
   const effectiveActiveOrg = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";
