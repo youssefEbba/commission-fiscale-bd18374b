@@ -1201,10 +1201,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
                                       </SelectContent>
                                     </Select>
-                                    <Input type="file" multiple className="flex-1 text-xs" onChange={e => {
-                                      const files = e.target.files;
-                                      if (files) { Array.from(files).forEach(f => setConvCreateDocs(prev => [...prev, { type: convDocType, file: f }])); e.target.value = ""; }
-                                    }} />
+                                    <UploadRow
+                                      id="wizard-conv-create-docs"
+                                      className="flex-1"
+                                      label={t("demandes:wizard.actions.browse")}
+                                      file={null}
+                                      multiple
+                                      onFileChange={() => {}}
+                                      onFilesChange={files => files.forEach(f => setConvCreateDocs(prev => [...prev, { type: convDocType, file: f }]))}
+                                    />
                                   </div>
                                   {convCreateDocs.length > 0 && (
                                     <div className="space-y-1">
