@@ -25,6 +25,7 @@ import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UploadRow } from "@/components/ui/upload-row";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
