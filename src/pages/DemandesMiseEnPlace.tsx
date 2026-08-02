@@ -180,8 +180,11 @@ const DemandesMiseEnPlace = () => {
 
   useEffect(() => { fetchCertificats(); }, []);
 
+  const [openingCreate, setOpeningCreate] = useState(false);
+
   const openCreateDialog = async () => {
-    setShowCreate(true);
+    if (openingCreate) return;
+    setOpeningCreate(true);
     setSelectedCorrectionId("");
     setDocFiles({});
     try {
@@ -193,10 +196,14 @@ const DemandesMiseEnPlace = () => {
       ]);
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
       setDocRequirements(reqs);
+      setShowCreate(true);
     } catch {
-      errToast(t("mise_en_place:dialogs.create.load_error"));
+      toast({ title: t("common:states.error"), description: t("mise_en_place:dialogs.create.load_error"), variant: "destructive" });
+    } finally {
+      setOpeningCreate(false);
     }
   };
+
 
   /** Clé stable d'une exigence documentaire — évite que plusieurs lignes sans `typeDocument`
    *  partagent la même clé `undefined` dans `docFiles` (sinon un fichier remplit toutes les lignes). */
@@ -450,9 +457,11 @@ const DemandesMiseEnPlace = () => {
           </div>
           <div className="flex gap-2">
             {canCreate && (
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 me-2" /> {t("mise_en_place:actions.new")}
+              <Button onClick={openCreateDialog} disabled={openingCreate}>
+                {openingCreate ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Plus className="h-4 w-4 me-2" />}
+                {t("mise_en_place:actions.new")}
               </Button>
+
             )}
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
               <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("mise_en_place:actions.refresh")}
