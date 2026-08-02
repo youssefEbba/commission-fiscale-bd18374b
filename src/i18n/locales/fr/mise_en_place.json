@@ -141,6 +141,8 @@
       "correction_search": "Rechercher (n°, entreprise)…",
       "correction_empty_none": "Aucune correction adoptée disponible",
       "correction_empty_search": "Aucun résultat.",
+      "marche_missing": "Cette demande de correction n'est rattachée à aucun marché. La mise en place exige un marché rattaché et signé (date de signature renseignée). Créez d'abord le marché correspondant en le liant à cette demande.",
+      "marche_missing_cta": "Créer le marché",
       "locked_suffix": " (mise en place déjà en cours)",
       "locked_alert": "Une mise en place active existe déjà pour cette correction.",
       "selected_title": "Correction sélectionnée",
