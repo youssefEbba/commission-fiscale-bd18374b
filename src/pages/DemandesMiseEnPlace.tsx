@@ -772,6 +772,19 @@ const DemandesMiseEnPlace = () => {
               </Card>
             )}
 
+            {selectedCorrection && !selectedCorrection.marcheId && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="space-y-2">
+                  <p>{t("mise_en_place:dialogs.create.marche_missing")}</p>
+                  <Button size="sm" variant="outline" onClick={() => navigate("/dashboard/marches")}>
+                    {t("mise_en_place:dialogs.create.marche_missing_cta")}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+
             <div className="space-y-3">
               <Label className="text-base font-semibold">{t("mise_en_place:dialogs.create.docs_title")}</Label>
               {docRequirements.length === 0 ? (
