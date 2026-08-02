@@ -437,7 +437,7 @@ const Marches = () => {
                 <Label>{t("marches:form.convention")} <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span></Label>
                 <SearchableSelect
                   value={form.conventionId ? String(form.conventionId) : ""}
-                  onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}
+                  onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v), demandeCorrectionId: undefined }))}
                   placeholder={visibleConventions.length === 0 ? t("marches:form.convention_empty_scope") : t("marches:form.convention_placeholder")}
                   searchPlaceholder={t("marches:form.convention_search")}
                   options={visibleConventions.map(c => ({
