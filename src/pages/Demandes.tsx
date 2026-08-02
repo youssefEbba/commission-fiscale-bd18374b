@@ -270,20 +270,19 @@ const Demandes = () => {
     }
   };
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Le libellé est traduit via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
-  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
+  // Document à uploader obligatoirement avant le visa — miroir exact du backend
+  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
+  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
+  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
-    if (uploadBeforeVisa) {
+    const demande = demandes.find(x => x.id === id) ?? (selected?.id === id ? selected : undefined);
+    const docType = requiredPreVisaDocCorrection(role, resolveCredits(demande));
+    setPendingDocType(docType);
+    if (docType) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
           setOffreCorrigeeOpen(true);
