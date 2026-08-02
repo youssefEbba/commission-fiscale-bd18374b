@@ -45,12 +45,13 @@ const Marches = () => {
   const navigate = useNavigate();
   const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
+  const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
-  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
+  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
   const [assignOpen, setAssignOpen] = useState(false);
