@@ -457,9 +457,11 @@ const DemandesMiseEnPlace = () => {
           </div>
           <div className="flex gap-2">
             {canCreate && (
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 me-2" /> {t("mise_en_place:actions.new")}
+              <Button onClick={openCreateDialog} disabled={openingCreate}>
+                {openingCreate ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Plus className="h-4 w-4 me-2" />}
+                {t("mise_en_place:actions.new")}
               </Button>
+
             )}
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
               <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("mise_en_place:actions.refresh")}
