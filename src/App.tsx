@@ -49,6 +49,8 @@ import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
 import Groupements from "./pages/Groupements";
+import GroupementDetail from "./pages/GroupementDetail";
+import EntrepriseDetail from "./pages/EntrepriseDetail";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
@@ -233,6 +235,16 @@ const App = () => (
             <Route path="/dashboard/groupements" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Groupements />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/groupements/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <GroupementDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/entreprises/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <EntrepriseDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/referentiel-taxes" element={
