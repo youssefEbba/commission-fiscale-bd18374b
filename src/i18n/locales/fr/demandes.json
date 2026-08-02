@@ -187,7 +187,9 @@
       "nif": "NIF",
       "adresse": "Adresse",
       "situation_fiscale": "Situation fiscale",
-      "empty": "Aucune information disponible"
+      "empty": "Aucune information disponible",
+      "voir_plus": "Voir plus",
+      "voir_groupement": "Voir le groupement"
     },
     "reject": {
       "title_final": "Rejet final",

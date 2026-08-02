@@ -187,7 +187,9 @@
       "nif": "الرقم الضريبي",
       "adresse": "العنوان",
       "situation_fiscale": "الوضع الضريبي",
-      "empty": "لا توجد معلومات متاحة"
+      "empty": "لا توجد معلومات متاحة",
+      "voir_plus": "عرض المزيد",
+      "voir_groupement": "عرض التجمع"
     },
     "reject": {
       "title_final": "رفض نهائي",
