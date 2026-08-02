@@ -132,8 +132,12 @@ const GroupementDetail = () => {
                     </TableHeader>
                     <TableBody>
                       {membres.map((m: EntrepriseDto) => (
-                        <TableRow key={m.id}>
-                          <TableCell className="font-medium">{m.raisonSociale || "—"}</TableCell>
+                        <TableRow
+                          key={m.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => m.id && navigate(`/dashboard/entreprises/${m.id}`)}
+                        >
+                          <TableCell className="font-medium text-primary hover:underline">{m.raisonSociale || "—"}</TableCell>
                           <TableCell>{m.nifAffiche || m.nif || "—"}</TableCell>
                           <TableCell>{m.adresse || "—"}</TableCell>
                           <TableCell>
