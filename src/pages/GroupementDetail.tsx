@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { groupementApi, GroupementDto, EntrepriseDto } from "@/lib/api";
+import { groupementApi, entrepriseApi, GroupementDto, EntrepriseDto } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,8 @@ const GroupementDetail = () => {
 
   usePageTitle("demandes:dialogs.entreprise_info.voir_groupement");
 
+  const [membres, setMembres] = useState<EntrepriseDto[]>([]);
+
   useEffect(() => {
     const load = async () => {
       if (!id) return;
@@ -39,6 +41,14 @@ const GroupementDetail = () => {
       try {
         const data = await groupementApi.getById(Number(id));
         setGroupement(data);
+        if (data.membres?.length) {
+          setMembres(data.membres);
+        } else if (data.membreIds?.length) {
+          const results = await Promise.allSettled(data.membreIds.map(mid => entrepriseApi.getById(mid)));
+          setMembres(results.filter(r => r.status === "fulfilled").map(r => (r as PromiseFulfilledResult<EntrepriseDto>).value));
+        } else {
+          setMembres([]);
+        }
       } catch (e: any) {
         toast({
           title: t("common:errors.title", { defaultValue: "Erreur" }),
@@ -68,7 +78,6 @@ const GroupementDetail = () => {
     );
   }
 
-  const membres = groupement.membres || [];
   const chefDeFile = membres.find((m: EntrepriseDto) => m.id === groupement.chefDeFileId);
 
   return (
@@ -123,8 +132,12 @@ const GroupementDetail = () => {
                     </TableHeader>
                     <TableBody>
                       {membres.map((m: EntrepriseDto) => (
-                        <TableRow key={m.id}>
-                          <TableCell className="font-medium">{m.raisonSociale || "—"}</TableCell>
+                        <TableRow
+                          key={m.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => m.id && navigate(`/dashboard/entreprises/${m.id}`)}
+                        >
+                          <TableCell className="font-medium text-primary hover:underline">{m.raisonSociale || "—"}</TableCell>
                           <TableCell>{m.nifAffiche || m.nif || "—"}</TableCell>
                           <TableCell>{m.adresse || "—"}</TableCell>
                           <TableCell>

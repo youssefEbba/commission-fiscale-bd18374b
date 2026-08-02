@@ -13,10 +13,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 import { groupementApi, GroupementDto, formatApiErrorMessage } from "@/lib/api";
-import { Plus, Pencil, MoreHorizontal, Trash2, Loader2, RefreshCw, Users2, Search } from "lucide-react";
+import { Plus, Pencil, MoreHorizontal, Trash2, Loader2, RefreshCw, Users2, Search, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Groupements = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [data, setData] = useState<GroupementDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -124,9 +126,13 @@ const Groupements = () => {
                   </TableHeader>
                   <TableBody>
                     {filtered.map(g => (
-                      <TableRow key={g.id}>
+                      <TableRow
+                        key={g.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => g.id && navigate(`/dashboard/groupements/${g.id}`)}
+                      >
                         <TableCell className="font-medium">
-                          {g.raisonSociale}
+                          <span className="text-primary hover:underline">{g.raisonSociale}</span>
                           {g.nomCommercial && <div className="text-xs text-muted-foreground">{g.nomCommercial}</div>}
                         </TableCell>
                         <TableCell>{g.chefDeFileRaisonSociale || "—"}</TableCell>
@@ -137,12 +143,15 @@ const Groupements = () => {
                             {g.actif === false ? "Inactif" : "Actif"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={e => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => g.id && navigate(`/dashboard/groupements/${g.id}`)}>
+                                <Eye className="h-4 w-4 me-2" /> Voir les détails
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openEdit(g)}>
                                 <Pencil className="h-4 w-4 me-2" /> Modifier
                               </DropdownMenuItem>
