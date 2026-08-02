@@ -267,6 +267,7 @@
     "load_demande_complete_error": "Impossible de charger la demande complète",
     "load_demandes_error": "Impossible de charger les demandes",
     "load_entreprise_error": "Impossible de charger les informations de l'entreprise",
+    "load_groupement_error": "Impossible de charger les informations du groupement",
     "permission_denied": "Votre compte n'a pas encore la permission de consulter les demandes de correction.",
     "decision_finale_applied": "Décision finale appliquée: {{statut}}",
     "decision_finale_applied_short": "Décision finale appliquée",
