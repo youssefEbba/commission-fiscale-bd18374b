@@ -561,7 +561,17 @@ const Demandes = () => {
                       <TableRow key={d.id}>
                         <TableCell className="font-medium">{displayRef(d)}</TableCell>
                         <TableCell className="text-muted-foreground">{d.autoriteContractanteNom || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{d.entrepriseRaisonSociale || "—"}</TableCell>
+                        <TableCell>
+                          <button
+                            className="text-muted-foreground hover:text-primary hover:underline text-start cursor-pointer"
+                            onClick={() => {
+                              setSelected(d);
+                              openEntrepriseDetail(d.entrepriseId!);
+                            }}
+                          >
+                            {d.entrepriseRaisonSociale || "—"}
+                          </button>
+                        </TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${STATUT_COLORS[d.statut] || ""}`}>
                             {tStatutDemande(d.statut)}
