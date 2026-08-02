@@ -7,6 +7,7 @@ import {
   marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_VALUES,
   delegueApi, DelegueDto,
   conventionApi, ConventionDto,
+  demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
   formatApiErrorMessage,
 } from "@/lib/api";
