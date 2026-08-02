@@ -128,6 +128,7 @@ const Demandes = () => {
   const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
+  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
