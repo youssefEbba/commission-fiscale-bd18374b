@@ -293,10 +293,12 @@ const DemandeDetail = () => {
   };
 
   const checkAndHandleVisa = async (demandeId: number) => {
-    if (uploadBeforeVisa) {
+    const docType = requiredPreVisaDocCorrection(role, resolveCredits(selected));
+    setPendingDocType(docType);
+    if (docType) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(demandeId);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
         if (!hasDoc) { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
       } catch { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
     }
