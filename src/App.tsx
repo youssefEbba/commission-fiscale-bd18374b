@@ -49,6 +49,8 @@ import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
 import Groupements from "./pages/Groupements";
+import GroupementDetail from "./pages/GroupementDetail";
+import EntrepriseDetail from "./pages/EntrepriseDetail";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
