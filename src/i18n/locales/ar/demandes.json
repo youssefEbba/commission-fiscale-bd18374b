@@ -267,6 +267,7 @@
     "load_demande_complete_error": "تعذّر تحميل الطلب الكامل",
     "load_demandes_error": "تعذّر تحميل الطلبات",
     "load_entreprise_error": "تعذّر تحميل معلومات المؤسسة",
+    "load_groupement_error": "تعذّر تحميل معلومات التجمع",
     "permission_denied": "ليس لحسابك بعد صلاحية الاطلاع على طلبات التصحيح.",
     "decision_finale_applied": "تم تطبيق القرار النهائي: {{statut}}",
     "decision_finale_applied_short": "تم تطبيق القرار النهائي",
