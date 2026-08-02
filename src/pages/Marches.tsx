@@ -82,9 +82,11 @@ const Marches = () => {
       const results = await Promise.allSettled([
         marcheApi.getAll(q),
         conventionApi.getAll(),
+        demandeCorrectionApi.getAll(),
       ]);
       setMarches(results[0].status === "fulfilled" ? results[0].value : []);
       setConventions(results[1].status === "fulfilled" ? results[1].value : []);
+      setDemandes(results[2].status === "fulfilled" ? results[2].value : []);
       if (results[0].status === "rejected") {
         toast({ title: errTitle, description: t("marches:list.load_error"), variant: "destructive" });
       }
@@ -103,7 +105,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
+    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
@@ -113,6 +115,7 @@ const Marches = () => {
       conventionId: m.conventionId || 0,
       numeroMarche: m.numeroMarche || "",
       intitule: m.intitule || "",
+      dateSignature: m.dateSignature ? m.dateSignature.slice(0, 10) : "",
       montantContratHt: m.montantContratHt ?? m.montantContratTtc,
       statut: m.statut,
     });
