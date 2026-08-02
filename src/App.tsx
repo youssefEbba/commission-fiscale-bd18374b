@@ -237,6 +237,16 @@ const App = () => (
                 <Groupements />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/groupements/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <GroupementDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/entreprises/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <EntrepriseDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/referentiel-taxes" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <ReferentielTaxes />
