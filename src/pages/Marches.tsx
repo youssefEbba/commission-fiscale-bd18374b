@@ -254,6 +254,13 @@ const Marches = () => {
     if (!payload.conventionId) {
       delete payload.conventionId;
     }
+    if (!payload.dateSignature) {
+      delete payload.dateSignature;
+    }
+    // Le rattachement à une demande de correction est immuable : uniquement à la création.
+    if (editing || !payload.demandeCorrectionId) {
+      delete payload.demandeCorrectionId;
+    }
     setSubmitting(true);
     try {
       if (editing) {
