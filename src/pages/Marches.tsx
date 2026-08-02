@@ -449,6 +449,30 @@ const Marches = () => {
               </div>
               );
             })()}
+            {!editing && (() => {
+              const linkedIds = new Set(marches.map(m => m.demandeCorrectionId).filter(Boolean) as number[]);
+              const eligibles = demandes
+                .filter(d => d.statut === "ADOPTEE" || d.statut === "NOTIFIEE")
+                .filter(d => !d.marcheId && !linkedIds.has(d.id))
+                .filter(d => !form.conventionId || d.conventionId === form.conventionId);
+              return (
+                <div className="space-y-2">
+                  <Label>{t("marches:form.demande_correction")}</Label>
+                  <SearchableSelect
+                    value={form.demandeCorrectionId ? String(form.demandeCorrectionId) : ""}
+                    onValueChange={v => setForm(f => ({ ...f, demandeCorrectionId: v ? Number(v) : undefined }))}
+                    placeholder={eligibles.length === 0 ? t("marches:form.demande_correction_empty") : t("marches:form.demande_correction_placeholder")}
+                    searchPlaceholder={t("marches:form.demande_correction_search")}
+                    options={eligibles.map(d => ({
+                      value: String(d.id),
+                      label: `${d.reference || d.numero || `#${d.id}`} — ${d.intituleMarche || d.marcheIntitule || ""}`,
+                      keywords: `${d.reference || ""} ${d.numero || ""} ${d.intituleMarche || ""} ${d.entrepriseRaisonSociale || ""}`,
+                    }))}
+                  />
+                  <p className="text-xs text-muted-foreground">{t("marches:form.demande_correction_hint")}</p>
+                </div>
+              );
+            })()}
             <div className="space-y-2">
               <Label>{t("marches:form.numero_required")}</Label>
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder={t("marches:form.numero_placeholder")} />
@@ -457,6 +481,12 @@ const Marches = () => {
               <Label>{t("marches:form.intitule")} <span className="text-muted-foreground text-xs">{t("marches:form.intitule_hint")}</span></Label>
               <Input maxLength={500} value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder={t("marches:form.intitule_placeholder")} />
             </div>
+            <div className="space-y-2">
+              <Label>{t("marches:form.date_signature")}</Label>
+              <Input type="date" value={form.dateSignature || ""} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+              <p className="text-xs text-muted-foreground">{t("marches:form.date_signature_hint")}</p>
+            </div>
+
             <div className="space-y-2">
               <Label>{t("marches:form.montant_required")}</Label>
               <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
