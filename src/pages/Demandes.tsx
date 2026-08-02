@@ -32,7 +32,7 @@ import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
-import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
+import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits, requiredPreVisaDocCorrection } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -128,6 +128,7 @@ const Demandes = () => {
   const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
+  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
@@ -270,20 +271,19 @@ const Demandes = () => {
     }
   };
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Le libellé est traduit via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
-  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
+  // Document à uploader obligatoirement avant le visa — miroir exact du backend
+  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
+  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
+  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
-    if (uploadBeforeVisa) {
+    const demande = demandes.find(x => x.id === id) ?? (selected?.id === id ? selected : undefined);
+    const docType = requiredPreVisaDocCorrection(role, resolveCredits(demande));
+    setPendingDocType(docType);
+    if (docType) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
           setOffreCorrigeeOpen(true);
@@ -307,7 +307,7 @@ const Demandes = () => {
     if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
     setOffreCorrigeeUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, pendingDocType || "OFFRE_CORRIGEE", offreCorrigeeFile);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
