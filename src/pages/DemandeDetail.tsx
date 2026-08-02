@@ -1349,11 +1349,25 @@ const DemandeDetail = () => {
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.raison_sociale")}</span><p className="font-medium">{entrepriseDetail.raisonSociale || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.nif")}</span><p className="font-medium">{entrepriseDetail.nif || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.adresse")}</span><p className="font-medium">{entrepriseDetail.adresse || "—"}</p></div>
-              
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">{t("demandes:dialogs.entreprise_info.empty")}</p>
           )}
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => setEntrepriseDialogOpen(false)}>{t("common:actions.close", { defaultValue: "Fermer" })}</Button>
+            {entrepriseDetail && (
+              <Button size="sm" onClick={() => {
+                setEntrepriseDialogOpen(false);
+                if (selected?.groupementId) {
+                  navigate(`/dashboard/groupements/${selected.groupementId}`);
+                } else {
+                  navigate(`/dashboard/entreprises/${entrepriseDetail.id}`);
+                }
+              }}>
+                {selected?.groupementId ? t("demandes:dialogs.entreprise_info.voir_groupement") : t("demandes:dialogs.entreprise_info.voir_plus")}
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
