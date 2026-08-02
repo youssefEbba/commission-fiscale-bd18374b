@@ -866,6 +866,21 @@ const Demandes = () => {
           ) : (
             <p className="text-center text-muted-foreground py-4">{t("demandes:dialogs.entreprise_info.empty")}</p>
           )}
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => setEntrepriseDialogOpen(false)}>{t("common:actions.close", { defaultValue: "Fermer" })}</Button>
+            {entrepriseDetail && selected && (
+              <Button size="sm" onClick={() => {
+                setEntrepriseDialogOpen(false);
+                if (selected.groupementId) {
+                  navigate(`/dashboard/groupements/${selected.groupementId}`);
+                } else {
+                  navigate(`/dashboard/entreprises/${entrepriseDetail.id}`);
+                }
+              }}>
+                {selected.groupementId ? t("demandes:dialogs.entreprise_info.voir_groupement") : t("demandes:dialogs.entreprise_info.voir_plus")}
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
