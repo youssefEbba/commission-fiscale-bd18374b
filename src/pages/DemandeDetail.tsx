@@ -180,17 +180,14 @@ const DemandeDetail = () => {
   const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
   const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Libellé via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
+  // Document à uploader obligatoirement avant le visa — miroir exact du backend
+  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
+  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
+  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
   const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
     PRESIDENT: { docType: "LETTRE_ADOPTION" },
   } as const;
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
-  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
+  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
