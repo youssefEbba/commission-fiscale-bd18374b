@@ -78,7 +78,6 @@ const GroupementDetail = () => {
     );
   }
 
-  const membres = groupement.membres || [];
   const chefDeFile = membres.find((m: EntrepriseDto) => m.id === groupement.chefDeFileId);
 
   return (
