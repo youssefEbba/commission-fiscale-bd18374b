@@ -790,7 +790,11 @@ const DemandesMiseEnPlace = () => {
               <Label>{t("mise_en_place:dialogs.create.correction_label")}</Label>
               <SearchableSelect
                 value={selectedCorrectionId}
-                onValueChange={setSelectedCorrectionId}
+                onValueChange={(v) => {
+                  setSelectedCorrectionId(v);
+                  const c = corrections.find(x => String(x.id) === v);
+                  setMarcheForm(f => ({ ...f, intitule: c?.intituleMarche || "" }));
+                }}
                 placeholder={t("mise_en_place:dialogs.create.correction_placeholder")}
                 searchPlaceholder={t("mise_en_place:dialogs.create.correction_search")}
                 emptyMessage={corrections.length === 0 ? t("mise_en_place:dialogs.create.correction_empty_none") : t("mise_en_place:dialogs.create.correction_empty_search")}
