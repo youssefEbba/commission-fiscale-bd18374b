@@ -284,7 +284,7 @@ export async function generateAdoptionLetterPdf(
   );
   let textH = 0;
   for (const lines of wrapped) textH += lines ? 5 * lines.length + 1 : 4;
-  const signatureH = 6 + 5 + 5 + 10 + 4;
+  const signatureH = 6 + 5 + 3 + 24 + 4;
   const h5 = 8 + textH + signatureH;
 
   const FOOTER_Y = 285;
