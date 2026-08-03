@@ -120,6 +120,8 @@ const DemandesMiseEnPlace = () => {
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number }>({});
   const [creatingMarche, setCreatingMarche] = useState(false);
+  /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
+  const todayIso = () => new Date().toISOString().slice(0, 10);
 
 
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
