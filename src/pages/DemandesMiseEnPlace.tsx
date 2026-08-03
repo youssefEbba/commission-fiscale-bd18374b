@@ -122,6 +122,18 @@ const DemandesMiseEnPlace = () => {
   const [linkedMarche, setLinkedMarche] = useState<MarcheDto | null>(null);
   const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number; montantContratTtc?: number; deviseOrigine?: string }>({ deviseOrigine: "MRU" });
   const [creatingMarche, setCreatingMarche] = useState(false);
+  /** Lit un montant de marché en tolérant les alias de nommage renvoyés par le backend. */
+  const marcheMontant = (m: any, kind: "ht" | "ttc"): number | undefined => {
+    if (!m) return undefined;
+    const keys = kind === "ht"
+      ? ["montantContratHt", "montantHt", "montantContratHT", "montant_contrat_ht"]
+      : ["montantContratTtc", "montantTtc", "montantContratTTC", "montant_contrat_ttc"];
+    for (const k of keys) {
+      const v = m[k];
+      if (v != null && v !== "" && !Number.isNaN(Number(v))) return Number(v);
+    }
+    return undefined;
+  };
   /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
   const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -243,7 +255,13 @@ const DemandesMiseEnPlace = () => {
         statut: "EN_COURS",
       });
       setCorrections(prev => prev.map(c => (c.id === correction.id ? { ...c, marcheId: created.id } : c)));
-      setLinkedMarche(created);
+      // Le backend peut ne pas renvoyer les montants : on complète avec les valeurs saisies.
+      setLinkedMarche({
+        ...created,
+        montantContratHt: marcheMontant(created, "ht") ?? marcheForm.montantContratHt,
+        montantContratTtc: marcheMontant(created, "ttc") ?? marcheForm.montantContratTtc,
+        deviseOrigine: created.deviseOrigine || marcheForm.deviseOrigine || "MRU",
+      });
       setMarcheForm({ deviseOrigine: "MRU" });
       okToast(t("mise_en_place:dialogs.create.marche_created"));
     } catch (e) {
@@ -864,8 +882,8 @@ const DemandesMiseEnPlace = () => {
                   <div>{t("mise_en_place:dialogs.create.marche_numero")} : <strong>{linkedMarche.numeroMarche || "—"}</strong></div>
                   <div>{t("mise_en_place:dialogs.create.marche_date_signature")} : <strong>{linkedMarche.dateSignature ? formatDate(linkedMarche.dateSignature) : "—"}</strong></div>
                   <div className="col-span-2">{t("mise_en_place:dialogs.create.marche_intitule")} : <strong>{linkedMarche.intitule || "—"}</strong></div>
-                  <div>{t("mise_en_place:dialogs.create.marche_montant")} : <strong>{linkedMarche.montantContratHt != null ? formatAmount(linkedMarche.montantContratHt, { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
-                  <div>{t("mise_en_place:dialogs.create.marche_montant_ttc")} : <strong>{linkedMarche.montantContratTtc != null ? formatAmount(linkedMarche.montantContratTtc, { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant")} : <strong>{marcheMontant(linkedMarche, "ht") != null ? formatAmount(marcheMontant(linkedMarche, "ht"), { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant_ttc")} : <strong>{marcheMontant(linkedMarche, "ttc") != null ? formatAmount(marcheMontant(linkedMarche, "ttc"), { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
                 </div>
               </div>
             )}
