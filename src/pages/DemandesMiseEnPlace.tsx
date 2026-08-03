@@ -122,6 +122,18 @@ const DemandesMiseEnPlace = () => {
   const [linkedMarche, setLinkedMarche] = useState<MarcheDto | null>(null);
   const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number; montantContratTtc?: number; deviseOrigine?: string }>({ deviseOrigine: "MRU" });
   const [creatingMarche, setCreatingMarche] = useState(false);
+  /** Lit un montant de marché en tolérant les alias de nommage renvoyés par le backend. */
+  const marcheMontant = (m: any, kind: "ht" | "ttc"): number | undefined => {
+    if (!m) return undefined;
+    const keys = kind === "ht"
+      ? ["montantContratHt", "montantHt", "montantContratHT", "montant_contrat_ht"]
+      : ["montantContratTtc", "montantTtc", "montantContratTTC", "montant_contrat_ttc"];
+    for (const k of keys) {
+      const v = m[k];
+      if (v != null && v !== "" && !Number.isNaN(Number(v))) return Number(v);
+    }
+    return undefined;
+  };
   /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
   const todayIso = () => new Date().toISOString().slice(0, 10);
 
