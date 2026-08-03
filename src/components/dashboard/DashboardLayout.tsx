@@ -190,9 +190,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="h-screen flex overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
+      <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 h-full overflow-y-auto">
         {sidebarContent()}
       </aside>
 
