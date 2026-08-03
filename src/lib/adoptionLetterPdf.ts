@@ -215,7 +215,13 @@ export async function generateAdoptionLetterPdf(
   yy = y + 8;
 
   const marcheRef = d.marcheNumero || marche?.numeroMarche || (d.marcheId ? `#${d.marcheId}` : "");
-  const marcheIntitule = d.marcheIntitule || marche?.intitule || "";
+  const marcheIntitule =
+    d.marcheIntitule ||
+    (d as any).intituleMarche ||
+    marche?.intitule ||
+    (marche as any)?.intituleMarche ||
+    (marche as any)?.objet ||
+    "";
   yy += inlineField(doc, "RÉFÉRENCE DU MARCHÉ", marcheRef, M + 4, yy, M + W - 4);
   yy += 7;
   yy += inlineField(doc, "INTITULÉ DU MARCHÉ", marcheIntitule, M + 4, yy, M + W - 4);
