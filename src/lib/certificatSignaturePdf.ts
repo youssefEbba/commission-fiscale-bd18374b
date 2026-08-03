@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
+import signaturePresident from "@/assets/signature-president.png";
 
 const CURRENCY = "Ouguiya";
 
@@ -329,9 +330,20 @@ export async function generateCertificatToSignPdf(
   doc.text(`À Nouakchott, le ${today}`, pageW / 2, y, { align: "center" });
   y += 6;
   doc.text("Le Président de la Commission Fiscale", pageW / 2, y, { align: "center" });
-  y += 5;
+  y += 4;
+  try {
+    const sigW = 46;
+    const sigH = 22;
+    doc.addImage(signaturePresident, "PNG", pageW / 2 - sigW / 2, y, sigW, sigH);
+    y += sigH + 3;
+  } catch {
+    y += 12;
+  }
   doc.setFont("helvetica", "normal");
-  doc.text("(Nom et signature)", pageW / 2, y, { align: "center" });
+  doc.setFontSize(9);
+  doc.text("(Signature et cachet)", pageW / 2, y, { align: "center" });
+
+
 
   const filename = `certificat-a-signer-${(c.reference || c.numero || c.id)
     .toString()
