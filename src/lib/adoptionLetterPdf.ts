@@ -256,10 +256,6 @@ export async function generateAdoptionLetterPdf(
   y += h4 + 6;
 
   // ---------- V - Décision ----------
-  const h5 = 62;
-  section(doc, "V – DÉCISION DE LA COMMISSION", M, y, W, h5);
-  yy = y + 8;
-
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const decisionText = [
@@ -273,12 +269,45 @@ export async function generateAdoptionLetterPdf(
     "La présente lettre d'adoption est établie pour servir et valoir ce que de droit.",
   ];
 
-  for (const line of decisionText) {
-    if (!line) {
+  // Pré-calcul de la hauteur réelle du bloc V (texte + signature)
+  const wrapped = decisionText.map((line) =>
+    line ? (doc.splitTextToSize(line, W - 8) as string[]) : null,
+  );
+  let textH = 0;
+  for (const lines of wrapped) textH += lines ? 5 * lines.length + 1 : 4;
+  const signatureH = 6 + 5 + 5 + 10 + 4;
+  const h5 = 8 + textH + signatureH;
+
+  const FOOTER_Y = 285;
+  const BOTTOM_LIMIT = FOOTER_Y - 8;
+  const drawFooter = () => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    const now = new Date().toLocaleDateString("fr-FR");
+    doc.text(`Document généré le ${now} — Réf. technique : ${d.id}`, M, FOOTER_Y);
+    doc.text("Commission Fiscale — Ministère des Finances", pageW - M, FOOTER_Y, { align: "right" });
+    doc.setTextColor(0);
+  };
+
+  // Saut de page si le bloc décision ne tient pas entièrement
+  if (y + h5 > BOTTOM_LIMIT) {
+    drawFooter();
+    doc.addPage();
+    y = 20;
+  }
+
+  section(doc, "V – DÉCISION DE LA COMMISSION", M, y, W, h5);
+  yy = y + 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  for (const lines of wrapped) {
+    if (!lines) {
       yy += 4;
       continue;
     }
-    const lines = doc.splitTextToSize(line, W - 8) as string[];
     doc.text(lines, M + 4, yy);
     yy += 5 * lines.length + 1;
   }
@@ -286,6 +315,7 @@ export async function generateAdoptionLetterPdf(
   // Signature
   yy += 6;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
   yy += 5;
   doc.setFont("helvetica", "normal");
@@ -296,14 +326,8 @@ export async function generateAdoptionLetterPdf(
   doc.setLineWidth(0.2);
   doc.line(M + W - 70, yy, M + W - 4, yy);
 
-  y += h5 + 6;
-
   // ---------- Pied de page ----------
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  const now = new Date().toLocaleDateString("fr-FR");
-  doc.text(`Document généré le ${now} — Réf. technique : ${d.id}`, M, 285);
-  doc.text("Commission Fiscale — Ministère des Finances", pageW - M, 285, { align: "right" });
+  drawFooter();
 
   return doc.output("blob");
 }
