@@ -485,6 +485,13 @@ const DemandesMiseEnPlace = () => {
   useEffect(() => {
     setLinkedMarche(null);
     if (!selectedCorrection) return;
+    // Charge le marché déjà rattaché (créé ici ou existant) pour confirmation visuelle
+    if (selectedCorrection.marcheId) {
+      const mid = selectedCorrection.marcheId;
+      marcheApi.getById(mid)
+        .then(m => setLinkedMarche(prev => (prev?.id === mid ? prev : m)))
+        .catch(() => setLinkedMarche({ id: mid, statut: "EN_COURS" } as MarcheDto));
+    }
     const prefill =
       (selectedCorrection as any).intituleMarche ||
       (selectedCorrection as any).marcheIntitule ||
