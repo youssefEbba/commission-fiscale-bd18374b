@@ -31,6 +31,8 @@ import {
   AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download,
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
