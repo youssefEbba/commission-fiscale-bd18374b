@@ -233,7 +233,7 @@ const DemandesMiseEnPlace = () => {
         conventionId: correction.conventionId || undefined,
         demandeCorrectionId: correction.id,
         numeroMarche: marcheForm.numeroMarche.trim(),
-        intitule: correction.intituleMarche?.trim() || undefined,
+        intitule: (marcheForm.intitule ?? correction.intituleMarche)?.trim() || undefined,
         dateSignature: `${marcheForm.dateSignature}T00:00:00Z`,
         montantContratHt: marcheForm.montantContratHt,
         statut: "EN_COURS",
@@ -790,7 +790,11 @@ const DemandesMiseEnPlace = () => {
               <Label>{t("mise_en_place:dialogs.create.correction_label")}</Label>
               <SearchableSelect
                 value={selectedCorrectionId}
-                onValueChange={setSelectedCorrectionId}
+                onValueChange={(v) => {
+                  setSelectedCorrectionId(v);
+                  const c = corrections.find(x => String(x.id) === v);
+                  setMarcheForm(f => ({ ...f, intitule: c?.intituleMarche || "" }));
+                }}
                 placeholder={t("mise_en_place:dialogs.create.correction_placeholder")}
                 searchPlaceholder={t("mise_en_place:dialogs.create.correction_search")}
                 emptyMessage={corrections.length === 0 ? t("mise_en_place:dialogs.create.correction_empty_none") : t("mise_en_place:dialogs.create.correction_empty_search")}
@@ -852,7 +856,10 @@ const DemandesMiseEnPlace = () => {
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_intitule")}</Label>
-                    <Input value={selectedCorrection.intituleMarche || "—"} readOnly disabled />
+                    <Input
+                      value={marcheForm.intitule ?? (selectedCorrection.intituleMarche || "")}
+                      onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
