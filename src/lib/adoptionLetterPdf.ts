@@ -326,11 +326,13 @@ export async function generateAdoptionLetterPdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
-  yy += 5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("(Signature et cachet)", M + W - 4, yy, { align: "right" });
-  yy += 10;
+  yy += 3;
+  try {
+    doc.addImage(signaturePresident, "PNG", M + W - 52, yy, 48, 22);
+  } catch {
+    // ignore si l'asset n'est pas chargé
+  }
+  yy += 24;
   doc.setDrawColor(0);
   doc.setLineWidth(0.2);
   doc.line(M + W - 70, yy, M + W - 4, yy);
