@@ -120,6 +120,8 @@ const DemandesMiseEnPlace = () => {
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number }>({});
   const [creatingMarche, setCreatingMarche] = useState(false);
+  /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
+  const todayIso = () => new Date().toISOString().slice(0, 10);
 
 
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
@@ -221,13 +223,17 @@ const DemandesMiseEnPlace = () => {
       errToast(t("mise_en_place:dialogs.create.marche_date_required"));
       return;
     }
+    if (marcheForm.dateSignature > todayIso()) {
+      errToast(t("mise_en_place:dialogs.create.marche_date_future"));
+      return;
+    }
     setCreatingMarche(true);
     try {
       const created = await marcheApi.create({
         conventionId: correction.conventionId || undefined,
         demandeCorrectionId: correction.id,
         numeroMarche: marcheForm.numeroMarche.trim(),
-        intitule: marcheForm.intitule?.trim() || undefined,
+        intitule: correction.intituleMarche?.trim() || undefined,
         dateSignature: `${marcheForm.dateSignature}T00:00:00Z`,
         montantContratHt: marcheForm.montantContratHt,
         statut: "EN_COURS",
@@ -839,16 +845,14 @@ const DemandesMiseEnPlace = () => {
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_date_signature")}</Label>
                     <Input
                       type="date"
+                      max={todayIso()}
                       value={marcheForm.dateSignature || ""}
                       onChange={e => setMarcheForm(f => ({ ...f, dateSignature: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_intitule")}</Label>
-                    <Input
-                      value={marcheForm.intitule || ""}
-                      onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
-                    />
+                    <Input value={selectedCorrection.intituleMarche || "—"} readOnly disabled />
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
