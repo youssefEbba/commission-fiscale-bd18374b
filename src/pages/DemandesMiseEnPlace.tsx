@@ -190,6 +190,8 @@ const DemandesMiseEnPlace = () => {
     setOpeningCreate(true);
     setSelectedCorrectionId("");
     setDocFiles({});
+    setMarcheForm({});
+
     try {
       const [corrs, reqs] = await Promise.all([
         user?.autoriteContractanteId
