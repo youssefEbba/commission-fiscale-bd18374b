@@ -782,16 +782,51 @@ const DemandesMiseEnPlace = () => {
             )}
 
             {selectedCorrection && !selectedCorrection.marcheId && (
-              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                <div className="space-y-2">
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                   <p>{t("mise_en_place:dialogs.create.marche_missing")}</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate("/dashboard/marches")}>
-                    {t("mise_en_place:dialogs.create.marche_missing_cta")}
-                  </Button>
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_numero")}</Label>
+                    <Input
+                      value={marcheForm.numeroMarche || ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, numeroMarche: e.target.value }))}
+                      placeholder="MARC-2026-001"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_date_signature")}</Label>
+                    <Input
+                      type="date"
+                      value={marcheForm.dateSignature || ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, dateSignature: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_intitule")}</Label>
+                    <Input
+                      value={marcheForm.intitule || ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
+                    <Input
+                      type="number"
+                      value={marcheForm.montantContratHt ?? ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, montantContratHt: e.target.value === "" ? undefined : Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+                <Button size="sm" onClick={handleCreateMarcheInline} disabled={creatingMarche}>
+                  {creatingMarche && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
+                  {t("mise_en_place:dialogs.create.marche_create_link")}
+                </Button>
               </div>
             )}
+
 
 
             <div className="space-y-3">
