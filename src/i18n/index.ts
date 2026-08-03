@@ -129,6 +129,7 @@ const resources = {
     reporting: frReporting,
     simulation: frSimulation,
     explication: frExplication,
+    presentation: frPresentation,
   },
   ar: {
     common: arCommon,
