@@ -233,7 +233,7 @@ const DemandesMiseEnPlace = () => {
         conventionId: correction.conventionId || undefined,
         demandeCorrectionId: correction.id,
         numeroMarche: marcheForm.numeroMarche.trim(),
-        intitule: marcheForm.intitule?.trim() || undefined,
+        intitule: correction.intituleMarche?.trim() || undefined,
         dateSignature: `${marcheForm.dateSignature}T00:00:00Z`,
         montantContratHt: marcheForm.montantContratHt,
         statut: "EN_COURS",
