@@ -11,7 +11,7 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
   DecisionCorrectionDto, isApiError,
-} from "@/lib/api";
+, DEVISES} from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -118,7 +118,7 @@ const DemandesMiseEnPlace = () => {
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
-  const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number }>({});
+  const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number; montantContratTtc?: number; deviseOrigine?: string }>({ deviseOrigine: "MRU" });
   const [creatingMarche, setCreatingMarche] = useState(false);
   /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
   const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -236,10 +236,12 @@ const DemandesMiseEnPlace = () => {
         intitule: (marcheForm.intitule ?? correction.intituleMarche)?.trim() || undefined,
         dateSignature: `${marcheForm.dateSignature}T00:00:00Z`,
         montantContratHt: marcheForm.montantContratHt,
+        montantContratTtc: marcheForm.montantContratTtc,
+        deviseOrigine: marcheForm.deviseOrigine || "MRU",
         statut: "EN_COURS",
       });
       setCorrections(prev => prev.map(c => (c.id === correction.id ? { ...c, marcheId: created.id } : c)));
-      setMarcheForm({});
+      setMarcheForm({ deviseOrigine: "MRU" });
       okToast(t("mise_en_place:dialogs.create.marche_created"));
     } catch (e) {
       errToast(tErr(e, t("mise_en_place:dialogs.create.marche_create_error")));
@@ -872,13 +874,30 @@ const DemandesMiseEnPlace = () => {
                       onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
                     />
                   </div>
-                  <div className="space-y-1 col-span-2">
+                  <div className="space-y-1">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
                     <Input
                       type="number"
                       value={marcheForm.montantContratHt ?? ""}
                       onChange={e => setMarcheForm(f => ({ ...f, montantContratHt: e.target.value === "" ? undefined : Number(e.target.value) }))}
                     />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant_ttc")}</Label>
+                    <Input
+                      type="number"
+                      value={marcheForm.montantContratTtc ?? ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, montantContratTtc: e.target.value === "" ? undefined : Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_devise")}</Label>
+                    <Select value={marcheForm.deviseOrigine || "MRU"} onValueChange={v => setMarcheForm(f => ({ ...f, deviseOrigine: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {DEVISES.map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <Button size="sm" onClick={handleCreateMarcheInline} disabled={creatingMarche}>

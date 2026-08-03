@@ -170,7 +170,9 @@
       "no_correction_selected": "Veuillez sélectionner une demande de correction",
       "no_entreprise": "L'entreprise n'est pas définie dans la correction",
       "create_error": "Impossible de créer la demande",
-      "marche_date_future": "La date de signature ne peut pas être postérieure à aujourd'hui"
+      "marche_date_future": "La date de signature ne peut pas être postérieure à aujourd'hui",
+      "marche_montant_ttc": "Montant TTC",
+      "marche_devise": "Devise"
     },
     "edit": {
       "title_draft": "Modifier le brouillon {{ref}}",
