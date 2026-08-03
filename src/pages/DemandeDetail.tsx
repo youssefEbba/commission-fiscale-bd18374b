@@ -993,6 +993,21 @@ const DemandeDetail = () => {
           </Card>
         )}
 
+        {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
+        <AdminCorrectionCard
+          entity="DEMANDE"
+          entityId={selected.id}
+          fields={[
+            { key: "intituleMarche", label: "Intitulé du marché", type: "text", value: selected.intituleMarche ?? "" },
+            { key: "creditInterieur", label: "Crédit intérieur", type: "number", value: selected.creditInterieur ?? "" },
+            { key: "creditExterieur", label: "Crédit extérieur", type: "number", value: selected.creditExterieur ?? "" },
+          ]}
+          documents={docs}
+          docLabel={(code) => tTypeDocument(code)}
+          onSuccess={fetchDetail}
+        />
+
+
         <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
