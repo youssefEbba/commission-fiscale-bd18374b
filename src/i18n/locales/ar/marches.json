@@ -75,7 +75,9 @@
       "numero_required": "رقم الصفقة مطلوب",
       "montant_required": "مبلغ العقد دون الرسوم مطلوب",
       "submit_failed": "فشلت العملية"
-    }
+    },
+    "montant_ttc": "مبلغ العقد شامل الضريبة",
+    "devise": "العملة"
   },
   "assign": {
     "title": "إدارة الممثلين",

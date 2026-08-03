@@ -170,7 +170,9 @@
       "no_correction_selected": "يرجى اختيار طلب تصحيح",
       "no_entreprise": "لم يتم تحديد المؤسسة في التصحيح",
       "create_error": "تعذر إنشاء الطلب",
-      "marche_date_future": "لا يمكن أن يكون تاريخ التوقيع بعد اليوم"
+      "marche_date_future": "لا يمكن أن يكون تاريخ التوقيع بعد اليوم",
+      "marche_montant_ttc": "المبلغ شامل الضريبة",
+      "marche_devise": "العملة"
     },
     "edit": {
       "title_draft": "تعديل المسودة {{ref}}",

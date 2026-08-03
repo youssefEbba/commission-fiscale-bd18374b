@@ -75,7 +75,9 @@
       "numero_required": "Le numéro de marché est requis",
       "montant_required": "Le montant contrat HT est obligatoire",
       "submit_failed": "Échec de l'opération"
-    }
+    },
+    "montant_ttc": "Montant contrat TTC",
+    "devise": "Devise"
   },
   "assign": {
     "title": "Gérer les représentants",

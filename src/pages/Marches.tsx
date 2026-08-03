@@ -10,7 +10,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
   formatApiErrorMessage,
-} from "@/lib/api";
+, DEVISES} from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +105,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
+    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
@@ -116,7 +116,9 @@ const Marches = () => {
       numeroMarche: m.numeroMarche || "",
       intitule: m.intitule || "",
       dateSignature: m.dateSignature ? m.dateSignature.slice(0, 10) : "",
-      montantContratHt: m.montantContratHt ?? m.montantContratTtc,
+      montantContratHt: m.montantContratHt,
+      montantContratTtc: m.montantContratTtc,
+      deviseOrigine: m.deviseOrigine || "MRU",
       statut: m.statut,
     });
     setDialogOpen(true);
@@ -245,12 +247,9 @@ const Marches = () => {
       return;
     }
     const payload: CreateMarcheRequest = { ...form };
-    if (payload.montantContratHt == null) {
-      delete payload.montantContratHt;
-      delete payload.montantContratTtc;
-    } else {
-      payload.montantContratTtc = payload.montantContratHt;
-    }
+    if (payload.montantContratHt == null) delete payload.montantContratHt;
+    if (payload.montantContratTtc == null) delete payload.montantContratTtc;
+    if (!payload.deviseOrigine) payload.deviseOrigine = "MRU";
     if (!payload.conventionId) {
       delete payload.conventionId;
     }
@@ -354,7 +353,7 @@ const Marches = () => {
                           <TableCell className="font-medium whitespace-nowrap">{displayRef(m)}</TableCell>
                           <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
-                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
@@ -488,9 +487,24 @@ const Marches = () => {
               <p className="text-xs text-muted-foreground">{t("marches:form.date_signature_hint")}</p>
             </div>
 
-            <div className="space-y-2">
-              <Label>{t("marches:form.montant_required")}</Label>
-              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
+                <Label>{t("marches:form.montant_required")}</Label>
+                <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("marches:form.montant_ttc")}</Label>
+                <Input type="number" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("marches:form.devise")}</Label>
+                <Select value={form.deviseOrigine || "MRU"} onValueChange={v => setForm(f => ({ ...f, deviseOrigine: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {DEVISES.map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>{t("marches:form.statut")}</Label>
