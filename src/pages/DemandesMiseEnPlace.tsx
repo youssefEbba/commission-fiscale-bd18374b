@@ -11,7 +11,8 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
   DecisionCorrectionDto, isApiError,
-, DEVISES} from "@/lib/api";
+  DEVISES,
+} from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
