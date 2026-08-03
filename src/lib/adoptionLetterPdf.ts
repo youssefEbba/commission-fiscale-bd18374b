@@ -155,12 +155,15 @@ export async function generateAdoptionLetterPdf(
   // ---------- N° ----------
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Réf. demande", pageW - M - 60, 54);
+  const refLabel = "Réf. demande :";
+  const refLabelX = pageW - M - 80;
+  doc.text(refLabel, refLabelX, 54);
   doc.setFont("helvetica", "normal");
   const refLisible = d.reference || d.numero || "";
-  doc.text(refLisible, pageW - M - 50, 54);
+  const refValueX = refLabelX + doc.getTextWidth(refLabel) + 3;
+  doc.text(safe(refLisible), refValueX, 54);
   doc.setLineWidth(0.2);
-  doc.line(pageW - M - 50, 55, pageW - M - 4, 55);
+  doc.line(refValueX, 55, pageW - M - 4, 55);
 
   let y = 64;
 
