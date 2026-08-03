@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, ArrowLeft, Upload, Loader2, Plus,
   CheckCircle, XCircle, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock, History,
+  AlertTriangle, Lock, Unlock, History, RotateCcw,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -324,6 +324,22 @@ const DemandeDetail = () => {
     } finally { setOffreCorrigeeUploading(false); setOffreCorrigeePendingId(null); }
   };
 
+  const [reactivateOpen, setReactivateOpen] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+
+  const handleReactivateRejetee = async () => {
+    if (!selected) return;
+    setReactivating(true);
+    try {
+      await demandeCorrectionApi.updateStatut(selected.id, "EN_VALIDATION");
+      toast({ title: t("demandes:toast.success"), description: t("demandes:detail.reactivate.success") });
+      setReactivateOpen(false);
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } finally { setReactivating(false); }
+  };
+
   const handleStatutChange = async (demandeId: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => {
     setActionLoading(demandeId);
     try {
@@ -488,7 +504,22 @@ const DemandeDetail = () => {
     return (
       <DashboardLayout>
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-      </DashboardLayout>
+        <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("demandes:detail.reactivate.confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("demandes:detail.reactivate.confirm_description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reactivating}>{t("common:actions.cancel", { defaultValue: "Annuler" })}</AlertDialogCancel>
+            <AlertDialogAction disabled={reactivating} onClick={(e) => { e.preventDefault(); handleReactivateRejetee(); }}>
+              {reactivating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+              {t("demandes:detail.reactivate.action")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DashboardLayout>
     );
   }
 
@@ -959,6 +990,22 @@ const DemandeDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Réactivation admin d'un rejet définitif */}
+        {selected.statut === "REJETEE" && hasRole(["ADMIN_SI"]) && (
+          <Card className="border-amber-300 bg-amber-50/60">
+            <CardContent className="p-6 space-y-2">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <RotateCcw className="h-4 w-4 text-amber-600" /> {t("demandes:detail.reactivate.title")}
+              </h3>
+              <p className="text-xs text-muted-foreground">{t("demandes:detail.reactivate.description")}</p>
+              <Button variant="outline" disabled={reactivating} onClick={() => setReactivateOpen(true)}>
+                {reactivating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <RotateCcw className="h-4 w-4 me-1" />}
+                {t("demandes:detail.reactivate.action")}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Workflow Actions */}
         {transitions.length > 0 && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (

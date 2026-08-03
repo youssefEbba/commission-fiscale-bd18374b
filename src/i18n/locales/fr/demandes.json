@@ -137,6 +137,14 @@
     "reupload_banner": {
       "title": "Réclamation acceptée — Nouveau cycle d'évaluation",
       "body": "Suite à l'acceptation de la réclamation, le processus d'évaluation reprend depuis le début. Le DGD doit téléverser la nouvelle offre corrigée et le Président la nouvelle lettre d'adoption lors de l'adoption. Les anciennes versions sont archivées dans l'historique."
+    },
+    "reactivate": {
+      "title": "Rejet définitif",
+      "description": "En tant qu'administrateur, vous pouvez annuler le rejet définitif afin que le Président puisse statuer à nouveau. Les visas déjà apposés sont conservés.",
+      "action": "Annuler le rejet définitif",
+      "confirm_title": "Annuler le rejet définitif ?",
+      "confirm_description": "La demande repassera au statut « En validation » et le motif de rejet sera effacé. Les visas existants sont conservés.",
+      "success": "Rejet annulé — la demande est de nouveau en validation"
     }
   },
   "actions": {
