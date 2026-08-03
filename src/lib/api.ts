@@ -941,11 +941,16 @@ export interface MarcheDto {
   dateSignature?: string;
   /** Montant HT (nom canonique côté back). */
   montantContratHt?: number;
-  /** Alias rétro-compatible (entrée acceptée par le back). */
+  /** Montant TTC du contrat. */
   montantContratTtc?: number;
+  /** Devise du contrat (MRU par défaut). */
+  deviseOrigine?: string;
   statut: StatutMarche;
   delegueIds?: number[];
 }
+
+/** Devises supportées pour les montants de contrat. */
+export const DEVISES = ["MRU", "USD", "EUR", "CNY", "AED", "SAR", "MAD", "GBP"] as const;
 
 export interface CreateMarcheRequest {
   conventionId?: number;
@@ -953,9 +958,12 @@ export interface CreateMarcheRequest {
   numeroMarche?: string;
   intitule?: string;
   dateSignature?: string;
-  /** Préférer montantContratHt en envoi ; montantContratTtc reste accepté en alias. */
+  /** Montant hors taxes du contrat. */
   montantContratHt?: number;
+  /** Montant toutes taxes comprises du contrat. */
   montantContratTtc?: number;
+  /** Devise des montants (MRU par défaut). */
+  deviseOrigine?: string;
   statut?: StatutMarche;
 }
 
