@@ -504,24 +504,10 @@ const DemandeDetail = () => {
     return (
       <DashboardLayout>
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-        <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("demandes:detail.reactivate.confirm_title")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("demandes:detail.reactivate.confirm_description")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={reactivating}>{t("common:actions.cancel", { defaultValue: "Annuler" })}</AlertDialogCancel>
-            <AlertDialogAction disabled={reactivating} onClick={(e) => { e.preventDefault(); handleReactivateRejetee(); }}>
-              {reactivating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
-              {t("demandes:detail.reactivate.action")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </DashboardLayout>
+      </DashboardLayout>
     );
   }
+
 
   if (!selected) {
     return (
