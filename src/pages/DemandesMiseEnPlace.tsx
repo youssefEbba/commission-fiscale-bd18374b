@@ -864,8 +864,8 @@ const DemandesMiseEnPlace = () => {
                   <div>{t("mise_en_place:dialogs.create.marche_numero")} : <strong>{linkedMarche.numeroMarche || "—"}</strong></div>
                   <div>{t("mise_en_place:dialogs.create.marche_date_signature")} : <strong>{linkedMarche.dateSignature ? formatDate(linkedMarche.dateSignature) : "—"}</strong></div>
                   <div className="col-span-2">{t("mise_en_place:dialogs.create.marche_intitule")} : <strong>{linkedMarche.intitule || "—"}</strong></div>
-                  <div>{t("mise_en_place:dialogs.create.marche_montant")} : <strong>{linkedMarche.montantContratHt != null ? formatAmount(linkedMarche.montantContratHt, { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
-                  <div>{t("mise_en_place:dialogs.create.marche_montant_ttc")} : <strong>{linkedMarche.montantContratTtc != null ? formatAmount(linkedMarche.montantContratTtc, { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant")} : <strong>{marcheMontant(linkedMarche, "ht") != null ? formatAmount(marcheMontant(linkedMarche, "ht"), { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant_ttc")} : <strong>{marcheMontant(linkedMarche, "ttc") != null ? formatAmount(marcheMontant(linkedMarche, "ttc"), { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
                 </div>
               </div>
             )}
