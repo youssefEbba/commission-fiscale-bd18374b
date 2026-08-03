@@ -119,6 +119,7 @@ const DemandesMiseEnPlace = () => {
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [linkedMarche, setLinkedMarche] = useState<MarcheDto | null>(null);
   const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number; montantContratTtc?: number; deviseOrigine?: string }>({ deviseOrigine: "MRU" });
   const [creatingMarche, setCreatingMarche] = useState(false);
   /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
@@ -242,6 +243,7 @@ const DemandesMiseEnPlace = () => {
         statut: "EN_COURS",
       });
       setCorrections(prev => prev.map(c => (c.id === correction.id ? { ...c, marcheId: created.id } : c)));
+      setLinkedMarche(created);
       setMarcheForm({ deviseOrigine: "MRU" });
       okToast(t("mise_en_place:dialogs.create.marche_created"));
     } catch (e) {
@@ -842,6 +844,22 @@ const DemandesMiseEnPlace = () => {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {selectedCorrection?.marcheId && linkedMarche && (
+              <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900 space-y-1">
+                <div className="flex items-center gap-2 font-medium">
+                  <CheckCircle className="h-4 w-4" />
+                  {t("mise_en_place:dialogs.create.marche_linked")}
+                </div>
+                <div className="grid grid-cols-2 gap-1 ps-6">
+                  <div>{t("mise_en_place:dialogs.create.marche_numero")} : <strong>{linkedMarche.numeroMarche || "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_date_signature")} : <strong>{linkedMarche.dateSignature ? formatDate(linkedMarche.dateSignature) : "—"}</strong></div>
+                  <div className="col-span-2">{t("mise_en_place:dialogs.create.marche_intitule")} : <strong>{linkedMarche.intitule || "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant")} : <strong>{linkedMarche.montantContratHt != null ? formatAmount(linkedMarche.montantContratHt, { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant_ttc")} : <strong>{linkedMarche.montantContratTtc != null ? formatAmount(linkedMarche.montantContratTtc, { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                </div>
+              </div>
             )}
 
             {selectedCorrection && !selectedCorrection.marcheId && (
