@@ -10,7 +10,8 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
   formatApiErrorMessage,
-, DEVISES} from "@/lib/api";
+  DEVISES,
+} from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
