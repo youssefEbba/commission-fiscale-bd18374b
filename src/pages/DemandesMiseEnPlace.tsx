@@ -118,6 +118,9 @@ const DemandesMiseEnPlace = () => {
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number }>({});
+  const [creatingMarche, setCreatingMarche] = useState(false);
+
 
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
