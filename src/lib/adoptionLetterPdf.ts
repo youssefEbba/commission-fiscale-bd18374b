@@ -7,6 +7,7 @@ import type {
   AutoriteContractanteDto,
 } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
+import signaturePresident from "@/assets/signature-president.png";
 import { hasCreditInterieur, hasCreditExterieur } from "@/lib/visas";
 
 const CURRENCY = "Ouguiya";
