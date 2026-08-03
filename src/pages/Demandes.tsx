@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, Search, RefreshCw, Plus, Eye, Upload, Loader2,
   CheckCircle, XCircle, ArrowRight, Filter,
-  AlertTriangle, MoreHorizontal, Info,
+  AlertTriangle, MoreHorizontal, Info, Download,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +31,9 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
+import { displayRef } from "@/lib/displayRef";
+import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits, requiredPreVisaDocCorrection } from "@/lib/visas";
+import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -125,6 +128,7 @@ const Demandes = () => {
   const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
   const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
   const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
+  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
@@ -144,6 +148,17 @@ const Demandes = () => {
       setEditingDemande(d);
     } finally {
       setLoadingEditId(null);
+    }
+  };
+
+  const handleGenerateAdoptionLetter = async (d: DemandeCorrectionDto) => {
+    try {
+      const blob = await generateAdoptionLetterPdf(d);
+      const ref = d.reference || d.numero || String(d.id);
+      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
     }
   };
 
@@ -256,20 +271,19 @@ const Demandes = () => {
     }
   };
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Le libellé est traduit via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
-  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
+  // Document à uploader obligatoirement avant le visa — miroir exact du backend
+  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
+  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
+  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
 
   const checkAndHandleVisa = async (id: number) => {
-    if (uploadBeforeVisa) {
+    const demande = demandes.find(x => x.id === id) ?? (selected?.id === id ? selected : undefined);
+    const docType = requiredPreVisaDocCorrection(role, resolveCredits(demande));
+    setPendingDocType(docType);
+    if (docType) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
         if (!hasDoc) {
           setOffreCorrigeePendingId(id);
           setOffreCorrigeeOpen(true);
@@ -293,7 +307,7 @@ const Demandes = () => {
     if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
     setOffreCorrigeeUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, pendingDocType || "OFFRE_CORRIGEE", offreCorrigeeFile);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false);
       setOffreCorrigeeFile(null);
@@ -460,7 +474,10 @@ const Demandes = () => {
   const filtered = demandes.filter((d) => {
     if (role === "AUTORITE_CONTRACTANTE" && user?.autoriteContractanteId && d.autoriteContractanteId !== user.autoriteContractanteId) return false;
     if (role === "ENTREPRISE" && user?.entrepriseId && d.entrepriseId !== user.entrepriseId) return false;
+    // Correction : les 4 acteurs (DGD/DGTCP/DGI/DGB) visent toujours, aucun filtrage par montant.
+    // correction : plus de filtrage par montant, les 4 acteurs visent toujours
     const matchSearch =
+      displayRef(d).toLowerCase().includes(search.toLowerCase()) ||
       (d.numero || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.autoriteContractanteNom || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.entrepriseRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -542,9 +559,19 @@ const Demandes = () => {
                   ) : (
                     filtered.map((d) => (
                       <TableRow key={d.id}>
-                        <TableCell className="font-medium">{d.numero || `#${d.id}`}</TableCell>
+                        <TableCell className="font-medium">{displayRef(d)}</TableCell>
                         <TableCell className="text-muted-foreground">{d.autoriteContractanteNom || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{d.entrepriseRaisonSociale || "—"}</TableCell>
+                        <TableCell>
+                          <button
+                            className="text-muted-foreground hover:text-primary hover:underline text-start cursor-pointer"
+                            onClick={() => {
+                              setSelected(d);
+                              openEntrepriseDetail(d.entrepriseId!);
+                            }}
+                          >
+                            {d.entrepriseRaisonSociale || "—"}
+                          </button>
+                        </TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${STATUT_COLORS[d.statut] || ""}`}>
                             {tStatutDemande(d.statut)}
@@ -553,10 +580,11 @@ const Demandes = () => {
                         <TableCell>
                           {(() => {
                             const decs = d.decisions || [];
-                            const dgdVisa = decs.some(dec => dec.role === "DGD" && dec.decision === "VISA");
-                            const isCurrentDGD = (role as string) === "DGD";
+                            const firstRole = firstVisaRoleCorrection(resolveCredits(d));
+                            const firstVisaDone = !firstRole || decs.some(dec => dec.role === firstRole && dec.decision === "VISA");
                             const isPres = (role as string) === "PRESIDENT";
-                            const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                            const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
+
                             const rejets = decs.filter(dec => dec.decision === "REJET_TEMP");
                             const openRejets = rejets.filter(dec => dec.rejetTempStatus !== "RESOLU");
                             const hasRejet = rejets.length > 0 || (d.rejets && d.rejets.length > 0);
@@ -565,7 +593,7 @@ const Demandes = () => {
                             const myHasVisa = myRoleDecs.some(dec => dec.decision === "VISA");
 
                             const badgeContent = blocked
-                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_dgd_visa")}</Badge>
+                              ? <Badge className="bg-amber-100 text-amber-800 text-xs">{t("demandes:stade.waiting_first_visa", { role: firstRole })}</Badge>
                               : myHasVisa
                               ? <Badge className="bg-green-100 text-green-800 text-xs">{t("demandes:stade.visa_applied")}</Badge>
                               : hasRejet && !allRejetsResolved
@@ -597,6 +625,11 @@ const Demandes = () => {
                                   <DropdownMenuItem onClick={() => navigate(`/dashboard/demandes/${d.id}`)}>
                                     <Eye className="h-4 w-4 me-2" /> {t("demandes:actions.view")}
                                   </DropdownMenuItem>
+                                  {role === "PRESIDENT" && d.statut === "EN_VALIDATION" && !d.documents?.some(doc => ((doc as any).codeDocument ?? doc.type) === "LETTRE_ADOPTION" && doc.actif !== false) && (
+                                    <DropdownMenuItem onClick={() => handleGenerateAdoptionLetter(d)}>
+                                      <Download className="h-4 w-4 me-2" /> {t("demandes:actions.generate_adoption_letter")}
+                                    </DropdownMenuItem>
+                                  )}
                                   {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
                                     <>
                                       <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>
@@ -843,6 +876,21 @@ const Demandes = () => {
           ) : (
             <p className="text-center text-muted-foreground py-4">{t("demandes:dialogs.entreprise_info.empty")}</p>
           )}
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => setEntrepriseDialogOpen(false)}>{t("common:actions.close", { defaultValue: "Fermer" })}</Button>
+            {entrepriseDetail && selected && (
+              <Button size="sm" onClick={() => {
+                setEntrepriseDialogOpen(false);
+                if (selected.groupementId) {
+                  navigate(`/dashboard/groupements/${selected.groupementId}`);
+                } else {
+                  navigate(`/dashboard/entreprises/${entrepriseDetail.id}`);
+                }
+              }}>
+                {selected.groupementId ? t("demandes:dialogs.entreprise_info.voir_groupement") : t("demandes:dialogs.entreprise_info.voir_plus")}
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

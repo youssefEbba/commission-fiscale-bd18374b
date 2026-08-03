@@ -23,5 +23,7 @@
   "roles_permissions": "Rôles & Permissions",
   "referentiel_taxes": "Référentiel Taxes",
   "audit": "Journal d'audit",
-  "commission_relais": "Commission relais"
+  "commission_relais": "Commission relais",
+  "credits_consultation": "Consultation crédits",
+  "groupements": "Groupements"
 }

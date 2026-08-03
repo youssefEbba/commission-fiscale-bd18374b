@@ -208,7 +208,7 @@ const DossiersList = () => {
                     {(dossier._marcheNum || dossier._marcheIntitule) && (
                       <span className="flex items-center gap-1">
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {dossier._marcheNum || dossier._marcheIntitule}
+                        {dossier._marcheIntitule || dossier._marcheNum}
                       </span>
                     )}
                   </div>
@@ -327,7 +327,7 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">{t("ged:dossiers.marche")}</p>
-                  <p className="font-medium text-foreground">{marcheNum}{marcheIntitule && ` – ${marcheIntitule}`}</p>
+                  <p className="font-medium text-foreground">{marcheIntitule || marcheNum}</p>
                 </div>
               </div>
             )}

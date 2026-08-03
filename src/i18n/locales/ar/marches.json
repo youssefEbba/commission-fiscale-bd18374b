@@ -56,6 +56,13 @@
     "convention_placeholder": "لا توجد اتفاقية مرتبطة",
     "convention_empty_scope": "لا توجد اتفاقية ضمن نطاقك",
     "convention_search": "ابحث عن اتفاقية...",
+    "demande_correction": "طلب التصحيح (اختياري)",
+    "demande_correction_placeholder": "لا يوجد طلب مرتبط",
+    "demande_correction_empty": "لا يوجد طلب معتمد متاح",
+    "demande_correction_search": "ابحث عن طلب...",
+    "demande_correction_hint": "لا يمكن الربط إلا عند إنشاء الصفقة، وهو مطلوب لإصدار شهادة الائتمان.",
+    "date_signature": "تاريخ التوقيع",
+    "date_signature_hint": "مطلوب قبل إصدار شهادة الائتمان الضريبي.",
     "numero_required": "رقم الإسناد *",
     "numero_placeholder": "MARC-2026-001",
     "intitule": "عنوان الصفقة",
@@ -68,7 +75,9 @@
       "numero_required": "رقم الصفقة مطلوب",
       "montant_required": "مبلغ العقد دون الرسوم مطلوب",
       "submit_failed": "فشلت العملية"
-    }
+    },
+    "montant_ttc": "مبلغ العقد شامل الضريبة",
+    "devise": "العملة"
   },
   "assign": {
     "title": "إدارة الممثلين",

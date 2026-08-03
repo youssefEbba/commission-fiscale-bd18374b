@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { UploadRow } from "@/components/ui/upload-row";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -850,17 +851,14 @@ const Conventions = () => {
 
                   </SelectContent>
                 </Select>
-                <Input
-                  type="file"
-                  multiple
+                <UploadRow
+                  id="conv-create-docs"
                   className="flex-1"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files) {
-                      Array.from(files).forEach(file => addCreateDoc(file));
-                      e.target.value = "";
-                    }
-                  }}
+                  label={t("conventions:docs.add_doc")}
+                  file={null}
+                  multiple
+                  onFileChange={() => {}}
+                  onFilesChange={(files) => files.forEach(file => addCreateDoc(file))}
                 />
               </div>
               {createDocs.length > 0 && (
@@ -998,10 +996,12 @@ const Conventions = () => {
 
                       </SelectContent>
                     </Select>
-                    <Input
-                      type="file"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                    <UploadRow
+                      id="conv-upload-doc"
                       className="flex-1"
+                      label={t("conventions:docs.add_doc")}
+                      file={uploadFile}
+                      onFileChange={setUploadFile}
                     />
                     <Button onClick={handleUpload} disabled={uploading || !uploadFile}>
                       {uploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
@@ -1080,7 +1080,13 @@ const Conventions = () => {
             )}
             {replaceDocId && (
               <div className="flex items-center gap-2 border border-border rounded-lg p-2">
-                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <UploadRow
+                  id="conv-replace-doc"
+                  className="flex-1"
+                  label={t("conventions:actions.replace", { defaultValue: "Remplacer le document" })}
+                  file={replaceFile}
+                  onFileChange={setReplaceFile}
+                />
                 <Button size="sm" onClick={handleReplaceConvDoc} disabled={replacing || !replaceFile}>
                   {replacing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
                   {t("conventions:actions.confirm")}

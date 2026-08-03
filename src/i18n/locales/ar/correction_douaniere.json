@@ -16,7 +16,7 @@
     "dash": "—"
   },
   "decisions": {
-    "card_title": "القرارات حسب الجهة",
+    "card_title": "القرارات حسب العضو",
     "refresh_aria": "تحديث القرارات",
     "waiting_title": "في الانتظار",
     "waiting_subtitle": "لا يوجد قرار من {{role}} في الوقت الحالي.",
@@ -60,7 +60,9 @@
     "solve_rejets_first": "يجب معالجة الرفوض أولاً",
     "rejeter_temp_first": "رفض مؤقت",
     "rejeter_temp_again": "رفض مؤقت جديد",
-    "visa_already": "التأشيرة موضوعة بالفعل"
+    "visa_already": "التأشيرة موضوعة بالفعل",
+    "blocked_by_first_title": "⏳ في انتظار تأشيرة {{role}}",
+    "blocked_by_first_body": "يجب على {{role}} التأشير أولاً قبل أن تتمكن من إبداء رأيك."
   },
   "final": {
     "card_title": "القرار النهائي",
@@ -141,7 +143,7 @@
     },
     "response": {
       "title": "الرد على الرفض",
-      "description": "أرسل رسالة تبرير إلى الجهة التي أصدرت الرفض.",
+      "description": "أرسل رسالة تبرير إلى العضو الذي أصدر الرفض.",
       "requested_docs": "📋 الوثائق المطلوبة لهذا الرفض:",
       "motif_label": "السبب: {{motif}}",
       "message_placeholder": "رسالة التبرير الخاصة بك...",

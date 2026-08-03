@@ -7,6 +7,7 @@ import { PDFDocument } from "pdf-lib";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
+  groupementApi, GroupementDto,
   conventionApi, ConventionDto, CreateConventionRequest,
   TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
   demandeCorrectionApi, DemandeCorrectionDto, ModeleFiscal, Dqe,
@@ -18,11 +19,14 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   formatApiErrorMessage,
 } from "@/lib/api";
+import { requiredVisasCorrection } from "@/lib/visas";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UploadRow } from "@/components/ui/upload-row";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +42,7 @@ import {
   XCircle, Merge, ArrowUp, ArrowDown, File, Paperclip, Search, Check, AlertCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 
 // ── helpers ──
 const emptyImportation = (): ImportationLigne => ({
@@ -90,12 +95,29 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [entrepriseId, setEntrepriseId, clearEntrepriseId] = usePersistedState<string>("demande:entrepriseId", "");
   const [conventionId, setConventionId, clearConventionId] = usePersistedState<string>("demande:conventionId", "");
   const [marcheId, setMarcheId, clearMarcheId] = usePersistedState<string>("demande:marcheId", "");
+  // Titulaire : entreprise seule ou groupement (XOR côté back).
+  const [titulaireType, setTitulaireType] = usePersistedState<"ENTREPRISE" | "GROUPEMENT">("demande:titulaireType", "ENTREPRISE");
+  const [groupementId, setGroupementId] = usePersistedState<string>("demande:groupementId", "");
+  const [groupements, setGroupements] = useState<GroupementDto[]>([]);
+  // Intitulé libre du marché (Phase A — remplace la création de marché dans le wizard de correction).
+  const [intituleMarche, setIntituleMarche, clearIntituleMarche] = usePersistedState<string>("demande:intituleMarche", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
   const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
   const [loadingData, setLoadingData] = useState(false);
 
   // Entreprise search combobox
   const [entrepriseOpen, setEntrepriseOpen] = useState(false);
+
+  // Chargement des groupements actifs (titulaire alternatif).
+  useEffect(() => {
+    if (!open) return;
+    groupementApi.getAll(true)
+      .then(list => setGroupements(list || []))
+      .catch(() => setGroupements([]));
+  }, [open]);
+
+  // Create groupement inline
+  const [showCreateGroupement, setShowCreateGroupement] = useState(false);
 
   // Create enterprise inline
   const [showCreateEntreprise, setShowCreateEntreprise] = useState(false);
@@ -154,6 +176,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0,
     tvaDeductible: 0, tvaNette: 0, creditInterieur: 0,
   });
+  // Enveloppes crédit saisissables (override du calcul auto) — le back exige au moins une > 0
+  const [creditExtManuel, setCreditExtManuel] = usePersistedState<string>("demande:creditExtManuel", "");
+  const [creditIntManuel, setCreditIntManuel] = usePersistedState<string>("demande:creditIntManuel", "");
 
   // Step 2: DQE — persistés
   const [dqeNumero, setDqeNumero] = usePersistedState<string>("demande:dqeNumero", "");
@@ -259,14 +284,34 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       const isFreshOpen = !wasOpenRef.current;
       wasOpenRef.current = true;
       if (isFreshOpen) {
-        // Au premier rendu, ne PAS écraser les états persistés (entrepriseId, conventionId,
-        // marcheId, importations, dqe, fiscalite, docFiles, etc.) — l'utilisateur peut être
-        // de retour après une bascule mobile et on veut restaurer sa saisie.
         setStep(0);
         setShowCreateEntreprise(false);
         setNewEntreprise({ raisonSociale: "", nif: "" });
         setShowCreateConvention(false);
         setShowCreateMarche(false);
+        // Nouvelle demande : réinitialiser complètement le formulaire.
+        if (!editingId && !editingDemande) {
+          setEntrepriseId("");
+          setTitulaireType("ENTREPRISE");
+          setGroupementId("");
+          setConventionId("");
+          setMarcheId("");
+          setIntituleMarche("");
+          setTypeProjet("BTP");
+          setReferenceDossier("");
+          setImportations([emptyImportation()]);
+          setFiscalite({ montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0, tvaDeductible: 0, tvaNette: 0, creditInterieur: 0 });
+          setCreditExtManuel("");
+          setCreditIntManuel("");
+          setDqeNumero("");
+          setDqeProjet("");
+          setDqeLot("");
+          setDqeTauxTVA(16);
+          setDqeLignes([emptyDqeLigne()]);
+          setExistingDocs({});
+          clearDocFiles();
+          setDocFiles({});
+        }
       }
       loadInitialData();
     } else {
@@ -280,8 +325,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   useEffect(() => {
     if (!open || !editingDemande) return;
     setEntrepriseId(editingDemande.entrepriseId ? String(editingDemande.entrepriseId) : "");
+    setGroupementId(editingDemande.groupementId ? String(editingDemande.groupementId) : "");
+    setTitulaireType(editingDemande.groupementId ? "GROUPEMENT" : "ENTREPRISE");
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
+    setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
     const mf = editingDemande.modeleFiscal;
     if (mf) {
       if (mf.typeProjet) setTypeProjet(mf.typeProjet);
@@ -346,9 +394,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.raison_sociale_required"), variant: "destructive" });
       return;
     }
-    if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
-      return;
+    if (newEntreprise.entrepriseEtrangere) {
+      if (!newEntreprise.registreCommerceEtranger?.trim()) {
+        toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.rc_etranger_required"), variant: "destructive" });
+        return;
+      }
+    } else {
+      if (!newEntreprise.nif || newEntreprise.nif.length !== 8) {
+        toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.nif_required"), variant: "destructive" });
+        return;
+      }
     }
     setCreatingEntreprise(true);
     try {
@@ -531,7 +586,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const totalDD = importations.reduce((s, l) => s + l.dd, 0);
   const totalTVADouane = importations.reduce((s, l) => s + l.tvaDouane, 0);
   const totalTaxes = importations.reduce((s, l) => s + l.totalTaxes, 0);
-  const creditExterieur = totalTaxes;
+  const creditExterieurCalc = totalTaxes;
+  const creditExterieur = creditExtManuel.trim() !== "" ? (parseFloat(creditExtManuel) || 0) : creditExterieurCalc;
 
   const updateFiscalite = (field: keyof FiscaliteInterieure, value: number) => {
     setFiscalite(prev => {
@@ -544,7 +600,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     });
   };
 
-  const creditTotal = creditExterieur + fiscalite.creditInterieur;
+  const creditInterieur = creditIntManuel.trim() !== "" ? (parseFloat(creditIntManuel) || 0) : fiscalite.creditInterieur;
+  const creditTotal = creditExterieur + creditInterieur;
 
   // ── DQE helpers ──
   const updateDqeLigne = (idx: number, field: keyof DqeLigne, value: string | number) => {
@@ -592,15 +649,32 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.no_ac_associated"), variant: "destructive" });
       return;
     }
-    if (!entrepriseId) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.entreprise_required"), variant: "destructive" });
+    const isGroupement = titulaireType === "GROUPEMENT";
+    if (isGroupement ? !groupementId : !entrepriseId) {
+      toast({
+        title: t("demandes:toast.error"),
+        description: isGroupement
+          ? t("demandes:wizard.errors.groupement_required")
+          : t("demandes:wizard.errors.entreprise_required"),
+        variant: "destructive",
+      });
       return;
     }
-    // En soumission ferme, conv/marché obligatoire ; en brouillon on est plus tolérant.
-    if (!asBrouillon && !conventionId && !marcheId) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_or_marche_required"), variant: "destructive" });
+    // Le back actuel accepte la demande sans création de marché, mais exige encore
+    // une convention porteuse. On bloque côté front pour éviter l'erreur API générique.
+    if (!asBrouillon && !conventionId) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.convention_required"), variant: "destructive" });
       return;
     }
+    if (!asBrouillon && !marcheId && !intituleMarche?.trim()) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.intitule_marche_required"), variant: "destructive" });
+      return;
+    }
+    if (!asBrouillon && creditExterieur <= 0 && creditInterieur <= 0) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.credit_required"), variant: "destructive" });
+      return;
+    }
+
 
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
@@ -609,16 +683,22 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     try {
       const payload = {
         autoriteContractanteId: user?.autoriteContractanteId || undefined,
-        entrepriseId: Number(entrepriseId),
+        // XOR : groupementId prime côté back (titulaire = chef de file).
+        entrepriseId: isGroupement ? undefined : Number(entrepriseId),
+        groupementId: isGroupement ? Number(groupementId) : undefined,
         conventionId: finalConventionId,
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
+        // Phase A : intitulé libre + enveloppes crédit (routing dynamique des visas côté back).
+        intituleMarche: intituleMarche?.trim() || selectedMarche?.intitule || undefined,
+        creditExterieur: Number(creditExterieur) || 0,
+        creditInterieur: Number(creditInterieur) || 0,
         modeleFiscal: {
           referenceDossier,
           typeProjet,
           afficherNomenclature: showNomenclature,
           importations,
-          fiscaliteInterieure: { ...fiscalite, tvaDeductible: totalTVADouane },
-          recapitulatif: { creditExterieur, creditInterieur: fiscalite.creditInterieur, creditTotal },
+          fiscaliteInterieure: { ...fiscalite, tvaDeductible: totalTVADouane, creditInterieur },
+          recapitulatif: { creditExterieur, creditInterieur, creditTotal },
         },
         dqe: {
           numeroAAOI: dqeNumero,
@@ -684,11 +764,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
-          "demande:entrepriseId", "demande:conventionId", "demande:marcheId",
+          "demande:entrepriseId", "demande:groupementId", "demande:titulaireType", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
           "demande:typeProjet", "demande:refDossier",
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
           "demande:dqeTauxTVA", "demande:dqeLignes",
+          "demande:creditExtManuel", "demande:creditIntManuel",
         ];
         keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
       } catch { /* noop */ }
@@ -708,6 +789,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   ];
 
   const selectedEntreprise = entreprises.find(e => String(e.id) === entrepriseId);
+  const titulaireSelected = titulaireType === "GROUPEMENT" ? !!groupementId : !!entrepriseId;
 
   return (
     <>
@@ -743,9 +825,69 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
               <>
+                {/* Titulaire : entreprise seule ou groupement */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t("demandes:wizard.fields.titulaire")} :</span>
+                  <div className="inline-flex rounded-md border p-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={titulaireType === "ENTREPRISE" ? "default" : "ghost"}
+                      className="h-7 text-xs"
+                      onClick={() => { setTitulaireType("ENTREPRISE"); setGroupementId(""); }}
+                    >
+                      {t("demandes:wizard.fields.titulaire_entreprise")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={titulaireType === "GROUPEMENT" ? "default" : "ghost"}
+                      className="h-7 text-xs"
+                      onClick={() => { setTitulaireType("GROUPEMENT"); setShowCreateEntreprise(false); }}
+                    >
+                      {t("demandes:wizard.fields.titulaire_groupement")}
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Entreprise with searchable combobox */}
+                  {titulaireType === "GROUPEMENT" ? (
+                    <div className="space-y-2">
+                      <Label className="flex items-center justify-between">
+                        <span>{t("demandes:wizard.fields.groupement")} *</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-primary"
+                          onClick={() => setShowCreateGroupement(true)}
+                        >
+                          <Plus className="h-3 w-3 me-1" />
+                          {t("demandes:wizard.actions.create_short")}
+                        </Button>
+                      </Label>
+                      <SearchableSelect
+                        value={groupementId}
+                        onValueChange={(v) => setGroupementId(v)}
+                        placeholder={t("demandes:wizard.fields.groupement_placeholder")}
+                        searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
+                        emptyMessage={t("demandes:wizard.fields.groupement_empty")}
+                        options={[...groupements]
+                          .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                          .map(g => ({
+                            value: String(g.id),
+                            label: g.raisonSociale || `#${g.id}`,
+                            description: g.nifAffiche
+                              ? `NIF (chef de file) : ${g.nifAffiche}${g.chefDeFileRaisonSociale ? ` — ${g.chefDeFileRaisonSociale}` : ""}`
+                              : g.chefDeFileRaisonSociale || undefined,
+                            keywords: `${g.raisonSociale || ""} ${g.nifAffiche || ""} ${g.chefDeFileRaisonSociale || ""}`,
+                          }))}
+                      />
+                    </div>
+                  ) : (
+                  /* Entreprise with searchable combobox */
                   <div className="space-y-2">
+
                     <Label className="flex items-center justify-between">
                       <span>{t("demandes:wizard.fields.entreprise_required")} *</span>
                       <Button
@@ -766,12 +908,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         placeholder={t("demandes:wizard.fields.entreprise_search_placeholder")}
                         searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
                         emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
-                        options={entreprises.map(e => ({
-                          value: String(e.id),
-                          label: e.raisonSociale || `#${e.id}`,
-                          description: e.nif ? `NIF : ${e.nif}` : undefined,
-                          keywords: `${e.raisonSociale || ""} ${e.nif || ""}`,
-                        }))}
+                        options={[...entreprises]
+                          .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
+                          .map(e => ({
+                            value: String(e.id),
+                            label: e.raisonSociale || `#${e.id}`,
+                            description: (e.nifAffiche || e.nif) ? `NIF : ${e.nifAffiche || e.nif}` : (e.registreCommerceEtranger ? `RC étranger : ${e.registreCommerceEtranger}` : undefined),
+                            keywords: `${e.raisonSociale || ""} ${e.nifAffiche || ""} ${e.nif || ""} ${e.registreCommerceEtranger || ""}`,
+                          }))}
                       />
                     ) : (
                       <Card className="border-primary/30">
@@ -788,15 +932,39 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               onChange={e => setNewEntreprise(prev => ({ ...prev, raisonSociale: e.target.value }))}
                             />
                           </div>
+                          <div className="flex flex-wrap items-center gap-4">
+                            <label className="flex items-center gap-2 text-xs">
+                              <Checkbox
+                                checked={!!newEntreprise.entrepriseEtrangere}
+                                onCheckedChange={(v) => setNewEntreprise(prev => ({ ...prev, entrepriseEtrangere: !!v }))}
+                              />
+                              {t("demandes:wizard.fields.entreprise_etrangere")}
+                            </label>
+                          </div>
+                          {newEntreprise.entrepriseEtrangere && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">{t("demandes:wizard.fields.rc_etranger")} <span className="text-destructive">*</span></Label>
+                              <Input
+                                placeholder={t("demandes:wizard.fields.rc_etranger_placeholder")}
+                                value={newEntreprise.registreCommerceEtranger || ""}
+                                onChange={e => setNewEntreprise(prev => ({ ...prev, registreCommerceEtranger: e.target.value }))}
+                              />
+                            </div>
+                          )}
+
                           <div className="space-y-1">
-                            <Label className="text-xs">{t("demandes:wizard.fields.nif")} <span className="text-destructive">*</span> <span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span></Label>
+                            <Label className="text-xs">
+                              {t("demandes:wizard.fields.nif")}
+                              {!newEntreprise.entrepriseEtrangere && <span className="text-destructive"> *</span>}
+                              {" "}<span className="text-muted-foreground">{t("demandes:wizard.fields.nif_hint")}</span>
+                            </Label>
                             <Input
                               placeholder={t("demandes:wizard.fields.nif_placeholder")}
                               value={newEntreprise.nif}
                               maxLength={8}
                               onChange={e => setNewEntreprise(prev => ({ ...prev, nif: e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) }))}
                             />
-                            {newEntreprise.nif && newEntreprise.nif.length !== 8 && (
+                            {!!newEntreprise.nif && newEntreprise.nif.length !== 8 && (
                               <p className="text-xs text-destructive flex items-center gap-1">
                                 <AlertCircle className="h-3 w-3" />
                                 {t("demandes:wizard.fields.nif_count", { count: newEntreprise.nif.length })}
@@ -830,7 +998,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             size="sm"
                             className="w-full"
                             onClick={handleCreateEntreprise}
-                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || newEntreprise.nif.length !== 8}
+                            disabled={creatingEntreprise || !newEntreprise.raisonSociale || (newEntreprise.entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger?.trim() : (newEntreprise.nif || "").length !== 8)}
                           >
                             {creatingEntreprise ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
                             {t("demandes:wizard.fields.create_entreprise")}
@@ -839,108 +1007,49 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       </Card>
                     )}
                   </div>
+                  )}
 
-                  {/* Attribution / Adjudication */}
+
+                  {/* Convention porteuse — le marché n'est plus créé/sélectionné ici. */}
                   <div className="space-y-2">
                     <Label className="flex items-center justify-between">
-                      <span>{t("demandes:wizard.fields.attribution")}</span>
+                      <span>{t("demandes:wizard.fields.convention")} <span className="text-destructive">*</span></span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-6 text-xs text-primary"
-                        onClick={() => { setShowCreateMarche(!showCreateMarche); if (showCreateMarche) { setShowCreateConvention(false); } }}
+                        onClick={() => setShowCreateConvention(!showCreateConvention)}
                       >
                         <Plus className="h-3 w-3 me-1" />
-                        {showCreateMarche ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
+                        {showCreateConvention ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
                       </Button>
                     </Label>
 
-                    {!showCreateMarche ? (
+                    {!showCreateConvention ? (
                       <SearchableSelect
-                        value={marcheId}
-                        onValueChange={(v) => {
-                          setMarcheId(v);
-                          const idNum = Number(v);
-                          if (!Number.isFinite(idNum) || idNum <= 0) return;
-                          // Vérification serveur : le marché a-t-il une demande de correction active ?
-                          marcheApi.getDemandeCorrectionActive(idNum)
-                            .then((res) => {
-                              if (!res?.hasActiveDemandeCorrection) return;
-                              // En mode édition, on ignore la propre demande en cours.
-                              if (editingId && res.demandeCorrectionId === editingId) return;
-                              setBusyMarcheIds(prev => {
-                                if (prev.has(idNum)) return prev;
-                                const next = new Set(prev);
-                                next.add(idNum);
-                                return next;
-                              });
-                              toast({
-                                title: t("demandes:wizard.errors.marche_busy_title"),
-                                description: res.demandeCorrectionStatut
-                                  ? t("demandes:wizard.errors.marche_busy_with_status", { statut: res.demandeCorrectionStatut })
-                                  : t("demandes:wizard.errors.marche_busy_no_status"),
-                                variant: "destructive",
-                              });
-                              // On désélectionne pour forcer un nouveau choix
-                              setMarcheId("");
-                            })
-                            .catch(() => { /* silencieux : fallback sur busyMarcheIds existants */ });
+                        value={conventionId}
+                        onValueChange={v => {
+                          setConventionId(v);
+                          setMarcheId("");
                         }}
-                        placeholder={t("demandes:wizard.fields.select_marche")}
-                        searchPlaceholder={t("demandes:wizard.fields.search_marche")}
-                        options={marches.map(m => {
-                          const isBusy = busyMarcheIds.has(m.id);
-                          const baseLabel = m.numeroMarche || `#${m.id}`;
-                          const amountDesc = m.montantContratTtc != null
-                            ? formatAmount(m.montantContratTtc, { currency: "MRU" })
-                            : undefined;
-                          const busyDesc = isBusy ? t("demandes:wizard.fields.marche_busy_description") : undefined;
-                          return {
-                            value: String(m.id),
-                            label: isBusy ? `${baseLabel} ${t("demandes:wizard.fields.marche_busy_suffix")}` : baseLabel,
-                            description: [amountDesc, busyDesc].filter(Boolean).join(" — ") || undefined,
-                            keywords: `${m.numeroMarche || ""} ${m.intitule || ""}`,
-                            disabled: isBusy,
-                          };
-                        })}
+                        placeholder={t("demandes:wizard.fields.select_convention")}
+                        searchPlaceholder={t("demandes:wizard.fields.search_convention")}
+                        options={conventions.map(c => ({
+                          value: String(c.id),
+                          label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
+                          keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
+                        }))}
                       />
                     ) : (
                       <Card className="border-primary/30">
                         <CardContent className="p-3 space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-primary">
                             <FileText className="h-4 w-4" />
-                            {t("demandes:wizard.fields.new_marche")}
+                            {t("demandes:wizard.fields.create_convention")}
                           </div>
 
-                          {/* Convention selector */}
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground flex items-center justify-between">
-                              <span>{t("demandes:wizard.fields.convention")} <span className="text-destructive">*</span></span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 text-xs text-primary p-0"
-                                onClick={() => setShowCreateConvention(!showCreateConvention)}
-                              >
-                                <Plus className="h-3 w-3 me-0.5" />
-                                {showCreateConvention ? t("demandes:wizard.actions.cancel") : t("demandes:wizard.actions.create_short")}
-                              </Button>
-                            </Label>
-                            {!showCreateConvention ? (
-                              <SearchableSelect
-                                value={conventionId}
-                                onValueChange={v => { setConventionId(v); }}
-                                placeholder={t("demandes:wizard.fields.select_convention")}
-                                searchPlaceholder={t("demandes:wizard.fields.search_convention")}
-                                options={conventions.map(c => ({
-                                  value: String(c.id),
-                                  label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
-                                  keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
-                                }))}
-                              />
-                            ) : (
                               <div className="space-y-3 border border-dashed border-border rounded-md p-3 max-h-[50vh] overflow-y-auto">
                                 <Input
                                   placeholder={t("demandes:wizard.fields.reference_placeholder")}
@@ -1093,10 +1202,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
                                       </SelectContent>
                                     </Select>
-                                    <Input type="file" multiple className="flex-1 text-xs" onChange={e => {
-                                      const files = e.target.files;
-                                      if (files) { Array.from(files).forEach(f => setConvCreateDocs(prev => [...prev, { type: convDocType, file: f }])); e.target.value = ""; }
-                                    }} />
+                                    <UploadRow
+                                      id="wizard-conv-create-docs"
+                                      className="flex-1"
+                                      label={t("demandes:wizard.actions.browse")}
+                                      file={null}
+                                      multiple
+                                      onFileChange={() => {}}
+                                      onFilesChange={files => files.forEach(f => setConvCreateDocs(prev => [...prev, { type: convDocType, file: f }]))}
+                                    />
                                   </div>
                                   {convCreateDocs.length > 0 && (
                                     <div className="space-y-1">
@@ -1153,59 +1267,74 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                   {t("demandes:wizard.fields.create_convention")}
                                 </Button>
                               </div>
-                            )}
                           </div>
-
-                          {/* Marché fields — enabled after convention */}
-                          {!conventionId ? (
-                            <p className="text-xs text-muted-foreground italic border border-dashed border-border rounded-md p-2 text-center">
-                              {t("demandes:wizard.fields.convention_choose_first")}
-                            </p>
-                          ) : (
-                            <>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.numero_marche")} <span className="text-destructive">*</span></Label>
-                                <Input
-                                  placeholder={t("demandes:wizard.fields.numero_marche_placeholder")}
-                                  value={newMarche.numeroMarche}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, numeroMarche: e.target.value }))}
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.montant_ht")} <span className="text-destructive">*</span></Label>
-                                <Input
-                                  placeholder={t("demandes:wizard.fields.montant_ht_placeholder")}
-                                  type="number"
-                                  value={newMarche.montantContratHt || ""}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.date_attribution")} <span className="text-destructive">*</span></Label>
-                                <Input
-                                  type="date"
-                                  max={new Date().toISOString().split("T")[0]}
-                                  value={newMarche.dateSignature || ""}
-                                  onChange={e => setNewMarche(prev => ({ ...prev, dateSignature: e.target.value }))}
-                                />
-                                <p className="text-[11px] text-muted-foreground">{t("demandes:wizard.fields.date_attribution_hint")}</p>
-                              </div>
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={handleCreateMarche}
-                                disabled={creatingMarche || !newMarche.numeroMarche || !newMarche.dateSignature || !newMarche.montantContratHt || newMarche.montantContratHt <= 0}
-                              >
-                                {creatingMarche ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}
-                                {t("demandes:wizard.fields.create_marche")}
-                              </Button>
-                            </>
-                          )}
                         </CardContent>
                       </Card>
                     )}
+
+                    {/* Phase A — Intitulé libre du marché (aucune création de marché ici). */}
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-sm">
+                        {t("demandes:wizard.fields.intitule_marche")}
+                        <span className="text-destructive ms-1">*</span>
+                      </Label>
+                      <Input
+                        value={intituleMarche}
+                        onChange={(e) => setIntituleMarche(e.target.value)}
+                        placeholder={t("demandes:wizard.fields.intitule_marche_placeholder")}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("demandes:wizard.fields.intitule_marche_hint")}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Enveloppes crédit — au moins une doit être > 0 */}
+                <div className="rounded-lg border border-primary/30 p-3 space-y-3">
+                  <h3 className="text-sm font-semibold">{t("demandes:wizard.modele_fiscal.section_recap")}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        {t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={creditExtManuel}
+                        placeholder={String(creditExterieurCalc || 0)}
+                        onChange={e => setCreditExtManuel(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        {t("demandes:wizard.modele_fiscal.totals.credit_interieur")}
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={creditIntManuel}
+                        placeholder={String(fiscalite.creditInterieur || 0)}
+                        onChange={e => setCreditIntManuel(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</Label>
+                      <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
+                    </div>
+                  </div>
+                  {(() => {
+                    const visas = requiredVisasCorrection({ creditInterieur, creditExterieur });
+                    const exclus = (["DGD", "DGI"] as const).filter(o => !visas.includes(o));
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        {t("demandes:wizard.modele_fiscal.visas_preview", { list: visas.join(", ") })}
+                        {exclus.length > 0 && ` — ${t("demandes:wizard.modele_fiscal.visas_excluded", { list: exclus.join(", ") })}`}
+                      </p>
+                    );
+                  })()}
+                </div>
+
 
                 <div>
                   <h3 className="text-sm font-semibold mb-2">{t("demandes:wizard.fields.pieces_to_attach")} <span className="text-muted-foreground text-xs">{t("demandes:wizard.fields.pieces_ged_hint")}</span></h3>
@@ -1217,12 +1346,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         const code = (dt.codeDocument || dt.typeDocument || "") as string;
                         const label = dt.libelle || tTypeDocument(code as any);
                         return (
-                        <div
+                        <label
                           key={dt.id}
-                          className={`flex items-center gap-2 rounded-lg border p-2 transition-colors ${
+                          htmlFor={`wizard-doc-${dt.id}`}
+                          className={`group flex items-center gap-2 rounded-lg border p-2 transition-colors cursor-pointer hover:bg-accent/40 focus-within:ring-2 focus-within:ring-ring ${
                             dragOverType === code
                               ? "border-primary bg-primary/5 border-dashed"
-                              : "border-border"
+                              : docFiles[code]
+                                ? "border-emerald-300 bg-emerald-50/40"
+                                : "border-border"
                           }`}
                           onDragOver={e => handleDragOver(e, code)}
                           onDragLeave={handleDragLeave}
@@ -1241,7 +1373,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             {dt.description && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+                                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" onClick={e => e.preventDefault()} />
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-[250px] text-xs">
                                   {dt.description}
@@ -1250,7 +1382,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                             )}
                           </span>
                           {docFiles[code] ? (
-                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">{docFiles[code].name}</span>
+                            <span className="text-xs text-emerald-700 truncate max-w-[150px]">{docFiles[code].name}</span>
                           ) : existingDocs[code] ? (
                             <span className="text-xs text-primary truncate max-w-[180px]" title={existingDocs[code].nomFichier}>
                               {t("demandes:wizard.fields.already_provided", { name: existingDocs[code].nomFichier })}
@@ -1260,21 +1392,39 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                               {t("demandes:wizard.actions.drop_hint")}
                             </span>
                           )}
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              className="hidden"
-                              accept={dt.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : "image/*").join(",")}
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) setDocFiles(prev => ({ ...prev, [code]: f }));
+                          {docFiles[code] && (
+                            <button
+                              type="button"
+                              aria-label={t("demandes:wizard.actions.remove", { defaultValue: "Retirer" }) as string}
+                              className="rounded-full p-1 hover:bg-destructive/10 text-destructive"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDocFiles(prev => {
+                                  const next = { ...prev };
+                                  delete next[code];
+                                  return next;
+                                });
                               }}
-                            />
-                            <span className="text-xs text-primary hover:underline">
-                              {docFiles[code] || existingDocs[code] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
-                            </span>
-                          </label>
-                        </div>
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <input
+                            id={`wizard-doc-${dt.id}`}
+                            type="file"
+                            className="sr-only"
+                            accept={dt.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : "image/*").join(",")}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) setDocFiles(prev => ({ ...prev, [code]: f }));
+                              e.target.value = "";
+                            }}
+                          />
+                          <span className="text-xs text-primary underline-offset-2 group-hover:underline shrink-0">
+                            {docFiles[code] || existingDocs[code] ? t("demandes:wizard.actions.replace") : t("demandes:wizard.actions.browse")}
+                          </span>
+                        </label>
                         );
                       })}
                     </div>
@@ -1425,22 +1575,36 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{t("demandes:wizard.modele_fiscal.section_recap")}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</p>
-                    <p className="text-lg font-bold">{fmt(creditExterieur)}</p>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={creditExtManuel}
+                      placeholder={String(creditExterieurCalc || 0)}
+                      onChange={e => setCreditExtManuel(e.target.value)}
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_interieur")}</p>
-                    <p className="text-lg font-bold">{fmt(fiscalite.creditInterieur)}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_interieur")}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={creditIntManuel}
+                      placeholder={String(fiscalite.creditInterieur || 0)}
+                      onChange={e => setCreditIntManuel(e.target.value)}
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</p>
-                    <p className="text-xl font-bold text-primary">{fmt(creditTotal)}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_total")}</Label>
+                    <Input readOnly value={fmt(creditTotal)} className="bg-muted font-bold text-primary" />
                   </div>
                 </div>
+                
               </CardContent>
+
             </Card>
           </div>
         )}
@@ -1531,7 +1695,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => onOpenChange(false)}>{t("demandes:wizard.actions.cancel")}</Button>
             {step < steps.length - 1 ? (
-              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !entrepriseId}>
+              <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !titulaireSelected}>
                 {t("demandes:wizard.actions.next")} <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
               </Button>
             ) : (
@@ -1540,14 +1704,14 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   <Button
                     variant="secondary"
                     onClick={() => handleSubmit(true)}
-                    disabled={savingDraft || submitting || !entrepriseId}
+                    disabled={savingDraft || submitting || !titulaireSelected}
                     title={t("demandes:wizard.actions.save_draft_tooltip")}
                   >
                     {savingDraft ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <FileText className="h-4 w-4 me-1" />}
                     {t("demandes:wizard.actions.save_draft")}
                   </Button>
                 )}
-                <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !entrepriseId}>
+                <Button onClick={() => handleSubmit(false)} disabled={submitting || savingDraft || !titulaireSelected}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Send className="h-4 w-4 me-1" />}
                   {isEditing ? t("demandes:wizard.actions.submit") : t("demandes:wizard.actions.submit_full")}
                 </Button>
@@ -1588,6 +1752,16 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Création d'un groupement (avec création d'entreprise membre à la volée) */}
+    <GroupementFormDialog
+      open={showCreateGroupement}
+      onOpenChange={setShowCreateGroupement}
+      onSaved={(g) => {
+        setGroupements(prev => [...prev.filter(x => x.id !== g.id), g]);
+        if (g.id) { setTitulaireType("GROUPEMENT"); setGroupementId(String(g.id)); }
+      }}
+    />
     </>
   );
 }

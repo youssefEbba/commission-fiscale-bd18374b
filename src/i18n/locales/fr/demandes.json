@@ -40,7 +40,8 @@
     "dgd_first": "⏳ Le DGD doit valider en premier.",
     "docs_requis": "Docs requis :",
     "rejet_open": "Ouvert",
-    "rejet_resolved": "Résolu"
+    "rejet_resolved": "Résolu",
+    "waiting_first_visa": "⏳ Visa {{role}}"
   },
   "detail": {
     "title": "Demande {{numero}}",
@@ -59,8 +60,9 @@
       "marche_fallback": "Marché #{{id}}",
       "marche_detached": "Marché #{{id}} (détaché)"
     },
+    "generate_adoption_letter": "Télécharger la lettre d'adoption",
     "org_status": {
-      "title": "Statut par organisme",
+      "title": "Statut par membre",
       "hint": "Les rejets ne sont pas modifiables.",
       "roles": {
         "DGD": "DGD – Douanes",
@@ -114,8 +116,10 @@
       "blocked_title": "⏳ En attente du visa DGD",
       "blocked_description": "Le DGD doit valider cette demande en premier.",
       "final_decision": "Décision finale :",
-      "missing_visas": "⚠️ Tous les organismes doivent apposer leur visa avant la décision finale.",
-      "missing_roles": "Manquant : {{roles}}"
+      "missing_visas": "⚠️ Tous les membres doivent apposer leur visa avant la décision finale.",
+      "missing_roles": "Manquant : {{roles}}",
+      "blocked_first_title": "⏳ En attente du visa {{role}}",
+      "blocked_first_description": "Le {{role}} doit viser cette demande en premier."
     },
     "reclamations": {
       "title": "Réclamations",
@@ -133,6 +137,14 @@
     "reupload_banner": {
       "title": "Réclamation acceptée — Nouveau cycle d'évaluation",
       "body": "Suite à l'acceptation de la réclamation, le processus d'évaluation reprend depuis le début. Le DGD doit téléverser la nouvelle offre corrigée et le Président la nouvelle lettre d'adoption lors de l'adoption. Les anciennes versions sont archivées dans l'historique."
+    },
+    "reactivate": {
+      "title": "Rejet définitif",
+      "description": "En tant qu'administrateur, vous pouvez annuler le rejet définitif afin que le Président puisse statuer à nouveau. Les visas déjà apposés sont conservés.",
+      "action": "Annuler le rejet définitif",
+      "confirm_title": "Annuler le rejet définitif ?",
+      "confirm_description": "La demande repassera au statut « En validation » et le motif de rejet sera effacé. Les visas existants sont conservés.",
+      "success": "Rejet annulé — la demande est de nouveau en validation"
     }
   },
   "actions": {
@@ -144,6 +156,7 @@
     "cancel_demande": "Annuler la demande",
     "correction_douaniere": "Correction douanière",
     "new_rejet_temp": "Nouveau rejet temporaire",
+    "generate_adoption_letter": "Générer la lettre d'adoption",
     "more": "Plus d'actions"
   },
   "dialogs": {
@@ -182,7 +195,9 @@
       "nif": "NIF",
       "adresse": "Adresse",
       "situation_fiscale": "Situation fiscale",
-      "empty": "Aucune information disponible"
+      "empty": "Aucune information disponible",
+      "voir_plus": "Voir plus",
+      "voir_groupement": "Voir le groupement"
     },
     "reject": {
       "title_final": "Rejet final",
@@ -260,6 +275,7 @@
     "load_demande_complete_error": "Impossible de charger la demande complète",
     "load_demandes_error": "Impossible de charger les demandes",
     "load_entreprise_error": "Impossible de charger les informations de l'entreprise",
+    "load_groupement_error": "Impossible de charger les informations du groupement",
     "permission_denied": "Votre compte n'a pas encore la permission de consulter les demandes de correction.",
     "decision_finale_applied": "Décision finale appliquée: {{statut}}",
     "decision_finale_applied_short": "Décision finale appliquée",
@@ -272,6 +288,8 @@
     "demande_cancelled": "Demande annulée avec succès",
     "cancel_error": "Erreur lors de l'annulation",
     "demande_adopted": "Demande adoptée et lettre d'adoption enregistrée",
+    "letter_generated": "Lettre d'adoption générée avec succès",
+    "letter_generate_error": "Erreur lors de la génération de la lettre d'adoption",
     "message_required_title": "Message requis",
     "message_required_desc": "Ce document répond à un rejet temporaire. Veuillez saisir un message.",
     "response_sent": "Réponse envoyée",
@@ -338,7 +356,7 @@
       "entreprise_search_command_placeholder": "Rechercher par nom ou NIF...",
       "entreprise_empty": "Aucune entreprise trouvée.",
       "entreprise_label_value": "{{name}} — NIF: {{nif}}",
-      "attribution": "Attribution / Adjudication",
+      "attribution": "Convention",
       "select_marche": "Sélectionnez",
       "search_marche": "Rechercher un marché...",
       "marche_busy_suffix": "(déjà associé à une demande active)",
@@ -347,6 +365,9 @@
       "convention": "Convention",
       "select_convention": "Sélectionnez une convention",
       "search_convention": "Rechercher une convention...",
+      "intitule_marche": "Intitulé du marché",
+      "intitule_marche_placeholder": "Ex : Construction du barrage de...",
+      "intitule_marche_hint": "Aucun marché n'est créé ici : l'intitulé libre sera transmis avec la demande.",
       "reference_placeholder": "Référence *",
       "intitule_placeholder": "Intitulé *",
       "bailleur": "Bailleur",
@@ -395,7 +416,18 @@
       "reference_dossier": "Référence dossier",
       "reference_dossier_placeholder": "REF-001",
       "type_projet": "Type de projet",
-      "nomenclature_douaniere": "Nomenclature douanière"
+      "nomenclature_douaniere": "Nomenclature douanière",
+      "entreprise_etrangere": "Entreprise étrangère",
+      "groupement": "Groupement",
+      "rc_etranger": "Registre de commerce étranger",
+      "rc_etranger_placeholder": "N° de registre de commerce étranger",
+      "chef_de_file": "Chef de file",
+      "chef_de_file_placeholder": "Sélectionner le chef de file",
+      "titulaire": "Titulaire",
+      "titulaire_entreprise": "Entreprise",
+      "titulaire_groupement": "Groupement",
+      "groupement_placeholder": "Sélectionner un groupement",
+      "groupement_empty": "Aucun groupement"
     },
     "modele_fiscal": {
       "section_parameters": "Modèle fiscal — Paramètres",
@@ -434,7 +466,9 @@
         "tva_deductible": "TVA déductible (douane)",
         "tva_nette": "TVA nette",
         "credit_interieur": "Crédit intérieur"
-      }
+      },
+      "visas_preview": "Visas requis : {{list}}",
+      "visas_excluded": "{{list}} non concernée(s)"
     },
     "dqe_form": {
       "section": "Formulaire DQE",
@@ -479,7 +513,9 @@
       "date_attribution_past": "La date d'attribution doit être antérieure à la date du jour",
       "no_ac_associated": "Votre compte n'est pas encore associé à une Autorité Contractante. Veuillez contacter un administrateur.",
       "entreprise_required": "Veuillez sélectionner une entreprise",
+      "convention_required": "Veuillez sélectionner une convention",
       "convention_or_marche_required": "Veuillez sélectionner une convention ou un marché",
+      "intitule_marche_required": "Veuillez saisir l'intitulé du marché",
       "save_failed": "Échec de l'enregistrement",
       "submit_failed": "Échec de la soumission",
       "merge_impossible_title": "Fusion impossible",
@@ -487,7 +523,10 @@
       "merge_error": "Erreur de fusion",
       "marche_busy_title": "Marché indisponible",
       "marche_busy_with_status": "Ce marché est déjà associé à une demande de correction active (statut : {{statut}}). Veuillez en choisir un autre.",
-      "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre."
+      "marche_busy_no_status": "Ce marché est déjà associé à une demande de correction active. Veuillez en choisir un autre.",
+      "credit_required": "Au moins un crédit (intérieur ou extérieur) doit être strictement supérieur à zéro",
+      "rc_etranger_required": "Le registre de commerce étranger est obligatoire pour une entreprise étrangère.",
+      "groupement_required": "Veuillez sélectionner un groupement"
     },
     "toast": {
       "entreprise_created": "Entreprise créée",

@@ -11,6 +11,8 @@ import {
   conventionApi, ConventionDto,
   DecisionCorrectionDto,
   documentRequirementApi,
+  autoriteContractanteApi,
+  type AutoriteContractanteDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { UploadRow } from "@/components/ui/upload-row";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -28,11 +31,15 @@ import {
   AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download,
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
+import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -89,6 +96,7 @@ const MiseEnPlaceDetail = () => {
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [marche, setMarche] = useState<MarcheDto | null>(null);
   const [convention, setConvention] = useState<ConventionDto | null>(null);
+  const [autorite, setAutorite] = useState<AutoriteContractanteDto | null>(null);
 
   const [visaLoading, setVisaLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -165,6 +173,9 @@ const MiseEnPlaceDetail = () => {
                 try {
                   const conv = await conventionApi.getById(m.conventionId);
                   setConvention(conv);
+                  if (conv?.autoriteContractanteId) {
+                    autoriteContractanteApi.getById(conv.autoriteContractanteId).then(setAutorite).catch(() => {});
+                  }
                 } catch { /* ignore */ }
               }
             })
@@ -219,8 +230,8 @@ const MiseEnPlaceDetail = () => {
 
   const c = certificat;
   const entrepriseName = c.entrepriseNom || entreprise?.raisonSociale || "—";
-  const correctionRef = c.demandeCorrectionNumero || (correction ? correction.numero || `#${correction.id}` : "—");
-  const marcheRef = c.marcheIntitule || marche?.numeroMarche || "—";
+  const correctionRef = (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
+  const marcheRef = c.marcheIntitule || marche?.intitule || marche?.numeroMarche || "—";
   // Devise affichée pour les montants — celle du marché si dispo, sinon MRU.
   const currency = (marche as any)?.deviseOrigine || "MRU";
 
@@ -229,8 +240,15 @@ const MiseEnPlaceDetail = () => {
   const myOpenRejets = myRoleDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const myHasOpenRejet = myOpenRejets.length > 0;
 
-  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string);
-  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string);
+  // Routing dynamique des visas : les crédits proviennent de la demande de correction liée.
+  const requiredVisas = requiredVisasCertificat(correction);
+  const dgdRequired = requiredVisas.includes("DGD");
+  const dgiRequired = requiredVisas.includes("DGI");
+  const visibleDecisionRoles = DECISION_ROLES_LIST.filter(r => r === "PRESIDENT" || requiredVisas.includes(r as any));
+  const roleExcluded = isRoleExcluded(role as string, correction);
+
+  const isControlRole = ["DGI", "DGD", "DGTCP"].includes(role as string) && !roleExcluded;
+  const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string) && !roleExcluded;
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
 
@@ -365,8 +383,8 @@ const MiseEnPlaceDetail = () => {
     } finally { setUploadingCert(false); }
   };
 
-  // ====== Tab d'organisme actif ======
-  const r = activeOrg;
+  // ====== Tab d'organisme actif (les organismes exclus ne sont pas affichés) ======
+  const r = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const roleDecs = decisions.filter(d => d.role === r);
   const allRejets = roleDecs.filter(d => d.decision === "REJET_TEMP");
   const openRejets = allRejets.filter(d => d.rejetTempStatus !== "RESOLU");
@@ -569,7 +587,7 @@ const MiseEnPlaceDetail = () => {
                           type="button"
                           variant="outline"
                           className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() => { void generateCertificatToSignPdf(c, { entreprise, marche, convention }); }}
+                          onClick={() => { void generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }); }}
                         >
                           <Download className="h-4 w-4 me-1" /> Télécharger le certificat à signer
                         </Button>
@@ -577,14 +595,14 @@ const MiseEnPlaceDetail = () => {
                           Téléchargez le certificat pré-rempli, signez-le, puis téléversez le document signé ci-dessous.
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <label className="cursor-pointer">
-                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setCertFile(e.target.files?.[0] || null)} />
-                          <div className="flex items-center gap-2 px-3 py-2 rounded border border-dashed border-muted-foreground/40 hover:border-primary text-sm text-muted-foreground hover:text-primary transition-colors">
-                            <Upload className="h-4 w-4" />
-                            {certFile ? certFile.name : t("mise_en_place:detail.president.upload_label")}
-                          </div>
-                        </label>
+                      <div className="space-y-2">
+                        <UploadRow
+                          id="mep-cert-upload"
+                          label={t("mise_en_place:detail.president.upload_label") as string}
+                          file={certFile}
+                          onFileChange={setCertFile}
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        />
                         {!certFile && (
                           <p className="text-xs text-amber-600">⚠️ {t("mise_en_place:detail.president.upload_warning")}</p>
                         )}
@@ -621,13 +639,13 @@ const MiseEnPlaceDetail = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">{t("mise_en_place:detail.orgs.title")}</h3>
             <div className="flex border-b border-border mb-3 gap-0">
-              {DECISION_ROLES_LIST.map((orgRole) => {
+              {visibleDecisionRoles.map((orgRole) => {
                 const orgDecs = decisions.filter(d => d.role === orgRole);
                 const orgHasVisa = orgDecs.some(d => d.decision === "VISA");
                 const orgHasRejets = orgDecs.some(d => d.decision === "REJET_TEMP");
                 const orgOpenRejets = orgDecs.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus !== "RESOLU");
                 const orgAllResolved = orgHasRejets && orgOpenRejets.length === 0;
-                const isActive = activeOrg === orgRole;
+                const isActive = r === orgRole;
                 const orgValidated = orgRole === "PRESIDENT" && ["OUVERT", "CLOTURE"].includes(c.statut);
                 return (
                   <button key={orgRole} onClick={() => setActiveOrg(orgRole)}
@@ -789,8 +807,13 @@ const MiseEnPlaceDetail = () => {
                       <div className="flex items-center justify-between gap-2">
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{tTypeDocument(code)}</Badge>
                       </div>
-                      <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                        onChange={(e) => setComplementFiles(prev => ({ ...prev, [code]: e.target.files?.[0] || null }))} />
+                      <UploadRow
+                        id={`mep-complement-${code}`}
+                        label={tTypeDocument(code)}
+                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        file={complementFiles[code] || null}
+                        onFileChange={(f) => setComplementFiles(prev => ({ ...prev, [code]: f }))}
+                      />
                       <Textarea
                         placeholder={t("mise_en_place:detail.complements.message_placeholder", { defaultValue: "Message explicatif (obligatoire)" })}
                         value={complementMessages[code] || ""}
@@ -910,13 +933,17 @@ const MiseEnPlaceDetail = () => {
             const tvaExpected = g != null && d != null ? g - d : null;
             const cordonMismatch = false;
             const tvaMismatch = false;
-            const baseValid = montantCordon !== "" && montantTVAInt !== "" && cordonNum >= 0 && tvaNum >= 0;
+            // Une enveloppe n'est obligatoire que si l'organisme correspondant est concerné.
+            const baseValid =
+              (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
+              (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
             const canSave = baseValid && !savingMontants;
 
             return (
               <>
                 <div className="space-y-4 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {dgdRequired && (
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.cordon_label")}</Label>
                       <div className="relative">
@@ -927,6 +954,8 @@ const MiseEnPlaceDetail = () => {
                         <p className="text-xs text-destructive">{t("mise_en_place:dialogs.montants.cordon_mismatch", { value: formatNumber(cordonExpected!) })}</p>
                       )}
                     </div>
+                    )}
+                    {dgiRequired && (
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.tva_label")}</Label>
                       <div className="relative">
@@ -937,6 +966,7 @@ const MiseEnPlaceDetail = () => {
                         <p className="text-xs text-destructive">{t("mise_en_place:dialogs.montants.tva_mismatch", { value: formatNumber(tvaExpected!) })}</p>
                       )}
                     </div>
+                    )}
                   </div>
 
                   <div className="rounded-lg border p-3 space-y-3">
@@ -1009,7 +1039,36 @@ const MiseEnPlaceDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
+      <div className="mt-6">
+        <AdminCorrectionCard
+          entity="CERTIFICAT"
+          entityId={c.id}
+          fields={[
+            { key: "dateValidite", label: "Date de validité", type: "date", value: c.dateValidite ?? "" },
+            {
+              key: "montantCordon", label: "Montant cordon", type: "number", value: c.montantCordon ?? "",
+              hint: "Refusé (409) si des demandes d'utilisation existent déjà sur ce certificat.",
+            },
+            {
+              key: "montantTVAInterieure", label: "Montant TVA intérieure", type: "number", value: c.montantTVAInterieure ?? "",
+              hint: "Refusé (409) si des demandes d'utilisation existent déjà sur ce certificat.",
+            },
+            { key: "valeurDouaneFournitures", label: "(a) Valeur en douane des fournitures", type: "number", value: c.valeurDouaneFournitures ?? "" },
+            { key: "droitsEtTaxesDouaneHorsTva", label: "(b) Droits et taxes hors TVA", type: "number", value: c.droitsEtTaxesDouaneHorsTva ?? "" },
+            { key: "tvaImportationDouane", label: "(d) TVA d'importation douane", type: "number", value: c.tvaImportationDouane ?? "" },
+            { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
+            { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
+          ]}
+          documents={docs.filter((d) => (d as any)._source === "certificat")}
+          extraDocTypes={docTypesDemandables}
+          docLabel={(code) => tTypeDocument(code)}
+          onSuccess={fetchData}
+        />
+      </div>
+
       {/* Reject Dialog */}
+
       <Dialog open={showReject} onOpenChange={setShowReject}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

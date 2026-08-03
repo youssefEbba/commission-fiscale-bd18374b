@@ -76,7 +76,7 @@
       "no_action_for_role": "Aucune action disponible pour votre rôle."
     },
     "orgs": {
-      "title": "Statut par organisme",
+      "title": "Statut par membre",
       "labels": {
         "DGI": "DGI – Impôts",
         "DGD": "DGD – Douanes",
@@ -141,6 +141,17 @@
       "correction_search": "Rechercher (n°, entreprise)…",
       "correction_empty_none": "Aucune correction adoptée disponible",
       "correction_empty_search": "Aucun résultat.",
+      "marche_missing": "Cette demande de correction n'est rattachée à aucun marché. Créez-le ci-dessous : il sera automatiquement lié à cette demande.",
+      "marche_missing_cta": "Créer le marché",
+      "marche_numero": "N° du marché *",
+      "marche_intitule": "Intitulé du marché",
+      "marche_date_signature": "Date de signature *",
+      "marche_montant": "Montant contrat HT",
+      "marche_create_link": "Créer et rattacher le marché",
+      "marche_numero_required": "Le numéro de marché est requis",
+      "marche_date_required": "La date de signature est requise",
+      "marche_created": "Marché créé et rattaché à la demande",
+      "marche_create_error": "Impossible de créer le marché",
       "locked_suffix": " (mise en place déjà en cours)",
       "locked_alert": "Une mise en place active existe déjà pour cette correction.",
       "selected_title": "Correction sélectionnée",
@@ -158,7 +169,11 @@
       "load_error": "Impossible de charger les données",
       "no_correction_selected": "Veuillez sélectionner une demande de correction",
       "no_entreprise": "L'entreprise n'est pas définie dans la correction",
-      "create_error": "Impossible de créer la demande"
+      "create_error": "Impossible de créer la demande",
+      "marche_date_future": "La date de signature ne peut pas être postérieure à aujourd'hui",
+      "marche_montant_ttc": "Montant TTC",
+      "marche_devise": "Devise",
+      "marche_linked": "Marché créé et rattaché à la demande de correction"
     },
     "edit": {
       "title_draft": "Modifier le brouillon {{ref}}",

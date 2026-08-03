@@ -40,7 +40,8 @@
     "dgd_first": "⏳ يجب أن تصادق الجمارك أولاً.",
     "docs_requis": "المستندات المطلوبة:",
     "rejet_open": "مفتوح",
-    "rejet_resolved": "تم الحل"
+    "rejet_resolved": "تم الحل",
+    "waiting_first_visa": "⏳ تأشيرة {{role}}"
   },
   "detail": {
     "title": "الطلب {{numero}}",
@@ -59,8 +60,9 @@
       "marche_fallback": "صفقة #{{id}}",
       "marche_detached": "صفقة #{{id}} (منفصلة)"
     },
+    "generate_adoption_letter": "تحميل رسالة الاعتماد",
     "org_status": {
-      "title": "الحالة حسب الجهة",
+      "title": "الحالة حسب العضو",
       "hint": "لا يمكن تعديل حالات الرفض.",
       "roles": {
         "DGD": "المديرية العامة للجمارك",
@@ -115,7 +117,9 @@
       "blocked_description": "يجب أن تصادق الجمارك على هذا الطلب أولاً.",
       "final_decision": "القرار النهائي:",
       "missing_visas": "⚠️ يجب أن تضع جميع الجهات تأشيراتها قبل القرار النهائي.",
-      "missing_roles": "ناقص: {{roles}}"
+      "missing_roles": "ناقص: {{roles}}",
+      "blocked_first_title": "⏳ في انتظار تأشيرة {{role}}",
+      "blocked_first_description": "يجب على {{role}} التأشير على هذا الطلب أولاً."
     },
     "reclamations": {
       "title": "الشكاوى",
@@ -133,6 +137,14 @@
     "reupload_banner": {
       "title": "تم قبول الشكوى — دورة تقييم جديدة",
       "body": "إثر قبول الشكوى، تُستأنف عملية التقييم من البداية. يجب أن ترفع الجمارك العرض المصحح الجديد وأن يرفع الرئيس رسالة الاعتماد الجديدة عند الاعتماد. تُؤرشف النسخ القديمة في السجل."
+    },
+    "reactivate": {
+      "title": "الرفض النهائي",
+      "description": "بصفتك مسؤولاً، يمكنك إلغاء الرفض النهائي ليتمكن الرئيس من البت مجدداً. تُحفظ التأشيرات الموجودة.",
+      "action": "إلغاء الرفض النهائي",
+      "confirm_title": "إلغاء الرفض النهائي؟",
+      "confirm_description": "سيعود الطلب إلى حالة « قيد التصديق » وسيُحذف سبب الرفض. تبقى التأشيرات كما هي.",
+      "success": "تم إلغاء الرفض — الطلب الآن قيد التصديق"
     }
   },
   "actions": {
@@ -144,6 +156,7 @@
     "cancel_demande": "إلغاء الطلب",
     "correction_douaniere": "التصحيح الجمركي",
     "new_rejet_temp": "رفض مؤقت جديد",
+    "generate_adoption_letter": "إنشاء رسالة الاعتماد",
     "more": "إجراءات أخرى"
   },
   "dialogs": {
@@ -182,7 +195,9 @@
       "nif": "الرقم الضريبي",
       "adresse": "العنوان",
       "situation_fiscale": "الوضع الضريبي",
-      "empty": "لا توجد معلومات متاحة"
+      "empty": "لا توجد معلومات متاحة",
+      "voir_plus": "عرض المزيد",
+      "voir_groupement": "عرض التجمع"
     },
     "reject": {
       "title_final": "رفض نهائي",
@@ -260,6 +275,7 @@
     "load_demande_complete_error": "تعذّر تحميل الطلب الكامل",
     "load_demandes_error": "تعذّر تحميل الطلبات",
     "load_entreprise_error": "تعذّر تحميل معلومات المؤسسة",
+    "load_groupement_error": "تعذّر تحميل معلومات التجمع",
     "permission_denied": "ليس لحسابك بعد صلاحية الاطلاع على طلبات التصحيح.",
     "decision_finale_applied": "تم تطبيق القرار النهائي: {{statut}}",
     "decision_finale_applied_short": "تم تطبيق القرار النهائي",
@@ -272,6 +288,8 @@
     "demande_cancelled": "تم إلغاء الطلب بنجاح",
     "cancel_error": "خطأ أثناء الإلغاء",
     "demande_adopted": "تم اعتماد الطلب وتسجيل رسالة الاعتماد",
+    "letter_generated": "تم إنشاء رسالة الاعتماد بنجاح",
+    "letter_generate_error": "خطأ أثناء إنشاء رسالة الاعتماد",
     "message_required_title": "الرسالة مطلوبة",
     "message_required_desc": "هذا المستند يرد على رفض مؤقت. يرجى إدخال رسالة.",
     "response_sent": "تم إرسال الرد",
@@ -338,7 +356,7 @@
       "entreprise_search_command_placeholder": "البحث بالاسم أو رقم التعريف الجبائي...",
       "entreprise_empty": "لم يتم العثور على أي مؤسسة.",
       "entreprise_label_value": "{{name}} — رقم التعريف الجبائي: {{nif}}",
-      "attribution": "الإسناد / الترسية",
+      "attribution": "الاتفاقية",
       "select_marche": "اختيار",
       "search_marche": "البحث عن صفقة...",
       "marche_busy_suffix": "(مرتبط بطلب نشط)",
@@ -347,6 +365,9 @@
       "convention": "الاتفاقية",
       "select_convention": "اختر اتفاقية",
       "search_convention": "البحث عن اتفاقية...",
+      "intitule_marche": "عنوان الصفقة",
+      "intitule_marche_placeholder": "مثال: بناء سد...",
+      "intitule_marche_hint": "لا يتم إنشاء صفقة هنا: سيتم إرسال العنوان الحر مع الطلب.",
       "reference_placeholder": "المرجع *",
       "intitule_placeholder": "العنوان *",
       "bailleur": "الممول",
@@ -395,7 +416,18 @@
       "reference_dossier": "مرجع الملف",
       "reference_dossier_placeholder": "REF-001",
       "type_projet": "نوع المشروع",
-      "nomenclature_douaniere": "التسمية الجمركية"
+      "nomenclature_douaniere": "التسمية الجمركية",
+      "entreprise_etrangere": "شركة أجنبية",
+      "groupement": "تجمع",
+      "rc_etranger": "السجل التجاري الأجنبي",
+      "rc_etranger_placeholder": "رقم السجل التجاري الأجنبي",
+      "chef_de_file": "الشركة الرائدة",
+      "chef_de_file_placeholder": "اختر الشركة الرائدة",
+      "titulaire": "صاحب الحق",
+      "titulaire_entreprise": "مؤسسة",
+      "titulaire_groupement": "تجمع",
+      "groupement_placeholder": "اختر تجمعاً",
+      "groupement_empty": "لا يوجد تجمع"
     },
     "modele_fiscal": {
       "section_parameters": "النموذج الضريبي — المعطيات",
@@ -434,7 +466,9 @@
         "tva_deductible": "ض.ق.م القابلة للخصم (الجمارك)",
         "tva_nette": "ض.ق.م الصافية",
         "credit_interieur": "الاعتماد الداخلي"
-      }
+      },
+      "visas_preview": "التأشيرات المطلوبة: {{list}}",
+      "visas_excluded": "{{list}} غير معنية"
     },
     "dqe_form": {
       "section": "نموذج الجدول الكمي التقديري",
@@ -479,7 +513,9 @@
       "date_attribution_past": "يجب أن يكون تاريخ الإسناد سابقاً لتاريخ اليوم",
       "no_ac_associated": "حسابك ليس مرتبطاً بعد بسلطة متعاقدة. يرجى الاتصال بالمسؤول.",
       "entreprise_required": "يرجى اختيار مؤسسة",
+      "convention_required": "يرجى اختيار اتفاقية",
       "convention_or_marche_required": "يرجى اختيار اتفاقية أو صفقة",
+      "intitule_marche_required": "يرجى إدخال عنوان الصفقة",
       "save_failed": "فشل الحفظ",
       "submit_failed": "فشل الإرسال",
       "merge_impossible_title": "تعذر الدمج",
@@ -487,7 +523,10 @@
       "merge_error": "خطأ في الدمج",
       "marche_busy_title": "الصفقة غير متاحة",
       "marche_busy_with_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط (الحالة: {{statut}}). يرجى اختيار صفقة أخرى.",
-      "marche_busy_no_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط. يرجى اختيار صفقة أخرى."
+      "marche_busy_no_status": "هذه الصفقة مرتبطة بطلب تصحيح نشط. يرجى اختيار صفقة أخرى.",
+      "credit_required": "يجب أن يكون أحد الرصيدين (الداخلي أو الخارجي) أكبر من الصفر",
+      "rc_etranger_required": "السجل التجاري الأجنبي إلزامي للشركة الأجنبية.",
+      "groupement_required": "يرجى اختيار تجمع"
     },
     "toast": {
       "entreprise_created": "تم إنشاء المؤسسة",

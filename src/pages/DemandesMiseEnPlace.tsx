@@ -11,6 +11,7 @@ import {
   documentRequirementApi, DocumentRequirementDto,
   DocumentDto, entrepriseApi, EntrepriseDto, marcheApi, MarcheDto,
   DecisionCorrectionDto, isApiError,
+  DEVISES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -117,6 +119,24 @@ const DemandesMiseEnPlace = () => {
   const [selectedCorrectionId, setSelectedCorrectionId] = useState<string>("");
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [linkedMarche, setLinkedMarche] = useState<MarcheDto | null>(null);
+  const [marcheForm, setMarcheForm] = useState<{ numeroMarche?: string; intitule?: string; dateSignature?: string; montantContratHt?: number; montantContratTtc?: number; deviseOrigine?: string }>({ deviseOrigine: "MRU" });
+  const [creatingMarche, setCreatingMarche] = useState(false);
+  /** Lit un montant de marché en tolérant les alias de nommage renvoyés par le backend. */
+  const marcheMontant = (m: any, kind: "ht" | "ttc"): number | undefined => {
+    if (!m) return undefined;
+    const keys = kind === "ht"
+      ? ["montantContratHt", "montantHt", "montantContratHT", "montant_contrat_ht"]
+      : ["montantContratTtc", "montantTtc", "montantContratTTC", "montant_contrat_ttc"];
+    for (const k of keys) {
+      const v = m[k];
+      if (v != null && v !== "" && !Number.isNaN(Number(v))) return Number(v);
+    }
+    return undefined;
+  };
+  /** Date du jour (YYYY-MM-DD) — borne max pour la date de signature. */
+  const todayIso = () => new Date().toISOString().slice(0, 10);
+
 
   const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -179,10 +199,15 @@ const DemandesMiseEnPlace = () => {
 
   useEffect(() => { fetchCertificats(); }, []);
 
+  const [openingCreate, setOpeningCreate] = useState(false);
+
   const openCreateDialog = async () => {
-    setShowCreate(true);
+    if (openingCreate) return;
+    setOpeningCreate(true);
     setSelectedCorrectionId("");
     setDocFiles({});
+    setMarcheForm({});
+
     try {
       const [corrs, reqs] = await Promise.all([
         user?.autoriteContractanteId
@@ -192,10 +217,61 @@ const DemandesMiseEnPlace = () => {
       ]);
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
       setDocRequirements(reqs);
+      setShowCreate(true);
     } catch {
-      errToast(t("mise_en_place:dialogs.create.load_error"));
+      toast({ title: t("common:states.error"), description: t("mise_en_place:dialogs.create.load_error"), variant: "destructive" });
+    } finally {
+      setOpeningCreate(false);
     }
   };
+
+  /** Crée le marché directement depuis la popup et le rattache à la correction sélectionnée. */
+  const handleCreateMarcheInline = async () => {
+    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+    if (!correction) return;
+    if (!marcheForm.numeroMarche?.trim()) {
+      errToast(t("mise_en_place:dialogs.create.marche_numero_required"));
+      return;
+    }
+    if (!marcheForm.dateSignature) {
+      errToast(t("mise_en_place:dialogs.create.marche_date_required"));
+      return;
+    }
+    if (marcheForm.dateSignature > todayIso()) {
+      errToast(t("mise_en_place:dialogs.create.marche_date_future"));
+      return;
+    }
+    setCreatingMarche(true);
+    try {
+      const created = await marcheApi.create({
+        conventionId: correction.conventionId || undefined,
+        demandeCorrectionId: correction.id,
+        numeroMarche: marcheForm.numeroMarche.trim(),
+        intitule: (marcheForm.intitule ?? correction.intituleMarche)?.trim() || undefined,
+        dateSignature: `${marcheForm.dateSignature}T00:00:00Z`,
+        montantContratHt: marcheForm.montantContratHt,
+        montantContratTtc: marcheForm.montantContratTtc,
+        deviseOrigine: marcheForm.deviseOrigine || "MRU",
+        statut: "EN_COURS",
+      });
+      setCorrections(prev => prev.map(c => (c.id === correction.id ? { ...c, marcheId: created.id } : c)));
+      // Le backend peut ne pas renvoyer les montants : on complète avec les valeurs saisies.
+      setLinkedMarche({
+        ...created,
+        montantContratHt: marcheMontant(created, "ht") ?? marcheForm.montantContratHt,
+        montantContratTtc: marcheMontant(created, "ttc") ?? marcheForm.montantContratTtc,
+        deviseOrigine: created.deviseOrigine || marcheForm.deviseOrigine || "MRU",
+      });
+      setMarcheForm({ deviseOrigine: "MRU" });
+      okToast(t("mise_en_place:dialogs.create.marche_created"));
+    } catch (e) {
+      errToast(tErr(e, t("mise_en_place:dialogs.create.marche_create_error")));
+    } finally {
+      setCreatingMarche(false);
+    }
+  };
+
+
 
   /** Clé stable d'une exigence documentaire — évite que plusieurs lignes sans `typeDocument`
    *  partagent la même clé `undefined` dans `docFiles` (sinon un fichier remplit toutes les lignes). */
@@ -418,10 +494,29 @@ const DemandesMiseEnPlace = () => {
   });
 
   const getEntrepriseName = (c: CertificatCreditDto) => c.entrepriseNom || (c.entrepriseId && entrepriseCache[c.entrepriseId]?.raisonSociale) || "—";
-  const getCorrectionName = (c: CertificatCreditDto) => c.demandeCorrectionNumero || (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId]?.numero) || "—";
-  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && marcheCache[c.marcheId]?.numeroMarche) || "—";
+  const getCorrectionName = (c: CertificatCreditDto) => (c.demandeCorrectionId && correctionCache[c.demandeCorrectionId] ? displayRef(correctionCache[c.demandeCorrectionId]) : c.demandeCorrectionNumero) || "—";
+  const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && (marcheCache[c.marcheId]?.intitule || marcheCache[c.marcheId]?.numeroMarche)) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
+
+  // Pré-remplit l'intitulé du marché depuis la demande de correction (modifiable ensuite)
+  useEffect(() => {
+    setLinkedMarche(null);
+    if (!selectedCorrection) return;
+    // Charge le marché déjà rattaché (créé ici ou existant) pour confirmation visuelle
+    if (selectedCorrection.marcheId) {
+      const mid = selectedCorrection.marcheId;
+      marcheApi.getById(mid)
+        .then(m => setLinkedMarche(prev => (prev?.id === mid ? prev : m)))
+        .catch(() => setLinkedMarche({ id: mid, statut: "EN_COURS" } as MarcheDto));
+    }
+    const prefill =
+      (selectedCorrection as any).intituleMarche ||
+      (selectedCorrection as any).marcheIntitule ||
+      (selectedCorrection as any).objet ||
+      "";
+    setMarcheForm(f => (f.intitule === undefined || f.intitule === "" ? { ...f, intitule: prefill } : f));
+  }, [selectedCorrectionId]);
   const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
 
   const lockedCorrectionIds = new Set<number>(
@@ -449,9 +544,11 @@ const DemandesMiseEnPlace = () => {
           </div>
           <div className="flex gap-2">
             {canCreate && (
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 me-2" /> {t("mise_en_place:actions.new")}
+              <Button onClick={openCreateDialog} disabled={openingCreate}>
+                {openingCreate ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Plus className="h-4 w-4 me-2" />}
+                {t("mise_en_place:actions.new")}
               </Button>
+
             )}
             <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
               <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("mise_en_place:actions.refresh")}
@@ -735,7 +832,11 @@ const DemandesMiseEnPlace = () => {
               <Label>{t("mise_en_place:dialogs.create.correction_label")}</Label>
               <SearchableSelect
                 value={selectedCorrectionId}
-                onValueChange={setSelectedCorrectionId}
+                onValueChange={(v) => {
+                  setSelectedCorrectionId(v);
+                  const c = corrections.find(x => String(x.id) === v);
+                  setMarcheForm(f => ({ ...f, intitule: c?.intituleMarche || "" }));
+                }}
                 placeholder={t("mise_en_place:dialogs.create.correction_placeholder")}
                 searchPlaceholder={t("mise_en_place:dialogs.create.correction_search")}
                 emptyMessage={corrections.length === 0 ? t("mise_en_place:dialogs.create.correction_empty_none") : t("mise_en_place:dialogs.create.correction_empty_search")}
@@ -743,8 +844,8 @@ const DemandesMiseEnPlace = () => {
                   const locked = lockedCorrectionIds.has(c.id);
                   return {
                     value: String(c.id),
-                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
-                    keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
+                    label: `${displayRef(c)} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
+                    keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
                     disabled: locked,
                   };
                 })}
@@ -762,14 +863,96 @@ const DemandesMiseEnPlace = () => {
                 <CardContent className="p-3 text-sm">
                   <p className="font-semibold mb-1">{t("mise_en_place:dialogs.create.selected_title")}</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {selectedCorrection?.marcheId && linkedMarche && (
+              <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900 space-y-1">
+                <div className="flex items-center gap-2 font-medium">
+                  <CheckCircle className="h-4 w-4" />
+                  {t("mise_en_place:dialogs.create.marche_linked")}
+                </div>
+                <div className="grid grid-cols-2 gap-1 ps-6">
+                  <div>{t("mise_en_place:dialogs.create.marche_numero")} : <strong>{linkedMarche.numeroMarche || "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_date_signature")} : <strong>{linkedMarche.dateSignature ? formatDate(linkedMarche.dateSignature) : "—"}</strong></div>
+                  <div className="col-span-2">{t("mise_en_place:dialogs.create.marche_intitule")} : <strong>{linkedMarche.intitule || "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant")} : <strong>{marcheMontant(linkedMarche, "ht") != null ? formatAmount(marcheMontant(linkedMarche, "ht"), { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                  <div>{t("mise_en_place:dialogs.create.marche_montant_ttc")} : <strong>{marcheMontant(linkedMarche, "ttc") != null ? formatAmount(marcheMontant(linkedMarche, "ttc"), { currency: linkedMarche.deviseOrigine || "MRU" }) : "—"}</strong></div>
+                </div>
+              </div>
+            )}
+
+            {selectedCorrection && !selectedCorrection.marcheId && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <p>{t("mise_en_place:dialogs.create.marche_missing")}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_numero")}</Label>
+                    <Input
+                      value={marcheForm.numeroMarche || ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, numeroMarche: e.target.value }))}
+                      placeholder="MARC-2026-001"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_date_signature")}</Label>
+                    <Input
+                      type="date"
+                      max={todayIso()}
+                      value={marcheForm.dateSignature || ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, dateSignature: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_intitule")}</Label>
+                    <Input
+                      value={marcheForm.intitule ?? (selectedCorrection.intituleMarche || "")}
+                      onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
+                    <Input
+                      type="number"
+                      value={marcheForm.montantContratHt ?? ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, montantContratHt: e.target.value === "" ? undefined : Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant_ttc")}</Label>
+                    <Input
+                      type="number"
+                      value={marcheForm.montantContratTtc ?? ""}
+                      onChange={e => setMarcheForm(f => ({ ...f, montantContratTtc: e.target.value === "" ? undefined : Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_devise")}</Label>
+                    <Select value={marcheForm.deviseOrigine || "MRU"} onValueChange={v => setMarcheForm(f => ({ ...f, deviseOrigine: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {DEVISES.map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button size="sm" onClick={handleCreateMarcheInline} disabled={creatingMarche}>
+                  {creatingMarche && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
+                  {t("mise_en_place:dialogs.create.marche_create_link")}
+                </Button>
+              </div>
+            )}
+
+
 
             <div className="space-y-3">
               <Label className="text-base font-semibold">{t("mise_en_place:dialogs.create.docs_title")}</Label>
@@ -859,8 +1042,8 @@ const DemandesMiseEnPlace = () => {
                   const locked = lockedCorrectionIds.has(c.id) && c.id !== editingOwnCorrectionId;
                   return {
                     value: String(c.id),
-                    label: `${c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
-                    keywords: `${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
+                    label: `${displayRef(c)} — ${c.entrepriseRaisonSociale || t("mise_en_place:dialogs.info.entreprise")}${locked ? t("mise_en_place:dialogs.create.locked_suffix") : ""}`,
+                    keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""}`,
                     disabled: locked,
                   };
                 })}
@@ -872,10 +1055,10 @@ const DemandesMiseEnPlace = () => {
                 <CardContent className="p-3 text-sm">
                   <p className="font-semibold mb-1">{t("mise_en_place:dialogs.create.selected_title")}</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {selectedCorrection.numero || `#${selectedCorrection.id}`}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -1074,10 +1257,10 @@ const DemandesMiseEnPlace = () => {
             return (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.numero")}</span><p className="font-medium">{corr.numero || `#${corr.id}`}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.numero")}</span><p className="font-medium">{displayRef(corr)}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{corr.statut}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.entreprise")}</span><p>{corr.entrepriseRaisonSociale || "—"}</p></div>
-                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.ac")}</span><p>{corr.autoriteContractanteNom || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.ac")}</span><p>{corr.autoriteContractanteNom || "—"}</p>{corr.autoriteContractanteMinistereTutelleNom && <p className="text-xs text-muted-foreground">{corr.autoriteContractanteMinistereTutelleNom}</p>}</div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_depot")}</span><p>{formatDate(corr.dateDepot)}</p></div>
                   {corr.motifRejet && <div className="col-span-2"><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.motif_rejet")}</span><p className="text-destructive">{corr.motifRejet}</p></div>}
                 </div>

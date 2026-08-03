@@ -10,6 +10,8 @@ import {
   conventionApi, ConventionDto, marcheApi, MarcheDto,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
+import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits, firstVisaRoleCorrection, requiredPreVisaDocCorrection } from "@/lib/visas";
+import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileText, ArrowLeft, Upload, Loader2, Plus,
   CheckCircle, XCircle, Download, ExternalLink,
-  AlertTriangle, Lock, Unlock, History,
+  AlertTriangle, Lock, Unlock, History, RotateCcw,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +33,8 @@ import { tStatutDemande, tReclamationStatut, tTypeDocument } from "@/i18n/enums"
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
+import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -178,17 +182,14 @@ const DemandeDetail = () => {
   const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
   const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
 
-  // Document à uploader obligatoirement avant le visa, selon le rôle.
-  // Libellé via `tTypeDocument` (enums.type_document.OFFRE_FISCALE_CORRIGEE / CREDIT_INTERIEUR).
-  const UPLOAD_BEFORE_VISA: Record<string, { docType: string }> = {
-    DGD: { docType: "OFFRE_FISCALE_CORRIGEE" },
-    DGI: { docType: "CREDIT_INTERIEUR" },
-  };
+  // Document à uploader obligatoirement avant le visa — miroir exact du backend
+  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
+  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
+  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
   const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
     PRESIDENT: { docType: "LETTRE_ADOPTION" },
   } as const;
-  const uploadBeforeVisa = role ? UPLOAD_BEFORE_VISA[role] : undefined;
-  const uploadBeforeVisaLabel = uploadBeforeVisa ? tTypeDocument(uploadBeforeVisa.docType) : undefined;
+  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
@@ -294,10 +295,12 @@ const DemandeDetail = () => {
   };
 
   const checkAndHandleVisa = async (demandeId: number) => {
-    if (uploadBeforeVisa) {
+    const docType = requiredPreVisaDocCorrection(role, resolveCredits(selected));
+    setPendingDocType(docType);
+    if (docType) {
       try {
         const documents = await demandeCorrectionApi.getDocuments(demandeId);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === uploadBeforeVisa.docType && d.actif !== false);
+        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
         if (!hasDoc) { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
       } catch { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
     }
@@ -313,7 +316,7 @@ const DemandeDetail = () => {
     if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
     setOffreCorrigeeUploading(true);
     try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, uploadBeforeVisa?.docType || "OFFRE_CORRIGEE", offreCorrigeeFile);
+      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, pendingDocType || "OFFRE_CORRIGEE", offreCorrigeeFile);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
       setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null);
       await handleTempVisa(offreCorrigeePendingId);
@@ -321,6 +324,22 @@ const DemandeDetail = () => {
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally { setOffreCorrigeeUploading(false); setOffreCorrigeePendingId(null); }
+  };
+
+  const [reactivateOpen, setReactivateOpen] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+
+  const handleReactivateRejetee = async () => {
+    if (!selected) return;
+    setReactivating(true);
+    try {
+      await demandeCorrectionApi.updateStatut(selected.id, "EN_VALIDATION");
+      toast({ title: t("demandes:toast.success"), description: t("demandes:detail.reactivate.success") });
+      setReactivateOpen(false);
+      fetchDetail();
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } finally { setReactivating(false); }
   };
 
   const handleStatutChange = async (demandeId: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => {
@@ -374,6 +393,22 @@ const DemandeDetail = () => {
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally { setAdoptionUploading(false); }
+  };
+
+  const handleGenerateAdoptionLetter = async () => {
+    if (!selected) return;
+    try {
+      const blob = await generateAdoptionLetterPdf(selected, {
+        entreprise: entrepriseDetail,
+        marche: marcheDetail,
+        convention: conventionDetail,
+      });
+      const ref = selected.reference || selected.numero || String(selected.id);
+      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
+    } catch (e: any) {
+      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    }
   };
 
   const handleCreateReclamation = async () => {
@@ -475,6 +510,7 @@ const DemandeDetail = () => {
     );
   }
 
+
   if (!selected) {
     return (
       <DashboardLayout>
@@ -526,6 +562,9 @@ const DemandeDetail = () => {
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.ac")}</span>
                 <p className="font-medium">{selected.autoriteContractanteNom || "—"}</p>
+                {selected.autoriteContractanteMinistereTutelleNom && (
+                  <p className="text-xs text-muted-foreground">{selected.autoriteContractanteMinistereTutelleNom}</p>
+                )}
               </div>
               <div>
                 <span className="text-muted-foreground">{t("demandes:detail.fields.entreprise")}</span>
@@ -549,7 +588,7 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
                   <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openConventionDetail(selected.conventionId!)}>
-                    {selected.conventionReference || selected.conventionIntitule || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
+                    {selected.conventionIntitule || selected.conventionReference || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
                   </button>
                 ) : (
                   <p className="font-medium text-muted-foreground">—</p>
@@ -559,8 +598,12 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
                   <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openMarcheDetail(selected.marcheId!)}>
-                    {selected.marcheNumero || selected.marcheIntitule || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
+                    {selected.marcheIntitule || (selected as any).intituleMarche || selected.marcheNumero || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
                   </button>
+                ) : (selected as any).intituleMarche ? (
+                  <p className="font-medium">{(selected as any).intituleMarche}</p>
+                ) : selected.marcheIntitule ? (
+                  <p className="font-medium">{selected.marcheIntitule}</p>
                 ) : selected.marcheIdTrace ? (
                   <p className="font-medium text-muted-foreground italic">
                     {t("demandes:detail.fields.marche_detached", { id: selected.marcheIdTrace })}
@@ -569,9 +612,57 @@ const DemandeDetail = () => {
                   <p className="font-medium text-muted-foreground">—</p>
                 )}
               </div>
+
             </div>
           </CardContent>
         </Card>
+
+        {/* Crédits demandés */}
+        {(() => {
+          const credits = resolveCredits(selected as any);
+          const hasInt = hasCreditInterieur(credits);
+          const hasExt = hasCreditExterieur(credits);
+          const nature = hasInt && hasExt ? "Mixte" : hasInt ? "Intérieur" : hasExt ? "Extérieur" : "Non renseigné";
+          const natureClass = hasInt && hasExt
+            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+            : hasInt || hasExt
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground";
+          const ci = Number(credits.creditInterieur ?? 0) || 0;
+          const ce = Number(credits.creditExterieur ?? 0) || 0;
+          const visas = requiredVisasCorrection(credits);
+          return (
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Crédits demandés</h3>
+                  <Badge className={`text-xs ${natureClass}`}>{nature}</Badge>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3 text-sm">
+                  <div className="rounded-lg border border-border p-3">
+                    <span className="text-muted-foreground text-xs">Crédit intérieur (DGI)</span>
+                    <p className="font-medium">{hasInt ? `${formatAmount(ci)} MRU` : "—"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <span className="text-muted-foreground text-xs">Crédit extérieur (DGD)</span>
+                    <p className="font-medium">{hasExt ? `${formatAmount(ce)} MRU` : "—"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <span className="text-muted-foreground text-xs">Total</span>
+                    <p className="font-semibold">{hasInt || hasExt ? `${formatAmount(ci + ce)} MRU` : "—"}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Visas requis :</span>
+                  {visas.map((v) => (
+                    <Badge key={v} variant="outline" className="text-[10px]">{v}</Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
 
         {/* Statut par organisme */}
         <Card>
@@ -888,6 +979,54 @@ const DemandeDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Réactivation admin d'un rejet définitif */}
+        {selected.statut === "REJETEE" && hasRole(["ADMIN_SI"]) && (
+          <Card className="border-amber-300 bg-amber-50/60">
+            <CardContent className="p-6 space-y-2">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <RotateCcw className="h-4 w-4 text-amber-600" /> {t("demandes:detail.reactivate.title")}
+              </h3>
+              <p className="text-xs text-muted-foreground">{t("demandes:detail.reactivate.description")}</p>
+              <Button variant="outline" disabled={reactivating} onClick={() => setReactivateOpen(true)}>
+                {reactivating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <RotateCcw className="h-4 w-4 me-1" />}
+                {t("demandes:detail.reactivate.action")}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
+        <AdminCorrectionCard
+          entity="DEMANDE"
+          entityId={selected.id}
+          fields={[
+            { key: "intituleMarche", label: "Intitulé du marché", type: "text", value: selected.intituleMarche ?? "" },
+            { key: "creditInterieur", label: "Crédit intérieur", type: "number", value: selected.creditInterieur ?? "" },
+            { key: "creditExterieur", label: "Crédit extérieur", type: "number", value: selected.creditExterieur ?? "" },
+          ]}
+          documents={docs}
+          docLabel={(code) => tTypeDocument(code)}
+          onSuccess={fetchDetail}
+        />
+
+
+        <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("demandes:detail.reactivate.confirm_title")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("demandes:detail.reactivate.confirm_description")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={reactivating}>{t("common:actions.cancel", { defaultValue: "Annuler" })}</AlertDialogCancel>
+              <AlertDialogAction disabled={reactivating} onClick={(e) => { e.preventDefault(); handleReactivateRejetee(); }}>
+                {reactivating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+                {t("demandes:detail.reactivate.action")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+
         {/* Workflow Actions */}
         {transitions.length > 0 && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
           <Card>
@@ -895,10 +1034,10 @@ const DemandeDetail = () => {
               {(() => {
                 const myHasVisa = decs.some(d => d.role === role && d.decision === "VISA");
                 const myOpenRejets = decs.filter(d => d.role === role && d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-                const dgdVisa = decs.some(d => d.role === "DGD" && d.decision === "VISA");
-                const isCurrentDGD = (role as string) === "DGD";
+                const firstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
+                const firstVisaDone = !firstRole || decs.some(d => d.role === firstRole && d.decision === "VISA");
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !isCurrentDGD && !isPres && !dgdVisa;
+                const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (
@@ -913,8 +1052,8 @@ const DemandeDetail = () => {
                     )}
                     {blocked ? (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                        <p className="font-medium">{t("demandes:detail.workflow.blocked_title")}</p>
-                        <p className="mt-1">{t("demandes:detail.workflow.blocked_description")}</p>
+                        <p className="font-medium">{t("demandes:detail.workflow.blocked_first_title", { role: firstRole })}</p>
+                        <p className="mt-1">{t("demandes:detail.workflow.blocked_first_description", { role: firstRole })}</p>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -938,33 +1077,48 @@ const DemandeDetail = () => {
               {(() => {
                 const hasFinalTransitions = transitions.some(tr => tr.isDecisionFinale && tr.from.includes(selected.statut));
                 if (!hasFinalTransitions) return null;
-                const REQUIRED_ROLES = ["DGD", "DGTCP", "DGI", "DGB"];
+                const REQUIRED_ROLES = requiredVisasCorrection(resolveCredits(selected as any)) as string[];
                 const allValidated = REQUIRED_ROLES.every(rr => decs.some(d => d.role === rr && d.decision === "VISA"));
                 const missingRoles = REQUIRED_ROLES.filter(rr => !decs.some(d => d.role === rr && d.decision === "VISA"));
                 return (
                   <div className="pt-2 border-t border-dashed border-border space-y-2">
                     <span className="text-xs font-semibold text-muted-foreground">{t("demandes:detail.workflow.final_decision")}</span>
-                    {!allValidated ? (
+                    {!allValidated && (
                       <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
                         {t("demandes:detail.workflow.missing_visas")}<br />{t("demandes:detail.workflow.missing_roles", { roles: missingRoles.join(", ") })}
                       </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {transitions.filter(tr => tr.isDecisionFinale && tr.from.includes(selected.statut)).map((tr, idx) => (
-                          <Button
-                            key={`final-${idx}`}
-                            variant={tr.to === "REJETEE" ? "destructive" : "default"}
-                            disabled={actionLoading === selected.id || (tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION")}
-                            title={tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION" ? t("demandes:detail.workflow.adopt_requires_en_validation", { defaultValue: "Disponible quand le dossier est en validation." }) : undefined}
-                            onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : checkAndHandlePresidentValidate(selected.id)}
-                          >
-                            {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
-                            {tTransition(tr.labelKey)}
-                          </Button>
-                        ))}
-                      </div>
                     )}
+                    <div className="flex flex-wrap gap-2">
+                      {transitions.filter(tr => tr.isDecisionFinale && tr.from.includes(selected.statut)).map((tr, idx) => (
+                        <Button
+                          key={`final-${idx}`}
+                          variant={tr.to === "REJETEE" ? "destructive" : "default"}
+                          disabled={
+                            actionLoading === selected.id ||
+                            (tr.to === "ADOPTEE" && (selected.statut !== "EN_VALIDATION" || !allValidated))
+                          }
+                          title={
+                            tr.to === "ADOPTEE" && selected.statut !== "EN_VALIDATION"
+                              ? t("demandes:detail.workflow.adopt_requires_en_validation", { defaultValue: "Disponible quand le dossier est en validation." })
+                              : tr.to === "ADOPTEE" && !allValidated
+                                ? t("demandes:detail.workflow.missing_roles", { roles: missingRoles.join(", ") })
+                                : undefined
+                          }
+                          onClick={() => tr.to === "REJETEE" ? openRejectDialog(selected.id, true) : checkAndHandlePresidentValidate(selected.id)}
+                        >
+                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
+                          {tTransition(tr.labelKey)}
+                        </Button>
+                      ))}
+                      {role === "PRESIDENT" && selected.statut === "EN_VALIDATION" && !docs.some(d => ((d as any).codeDocument ?? d.type) === "LETTRE_ADOPTION" && d.actif !== false) && (
+                        <Button variant="outline" onClick={handleGenerateAdoptionLetter}>
+                          <Download className="h-4 w-4 me-1" />
+                          {t("demandes:detail.generate_adoption_letter")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
+
                 );
               })()}
             </CardContent>
@@ -1262,11 +1416,25 @@ const DemandeDetail = () => {
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.raison_sociale")}</span><p className="font-medium">{entrepriseDetail.raisonSociale || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.nif")}</span><p className="font-medium">{entrepriseDetail.nif || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("demandes:dialogs.entreprise_info.adresse")}</span><p className="font-medium">{entrepriseDetail.adresse || "—"}</p></div>
-              
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">{t("demandes:dialogs.entreprise_info.empty")}</p>
           )}
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => setEntrepriseDialogOpen(false)}>{t("common:actions.close", { defaultValue: "Fermer" })}</Button>
+            {entrepriseDetail && (
+              <Button size="sm" onClick={() => {
+                setEntrepriseDialogOpen(false);
+                if (selected?.groupementId) {
+                  navigate(`/dashboard/groupements/${selected.groupementId}`);
+                } else {
+                  navigate(`/dashboard/entreprises/${entrepriseDetail.id}`);
+                }
+              }}>
+                {selected?.groupementId ? t("demandes:dialogs.entreprise_info.voir_groupement") : t("demandes:dialogs.entreprise_info.voir_plus")}
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

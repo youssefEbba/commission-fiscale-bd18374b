@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut, UtilisationType,
-  UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA,
+  UTILISATION_DOC_TYPES_DOUANE, UTILISATION_DOC_TYPES_TVA, getUtilisationDocTypesTVA, UTILISATION_DOCUMENT_TYPES,
   TypeDocumentUtilisation, DocumentDto,
   DecisionCorrectionDto, RejetTempResponseDto,
   certificatCreditApi, CertificatCreditDto, TvaDeductibleStockDto,
@@ -18,6 +18,7 @@ import {
 import { formatAmount, formatDate } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
+import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
 
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -1139,6 +1140,26 @@ const UtilisationDetail = () => {
         )}
 
         <DiscussionCommissionPanel contexte="UTILISATION" dossierId={u.id} dossierStatut={u.statut as string} />
+
+        {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
+        <AdminCorrectionCard
+          entity="UTILISATION"
+          entityId={u.id}
+          fields={[
+            { key: "montant", label: "Montant", type: "number", value: u.montant ?? "" },
+            ...(u.type === "DOUANIER"
+              ? [
+                  { key: "numeroDeclaration", label: "N° de déclaration", type: "text" as const, value: u.numeroDeclaration ?? "" },
+                  { key: "numeroBulletin", label: "N° de bulletin", type: "text" as const, value: u.numeroBulletin ?? "" },
+                  { key: "dateDeclaration", label: "Date de déclaration", type: "date" as const, value: u.dateDeclaration ?? "" },
+                ]
+              : []),
+          ]}
+          documents={docs}
+          extraDocTypes={[...UTILISATION_DOCUMENT_TYPES]}
+          docLabel={(code) => tTypeDocument(code) || code.replace(/_/g, " ")}
+          onSuccess={fetchAll}
+        />
       </div>
 
 

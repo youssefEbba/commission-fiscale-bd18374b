@@ -4,6 +4,7 @@ import { API_BASE } from "@/lib/apiConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { UploadRow } from "@/components/ui/upload-row";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -299,7 +300,14 @@ const DocumentGED = ({
 
             {replaceDocId && (
               <div className="flex items-center gap-2 border border-border rounded-lg p-2">
-                <Input type="file" onChange={(e) => setReplaceFile(e.target.files?.[0] || null)} className="flex-1" />
+                <UploadRow
+                  id="ged-replace-file"
+                  className="flex-1"
+                  label={t("ged:document.replace", { defaultValue: "Remplacer le document" })}
+                  file={replaceFile}
+                  onFileChange={setReplaceFile}
+                  browseLabel={t("ged:document.browse", { defaultValue: "Parcourir" }) as string}
+                />
                 <Button size="sm" onClick={handleReplaceDoc} disabled={replacing || !replaceFile}>
                   {replacing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Replace className="h-4 w-4 me-1" />}
                   {t("ged:document.confirm")}
@@ -336,20 +344,41 @@ const DocumentGED = ({
                   </div>
                   <div>
                     <Label className="text-xs">{t("ged:upload.file_label")}</Label>
-                    <Input
-                      type="file"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                    />
+                    <label
+                      htmlFor="ged-upload-file"
+                      className="mt-1 flex w-full items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-accent/40 focus-within:ring-2 focus-within:ring-ring transition-colors"
+                    >
+                      {uploadFile ? (
+                        <>
+                          {getFileIcon(uploadFile.name)}
+                          <span className="flex-1 truncate text-xs">{uploadFile.name}</span>
+                          <span className="text-[11px] text-muted-foreground shrink-0">({formatFileSize(uploadFile.size)})</span>
+                          <button
+                            type="button"
+                            aria-label={t("ged:document.cancel") as string}
+                            className="rounded-full p-1 hover:bg-destructive/10 text-destructive"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUploadFile(null); }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 text-muted-foreground" />
+                          <span className="flex-1 text-xs text-muted-foreground">{t("ged:upload.file_label")}</span>
+                          <span className="text-xs text-primary">{t("ged:document.browse", { defaultValue: "Parcourir" })}</span>
+                        </>
+                      )}
+                      <input
+                        id="ged-upload-file"
+                        type="file"
+                        className="sr-only"
+                        onChange={(e) => { setUploadFile(e.target.files?.[0] || null); e.target.value = ""; }}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                      />
+                    </label>
                   </div>
                 </div>
-                {uploadFile && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                    {getFileIcon(uploadFile.name)}
-                    <span>{uploadFile.name}</span>
-                    <span>({formatFileSize(uploadFile.size)})</span>
-                  </div>
-                )}
                 <Button
                   onClick={handleUpload}
                   disabled={uploading || !uploadFile}

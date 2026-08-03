@@ -123,7 +123,10 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
             }}
           >
             <CommandInput placeholder={searchPlaceholder} />
-            <CommandList className="max-h-[min(60vh,320px)]">
+            <CommandList
+              className="max-h-[50vh] overscroll-contain"
+              style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+            >
               <CommandEmpty>{emptyMessage}</CommandEmpty>
               <CommandGroup>
                 {options.map((opt) => (

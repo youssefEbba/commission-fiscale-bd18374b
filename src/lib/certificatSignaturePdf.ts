@@ -1,13 +1,22 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
-import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto } from "@/lib/api";
-import emblem from "@/assets/mauritania-emblem.png";
+import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
+import emblem from "@/assets/logo-official.png";
+import signaturePresident from "@/assets/signature-president.png";
 
 const CURRENCY = "Ouguiya";
 
+// Sanitize a string for jsPDF's built-in (Helvetica) fonts, which don't ship
+// some Unicode whitespace/dashes. In particular the narrow no-break space
+// (U+202F / U+00A0) produced by fr-FR locale formatting renders as "/".
+const safe = (s: string) =>
+  s
+    .replace(/[\u00A0\u202F\u2007]/g, " ") // narrow/no-break spaces -> normal space
+    .replace(/[\u2013\u2014]/g, "-");       // en/em dash -> hyphen
+
 const fmt = (v: any) =>
   v != null && !isNaN(Number(v))
-    ? Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    ? safe(Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
     : "";
 
 const fmtMontant = (v: any) => {
@@ -31,14 +40,25 @@ const inlineField = (
   x: number,
   y: number,
   endX: number,
-) => {
+): number => {
   doc.setFont("helvetica", "bold");
   doc.text(label, x, y);
   const lw = doc.getTextWidth(label);
   doc.setFont("helvetica", "normal");
-  if (value) doc.text(value, x + lw + 2, y);
+  const valueX = x + lw + 2;
+  const available = Math.max(10, endX - valueX);
+  const v = value ? safe(String(value)) : "";
+  const lines: string[] = v ? (doc.splitTextToSize(v, available) as string[]) : [""];
+  if (v) doc.text(lines[0], valueX, y);
   doc.setLineWidth(0.2);
-  doc.line(x + lw + 2, y + 0.8, endX, y + 0.8);
+  doc.line(valueX, y + 0.8, endX, y + 0.8);
+  let cy = y;
+  for (let i = 1; i < lines.length; i++) {
+    cy += 5;
+    doc.text(lines[i], x, cy);
+    doc.line(x, cy + 0.8, endX, cy + 0.8);
+  }
+  return cy - y;
 };
 
 const section = (
@@ -71,6 +91,8 @@ export interface CertificatPdfContext {
   entreprise?: EntrepriseDto | null;
   marche?: MarcheDto | null;
   convention?: ConventionDto | null;
+  /** Autorité contractante (pour l'affichage du ministère de tutelle). */
+  autorite?: AutoriteContractanteDto | null;
 }
 
 /**
@@ -83,7 +105,7 @@ export async function generateCertificatToSignPdf(
   c: CertificatCreditDto,
   ctx: CertificatPdfContext = {},
 ) {
-  const { entreprise, marche, convention } = ctx;
+  const { entreprise, marche, convention, autorite } = ctx;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const M = 12;
@@ -129,8 +151,9 @@ export async function generateCertificatToSignPdf(
   doc.setFontSize(11);
   doc.text("N°", pageW - M - 60, 54);
   doc.setFont("helvetica", "normal");
-  const numero = c.numero || c.reference || "";
-  doc.text(numero, pageW - M - 50, 54);
+  const numero = c.numero || "";
+  const refLisible = c.reference || c.numero || "";
+  doc.text(refLisible, pageW - M - 50, 54);
   doc.setLineWidth(0.2);
   doc.line(pageW - M - 50, 55, pageW - M - 4, 55);
 
@@ -142,7 +165,7 @@ export async function generateCertificatToSignPdf(
   doc.setFontSize(9);
   let yy = y + 8;
 
-  const nifRaw = entreprise?.nif || (c as any).entrepriseNif || "";
+  const nifRaw = entreprise?.nifAffiche || entreprise?.nif || (c as any).entrepriseNif || "";
   const nifChars = String(nifRaw).padEnd(10, " ").slice(0, 10);
   doc.setFont("helvetica", "bold");
   doc.text("NIF", M + 4, yy);
@@ -155,7 +178,7 @@ export async function generateCertificatToSignPdf(
     doc.text("/", bx + 7, yy);
   }
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "NOM et PRÉNOM OU RAISON SOCIALE",
     entreprise?.raisonSociale || c.entrepriseRaisonSociale || c.entrepriseNom || "",
@@ -164,7 +187,7 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
   yy += 7;
   doc.setFont("helvetica", "bold");
   doc.text("BP", M + 4, yy);
@@ -184,15 +207,15 @@ export async function generateCertificatToSignPdf(
   y += h1 + 6;
 
   // ---------- II - Identification marché ----------
-  const h2 = 58;
+  const h2 = 81;
   section(doc, "II – IDENTIFICATION DU MARCHÉ", M, y, W, h2);
   yy = y + 8;
   const objet = [marche?.numeroMarche, marche?.intitule || c.marcheIntitule]
     .filter(Boolean)
     .join(" - ");
-  inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "MONTANT DU MARCHÉ (HT)",
     fmtMontant(marche?.montantContratHt),
@@ -201,12 +224,23 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  inlineField(doc, "DATE DE SIGNATURE", fmtDate(marche?.dateSignature), M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "DATE DE SIGNATURE", fmtDate(marche?.dateSignature), M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "COLLECTIVITÉ BÉNÉFICIAIRE DU MARCHÉ",
-    convention?.autoriteContractanteNom || "",
+    convention?.autoriteContractanteNom || autorite?.nom || "",
+    M + 4,
+    yy,
+    M + W - 4,
+  );
+  yy += 7;
+  yy += inlineField(
+    doc,
+    "MINISTÈRE DE TUTELLE",
+    [autorite?.ministereTutelleNom, autorite?.ministereTutelleCode ? `(${autorite.ministereTutelleCode})` : ""]
+      .filter(Boolean)
+      .join(" "),
     M + 4,
     yy,
     M + W - 4,
@@ -215,9 +249,9 @@ export async function generateCertificatToSignPdf(
   doc.setFont("helvetica", "bold");
   doc.text("ORGANISME DE FINANCEMENT (NOM, ADRESSE ET TÉLÉPHONE)", M + 4, yy);
   yy += 7;
-  inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
   yy += 7;
-  inlineField(
+  yy += inlineField(
     doc,
     "RÉFÉRENCE CONVENTION",
     convention?.reference || convention?.projectReference || "",
@@ -273,9 +307,9 @@ export async function generateCertificatToSignPdf(
       width: 256,
       color: { dark: "#006633", light: "#ffffff" },
     });
-    const qrSize = 30;
+    const qrSize = 28;
     const qrX = M + W - qrSize - 4;
-    const qrY = y + h3 - qrSize - 6;
+    const qrY = y + h3 - qrSize - 10;
     doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     doc.setFontSize(7);
     doc.setFont("helvetica", "italic");
@@ -296,9 +330,20 @@ export async function generateCertificatToSignPdf(
   doc.text(`À Nouakchott, le ${today}`, pageW / 2, y, { align: "center" });
   y += 6;
   doc.text("Le Président de la Commission Fiscale", pageW / 2, y, { align: "center" });
-  y += 5;
+  y += 4;
+  try {
+    const sigW = 46;
+    const sigH = 22;
+    doc.addImage(signaturePresident, "PNG", pageW / 2 - sigW / 2, y, sigW, sigH);
+    y += sigH + 3;
+  } catch {
+    y += 12;
+  }
   doc.setFont("helvetica", "normal");
-  doc.text("(Nom et signature)", pageW / 2, y, { align: "center" });
+  doc.setFontSize(9);
+  doc.text("(Signature et cachet)", pageW / 2, y, { align: "center" });
+
+
 
   const filename = `certificat-a-signer-${(c.reference || c.numero || c.id)
     .toString()

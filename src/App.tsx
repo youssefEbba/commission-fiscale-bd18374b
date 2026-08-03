@@ -37,6 +37,8 @@ import TransfertDetail from "./pages/TransfertDetail";
 // import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
+import CreditsRecherche from "./pages/CreditsRecherche";
+import CreditFiche from "./pages/CreditFiche";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
 // TODO: réactiver quand le back-end Modifications/Avenants sera disponible
@@ -46,6 +48,9 @@ import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
 import CommissionRelais from "./pages/CommissionRelais";
 import ReferentielTaxes from "./pages/ReferentielTaxes";
+import Groupements from "./pages/Groupements";
+import GroupementDetail from "./pages/GroupementDetail";
+import EntrepriseDetail from "./pages/EntrepriseDetail";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
@@ -111,6 +116,16 @@ const App = () => (
             <Route path="/dashboard/mise-en-place/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <MiseEnPlaceDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/credits/recherche" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <CreditsRecherche />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/credits/fiche/:reference" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <CreditFiche />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={
@@ -215,6 +230,21 @@ const App = () => (
             <Route path="/dashboard/relais" element={
               <ProtectedRoute allowedRoles={["COMMISSION_RELAIS"]}>
                 <CommissionRelais />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/groupements" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <Groupements />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/groupements/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <GroupementDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/entreprises/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <EntrepriseDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/referentiel-taxes" element={

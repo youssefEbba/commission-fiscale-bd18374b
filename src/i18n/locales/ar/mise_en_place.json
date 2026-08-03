@@ -76,7 +76,7 @@
       "no_action_for_role": "لا يوجد إجراء متاح لدورك."
     },
     "orgs": {
-      "title": "الحالة حسب الجهة",
+      "title": "الحالة حسب العضو",
       "labels": {
         "DGI": "DGI – الضرائب",
         "DGD": "DGD – الجمارك",
@@ -141,6 +141,17 @@
       "correction_search": "بحث (رقم، مؤسسة)…",
       "correction_empty_none": "لا يوجد تصحيح معتمد متاح",
       "correction_empty_search": "لا توجد نتيجة.",
+      "marche_missing": "هذا الطلب غير مرتبط بأي صفقة. أنشئ الصفقة أدناه وسيتم ربطها تلقائياً بهذا الطلب.",
+      "marche_missing_cta": "إنشاء الصفقة",
+      "marche_numero": "رقم الصفقة *",
+      "marche_intitule": "عنوان الصفقة",
+      "marche_date_signature": "تاريخ التوقيع *",
+      "marche_montant": "مبلغ العقد دون الرسوم",
+      "marche_create_link": "إنشاء الصفقة وربطها",
+      "marche_numero_required": "رقم الصفقة مطلوب",
+      "marche_date_required": "تاريخ التوقيع مطلوب",
+      "marche_created": "تم إنشاء الصفقة وربطها بالطلب",
+      "marche_create_error": "تعذّر إنشاء الصفقة",
       "locked_suffix": " (تأسيس قيد المعالجة بالفعل)",
       "locked_alert": "يوجد تأسيس نشط بالفعل لهذا التصحيح.",
       "selected_title": "التصحيح المختار",
@@ -158,7 +169,11 @@
       "load_error": "تعذر تحميل البيانات",
       "no_correction_selected": "يرجى اختيار طلب تصحيح",
       "no_entreprise": "لم يتم تحديد المؤسسة في التصحيح",
-      "create_error": "تعذر إنشاء الطلب"
+      "create_error": "تعذر إنشاء الطلب",
+      "marche_date_future": "لا يمكن أن يكون تاريخ التوقيع بعد اليوم",
+      "marche_montant_ttc": "المبلغ شامل الضريبة",
+      "marche_devise": "العملة",
+      "marche_linked": "تم إنشاء الصفقة وربطها بطلب التصحيح"
     },
     "edit": {
       "title_draft": "تعديل المسودة {{ref}}",

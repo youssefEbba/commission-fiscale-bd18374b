@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react";
+import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -38,6 +38,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   { labelKey: "conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
   { labelKey: "marches", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+  { labelKey: "groupements", href: "/dashboard/groupements", icon: Users, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   {
     labelKey: "demandes",
     icon: FileText,
@@ -49,6 +50,7 @@ const NAV_ENTRIES: NavEntry[] = [
   },
   { labelKey: "representants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
   { labelKey: "certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+  { labelKey: "credits_consultation", href: "/dashboard/credits/recherche", icon: Search, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
   // TODO: réactiver quand la simulation sera activée ultérieurement
   // { labelKey: "simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },

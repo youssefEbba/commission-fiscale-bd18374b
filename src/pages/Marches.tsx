@@ -7,8 +7,10 @@ import {
   marcheApi, MarcheDto, CreateMarcheRequest, StatutMarche, MARCHE_STATUT_VALUES,
   delegueApi, DelegueDto,
   conventionApi, ConventionDto,
+  demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
   formatApiErrorMessage,
+  DEVISES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount } from "@/i18n/format";
+import { displayRef } from "@/lib/displayRef";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -43,12 +46,13 @@ const Marches = () => {
   const navigate = useNavigate();
   const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
+  const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
-  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
+  const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
 
   const [assignOpen, setAssignOpen] = useState(false);
@@ -79,9 +83,11 @@ const Marches = () => {
       const results = await Promise.allSettled([
         marcheApi.getAll(q),
         conventionApi.getAll(),
+        demandeCorrectionApi.getAll(),
       ]);
       setMarches(results[0].status === "fulfilled" ? results[0].value : []);
       setConventions(results[1].status === "fulfilled" ? results[1].value : []);
+      setDemandes(results[2].status === "fulfilled" ? results[2].value : []);
       if (results[0].status === "rejected") {
         toast({ title: errTitle, description: t("marches:list.load_error"), variant: "destructive" });
       }
@@ -100,7 +106,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, numeroMarche: "", intitule: "", montantContratHt: undefined, statut: "EN_COURS" });
+    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS" });
     setDialogOpen(true);
   };
 
@@ -110,7 +116,10 @@ const Marches = () => {
       conventionId: m.conventionId || 0,
       numeroMarche: m.numeroMarche || "",
       intitule: m.intitule || "",
-      montantContratHt: m.montantContratHt ?? m.montantContratTtc,
+      dateSignature: m.dateSignature ? m.dateSignature.slice(0, 10) : "",
+      montantContratHt: m.montantContratHt,
+      montantContratTtc: m.montantContratTtc,
+      deviseOrigine: m.deviseOrigine || "MRU",
       statut: m.statut,
     });
     setDialogOpen(true);
@@ -239,14 +248,18 @@ const Marches = () => {
       return;
     }
     const payload: CreateMarcheRequest = { ...form };
-    if (payload.montantContratHt == null) {
-      delete payload.montantContratHt;
-      delete payload.montantContratTtc;
-    } else {
-      payload.montantContratTtc = payload.montantContratHt;
-    }
+    if (payload.montantContratHt == null) delete payload.montantContratHt;
+    if (payload.montantContratTtc == null) delete payload.montantContratTtc;
+    if (!payload.deviseOrigine) payload.deviseOrigine = "MRU";
     if (!payload.conventionId) {
       delete payload.conventionId;
+    }
+    if (!payload.dateSignature) {
+      delete payload.dateSignature;
+    }
+    // Le rattachement à une demande de correction est immuable : uniquement à la création.
+    if (editing || !payload.demandeCorrectionId) {
+      delete payload.demandeCorrectionId;
     }
     setSubmitting(true);
     try {
@@ -270,6 +283,7 @@ const Marches = () => {
     const s = search.toLowerCase();
     if (!s) return true;
     return (
+      (m.reference || "").toLowerCase().includes(s) ||
       (m.numeroMarche || "").toLowerCase().includes(s) ||
       (m.intitule || "").toLowerCase().includes(s) ||
       String(m.id).includes(s)
@@ -337,10 +351,10 @@ const Marches = () => {
                     ) : (
                       filtered.map(m => (
                         <TableRow key={m.id}>
-                          <TableCell className="font-medium whitespace-nowrap">{m.numeroMarche || `#${m.id}`}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{displayRef(m)}</TableCell>
                           <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
-                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
@@ -405,7 +419,8 @@ const Marches = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+
           <DialogHeader>
             <DialogTitle>{editing ? t("marches:form.title_edit") : t("marches:form.title_create")}</DialogTitle>
             <DialogDescription>
@@ -423,7 +438,7 @@ const Marches = () => {
                 <Label>{t("marches:form.convention")} <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span></Label>
                 <SearchableSelect
                   value={form.conventionId ? String(form.conventionId) : ""}
-                  onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v) }))}
+                  onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v), demandeCorrectionId: undefined }))}
                   placeholder={visibleConventions.length === 0 ? t("marches:form.convention_empty_scope") : t("marches:form.convention_placeholder")}
                   searchPlaceholder={t("marches:form.convention_search")}
                   options={visibleConventions.map(c => ({
@@ -435,6 +450,30 @@ const Marches = () => {
               </div>
               );
             })()}
+            {!editing && (() => {
+              const linkedIds = new Set(marches.map(m => m.demandeCorrectionId).filter(Boolean) as number[]);
+              const eligibles = demandes
+                .filter(d => d.statut === "ADOPTEE" || d.statut === "NOTIFIEE")
+                .filter(d => !d.marcheId && !linkedIds.has(d.id))
+                .filter(d => !form.conventionId || d.conventionId === form.conventionId);
+              return (
+                <div className="space-y-2">
+                  <Label>{t("marches:form.demande_correction")}</Label>
+                  <SearchableSelect
+                    value={form.demandeCorrectionId ? String(form.demandeCorrectionId) : ""}
+                    onValueChange={v => setForm(f => ({ ...f, demandeCorrectionId: v ? Number(v) : undefined }))}
+                    placeholder={eligibles.length === 0 ? t("marches:form.demande_correction_empty") : t("marches:form.demande_correction_placeholder")}
+                    searchPlaceholder={t("marches:form.demande_correction_search")}
+                    options={eligibles.map(d => ({
+                      value: String(d.id),
+                      label: `${d.reference || d.numero || `#${d.id}`} — ${d.intituleMarche || d.marcheIntitule || ""}`,
+                      keywords: `${d.reference || ""} ${d.numero || ""} ${d.intituleMarche || ""} ${d.entrepriseRaisonSociale || ""}`,
+                    }))}
+                  />
+                  <p className="text-xs text-muted-foreground">{t("marches:form.demande_correction_hint")}</p>
+                </div>
+              );
+            })()}
             <div className="space-y-2">
               <Label>{t("marches:form.numero_required")}</Label>
               <Input value={form.numeroMarche} onChange={e => setForm(f => ({ ...f, numeroMarche: e.target.value }))} placeholder={t("marches:form.numero_placeholder")} />
@@ -444,8 +483,29 @@ const Marches = () => {
               <Input maxLength={500} value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} placeholder={t("marches:form.intitule_placeholder")} />
             </div>
             <div className="space-y-2">
-              <Label>{t("marches:form.montant_required")}</Label>
-              <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+              <Label>{t("marches:form.date_signature")}</Label>
+              <Input type="date" value={form.dateSignature || ""} onChange={e => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+              <p className="text-xs text-muted-foreground">{t("marches:form.date_signature_hint")}</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
+                <Label>{t("marches:form.montant_required")}</Label>
+                <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("marches:form.montant_ttc")}</Label>
+                <Input type="number" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("marches:form.devise")}</Label>
+                <Select value={form.deviseOrigine || "MRU"} onValueChange={v => setForm(f => ({ ...f, deviseOrigine: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {DEVISES.map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>{t("marches:form.statut")}</Label>

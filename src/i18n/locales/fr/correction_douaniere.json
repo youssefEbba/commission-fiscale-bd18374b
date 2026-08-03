@@ -16,7 +16,7 @@
     "dash": "—"
   },
   "decisions": {
-    "card_title": "Décisions par organisme",
+    "card_title": "Décisions par membre",
     "refresh_aria": "Rafraîchir les décisions",
     "waiting_title": "En attente",
     "waiting_subtitle": "Aucune décision de {{role}} pour le moment.",
@@ -60,7 +60,9 @@
     "solve_rejets_first": "Résoudre les rejets d'abord",
     "rejeter_temp_first": "Rejeter temporairement",
     "rejeter_temp_again": "Nouveau rejet temporaire",
-    "visa_already": "Visa déjà apposé"
+    "visa_already": "Visa déjà apposé",
+    "blocked_by_first_title": "⏳ En attente du visa {{role}}",
+    "blocked_by_first_body": "Le {{role}} doit apposer son visa en premier avant que vous puissiez vous prononcer."
   },
   "final": {
     "card_title": "Décision finale",
@@ -141,7 +143,7 @@
     },
     "response": {
       "title": "Répondre au rejet",
-      "description": "Envoyez un message de justification à l'organisme ayant émis le rejet.",
+      "description": "Envoyez un message de justification à le membre ayant émis le rejet.",
       "requested_docs": "📋 Documents demandés par ce rejet :",
       "motif_label": "Motif : {{motif}}",
       "message_placeholder": "Votre message de justification...",

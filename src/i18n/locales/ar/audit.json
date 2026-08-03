@@ -17,13 +17,15 @@
     "all": "كل الإجراءات",
     "CREATE": "إنشاء",
     "UPDATE": "تعديل",
-    "DELETE": "حذف"
+    "DELETE": "حذف",
+    "ADMIN_CORRECTION": "تصحيح إداري"
   },
   "table": {
     "date": "التاريخ",
     "user": "المستخدم",
     "action": "الإجراء",
     "entity": "الكيان",
+    "motif": "السبب",
     "details": "التفاصيل",
     "empty_cell": "—"
   },

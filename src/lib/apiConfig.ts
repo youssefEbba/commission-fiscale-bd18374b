@@ -3,10 +3,12 @@
 // ================================
 
 /** Backend principal (Spring Boot) */
+
 export const API_BASE = "/api";
 
 /** WebSocket backend */
 export const WS_BASE = "/ws";
+
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
