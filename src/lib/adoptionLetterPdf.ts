@@ -210,20 +210,24 @@ export async function generateAdoptionLetterPdf(
   y += h2 + 6;
 
   // ---------- III - Identification marché / convention ----------
-  const h3 = 44;
+  const h3 = 51;
   section(doc, "III – IDENTIFICATION DU MARCHÉ / CONVENTION", M, y, W, h3);
   yy = y + 8;
 
-  const objet = [d.marcheNumero || marche?.numeroMarche, d.marcheIntitule || marche?.intitule]
-    .filter(Boolean)
-    .join(" - ");
-  yy += inlineField(doc, "OBJET DU MARCHÉ", objet, M + 4, yy, M + W - 4);
+  const marcheRef = d.marcheNumero || marche?.numeroMarche || (d.marcheId ? `#${d.marcheId}` : "");
+  const marcheIntitule = d.marcheIntitule || marche?.intitule || "";
+  yy += inlineField(doc, "RÉFÉRENCE DU MARCHÉ", marcheRef, M + 4, yy, M + W - 4);
   yy += 7;
+  yy += inlineField(doc, "INTITULÉ DU MARCHÉ", marcheIntitule, M + 4, yy, M + W - 4);
+  yy += 7;
+
+  const objet = [marcheRef, marcheIntitule].filter(Boolean).join(" - ");
 
   const convRef = d.conventionReference || convention?.reference || "";
   const convIntitule = d.conventionIntitule || convention?.intitule || "";
   yy += inlineField(doc, "CONVENTION", [convRef, convIntitule].filter(Boolean).join(" - "), M + 4, yy, M + W - 4);
   yy += 7;
+
 
   const autoriteLabel = autorite?.nom || d.autoriteContractanteNom || "";
   const ministere = autorite?.ministereTutelleNom || "";
