@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
+import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut,
@@ -526,6 +527,32 @@ const CertificatDetail = () => {
         </Card>
 
         <DiscussionCommissionPanel contexte="CERTIFICAT" dossierId={c.id} dossierStatut={c.statut as string} />
+
+        {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
+        <AdminCorrectionCard
+          entity="CERTIFICAT"
+          entityId={c.id}
+          fields={[
+            { key: "dateValidite", label: "Date de validité", type: "date", value: c.dateValidite ?? "" },
+            {
+              key: "montantCordon", label: "Montant cordon", type: "number", value: c.montantCordon ?? "",
+              hint: "Refusé (409) si des demandes d'utilisation existent déjà sur ce certificat.",
+            },
+            {
+              key: "montantTVAInterieure", label: "Montant TVA intérieure", type: "number", value: c.montantTVAInterieure ?? "",
+              hint: "Refusé (409) si des demandes d'utilisation existent déjà sur ce certificat.",
+            },
+            { key: "valeurDouaneFournitures", label: "(a) Valeur en douane des fournitures", type: "number", value: c.valeurDouaneFournitures ?? "" },
+            { key: "droitsEtTaxesDouaneHorsTva", label: "(b) Droits et taxes hors TVA", type: "number", value: c.droitsEtTaxesDouaneHorsTva ?? "" },
+            { key: "tvaImportationDouane", label: "(d) TVA d'importation douane", type: "number", value: c.tvaImportationDouane ?? "" },
+            { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
+            { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
+          ]}
+          documents={gedDocs as unknown as DocumentDto[]}
+          extraDocTypes={gedDocTypes.map((o) => o.value)}
+          docLabel={(code) => gedDocTypes.find((o) => o.value === code)?.label ?? tTypeDocument(code)}
+          onSuccess={() => window.location.reload()}
+        />
       </div>
 
 

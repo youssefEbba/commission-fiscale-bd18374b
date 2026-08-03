@@ -17,13 +17,15 @@
     "all": "Toutes actions",
     "CREATE": "Création",
     "UPDATE": "Modification",
-    "DELETE": "Suppression"
+    "DELETE": "Suppression",
+    "ADMIN_CORRECTION": "Correction administrateur"
   },
   "table": {
     "date": "Date",
     "user": "Utilisateur",
     "action": "Action",
     "entity": "Entité",
+    "motif": "Motif",
     "details": "Détails",
     "empty_cell": "—"
   },

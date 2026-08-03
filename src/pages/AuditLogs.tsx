@@ -11,12 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Search, RefreshCw, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, Search, RefreshCw, Loader2, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react";
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: "bg-green-100 text-green-800",
   UPDATE: "bg-blue-100 text-blue-800",
   DELETE: "bg-red-100 text-red-800",
+  ADMIN_CORRECTION: "bg-amber-100 text-amber-900 border border-amber-300",
 };
 
 const AuditLogs = () => {
@@ -32,7 +33,7 @@ const AuditLogs = () => {
   // Mini-helper i18n local : libellés affichés pour les actions d'audit.
   // Les codes CREATE/UPDATE/DELETE restent inchangés côté API.
   const tAuditAction = (action: string): string => {
-    if (action === "CREATE" || action === "UPDATE" || action === "DELETE") {
+    if (action === "CREATE" || action === "UPDATE" || action === "DELETE" || action === "ADMIN_CORRECTION") {
       return t(`audit:actions.${action}`);
     }
     return action;
@@ -99,6 +100,7 @@ const AuditLogs = () => {
               <SelectItem value="CREATE">{t("audit:actions.CREATE")}</SelectItem>
               <SelectItem value="UPDATE">{t("audit:actions.UPDATE")}</SelectItem>
               <SelectItem value="DELETE">{t("audit:actions.DELETE")}</SelectItem>
+              <SelectItem value="ADMIN_CORRECTION">{t("audit:actions.ADMIN_CORRECTION")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -116,22 +118,41 @@ const AuditLogs = () => {
                       <TableHead>{t("audit:table.user")}</TableHead>
                       <TableHead>{t("audit:table.action")}</TableHead>
                       <TableHead>{t("audit:table.entity")}</TableHead>
+                      <TableHead>{t("audit:table.motif")}</TableHead>
                       <TableHead>{t("audit:table.details")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(!data || data.content.length === 0) ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t("audit:list.empty")}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("audit:list.empty")}</TableCell></TableRow>
                     ) : data.content.map((log) => (
-                      <TableRow key={log.id}>
+                      <TableRow
+                        key={log.id}
+                        className={log.action === "ADMIN_CORRECTION" ? "bg-amber-50/60 dark:bg-amber-950/10" : undefined}
+                      >
                         <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                           {formatDateTime(log.dateAction)}
                         </TableCell>
                         {/* Username brut depuis l'API — non traduisible */}
                         <TableCell className="font-medium">{log.username}</TableCell>
-                        <TableCell><Badge className={`text-xs ${ACTION_COLORS[log.action] || ""}`}>{tAuditAction(log.action)}</Badge></TableCell>
+                        <TableCell>
+                          <Badge className={`text-xs gap-1 ${ACTION_COLORS[log.action] || ""}`}>
+                            {log.action === "ADMIN_CORRECTION" && <ShieldAlert className="h-3 w-3" />}
+                            {tAuditAction(log.action)}
+                          </Badge>
+                        </TableCell>
                         {/* entityType : code JPA brut côté API (DEMANDE, CERTIFICAT…) — non traduit */}
                         <TableCell className="text-muted-foreground">{log.entityType}{log.entityId ? ` #${log.entityId}` : ""}</TableCell>
+                        {/* Motif : renseigné uniquement pour les corrections administrateur */}
+                        <TableCell className="text-sm max-w-xs">
+                          {log.motif ? (
+                            <span className="block font-medium text-amber-900 dark:text-amber-300 whitespace-pre-wrap break-words" title={log.motif}>
+                              {log.motif}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">{t("audit:table.empty_cell")}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{log.details || t("audit:table.empty_cell")}</TableCell>
                       </TableRow>
                     ))}
