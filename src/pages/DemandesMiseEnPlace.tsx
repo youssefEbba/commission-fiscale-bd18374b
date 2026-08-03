@@ -255,7 +255,13 @@ const DemandesMiseEnPlace = () => {
         statut: "EN_COURS",
       });
       setCorrections(prev => prev.map(c => (c.id === correction.id ? { ...c, marcheId: created.id } : c)));
-      setLinkedMarche(created);
+      // Le backend peut ne pas renvoyer les montants : on complète avec les valeurs saisies.
+      setLinkedMarche({
+        ...created,
+        montantContratHt: marcheMontant(created, "ht") ?? marcheForm.montantContratHt,
+        montantContratTtc: marcheMontant(created, "ttc") ?? marcheForm.montantContratTtc,
+        deviseOrigine: created.deviseOrigine || marcheForm.deviseOrigine || "MRU",
+      });
       setMarcheForm({ deviseOrigine: "MRU" });
       okToast(t("mise_en_place:dialogs.create.marche_created"));
     } catch (e) {
