@@ -172,7 +172,8 @@
       "create_error": "Impossible de créer la demande",
       "marche_date_future": "La date de signature ne peut pas être postérieure à aujourd'hui",
       "marche_montant_ttc": "Montant TTC",
-      "marche_devise": "Devise"
+      "marche_devise": "Devise",
+      "marche_linked": "Marché créé et rattaché à la demande de correction"
     },
     "edit": {
       "title_draft": "Modifier le brouillon {{ref}}",

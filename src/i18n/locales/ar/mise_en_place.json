@@ -172,7 +172,8 @@
       "create_error": "تعذر إنشاء الطلب",
       "marche_date_future": "لا يمكن أن يكون تاريخ التوقيع بعد اليوم",
       "marche_montant_ttc": "المبلغ شامل الضريبة",
-      "marche_devise": "العملة"
+      "marche_devise": "العملة",
+      "marche_linked": "تم إنشاء الصفقة وربطها بطلب التصحيح"
     },
     "edit": {
       "title_draft": "تعديل المسودة {{ref}}",
