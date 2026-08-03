@@ -7,6 +7,7 @@ import type {
   AutoriteContractanteDto,
 } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
+import signaturePresident from "@/assets/signature-president.png";
 import { hasCreditInterieur, hasCreditExterieur } from "@/lib/visas";
 
 const CURRENCY = "Ouguiya";
@@ -283,7 +284,7 @@ export async function generateAdoptionLetterPdf(
   );
   let textH = 0;
   for (const lines of wrapped) textH += lines ? 5 * lines.length + 1 : 4;
-  const signatureH = 6 + 5 + 5 + 10 + 4;
+  const signatureH = 6 + 5 + 3 + 24 + 4;
   const h5 = 8 + textH + signatureH;
 
   const FOOTER_Y = 285;
@@ -325,11 +326,13 @@ export async function generateAdoptionLetterPdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
-  yy += 5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("(Signature et cachet)", M + W - 4, yy, { align: "right" });
-  yy += 10;
+  yy += 3;
+  try {
+    doc.addImage(signaturePresident, "PNG", M + W - 52, yy, 48, 22);
+  } catch {
+    // ignore si l'asset n'est pas chargé
+  }
+  yy += 24;
   doc.setDrawColor(0);
   doc.setLineWidth(0.2);
   doc.line(M + W - 70, yy, M + W - 4, yy);
