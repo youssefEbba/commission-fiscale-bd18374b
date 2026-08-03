@@ -7,40 +7,34 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Deploy frontend on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          script: |
-            set -e
+      - name: Deploy frontend locally
+        run: |
+          set -e
 
-            cd /home/mf/commission-fiscale-bd18374b
+          cd /home/mf/commission-fiscale-bd18374b
 
-            sudo chown -R mf:mf /home/mf/commission-fiscale-bd18374b
+          mkdir -p /home/mf/deploy-backups
 
-            # Sauvegarder les fichiers de configuration locale
-            cp src/lib/apiConfig.ts /home/mf/apiConfig.ts.frontend.server || true
-            cp nginx.conf /home/mf/nginx.conf.frontend.server || true
-            cp Dockerfile /home/mf/Dockerfile.frontend.server || true
+          # Sauvegarder les fichiers locaux du serveur
+          cp src/lib/apiConfig.ts /home/mf/deploy-backups/apiConfig.ts.frontend.server || true
+          cp nginx.conf /home/mf/deploy-backups/nginx.conf.frontend.server || true
+          cp Dockerfile /home/mf/deploy-backups/Dockerfile.frontend.server || true
 
-            # Mettre à jour le code depuis GitHub
-            git fetch origin main
-            git reset --hard origin/main
+          # Mettre à jour le code depuis GitHub avec token
+          git fetch https://x-access-token:${{ secrets.GH_PAT }}@github.com/youssefEbba/commission-fiscale-bd18374b.git main
+          git reset --hard FETCH_HEAD
 
-            # Remettre les fichiers de configuration locale
-            cp /home/mf/apiConfig.ts.frontend.server src/lib/apiConfig.ts || true
-            cp /home/mf/nginx.conf.frontend.server nginx.conf || true
-            cp /home/mf/Dockerfile.frontend.server Dockerfile || true
+          # Remettre les fichiers de configuration locale serveur
+          cp /home/mf/deploy-backups/apiConfig.ts.frontend.server src/lib/apiConfig.ts || true
+          cp /home/mf/deploy-backups/nginx.conf.frontend.server nginx.conf || true
+          cp /home/mf/deploy-backups/Dockerfile.frontend.server Dockerfile || true
 
-            # Rebuild et redémarrage frontend
-            cd /home/mf/commission-fiscale-deploy
-            sudo docker compose up -d --build frontend
+          # Rebuild et redémarrage frontend
+          cd /home/mf/commission-fiscale-deploy
+          sudo docker compose up -d --build frontend
 
-            sudo docker ps
-            curl -I http://127.0.0.1:8082 || true
+          sudo docker ps
+          curl -I http://127.0.0.1:8082 || true
