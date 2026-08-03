@@ -856,7 +856,10 @@ const DemandesMiseEnPlace = () => {
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_intitule")}</Label>
-                    <Input value={selectedCorrection.intituleMarche || "—"} readOnly disabled />
+                    <Input
+                      value={marcheForm.intitule ?? (selectedCorrection.intituleMarche || "")}
+                      onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
