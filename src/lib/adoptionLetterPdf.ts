@@ -210,7 +210,7 @@ export async function generateAdoptionLetterPdf(
   y += h2 + 6;
 
   // ---------- III - Identification marché / convention ----------
-  const h3 = 51;
+  const h3 = 44;
   section(doc, "III – IDENTIFICATION DU MARCHÉ / CONVENTION", M, y, W, h3);
   yy = y + 8;
 
@@ -222,8 +222,6 @@ export async function generateAdoptionLetterPdf(
     (marche as any)?.intituleMarche ||
     (marche as any)?.objet ||
     "";
-  yy += inlineField(doc, "RÉFÉRENCE DU MARCHÉ", marcheRef, M + 4, yy, M + W - 4);
-  yy += 7;
   yy += inlineField(doc, "INTITULÉ DU MARCHÉ", marcheIntitule, M + 4, yy, M + W - 4);
   yy += 7;
 
