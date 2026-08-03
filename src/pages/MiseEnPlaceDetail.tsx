@@ -1037,7 +1037,36 @@ const MiseEnPlaceDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
+      <div className="mt-6">
+        <AdminCorrectionCard
+          entity="CERTIFICAT"
+          entityId={c.id}
+          fields={[
+            { key: "dateValidite", label: "Date de validité", type: "date", value: c.dateValidite ?? "" },
+            {
+              key: "montantCordon", label: "Montant cordon", type: "number", value: c.montantCordon ?? "",
+              hint: "Refusé (409) si des demandes d'utilisation existent déjà sur ce certificat.",
+            },
+            {
+              key: "montantTVAInterieure", label: "Montant TVA intérieure", type: "number", value: c.montantTVAInterieure ?? "",
+              hint: "Refusé (409) si des demandes d'utilisation existent déjà sur ce certificat.",
+            },
+            { key: "valeurDouaneFournitures", label: "(a) Valeur en douane des fournitures", type: "number", value: c.valeurDouaneFournitures ?? "" },
+            { key: "droitsEtTaxesDouaneHorsTva", label: "(b) Droits et taxes hors TVA", type: "number", value: c.droitsEtTaxesDouaneHorsTva ?? "" },
+            { key: "tvaImportationDouane", label: "(d) TVA d'importation douane", type: "number", value: c.tvaImportationDouane ?? "" },
+            { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
+            { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
+          ]}
+          documents={docs.filter((d) => (d as any)._source === "certificat")}
+          extraDocTypes={docTypesDemandables}
+          docLabel={(code) => tTypeDocument(code)}
+          onSuccess={fetchData}
+        />
+      </div>
+
       {/* Reject Dialog */}
+
       <Dialog open={showReject} onOpenChange={setShowReject}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
