@@ -96,6 +96,7 @@ export const NAMESPACES = [
   "reporting",
   "simulation",
   "explication",
+  "presentation",
 ] as const;
 
 const resources = {
