@@ -1,203 +1,262 @@
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import {
-  FileEdit, TrendingUp, FolderOpen, Users, FilePlus, FileCheck,
-  CheckCircle2, ArrowRight, Shield, ArrowLeftRight, Handshake, FlaskConical
-} from "lucide-react";
+import { FileDown, Globe, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import type { AppLang } from "@/i18n";
+import emblem from "@/assets/mauritania-emblem.png";
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
+  hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.12, duration: 0.5, ease: "easeOut" as const }
-  })
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, duration: 0.45, ease: "easeOut" as const },
+  }),
 };
 
-interface Section {
-  icon: React.ElementType;
-  title: string;
-  color: string;
-  points: string[];
-  tag?: string;
-}
+export default function Presentation() {
+  const { t, i18n } = useTranslation("presentation");
+  const isAr = i18n.language.startsWith("ar");
+  const dir = isAr ? "rtl" : "ltr";
 
-const SECTIONS: Section[] = [
-  {
-    icon: FolderOpen,
-    title: "1. La GED (Gestion Électronique des Documents)",
-    color: "from-cyan-600 to-cyan-800",
-    points: [
-      "Configuration dynamique des exigences par processus",
-      "Séparation claire : Cordon Douanier vs TVA Intérieure",
-      "Documents obligatoires paramétrables par type d'opération",
-      "Upload obligatoire avant toute soumission de demande",
-    ],
-  },
-  {
-    icon: FilePlus,
-    title: "2. Demande de Mise en Place CI",
-    color: "from-green-600 to-green-800",
-    points: [
-      "Workflow complet : AC → DGI → DGTCP → Président",
-      "Saisie des montants Cordon Douanier et TVA Intérieure",
-      "Génération automatique du certificat d'incentives en PDF",
-      "Ouverture automatique des soldes après validation",
-    ],
-  },
-  {
-    icon: FileCheck,
-    title: "3. Demande d'Utilisation CI",
-    color: "from-sky-600 to-sky-800",
-    points: [
-      "Deux flux distincts : Douanier (DGD → DGTCP) et TVA Intérieure (DGTCP seul)",
-      "Documents GED obligatoires avant soumission",
-      "Débit automatique du solde du certificat après validation",
-      "Traçabilité complète de chaque utilisation",
-    ],
-  },
-  {
-    icon: FileEdit,
-    title: "4. Correction Douanière & Chatbot IA",
-    color: "from-teal-600 to-teal-800",
-    points: [
-      "Workflow en 2 phases : Phase 1 (DQE vs Offre Financière) puis Phase 2 (DQE corrigé vs Offre Fiscale)",
-      "Chatbot intelligent intégré avec analyse automatique des documents (PDF/Excel)",
-      "Extraction automatique des données via IA (Gemini + Anthropic)",
-      "Export des documents corrigés (DQE standard, Offre Fiscale) au format Excel",
-      "Historique des échanges et traçabilité complète des corrections",
-    ],
-  },
-  {
-    icon: TrendingUp,
-    title: "5. Simulation Entreprise",
-    color: "from-orange-600 to-orange-800",
-    points: [
-      "Simulation autonome par entreprise sans passer par le workflow complet de correction",
-      "Upload du DQE et de l'offre fiscale avec extraction et structuration automatiques",
-      "Génération de l'offre fiscale corrigée en un clic via les modèles IA",
-      "Téléchargement de l'offre corrigée au format Excel directement depuis l'espace simulation",
-      "Persistance des résultats : consultation et re-téléchargement à tout moment",
-    ],
-  },
-  {
-    icon: Shield,
-    title: "6. Extraction & Indexation Intelligente",
-    color: "from-fuchsia-600 to-fuchsia-800",
-    points: [
-      "Extraction automatique du contenu des documents PDF et Excel via API IA",
-      "Filtrage intelligent des types de documents supportés (DQE, DAO, Offre Fiscale/Financière)",
-      "Limitation automatique à 30 pages pour les documents volumineux",
-      "Stockage structuré des extractions par session de correction ou simulation",
-    ],
-  },
-  {
-    icon: Users,
-    title: "7. Les Délégués (UPM / UEP)",
-    color: "from-amber-600 to-amber-800",
-    points: [
-      "Accès identique à l'Autorité Contractante sur leur périmètre",
-      "Filtrage automatique par marchés affectés",
-      "Visibilité sur les conventions, demandes et certificats liés",
-      "Séparation des rôles UPM et UEP avec périmètres distincts",
-    ],
-    tag: "À tester",
-  },
-  {
-    icon: ArrowLeftRight,
-    title: "8. Transfert de Crédit d'Impôt",
-    color: "from-indigo-600 to-indigo-800",
-    points: [
-      "Transfert partiel ou total du solde d'un certificat vers un autre bénéficiaire",
-      "Workflow de validation : AC → DGTCP → Président",
-      "Vérification automatique du solde disponible avant transfert",
-      "Historique complet des transferts avec traçabilité des montants",
-    ],
-    tag: "À tester",
-  },
-  {
-    icon: Handshake,
-    title: "9. Sous-traitance",
-    color: "from-rose-600 to-rose-800",
-    points: [
-      "Association directe entre entreprise titulaire et sous-traitante",
-      "Upload obligatoire du contrat de sous-traitance et lettre de volumes",
-      "Autorisation par la DGTCP activant les droits d'utilisation pour le sous-traitant",
-      "Visibilité des certificats sous-traités avec badge distinctif dans l'espace du sous-traitant",
-    ],
-    tag: "À tester",
-  },
-];
+  const changeLang = (lng: AppLang) => {
+    i18n.changeLanguage(lng);
+  };
 
-const Presentation = () => {
+  const objectives = t("objectives", { returnObjects: true }) as string[];
+  const documents = t("documents", { returnObjects: true }) as Array<{
+    title: string;
+    description: string;
+    link: string;
+  }>;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(160,50%,6%)] via-[hsl(153,40%,10%)] to-[hsl(160,50%,6%)]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[hsl(160,50%,6%)]/80 border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center gap-4">
-          <Shield className="h-8 w-8 text-[hsl(var(--accent))]" />
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Commission Fiscale
-            </h1>
-            <p className="text-xs text-white/50">Présentation des fonctionnalités</p>
+    <div className="min-h-screen bg-[#f8faf9]" dir={dir}>
+      {/* Official header — Republic */}
+      <div className="bg-[#00A95C] text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-3">
+              <img
+                src={emblem}
+                alt="Emblème de la République Islamique de Mauritanie"
+                className="h-12 w-auto object-contain"
+              />
+              <div className={cn("flex flex-col", isAr && "items-end text-right")}>
+                <span className="text-sm sm:text-base font-bold leading-tight">
+                  {isAr ? t("header.republic") : t("header.republic")}
+                </span>
+                <span className="text-[11px] sm:text-xs text-white/90 leading-tight">
+                  {isAr ? "République Islamique de Mauritanie" : "الجمهورية الإسلامية الموريتانية"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
+
+      {/* Official header — Ministry */}
+      <div className="bg-[#008C4D] text-white border-t border-white/20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between py-2.5">
+            <div className={cn("flex flex-col", isAr && "items-end text-right")}>
+              <span className="text-sm sm:text-base font-bold leading-tight">
+                {isAr ? "وزارة المالية" : "Ministère des Finances"}
+              </span>
+              <span className="text-[11px] sm:text-xs text-white/90 leading-tight">
+                {isAr ? "Ministère des Finances" : "وزارة المالية"}
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="bg-[#FFD700] text-[#004d2a] text-[10px] font-extrabold px-2 py-0.5 uppercase tracking-wide">
+                {t("header.siteLabel")}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Language switcher */}
+      <div className="bg-white border-b border-[#00A95C]/20 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
+          <div className={cn("flex items-center gap-2", isAr ? "justify-start" : "justify-end")}>
+            <Globe className="h-4 w-4 text-[#00A95C]" />
+            <span className="text-xs font-medium text-[#004d2a]">
+              {isAr ? "اللغة :" : "Langue :"}
+            </span>
+            <div className="inline-flex rounded overflow-hidden border border-[#00A95C]">
+              <button
+                onClick={() => changeLang("fr")}
+                className={cn(
+                  "px-3 py-1 text-xs font-semibold transition-colors",
+                  !isAr
+                    ? "bg-[#00A95C] text-white"
+                    : "bg-white text-[#00A95C] hover:bg-[#00A95C]/10"
+                )}
+              >
+                {t("lang.fr")}
+              </button>
+              <button
+                onClick={() => changeLang("ar")}
+                className={cn(
+                  "px-3 py-1 text-xs font-semibold transition-colors",
+                  isAr
+                    ? "bg-[#00A95C] text-white"
+                    : "bg-white text-[#00A95C] hover:bg-[#00A95C]/10"
+                )}
+              >
+                {t("lang.ar")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Hero */}
       <motion.section
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-6xl mx-auto px-6 pt-20 pb-16 text-center"
+        transition={{ duration: 0.5 }}
+        className="bg-gradient-to-br from-[#00A95C] to-[#006b3a] text-white"
       >
-        <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4">
-          Système de Gestion des{" "}
-          <span className="text-[hsl(var(--accent))]">Incentives Fiscaux</span>
-        </h2>
-        <p className="text-lg text-white/60 max-w-2xl mx-auto">
-          Vue d'ensemble des modules, améliorations et workflows implémentés dans la plateforme.
-        </p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 text-center">
+          <h1
+            className={cn(
+              "text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight mb-4",
+              isAr && "font-bold"
+            )}
+          >
+            {t("hero.title")}
+          </h1>
+          <p className="text-base sm:text-lg text-white/90 max-w-3xl mx-auto mb-8">
+            {t("hero.subtitle")}
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="bg-[#FFD700] text-[#004d2a] hover:bg-[#e6c200] font-bold gap-2"
+          >
+            <a
+              href={t("hero.downloadUrl")}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FileDown className="h-5 w-5" />
+              {t("hero.download")}
+            </a>
+          </Button>
+        </div>
       </motion.section>
 
-      {/* Sections */}
-      <div className="max-w-6xl mx-auto px-6 pb-24 space-y-8">
-        {SECTIONS.map((section, i) => (
+      {/* Main content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Objectives */}
           <motion.div
-            key={section.title}
-            custom={i}
+            custom={0}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
             variants={fadeUp}
-            className="rounded-2xl overflow-hidden bg-white/[0.04] border border-white/10 hover:border-white/20 transition-colors"
           >
-            <div className={`bg-gradient-to-r ${section.color} px-8 py-5 flex items-center gap-4`}>
-              <section.icon className="h-7 w-7 text-white/90" />
-              <h3 className="text-xl font-bold text-white">{section.title}</h3>
-              {section.tag && (
-                <span className="ml-auto text-xs font-bold uppercase tracking-wider bg-yellow-400/90 text-yellow-950 px-3 py-1 rounded-full">
-                  {section.tag}
-                </span>
-              )}
-            </div>
-            <ul className="px-8 py-6 space-y-3">
-              {section.points.map((point) => (
-                <li key={point} className="flex items-start gap-3 text-white/80">
-                  <CheckCircle2 className="h-5 w-5 text-[hsl(var(--accent))] mt-0.5 shrink-0" />
-                  <span className="text-[15px] leading-relaxed">{point}</span>
-                </li>
-              ))}
-            </ul>
+            <Card className="h-full border-[#00A95C]/20 shadow-sm">
+              <CardHeader
+                className={cn(
+                  "bg-[#00A95C] text-white py-4",
+                  isAr ? "text-right" : "text-left"
+                )}
+              >
+                <h2 className="text-lg font-bold">{t("sections.objectives")}</h2>
+              </CardHeader>
+              <CardContent className="p-6">
+                <ul className="space-y-4">
+                  {objectives.map((point, idx) => (
+                    <li
+                      key={idx}
+                      className={cn(
+                        "flex items-start gap-3 text-[15px] leading-relaxed text-foreground/90",
+                        isAr && "flex-row-reverse text-right"
+                      )}
+                    >
+                      <span className="text-[#D01C1F] text-lg leading-none mt-0.5 shrink-0">
+                        ►
+                      </span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </motion.div>
-        ))}
-      </div>
+
+          {/* Documents */}
+          <motion.div
+            custom={1}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            variants={fadeUp}
+            className="space-y-6"
+          >
+            <h2
+              className={cn(
+                "text-xl font-bold text-[#004d2a] border-b-2 border-[#00A95C] pb-2",
+                isAr && "text-right"
+              )}
+            >
+              {t("sections.documents")}
+            </h2>
+            {documents.map((doc, idx) => (
+              <Card
+                key={idx}
+                className="border-[#00A95C]/20 shadow-sm overflow-hidden"
+              >
+                <CardHeader
+                  className={cn(
+                    "bg-[#f0fdf4] text-[#004d2a] py-3",
+                    isAr ? "text-right" : "text-left"
+                  )}
+                >
+                  <h3 className="text-base font-bold">{doc.title}</h3>
+                </CardHeader>
+                <CardContent className="p-5">
+                  <p
+                    className={cn(
+                      "text-sm text-muted-foreground mb-4",
+                      isAr && "text-right"
+                    )}
+                  >
+                    {doc.description}
+                  </p>
+                  <a
+                    href={t("hero.downloadUrl")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "inline-flex items-center gap-2 text-sm font-semibold text-[#00A95C] hover:text-[#008C4D] hover:underline",
+                      isAr && "flex-row-reverse"
+                    )}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {doc.link}
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
+          </motion.div>
+        </div>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center text-white/30 text-sm">
-        Commission Fiscale — {new Date().getFullYear()} — Présentation confidentielle
+      <footer className="bg-[#004d2a] text-white py-6 mt-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-sm text-white/90">
+            {t("footer.copyright", { year: new Date().getFullYear() })}
+          </p>
+        </div>
       </footer>
     </div>
   );
-};
-
-export default Presentation;
+}

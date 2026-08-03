@@ -31,6 +31,7 @@ import frEnums from "./locales/fr/enums.json";
 import frReporting from "./locales/fr/reporting.json";
 import frSimulation from "./locales/fr/simulation.json";
 import frExplication from "./locales/fr/explication.json";
+import frPresentation from "./locales/fr/presentation.json";
 
 // AR namespaces
 import arCommon from "./locales/ar/common.json";
@@ -61,6 +62,7 @@ import arEnums from "./locales/ar/enums.json";
 import arReporting from "./locales/ar/reporting.json";
 import arSimulation from "./locales/ar/simulation.json";
 import arExplication from "./locales/ar/explication.json";
+import arPresentation from "./locales/ar/presentation.json";
 
 export const SUPPORTED_LANGS = ["fr", "ar"] as const;
 export type AppLang = (typeof SUPPORTED_LANGS)[number];
@@ -94,6 +96,7 @@ export const NAMESPACES = [
   "reporting",
   "simulation",
   "explication",
+  "presentation",
 ] as const;
 
 const resources = {
@@ -126,6 +129,7 @@ const resources = {
     reporting: frReporting,
     simulation: frSimulation,
     explication: frExplication,
+    presentation: frPresentation,
   },
   ar: {
     common: arCommon,
@@ -156,6 +160,7 @@ const resources = {
     reporting: arReporting,
     simulation: arSimulation,
     explication: arExplication,
+    presentation: arPresentation,
   },
 } as const;
 
