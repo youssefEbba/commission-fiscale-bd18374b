@@ -475,6 +475,17 @@ const DemandesMiseEnPlace = () => {
   const getMarcheName = (c: CertificatCreditDto) => c.marcheIntitule || (c.marcheId && (marcheCache[c.marcheId]?.intitule || marcheCache[c.marcheId]?.numeroMarche)) || "—";
 
   const selectedCorrection = corrections.find(c => c.id === Number(selectedCorrectionId));
+
+  // Pré-remplit l'intitulé du marché depuis la demande de correction (modifiable ensuite)
+  useEffect(() => {
+    if (!selectedCorrection) return;
+    const prefill =
+      (selectedCorrection as any).intituleMarche ||
+      (selectedCorrection as any).marcheIntitule ||
+      (selectedCorrection as any).objet ||
+      "";
+    setMarcheForm(f => (f.intitule === undefined || f.intitule === "" ? { ...f, intitule: prefill } : f));
+  }, [selectedCorrectionId]);
   const canCreate = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
 
   const lockedCorrectionIds = new Set<number>(
