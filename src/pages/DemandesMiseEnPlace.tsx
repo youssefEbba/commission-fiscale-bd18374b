@@ -209,6 +209,40 @@ const DemandesMiseEnPlace = () => {
     }
   };
 
+  /** Crée le marché directement depuis la popup et le rattache à la correction sélectionnée. */
+  const handleCreateMarcheInline = async () => {
+    const correction = corrections.find(c => c.id === Number(selectedCorrectionId));
+    if (!correction) return;
+    if (!marcheForm.numeroMarche?.trim()) {
+      errToast(t("mise_en_place:dialogs.create.marche_numero_required"));
+      return;
+    }
+    if (!marcheForm.dateSignature) {
+      errToast(t("mise_en_place:dialogs.create.marche_date_required"));
+      return;
+    }
+    setCreatingMarche(true);
+    try {
+      const created = await marcheApi.create({
+        conventionId: correction.conventionId || undefined,
+        demandeCorrectionId: correction.id,
+        numeroMarche: marcheForm.numeroMarche.trim(),
+        intitule: marcheForm.intitule?.trim() || undefined,
+        dateSignature: `${marcheForm.dateSignature}T00:00:00Z`,
+        montantContratHt: marcheForm.montantContratHt,
+        statut: "EN_COURS",
+      });
+      setCorrections(prev => prev.map(c => (c.id === correction.id ? { ...c, marcheId: created.id } : c)));
+      setMarcheForm({});
+      okToast(t("mise_en_place:dialogs.create.marche_created"));
+    } catch (e) {
+      errToast(tErr(e, t("mise_en_place:dialogs.create.marche_create_error")));
+    } finally {
+      setCreatingMarche(false);
+    }
+  };
+
+
 
   /** Clé stable d'une exigence documentaire — évite que plusieurs lignes sans `typeDocument`
    *  partagent la même clé `undefined` dans `docFiles` (sinon un fichier remplit toutes les lignes). */
