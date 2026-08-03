@@ -993,6 +993,23 @@ const DemandeDetail = () => {
           </Card>
         )}
 
+        <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("demandes:detail.reactivate.confirm_title")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("demandes:detail.reactivate.confirm_description")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={reactivating}>{t("common:actions.cancel", { defaultValue: "Annuler" })}</AlertDialogCancel>
+              <AlertDialogAction disabled={reactivating} onClick={(e) => { e.preventDefault(); handleReactivateRejetee(); }}>
+                {reactivating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+                {t("demandes:detail.reactivate.action")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+
         {/* Workflow Actions */}
         {transitions.length > 0 && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
           <Card>
