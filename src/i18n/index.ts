@@ -160,6 +160,7 @@ const resources = {
     reporting: arReporting,
     simulation: arSimulation,
     explication: arExplication,
+    presentation: arPresentation,
   },
 } as const;
 
