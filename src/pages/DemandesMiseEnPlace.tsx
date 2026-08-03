@@ -483,6 +483,7 @@ const DemandesMiseEnPlace = () => {
 
   // Pré-remplit l'intitulé du marché depuis la demande de correction (modifiable ensuite)
   useEffect(() => {
+    setLinkedMarche(null);
     if (!selectedCorrection) return;
     const prefill =
       (selectedCorrection as any).intituleMarche ||
