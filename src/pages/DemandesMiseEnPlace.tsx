@@ -221,6 +221,10 @@ const DemandesMiseEnPlace = () => {
       errToast(t("mise_en_place:dialogs.create.marche_date_required"));
       return;
     }
+    if (marcheForm.dateSignature > todayIso()) {
+      errToast(t("mise_en_place:dialogs.create.marche_date_future"));
+      return;
+    }
     setCreatingMarche(true);
     try {
       const created = await marcheApi.create({
