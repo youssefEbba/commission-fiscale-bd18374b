@@ -845,16 +845,14 @@ const DemandesMiseEnPlace = () => {
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_date_signature")}</Label>
                     <Input
                       type="date"
+                      max={todayIso()}
                       value={marcheForm.dateSignature || ""}
                       onChange={e => setMarcheForm(f => ({ ...f, dateSignature: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_intitule")}</Label>
-                    <Input
-                      value={marcheForm.intitule || ""}
-                      onChange={e => setMarcheForm(f => ({ ...f, intitule: e.target.value }))}
-                    />
+                    <Input value={selectedCorrection.intituleMarche || "—"} readOnly disabled />
                   </div>
                   <div className="space-y-1 col-span-2">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
