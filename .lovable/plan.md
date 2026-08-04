@@ -6,8 +6,10 @@ Oui, c'est possible et c'est la bonne approche. Aujourd'hui la signature du Pré
 
 1. Nouveau module `src/lib/signatures.ts` : récupération de la signature active d'un rôle/utilisateur, conversion en dataURL base64 (jsPDF a besoin d'une image encodée, pas d'une URL protégée), avec cache mémoire.
 2. `certificatSignaturePdf.ts` et `adoptionLetterPdf.ts` : la signature devient un paramètre du contexte ; repli sur l'asset local si l'API ne répond pas (503 MinIO, signature absente), pour ne jamais bloquer la génération.
-3. Nouvelle page d'administration « Signatures » (ADMIN_SI, plus auto-gestion de sa propre signature) : upload PNG fond transparent, aperçu, activation/désactivation, historique des versions.
-4. Extension au besoin aux documents d'utilisation de crédit.
+3. Section « Ma signature » dans `MonProfil.tsx` : chaque acteur (PRESIDENT, DGD, DGI, DGTCP, DGB) voit sa signature actuelle, peut en uploader une nouvelle ou la remplacer.
+4. Dans `Utilisateurs.tsx` (ADMIN_SI) : action « Signature » sur chaque ligne utilisateur — aperçu, upload, remplacement, désactivation de la signature de n'importe quel acteur. L'administrateur gère donc les signatures de tous les rôles depuis son front.
+5. Extension au besoin aux documents d'utilisation de crédit.
+
 
 ## Prompt à transmettre à l'équipe backend
 
