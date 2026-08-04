@@ -39,7 +39,7 @@ Oui, c'est possible et c'est la bonne approche. Aujourd'hui la signature du Pré
 > - Refuser tout fichier non-image ; stocker le checksum.
 >
 > **Sécurité / audit**
-> - Écriture (POST/PUT/DELETE/remplacer) : ADMIN_SI, ou l'utilisateur pour sa propre signature.
+> - Écriture (POST/PUT/DELETE/remplacer) : **ADMIN_SI sur n'importe quel utilisateur/rôle** (il administre les signatures de DGI, DGD, DGTCP, DGB, PRESIDENT depuis son interface), ou l'utilisateur pour sa propre signature uniquement.
 > - Lecture du contenu : tout utilisateur authentifié autorisé à générer le document concerné.
 > - Journaliser chaque création/remplacement/désactivation dans l'audit, avec `motif` quand l'action passe par le canal de correction administrateur.
 >
