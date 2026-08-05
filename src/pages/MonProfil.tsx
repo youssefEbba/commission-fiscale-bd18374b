@@ -224,8 +224,6 @@ const MonProfil = () => {
               Changer mon mot de passe
             </CardTitle>
 
-              Changer mon mot de passe
-            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={submitPassword} className="space-y-5">
