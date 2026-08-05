@@ -8,6 +8,7 @@ import type {
 } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 import signaturePresident from "@/assets/signature-president.png";
+import { getActiveSignatureDataUrl } from "@/lib/signatures";
 import { hasCreditInterieur, hasCreditExterieur } from "@/lib/visas";
 
 const CURRENCY = "Ouguiya";
@@ -327,8 +328,9 @@ export async function generateAdoptionLetterPdf(
   doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
   yy += 3;
+  const presidentSig = (await getActiveSignatureDataUrl("PRESIDENT")) || signaturePresident;
   try {
-    doc.addImage(signaturePresident, "PNG", M + W - 52, yy, 48, 22);
+    doc.addImage(presidentSig, "PNG", M + W - 52, yy, 48, 22);
   } catch {
     // ignore si l'asset n'est pas chargé
   }

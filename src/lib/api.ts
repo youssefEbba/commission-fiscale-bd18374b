@@ -2428,3 +2428,75 @@ export const dossierGedApi = {
   getAll: () => apiFetch<DossierGedDto[]>("/dossiers"),
   getById: (id: number) => apiFetch<DossierGedDto>(`/dossiers/${id}`),
 };
+
+// ============================================================
+// Signatures (images PNG des signataires)
+// ============================================================
+
+export interface SignatureDto {
+  id: number;
+  utilisateurId?: number | null;
+  utilisateurNom?: string | null;
+  role: string;
+  nomAffiche?: string | null;
+  contentType?: string;
+  taille?: number;
+  largeurPx?: number;
+  hauteurPx?: number;
+  checksumSha256?: string;
+  active: boolean;
+  version?: number;
+  dateCreation?: string;
+  creePar?: string;
+  dateDesactivation?: string | null;
+}
+
+export interface SignatureListFilters {
+  role?: string;
+  utilisateurId?: number;
+  activeOnly?: boolean;
+}
+
+/** Contraintes de validation alignées sur le backend. */
+export const SIGNATURE_CONSTRAINTS = {
+  maxBytes: 1024 * 1024,
+  maxWidth: 2000,
+  maxHeight: 1000,
+  mimeType: "image/png",
+} as const;
+
+export const signatureApi = {
+  list: (filters: SignatureListFilters = {}) => {
+    const p = new URLSearchParams();
+    if (filters.role) p.set("role", filters.role);
+    if (filters.utilisateurId != null) p.set("utilisateurId", String(filters.utilisateurId));
+    if (filters.activeOnly != null) p.set("activeOnly", String(filters.activeOnly));
+    const qs = p.toString();
+    return apiFetch<SignatureDto[]>(`/signatures${qs ? `?${qs}` : ""}`);
+  },
+  getActive: (role: string, utilisateurId?: number) => {
+    const p = new URLSearchParams({ role });
+    if (utilisateurId != null) p.set("utilisateurId", String(utilisateurId));
+    return apiFetch<SignatureDto>(`/signatures/active?${p.toString()}`, { skipAuthRedirect: true });
+  },
+  getBase64: (id: number) =>
+    apiFetch<{ dataUrl: string }>(`/signatures/${id}/base64`, { skipAuthRedirect: true }),
+  contentUrl: (id: number) => `${API_BASE}/signatures/${id}/content`,
+  create: (params: { file: File; role: string; utilisateurId?: number; nomAffiche?: string; activer?: boolean }) => {
+    const fd = new FormData();
+    fd.append("file", params.file);
+    fd.append("role", params.role);
+    if (params.utilisateurId != null) fd.append("utilisateurId", String(params.utilisateurId));
+    if (params.nomAffiche) fd.append("nomAffiche", params.nomAffiche);
+    if (params.activer != null) fd.append("activer", String(params.activer));
+    return apiFetch<SignatureDto>("/signatures", { method: "POST", rawBody: fd });
+  },
+  update: (id: number, data: { nomAffiche?: string; active?: boolean }) =>
+    apiFetch<SignatureDto>(`/signatures/${id}`, { method: "PUT", body: data }),
+  remplacer: (id: number, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return apiFetch<SignatureDto>(`/signatures/${id}/remplacer`, { method: "POST", rawBody: fd });
+  },
+  desactiver: (id: number) => apiFetch<void>(`/signatures/${id}`, { method: "DELETE" }),
+};
