@@ -287,7 +287,7 @@ const UtilisationDetail = () => {
         : null;
       setUtil(u2);
       if (cert2) setCert(cert2);
-      try { generateLiquidationPdf(u2, cert2); } catch (err) { console.error("PDF generation failed", err); }
+      void generateLiquidationPdf(u2, cert2).catch((err) => console.error("PDF generation failed", err));
       fetchAll();
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
@@ -839,7 +839,7 @@ const UtilisationDetail = () => {
           <Card className="border-s-4 border-s-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>
-              <Button size="sm" variant="outline" onClick={() => generateLiquidationPdf(u, cert)}>
+              <Button size="sm" variant="outline" onClick={() => { void generateLiquidationPdf(u, cert); }}>
                 <Download className="h-4 w-4 me-2" /> {t("utilisations:traceability_liq.download_pdf")}
               </Button>
             </CardHeader>
