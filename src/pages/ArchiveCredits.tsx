@@ -243,7 +243,17 @@ const ArchiveCredits = () => {
                     <Info label={t("archive:credit_douanier")} value={money(preview.creditDouanier)} />
                     <Info label={t("archive:credit_interieur")} value={money(preview.creditInterieur)} />
                     <Info label={t("archive:montant_credit_impot")} value={money(preview.montantCreditImpot)} />
-                    <Info label={t("archive:transfert_credit")} value={money(preview.transfertCredit)} />
+                    <div className="sm:col-span-2 lg:col-span-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-muted-foreground">{t("archive:transfert_credit")}</p>
+                        <p className="text-sm font-medium break-words">{money(preview.transfertCredit)}</p>
+                        <p className="text-xs text-muted-foreground">{t("archive:transfert_credit_hint")}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-muted-foreground">{t("archive:total_transfert_sortant")}</p>
+                        <p className="text-sm font-medium break-words">{money(preview.totalTransfertSortant)}</p>
+                      </div>
+                    </div>
                     <Info label={t("archive:total_utilisations_douane")} value={money(preview.totalUtilisationsDouane)} />
                     <Info label={t("archive:total_utilisations_interieur")} value={money(preview.totalUtilisationsInterieur)} />
                   </div>

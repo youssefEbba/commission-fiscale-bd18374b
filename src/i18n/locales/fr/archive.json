@@ -18,6 +18,8 @@
   "credit_interieur": "Crédit intérieur",
   "montant_credit_impot": "Montant du crédit d'impôt",
   "transfert_credit": "Transfert de crédit",
+  "transfert_credit_hint": "dont part TVA transférée vers le crédit intérieur",
+  "total_transfert_sortant": "Total sorti du crédit douanier",
   "soldes_compare": "Soldes : déclaré vs recalculé",
   "solde": "Solde",
   "solde_douanier": "Solde douanier",
