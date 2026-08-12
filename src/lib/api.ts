@@ -2541,6 +2541,7 @@ export interface ArchiveCreditPreviewDto {
   soldeInterieurCalcule: number;
   totalUtilisationsDouane: number;
   totalUtilisationsInterieur: number;
+  totalTransfertSortant: number | null;
   utilisations: ArchiveUtilisationDto[];
   anomalies: string[];
   entrepriseRapprocheeId: number | null;

@@ -18,6 +18,8 @@
   "credit_interieur": "الاعتماد الداخلي",
   "montant_credit_impot": "مبلغ الاعتماد الضريبي",
   "transfert_credit": "تحويل الاعتماد",
+  "transfert_credit_hint": "منها حصة الضريبة على القيمة المضافة المحوَّلة إلى الاعتماد الداخلي",
+  "total_transfert_sortant": "إجمالي ما خرج من الاعتماد الجمركي",
   "soldes_compare": "الأرصدة: المصرّح بها مقابل المُعاد حسابها",
   "solde": "الرصيد",
   "solde_douanier": "الرصيد الجمركي",
