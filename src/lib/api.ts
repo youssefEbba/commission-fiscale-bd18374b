@@ -2500,3 +2500,95 @@ export const signatureApi = {
   },
   desactiver: (id: number) => apiFetch<void>(`/signatures/${id}`, { method: "DELETE" }),
 };
+
+// ---------------------------------------------------------------------------
+// Reprise d'archive — relevés de crédit d'impôt de l'ancienne application
+// ---------------------------------------------------------------------------
+export type AffectationTaxeArchive = "AU_CI" | "A_PAYER";
+
+export interface ArchiveLigneTaxeDto {
+  codeTaxe: string;
+  denominationTaxe: string | null;
+  valeur: number;
+  affectation: AffectationTaxeArchive;
+}
+
+export interface ArchiveUtilisationDto {
+  libelle: string;
+  numeroQuittance: string | null;
+  date: string | null;
+  douaniere: boolean;
+  montant: number;
+  totalPrisEnCharge: number | null;
+  totalAPayer: number | null;
+  lignesTaxe: ArchiveLigneTaxeDto[];
+}
+
+export interface ArchiveCreditPreviewDto {
+  nomFichier: string;
+  nif: string;
+  referenceMarche: string;
+  numeroCredit: string;
+  dateCredit: string;
+  montantMarche: number;
+  creditDouanier: number;
+  creditInterieur: number;
+  montantCreditImpot: number;
+  transfertCredit: number;
+  soldeDouanierDeclare: number;
+  soldeInterieurDeclare: number;
+  soldeDouanierCalcule: number;
+  soldeInterieurCalcule: number;
+  totalUtilisationsDouane: number;
+  totalUtilisationsInterieur: number;
+  utilisations: ArchiveUtilisationDto[];
+  anomalies: string[];
+  entrepriseRapprocheeId: number | null;
+  entrepriseRapprocheeRaisonSociale: string | null;
+  entrepriseRapprocheeSource: "NIF" | null;
+  marcheRapprocheId: number | null;
+  marcheRapprocheNumero: string | null;
+  marcheRapprocheIntitule: string | null;
+  autoriteRapprocheeId: number | null;
+  autoriteRapprocheeNom: string | null;
+  certificatDejaImporteId: number | null;
+  certificatDejaImporteReference: string | null;
+}
+
+export interface ArchiveCreditImportResultDto {
+  certificatId: number;
+  certificatNumero: string;
+  certificatStatut: string;
+  entrepriseId: number;
+  entrepriseRaisonSociale: string;
+  utilisationsDouanieres: number;
+  utilisationsInterieures: number;
+  lignesTaxeCreees: number;
+  soldeCordon: number;
+  soldeTVA: number;
+  anomalies: string[];
+}
+
+export const archiveCreditApi = {
+  previsualiser: (fichier: File) => {
+    const fd = new FormData();
+    fd.append("fichier", fichier);
+    return apiFetch<ArchiveCreditPreviewDto>("/archive/credits/previsualiser", { method: "POST", rawBody: fd });
+  },
+  importer: (params: {
+    fichier: File;
+    entrepriseId: number;
+    autoriteContractanteId?: number | null;
+    marcheId?: number | null;
+    confirmerMalgreAnomalies?: boolean;
+  }) => {
+    const fd = new FormData();
+    fd.append("fichier", params.fichier);
+    fd.append("entrepriseId", String(params.entrepriseId));
+    if (params.autoriteContractanteId != null) fd.append("autoriteContractanteId", String(params.autoriteContractanteId));
+    if (params.marcheId != null) fd.append("marcheId", String(params.marcheId));
+    fd.append("confirmerMalgreAnomalies", String(!!params.confirmerMalgreAnomalies));
+    return apiFetch<ArchiveCreditImportResultDto>("/archive/credits/importer", { method: "POST", rawBody: fd });
+  },
+  codesTaxe: () => apiFetch<string[]>("/archive/credits/codes-taxe"),
+};

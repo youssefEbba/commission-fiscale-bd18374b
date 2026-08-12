@@ -55,6 +55,7 @@ import EntrepriseDetail from "./pages/EntrepriseDetail";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
+import ArchiveCredits from "./pages/ArchiveCredits";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
@@ -247,6 +248,11 @@ const App = () => (
             <Route path="/dashboard/entreprises/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <EntrepriseDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/archive/credits" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <ArchiveCredits />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/referentiel-taxes" element={
