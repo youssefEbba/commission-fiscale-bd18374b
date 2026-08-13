@@ -243,17 +243,36 @@ const ArchiveCredits = () => {
                     <Info label={t("archive:credit_douanier")} value={money(preview.creditDouanier)} />
                     <Info label={t("archive:credit_interieur")} value={money(preview.creditInterieur)} />
                     <Info label={t("archive:montant_credit_impot")} value={money(preview.montantCreditImpot)} />
-                    <div className="sm:col-span-2 lg:col-span-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-muted-foreground">{t("archive:transfert_credit")}</p>
-                        <p className="text-sm font-medium break-words">{money(preview.transfertCredit)}</p>
-                        <p className="text-xs text-muted-foreground">{t("archive:transfert_credit_hint")}</p>
+                    {preview.totalTransfertSortant != null ? (
+                      <div className="sm:col-span-2 lg:col-span-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">{t("archive:total_transfert_sortant")}</p>
+                            <p className="text-sm font-semibold">{money(preview.totalTransfertSortant)}</p>
+                          </div>
+                          <div className="flex items-center justify-between ps-4">
+                            <p className="text-xs text-muted-foreground">{t("archive:transfert_dont_transfere")}</p>
+                            <p className="text-sm">{money(preview.transfertCredit)}</p>
+                          </div>
+                          <div className="flex items-center justify-between ps-4">
+                            <p className="text-xs text-muted-foreground">{t("archive:transfert_dont_zero")}</p>
+                            <p className="text-sm">
+                              {money((preview.totalTransfertSortant ?? 0) - (preview.transfertCredit ?? 0))}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                            {t("archive:transfert_credit_note")}
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-muted-foreground">{t("archive:total_transfert_sortant")}</p>
-                        <p className="text-sm font-medium break-words">{money(preview.totalTransfertSortant)}</p>
+                    ) : (
+                      <div className="sm:col-span-2 lg:col-span-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="space-y-0.5">
+                          <p className="text-xs text-muted-foreground">{t("archive:transfert_credit")}</p>
+                          <p className="text-sm font-medium break-words">{money(preview.transfertCredit)}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <Info label={t("archive:total_utilisations_douane")} value={money(preview.totalUtilisationsDouane)} />
                     <Info label={t("archive:total_utilisations_interieur")} value={money(preview.totalUtilisationsInterieur)} />
                   </div>
