@@ -54,22 +54,46 @@ const ArchiveCredits = () => {
 
   const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
   const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
+  const [conventions, setConventions] = useState<ConventionDto[]>([]);
+  const [bailleurs, setBailleurs] = useState<BailleurDto[]>([]);
   const [marches, setMarches] = useState<MarcheDto[]>([]);
 
   const [entrepriseId, setEntrepriseId] = useState<string>("");
   const [autoriteId, setAutoriteId] = useState<string>("");
+  const [conventionId, setConventionId] = useState<string>("");
   const [marcheId, setMarcheId] = useState<string>("");
+
+  // Création d'entités manquantes
+  type CreateKind = "entreprise" | "autorite" | "bailleur" | "convention" | "marche";
+  const [createOpen, setCreateOpen] = useState<CreateKind | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+  const setField = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const loadEntreprises = async () => {
+    const v = await entrepriseApi.getAll();
+    setEntreprises(Array.isArray(v) ? v : []);
+  };
+  const loadAutorites = async () => {
+    const v = await autoriteContractanteApi.getAll();
+    setAutorites(Array.isArray(v) ? v : []);
+  };
+  const loadConventions = async () => {
+    const v = await conventionApi.getAll();
+    setConventions(Array.isArray(v) ? v : []);
+  };
+  const loadBailleurs = async () => {
+    const v = await bailleurApi.getAll();
+    setBailleurs(Array.isArray(v) ? v : []);
+  };
+  const loadMarches = async () => {
+    const v = await marcheApi.getAll();
+    setMarches(Array.isArray(v) ? v : []);
+  };
 
   useEffect(() => {
     void (async () => {
-      const [e, a, m] = await Promise.allSettled([
-        entrepriseApi.getAll(),
-        autoriteContractanteApi.getAll(),
-        marcheApi.getAll(),
-      ]);
-      if (e.status === "fulfilled") setEntreprises(Array.isArray(e.value) ? e.value : []);
-      if (a.status === "fulfilled") setAutorites(Array.isArray(a.value) ? a.value : []);
-      if (m.status === "fulfilled") setMarches(Array.isArray(m.value) ? m.value : []);
+      await Promise.allSettled([loadEntreprises(), loadAutorites(), loadConventions(), loadBailleurs(), loadMarches()]);
     })();
   }, []);
 
@@ -87,16 +111,32 @@ const ArchiveCredits = () => {
         .map((a) => ({ value: String(a.id), label: a.nom || `#${a.id}`, description: a.sigle || undefined })),
     [autorites],
   );
+  const conventionOptions = useMemo(
+    () =>
+      [...conventions]
+        .filter((c) => !autoriteId || String(c.autoriteContractanteId ?? "") === autoriteId)
+        .sort((x, y) => (x.reference || "").localeCompare(y.reference || "", "fr"))
+        .map((c) => ({ value: String(c.id), label: c.reference || `#${c.id}`, description: c.intitule || undefined })),
+    [conventions, autoriteId],
+  );
+  const bailleurOptions = useMemo(
+    () =>
+      [...bailleurs]
+        .sort((x, y) => (x.nom || "").localeCompare(y.nom || "", "fr"))
+        .map((b) => ({ value: String(b.id), label: b.nom || `#${b.id}` })),
+    [bailleurs],
+  );
   const marcheOptions = useMemo(
     () =>
       [...marches]
+        .filter((m) => !conventionId || String(m.conventionId ?? "") === conventionId)
         .sort((x, y) => (x.numeroMarche || "").localeCompare(y.numeroMarche || "", "fr"))
         .map((m) => ({
           value: String(m.id),
           label: m.numeroMarche || `#${m.id}`,
           description: m.intitule || undefined,
         })),
-    [marches],
+    [marches, conventionId],
   );
 
   const reset = () => {
@@ -106,6 +146,7 @@ const ArchiveCredits = () => {
     setConfirmAnomalies(false);
     setEntrepriseId("");
     setAutoriteId("");
+    setConventionId("");
     setMarcheId("");
     setExpanded({});
   };
@@ -123,6 +164,8 @@ const ArchiveCredits = () => {
       setEntrepriseId(p.entrepriseRapprocheeId != null ? String(p.entrepriseRapprocheeId) : "");
       setAutoriteId(p.autoriteRapprocheeId != null ? String(p.autoriteRapprocheeId) : "");
       setMarcheId(p.marcheRapprocheId != null ? String(p.marcheRapprocheId) : "");
+      const m = p.marcheRapprocheId != null ? marches.find((x) => x.id === p.marcheRapprocheId) : undefined;
+      setConventionId(m?.conventionId != null ? String(m.conventionId) : "");
     } catch (err) {
       toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(err, t("archive:error_preview")), variant: "destructive" });
       setFile(null);
@@ -131,19 +174,97 @@ const ArchiveCredits = () => {
     }
   };
 
+  const openCreate = (kind: CreateKind) => {
+    if (kind === "entreprise") setForm({ raisonSociale: "", nif: preview?.nif ?? "" });
+    else if (kind === "autorite") setForm({ nom: "", sigle: "" });
+    else if (kind === "bailleur") setForm({ nom: "", details: "" });
+    else if (kind === "convention") setForm({ reference: "", intitule: "", bailleurId: "" });
+    else
+      setForm({
+        numeroMarche: preview?.referenceMarche ?? "",
+        intitule: "",
+        montantContratHt: preview?.montantMarche != null ? String(preview.montantMarche) : "",
+        statut: "CLOTURE",
+      });
+    setCreateOpen(kind);
+  };
+
+  const handleCreate = async () => {
+    if (!createOpen) return;
+    setCreating(true);
+    try {
+      if (createOpen === "entreprise") {
+        const created = await entrepriseApi.create({ raisonSociale: form.raisonSociale, nif: form.nif } as EntrepriseDto);
+        await loadEntreprises();
+        if (created?.id != null) setEntrepriseId(String(created.id));
+      } else if (createOpen === "autorite") {
+        const created = await autoriteContractanteApi.create({ nom: form.nom, sigle: form.sigle || undefined });
+        await loadAutorites();
+        if (created?.id != null) setAutoriteId(String(created.id));
+      } else if (createOpen === "bailleur") {
+        const created = await bailleurApi.create({ nom: form.nom, details: form.details || undefined });
+        await loadBailleurs();
+        if (created?.id != null) setField("bailleurId", String(created.id));
+      } else if (createOpen === "convention") {
+        const created = await conventionApi.create({
+          reference: form.reference,
+          intitule: form.intitule,
+          autoriteContractanteId: Number(autoriteId),
+          bailleurId: form.bailleurId ? Number(form.bailleurId) : undefined,
+        });
+        await loadConventions();
+        if (created?.id != null) setConventionId(String(created.id));
+      } else {
+        const created = await marcheApi.create({
+          conventionId: Number(conventionId),
+          numeroMarche: form.numeroMarche,
+          intitule: form.intitule || undefined,
+          montantContratHt: form.montantContratHt ? Number(form.montantContratHt) : undefined,
+          statut: (form.statut || "CLOTURE") as StatutMarche,
+        });
+        await loadMarches();
+        if (created?.id != null) setMarcheId(String(created.id));
+      }
+      toast({ title: t("archive:created_ok") });
+      setCreateOpen(null);
+    } catch (err) {
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(err, t("archive:error_create")), variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const createValid = (() => {
+    switch (createOpen) {
+      case "entreprise":
+        return !!form.raisonSociale?.trim() && !!form.nif?.trim();
+      case "autorite":
+      case "bailleur":
+        return !!form.nom?.trim();
+      case "convention":
+        return !!form.reference?.trim() && !!form.intitule?.trim() && !!autoriteId;
+      case "marche":
+        return !!form.numeroMarche?.trim() && !!conventionId && !!form.montantContratHt;
+      default:
+        return false;
+    }
+  })();
+
   const anomalies = preview?.anomalies ?? [];
   const blocked = !!preview?.certificatDejaImporteId;
   const canImport =
-    !!file && !!preview && !blocked && !!entrepriseId && (anomalies.length === 0 || confirmAnomalies);
+    !!file && !!preview && !blocked && !!entrepriseId && !!autoriteId && !!conventionId &&
+    (anomalies.length === 0 || confirmAnomalies);
 
   const handleImport = async () => {
-    if (!file || !entrepriseId) return;
+    if (!file || !entrepriseId || !autoriteId || !conventionId) return;
     setImporting(true);
     try {
       const res = await archiveCreditApi.importer({
         fichier: file,
         entrepriseId: Number(entrepriseId),
-        autoriteContractanteId: autoriteId ? Number(autoriteId) : undefined,
+        autoriteContractanteId: Number(autoriteId),
+        conventionId: Number(conventionId),
         marcheId: marcheId ? Number(marcheId) : undefined,
         confirmerMalgreAnomalies: confirmAnomalies,
       });
@@ -154,6 +275,7 @@ const ArchiveCredits = () => {
       setImporting(false);
     }
   };
+
 
   const SoldeRow = ({ label, declare, calcule }: { label: string; declare: number; calcule: number }) => {
     const ecart = (declare ?? 0) - (calcule ?? 0);
