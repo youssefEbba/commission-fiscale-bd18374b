@@ -2574,6 +2574,9 @@ export interface ArchiveCreditImportResultDto {
   autoriteContractanteId?: number | null;
   conventionId?: number | null;
   marcheId?: number | null;
+  /** Transfert de crédit enregistré comme exécuté lors de l'import. */
+  transfertCreditId?: number | null;
+  transfertCreditMontant?: number | null;
 }
 
 export const archiveCreditApi = {

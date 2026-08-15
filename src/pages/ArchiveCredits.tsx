@@ -704,6 +704,9 @@ const ArchiveCredits = () => {
                 {result.demandeCorrectionId != null && (
                   <Info label={t("archive:result_dossier")} value={result.demandeCorrectionNumero ?? `#${result.demandeCorrectionId}`} />
                 )}
+                {result.transfertCreditId != null && (
+                  <Info label={t("archive:result_transfert")} value={money(result.transfertCreditMontant)} />
+                )}
                 <Info label={t("archive:result_utilisations_douane")} value={result.utilisationsDouanieres} />
                 <Info label={t("archive:result_utilisations_interieur")} value={result.utilisationsInterieures} />
                 <Info label={t("archive:result_lignes_taxe")} value={result.lignesTaxeCreees} />
