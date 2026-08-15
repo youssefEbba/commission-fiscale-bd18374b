@@ -2568,6 +2568,12 @@ export interface ArchiveCreditImportResultDto {
   soldeCordon: number;
   soldeTVA: number;
   anomalies: string[];
+  /** Dossier d'archive créé (demande de correction NOTIFIEE, visas acquis). */
+  demandeCorrectionId?: number | null;
+  demandeCorrectionNumero?: string | null;
+  autoriteContractanteId?: number | null;
+  conventionId?: number | null;
+  marcheId?: number | null;
 }
 
 export const archiveCreditApi = {
@@ -2579,17 +2585,20 @@ export const archiveCreditApi = {
   importer: (params: {
     fichier: File;
     entrepriseId: number;
-    autoriteContractanteId?: number | null;
+    autoriteContractanteId: number;
+    conventionId: number;
     marcheId?: number | null;
     confirmerMalgreAnomalies?: boolean;
   }) => {
     const fd = new FormData();
     fd.append("fichier", params.fichier);
     fd.append("entrepriseId", String(params.entrepriseId));
-    if (params.autoriteContractanteId != null) fd.append("autoriteContractanteId", String(params.autoriteContractanteId));
+    fd.append("autoriteContractanteId", String(params.autoriteContractanteId));
+    fd.append("conventionId", String(params.conventionId));
     if (params.marcheId != null) fd.append("marcheId", String(params.marcheId));
     fd.append("confirmerMalgreAnomalies", String(!!params.confirmerMalgreAnomalies));
     return apiFetch<ArchiveCreditImportResultDto>("/archive/credits/importer", { method: "POST", rawBody: fd });
   },
   codesTaxe: () => apiFetch<string[]>("/archive/credits/codes-taxe"),
 };
+
