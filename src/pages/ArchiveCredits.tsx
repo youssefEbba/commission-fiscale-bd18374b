@@ -701,6 +701,9 @@ const ArchiveCredits = () => {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Info label={t("archive:result_certificat")} value={`${result.certificatNumero} (${result.certificatStatut})`} />
                 <Info label={t("archive:entreprise")} value={result.entrepriseRaisonSociale} />
+                {result.demandeCorrectionId != null && (
+                  <Info label={t("archive:result_dossier")} value={result.demandeCorrectionNumero ?? `#${result.demandeCorrectionId}`} />
+                )}
                 <Info label={t("archive:result_utilisations_douane")} value={result.utilisationsDouanieres} />
                 <Info label={t("archive:result_utilisations_interieur")} value={result.utilisationsInterieures} />
                 <Info label={t("archive:result_lignes_taxe")} value={result.lignesTaxeCreees} />
@@ -722,12 +725,136 @@ const ArchiveCredits = () => {
                 <Button asChild>
                   <Link to={`/dashboard/certificats/${result.certificatId}`}>{t("archive:open_certificat")}</Link>
                 </Button>
+                {result.demandeCorrectionId != null && (
+                  <Button asChild variant="secondary">
+                    <Link to={`/dashboard/demandes/${result.demandeCorrectionId}`}>{t("archive:open_demande")}</Link>
+                  </Button>
+                )}
                 <Button variant="outline" onClick={reset}>{t("archive:new_import")}</Button>
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Création d'entité manquante */}
+        <Dialog open={createOpen !== null} onOpenChange={(o) => !o && setCreateOpen(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{createOpen ? t(`archive:create_${createOpen}`) : ""}</DialogTitle>
+              <DialogDescription>{t("archive:create_desc")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {createOpen === "entreprise" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_raison_sociale")} *</Label>
+                    <Input value={form.raisonSociale ?? ""} onChange={(e) => setField("raisonSociale", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:nif")} *</Label>
+                    <Input value={form.nif ?? ""} onChange={(e) => setField("nif", e.target.value)} />
+                  </div>
+                </>
+              )}
+              {(createOpen === "autorite" || createOpen === "bailleur") && (
+                <div className="space-y-1.5">
+                  <Label>{t("archive:f_nom")} *</Label>
+                  <Input value={form.nom ?? ""} onChange={(e) => setField("nom", e.target.value)} />
+                </div>
+              )}
+              {createOpen === "autorite" && (
+                <div className="space-y-1.5">
+                  <Label>{t("archive:f_sigle")}</Label>
+                  <Input value={form.sigle ?? ""} onChange={(e) => setField("sigle", e.target.value)} />
+                </div>
+              )}
+              {createOpen === "convention" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_reference")} *</Label>
+                    <Input value={form.reference ?? ""} onChange={(e) => setField("reference", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_intitule")} *</Label>
+                    <Input value={form.intitule ?? ""} onChange={(e) => setField("intitule", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_bailleur")}</Label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 min-w-0">
+                        <SearchableSelect
+                          options={bailleurOptions}
+                          value={form.bailleurId ?? ""}
+                          onValueChange={(v) => setField("bailleurId", v)}
+                          placeholder={t("archive:select_bailleur")}
+                          clearable
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const keep = { ...form };
+                          setForm({ nom: "", details: "" });
+                          setCreateOpen("bailleur");
+                          // conserve les valeurs convention pour un retour manuel
+                          void keep;
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+              {createOpen === "marche" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_numero_marche")} *</Label>
+                    <Input value={form.numeroMarche ?? ""} onChange={(e) => setField("numeroMarche", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_intitule")}</Label>
+                    <Input value={form.intitule ?? ""} onChange={(e) => setField("intitule", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_montant_ht")} *</Label>
+                    <Input
+                      type="number"
+                      value={form.montantContratHt ?? ""}
+                      onChange={(e) => setField("montantContratHt", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("archive:f_statut")}</Label>
+                    <Select value={form.statut ?? "CLOTURE"} onValueChange={(v) => setField("statut", v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MARCHE_STATUT_VALUES.map((s) => (
+                          <SelectItem key={s} value={s}>{tStatutMarche(s)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateOpen(null)} disabled={creating}>
+                {t("common:cancel", { defaultValue: "Annuler" })}
+              </Button>
+              <Button onClick={() => void handleCreate()} disabled={!createValid || creating}>
+                {creating && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+                {t("archive:create")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
+
     </DashboardLayout>
   );
 };
