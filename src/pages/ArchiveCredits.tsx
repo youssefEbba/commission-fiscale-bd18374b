@@ -676,9 +676,10 @@ const ArchiveCredits = () => {
                     </Label>
                   </div>
                 )}
-                {!entrepriseId && !blocked && (
-                  <p className="text-xs text-muted-foreground">{t("archive:import_disabled_entreprise")}</p>
+                {!blocked && (!entrepriseId || !autoriteId || !conventionId) && (
+                  <p className="text-xs text-muted-foreground">{t("archive:import_disabled_required")}</p>
                 )}
+
                 <Button onClick={() => void handleImport()} disabled={!canImport || importing}>
                   {importing ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Archive className="h-4 w-4 me-2" />}
                   {importing ? t("archive:importing") : t("archive:import")}
