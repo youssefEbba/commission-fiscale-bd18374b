@@ -6,26 +6,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadRow } from "@/components/ui/upload-row";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, RotateCcw } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, Plus, RotateCcw } from "lucide-react";
 import { formatAmount, formatDate } from "@/i18n/format";
+import { tStatutMarche } from "@/i18n/enums";
 import {
   archiveCreditApi,
   entrepriseApi,
   autoriteContractanteApi,
+  conventionApi,
+  bailleurApi,
   marcheApi,
   formatApiErrorMessage,
+  MARCHE_STATUT_VALUES,
   type ArchiveCreditPreviewDto,
   type ArchiveCreditImportResultDto,
   type EntrepriseDto,
   type AutoriteContractanteDto,
+  type ConventionDto,
+  type BailleurDto,
   type MarcheDto,
+  type StatutMarche,
 } from "@/lib/api";
+
 
 const money = (v: number | null | undefined) => formatAmount(v ?? 0);
 
