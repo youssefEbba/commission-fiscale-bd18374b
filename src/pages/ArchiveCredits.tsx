@@ -713,6 +713,11 @@ const ArchiveCredits = () => {
                 <Info label={t("archive:result_solde_cordon")} value={money(result.soldeCordon)} />
                 <Info label={t("archive:result_solde_tva")} value={money(result.soldeTVA)} />
               </div>
+              {result.transfertCreditId != null && (
+                <p className="text-sm text-muted-foreground">
+                  {t("archive:result_transfert_note")}
+                </p>
+              )}
               {result.anomalies?.length > 0 && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
