@@ -447,16 +447,24 @@ const ArchiveCredits = () => {
 
                 <div>
                   <h3 className="text-sm font-semibold mb-3">{t("archive:rapprochements")}</h3>
-                  <div className="grid gap-4 lg:grid-cols-3">
+                  <div className="grid gap-4 lg:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label>{t("archive:entreprise")} *</Label>
-                      <SearchableSelect
-                        options={entrepriseOptions}
-                        value={entrepriseId}
-                        onValueChange={setEntrepriseId}
-                        placeholder={t("archive:select_entreprise")}
-                        clearable
-                      />
+                      <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                          <SearchableSelect
+                            options={entrepriseOptions}
+                            value={entrepriseId}
+                            onValueChange={setEntrepriseId}
+                            placeholder={t("archive:select_entreprise")}
+                            clearable
+                          />
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => openCreate("entreprise")}>
+                          <Plus className="h-4 w-4 me-1" />
+                          {t("archive:create")}
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {preview.entrepriseRapprocheeId
                           ? `${t("archive:from_nif")} — ${preview.entrepriseRapprocheeRaisonSociale ?? ""}`
@@ -464,14 +472,26 @@ const ArchiveCredits = () => {
                       </p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label>{t("archive:autorite")}</Label>
-                      <SearchableSelect
-                        options={autoriteOptions}
-                        value={autoriteId}
-                        onValueChange={setAutoriteId}
-                        placeholder={t("archive:select_autorite")}
-                        clearable
-                      />
+                      <Label>{t("archive:autorite")} *</Label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                          <SearchableSelect
+                            options={autoriteOptions}
+                            value={autoriteId}
+                            onValueChange={(v) => {
+                              setAutoriteId(v);
+                              setConventionId("");
+                              setMarcheId("");
+                            }}
+                            placeholder={t("archive:select_autorite")}
+                            clearable
+                          />
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => openCreate("autorite")}>
+                          <Plus className="h-4 w-4 me-1" />
+                          {t("archive:create")}
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {preview.autoriteRapprocheeId
                           ? `${t("archive:from_marche")} — ${preview.autoriteRapprocheeNom ?? ""}`
@@ -479,21 +499,70 @@ const ArchiveCredits = () => {
                       </p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label>{t("archive:marche")}</Label>
-                      <SearchableSelect
-                        options={marcheOptions}
-                        value={marcheId}
-                        onValueChange={setMarcheId}
-                        placeholder={t("archive:select_marche")}
-                        clearable
-                      />
+                      <Label>{t("archive:convention")} *</Label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                          <SearchableSelect
+                            options={conventionOptions}
+                            value={conventionId}
+                            onValueChange={(v) => {
+                              setConventionId(v);
+                              setMarcheId("");
+                            }}
+                            placeholder={t("archive:select_convention")}
+                            disabled={!autoriteId}
+                            clearable
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!autoriteId}
+                          onClick={() => openCreate("convention")}
+                        >
+                          <Plus className="h-4 w-4 me-1" />
+                          {t("archive:create")}
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        {preview.marcheRapprocheId
-                          ? `${t("archive:from_reference")} — ${preview.marcheRapprocheNumero ?? ""}${preview.marcheRapprocheIntitule ? ` · ${preview.marcheRapprocheIntitule}` : ""}`
-                          : t("archive:no_match_marche")}
+                        {!autoriteId ? t("archive:convention_requires_autorite") : t("archive:convention_hint")}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>{t("archive:marche")}</Label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                          <SearchableSelect
+                            options={marcheOptions}
+                            value={marcheId}
+                            onValueChange={setMarcheId}
+                            placeholder={t("archive:select_marche")}
+                            disabled={!conventionId}
+                            clearable
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!conventionId}
+                          onClick={() => openCreate("marche")}
+                        >
+                          <Plus className="h-4 w-4 me-1" />
+                          {t("archive:create")}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {!conventionId
+                          ? t("archive:marche_requires_convention")
+                          : preview.marcheRapprocheId
+                            ? `${t("archive:from_reference")} — ${preview.marcheRapprocheNumero ?? ""}${preview.marcheRapprocheIntitule ? ` · ${preview.marcheRapprocheIntitule}` : ""}`
+                            : t("archive:no_match_marche")}
                       </p>
                     </div>
                   </div>
+
                 </div>
 
                 <div>
