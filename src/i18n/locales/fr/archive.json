@@ -107,5 +107,7 @@
   "f_statut": "Statut",
   "import_disabled_required": "Renseignez l'entreprise, l'autorité contractante et la convention pour activer l'import",
   "result_dossier": "Dossier d'archive créé",
-  "open_demande": "Ouvrir la demande de correction"
+  "open_demande": "Ouvrir la demande de correction",
+  "result_transfert": "Transfert de crédit repris",
+  "result_transfert_note": "Transfert enregistré comme exécuté : les utilisations douanières sont désormais verrouillées sur ce certificat."
 }

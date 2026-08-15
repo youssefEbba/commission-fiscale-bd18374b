@@ -704,12 +704,20 @@ const ArchiveCredits = () => {
                 {result.demandeCorrectionId != null && (
                   <Info label={t("archive:result_dossier")} value={result.demandeCorrectionNumero ?? `#${result.demandeCorrectionId}`} />
                 )}
+                {result.transfertCreditId != null && (
+                  <Info label={t("archive:result_transfert")} value={money(result.transfertCreditMontant)} />
+                )}
                 <Info label={t("archive:result_utilisations_douane")} value={result.utilisationsDouanieres} />
                 <Info label={t("archive:result_utilisations_interieur")} value={result.utilisationsInterieures} />
                 <Info label={t("archive:result_lignes_taxe")} value={result.lignesTaxeCreees} />
                 <Info label={t("archive:result_solde_cordon")} value={money(result.soldeCordon)} />
                 <Info label={t("archive:result_solde_tva")} value={money(result.soldeTVA)} />
               </div>
+              {result.transfertCreditId != null && (
+                <p className="text-sm text-muted-foreground">
+                  {t("archive:result_transfert_note")}
+                </p>
+              )}
               {result.anomalies?.length > 0 && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
