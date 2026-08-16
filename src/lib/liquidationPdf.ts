@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { getActiveSignatureDataUrl } from "@/lib/signatures";
 import autoTable from "jspdf-autotable";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 
@@ -57,7 +58,7 @@ function labelDottedValue(doc: jsPDF, x: number, y: number, label: string, value
   doc.text(value || "", vx + 2, y - 1);
 }
 
-export function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null) {
+export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const M = 32;
@@ -209,6 +210,22 @@ export function generateLiquidationPdf(u: UtilisationCreditDto, cert: Certificat
   doc.text("Le Président de la Commission", W - M, y, { align: "right" });
   y += 12;
   doc.text("Fiscale", W - M, y, { align: "right" });
+
+  // Signatures serveur : DGTCP (visa du trésor) et Président. Absentes = espace vide.
+  const [sigDgtcp, sigPresident] = await Promise.all([
+    getActiveSignatureDataUrl("DGTCP"),
+    getActiveSignatureDataUrl("PRESIDENT"),
+  ]);
+  const sigW = 110;
+  const sigH = 44;
+  const sigY = y + 6;
+  if (sigDgtcp) {
+    try { doc.addImage(sigDgtcp, "PNG", M, sigY, sigW, sigH); } catch { /* ignore */ }
+  }
+  if (sigPresident) {
+    try { doc.addImage(sigPresident, "PNG", W - M - sigW, sigY, sigW, sigH); } catch { /* ignore */ }
+  }
+  if (sigDgtcp || sigPresident) y = sigY + sigH - 12;
 
   // Encadré général
   doc.setDrawColor(0).setLineWidth(0.6);

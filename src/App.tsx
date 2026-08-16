@@ -17,6 +17,7 @@ import DemandesMiseEnPlace from "./pages/DemandesMiseEnPlace";
 import Utilisations from "./pages/Utilisations";
 import Utilisateurs from "./pages/Utilisateurs";
 import MonProfil from "./pages/MonProfil";
+import Signatures from "./pages/Signatures";
 import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
 // TODO: réactiver quand la simulation sera activée ultérieurement
@@ -54,6 +55,7 @@ import EntrepriseDetail from "./pages/EntrepriseDetail";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
+import ArchiveCredits from "./pages/ArchiveCredits";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
@@ -190,6 +192,7 @@ const App = () => (
             <Route path="/dashboard/profil" element={<ProtectedRoute><MonProfil /></ProtectedRoute>} />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
+            <Route path="/dashboard/signatures" element={<ProtectedRoute adminOnly><Signatures /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
             <Route path="/dashboard/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
             {/* TODO: réactiver quand la simulation sera activée ultérieurement
@@ -245,6 +248,11 @@ const App = () => (
             <Route path="/dashboard/entreprises/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <EntrepriseDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/archive/credits" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <ArchiveCredits />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/referentiel-taxes" element={

@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 import signaturePresident from "@/assets/signature-president.png";
+import { getActiveSignatureDataUrl } from "@/lib/signatures";
 
 const CURRENCY = "Ouguiya";
 
@@ -331,10 +332,12 @@ export async function generateCertificatToSignPdf(
   y += 6;
   doc.text("Le Président de la Commission Fiscale", pageW / 2, y, { align: "center" });
   y += 4;
+  // Signature du Président : image stockée côté serveur, repli sur l'asset local.
+  const presidentSig = (await getActiveSignatureDataUrl("PRESIDENT")) || signaturePresident;
   try {
     const sigW = 46;
     const sigH = 22;
-    doc.addImage(signaturePresident, "PNG", pageW / 2 - sigW / 2, y, sigW, sigH);
+    doc.addImage(presidentSig, "PNG", pageW / 2 - sigW / 2, y, sigW, sigH);
     y += sigH + 3;
   } catch {
     y += 12;
