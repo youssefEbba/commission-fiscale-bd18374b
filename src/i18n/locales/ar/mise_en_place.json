@@ -38,6 +38,7 @@
     "load_error": "تعذر تحميل الطلب",
     "info": {
       "entreprise": "المؤسسة",
+      "autorite": "السلطة المتعاقدة",
       "nif": "الرقم الضريبي",
       "correction": "التصحيح الجمركي",
       "correction_statut": "الحالة",

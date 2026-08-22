@@ -235,7 +235,7 @@ const CertificatDetail = () => {
         </div>
 
         {/* Certificate Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -249,6 +249,24 @@ const CertificatDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Landmark className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("certificats:detail.cards.autorite")}</p>
+                  <p className="font-semibold text-sm">{c.autoriteContractanteNom || "—"}</p>
+                  {c.autoriteContractanteMinistereTutelleNom && (
+                    <p className="text-xs text-muted-foreground">{c.autoriteContractanteMinistereTutelleNom}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
 
           <Card>
             <CardContent className="pt-6">
