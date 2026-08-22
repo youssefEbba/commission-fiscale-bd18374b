@@ -38,6 +38,7 @@
     "load_error": "Impossible de charger la demande",
     "info": {
       "entreprise": "Entreprise",
+      "autorite": "Autorité contractante",
       "nif": "NIF",
       "correction": "Correction douanière",
       "correction_statut": "Statut",

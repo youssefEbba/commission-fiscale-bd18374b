@@ -67,6 +67,7 @@
     "load_error": "Impossible de charger le certificat",
     "cards": {
       "entreprise": "Entreprise",
+      "autorite": "Autorité contractante",
       "statut": "Statut",
       "date_emission": "Date d'émission",
       "validite": "Validité"
