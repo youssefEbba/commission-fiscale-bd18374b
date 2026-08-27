@@ -34,6 +34,7 @@ import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+import AdminVisasCard from "@/components/admin/AdminVisasCard";
 
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -704,6 +705,12 @@ const DemandeDetail = () => {
                 {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">{t("demandes:detail.org_status.all_resolved")}</p>}
                 {!hasVisa && !hasRejets && <p className="text-muted-foreground text-xs mt-0.5">{t("demandes:detail.org_status.awaiting")}</p>}
                 {hasVisa && visaDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">{t("demandes:detail.org_status.on", { date: formatDate(visaDec.dateDecision) })}</p>}
+                {hasVisa && visaDec?.visaParAdmin && (
+                  <div className="mt-1 space-y-0.5">
+                    <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">{t("demandes:detail.admin_visas.by_admin")}</Badge>
+                    {visaDec.motifAdmin && <p className="text-muted-foreground italic text-[10px]">{t("demandes:detail.admin_visas.admin_motif")} : {visaDec.motifAdmin}</p>}
+                  </div>
+                )}
               </div>
               {hasRejets && (
                 <div className="space-y-3">
@@ -994,6 +1001,9 @@ const DemandeDetail = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Visas de la commission — substitution administrateur */}
+        <AdminVisasCard demandeId={selected.id} onSuccess={fetchDetail} />
 
         {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
         <AdminCorrectionCard
