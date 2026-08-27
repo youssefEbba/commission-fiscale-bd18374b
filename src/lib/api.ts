@@ -785,6 +785,35 @@ export interface DecisionCorrectionDto {
   rejetTempStatus?: "OUVERT" | "RESOLU";
   rejetTempResolvedAt?: string;
   rejetTempResponses?: RejetTempResponseDto[];
+  /** Visa posé par l'administrateur à la place du titulaire. */
+  visaParAdmin?: boolean;
+  /** Motif de la substitution administrateur. */
+  motifAdmin?: string | null;
+}
+
+/** État d'un visa de la commission (vue administrateur). */
+export interface VisaEtatDto {
+  role: "DGD" | "DGTCP" | "DGI" | "DGB" | "PRESIDENT";
+  requis: boolean;
+  pose: boolean;
+  decisionId: number | null;
+  datePose: string | null;
+  utilisateurId: number | null;
+  utilisateurNom: string | null;
+  visaParAdmin: boolean;
+  codeDocumentRequis: string | null;
+  documentRequisPresent: boolean;
+  rejetTempOuvert: boolean;
+  visaPrealableManquant: "DGD" | "DGI" | null;
+  visableParAdmin: boolean;
+  motifBlocage: string | null;
+}
+
+export interface VisaAdminResponseDto {
+  demande: DemandeCorrectionDto;
+  decision: DecisionCorrectionDto | null;
+  document: DocumentDto | null;
+  visas: VisaEtatDto[];
 }
 
 // Réclamation DTO
