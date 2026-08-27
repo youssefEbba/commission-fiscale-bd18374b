@@ -785,6 +785,35 @@ export interface DecisionCorrectionDto {
   rejetTempStatus?: "OUVERT" | "RESOLU";
   rejetTempResolvedAt?: string;
   rejetTempResponses?: RejetTempResponseDto[];
+  /** Visa posé par l'administrateur à la place du titulaire. */
+  visaParAdmin?: boolean;
+  /** Motif de la substitution administrateur. */
+  motifAdmin?: string | null;
+}
+
+/** État d'un visa de la commission (vue administrateur). */
+export interface VisaEtatDto {
+  role: "DGD" | "DGTCP" | "DGI" | "DGB" | "PRESIDENT";
+  requis: boolean;
+  pose: boolean;
+  decisionId: number | null;
+  datePose: string | null;
+  utilisateurId: number | null;
+  utilisateurNom: string | null;
+  visaParAdmin: boolean;
+  codeDocumentRequis: string | null;
+  documentRequisPresent: boolean;
+  rejetTempOuvert: boolean;
+  visaPrealableManquant: "DGD" | "DGI" | null;
+  visableParAdmin: boolean;
+  motifBlocage: string | null;
+}
+
+export interface VisaAdminResponseDto {
+  demande: DemandeCorrectionDto;
+  decision: DecisionCorrectionDto | null;
+  document: DocumentDto | null;
+  visas: VisaEtatDto[];
 }
 
 // Réclamation DTO
@@ -879,6 +908,19 @@ export const demandeCorrectionApi = {
   },
   // Décisions temporaires
   getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/demandes-correction/${id}/decisions`),
+  /** État ordonné des visas (DGD, DGTCP, DGI, DGB, PRESIDENT) — vue administrateur. */
+  getVisas: (id: number) => apiFetch<VisaEtatDto[]>(`/demandes-correction/${id}/visas`),
+  /** Pose du visa par l'administrateur à la place du titulaire (multipart). */
+  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null) => {
+    const fd = new FormData();
+    fd.append("role", role);
+    fd.append("motif", motif);
+    if (file) fd.append("file", file);
+    return apiFetch<VisaAdminResponseDto>(`/demandes-correction/${id}/visas/admin`, {
+      method: "POST",
+      rawBody: fd,
+    });
+  },
   postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
     apiFetch<DecisionCorrectionDto>(`/demandes-correction/${id}/decisions`, {
       method: "POST",

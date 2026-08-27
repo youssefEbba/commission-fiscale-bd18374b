@@ -145,6 +145,30 @@
       "confirm_title": "Annuler le rejet définitif ?",
       "confirm_description": "La demande repassera au statut « En validation » et le motif de rejet sera effacé. Les visas existants sont conservés.",
       "success": "Rejet annulé — la demande est de nouveau en validation"
+    },
+    "admin_visas": {
+      "title": "Visas de la commission",
+      "description": "En tant qu'administrateur, vous pouvez viser à la place d'un membre de la commission ou adopter à la place du Président. Chaque action est tracée et journalisée.",
+      "state_posed": "Visé",
+      "state_adopted": "Adoptée",
+      "state_pending": "En attente",
+      "state_not_concerned": "Non concerné",
+      "by_admin": "Visé par l'administrateur",
+      "posed_meta": "Le {{date}} par {{user}}",
+      "doc_required": "Document exigé",
+      "doc_present": "déposé",
+      "doc_missing": "manquant",
+      "action_visa": "Viser à la place de {{role}}",
+      "action_adopt": "Adopter à la place du Président",
+      "dialog_warning": "Vous allez viser cette demande à la place de {{role}}. Cette action est tracée et journalisée.",
+      "motif_label": "Motif de la substitution",
+      "motif_placeholder": "Expliquez pourquoi vous visez à la place du titulaire…",
+      "file_optional": "optionnel — remplacement",
+      "confirm": "Confirmer le visa",
+      "toast_title": "Visa enregistré",
+      "toast_desc": "Le visa a été posé à la place de {{role}}.",
+      "error_title": "Échec du visa administrateur",
+      "admin_motif": "Motif administrateur"
     }
   },
   "actions": {
