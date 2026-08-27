@@ -908,6 +908,19 @@ export const demandeCorrectionApi = {
   },
   // Décisions temporaires
   getDecisions: (id: number) => apiFetch<DecisionCorrectionDto[]>(`/demandes-correction/${id}/decisions`),
+  /** État ordonné des visas (DGD, DGTCP, DGI, DGB, PRESIDENT) — vue administrateur. */
+  getVisas: (id: number) => apiFetch<VisaEtatDto[]>(`/demandes-correction/${id}/visas`),
+  /** Pose du visa par l'administrateur à la place du titulaire (multipart). */
+  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null) => {
+    const fd = new FormData();
+    fd.append("role", role);
+    fd.append("motif", motif);
+    if (file) fd.append("file", file);
+    return apiFetch<VisaAdminResponseDto>(`/demandes-correction/${id}/visas/admin`, {
+      method: "POST",
+      rawBody: fd,
+    });
+  },
   postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
     apiFetch<DecisionCorrectionDto>(`/demandes-correction/${id}/decisions`, {
       method: "POST",
