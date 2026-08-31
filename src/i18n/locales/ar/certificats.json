@@ -67,6 +67,7 @@
     "load_error": "تعذّر تحميل الشهادة",
     "cards": {
       "entreprise": "المؤسسة",
+      "autorite": "السلطة المتعاقدة",
       "statut": "الحالة",
       "date_emission": "تاريخ الإصدار",
       "validite": "الصلاحية"
