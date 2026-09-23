@@ -1203,6 +1203,32 @@ export interface CertificatUtilisationEligibilityDto {
   expire?: boolean;
 }
 
+/** État d'un visa du certificat (vue administrateur) — aucun ordre imposé entre visas. */
+export interface CertificatVisaEtatDto {
+  role: "DGI" | "DGD" | "DGTCP" | "PRESIDENT";
+  requis: boolean;
+  pose: boolean;
+  decisionId: number | null;
+  datePose: string | null;
+  utilisateurId: number | null;
+  utilisateurNom: string | null;
+  visaParAdmin: boolean;
+  codeDocumentRequis: string | null;
+  documentRequisPresent: boolean;
+  rejetTempOuvert: boolean;
+  /** Toujours null pour le certificat (aucun ordre imposé). */
+  visaPrealableManquant: null;
+  visableParAdmin: boolean;
+  motifBlocage: string | null;
+}
+
+export interface CertificatVisaAdminResponseDto {
+  certificat: CertificatCreditDto;
+  decision: DecisionCorrectionDto | null;
+  document: DocumentDto | null;
+  visas: CertificatVisaEtatDto[];
+}
+
 export const certificatCreditApi = {
   getAll: () => apiFetch<CertificatCreditDto[]>("/certificats-credit"),
   getById: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`),
