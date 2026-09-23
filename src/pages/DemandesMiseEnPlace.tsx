@@ -199,6 +199,31 @@ const DemandesMiseEnPlace = () => {
 
   useEffect(() => { fetchCertificats(); }, []);
 
+  // Indique au représentant (DGD/DGI/DGTCP/DGB/PRESIDENT) s'il a déjà visé chaque demande
+  const [myVisaMap, setMyVisaMap] = useState<Record<number, DecisionCorrectionDto | undefined>>({});
+  useEffect(() => {
+    const VISA_ROLES = ["DGD", "DGI", "DGTCP", "DGB", "PRESIDENT"];
+    if (!role || !VISA_ROLES.includes(role) || certificats.length === 0) { setMyVisaMap({}); return; }
+    let cancelled = false;
+    const targets = certificats.filter(c => !["BROUILLON", "ANNULE"].includes(c.statut));
+    Promise.all(
+      targets.map(c =>
+        certificatCreditApi.getDecisions(c.id)
+          .then(list => ({ id: c.id, list }))
+          .catch(() => ({ id: c.id, list: [] as DecisionCorrectionDto[] }))
+      )
+    ).then(results => {
+      if (cancelled) return;
+      const map: Record<number, DecisionCorrectionDto | undefined> = {};
+      for (const r of results) {
+        const mine = r.list.filter(d => d.role === role && d.decision === "VISA");
+        if (mine.length > 0) map[r.id] = mine[mine.length - 1];
+      }
+      setMyVisaMap(map);
+    });
+    return () => { cancelled = true; };
+  }, [certificats, role]);
+
   const [openingCreate, setOpeningCreate] = useState(false);
 
   const openCreateDialog = async () => {
@@ -595,7 +620,20 @@ const DemandesMiseEnPlace = () => {
                       <TableCell>{getEntrepriseName(c)}</TableCell>
                       <TableCell>{getCorrectionName(c)}</TableCell>
                       <TableCell>{getMarcheName(c)}</TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge></TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge>
+                          {myVisaMap[c.id] && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-green-300 bg-green-50 text-green-700"
+                              title={myVisaMap[c.id]?.dateDecision ? formatDate(myVisaMap[c.id]!.dateDecision!) : undefined}
+                            >
+                              <CheckCircle className="h-3 w-3 me-1" /> Déjà visé
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
