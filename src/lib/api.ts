@@ -1203,6 +1203,32 @@ export interface CertificatUtilisationEligibilityDto {
   expire?: boolean;
 }
 
+/** État d'un visa du certificat (vue administrateur) — aucun ordre imposé entre visas. */
+export interface CertificatVisaEtatDto {
+  role: "DGI" | "DGD" | "DGTCP" | "PRESIDENT";
+  requis: boolean;
+  pose: boolean;
+  decisionId: number | null;
+  datePose: string | null;
+  utilisateurId: number | null;
+  utilisateurNom: string | null;
+  visaParAdmin: boolean;
+  codeDocumentRequis: string | null;
+  documentRequisPresent: boolean;
+  rejetTempOuvert: boolean;
+  /** Toujours null pour le certificat (aucun ordre imposé). */
+  visaPrealableManquant: null;
+  visableParAdmin: boolean;
+  motifBlocage: string | null;
+}
+
+export interface CertificatVisaAdminResponseDto {
+  certificat: CertificatCreditDto;
+  decision: DecisionCorrectionDto | null;
+  document: DocumentDto | null;
+  visas: CertificatVisaEtatDto[];
+}
+
 export const certificatCreditApi = {
   getAll: () => apiFetch<CertificatCreditDto[]>("/certificats-credit"),
   getById: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`),
@@ -1254,6 +1280,25 @@ export const certificatCreditApi = {
         ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
       },
       }),
+  /** État ordonné des visas du certificat (DGI, DGD, DGTCP, PRESIDENT) — vue administrateur. */
+  getVisas: (id: number) => apiFetch<CertificatVisaEtatDto[]>(`/certificats-credit/${id}/visas`),
+  /** Pose du visa par l'administrateur à la place du titulaire (multipart). */
+  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null) => {
+    const fd = new FormData();
+    fd.append("role", role);
+    fd.append("motif", motif);
+    if (file) fd.append("file", file);
+    return apiFetch<CertificatVisaAdminResponseDto>(`/certificats-credit/${id}/visas/admin`, {
+      method: "POST",
+      rawBody: fd,
+    });
+  },
+  /** Ouverture du crédit par l'administrateur (effet financier — initialise les soldes). */
+  ouvertureAdmin: (id: number, motif: string) =>
+    apiFetch<CertificatCreditDto>(
+      `/certificats-credit/${id}/ouverture/admin?motif=${encodeURIComponent(motif)}`,
+      { method: "POST" },
+    ),
   // Résoudre manuellement un rejet temporaire
   resolveRejetTemp: (decisionId: number) =>
     apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve`, {
