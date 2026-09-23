@@ -620,7 +620,20 @@ const DemandesMiseEnPlace = () => {
                       <TableCell>{getEntrepriseName(c)}</TableCell>
                       <TableCell>{getCorrectionName(c)}</TableCell>
                       <TableCell>{getMarcheName(c)}</TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge></TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge>
+                          {myVisaMap[c.id] && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-green-300 bg-green-50 text-green-700"
+                              title={myVisaMap[c.id]?.dateDecision ? formatDate(myVisaMap[c.id]!.dateDecision!) : undefined}
+                            >
+                              <CheckCircle className="h-3 w-3 me-1" /> Déjà visé
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
