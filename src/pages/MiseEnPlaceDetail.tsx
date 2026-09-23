@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
 import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+import CertificatAdminVisasCard from "@/components/admin/CertificatAdminVisasCard";
 
 
 import { API_BASE } from "@/lib/apiConfig";
@@ -676,7 +677,27 @@ const MiseEnPlaceDetail = () => {
                 {tabAllResolved && !tabHasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">{t("mise_en_place:detail.orgs.all_resolved_can_visa")}</p>}
                 {presidentValidated && !tabHasVisa && !tabHasRejets && <p className="text-green-700 font-medium text-xs mt-0.5">{t("mise_en_place:detail.orgs.president_validated")}</p>}
                 {!presidentValidated && !tabHasVisa && !tabHasRejets && <p className="text-muted-foreground text-xs mt-0.5">{t("mise_en_place:detail.orgs.waiting")}</p>}
-                {tabHasVisa && (() => { const vd = roleDecs.find(d => d.decision === "VISA"); return vd?.dateDecision ? <p className="text-muted-foreground text-[10px] mt-0.5">{t("mise_en_place:detail.orgs.on_date", { date: formatDate(vd.dateDecision) })}</p> : null; })()}
+                {tabHasVisa && (() => {
+                  const vd = roleDecs.find(d => d.decision === "VISA");
+                  if (!vd) return null;
+                  return (
+                    <>
+                      {vd.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">{t("mise_en_place:detail.orgs.on_date", { date: formatDate(vd.dateDecision) })}</p>}
+                      {vd.visaParAdmin && (
+                        <div className="mt-1 space-y-0.5">
+                          <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">
+                            {t("mise_en_place:detail.admin_visas.by_admin")}
+                          </Badge>
+                          {vd.motifAdmin && (
+                            <p className="text-muted-foreground text-[10px] italic">
+                              {t("mise_en_place:detail.admin_visas.admin_motif")} : {vd.motifAdmin}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {openRejets.length > 0 && (
@@ -1048,6 +1069,11 @@ const MiseEnPlaceDetail = () => {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Visas & ouverture administrateur (ADMIN_SI) */}
+      <div className="mt-6 space-y-4">
+        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} />
+      </div>
 
       {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
       <div className="mt-6">
