@@ -199,6 +199,31 @@ const DemandesMiseEnPlace = () => {
 
   useEffect(() => { fetchCertificats(); }, []);
 
+  // Indique au représentant (DGD/DGI/DGTCP/DGB/PRESIDENT) s'il a déjà visé chaque demande
+  const [myVisaMap, setMyVisaMap] = useState<Record<number, DecisionCorrectionDto | undefined>>({});
+  useEffect(() => {
+    const VISA_ROLES = ["DGD", "DGI", "DGTCP", "DGB", "PRESIDENT"];
+    if (!role || !VISA_ROLES.includes(role) || certificats.length === 0) { setMyVisaMap({}); return; }
+    let cancelled = false;
+    const targets = certificats.filter(c => !["BROUILLON", "ANNULE"].includes(c.statut));
+    Promise.all(
+      targets.map(c =>
+        certificatCreditApi.getDecisions(c.id)
+          .then(list => ({ id: c.id, list }))
+          .catch(() => ({ id: c.id, list: [] as DecisionCorrectionDto[] }))
+      )
+    ).then(results => {
+      if (cancelled) return;
+      const map: Record<number, DecisionCorrectionDto | undefined> = {};
+      for (const r of results) {
+        const mine = r.list.filter(d => d.role === role && d.decision === "VISA");
+        if (mine.length > 0) map[r.id] = mine[mine.length - 1];
+      }
+      setMyVisaMap(map);
+    });
+    return () => { cancelled = true; };
+  }, [certificats, role]);
+
   const [openingCreate, setOpeningCreate] = useState(false);
 
   const openCreateDialog = async () => {
