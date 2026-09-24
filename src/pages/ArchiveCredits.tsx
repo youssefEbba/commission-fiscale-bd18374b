@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, Plus, RotateCcw, Info as Info_ } from "lucide-react";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { tStatutMarche } from "@/i18n/enums";
 import {
@@ -251,9 +251,10 @@ const ArchiveCredits = () => {
   })();
 
   const anomalies = preview?.anomalies ?? [];
-  const blocked = !!preview?.certificatDejaImporteId;
+  // Un crédit déjà repris n'est plus bloquant : l'import complète le dossier existant.
+  const existing = !!preview?.certificatDejaImporteId;
   const canImport =
-    !!file && !!preview && !blocked && !!entrepriseId && !!autoriteId && !!conventionId &&
+    !!file && !!preview && !!entrepriseId && !!autoriteId && !!conventionId &&
     (anomalies.length === 0 || confirmAnomalies);
 
   const handleImport = async () => {
@@ -348,9 +349,9 @@ const ArchiveCredits = () => {
 
         {preview && !result && (
           <>
-            {blocked && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
+            {existing && (
+              <Alert>
+                <Info_ className="h-4 w-4" />
                 <AlertTitle>{t("archive:deja_importe")}</AlertTitle>
                 <AlertDescription>
                   {t("archive:deja_importe_desc", { reference: preview.certificatDejaImporteReference ?? preview.certificatDejaImporteId })}
@@ -664,7 +665,7 @@ const ArchiveCredits = () => {
                 <CardTitle className="text-base">3. {t("archive:step3")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {anomalies.length > 0 && !blocked && (
+                {anomalies.length > 0 && (
                   <div className="flex items-start gap-2">
                     <Checkbox
                       id="confirm-anomalies"
@@ -676,7 +677,7 @@ const ArchiveCredits = () => {
                     </Label>
                   </div>
                 )}
-                {!blocked && (!entrepriseId || !autoriteId || !conventionId) && (
+                {(!entrepriseId || !autoriteId || !conventionId) && (
                   <p className="text-xs text-muted-foreground">{t("archive:import_disabled_required")}</p>
                 )}
 
@@ -689,15 +690,29 @@ const ArchiveCredits = () => {
           </>
         )}
 
-        {result && (
+        {result && (() => {
+          const complement = !!result.certificatDejaExistant;
+          const ajoutees = (result.utilisationsDouanieres ?? 0) + (result.utilisationsInterieures ?? 0);
+          const ignorees = result.utilisationsIgnorees ?? 0;
+          return (
           <Card className="border-emerald-300">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2 text-emerald-700">
                 <CheckCircle2 className="h-5 w-5" />
-                {t("archive:result_title")}
+                {complement ? t("archive:result_title_complement") : t("archive:result_title_creation")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {complement && (
+                <Alert>
+                  <Info_ className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    {ajoutees === 0
+                      ? t("archive:result_complement_rien", { ignorees })
+                      : t("archive:result_complement_desc", { ajoutees, ignorees })}
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Info label={t("archive:result_certificat")} value={`${result.certificatNumero} (${result.certificatStatut})`} />
                 <Info label={t("archive:entreprise")} value={result.entrepriseRaisonSociale} />
@@ -710,6 +725,7 @@ const ArchiveCredits = () => {
                 <Info label={t("archive:result_utilisations_douane")} value={result.utilisationsDouanieres} />
                 <Info label={t("archive:result_utilisations_interieur")} value={result.utilisationsInterieures} />
                 <Info label={t("archive:result_lignes_taxe")} value={result.lignesTaxeCreees} />
+                {complement && <Info label={t("archive:result_utilisations_ignorees")} value={ignorees} />}
                 <Info label={t("archive:result_solde_cordon")} value={money(result.soldeCordon)} />
                 <Info label={t("archive:result_solde_tva")} value={money(result.soldeTVA)} />
               </div>
@@ -742,7 +758,8 @@ const ArchiveCredits = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+          );
+        })()}
 
         {/* Création d'entité manquante */}
         <Dialog open={createOpen !== null} onOpenChange={(o) => !o && setCreateOpen(null)}>

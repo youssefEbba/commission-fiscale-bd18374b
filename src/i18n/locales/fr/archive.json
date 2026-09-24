@@ -65,8 +65,8 @@
   "total_pris_en_charge": "Total pris en charge",
   "total_a_payer": "Total à payer",
   "no_utilisations": "Aucune utilisation dans ce relevé",
-  "deja_importe": "Ce relevé a déjà été importé",
-  "deja_importe_desc": "Certificat existant : {{reference}}. L'import est bloqué.",
+  "deja_importe": "Ce crédit existe déjà : le dossier sera complété",
+  "deja_importe_desc": "Certificat existant : {{reference}}. Seules les utilisations nouvelles seront ajoutées ; les montants et soldes seront réalignés sur ce relevé.",
   "confirm_anomalies": "Je confirme vouloir importer ce relevé malgré les anomalies détectées",
   "import": "Importer le relevé",
   "importing": "Import en cours…",
@@ -109,5 +109,10 @@
   "result_dossier": "Dossier d'archive créé",
   "open_demande": "Ouvrir la demande de correction",
   "result_transfert": "Transfert de crédit repris",
-  "result_transfert_note": "Transfert enregistré comme exécuté : les utilisations douanières sont désormais verrouillées sur ce certificat."
+  "result_transfert_note": "Transfert enregistré comme exécuté : les utilisations douanières sont désormais verrouillées sur ce certificat.",
+  "result_title_creation": "Crédit créé",
+  "result_title_complement": "Crédit complété",
+  "result_complement_desc": "{{ajoutees}} utilisation(s) ajoutée(s), {{ignorees}} ignorée(s) car déjà présente(s).",
+  "result_complement_rien": "Aucune nouvelle utilisation : les {{ignorees}} ligne(s) du relevé étaient déjà reprises. Le dossier est à jour.",
+  "result_utilisations_ignorees": "Utilisations ignorées (déjà présentes)"
 }

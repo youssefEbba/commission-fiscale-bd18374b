@@ -2684,6 +2684,10 @@ export interface ArchiveCreditImportResultDto {
   soldeCordon: number;
   soldeTVA: number;
   anomalies: string[];
+  /** true quand le relevé a complété un certificat existant au lieu d'en créer un. */
+  certificatDejaExistant?: boolean;
+  /** Lignes du relevé déjà présentes en base, non réinsérées. */
+  utilisationsIgnorees?: number;
   /** Dossier d'archive créé (demande de correction NOTIFIEE, visas acquis). */
   demandeCorrectionId?: number | null;
   demandeCorrectionNumero?: string | null;
