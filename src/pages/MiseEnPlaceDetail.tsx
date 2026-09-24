@@ -119,6 +119,7 @@ const MiseEnPlaceDetail = () => {
   const [recapC, setRecapC] = useState("");
   const [recapD, setRecapD] = useState("");
   const [recapG, setRecapG] = useState("");
+  const [recapTC, setRecapTC] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
   const [montantsAdminMode, setMontantsAdminMode] = useState(false);
   const [montantsMotif, setMontantsMotif] = useState("");
@@ -328,6 +329,7 @@ const MiseEnPlaceDetail = () => {
     setRecapC(c.montantMarcheHt != null ? String(c.montantMarcheHt) : "");
     setRecapD(c.tvaImportationDouane != null ? String(c.tvaImportationDouane) : "");
     setRecapG(c.tvaCollecteeTravaux != null ? String(c.tvaCollecteeTravaux) : "");
+    setRecapTC(c.taxesConsommation != null ? String(c.taxesConsommation) : "");
   };
 
   const handleAdminResolve = async () => {
@@ -997,7 +999,11 @@ const MiseEnPlaceDetail = () => {
             const cVal = recapC === "" ? null : Number(recapC);
             const d = recapD === "" ? null : Number(recapD);
             const g = recapG === "" ? null : Number(recapG);
-            const cordonExpected = b != null && d != null ? b + d : null;
+            const tc = recapTC === "" ? null : Number(recapTC);
+            // Volets indépendants : un volet à zéro n'impose aucun champ ni contrôle.
+            const interieurActif = dgiRequired && montantTVAInt !== "" && tvaNum > 0;
+            const douanierActif = !(dgdRequired && montantCordon !== "" && cordonNum === 0) && dgdRequired;
+            const cordonExpected = b != null && d != null ? b + (tc ?? 0) + d : null;
             const tvaExpected = g != null && d != null ? g - d : null;
             const cordonMismatch = false;
             const tvaMismatch = false;
@@ -1042,28 +1048,42 @@ const MiseEnPlaceDetail = () => {
                       <p className="text-sm font-semibold">{t("mise_en_place:dialogs.montants.recap_title")}</p>
                       <p className="text-[11px] text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_hint")}</p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_a")}</Label>
-                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapA} onChange={(e) => setRecapA(e.target.value)} />
+                    <fieldset disabled={!douanierActif} className={`space-y-2 ${!douanierActif ? "opacity-50" : ""}`}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.bloc_douanier")}</p>
+                      {!douanierActif && <p className="text-[11px] text-muted-foreground">{t("mise_en_place:dialogs.montants.bloc_douanier_off")}</p>}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_a")}</Label>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapA} onChange={(e) => setRecapA(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_b")}</Label>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapB} onChange={(e) => setRecapB(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_d")}</Label>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapD} onChange={(e) => setRecapD(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_c")}</Label>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapTC} onChange={(e) => setRecapTC(e.target.value)} />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_b")}</Label>
-                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapB} onChange={(e) => setRecapB(e.target.value)} />
+                    </fieldset>
+                    <fieldset disabled={!interieurActif} className={`space-y-2 border-t pt-3 ${!interieurActif ? "opacity-50" : ""}`}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("mise_en_place:dialogs.montants.bloc_interieur")}</p>
+                      {!interieurActif && <p className="text-[11px] text-muted-foreground">{t("mise_en_place:dialogs.montants.bloc_interieur_off")}</p>}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_f")}</Label>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapC} onChange={(e) => setRecapC(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_g")}</Label>
+                          <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapG} onChange={(e) => setRecapG(e.target.value)} />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_d")}</Label>
-                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapD} onChange={(e) => setRecapD(e.target.value)} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_f")}</Label>
-                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapC} onChange={(e) => setRecapC(e.target.value)} />
-                      </div>
-                      <div className="space-y-1 sm:col-span-2">
-                        <Label className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.montants.recap_g")}</Label>
-                        <Input type="number" min="0" step="0.01" placeholder="0.00" value={recapG} onChange={(e) => setRecapG(e.target.value)} />
-                      </div>
-                    </div>
+                    </fieldset>
                   </div>
 
                   {baseValid && (
@@ -1091,11 +1111,17 @@ const MiseEnPlaceDetail = () => {
                     setSavingMontants(true);
                     try {
                       const recap: Record<string, number> = {};
-                      if (a != null && Number.isFinite(a)) recap.valeurDouaneFournitures = a;
-                      if (b != null && Number.isFinite(b)) recap.droitsEtTaxesDouaneHorsTva = b;
-                      if (d != null && Number.isFinite(d)) recap.tvaImportationDouane = d;
-                      if (cVal != null && Number.isFinite(cVal)) recap.montantMarcheHt = cVal;
-                      if (g != null && Number.isFinite(g)) recap.tvaCollecteeTravaux = g;
+                      const ok = (v: number | null): v is number => v != null && Number.isFinite(v);
+                      if (douanierActif) {
+                        if (ok(a)) recap.valeurDouaneFournitures = a;
+                        if (ok(b)) recap.droitsEtTaxesDouaneHorsTva = b;
+                        if (ok(d)) recap.tvaImportationDouane = d;
+                        if (ok(tc)) recap.taxesConsommation = tc;
+                      }
+                      if (interieurActif) {
+                        if (ok(cVal)) recap.montantMarcheHt = cVal;
+                        if (ok(g)) recap.tvaCollecteeTravaux = g;
+                      }
                       if (montantsAdminMode) {
                         await certificatCreditApi.montantsAdmin(c.id, montantsMotif.trim(), { montantCordon: cordonNum, montantTVAInterieure: tvaNum, ...recap });
                         okToast(t("mise_en_place:detail.admin_montants.toast"));
