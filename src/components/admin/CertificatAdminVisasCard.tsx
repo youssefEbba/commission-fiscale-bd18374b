@@ -30,9 +30,12 @@ interface Props {
   refreshKey?: number;
   /** Ouvre le formulaire de montants (mode administrateur) de la page parente. */
   onOpenMontantsAdmin?: () => void;
+  /** Génère le certificat à signer (même PDF que le Président), fourni par la page parente. */
+  onGenerateCertificatToSign?: () => Promise<unknown> | void;
 }
 
-const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey, onOpenMontantsAdmin }: Props) => {
+const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey, onOpenMontantsAdmin, onGenerateCertificatToSign }: Props) => {
+  const [generating, setGenerating] = useState(false);
   const { t } = useTranslation();
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole(["ADMIN_SI"]);

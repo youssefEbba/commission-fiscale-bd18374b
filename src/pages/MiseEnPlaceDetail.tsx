@@ -1148,7 +1148,7 @@ const MiseEnPlaceDetail = () => {
 
       {/* Visas & ouverture administrateur (ADMIN_SI) */}
       <div className="mt-6 space-y-4">
-        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={() => openMontantsDialog(true)} />
+        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={() => openMontantsDialog(true)} onGenerateCertificatToSign={() => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite })} />
       </div>
 
       <Dialog open={adminResolveId != null} onOpenChange={(o) => { if (!o && !adminResolveLoading) setAdminResolveId(null); }}>
