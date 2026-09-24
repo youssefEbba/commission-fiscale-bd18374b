@@ -522,7 +522,7 @@ const MiseEnPlaceDetail = () => {
         )}
 
         {/* Récapitulatif fiscal */}
-        {(c.valeurDouaneFournitures != null || c.droitsEtTaxesDouaneHorsTva != null || c.tvaImportationDouane != null
+        {(c.valeurDouaneFournitures != null || c.droitsEtTaxesDouaneHorsTva != null || c.tvaImportationDouane != null || c.taxesConsommation != null
           || c.montantMarcheHt != null || c.tvaCollecteeTravaux != null
           || c.creditExterieurRecap != null || c.creditInterieurNetRecap != null || c.totalCreditImpotRecap != null) && (
           <Card>
@@ -547,6 +547,7 @@ const MiseEnPlaceDetail = () => {
                   {c.tvaImportationDouaneAccordee != null && c.tvaImportationDouane != null && c.tvaImportationDouane !== c.tvaImportationDouaneAccordee && (
                     <TableRow><TableCell className="font-mono text-muted-foreground">d′</TableCell><TableCell className="text-muted-foreground">{t("mise_en_place:detail.recap.d_prime")}</TableCell><TableCell className="text-end text-muted-foreground">{fmtRaw(c.tvaImportationDouane)}</TableCell></TableRow>
                   )}
+                  <TableRow><TableCell className="font-mono">c</TableCell><TableCell>{t("mise_en_place:detail.recap.c")}</TableCell><TableCell className="text-end">{fmtRaw(c.taxesConsommation)}</TableCell></TableRow>
                   <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">e</TableCell><TableCell className="font-semibold">{t("mise_en_place:detail.recap.e")}</TableCell><TableCell className="text-end font-bold">{fmtRaw(c.creditExterieurRecap)}</TableCell></TableRow>
                   <TableRow><TableCell className="font-mono">f</TableCell><TableCell>{t("mise_en_place:detail.recap.f")}</TableCell><TableCell className="text-end">{fmtRaw(c.montantMarcheHt)}</TableCell></TableRow>
                   <TableRow><TableCell className="font-mono">g</TableCell><TableCell>{t("mise_en_place:detail.recap.g")}</TableCell><TableCell className="text-end">{fmtRaw(c.tvaCollecteeTravaux)}</TableCell></TableRow>
@@ -1162,6 +1163,7 @@ const MiseEnPlaceDetail = () => {
             { key: "valeurDouaneFournitures", label: "(a) Valeur en douane des fournitures", type: "number", value: c.valeurDouaneFournitures ?? "" },
             { key: "droitsEtTaxesDouaneHorsTva", label: "(b) Droits et taxes hors TVA", type: "number", value: c.droitsEtTaxesDouaneHorsTva ?? "" },
             { key: "tvaImportationDouane", label: "(d) TVA d'importation douane", type: "number", value: c.tvaImportationDouane ?? "" },
+            { key: "taxesConsommation", label: "(c) Taxes de consommation", type: "number", value: c.taxesConsommation ?? "" },
             { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
             { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
           ]}
