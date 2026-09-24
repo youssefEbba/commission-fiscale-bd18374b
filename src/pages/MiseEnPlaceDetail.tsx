@@ -451,24 +451,26 @@ const MiseEnPlaceDetail = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/mise-en-place")}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" onClick={() => navigate("/dashboard/mise-en-place")}>
               <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Award className="h-6 w-6 text-primary" />
-                {role === "AUTORITE_CONTRACTANTE"
-                  ? t("mise_en_place:detail.header_view", { ref: c.reference || `#${c.id}` })
-                  : t("mise_en_place:detail.header_process", { ref: c.reference || `#${c.id}` })}
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold flex items-center gap-2 leading-tight">
+                <Award className="h-6 w-6 text-primary shrink-0" />
+                <span className="truncate">
+                  {role === "AUTORITE_CONTRACTANTE"
+                    ? t("mise_en_place:detail.header_view", { ref: c.reference || `#${c.id}` })
+                    : t("mise_en_place:detail.header_process", { ref: c.reference || `#${c.id}` })}
+                </span>
               </h1>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-sm mt-1">
                 {role === "AUTORITE_CONTRACTANTE" ? t("mise_en_place:detail.header_subtitle_view") : t("mise_en_place:detail.header_subtitle_process")}
               </p>
             </div>
           </div>
-          <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[c.statut]}`}>
+          <Badge className={`shrink-0 self-start mt-1 text-sm px-3 py-1 whitespace-nowrap ${STATUT_COLORS[c.statut]}`}>
             {tStatutCertificat(c.statut)}
           </Badge>
         </div>
