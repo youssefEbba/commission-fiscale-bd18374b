@@ -300,7 +300,7 @@ export async function generateCertificatToSignPdf(
   yy += 9;
   doc.setFont("helvetica", "normal");
   doc.text("Ces crédits sont disponibles à compter du", M + 4, yy);
-  doc.text(fmtDate(c.dateEmission) || fmtDate(c.dateCreation) || "", M + 62, yy);
+  doc.text(fmtDate(c.dateEmission) || "", M + 62, yy);
   doc.line(M + 62, yy + 0.8, M + W - 60, yy + 0.8);
   yy += 7;
   doc.text("Date de validité :", M + 4, yy);

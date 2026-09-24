@@ -292,7 +292,7 @@ const CertificatDetail = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("certificats:detail.cards.date_emission")}</p>
-                  <p className="font-semibold text-sm">{formatDate(c.dateEmission || c.dateCreation)}</p>
+                  <p className="font-semibold text-sm">{formatDate(c.dateEmission)}</p>
                 </div>
               </div>
             </CardContent>

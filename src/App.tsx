@@ -119,18 +119,14 @@ const App = () => (
                 <MiseEnPlaceDetail />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/credits/recherche" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
-                <CreditsRecherche />
-              </ProtectedRoute>
-            } />
+            <Route path="/dashboard/credits/recherche" element={<Navigate to="/dashboard/certificats" replace />} />
             <Route path="/dashboard/credits/fiche/:reference" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <CreditFiche />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Certificats />
               </ProtectedRoute>
             } />
@@ -184,7 +180,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats/:id" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <CertificatDetail />
               </ProtectedRoute>
             } />
