@@ -1219,8 +1219,23 @@ export interface CertificatVisaEtatDto {
   /** Toujours null pour le certificat (aucun ordre imposé). */
   visaPrealableManquant: null;
   visableParAdmin: boolean;
+  /** Message destiné à l'utilisateur — à afficher tel quel, jamais à interpréter. */
   motifBlocage: string | null;
+  /** Code stable du blocage (null si rien ne bloque) — seule base de la logique d'affichage. */
+  codeBlocage: CertificatVisaCodeBlocage | null;
 }
+
+export type CertificatVisaCodeBlocage =
+  | "ROLE_NON_HABILITE"
+  | "ROLE_NON_CONCERNE"
+  | "STATUT_INCOMPATIBLE"
+  | "VISA_DEJA_POSE"
+  | "REJET_TEMP_OUVERT"
+  | "MONTANTS_MANQUANTS"
+  | "DEJA_VALIDE"
+  | "DOCUMENT_MANQUANT"
+  // Tolère un futur code sans casser le typage.
+  | (string & {});
 
 export interface CertificatVisaAdminResponseDto {
   certificat: CertificatCreditDto;
