@@ -162,7 +162,7 @@ export interface RegisterRequest { username: string; password: string; role: str
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
 
 // Commission Relais (impersonation)
-export interface PageResponse<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number; }
+export interface PageResponse<T> { content: T[]; totalElements: number; totalPages: number; number?: number; page?: number; size: number; }
 export interface RelaisEntrepriseDto { id: number; raisonSociale: string; nif?: string; actif?: boolean; }
 export interface RelaisAutoriteDto { id: number; nom: string; sigle?: string; actif?: boolean; }
 
@@ -1125,6 +1125,8 @@ export interface CertificatRecapFiscal {
   tvaImportationDouane?: number;
   /** (d) TVA d'importation à la douane — accord initial (figé, sert aux formules récap). Lecture seule côté DTO. */
   tvaImportationDouaneAccordee?: number;
+  /** (c) Taxes de consommation (facultatif) — incluses dans le crédit extérieur. */
+  taxesConsommation?: number;
   /** (f) Montant du marché HT */
   montantMarcheHt?: number;
   /** (g) TVA collectée sur les travaux */
@@ -1149,7 +1151,6 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   montantTVAInterieure?: number;
   soldeCordon?: number;
   soldeTVA?: number;
-  dateCreation?: string;
   dateEmission?: string;
   /** Date de mise en place effective (posée au passage OUVERT). Utilisée par le journal daté. */
   dateMiseEnPlace?: string;
@@ -1160,7 +1161,7 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   demandeCorrectionNumero?: string;
   marcheId?: number;
   marcheIntitule?: string;
-  /** (e) = b + d, calculé côté back si b et d présents */
+  /** (e) = b + c + d, calculé côté back si b et d présents */
   creditExterieurRecap?: number;
   /** (h) = g − d, calculé côté back si g et d présents */
   creditInterieurNetRecap?: number;
@@ -1219,8 +1220,23 @@ export interface CertificatVisaEtatDto {
   /** Toujours null pour le certificat (aucun ordre imposé). */
   visaPrealableManquant: null;
   visableParAdmin: boolean;
+  /** Message destiné à l'utilisateur — à afficher tel quel, jamais à interpréter. */
   motifBlocage: string | null;
+  /** Code stable du blocage (null si rien ne bloque) — seule base de la logique d'affichage. */
+  codeBlocage: CertificatVisaCodeBlocage | null;
 }
+
+export type CertificatVisaCodeBlocage =
+  | "ROLE_NON_HABILITE"
+  | "ROLE_NON_CONCERNE"
+  | "STATUT_INCOMPATIBLE"
+  | "VISA_DEJA_POSE"
+  | "REJET_TEMP_OUVERT"
+  | "MONTANTS_MANQUANTS"
+  | "DEJA_VALIDE"
+  | "DOCUMENT_MANQUANT"
+  // Tolère un futur code sans casser le typage.
+  | (string & {});
 
 export interface CertificatVisaAdminResponseDto {
   certificat: CertificatCreditDto;
@@ -1299,6 +1315,15 @@ export const certificatCreditApi = {
       `/certificats-credit/${id}/ouverture/admin?motif=${encodeURIComponent(motif)}`,
       { method: "POST" },
     ),
+  /** Prise en charge par l'administrateur (ENVOYEE → EN_CONTROLE). */
+  priseEnChargeAdmin: (id: number, motif: string) =>
+    apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/prise-en-charge/admin?motif=${encodeURIComponent(motif)}`, { method: "POST" }),
+  /** Saisie des montants par l'administrateur à la place de la DGTCP. */
+  montantsAdmin: (id: number, motif: string, body: UpdateCertificatCreditMontantsRequest) =>
+    apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants/admin?motif=${encodeURIComponent(motif)}`, { method: "POST", body }),
+  /** Résolution administrateur d'un rejet temporaire, quel que soit le rôle auteur. */
+  resolveRejetTempAdmin: (decisionId: number, motif: string) =>
+    apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve/admin?motif=${encodeURIComponent(motif)}`, { method: "PUT" }),
   // Résoudre manuellement un rejet temporaire
   resolveRejetTemp: (decisionId: number) =>
     apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve`, {
@@ -1476,7 +1501,10 @@ export interface UtilisationCreditDto {
   description?: string;
   entrepriseNom?: string;
   entrepriseId?: number;
+  /** Référence lisible du crédit (ex. CR-001-01/2026). À afficher en priorité. */
   certificatReference?: string;
+  /** Numéro technique du crédit, repli si `certificatReference` est absente. */
+  certificatNumero?: string;
   // Douane fields
   numeroDeclaration?: string;
   numeroBulletin?: string;
@@ -1757,6 +1785,7 @@ export interface AdminCorrectionCertificatPayload {
   valeurDouaneFournitures?: number;
   droitsEtTaxesDouaneHorsTva?: number;
   tvaImportationDouane?: number;
+  taxesConsommation?: number;
   montantMarcheHt?: number;
   tvaCollecteeTravaux?: number;
 }
@@ -2655,6 +2684,10 @@ export interface ArchiveCreditImportResultDto {
   soldeCordon: number;
   soldeTVA: number;
   anomalies: string[];
+  /** true quand le relevé a complété un certificat existant au lieu d'en créer un. */
+  certificatDejaExistant?: boolean;
+  /** Lignes du relevé déjà présentes en base, non réinsérées. */
+  utilisationsIgnorees?: number;
   /** Dossier d'archive créé (demande de correction NOTIFIEE, visas acquis). */
   demandeCorrectionId?: number | null;
   demandeCorrectionNumero?: string | null;

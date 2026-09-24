@@ -264,7 +264,7 @@ export async function generateCertificatToSignPdf(
   y += h2 + 6;
 
   // ---------- III - Certificat ----------
-  const h3 = 72;
+  const h3 = 79;
   section(doc, "III – CERTIFICAT", M, y, W, h3);
   yy = y + 8;
   doc.setFontSize(9);
@@ -275,7 +275,8 @@ export async function generateCertificatToSignPdf(
     yy,
   );
   yy += 7;
-  const douane = c.montantDouane ?? c.montantCordon;
+  // Crédit douanier = b + c + d (c = taxes de consommation), calculé côté API.
+  const douane = c.creditExterieurRecap ?? c.montantDouane ?? c.montantCordon;
   const interieur = c.montantInterieur ?? c.montantTVAInterieure;
   const totalNum =
     c.montantTotal ??
@@ -283,6 +284,14 @@ export async function generateCertificatToSignPdf(
   doc.text("•", M + 4, yy);
   inlineField(doc, "d'un crédit d'impôt douanier de", fmtMontant(douane), M + 8, yy, M + W - 4);
   yy += 7;
+  doc.setFontSize(8);
+  doc.text(
+    safe(`dont droits et taxes : ${fmtMontant(c.droitsEtTaxesDouaneHorsTva) || "-"}  |  TVA douanes : ${fmtMontant(c.tvaImportationDouaneAccordee ?? c.tvaImportationDouane) || "-"}  |  taxes de consommation : ${fmtMontant(c.taxesConsommation) || "-"}`),
+    M + 12,
+    yy - 1.5,
+  );
+  doc.setFontSize(9);
+  yy += 5;
   doc.text("•", M + 4, yy);
   inlineField(doc, "d'un crédit d'impôt intérieur de", fmtMontant(interieur), M + 8, yy, M + W - 4);
   yy += 7;
@@ -291,7 +300,7 @@ export async function generateCertificatToSignPdf(
   yy += 9;
   doc.setFont("helvetica", "normal");
   doc.text("Ces crédits sont disponibles à compter du", M + 4, yy);
-  doc.text(fmtDate(c.dateEmission) || fmtDate(c.dateCreation) || "", M + 62, yy);
+  doc.text(fmtDate(c.dateEmission) || "", M + 62, yy);
   doc.line(M + 62, yy + 0.8, M + W - 60, yy + 0.8);
   yy += 7;
   doc.text("Date de validité :", M + 4, yy);

@@ -1,20 +1,20 @@
 {
   "list": {
-    "title": "Certificats de crédit",
-    "subtitle": "Suivi des certificats de crédit d'impôt",
-    "search_placeholder": "Réf. certificat ou entreprise",
+    "title": "Crédits d'impôt",
+    "subtitle": "Suivi des crédits d'impôt",
+    "search_placeholder": "Réf. crédit ou entreprise",
     "filter_status": "Filtrer par statut",
     "filter_all": "Tous les statuts",
-    "empty": "Aucun certificat",
+    "empty": "Aucun crédit",
     "refresh": "Actualiser",
     "role_titles": {
-      "AUTORITE_CONTRACTANTE": "Mes certificats",
-      "ENTREPRISE": "Mes certificats de crédit",
-      "DGTCP": "Certificats – Ouverture & ventilation",
-      "DGI": "Certificats – Contrôle fiscal",
-      "PRESIDENT": "Certificats en attente de signature",
-      "ADMIN_SI": "Tous les certificats (Audit)",
-      "DEFAULT": "Certificats de crédit"
+      "AUTORITE_CONTRACTANTE": "Mes crédits",
+      "ENTREPRISE": "Mes crédits",
+      "DGTCP": "Crédits – Ouverture & ventilation",
+      "DGI": "Crédits – Contrôle fiscal",
+      "PRESIDENT": "Crédits en attente de signature",
+      "ADMIN_SI": "Tous les crédits (Audit)",
+      "DEFAULT": "Crédits d'impôt"
     },
     "columns": {
       "ref": "Réf.",
@@ -24,7 +24,9 @@
       "solde_cordon": "Solde Cordon (droits)",
       "solde_tva": "Solde TVA",
       "statut": "Statut",
-      "actions": "Actions"
+      "actions": "Actions",
+      "marche": "Marché",
+      "date_creation": "Date de création"
     },
     "badge": {
       "sous_traite": "Sous-traité"
@@ -34,11 +36,11 @@
       "valider_ouvrir": "Valider et ouvrir"
     },
     "toast": {
-      "load_error": "Impossible de charger les certificats",
+      "load_error": "Impossible de charger les crédits",
       "statut_success": "Statut: {{label}}"
     },
     "dialog": {
-      "title": "Certificat {{ref}}",
+      "title": "Crédit {{ref}}",
       "entreprise": "Entreprise",
       "statut": "Statut",
       "montant_cordon": "Montant Cordon (Douane) — enveloppe",
@@ -54,17 +56,50 @@
       "documents_title": "Documents du dossier",
       "no_documents": "Aucun document associé",
       "download": "Télécharger"
+    },
+    "tabs": {
+      "liste": "Liste",
+      "journal": "Journal"
+    },
+    "filters": {
+      "nif": "NIF",
+      "numero_marche": "N° marché",
+      "convention": "Réf. convention",
+      "projet": "Projet",
+      "autorite": "Autorité contractante",
+      "all_f": "Toutes",
+      "from": "Du",
+      "to": "Au",
+      "reset": "Réinitialiser",
+      "search": "Rechercher"
+    },
+    "pagination": {
+      "range": "{{from}}–{{to}} sur {{total}} crédits",
+      "per_page": "Par page",
+      "page": "Page {{page}} / {{total}}",
+      "total": "{{total}} crédits au total",
+      "prev": "Page précédente",
+      "next": "Page suivante"
+    },
+    "journal": {
+      "show": "Afficher",
+      "error": "Journal indisponible",
+      "nb": "Crédits mis en place",
+      "total_cordon": "Total cordon",
+      "total_tva": "Total TVA intérieure",
+      "solde_cordon": "Solde cordon",
+      "solde_tva": "Solde TVA"
     }
   },
   "detail": {
-    "title": "Certificat {{ref}}",
-    "title_short": "Détail du certificat",
-    "subtitle": "Détail du certificat, documents GED et historique des utilisations",
+    "title": "Crédit {{ref}}",
+    "title_short": "Détail du crédit",
+    "subtitle": "Détail du crédit, documents GED et historique des utilisations",
     "back": "Retour",
     "ged_button": "Documents GED",
-    "ged_dialog_title": "Documents GED — Certificat {{ref}}",
-    "not_found": "Certificat introuvable",
-    "load_error": "Impossible de charger le certificat",
+    "ged_dialog_title": "Documents GED — Crédit {{ref}}",
+    "not_found": "Crédit introuvable",
+    "load_error": "Impossible de charger le crédit",
     "cards": {
       "entreprise": "Entreprise",
       "autorite": "Autorité contractante",
@@ -89,7 +124,8 @@
       "b": "Droits et taxes douane (hors TVA)",
       "d": "TVA d'importation (douane) — accord initial",
       "dp": "TVA d'importation — restant après liquidations",
-      "e": "Crédit extérieur (b + d accord)",
+      "c": "Taxes de consommation",
+      "e": "Crédit extérieur (b + c + d accord)",
       "f": "Montant du marché HT",
       "g": "TVA collectée travaux",
       "h": "Crédit intérieur net (g − d)",
@@ -122,7 +158,7 @@
     "utilisations": {
       "title": "Utilisations liées ({{count}})",
       "new": "Nouvelle utilisation",
-      "empty": "Aucune utilisation pour ce certificat",
+      "empty": "Aucune utilisation pour ce crédit",
       "id": "ID",
       "type": "Type",
       "montant": "Montant",

@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -37,7 +37,6 @@ import TransfertDetail from "./pages/TransfertDetail";
 // import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
-import CreditsRecherche from "./pages/CreditsRecherche";
 import CreditFiche from "./pages/CreditFiche";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
@@ -119,18 +118,14 @@ const App = () => (
                 <MiseEnPlaceDetail />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/credits/recherche" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
-                <CreditsRecherche />
-              </ProtectedRoute>
-            } />
+            <Route path="/dashboard/credits/recherche" element={<Navigate to="/dashboard/certificats" replace />} />
             <Route path="/dashboard/credits/fiche/:reference" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <CreditFiche />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Certificats />
               </ProtectedRoute>
             } />
@@ -184,7 +179,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/certificats/:id" element={
-              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <CertificatDetail />
               </ProtectedRoute>
             } />

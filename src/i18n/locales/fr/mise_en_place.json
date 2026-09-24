@@ -63,7 +63,8 @@
       "b": "Droits et taxes douane (hors TVA)",
       "d": "TVA d'importation (douane) — accord initial",
       "d_prime": "TVA d'importation — restant après liquidations",
-      "e": "Crédit extérieur (b + d accord)",
+      "c": "Taxes de consommation",
+      "e": "Crédit extérieur (b + c + d accord)",
       "f": "Montant du marché HT",
       "g": "TVA collectée travaux",
       "h": "Crédit intérieur net (g − d accord)",
@@ -125,6 +126,8 @@
     },
     "admin_visas": {
       "title": "Administration des visas",
+      "action_generate": "Générer le certificat à signer",
+      "generate_error": "Impossible de générer le certificat à signer",
       "description": "En tant qu'administrateur, vous pouvez viser à la place d'un directeur (DGI, DGD, DGTCP) ou valider à la place du Président. Chaque action est tracée et journalisée.",
       "state_posed": "Visé",
       "state_validated": "Validé",
@@ -161,6 +164,30 @@
       "toast_title": "Crédit ouvert",
       "toast_desc": "Le crédit du certificat a été ouvert et les soldes initialisés.",
       "error_title": "Échec de l'ouverture du crédit"
+    },
+    "admin_pec": {
+      "title": "Prise en charge (administrateur)",
+      "description": "Le certificat n'a été pris en charge par aucune direction. Faites-le passer en contrôle.",
+      "action": "Prendre en charge",
+      "dialog_title": "Prendre en charge à la place d'une direction",
+      "dialog_warning": "Le certificat passera de « Envoyée » à « En contrôle ». Action tracée et journalisée.",
+      "toast_title": "Certificat pris en charge",
+      "toast_desc": "Le certificat est désormais en contrôle.",
+      "error_title": "Échec de la prise en charge"
+    },
+    "admin_montants": {
+      "title": "Saisie des montants (administrateur)",
+      "action": "Saisir les montants",
+      "dialog_title": "Saisie des montants à la place de la DGTCP",
+      "dialog_warning": "Ces montants seront enregistrés à la place de la DGTCP et débloqueront son visa. Action tracée et journalisée.",
+      "toast": "Montants enregistrés par l'administrateur."
+    },
+    "admin_resolve": {
+      "action": "Lever (admin)",
+      "by_admin": "Levé par l'administrateur",
+      "dialog_title": "Lever le rejet temporaire (administrateur)",
+      "dialog_warning": "Le rejet sera résolu à la place du rôle qui l'a posé, ce qui débloque son visa. Action tracée et journalisée.",
+      "toast": "Rejet temporaire levé par l'administrateur."
     }
   },
   "actions": {
@@ -237,13 +264,14 @@
       "subtitle": "Demande {{ref}} — {{entreprise}}",
       "cordon_label": "Montant Cordon (Douane) *",
       "tva_label": "Montant TVA Intérieure *",
-      "cordon_mismatch": "Doit être ≈ b + d = {{value}} (tolérance 1 MRU)",
+      "cordon_mismatch": "Doit être ≈ b + c + d = {{value}} (tolérance 1 MRU)",
       "tva_mismatch": "Doit être ≈ g − d = {{value}} (tolérance 1 MRU)",
       "recap_title": "Récapitulatif fiscal (optionnel)",
       "recap_hint": "Sert aux contrôles de cohérence",
       "recap_a": "(a) Valeur en douane des fournitures",
       "recap_b": "(b) Droits & taxes douane hors TVA",
       "recap_d": "(d) TVA d'importation à la douane",
+      "recap_c": "(c) Taxes de consommation (facultatif)",
       "recap_f": "(f) Montant marché HT",
       "recap_g": "(g) TVA collectée sur travaux",
       "total_credit": "Total crédit",
@@ -253,7 +281,11 @@
       "save": "Enregistrer",
       "save_only": "Enregistrer les montants",
       "save_open": "Valider & Ouvrir",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "bloc_douanier": "Crédit douanier",
+      "bloc_douanier_off": "Enveloppe douanière à zéro : aucun champ requis.",
+      "bloc_interieur": "Crédit intérieur",
+      "bloc_interieur_off": "Montant TVA intérieure à zéro : volet non applicable, aucun contrôle."
     },
     "reject": {
       "title": "Rejeter la demande",
