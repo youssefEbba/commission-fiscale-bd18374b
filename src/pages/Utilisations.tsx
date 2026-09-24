@@ -28,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import CreditLink from "@/components/credits/CreditLink";
 import { UploadRow } from "@/components/ui/upload-row";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -558,6 +559,7 @@ const Utilisations = () => {
 
   const filtered = data.filter((u) => {
     const ms = (u.certificatReference || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.certificatTitulaireRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.numeroDeclaration || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -669,7 +671,7 @@ const Utilisations = () => {
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">#{u.id}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        <div>{u.certificatReference || t("utilisations:list.cert_fallback", { id: u.certificatCreditId })}</div>
+                        <div><CreditLink id={u.certificatCreditId} reference={u.certificatReference} numero={u.certificatNumero} /></div>
                         {u.certificatTitulaireRaisonSociale && (
                           <div className="text-[11px] text-muted-foreground/70">{t("utilisations:list.titulaire_prefix", { name: u.certificatTitulaireRaisonSociale })}</div>
                         )}

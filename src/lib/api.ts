@@ -162,7 +162,7 @@ export interface RegisterRequest { username: string; password: string; role: str
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
 
 // Commission Relais (impersonation)
-export interface PageResponse<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number; }
+export interface PageResponse<T> { content: T[]; totalElements: number; totalPages: number; number?: number; page?: number; size: number; }
 export interface RelaisEntrepriseDto { id: number; raisonSociale: string; nif?: string; actif?: boolean; }
 export interface RelaisAutoriteDto { id: number; nom: string; sigle?: string; actif?: boolean; }
 
@@ -1502,7 +1502,10 @@ export interface UtilisationCreditDto {
   description?: string;
   entrepriseNom?: string;
   entrepriseId?: number;
+  /** Référence lisible du crédit (ex. CR-001-01/2026). À afficher en priorité. */
   certificatReference?: string;
+  /** Numéro technique du crédit, repli si `certificatReference` est absente. */
+  certificatNumero?: string;
   // Douane fields
   numeroDeclaration?: string;
   numeroBulletin?: string;
