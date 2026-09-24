@@ -83,7 +83,8 @@ const MiseEnPlaceDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role as AppRole;
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
+  const canAdminOverride = hasPermission("certificat.visa.admin_override") || hasRole(["ADMIN_SI"]);
   const { toast } = useToast();
   const { t } = useTranslation(["mise_en_place", "common", "enums"]);
 
@@ -119,6 +120,12 @@ const MiseEnPlaceDetail = () => {
   const [recapD, setRecapD] = useState("");
   const [recapG, setRecapG] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
+  const [montantsAdminMode, setMontantsAdminMode] = useState(false);
+  const [montantsMotif, setMontantsMotif] = useState("");
+  const [adminResolveId, setAdminResolveId] = useState<number | null>(null);
+  const [adminResolveMotif, setAdminResolveMotif] = useState("");
+  const [adminResolveLoading, setAdminResolveLoading] = useState(false);
+  const [adminRefreshKey, setAdminRefreshKey] = useState(0);
 
   const [showReject, setShowReject] = useState(false);
   const [motifRejet, setMotifRejet] = useState("");
@@ -307,6 +314,32 @@ const MiseEnPlaceDetail = () => {
       errToast(e.message);
       fetchData();
     } finally { setRejetTempLoading(false); }
+  };
+
+  const openMontantsDialog = (admin: boolean) => {
+    setMontantsAdminMode(admin);
+    setMontantsMotif("");
+    setShowMontants(true);
+    setMontantCordon(c.montantCordon != null ? String(c.montantCordon) : "");
+    setMontantTVAInt(c.montantTVAInterieure != null ? String(c.montantTVAInterieure) : "");
+    setRecapA(c.valeurDouaneFournitures != null ? String(c.valeurDouaneFournitures) : "");
+    setRecapB(c.droitsEtTaxesDouaneHorsTva != null ? String(c.droitsEtTaxesDouaneHorsTva) : "");
+    setRecapC(c.montantMarcheHt != null ? String(c.montantMarcheHt) : "");
+    setRecapD(c.tvaImportationDouane != null ? String(c.tvaImportationDouane) : "");
+    setRecapG(c.tvaCollecteeTravaux != null ? String(c.tvaCollecteeTravaux) : "");
+  };
+
+  const handleAdminResolve = async () => {
+    if (!adminResolveId || !adminResolveMotif.trim()) return;
+    setAdminResolveLoading(true);
+    try {
+      await certificatCreditApi.resolveRejetTempAdmin(adminResolveId, adminResolveMotif.trim());
+      okToast(t("mise_en_place:detail.admin_resolve.toast"));
+      setAdminResolveId(null);
+      fetchData();
+    } catch (e: any) {
+      errToast(e.message);
+    } finally { setAdminResolveLoading(false); }
   };
 
   const handleResolve = async (decisionId: number) => {
@@ -575,16 +608,7 @@ const MiseEnPlaceDetail = () => {
               )}
 
               {canMontants && (
-                <Button variant="outline" onClick={() => {
-                  setShowMontants(true);
-                  setMontantCordon(c.montantCordon != null ? String(c.montantCordon) : "");
-                  setMontantTVAInt(c.montantTVAInterieure != null ? String(c.montantTVAInterieure) : "");
-                  setRecapA(c.valeurDouaneFournitures != null ? String(c.valeurDouaneFournitures) : "");
-                  setRecapB(c.droitsEtTaxesDouaneHorsTva != null ? String(c.droitsEtTaxesDouaneHorsTva) : "");
-                  setRecapC(c.montantMarcheHt != null ? String(c.montantMarcheHt) : "");
-                  setRecapD(c.tvaImportationDouane != null ? String(c.tvaImportationDouane) : "");
-                  setRecapG(c.tvaCollecteeTravaux != null ? String(c.tvaCollecteeTravaux) : "");
-                }}>
+                <Button variant="outline" onClick={() => openMontantsDialog(false)}>
                   <Wallet className="h-4 w-4 me-1" /> {t("mise_en_place:actions.set_montants")}
                 </Button>
               )}
@@ -759,6 +783,11 @@ const MiseEnPlaceDetail = () => {
                           <CheckCircle className="h-3 w-3 me-0.5" /> {t("mise_en_place:detail.orgs.resolve_rejet_btn")}
                         </Button>
                       )}
+                      {canAdminOverride && rej.rejetTempStatus === "OUVERT" && (
+                        <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 mt-1 ms-1 border-primary/40 text-primary" onClick={() => { setAdminResolveId(rej.id); setAdminResolveMotif(""); }}>
+                          <ShieldCheck className="h-3 w-3 me-0.5" /> {t("mise_en_place:detail.admin_resolve.action")}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -797,6 +826,12 @@ const MiseEnPlaceDetail = () => {
                           {rej.dateDecision && <span className="text-muted-foreground text-[10px]">{formatDate(rej.dateDecision)}</span>}
                         </div>
                         {rej.motifRejet && <p className="text-muted-foreground italic text-xs">{rej.motifRejet}</p>}
+                        {rej.visaParAdmin && (
+                          <div className="space-y-0.5">
+                            <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">{t("mise_en_place:detail.admin_resolve.by_admin")}</Badge>
+                            {rej.motifAdmin && <p className="text-muted-foreground text-[10px] italic">{t("mise_en_place:detail.admin_visas.motif_label")} : {rej.motifAdmin}</p>}
+                          </div>
+                        )}
                         {rej.rejetTempResponses && rej.rejetTempResponses.length > 0 && (
                           <div className="space-y-1 mt-1">
                             {rej.rejetTempResponses.map((resp, rIdx) => (
@@ -948,7 +983,7 @@ const MiseEnPlaceDetail = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-primary" />
-              {t("mise_en_place:dialogs.montants.title_dgtcp")}
+              {montantsAdminMode ? t("mise_en_place:detail.admin_montants.dialog_title") : t("mise_en_place:dialogs.montants.title_dgtcp")}
             </DialogTitle>
           </DialogHeader>
 
@@ -968,7 +1003,7 @@ const MiseEnPlaceDetail = () => {
             const baseValid =
               (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
               (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
-            const canSave = baseValid && !savingMontants;
+            const canSave = baseValid && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
 
             return (
               <>
@@ -1040,6 +1075,14 @@ const MiseEnPlaceDetail = () => {
                   )}
                 </div>
 
+                {montantsAdminMode && (
+                  <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.admin_montants.dialog_warning")}</p>
+                    <Label>{t("mise_en_place:detail.admin_visas.motif_label")} *</Label>
+                    <Textarea rows={2} value={montantsMotif} onChange={(e) => setMontantsMotif(e.target.value)} placeholder={t("mise_en_place:detail.admin_visas.motif_placeholder")} />
+                  </div>
+                )}
+
                 <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-3">
                   <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:me-auto">{t("mise_en_place:dialogs.montants.cancel")}</Button>
                   <Button disabled={!canSave} onClick={async () => {
@@ -1051,8 +1094,13 @@ const MiseEnPlaceDetail = () => {
                       if (d != null && Number.isFinite(d)) recap.tvaImportationDouane = d;
                       if (cVal != null && Number.isFinite(cVal)) recap.montantMarcheHt = cVal;
                       if (g != null && Number.isFinite(g)) recap.tvaCollecteeTravaux = g;
-                      await certificatCreditApi.updateMontants(c.id, cordonNum, tvaNum, Object.keys(recap).length ? recap : undefined);
-                      okToast(t("mise_en_place:toast.montants_saved_president"));
+                      if (montantsAdminMode) {
+                        await certificatCreditApi.montantsAdmin(c.id, montantsMotif.trim(), { montantCordon: cordonNum, montantTVAInterieure: tvaNum, ...recap });
+                        okToast(t("mise_en_place:detail.admin_montants.toast"));
+                      } else {
+                        await certificatCreditApi.updateMontants(c.id, cordonNum, tvaNum, Object.keys(recap).length ? recap : undefined);
+                        okToast(t("mise_en_place:toast.montants_saved_president"));
+                      }
                       setShowMontants(false);
                       fetchData();
                     } catch (e: any) {
@@ -1072,8 +1120,28 @@ const MiseEnPlaceDetail = () => {
 
       {/* Visas & ouverture administrateur (ADMIN_SI) */}
       <div className="mt-6 space-y-4">
-        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} />
+        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={() => openMontantsDialog(true)} />
       </div>
+
+      <Dialog open={adminResolveId != null} onOpenChange={(o) => { if (!o && !adminResolveLoading) setAdminResolveId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("mise_en_place:detail.admin_resolve.dialog_title")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{t("mise_en_place:detail.admin_resolve.dialog_warning")}</p>
+          <div className="space-y-1.5">
+            <Label>{t("mise_en_place:detail.admin_visas.motif_label")} *</Label>
+            <Textarea rows={3} value={adminResolveMotif} onChange={(e) => setAdminResolveMotif(e.target.value)} placeholder={t("mise_en_place:detail.admin_visas.motif_placeholder")} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdminResolveId(null)} disabled={adminResolveLoading}>{t("common:actions.cancel")}</Button>
+            <Button onClick={handleAdminResolve} disabled={adminResolveLoading || !adminResolveMotif.trim()}>
+              {adminResolveLoading && <Loader2 className="h-4 w-4 animate-spin me-1" />}
+              {t("mise_en_place:detail.admin_visas.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
       <div className="mt-6">
