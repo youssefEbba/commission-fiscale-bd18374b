@@ -46,7 +46,7 @@ export default function CreditFiche() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/credits/recherche")}>
+        <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/certificats")}>
           <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> Retour à la recherche
         </Button>
 

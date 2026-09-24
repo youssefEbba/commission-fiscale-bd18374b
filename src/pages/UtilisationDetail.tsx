@@ -1,6 +1,7 @@
 import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import CreditLink from "@/components/credits/CreditLink";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -525,7 +526,7 @@ const UtilisationDetail = () => {
                 : t("utilisations:detail.header.title_tva", { id: u.id })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {t("utilisations:detail.header.subtitle_cert", { ref: u.certificatReference || `#${u.certificatCreditId}` })}
+              {t("utilisations:detail.header.credit_label")}{" "}<CreditLink id={u.certificatCreditId} reference={u.certificatReference || cert?.reference} numero={u.certificatNumero || cert?.numero} />
               {u.entrepriseNom && <> — {t("utilisations:detail.header.subtitle_company", { name: u.entrepriseNom })}</>}
               {u.demandeurEstSousTraitant && (
                 <Badge variant="outline" className="ms-2 text-[10px] border-orange-300 text-orange-700 bg-orange-50">
@@ -544,81 +545,56 @@ const UtilisationDetail = () => {
           </Badge>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10"><CreditCard className="h-5 w-5 text-primary" /></div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.montant_total")}</p>
-                  <p className="text-lg font-bold">{fmtAmt(
-                    isDouane && (u.lignes?.length ?? 0) > 0
-                      ? (u.lignes || []).reduce((s, l) => s + (Number(l.valeur) || 0), 0)
-                      : u.montant
-                  )}</p>
+        {/* KPIs — 4 cartes harmonisées */}
+        {(() => {
+          const beforeVisa = ["BROUILLON","DEMANDEE","INCOMPLETE","A_RECONTROLER","EN_VERIFICATION"].includes(u.statut);
+          const lignes = u.lignes || [];
+          const propAuCi = lignes.filter(l => l.affectationEntreprise === "AU_CI").reduce((s,l)=>s+(Number(l.valeur)||0),0);
+          const propAPayer = lignes.filter(l => l.affectationEntreprise === "A_PAYER").reduce((s,l)=>s+(Number(l.valeur)||0),0);
+          const showCi = (u.totalPrisEnCharge != null && u.totalPrisEnCharge > 0) ? u.totalPrisEnCharge : (beforeVisa ? propAuCi : (u.totalPrisEnCharge ?? 0));
+          const showAP = (u.totalAPayer != null && u.totalAPayer > 0) ? u.totalAPayer : (beforeVisa ? propAPayer : (u.totalAPayer ?? 0));
+          const isPreview = beforeVisa && (propAuCi > 0 || propAPayer > 0) && (!u.totalPrisEnCharge && !u.totalAPayer);
+          const montantTotal = isDouane && lignes.length > 0 ? lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0) : u.montant;
+          const previewNote = isPreview ? <span className="block text-[10px] italic text-muted-foreground">{t("utilisations:detail.kpi.preview_note")}</span> : null;
+
+          const Kpi = ({ icon: Icon, label, value, note, tone = "primary" }: { icon: any; label: string; value: React.ReactNode; note?: React.ReactNode; tone?: "primary" | "accent" | "muted" }) => (
+            <Card className="h-full border-t-4 border-t-primary/70 shadow-sm">
+              <CardContent className="flex h-full items-start gap-3 p-5">
+                <div className={`shrink-0 rounded-lg p-2 ${tone === "accent" ? "bg-accent/15 text-accent-foreground" : tone === "muted" ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+                  <Icon className="h-5 w-5" />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-
-          {isDouane && (() => {
-            // Si les totaux finaux ne sont pas encore figés par la DGD, on affiche
-            // un aperçu basé sur la proposition de l'entreprise pour ne pas montrer "0".
-            const beforeVisa = ["BROUILLON","DEMANDEE","INCOMPLETE","A_RECONTROLER","EN_VERIFICATION"].includes(u.statut);
-            const lignes = u.lignes || [];
-            const propAuCi = lignes.filter(l => l.affectationEntreprise === "AU_CI").reduce((s,l)=>s+(Number(l.valeur)||0),0);
-            const propAPayer = lignes.filter(l => l.affectationEntreprise === "A_PAYER").reduce((s,l)=>s+(Number(l.valeur)||0),0);
-            const showCi = (u.totalPrisEnCharge != null && u.totalPrisEnCharge > 0) ? u.totalPrisEnCharge : (beforeVisa ? propAuCi : (u.totalPrisEnCharge ?? 0));
-            const showAP = (u.totalAPayer != null && u.totalAPayer > 0) ? u.totalAPayer : (beforeVisa ? propAPayer : (u.totalAPayer ?? 0));
-            const isPreview = beforeVisa && (propAuCi > 0 || propAPayer > 0) && (!u.totalPrisEnCharge && !u.totalAPayer);
-            return (
-              <>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-xs text-muted-foreground">
-                      {t("utilisations:detail.kpi.total_au_ci")}
-                      {isPreview && <span className="ms-1 text-[10px] italic text-muted-foreground/80">(aperçu — proposition entreprise)</span>}
-                    </p>
-                    <p className="text-lg font-bold text-primary">{fmtAmt(showCi)}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-xs text-muted-foreground">
-                      {t("utilisations:detail.kpi.total_a_payer")}
-                      {isPreview && <span className="ms-1 text-[10px] italic text-muted-foreground/80">(aperçu — proposition entreprise)</span>}
-                    </p>
-                    <p className="text-lg font-bold text-amber-700">{fmtAmt(showAP)}</p>
-                  </CardContent>
-                </Card>
-              </>
-            );
-          })()}
-
-          {isTVA && (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.tva_collectee")}</p>
-                <p className="text-lg font-bold">{fmtAmt(u.montantTVAInterieure)}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {cert && (
-            <Card className="border-s-4 border-s-primary">
-              <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">{t("utilisations:detail.kpi.soldes_cert")}</p>
-                <div className="text-sm space-y-1 mt-1">
-                  <div className="flex justify-between"><span>{t("utilisations:detail.kpi.solde_cordon")}</span><span className="font-semibold">{fmtAmt(cert.soldeCordon)}</span></div>
-                  <div className="flex justify-between"><span>{t("utilisations:detail.kpi.tva_import_restante")}</span><span className="font-semibold">{fmtAmt(cert.tvaImportationDouane)}</span></div>
-                  <div className="flex justify-between"><span>{t("utilisations:detail.kpi.solde_tva_int")}</span><span className="font-semibold">{fmtAmt(cert.soldeTVA)}</span></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <div className="mt-1 text-lg font-bold tabular-nums text-foreground">{value}</div>
+                  {note}
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+          );
+
+          return (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Kpi icon={CreditCard} label={t("utilisations:detail.kpi.montant_total")} value={fmtAmt(montantTotal)} />
+              {isDouane && <Kpi icon={TrendingDown} label={t("utilisations:detail.kpi.total_au_ci")} value={fmtAmt(showCi)} note={previewNote} />}
+              {isDouane && <Kpi icon={CircleDollarSign} tone="accent" label={t("utilisations:detail.kpi.total_a_payer")} value={fmtAmt(showAP)} note={previewNote} />}
+              {isTVA && <Kpi icon={Building2} label={t("utilisations:detail.kpi.tva_collectee")} value={fmtAmt(u.montantTVAInterieure)} />}
+              {cert && (
+                <Kpi
+                  icon={Info}
+                  tone="muted"
+                  label={t("utilisations:detail.kpi.soldes_cert")}
+                  value={
+                    <div className="space-y-1 text-sm font-normal">
+                      <div className="flex justify-between gap-2"><span className="text-muted-foreground">{t("utilisations:detail.kpi.solde_cordon")}</span><span className="font-semibold">{fmtAmt(cert.soldeCordon)}</span></div>
+                      <div className="flex justify-between gap-2"><span className="text-muted-foreground">{t("utilisations:detail.kpi.tva_import_restante")}</span><span className="font-semibold">{fmtAmt(cert.tvaImportationDouane)}</span></div>
+                      <div className="flex justify-between gap-2"><span className="text-muted-foreground">{t("utilisations:detail.kpi.solde_tva_int")}</span><span className="font-semibold">{fmtAmt(cert.soldeTVA)}</span></div>
+                    </div>
+                  }
+                />
+              )}
+            </div>
+          );
+        })()}
 
         {/* Info métier */}
         <Card>
@@ -644,6 +620,7 @@ const UtilisationDetail = () => {
                   <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_facture")}</p><p className="font-medium">{formatDate(u.dateFacture)}</p></div>
                 </>
               )}
+              <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_credit")}</p><p><CreditLink id={u.certificatCreditId} reference={u.certificatReference || cert?.reference} numero={u.certificatNumero || cert?.numero} /></p></div>
               <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_creation")}</p><p className="font-medium">{formatDate(u.dateCreation)}</p></div>
               {u.dateLiquidation && <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_liquidation")}</p><p className="font-medium">{formatDate(u.dateLiquidation)}</p></div>}
             </div>

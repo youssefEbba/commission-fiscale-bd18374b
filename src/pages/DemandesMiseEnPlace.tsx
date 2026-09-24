@@ -699,7 +699,7 @@ const DemandesMiseEnPlace = () => {
                   {selected.entrepriseId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "entreprise", id: selected.entrepriseId! })}>{getEntrepriseName(selected)}</button> : "—"}
                 </p></div>
                 <div><span className="text-muted-foreground">{t("mise_en_place:list.columns.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutCertificat(selected.statut)}</Badge></p></div>
-                <div><span className="text-muted-foreground">{t("mise_en_place:detail.info.date")}</span><p>{formatDate(selected.dateCreation)}</p></div>
+                <div><span className="text-muted-foreground">{t("mise_en_place:detail.info.date")}</span><p>{formatDate(selected.dateEmission)}</p></div>
                 <div><span className="text-muted-foreground">{t("mise_en_place:list.columns.correction")}</span><p className="font-medium">
                   {selected.demandeCorrectionId ? <button className="text-primary underline hover:opacity-80" onClick={() => setInfoModal({ type: "correction", id: selected.demandeCorrectionId! })}>{getCorrectionName(selected)}</button> : "—"}
                 </p></div>

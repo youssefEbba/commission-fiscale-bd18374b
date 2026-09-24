@@ -503,7 +503,7 @@ const MiseEnPlaceDetail = () => {
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground mb-1">{t("mise_en_place:detail.info.marche")}</p>
               <p className="font-semibold">{marcheRef}</p>
-              {c.dateCreation && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.created_on")}: {formatDate(c.dateCreation)}</p>}
+              {c.dateEmission && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.created_on")}: {formatDate(c.dateEmission)}</p>}
             </CardContent>
           </Card>
         </div>
