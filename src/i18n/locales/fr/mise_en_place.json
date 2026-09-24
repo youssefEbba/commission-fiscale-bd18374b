@@ -126,6 +126,8 @@
     },
     "admin_visas": {
       "title": "Administration des visas",
+      "action_generate": "Générer le certificat à signer",
+      "generate_error": "Impossible de générer le certificat à signer",
       "description": "En tant qu'administrateur, vous pouvez viser à la place d'un directeur (DGI, DGD, DGTCP) ou valider à la place du Président. Chaque action est tracée et journalisée.",
       "state_posed": "Visé",
       "state_validated": "Validé",

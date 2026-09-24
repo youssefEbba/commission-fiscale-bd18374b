@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { ShieldCheck, CheckCircle, Loader2, AlertTriangle, Unlock } from "lucide-react";
+import { ShieldCheck, CheckCircle, Loader2, AlertTriangle, Unlock, FileDown } from "lucide-react";
 
 const ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png";
 
@@ -30,9 +30,12 @@ interface Props {
   refreshKey?: number;
   /** Ouvre le formulaire de montants (mode administrateur) de la page parente. */
   onOpenMontantsAdmin?: () => void;
+  /** Génère le certificat à signer (même PDF que le Président), fourni par la page parente. */
+  onGenerateCertificatToSign?: () => Promise<unknown> | void;
 }
 
-const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey, onOpenMontantsAdmin }: Props) => {
+const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey, onOpenMontantsAdmin, onGenerateCertificatToSign }: Props) => {
+  const [generating, setGenerating] = useState(false);
   const { t } = useTranslation();
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole(["ADMIN_SI"]);
@@ -244,6 +247,23 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey,
                           </p>
                         )}
                       </div>
+                      <div className="flex flex-wrap gap-2">
+                      {isPresident && onGenerateCertificatToSign && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={generating}
+                          onClick={async () => {
+                            setGenerating(true);
+                            try { await onGenerateCertificatToSign(); }
+                            catch (e) { showApiError(e, t("mise_en_place:detail.admin_visas.generate_error")); }
+                            finally { setGenerating(false); }
+                          }}
+                        >
+                          {generating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <FileDown className="h-4 w-4 me-1" />}
+                          {t("mise_en_place:detail.admin_visas.action_generate")}
+                        </Button>
+                      )}
                       {!v.pose && (
                         <Button
                           size="sm"
@@ -257,6 +277,7 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey,
                             : t("mise_en_place:detail.admin_visas.action_visa", { role: roleLabel(v.role) })}
                         </Button>
                       )}
+                      </div>
                     </div>
                   );
                 })}
