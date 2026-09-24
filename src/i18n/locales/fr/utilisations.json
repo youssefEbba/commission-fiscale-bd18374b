@@ -3,9 +3,9 @@
     "title": "Utilisations de crédit",
     "subtitle": "Douane (SYDONIA) & TVA Intérieure",
     "title_by_role": {
-      "AUTORITE_CONTRACTANTE": "Utilisations – Suivi des certificats",
-      "AUTORITE_UPM": "Utilisations – Suivi des certificats",
-      "AUTORITE_UEP": "Utilisations – Suivi des certificats",
+      "AUTORITE_CONTRACTANTE": "Utilisations – Suivi des crédits",
+      "AUTORITE_UPM": "Utilisations – Suivi des crédits",
+      "AUTORITE_UEP": "Utilisations – Suivi des crédits",
       "ENTREPRISE": "Mes utilisations de crédit",
       "SOUS_TRAITANT": "Mes utilisations (sous-traitant)",
       "DGD": "Utilisations Douane – Vérification",
@@ -26,7 +26,7 @@
     },
     "columns": {
       "id": "#",
-      "certificat": "Certificat",
+      "certificat": "Crédit",
       "demandeur": "Demandeur",
       "type": "Type",
       "reference_metier": "Réf. métier",
@@ -39,7 +39,7 @@
       "tva": "TVA Int."
     },
     "titulaire_prefix": "Titulaire : {{name}}",
-    "cert_fallback": "Cert #{{id}}",
+    "cert_fallback": "Crédit #{{id}}",
     "sous_traite_badge": "Sous-traité",
     "actions": {
       "new": "Nouvelle utilisation",
@@ -47,7 +47,7 @@
       "process": "Traiter",
       "drafts_menu_title": "Actions brouillon",
       "drafts_blocked_title": "Transfert exécuté : utilisations douanières bloquées",
-      "drafts_blocked_banner": "Transfert exécuté sur ce certificat — modification & soumission douanières bloquées.",
+      "drafts_blocked_banner": "Transfert exécuté sur ce crédit — modification & soumission douanières bloquées.",
       "edit_draft": "Modifier le brouillon",
       "submit": "Soumettre",
       "delete_draft": "Supprimer le brouillon"
@@ -58,10 +58,10 @@
       "type_value_douane": "Crédit Douanier (SYDONIA)",
       "type_value_tva": "TVA Intérieure",
       "statut": "Statut",
-      "certificat": "Certificat",
+      "certificat": "Crédit",
       "montant": "Montant",
       "demandeur": "Demandeur",
-      "titulaire_cert": "Titulaire du certificat",
+      "titulaire_cert": "Titulaire du crédit",
       "date_creation": "Date création",
       "date_liquidation": "Date liquidation",
       "douane_section": "Données Douane (SYDONIA)",
@@ -94,11 +94,11 @@
     "title_new": "Nouvelle utilisation de crédit",
     "title_edit": "Modifier l'utilisation #{{id}}",
     "type_immutable_hint": "Le type d'utilisation ne peut pas être modifié.",
-    "certificat_label": "Certificat de crédit",
-    "certificat_placeholder": "Sélectionner un certificat",
+    "certificat_label": "Crédit d'impôt",
+    "certificat_placeholder": "Sélectionner un crédit",
     "certificat_search": "Rechercher (réf., entreprise)…",
     "certificat_blocked_suffix": "(transfert exécuté — douane bloquée)",
-    "transfert_warning": "Transfert exécuté sur ce certificat. Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.",
+    "transfert_warning": "Transfert exécuté sur ce crédit. Aucune nouvelle utilisation douanière ne peut être créée ou soumise. Les utilisations TVA intérieure restent autorisées.",
     "type_label": "Type d'utilisation",
     "tab_douane": "Douane (SYDONIA)",
     "tab_tva": "TVA Intérieure",
@@ -214,9 +214,9 @@
     "tax_added_title": "Succès",
     "tax_added_desc": "Taxe ajoutée au référentiel",
     "tax_add_failed": "Impossible d'ajouter la taxe",
-    "cert_required": "Certificat requis",
+    "cert_required": "Crédit requis",
     "douane_blocked_title": "Action bloquée",
-    "douane_blocked_desc": "Un transfert a déjà été exécuté sur ce certificat. Aucune nouvelle utilisation douanière (ni création ni soumission de brouillon) n'est possible. Les utilisations TVA intérieure restent autorisées.",
+    "douane_blocked_desc": "Un transfert a déjà été exécuté sur ce crédit. Aucune nouvelle utilisation douanière (ni création ni soumission de brouillon) n'est possible. Les utilisations TVA intérieure restent autorisées.",
     "missing_docs_title": "Documents manquants",
     "missing_docs_desc": "Veuillez joindre : {{list}}",
     "draft_saved": "Brouillon enregistré",
@@ -225,7 +225,7 @@
     "created_with_docs_one": "Utilisation créée avec {{count}} document",
     "created_with_docs_other": "Utilisation créée avec {{count}} documents",
     "submit_blocked_title": "Soumission bloquée",
-    "submit_blocked_desc": "Un transfert a déjà été exécuté sur ce certificat. Aucune utilisation douanière ne peut plus être soumise.",
+    "submit_blocked_desc": "Un transfert a déjà été exécuté sur ce crédit. Aucune utilisation douanière ne peut plus être soumise.",
     "draft_deleted": "Brouillon supprimé",
     "statut_updated": "Statut: {{label}}",
     "rejet_temp_sent": "Rejet temporaire envoyé — documents demandés",
@@ -273,20 +273,22 @@
     "header": {
       "title_douane": "Utilisation #{{id}} — Importation Douanière",
       "title_tva": "Utilisation #{{id}} — TVA Intérieure",
-      "subtitle_cert": "Certificat {{ref}}",
+      "subtitle_cert": "Crédit {{ref}}",
       "subtitle_company": "{{name}}",
       "sous_traite_badge": "Sous-traité",
-      "titulaire_label": "Titulaire du certificat :"
+      "titulaire_label": "Titulaire du crédit :",
+      "credit_label": "Crédit"
     },
     "kpi": {
       "montant_total": "Montant total",
       "total_au_ci": "Total pris en charge (CI)",
       "total_a_payer": "Total à payer (entreprise)",
       "tva_collectee": "TVA Intérieure (collectée)",
-      "soldes_cert": "Soldes certificat",
+      "soldes_cert": "Soldes crédit",
       "solde_cordon": "Solde Cordon (droits) :",
       "tva_import_restante": "TVA importation restante :",
-      "solde_tva_int": "Solde TVA intérieure :"
+      "solde_tva_int": "Solde TVA intérieure :",
+      "preview_note": "(aperçu — proposition entreprise)"
     },
     "info": {
       "title": "Informations métier",
@@ -303,7 +305,8 @@
       "numero_decompte": "N° Décompte",
       "date_facture": "Date facture",
       "date_creation": "Date création",
-      "date_liquidation": "Date liquidation"
+      "date_liquidation": "Date liquidation",
+      "numero_credit": "N° du crédit"
     },
     "actions_section": "Actions disponibles",
     "actions_hint_liquidation": "La liquidation va débiter le solde cordon de <strong>{{hors_tva}}</strong> (hors TVA), décrémenter le quota TVA importation de <strong>{{tva}}</strong> et alimenter le stock TVA déductible.",
@@ -376,9 +379,9 @@
     "report": "Report à nouveau",
     "solde_tva": "Solde TVA",
     "cas1": "Cas 1 — TVA nette nulle : opération neutre, aucun impact sur le solde.",
-    "cas2a": "Cas 2a — TVA nette positive : le solde TVA du certificat a été débité de {{montant}}.",
+    "cas2a": "Cas 2a — TVA nette positive : le solde TVA du crédit a été débité de {{montant}}.",
     "cas2b": "Cas 2b — Solde insuffisant : {{interne}} prélevés + {{paiement}} à payer en cash par l'entreprise.",
-    "cas3": "Cas 3 — Report à nouveau : {{montant}} ajoutés au solde TVA du certificat."
+    "cas3": "Cas 3 — Report à nouveau : {{montant}} ajoutés au solde TVA du crédit."
   },
   "stock_tva": {
     "title": "Stock TVA déductible disponible — Total : {{total}}",
@@ -430,7 +433,7 @@
     "modifier_quittances": "Modifier les quittances",
     "passer_verification": "Passer en vérification",
     "valider": "Valider",
-    "liquider_certificat": "Générer le certificat & liquider",
+    "liquider_certificat": "Générer le crédit & liquider",
     "accuser_reception": "Accuser réception & clôturer",
     "proceder_apurement": "Procéder à l'apurement",
     "rejet_temp": "Rejet temporaire",

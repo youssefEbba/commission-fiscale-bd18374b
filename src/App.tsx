@@ -37,7 +37,6 @@ import TransfertDetail from "./pages/TransfertDetail";
 // import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
-import CreditsRecherche from "./pages/CreditsRecherche";
 import CreditFiche from "./pages/CreditFiche";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";

@@ -3,9 +3,9 @@
     "title": "استخدامات الرصيد",
     "subtitle": "الجمارك (SYDONIA) والضريبة الداخلية",
     "title_by_role": {
-      "AUTORITE_CONTRACTANTE": "الاستخدامات – متابعة الشهادات",
-      "AUTORITE_UPM": "الاستخدامات – متابعة الشهادات",
-      "AUTORITE_UEP": "الاستخدامات – متابعة الشهادات",
+      "AUTORITE_CONTRACTANTE": "الاستخدامات – متابعة الاعتمادات",
+      "AUTORITE_UPM": "الاستخدامات – متابعة الاعتمادات",
+      "AUTORITE_UEP": "الاستخدامات – متابعة الاعتمادات",
       "ENTREPRISE": "استخداماتي للرصيد",
       "SOUS_TRAITANT": "استخداماتي (مقاول من الباطن)",
       "DGD": "استخدامات الجمارك – التحقق",
@@ -26,7 +26,7 @@
     },
     "columns": {
       "id": "#",
-      "certificat": "الشهادة",
+      "certificat": "الاعتماد",
       "demandeur": "مقدم الطلب",
       "type": "النوع",
       "reference_metier": "المرجع",
@@ -38,8 +38,8 @@
       "douane": "جمارك",
       "tva": "ض.د."
     },
-    "titulaire_prefix": "صاحب الشهادة: {{name}}",
-    "cert_fallback": "شهادة #{{id}}",
+    "titulaire_prefix": "صاحب الاعتماد: {{name}}",
+    "cert_fallback": "اعتماد #{{id}}",
     "sous_traite_badge": "بالباطن",
     "actions": {
       "new": "استخدام جديد",
@@ -47,7 +47,7 @@
       "process": "معالجة",
       "drafts_menu_title": "إجراءات المسودة",
       "drafts_blocked_title": "تم تنفيذ تحويل: الاستخدامات الجمركية محظورة",
-      "drafts_blocked_banner": "تم تنفيذ تحويل على هذه الشهادة — تعديل وتقديم الاستخدامات الجمركية محظوران.",
+      "drafts_blocked_banner": "تم تنفيذ تحويل على هذا الاعتماد — تعديل وتقديم الاستخدامات الجمركية محظوران.",
       "edit_draft": "تعديل المسودة",
       "submit": "تقديم",
       "delete_draft": "حذف المسودة"
@@ -58,10 +58,10 @@
       "type_value_douane": "رصيد جمركي (SYDONIA)",
       "type_value_tva": "ضريبة داخلية",
       "statut": "الحالة",
-      "certificat": "الشهادة",
+      "certificat": "الاعتماد",
       "montant": "المبلغ",
       "demandeur": "مقدم الطلب",
-      "titulaire_cert": "صاحب الشهادة",
+      "titulaire_cert": "صاحب الاعتماد",
       "date_creation": "تاريخ الإنشاء",
       "date_liquidation": "تاريخ التصفية",
       "douane_section": "بيانات الجمارك (SYDONIA)",
@@ -94,11 +94,11 @@
     "title_new": "استخدام جديد للرصيد",
     "title_edit": "تعديل الاستخدام رقم {{id}}",
     "type_immutable_hint": "لا يمكن تغيير نوع الاستخدام.",
-    "certificat_label": "شهادة الرصيد",
-    "certificat_placeholder": "اختر شهادة",
+    "certificat_label": "الاعتماد الضريبي",
+    "certificat_placeholder": "اختر اعتمادًا",
     "certificat_search": "بحث (مرجع، مؤسسة)…",
     "certificat_blocked_suffix": "(تم تنفيذ تحويل — الجمارك محظورة)",
-    "transfert_warning": "تم تنفيذ تحويل على هذه الشهادة. لا يمكن إنشاء أو تقديم أي استخدام جمركي جديد. تبقى استخدامات الضريبة الداخلية مسموحة.",
+    "transfert_warning": "تم تنفيذ تحويل على هذا الاعتماد. لا يمكن إنشاء أو تقديم أي استخدام جمركي جديد. تبقى استخدامات الضريبة الداخلية مسموحة.",
     "type_label": "نوع الاستخدام",
     "tab_douane": "الجمارك (SYDONIA)",
     "tab_tva": "الضريبة الداخلية",
@@ -214,9 +214,9 @@
     "tax_added_title": "تم بنجاح",
     "tax_added_desc": "تمت إضافة الضريبة إلى المرجع",
     "tax_add_failed": "تعذر إضافة الضريبة",
-    "cert_required": "الشهادة مطلوبة",
+    "cert_required": "الاعتماد مطلوبة",
     "douane_blocked_title": "إجراء محظور",
-    "douane_blocked_desc": "تم تنفيذ تحويل على هذه الشهادة. لا يمكن إنشاء أو تقديم أي استخدام جمركي جديد. تبقى استخدامات الضريبة الداخلية مسموحة.",
+    "douane_blocked_desc": "تم تنفيذ تحويل على هذا الاعتماد. لا يمكن إنشاء أو تقديم أي استخدام جمركي جديد. تبقى استخدامات الضريبة الداخلية مسموحة.",
     "missing_docs_title": "وثائق ناقصة",
     "missing_docs_desc": "يرجى إرفاق: {{list}}",
     "draft_saved": "تم حفظ المسودة",
@@ -229,7 +229,7 @@
     "created_with_docs_many": "تم إنشاء الاستخدام مع {{count}} وثيقة",
     "created_with_docs_other": "تم إنشاء الاستخدام مع {{count}} وثيقة",
     "submit_blocked_title": "التقديم محظور",
-    "submit_blocked_desc": "تم تنفيذ تحويل على هذه الشهادة. لا يمكن تقديم أي استخدام جمركي بعد الآن.",
+    "submit_blocked_desc": "تم تنفيذ تحويل على هذا الاعتماد. لا يمكن تقديم أي استخدام جمركي بعد الآن.",
     "draft_deleted": "تم حذف المسودة",
     "statut_updated": "الحالة: {{label}}",
     "rejet_temp_sent": "تم إرسال الرفض المؤقت — تم طلب الوثائق",
@@ -273,20 +273,22 @@
     "header": {
       "title_douane": "الاستخدام #{{id}} — استيراد جمركي",
       "title_tva": "الاستخدام #{{id}} — الضريبة الداخلية",
-      "subtitle_cert": "الشهادة {{ref}}",
+      "subtitle_cert": "الاعتماد {{ref}}",
       "subtitle_company": "{{name}}",
       "sous_traite_badge": "مقاولة من الباطن",
-      "titulaire_label": "حامل الشهادة:"
+      "titulaire_label": "حامل الاعتماد:",
+      "credit_label": "الاعتماد"
     },
     "kpi": {
       "montant_total": "المبلغ الإجمالي",
       "total_au_ci": "إجمالي محمّل على الاعتماد",
       "total_a_payer": "إجمالي مستحق الدفع (المؤسسة)",
       "tva_collectee": "الضريبة الداخلية (المحصّلة)",
-      "soldes_cert": "أرصدة الشهادة",
+      "soldes_cert": "أرصدة الاعتماد",
       "solde_cordon": "رصيد الكوردون (الحقوق):",
       "tva_import_restante": "الضريبة على الاستيراد المتبقية:",
-      "solde_tva_int": "رصيد الضريبة الداخلية:"
+      "solde_tva_int": "رصيد الضريبة الداخلية:",
+      "preview_note": "(معاينة — اقتراح المؤسسة)"
     },
     "info": {
       "title": "معلومات الملف",
@@ -303,7 +305,8 @@
       "numero_decompte": "رقم المستحقات",
       "date_facture": "تاريخ الفاتورة",
       "date_creation": "تاريخ الإنشاء",
-      "date_liquidation": "تاريخ التسوية"
+      "date_liquidation": "تاريخ التسوية",
+      "numero_credit": "رقم الاعتماد"
     },
     "actions_section": "الإجراءات المتاحة",
     "actions_hint_liquidation": "ستخصم التسوية رصيد الكوردون بمقدار <strong>{{hors_tva}}</strong> (خارج الضريبة)، وستقلص حصة الضريبة على الاستيراد بمقدار <strong>{{tva}}</strong> وتغذي مخزون الضريبة القابلة للخصم.",
@@ -376,9 +379,9 @@
     "report": "تأجيل لاحق",
     "solde_tva": "رصيد الضريبة",
     "cas1": "الحالة 1 — صافي الضريبة منعدم: عملية محايدة دون أثر على الرصيد.",
-    "cas2a": "الحالة 2a — صافي الضريبة موجب: تم خصم رصيد الضريبة من الشهادة بمقدار {{montant}}.",
+    "cas2a": "الحالة 2a — صافي الضريبة موجب: تم خصم رصيد الضريبة من الاعتماد بمقدار {{montant}}.",
     "cas2b": "الحالة 2b — الرصيد غير كافٍ: تم خصم {{interne}} + {{paiement}} مستحقة الدفع نقداً من المؤسسة.",
-    "cas3": "الحالة 3 — تأجيل لاحق: تمت إضافة {{montant}} إلى رصيد الضريبة للشهادة."
+    "cas3": "الحالة 3 — تأجيل لاحق: تمت إضافة {{montant}} إلى رصيد الضريبة للاعتماد."
   },
   "stock_tva": {
     "title": "مخزون الضريبة القابلة للخصم المتاح — المجموع: {{total}}",
@@ -430,7 +433,7 @@
     "modifier_quittances": "تعديل الإيصالات",
     "passer_verification": "الانتقال إلى التحقق",
     "valider": "المصادقة",
-    "liquider_certificat": "إصدار الشهادة والتسوية",
+    "liquider_certificat": "إصدار الاعتماد والتسوية",
     "accuser_reception": "تأكيد الاستلام والإغلاق",
     "proceder_apurement": "المباشرة في التسوية",
     "rejet_temp": "رفض مؤقت",
