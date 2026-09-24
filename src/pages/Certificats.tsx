@@ -1,180 +1,215 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
-  certificatCreditApi, CertificatCreditDto, CertificatStatut,
+  certificatCreditApi,
+  certificatCreditConsultation,
+  autoriteContractanteApi,
+  AutoriteContractanteDto,
+  CertificatCreditDto,
+  CertificatCreditJournalDto,
+  CertificatStatut,
   CERTIFICAT_STATUT_VALUES,
-  DocumentDto,
+  PageResponse,
   sousTraitanceApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, Search, RefreshCw, Eye, Loader2, Filter, FileText } from "lucide-react";
+import { Award, Search, RefreshCw, Loader2, BookOpen, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { tStatutCertificat } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
+import CreditLink from "@/components/credits/CreditLink";
 
-import { API_BASE } from "@/lib/apiConfig";
-import { displayRef } from "@/lib/displayRef";
+const PAGE_SIZES = [10, 20, 50, 100];
+const toInstant = (d: string, end = false) => (d ? `${d}T${end ? "23:59:59" : "00:00:00"}Z` : undefined);
 
-const STATUT_COLORS: Record<CertificatStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  ENVOYEE: "bg-sky-100 text-sky-800",
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_CONTROLE: "bg-teal-100 text-teal-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
-  EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
-  VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
-  EN_OUVERTURE_DGTCP: "bg-yellow-100 text-yellow-800",
-  OUVERT: "bg-emerald-100 text-emerald-800",
-  MODIFIE: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
+const EMPTY_CRITERES = {
+  nif: "", numeroMarche: "", conventionRef: "", projet: "",
+  autoriteContractanteId: "all", statut: "all", from: "", to: "",
 };
 
-const ROLE_TRANSITIONS: Record<string, { from: CertificatStatut[]; to: CertificatStatut; labelKey: string }[]> = {
-  AUTORITE_CONTRACTANTE: [],
-  PRESIDENT: [
-    { from: ["EN_VALIDATION_PRESIDENT"], to: "OUVERT", labelKey: "list.actions.valider_ouvrir" },
-  ],
-  DGTCP: [],
-};
-
-function getDocFileUrl(doc: DocumentDto): string {
-  if (!doc.chemin) return "#";
-  if (doc.chemin.startsWith("http")) return doc.chemin;
-  return `${API_BASE}/documents/download/${doc.id}`;
-}
-
+/**
+ * Menu unique « Crédits » : liste paginée côté serveur (GET /certificats-credit/search),
+ * filtres multi-critères, journal daté. Un clic ouvre directement le détail du crédit.
+ */
 const Certificats = () => {
   const { t } = useTranslation(["certificats", "common"]);
   usePageTitle("certificats:list.title");
   const { user } = useAuth();
-  const navigate = useNavigate();
   const role = user?.role as AppRole;
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
-  const [sousTraiteCertIds, setSousTraiteCertIds] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterStatut, setFilterStatut] = useState<string>("ALL");
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const [selected, setSelected] = useState<CertificatCreditDto | null>(null);
+  const isEntreprise = role === "ENTREPRISE";
 
-  const [detailDocs, setDetailDocs] = useState<DocumentDto[]>([]);
-  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
+  useEffect(() => {
+    if (isEntreprise) return;
+    autoriteContractanteApi.getAll().then(setAutorites).catch(() => setAutorites([]));
+  }, [isEntreprise]);
 
-  const fetchCertificats = async () => {
+  // ---- Liste
+  const [criteres, setCriteres] = useState(EMPTY_CRITERES);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [result, setResult] = useState<PageResponse<CertificatCreditDto> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [sousTraiteIds, setSousTraiteIds] = useState<Set<number>>(new Set());
+
+  // Entreprise : source dédiée (crédits propres + sous-traités), paginée localement.
+  const [entrepriseAll, setEntrepriseAll] = useState<CertificatCreditDto[]>([]);
+
+  const loadEntreprise = useCallback(async () => {
+    if (!user?.entrepriseId) return;
     setLoading(true);
     try {
-      if (role === "ENTREPRISE" && user?.entrepriseId) {
-        let ownCerts: CertificatCreditDto[] = [];
-        try {
-          ownCerts = await certificatCreditApi.getByEntreprise(user.entrepriseId);
-        } catch { /* ignore */ }
-
-        let allSousTraitances: any[] = [];
-        try {
-          allSousTraitances = await sousTraitanceApi.getAll();
-        } catch { /* ignore */ }
-
-        const mySousTraitances = allSousTraitances.filter(
-          (st: any) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE"
-        );
-
-        const ownCertIds = new Set(ownCerts.map((c) => c.id));
-        const stCertIds = new Set<number>();
-        const sousTraiteCerts: CertificatCreditDto[] = [];
-
-        for (const st of mySousTraitances) {
-          if (!ownCertIds.has(st.certificatCreditId) && !stCertIds.has(st.certificatCreditId)) {
-            stCertIds.add(st.certificatCreditId);
-            try {
-              const cert = await certificatCreditApi.getById(st.certificatCreditId);
-              sousTraiteCerts.push(cert);
-            } catch {
-              sousTraiteCerts.push({
-                id: st.certificatCreditId,
-                numero: st.certificatNumero || `CERT-${st.certificatCreditId}`,
-                reference: st.certificatNumero,
-                statut: "OUVERT" as CertificatStatut,
-                entrepriseId: st.entrepriseSourceId,
-                entrepriseRaisonSociale: st.entrepriseSourceRaisonSociale || "—",
-              } as CertificatCreditDto);
-            }
-          }
-        }
-
-        setSousTraiteCertIds(stCertIds);
-        setCertificats([...ownCerts, ...sousTraiteCerts]);
-      } else {
-        setSousTraiteCertIds(new Set());
-        setCertificats(await certificatCreditApi.getAll());
+      const own = await certificatCreditApi.getByEntreprise(user.entrepriseId).catch(() => [] as CertificatCreditDto[]);
+      const sts = await sousTraitanceApi.getAll().catch(() => [] as any[]);
+      const mine = sts.filter((st: any) => st.sousTraitantEntrepriseId === user.entrepriseId && st.statut === "AUTORISEE");
+      const ownIds = new Set(own.map((c) => c.id));
+      const stIds = new Set<number>();
+      const extra: CertificatCreditDto[] = [];
+      for (const st of mine) {
+        if (ownIds.has(st.certificatCreditId) || stIds.has(st.certificatCreditId)) continue;
+        stIds.add(st.certificatCreditId);
+        const c = await certificatCreditApi.getById(st.certificatCreditId).catch(() => null);
+        if (c) extra.push(c);
       }
+      setSousTraiteIds(stIds);
+      setEntrepriseAll([...own, ...extra]);
     } catch {
       toast({ title: t("common:states.error"), description: t("certificats:list.toast.load_error"), variant: "destructive" });
     } finally { setLoading(false); }
-  };
+  }, [user?.entrepriseId, toast, t]);
 
-  useEffect(() => { fetchCertificats(); }, []);
-
-  const handleStatut = async (id: number, statut: CertificatStatut) => {
-    setActionLoading(id);
+  const runSearch = useCallback(async (p = 0, s = size) => {
+    setLoading(true);
     try {
-      await certificatCreditApi.updateStatut(id, statut);
-      toast({ title: t("common:states.success"), description: t("certificats:list.toast.statut_success", { label: tStatutCertificat(statut) }) });
-      fetchCertificats();
-    } catch (e: any) {
-      toast({ title: t("common:states.error"), description: e.message, variant: "destructive" });
-    } finally { setActionLoading(null); }
-  };
-
-  const openDetail = async (c: CertificatCreditDto) => {
-    setSelected(c);
-    setDetailDocs([]);
-    setLoadingDocs(true);
-    try {
-      const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/certificats-credit/${c.id}/documents`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "true",
-        },
+      const res = await certificatCreditConsultation.search({
+        nif: criteres.nif.trim() || undefined,
+        numeroMarche: criteres.numeroMarche.trim() || undefined,
+        conventionRef: criteres.conventionRef.trim() || undefined,
+        projet: criteres.projet.trim() || undefined,
+        autoriteContractanteId: criteres.autoriteContractanteId !== "all" ? Number(criteres.autoriteContractanteId) : undefined,
+        statut: criteres.statut !== "all" ? (criteres.statut as CertificatStatut) : undefined,
+        from: toInstant(criteres.from),
+        to: toInstant(criteres.to, true),
+        page: p,
+        size: s,
       });
-      if (res.ok) {
-        setDetailDocs(await res.json());
-      }
-    } catch { /* ignore */ }
-    setLoadingDocs(false);
+      setResult(res);
+      setPage(p);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t("certificats:list.toast.load_error"), description: e?.message });
+    } finally { setLoading(false); }
+  }, [criteres, size, toast, t]);
+
+  useEffect(() => {
+    if (isEntreprise) void loadEntreprise();
+    else void runSearch(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEntreprise]);
+
+  // Filtrage local pour l'entreprise (statut + date), sinon résultat serveur.
+  const entrepriseFiltered = useMemo(() => entrepriseAll.filter((c) => {
+    if (criteres.statut !== "all" && c.statut !== criteres.statut) return false;
+    const d = c.dateEmission ? c.dateEmission.slice(0, 10) : "";
+    if (criteres.from && (!d || d < criteres.from)) return false;
+    if (criteres.to && (!d || d > criteres.to)) return false;
+    return true;
+  }), [entrepriseAll, criteres]);
+
+  const items: CertificatCreditDto[] = isEntreprise
+    ? entrepriseFiltered.slice(page * size, page * size + size)
+    : result?.content || [];
+  const totalElements = isEntreprise ? entrepriseFiltered.length : result?.totalElements ?? 0;
+  const totalPages = isEntreprise ? Math.max(1, Math.ceil(totalElements / size)) : Math.max(1, result?.totalPages ?? 0);
+  const firstIdx = totalElements === 0 ? 0 : page * size + 1;
+  const lastIdx = Math.min(totalElements, page * size + items.length);
+
+  const goPage = (p: number) => {
+    if (isEntreprise) setPage(p);
+    else void runSearch(p);
   };
+  const changeSize = (s: number) => {
+    setSize(s);
+    if (isEntreprise) setPage(0);
+    else void runSearch(0, s);
+  };
+  const applyFilters = () => {
+    if (isEntreprise) setPage(0);
+    else void runSearch(0);
+  };
+  const refresh = () => (isEntreprise ? void loadEntreprise() : void runSearch(page));
 
-  const transitions = ROLE_TRANSITIONS[role] || [];
+  // ---- Journal
+  const [jFrom, setJFrom] = useState("");
+  const [jTo, setJTo] = useState("");
+  const [jPage, setJPage] = useState(0);
+  const [journal, setJournal] = useState<CertificatCreditJournalDto | null>(null);
+  const [jLoading, setJLoading] = useState(false);
+  const runJournal = useCallback(async (p = 0) => {
+    setJLoading(true);
+    try {
+      const res = await certificatCreditConsultation.journal({ from: toInstant(jFrom), to: toInstant(jTo, true), page: p, size });
+      setJournal(res);
+      setJPage(p);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t("certificats:list.journal.error"), description: e?.message });
+    } finally { setJLoading(false); }
+  }, [jFrom, jTo, size, toast, t]);
 
-  const filtered = certificats.filter((c) => {
-    if (c.statut !== "OUVERT" && c.statut !== "MODIFIE" && c.statut !== "CLOTURE") return false;
-    const q = search.trim().toLowerCase();
-    const ms = !q ||
-      (c.reference || "").toLowerCase().includes(q) ||
-      (c.numero || "").toLowerCase().includes(q) ||
-      (c.entrepriseRaisonSociale || "").toLowerCase().includes(q) ||
-      (c.entrepriseNom || "").toLowerCase().includes(q) ||
-      String(c.id).includes(q);
-    return ms && (filterStatut === "ALL" || c.statut === filterStatut);
-  });
+  const pageTitle = t(`certificats:list.role_titles.${role}`, { defaultValue: t("certificats:list.role_titles.DEFAULT") });
 
-  const pageTitle = t(`certificats:list.role_titles.${role}`, {
-    defaultValue: t("certificats:list.role_titles.DEFAULT"),
-  });
+  const Rows = ({ list }: { list: CertificatCreditDto[] }) => (
+    <>
+      {list.length === 0 ? (
+        <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("certificats:list.empty")}</TableCell></TableRow>
+      ) : list.map((c) => (
+        <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
+          <TableCell className="whitespace-nowrap">
+            <CreditLink id={c.id} reference={c.reference} numero={c.numero} />
+            {sousTraiteIds.has(c.id) && (
+              <Badge variant="outline" className="ms-2 text-[10px]">{t("certificats:list.badge.sous_traite")}</Badge>
+            )}
+          </TableCell>
+          <TableCell className="max-w-[200px] truncate">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
+          <TableCell className="max-w-[200px] truncate">{c.marcheIntitule || "—"}</TableCell>
+          <TableCell className="text-end whitespace-nowrap">{formatAmount(c.montantCordon ?? c.montantDouane)}</TableCell>
+          <TableCell className="text-end whitespace-nowrap">{formatAmount(c.montantTVAInterieure ?? c.montantInterieur)}</TableCell>
+          <TableCell className="text-end whitespace-nowrap font-semibold">{formatAmount(c.soldeCordon)}</TableCell>
+          <TableCell className="text-end whitespace-nowrap font-semibold">{formatAmount(c.soldeTVA)}</TableCell>
+          <TableCell><Badge variant="outline" className="text-xs">{tStatutCertificat(c.statut)}</Badge></TableCell>
+          <TableCell className="whitespace-nowrap">{c.dateEmission ? formatDate(c.dateEmission) : "—"}</TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+
+  const Head = () => (
+    <TableHeader>
+      <TableRow>
+        <TableHead>{t("certificats:list.columns.ref")}</TableHead>
+        <TableHead>{t("certificats:list.columns.entreprise")}</TableHead>
+        <TableHead>{t("certificats:list.columns.marche")}</TableHead>
+        <TableHead className="text-end">{t("certificats:list.columns.cordon")}</TableHead>
+        <TableHead className="text-end">{t("certificats:list.columns.tva_int")}</TableHead>
+        <TableHead className="text-end">{t("certificats:list.columns.solde_cordon")}</TableHead>
+        <TableHead className="text-end">{t("certificats:list.columns.solde_tva")}</TableHead>
+        <TableHead>{t("certificats:list.columns.statut")}</TableHead>
+        <TableHead>{t("certificats:list.columns.date_creation")}</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
 
   return (
     <DashboardLayout>
@@ -182,156 +217,163 @@ const Certificats = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Award className="h-6 w-6 text-primary" />
-              {pageTitle}
+              <Award className="h-6 w-6 text-primary" /> {pageTitle}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">{t("certificats:list.subtitle")}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchCertificats} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("certificats:list.refresh")}
-            </Button>
-          </div>
+          <Button variant="outline" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("certificats:list.refresh")}
+          </Button>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder={t("certificats:list.search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
-          </div>
-          <Select value={filterStatut} onValueChange={setFilterStatut}>
-            <SelectTrigger className="w-48"><Filter className="h-4 w-4 me-2" /><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("certificats:list.filter_all")}</SelectItem>
-              {CERTIFICAT_STATUT_VALUES.map((k) => (<SelectItem key={k} value={k}>{tStatutCertificat(k)}</SelectItem>))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                     <TableHead>{t("certificats:list.columns.ref")}</TableHead>
-                     <TableHead>{t("certificats:list.columns.entreprise")}</TableHead>
-                     <TableHead>{t("certificats:list.columns.cordon")}</TableHead>
-                     <TableHead>{t("certificats:list.columns.tva_int")}</TableHead>
-                     <TableHead>{t("certificats:list.columns.solde_cordon")}</TableHead>
-                     <TableHead>{t("certificats:list.columns.solde_tva")}</TableHead>
-                     <TableHead>{t("certificats:list.columns.statut")}</TableHead>
-                     <TableHead className="text-end">{t("certificats:list.columns.actions")}</TableHead>
-                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("certificats:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((c) => (
-                     <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
-                       <TableCell className="font-medium">
-                         {displayRef(c)}
-                         {sousTraiteCertIds.has(c.id) && (
-                           <Badge className="ms-2 text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">{t("certificats:list.badge.sous_traite")}</Badge>
-                         )}
-                       </TableCell>
-                       <TableCell className="text-muted-foreground">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
-                       <TableCell>{formatAmount(c.montantCordon ?? c.montantDouane)}</TableCell>
-                       <TableCell>{formatAmount(c.montantTVAInterieure ?? c.montantInterieur)}</TableCell>
-                       <TableCell className="font-semibold">{formatAmount(c.soldeCordon)}</TableCell>
-                       <TableCell className="font-semibold">{formatAmount(c.soldeTVA)}</TableCell>
-                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[c.statut]}`}>{tStatutCertificat(c.statut)}</Badge></TableCell>
-                      <TableCell className="text-end">
-                        <div className="flex gap-1 justify-end flex-wrap" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}><Eye className="h-4 w-4 me-1" /> {t("certificats:list.actions.detail")}</Button>
-                          {transitions.map((tr) =>
-                            tr.from.includes(c.statut) ? (
-                              <Button key={tr.to} variant={tr.to === "ANNULE" ? "destructive" : "default"} size="sm" disabled={actionLoading === c.id} onClick={() => handleStatut(c.id, tr.to)}>
-                                {actionLoading === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                {t(`certificats:${tr.labelKey}`)}
-                              </Button>
-                            ) : null
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detail Dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("certificats:list.dialog.title", { ref: selected?.reference || `#${selected?.id}` })}</DialogTitle></DialogHeader>
-          {selected && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.entreprise")}</span><p className="font-medium">{selected.entrepriseRaisonSociale || selected.entrepriseNom || "—"}</p></div>
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutCertificat(selected.statut)}</Badge></p></div>
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.montant_cordon")}</span><p className="font-medium">{formatAmount(selected.montantCordon ?? selected.montantDouane)}</p></div>
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.montant_tva")}</span><p className="font-medium">{formatAmount(selected.montantTVAInterieure ?? selected.montantInterieur)}</p></div>
-                <div>
-                  <span className="text-muted-foreground">{t("certificats:list.dialog.solde_cordon")}</span>
-                  <p className="font-bold">
-                    {formatAmount(selected.soldeCordon)}
-                    <br />
-                    <span className="text-[10px] font-normal text-muted-foreground">
-                      {t("certificats:list.dialog.solde_cordon_plus", {
-                        tva: formatAmount(selected.tvaImportationDouane),
-                        total: formatAmount((selected.soldeCordon ?? 0) + (selected.tvaImportationDouane ?? 0)),
-                      })}
-                    </span>
-                  </p>
-                </div>
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.solde_tva")}</span><p className="font-bold">{formatAmount(selected.soldeTVA)}</p></div>
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.total")}</span><p className="font-bold text-primary">{formatAmount(selected.montantTotal)}</p></div>
-                <div><span className="text-muted-foreground">{t("certificats:list.dialog.date")}</span><p>{formatDate(selected.dateEmission || selected.dateCreation)}</p></div>
-                {selected.dateValidite && <div><span className="text-muted-foreground">{t("certificats:list.dialog.validite")}</span><p>{formatDate(selected.dateValidite)}</p></div>}
-                {selected.demandeCorrectionId && <div><span className="text-muted-foreground">{t("certificats:list.dialog.demande_correction")}</span><p className="font-medium">#{selected.demandeCorrectionId}</p></div>}
-                {selected.marcheId && <div><span className="text-muted-foreground">{t("certificats:list.dialog.marche")}</span><p className="font-medium">#{selected.marcheId}</p></div>}
-              </div>
-
-              <div className="border-t pt-3">
-                <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> {t("certificats:list.dialog.documents_title")}</h4>
-                {loadingDocs ? (
-                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-                ) : detailDocs.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">{t("certificats:list.dialog.no_documents")}</p>
-                ) : (
-                  <div className="space-y-2">
-                    {detailDocs.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">{doc.nomFichier}</p>
-                            <p className="text-xs text-muted-foreground">{tTypeDocument(doc.type)}</p>
-                          </div>
-                        </div>
-                        <a
-                          href={getDocFileUrl(doc)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          {t("certificats:list.dialog.download")}
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+        <Tabs defaultValue="liste">
+          {!isEntreprise && (
+            <TabsList>
+              <TabsTrigger value="liste"><Search className="h-4 w-4 me-1" /> {t("certificats:list.tabs.liste")}</TabsTrigger>
+              <TabsTrigger value="journal" onClick={() => { if (!journal) void runJournal(0); }}>
+                <BookOpen className="h-4 w-4 me-1" /> {t("certificats:list.tabs.journal")}
+              </TabsTrigger>
+            </TabsList>
           )}
-        </DialogContent>
-      </Dialog>
 
+          <TabsContent value="liste" className="space-y-4">
+            <Card>
+              <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {!isEntreprise && (
+                  <>
+                    <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.nif")}</Label><Input value={criteres.nif} onChange={(e) => setCriteres((p) => ({ ...p, nif: e.target.value }))} /></div>
+                    <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.numero_marche")}</Label><Input value={criteres.numeroMarche} onChange={(e) => setCriteres((p) => ({ ...p, numeroMarche: e.target.value }))} /></div>
+                    <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.convention")}</Label><Input value={criteres.conventionRef} onChange={(e) => setCriteres((p) => ({ ...p, conventionRef: e.target.value }))} /></div>
+                    <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.projet")}</Label><Input value={criteres.projet} onChange={(e) => setCriteres((p) => ({ ...p, projet: e.target.value }))} /></div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("certificats:list.filters.autorite")}</Label>
+                      <Select value={criteres.autoriteContractanteId} onValueChange={(v) => setCriteres((p) => ({ ...p, autoriteContractanteId: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("certificats:list.filters.all_f")}</SelectItem>
+                          {autorites.map((a) => <SelectItem key={a.id} value={String(a.id)}>{a.nom}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+                <div className="space-y-1">
+                  <Label className="text-xs">{t("certificats:list.filter_status")}</Label>
+                  <Select value={criteres.statut} onValueChange={(v) => setCriteres((p) => ({ ...p, statut: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("certificats:list.filter_all")}</SelectItem>
+                      {CERTIFICAT_STATUT_VALUES.map((k) => <SelectItem key={k} value={k}>{tStatutCertificat(k)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.from")}</Label><Input type="date" value={criteres.from} onChange={(e) => setCriteres((p) => ({ ...p, from: e.target.value }))} /></div>
+                <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.to")}</Label><Input type="date" value={criteres.to} onChange={(e) => setCriteres((p) => ({ ...p, to: e.target.value }))} /></div>
+                <div className="lg:col-span-4 flex justify-end gap-2">
+                  <Button variant="ghost" onClick={() => setCriteres(EMPTY_CRITERES)} disabled={loading}>
+                    <RotateCcw className="h-4 w-4 me-1" /> {t("certificats:list.filters.reset")}
+                  </Button>
+                  <Button onClick={applyFilters} disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Search className="h-4 w-4 me-1" />} {t("certificats:list.filters.search")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[1000px]">
+                    <Head />
+                    <TableBody>
+                      {loading ? (
+                        <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
+                      ) : <Rows list={items} />}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex flex-col gap-3 border-t p-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    {t("certificats:list.pagination.range", { from: firstIdx, to: lastIdx, total: totalElements })}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span>{t("certificats:list.pagination.per_page")}</span>
+                      <Select value={String(size)} onValueChange={(v) => changeSize(Number(v))}>
+                        <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PAGE_SIZES.map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <span>{t("certificats:list.pagination.page", { page: totalElements === 0 ? 0 : page + 1, total: totalElements === 0 ? 0 : totalPages })}</span>
+                    <Button size="sm" variant="outline" disabled={loading || page <= 0} onClick={() => goPage(page - 1)} aria-label={t("certificats:list.pagination.prev")}>
+                      <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={loading || page + 1 >= totalPages} onClick={() => goPage(page + 1)} aria-label={t("certificats:list.pagination.next")}>
+                      <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {!isEntreprise && (
+            <TabsContent value="journal" className="space-y-4">
+              <Card>
+                <CardContent className="p-4 flex flex-wrap items-end gap-3">
+                  <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.from")}</Label><Input type="date" className="w-40" value={jFrom} onChange={(e) => setJFrom(e.target.value)} /></div>
+                  <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.to")}</Label><Input type="date" className="w-40" value={jTo} onChange={(e) => setJTo(e.target.value)} /></div>
+                  <Button size="sm" onClick={() => void runJournal(0)} disabled={jLoading}>
+                    {jLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <BookOpen className="h-4 w-4 me-1" />} {t("certificats:list.journal.show")}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {journal && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {[
+                    { l: t("certificats:list.journal.nb"), v: String(journal.nombreCredits ?? 0) },
+                    { l: t("certificats:list.journal.total_cordon"), v: formatAmount(journal.totalMontantCordon) },
+                    { l: t("certificats:list.journal.total_tva"), v: formatAmount(journal.totalMontantTVAInterieure) },
+                    { l: t("certificats:list.journal.solde_cordon"), v: formatAmount(journal.totalSoldeCordon) },
+                    { l: t("certificats:list.journal.solde_tva"), v: formatAmount(journal.totalSoldeTVA) },
+                  ].map((k) => (
+                    <Card key={k.l}>
+                      <CardHeader className="pb-1"><CardTitle className="text-xs font-medium text-muted-foreground">{k.l}</CardTitle></CardHeader>
+                      <CardContent className="pt-0"><p className="text-lg font-bold">{k.v}</p></CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[1000px]">
+                      <Head />
+                      <TableBody>
+                        {jLoading ? (
+                          <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
+                        ) : <Rows list={journal?.certificats?.content || []} />}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="flex items-center justify-between border-t p-3 text-sm text-muted-foreground">
+                    <span>{t("certificats:list.pagination.total", { total: journal?.certificats?.totalElements ?? 0 })}</span>
+                    <div className="flex items-center gap-2">
+                      <span>{t("certificats:list.pagination.page", { page: (journal?.certificats?.totalPages ?? 0) === 0 ? 0 : jPage + 1, total: journal?.certificats?.totalPages ?? 0 })}</span>
+                      <Button size="sm" variant="outline" disabled={jLoading || jPage <= 0} onClick={() => void runJournal(jPage - 1)}><ChevronLeft className="h-4 w-4 rtl:rotate-180" /></Button>
+                      <Button size="sm" variant="outline" disabled={jLoading || jPage + 1 >= (journal?.certificats?.totalPages ?? 0)} onClick={() => void runJournal(jPage + 1)}><ChevronRight className="h-4 w-4 rtl:rotate-180" /></Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
+      </div>
     </DashboardLayout>
   );
 };
