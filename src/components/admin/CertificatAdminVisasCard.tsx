@@ -146,7 +146,7 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey,
 
   const dgtcpRow = visas?.find((v) => v.role === "DGTCP");
   const montantsBlocked = !!dgtcpRow && !dgtcpRow.pose && !dgtcpRow.visableParAdmin
-    && /montant/i.test(dgtcpRow.motifBlocage ?? "");
+    && dgtcpRow.codeBlocage === "MONTANTS_MANQUANTS";
 
   const ouvertureAvailable = canOuvertureOverride && OUVERTURE_STATUTS.includes(statut);
 
