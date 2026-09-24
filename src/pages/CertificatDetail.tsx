@@ -349,7 +349,7 @@ const CertificatDetail = () => {
         </div>
 
         {/* Récapitulatif fiscal */}
-        {(c.valeurDouaneFournitures != null || c.droitsEtTaxesDouaneHorsTva != null || c.tvaImportationDouane != null
+        {(c.valeurDouaneFournitures != null || c.droitsEtTaxesDouaneHorsTva != null || c.tvaImportationDouane != null || c.taxesConsommation != null
           || c.montantMarcheHt != null || c.tvaCollecteeTravaux != null
           || c.creditExterieurRecap != null || c.creditInterieurNetRecap != null || c.totalCreditImpotRecap != null) && (
           <Card>
@@ -374,6 +374,7 @@ const CertificatDetail = () => {
                   {c.tvaImportationDouaneAccordee != null && c.tvaImportationDouane != null && c.tvaImportationDouane !== c.tvaImportationDouaneAccordee && (
                     <TableRow><TableCell className="font-mono text-muted-foreground">d′</TableCell><TableCell className="text-muted-foreground">{t("certificats:detail.recap.dp")}</TableCell><TableCell className="text-end text-muted-foreground">{formatAmount(c.tvaImportationDouane)}</TableCell></TableRow>
                   )}
+                  <TableRow><TableCell className="font-mono">c</TableCell><TableCell>{t("certificats:detail.recap.c")}</TableCell><TableCell className="text-end">{formatAmount(c.taxesConsommation)}</TableCell></TableRow>
                   <TableRow className="bg-muted/40"><TableCell className="font-mono font-bold">e</TableCell><TableCell className="font-semibold">{t("certificats:detail.recap.e")}</TableCell><TableCell className="text-end font-bold">{formatAmount(c.creditExterieurRecap)}</TableCell></TableRow>
                   <TableRow><TableCell className="font-mono">f</TableCell><TableCell>{t("certificats:detail.recap.f")}</TableCell><TableCell className="text-end">{formatAmount(c.montantMarcheHt)}</TableCell></TableRow>
                   <TableRow><TableCell className="font-mono">g</TableCell><TableCell>{t("certificats:detail.recap.g")}</TableCell><TableCell className="text-end">{formatAmount(c.tvaCollecteeTravaux)}</TableCell></TableRow>
@@ -563,6 +564,7 @@ const CertificatDetail = () => {
             { key: "valeurDouaneFournitures", label: "(a) Valeur en douane des fournitures", type: "number", value: c.valeurDouaneFournitures ?? "" },
             { key: "droitsEtTaxesDouaneHorsTva", label: "(b) Droits et taxes hors TVA", type: "number", value: c.droitsEtTaxesDouaneHorsTva ?? "" },
             { key: "tvaImportationDouane", label: "(d) TVA d'importation douane", type: "number", value: c.tvaImportationDouane ?? "" },
+            { key: "taxesConsommation", label: "(c) Taxes de consommation", type: "number", value: c.taxesConsommation ?? "" },
             { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
             { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
           ]}

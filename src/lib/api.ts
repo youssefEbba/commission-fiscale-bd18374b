@@ -1125,6 +1125,8 @@ export interface CertificatRecapFiscal {
   tvaImportationDouane?: number;
   /** (d) TVA d'importation à la douane — accord initial (figé, sert aux formules récap). Lecture seule côté DTO. */
   tvaImportationDouaneAccordee?: number;
+  /** (c) Taxes de consommation (facultatif) — incluses dans le crédit extérieur. */
+  taxesConsommation?: number;
   /** (f) Montant du marché HT */
   montantMarcheHt?: number;
   /** (g) TVA collectée sur les travaux */
@@ -1160,7 +1162,7 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   demandeCorrectionNumero?: string;
   marcheId?: number;
   marcheIntitule?: string;
-  /** (e) = b + d, calculé côté back si b et d présents */
+  /** (e) = b + c + d, calculé côté back si b et d présents */
   creditExterieurRecap?: number;
   /** (h) = g − d, calculé côté back si g et d présents */
   creditInterieurNetRecap?: number;
@@ -1781,6 +1783,7 @@ export interface AdminCorrectionCertificatPayload {
   valeurDouaneFournitures?: number;
   droitsEtTaxesDouaneHorsTva?: number;
   tvaImportationDouane?: number;
+  taxesConsommation?: number;
   montantMarcheHt?: number;
   tvaCollecteeTravaux?: number;
 }
