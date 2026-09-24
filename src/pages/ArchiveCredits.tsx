@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, Plus, RotateCcw, Info as Info_ } from "lucide-react";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { tStatutMarche } from "@/i18n/enums";
 import {
@@ -665,7 +665,7 @@ const ArchiveCredits = () => {
                 <CardTitle className="text-base">3. {t("archive:step3")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {anomalies.length > 0 && !blocked && (
+                {anomalies.length > 0 && (
                   <div className="flex items-start gap-2">
                     <Checkbox
                       id="confirm-anomalies"
@@ -677,7 +677,7 @@ const ArchiveCredits = () => {
                     </Label>
                   </div>
                 )}
-                {!blocked && (!entrepriseId || !autoriteId || !conventionId) && (
+                {(!entrepriseId || !autoriteId || !conventionId) && (
                   <p className="text-xs text-muted-foreground">{t("archive:import_disabled_required")}</p>
                 )}
 
@@ -758,7 +758,8 @@ const ArchiveCredits = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+          );
+        })()}
 
         {/* Création d'entité manquante */}
         <Dialog open={createOpen !== null} onOpenChange={(o) => !o && setCreateOpen(null)}>
