@@ -26,9 +26,13 @@ interface Props {
   statut: CertificatStatut;
   /** Rafraîchit le certificat parent après une action administrateur. */
   onSuccess?: () => void;
+  /** Change à chaque rafraîchissement du certificat parent → recharge les visas. */
+  refreshKey?: number;
+  /** Ouvre le formulaire de montants (mode administrateur) de la page parente. */
+  onOpenMontantsAdmin?: () => void;
 }
 
-const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess }: Props) => {
+const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess, refreshKey, onOpenMontantsAdmin }: Props) => {
   const { t } = useTranslation();
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole(["ADMIN_SI"]);
@@ -58,7 +62,11 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess }: Props) =>
     }
   }, [certificatId]);
 
-  useEffect(() => { if (canVisaOverride) load(); }, [canVisaOverride, load]);
+  useEffect(() => { if (canVisaOverride) load(); }, [canVisaOverride, load, refreshKey]);
+
+  const [pecOpen, setPecOpen] = useState(false);
+  const [pecMotif, setPecMotif] = useState("");
+  const [pecSubmitting, setPecSubmitting] = useState(false);
 
   if (!canVisaOverride && !canOuvertureOverride) return null;
 
@@ -120,6 +128,26 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess }: Props) =>
     }
   };
 
+  const submitPec = async () => {
+    if (!pecMotif.trim()) return;
+    setPecSubmitting(true);
+    try {
+      await certificatCreditApi.priseEnChargeAdmin(certificatId, pecMotif.trim());
+      setPecOpen(false);
+      showSuccess(t("mise_en_place:detail.admin_pec.toast_title"), t("mise_en_place:detail.admin_pec.toast_desc"));
+      await load();
+      onSuccess?.();
+    } catch (e) {
+      showApiError(e, t("mise_en_place:detail.admin_pec.error_title"));
+    } finally {
+      setPecSubmitting(false);
+    }
+  };
+
+  const dgtcpRow = visas?.find((v) => v.role === "DGTCP");
+  const montantsBlocked = !!dgtcpRow && !dgtcpRow.pose && !dgtcpRow.visableParAdmin
+    && /montant/i.test(dgtcpRow.motifBlocage ?? "");
+
   const ouvertureAvailable = canOuvertureOverride && OUVERTURE_STATUTS.includes(statut);
 
   return (
@@ -132,6 +160,30 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess }: Props) =>
               <h3 className="text-sm font-semibold">{t("mise_en_place:detail.admin_visas.title")}</h3>
             </div>
             <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.admin_visas.description")}</p>
+
+            {statut === "ENVOYEE" && (
+              <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">{t("mise_en_place:detail.admin_pec.title")}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("mise_en_place:detail.admin_pec.description")}</p>
+                </div>
+                <Button size="sm" onClick={() => { setPecMotif(""); setPecOpen(true); }}>
+                  {t("mise_en_place:detail.admin_pec.action")}
+                </Button>
+              </div>
+            )}
+
+            {montantsBlocked && onOpenMontantsAdmin && (
+              <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">{t("mise_en_place:detail.admin_montants.title")}</p>
+                  <p className="text-[11px] text-amber-700">{dgtcpRow?.motifBlocage}</p>
+                </div>
+                <Button size="sm" onClick={onOpenMontantsAdmin}>
+                  {t("mise_en_place:detail.admin_montants.action")}
+                </Button>
+              </div>
+            )}
 
             {loading && !visas ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -278,6 +330,26 @@ const CertificatAdminVisasCard = ({ certificatId, statut, onSuccess }: Props) =>
             </Button>
             <Button onClick={submit} disabled={submitting || !motif.trim() || (fileRequired && !file)}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin me-1" />}
+              {t("mise_en_place:detail.admin_visas.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pecOpen} onOpenChange={(o) => { if (!o && !pecSubmitting) setPecOpen(false); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("mise_en_place:detail.admin_pec.dialog_title")}</DialogTitle>
+            <DialogDescription>{t("mise_en_place:detail.admin_pec.dialog_warning")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label>{t("mise_en_place:detail.admin_visas.motif_label")} *</Label>
+            <Textarea rows={3} value={pecMotif} onChange={(e) => setPecMotif(e.target.value)} placeholder={t("mise_en_place:detail.admin_visas.motif_placeholder")} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPecOpen(false)} disabled={pecSubmitting}>{t("common:actions.cancel")}</Button>
+            <Button onClick={submitPec} disabled={pecSubmitting || !pecMotif.trim()}>
+              {pecSubmitting && <Loader2 className="h-4 w-4 animate-spin me-1" />}
               {t("mise_en_place:detail.admin_visas.confirm")}
             </Button>
           </DialogFooter>

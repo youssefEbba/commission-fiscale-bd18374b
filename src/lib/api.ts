@@ -1299,6 +1299,15 @@ export const certificatCreditApi = {
       `/certificats-credit/${id}/ouverture/admin?motif=${encodeURIComponent(motif)}`,
       { method: "POST" },
     ),
+  /** Prise en charge par l'administrateur (ENVOYEE → EN_CONTROLE). */
+  priseEnChargeAdmin: (id: number, motif: string) =>
+    apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/prise-en-charge/admin?motif=${encodeURIComponent(motif)}`, { method: "POST" }),
+  /** Saisie des montants par l'administrateur à la place de la DGTCP. */
+  montantsAdmin: (id: number, motif: string, body: UpdateCertificatCreditMontantsRequest) =>
+    apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants/admin?motif=${encodeURIComponent(motif)}`, { method: "POST", body }),
+  /** Résolution administrateur d'un rejet temporaire, quel que soit le rôle auteur. */
+  resolveRejetTempAdmin: (decisionId: number, motif: string) =>
+    apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve/admin?motif=${encodeURIComponent(motif)}`, { method: "PUT" }),
   // Résoudre manuellement un rejet temporaire
   resolveRejetTemp: (decisionId: number) =>
     apiFetch<DecisionCorrectionDto>(`/certificats-credit/decisions/${decisionId}/resolve`, {

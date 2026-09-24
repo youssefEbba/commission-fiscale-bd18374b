@@ -149,6 +149,7 @@ const MiseEnPlaceDetail = () => {
     toast({ title: t("common:states.error"), description, variant: "destructive" });
 
   const fetchData = async () => {
+    setAdminRefreshKey((k) => k + 1);
     if (!id) return;
     setLoading(true);
     try {
