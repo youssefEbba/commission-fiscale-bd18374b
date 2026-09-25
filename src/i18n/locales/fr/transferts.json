@@ -162,5 +162,30 @@
     "response_missing_piece": "Veuillez joindre la pièce demandée et préciser son type.",
     "response_missing_piece_title": "Pièce requise",
     "rejet_resolved": "Rejet temporaire résolu"
+  },
+  "circuit": {
+    "title": "Circuit de validation",
+    "subtitle": "Visas successifs : DGD → DGI → DGTCP → Président. L'approbation du Président déclenche le transfert.",
+    "empty": "Circuit de visas indisponible.",
+    "approbation": "Approbation",
+    "vise": "Visé",
+    "approuve": "Approuvé",
+    "au_tour": "À son tour",
+    "en_attente": "En attente",
+    "par": "Par {{nom}} le {{date}}",
+    "attend": "Attend le visa : {{role}}",
+    "btn_viser": "Apposer mon visa",
+    "btn_approuver": "Approuver le transfert",
+    "toast_vise": "Visa enregistré",
+    "confirm_title": "Approbation du transfert — action irréversible",
+    "confirm_intro": "Votre approbation enregistre le dernier visa et exécute immédiatement l'écriture :",
+    "effet_quota": "diminution du quota de TVA à l'importation (solde Cordon) ;",
+    "effet_stock": "alimentation du stock de TVA déductible ;",
+    "effet_cloture": "clôture des opérations douanières en cours.",
+    "irreversible": "Cette écriture ne peut pas être annulée.",
+    "confirm_check": "Je confirme avoir pris connaissance des effets financiers et j'approuve ce transfert.",
+    "btn_confirmer": "Approuver et exécuter",
+    "queue_filter": "À viser ({{count}})",
+    "a_viser": "À viser"
   }
 }

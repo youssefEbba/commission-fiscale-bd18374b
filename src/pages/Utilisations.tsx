@@ -36,7 +36,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save } from "lucide-react";
+import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save, Download } from "lucide-react";
+import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -56,6 +57,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
   ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
+  QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
 };
 
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
@@ -101,6 +103,7 @@ const Utilisations = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [createType, setCreateType] = useState<UtilisationType>("DOUANIER");
+  const [pdfLoadingId, setPdfLoadingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<CreateUtilisationCreditRequest>>({ ...emptyDouane });
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [creating, setCreating] = useState(false);
@@ -701,6 +704,29 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title={t("utilisations:list.actions.view_detail")} aria-label={t("utilisations:list.actions.view_detail")}>
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {u.type === "DOUANIER" && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={pdfLoadingId === u.id}
+                              title={t("utilisations:traceability_liq.download_pdf")}
+                              aria-label={t("utilisations:traceability_liq.download_pdf")}
+                              onClick={async () => {
+                                setPdfLoadingId(u.id);
+                                try {
+                                  const full = await utilisationCreditApi.getById(u.id);
+                                  const c = await certificatCreditApi.getById(full.certificatCreditId).catch(() => null);
+                                  await generateLiquidationPdf(full, c);
+                                } catch (e: any) {
+                                  toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message, variant: "destructive" });
+                                } finally {
+                                  setPdfLoadingId(null);
+                                }
+                              }}
+                            >
+                              {pdfLoadingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                            </Button>
+                          )}
                           {((role === "DGD" && u.type === "DOUANIER") || (role === "DGTCP")) && !["BROUILLON", "LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut) && (
                             <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                               {t("utilisations:list.actions.process")}

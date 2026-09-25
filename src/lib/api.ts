@@ -1407,7 +1407,9 @@ export type UtilisationStatut =
   | "BROUILLON" | "DEMANDEE" | "INCOMPLETE" | "A_RECONTROLER" | "EN_VERIFICATION"
   | "VISE" | "VALIDEE" | "LIQUIDEE" | "APUREE" | "REJETEE" | "CLOTUREE"
   // Nouveau workflow douanier
-  | "EN_CONTROLE_DGD" | "CHEQUE_SAISI" | "ENVOYEE_AU_TRESOR" | "QUITTANCES_ENREGISTREES";
+  | "EN_CONTROLE_DGD" | "CHEQUE_SAISI" | "ENVOYEE_AU_TRESOR" | "QUITTANCES_ENREGISTREES"
+  // Workflow TVA intérieure : quittance DGI après validation
+  | "QUITTANCE_DGI_ENREGISTREE";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export type TvaDeductibleStockSource = "UTILISATION_DOUANE" | "TRANSFERT_CREDIT";
@@ -1542,10 +1544,27 @@ export interface UtilisationCreditDto {
   reportANouveau?: number;
   soldeTVAAvant?: number;
   soldeTVAApres?: number;
+  // Quittance DGI (TVA intérieure, après validation)
+  quittanceDgi?: QuittanceDgiDto | null;
+  // Certificat d'utilisation TVA (généré par la DGTCP à l'apurement)
+  numeroCertificatUtilisation?: string | null;
+  dateCertificatUtilisation?: string | null;
   // Traçabilité sous-traitant
   certificatTitulaireEntrepriseId?: number;
   certificatTitulaireRaisonSociale?: string;
   demandeurEstSousTraitant?: boolean;
+}
+
+export interface QuittanceDgiDto {
+  id?: number;
+  numeroQuittance: string;
+  dateQuittance: string;
+  montant: number;
+  documentChemin?: string;
+  documentNomFichier?: string;
+  documentId?: number;
+  deposeePar?: string;
+  dateDepot?: string;
 }
 
 export interface QuittanceTresorDto {
@@ -1718,6 +1737,17 @@ export const utilisationCreditApi = {
     const raw = await apiFetch<any[]>(`/utilisations-credit/${id}/lignes-bulletin`);
     return (raw || []).map(normalizeLigneBulletin);
   },
+  /** DGI — dépôt / remplacement de la quittance (TVA intérieure). Prérequis : VALIDEE ou QUITTANCE_DGI_ENREGISTREE. Statut → QUITTANCE_DGI_ENREGISTREE.
+   * Multipart : numeroQuittance, dateQuittance (ISO Instant), montant, file (obligatoire au premier dépôt). */
+  saisirQuittanceDgi: (id: number, data: { numeroQuittance: string; dateQuittance: string; montant: number }, file?: File | null) => {
+    const fd = new FormData();
+    fd.append("numeroQuittance", data.numeroQuittance);
+    fd.append("dateQuittance", data.dateQuittance);
+    fd.append("montant", String(data.montant));
+    if (file) fd.append("file", file);
+    return apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/quittance-dgi`, { method: "POST", rawBody: fd });
+  },
+  /** DGTCP — apurement TVA. Prérequis : QUITTANCE_DGI_ENREGISTREE. */
   apurerTVA: (id: number, tvaDeductibleUtilisee: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/apurement-tva`, {
       method: "POST",
@@ -1908,6 +1938,7 @@ export const UTILISATION_STATUT_VALUES: readonly UtilisationStatut[] = [
   "CHEQUE_SAISI",
   "ENVOYEE_AU_TRESOR",
   "QUITTANCES_ENREGISTREES",
+  "QUITTANCE_DGI_ENREGISTREE",
 ] as const;
 
 // Notifications
@@ -2130,6 +2161,25 @@ export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
 // TRANSFERT_STATUT_LABELS supprimée (orpheline, détectée en POLISH-1).
 // Libellés via `tStatutTransfert(code)` (cf. `enums.statut_transfert.*`).
 
+export type TransfertVisaRole = "DGD" | "DGI" | "DGTCP" | "PRESIDENT";
+export type TransfertCodeBlocage =
+  | "ROLE_NON_HABILITE" | "STATUT_INCOMPATIBLE" | "VISA_DEJA_POSE"
+  | "REJET_TEMP_OUVERT" | "VISA_PREALABLE_MANQUANT" | (string & {});
+
+export interface TransfertVisaEtatDto {
+  role: TransfertVisaRole;
+  rang: number;
+  pose: boolean;
+  decisionId?: number | null;
+  datePose?: string | null;
+  utilisateurId?: number | null;
+  utilisateurNom?: string | null;
+  visablePourMoi: boolean;
+  codeBlocage?: TransfertCodeBlocage | null;
+  motifBlocage?: string | null;
+  visaPrealableManquant?: TransfertVisaRole | null;
+}
+
 export const transfertCreditApi = {
   getAll: () => apiFetch<TransfertCreditDto[]>("/transferts-credit"),
   getById: (id: number) => apiFetch<TransfertCreditDto>(`/transferts-credit/${id}`),
@@ -2137,8 +2187,15 @@ export const transfertCreditApi = {
     apiFetch<TransfertCreditDto>(`/transferts-credit/by-certificat/${certificatCreditId}`),
   create: (data: CreateTransfertCreditRequest) =>
     apiFetch<TransfertCreditDto>("/transferts-credit", { method: "POST", body: data }),
+  /** Approbation du Président (4e visa + exécution de l'écriture). 403 pour tout autre rôle. */
   valider: (id: number) =>
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/valider`, { method: "POST" }),
+  /** Circuit P7 : état des 4 visas (DGD → DGI → DGTCP → PRESIDENT). */
+  getVisas: (id: number) =>
+    apiFetch<TransfertVisaEtatDto[]>(`/transferts-credit/${id}/visas`),
+  /** Visa d'une direction (DGD, DGI, DGTCP). */
+  viser: (id: number) =>
+    apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/visa`, { method: "POST" }),
   rejeter: (id: number) =>
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/rejeter`, { method: "POST" }),
   /** Annulation par l'entreprise titulaire (avant exécution). */

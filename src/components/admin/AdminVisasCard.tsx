@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { ShieldCheck, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
+import { ShieldCheck, CheckCircle, Loader2, AlertTriangle, Download } from "lucide-react";
 
 const ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png";
 
@@ -22,9 +22,12 @@ interface Props {
   demandeId: number;
   /** Rafraîchit la demande parente après un visa administrateur. */
   onSuccess?: () => void;
+  /** Génère la lettre d'adoption (même PDF que pour le Président). */
+  onGenerateAdoptionLetter?: () => void | Promise<void>;
 }
 
-const AdminVisasCard = ({ demandeId, onSuccess }: Props) => {
+const AdminVisasCard = ({ demandeId, onSuccess, onGenerateAdoptionLetter }: Props) => {
+  const [generating, setGenerating] = useState(false);
   const { t } = useTranslation();
   const { hasPermission, hasRole } = useAuth();
   const canOverride = hasPermission("correction.visa.admin_override") || hasRole(["ADMIN_SI"]);
@@ -153,6 +156,21 @@ const AdminVisasCard = ({ demandeId, onSuccess }: Props) => {
                         </p>
                       )}
                     </div>
+                    <div className="flex flex-wrap gap-2">
+                    {isPresident && onGenerateAdoptionLetter && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={generating}
+                        onClick={async () => {
+                          setGenerating(true);
+                          try { await onGenerateAdoptionLetter(); } finally { setGenerating(false); }
+                        }}
+                      >
+                        {generating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Download className="h-4 w-4 me-1" />}
+                        {t("demandes:detail.generate_adoption_letter")}
+                      </Button>
+                    )}
                     {!v.pose && (
                       <Button
                         size="sm"
@@ -166,6 +184,7 @@ const AdminVisasCard = ({ demandeId, onSuccess }: Props) => {
                           : t("demandes:detail.admin_visas.action_visa", { role: roleLabel(v.role) })}
                       </Button>
                     )}
+                    </div>
                   </div>
                 );
               })}
