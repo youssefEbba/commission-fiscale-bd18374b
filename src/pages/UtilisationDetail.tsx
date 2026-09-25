@@ -587,6 +587,28 @@ const UtilisationDetail = () => {
           </Badge>
         </div>
 
+        {isDouane && (() => {
+          const stepKey =
+            u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE" ? "attente_cheque"
+            : u.statut === "CHEQUE_SAISI" ? "attente_envoi_tresor"
+            : u.statut === "ENVOYEE_AU_TRESOR" ? "attente_quittances"
+            : u.statut === "QUITTANCES_ENREGISTREES" ? "attente_liquidation"
+            : u.statut === "LIQUIDEE" ? "attente_reception"
+            : null;
+          if (!stepKey) return null;
+          return (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-foreground">{t("utilisations:next_step.title")}</p>
+                <p className="text-muted-foreground mt-0.5">{t(`utilisations:next_step.${stepKey}`)}</p>
+              </div>
+            </div>
+          );
+        })()}
+
+
+
         {/* KPIs — 4 cartes harmonisées */}
         {(() => {
           const beforeVisa = ["BROUILLON","DEMANDEE","INCOMPLETE","A_RECONTROLER","EN_VERIFICATION"].includes(u.statut);
