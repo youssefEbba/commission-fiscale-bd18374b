@@ -259,16 +259,36 @@ const Transferts = () => {
     await transfertCreditApi.uploadDocument(dossierId, type as TypeDocumentTransfert, file);
   };
 
+  // File d'attente P7 : transferts dont c'est le tour de l'utilisateur (visablePourMoi côté backend).
+  const isCircuitRole = ["DGD", "DGI", "DGTCP", "PRESIDENT"].includes(role);
+  const [aViserIds, setAViserIds] = useState<Set<number>>(new Set());
+  const [onlyAViser, setOnlyAViser] = useState(false);
+  useEffect(() => {
+    if (!isCircuitRole) return;
+    const pending = data.filter((tr) => !TERMINAL_STATUTS.includes(tr.statut));
+    let cancelled = false;
+    Promise.allSettled(pending.map((tr) => transfertCreditApi.getVisas(tr.id).then((v) => ({ id: tr.id, v }))))
+      .then((res) => {
+        if (cancelled) return;
+        const ids = new Set<number>();
+        res.forEach((r) => { if (r.status === "fulfilled" && r.value.v.some((x) => x.visablePourMoi && !x.pose)) ids.add(r.value.id); });
+        setAViserIds(ids);
+      });
+    return () => { cancelled = true; };
+  }, [data, isCircuitRole]);
+
   const filtered = data.filter((tr) => {
+    if (onlyAViser && !aViserIds.has(tr.id)) return false;
     const ms = (tr.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) || String(tr.id).includes(search);
     const matchStatut = filterStatut === "ALL" || tr.statut === filterStatut;
     return ms && matchStatut;
   });
 
-  const canCreate = role === "ENTREPRISE";
-  const canValider = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.validate");
+  const canCreate = role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE";
+  // P7 : le visa et l'approbation se font depuis la fiche (circuit DGD → DGI → DGTCP → Président).
+  const canValider = false;
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
-  const canRejetTemp = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.validate") || hasPermission("transfert.president.reject");
+  const canRejetTemp = ["DGD", "DGI", "DGTCP", "PRESIDENT"].includes(role);
   const canRespondRejet = role === "ENTREPRISE" && hasPermission("transfert.entreprise.rejet.repondre");
   const canAnnuler = role === "ENTREPRISE" && hasPermission("transfert.annuler");
 
@@ -309,6 +329,11 @@ const Transferts = () => {
               {VISIBLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{tStatutTransfert(k)}</SelectItem>))}
             </SelectContent>
           </Select>
+          {isCircuitRole && (
+            <Button variant={onlyAViser ? "default" : "outline"} onClick={() => setOnlyAViser((v) => !v)}>
+              {t("transferts:circuit.queue_filter", { count: aViserIds.size })}
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -341,7 +366,12 @@ const Transferts = () => {
                           {tr.operationsDouaneCloturees ? t("transferts:list.yes") : t("transferts:list.no")}
                         </Badge>
                       </TableCell>
-                      <TableCell><Badge className={`text-xs ${STATUT_COLORS[tr.statut]}`}>{tStatutTransfert(tr.statut)}</Badge></TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          <Badge className={`text-xs ${STATUT_COLORS[tr.statut]}`}>{tStatutTransfert(tr.statut)}</Badge>
+                          {aViserIds.has(tr.id) && <Badge className="text-xs bg-accent text-accent-foreground hover:bg-accent">{t("transferts:circuit.a_viser")}</Badge>}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{formatDate(tr.dateDemande)}</TableCell>
                       <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap">
@@ -469,7 +499,7 @@ const Transferts = () => {
                               {t("transferts:actions.repondre")}
                             </Button>
                           )}
-                          {d.rejetTempStatus === "OUVERT" && (canValider || hasPermission("transfert.president.validate")) && (
+                          {d.rejetTempStatus === "OUVERT" && canRejetTemp && (
                             <Button size="sm" onClick={() => handleResolve(d.id)}>
                               {t("transferts:actions.marquer_resolu")}
                             </Button>

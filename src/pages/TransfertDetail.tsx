@@ -27,6 +27,7 @@ import {
   MessageSquare, FileText, RefreshCw,
 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
+import TransfertVisasCircuit from "@/components/transferts/TransfertVisasCircuit";
 
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
@@ -42,7 +43,6 @@ const STATUT_COLORS: Record<StatutTransfert, string> = {
 
 const TERMINAL_STATUTS: StatutTransfert[] = ["TRANSFERE", "REJETE", "ANNULEE"];
 const UPLOAD_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "INCOMPLETE", "A_RECONTROLER"];
-const VALIDATE_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "A_RECONTROLER"];
 
 const TransfertDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -114,23 +114,17 @@ const TransfertDetail = () => {
 
   useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [id]);
 
-  const canValider = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.validate");
+  // P7 : visa/approbation pilotés par GET /visas (visablePourMoi). Le rejet temporaire est ouvert aux 4 rôles du circuit.
+  const isCircuitRole = ["DGD", "DGI", "DGTCP", "PRESIDENT"].includes(role);
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
-  const canRejetTemp = hasPermission("transfert.dgtcp.update")
-    || hasPermission("transfert.president.validate")
-    || hasPermission("transfert.president.reject");
+  const canRejetTemp = isCircuitRole;
+  const canResolveRejet = isCircuitRole;
+  const [circuitKey, setCircuitKey] = useState(0);
   const canRespondRejet = role === "ENTREPRISE" && hasPermission("transfert.entreprise.rejet.repondre");
   const canAnnuler = role === "ENTREPRISE" && hasPermission("transfert.annuler");
   const canUpload = !!transfert && role === "ENTREPRISE" && UPLOAD_STATUTS.includes(transfert.statut);
 
   const hasOpenRejetTemp = decisions.some(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-
-  const handleValider = async () => {
-    if (!transfert) return;
-    setActionLoading(true);
-    try { await transfertCreditApi.valider(transfert.id); okToast(t("transferts:toasts.valid_success_short")); loadAll(); }
-    catch (e: any) { errToast(e); } finally { setActionLoading(false); }
-  };
 
   const handleRejeter = async () => {
     if (!transfert) return;
@@ -158,6 +152,7 @@ const TransfertDetail = () => {
       okToast(t("transferts:toasts.rejet_temp_sent_short"));
       setRejetOpen(false);
       setRejetMotif(""); setRejetDocs([]);
+      setCircuitKey((k) => k + 1);
       loadAll();
     } catch (e: any) { errToast(e); } finally { setRejetLoading(false); }
   };
@@ -191,6 +186,7 @@ const TransfertDetail = () => {
     try {
       await transfertCreditApi.resolveRejetTemp(decisionId);
       okToast(t("transferts:toasts.rejet_resolved"));
+      setCircuitKey((k) => k + 1);
       loadDecisions();
       loadAll();
     } catch (e: any) { errToast(e); }
@@ -265,15 +261,8 @@ const TransfertDetail = () => {
               </div>
             </div>
 
-            {!TERMINAL_STATUTS.includes(transfert.statut) && (canValider || canRejetTemp || canRejeter || canAnnuler) && (
+            {!TERMINAL_STATUTS.includes(transfert.statut) && (canRejetTemp || canRejeter || canAnnuler) && (
               <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-2">
-                {VALIDATE_STATUTS.includes(transfert.statut) && canValider && (
-                  <Button size="sm" disabled={actionLoading || hasOpenRejetTemp} onClick={handleValider}
-                    title={hasOpenRejetTemp ? t("transferts:actions.validate_blocked_tooltip") : ""}>
-                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle2 className="h-4 w-4 me-1" />}
-                    {t("transferts:actions.valider")}
-                  </Button>
-                )}
                 {transfert.statut !== "INCOMPLETE" && canRejetTemp && (
                   <Button variant="outline" size="sm" onClick={() => { setRejetOpen(true); setRejetMotif(""); setRejetDocs([]); }}>
                     <AlertTriangle className="h-4 w-4 me-1" /> {t("transferts:actions.rejet_temp_short")}
@@ -294,6 +283,10 @@ const TransfertDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        {transfert.statut !== "ANNULEE" && (
+          <TransfertVisasCircuit transfertId={transfert.id} reloadKey={circuitKey} onChanged={() => { loadAll(); }} />
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -461,14 +454,14 @@ const TransfertDetail = () => {
                         )}
                       </div>
 
-                      {isOuvert && (canRespondRejet || canValider) && (
+                      {isOuvert && (canRespondRejet || canResolveRejet) && (
                         <div className="flex gap-2 px-4 py-2 border-t bg-muted/20 justify-end">
                           {canRespondRejet && (
                             <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setResponseMsg(""); }}>
                               {t("transferts:actions.repondre")}
                             </Button>
                           )}
-                          {canValider && (
+                          {canResolveRejet && (
                             <Button size="sm" onClick={() => handleResolve(d.id)}>{t("transferts:actions.marquer_resolu")}</Button>
                           )}
                         </div>

@@ -140,12 +140,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/transferts" element={
-              <ProtectedRoute allowedRoles={["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Transferts />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/transferts/:id" element={
-              <ProtectedRoute allowedRoles={["ENTREPRISE", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <TransfertDetail />
               </ProtectedRoute>
             } />
