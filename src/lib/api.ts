@@ -2161,6 +2161,25 @@ export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
 // TRANSFERT_STATUT_LABELS supprimée (orpheline, détectée en POLISH-1).
 // Libellés via `tStatutTransfert(code)` (cf. `enums.statut_transfert.*`).
 
+export type TransfertVisaRole = "DGD" | "DGI" | "DGTCP" | "PRESIDENT";
+export type TransfertCodeBlocage =
+  | "ROLE_NON_HABILITE" | "STATUT_INCOMPATIBLE" | "VISA_DEJA_POSE"
+  | "REJET_TEMP_OUVERT" | "VISA_PREALABLE_MANQUANT" | (string & {});
+
+export interface TransfertVisaEtatDto {
+  role: TransfertVisaRole;
+  rang: number;
+  pose: boolean;
+  decisionId?: number | null;
+  datePose?: string | null;
+  utilisateurId?: number | null;
+  utilisateurNom?: string | null;
+  visablePourMoi: boolean;
+  codeBlocage?: TransfertCodeBlocage | null;
+  motifBlocage?: string | null;
+  visaPrealableManquant?: TransfertVisaRole | null;
+}
+
 export const transfertCreditApi = {
   getAll: () => apiFetch<TransfertCreditDto[]>("/transferts-credit"),
   getById: (id: number) => apiFetch<TransfertCreditDto>(`/transferts-credit/${id}`),
@@ -2168,8 +2187,15 @@ export const transfertCreditApi = {
     apiFetch<TransfertCreditDto>(`/transferts-credit/by-certificat/${certificatCreditId}`),
   create: (data: CreateTransfertCreditRequest) =>
     apiFetch<TransfertCreditDto>("/transferts-credit", { method: "POST", body: data }),
+  /** Approbation du Président (4e visa + exécution de l'écriture). 403 pour tout autre rôle. */
   valider: (id: number) =>
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/valider`, { method: "POST" }),
+  /** Circuit P7 : état des 4 visas (DGD → DGI → DGTCP → PRESIDENT). */
+  getVisas: (id: number) =>
+    apiFetch<TransfertVisaEtatDto[]>(`/transferts-credit/${id}/visas`),
+  /** Visa d'une direction (DGD, DGI, DGTCP). */
+  viser: (id: number) =>
+    apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/visa`, { method: "POST" }),
   rejeter: (id: number) =>
     apiFetch<TransfertCreditDto>(`/transferts-credit/${id}/rejeter`, { method: "POST" }),
   /** Annulation par l'entreprise titulaire (avant exécution). */
