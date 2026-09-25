@@ -854,7 +854,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Traçabilité Liquidation Douane */}
-        {isDouane && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE") && (
+        {isDouane && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
           <Card className="border-s-4 border-s-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>

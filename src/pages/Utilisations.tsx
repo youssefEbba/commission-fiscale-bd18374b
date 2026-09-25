@@ -704,7 +704,7 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title={t("utilisations:list.actions.view_detail")} aria-label={t("utilisations:list.actions.view_detail")}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {u.type === "DOUANIER" && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE") && (
+                          {u.type === "DOUANIER" && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
                             <Button
                               variant="ghost"
                               size="sm"
