@@ -56,6 +56,7 @@ const STATUT_COLORS_UTIL: Record<UtilisationStatut, string> = {
   CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
   ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
+  QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
 };
 
 const CertificatDetail = () => {
