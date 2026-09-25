@@ -499,7 +499,7 @@ const Transferts = () => {
                               {t("transferts:actions.repondre")}
                             </Button>
                           )}
-                          {d.rejetTempStatus === "OUVERT" && (canValider || hasPermission("transfert.president.validate")) && (
+                          {d.rejetTempStatus === "OUVERT" && canRejetTemp && (
                             <Button size="sm" onClick={() => handleResolve(d.id)}>
                               {t("transferts:actions.marquer_resolu")}
                             </Button>
