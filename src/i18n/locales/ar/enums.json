@@ -62,6 +62,7 @@
     "VALIDEE": "مصادق عليها",
     "CHEQUE_SAISI": "تم إدخال الشيك",
     "ENVOYEE_AU_TRESOR": "أُرسلت إلى الخزينة",
+    "QUITTANCE_DGI_ENREGISTREE": "تم تسجيل إيصال المديرية العامة للضرائب",
     "QUITTANCES_ENREGISTREES": "تم تسجيل الإيصالات",
     "LIQUIDEE": "مسوّاة",
     "IMPUTEE": "مخصومة",
