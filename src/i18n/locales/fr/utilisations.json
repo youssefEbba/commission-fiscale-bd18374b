@@ -556,5 +556,21 @@
     "cancel": "Annuler",
     "send": "Envoyer",
     "send_n": "Envoyer {{count}} documents"
+  },
+  "quittance_dgi": {
+    "title": "Quittance DGI",
+    "deposer": "Déposer la quittance DGI",
+    "modifier": "Modifier la quittance DGI",
+    "dialog_title": "Quittance DGI — #{{id}}",
+    "intro": "Après validation, la DGI dépose la quittance correspondant à cette utilisation intérieure. La DGTCP pourra ensuite procéder à l'apurement et générer le certificat d'utilisation.",
+    "numero": "N° de quittance",
+    "date": "Date de la quittance",
+    "montant": "Montant (MRU)",
+    "justificatif": "Justificatif",
+    "fichier": "Scan de la quittance (PDF/image)",
+    "fichier_actuel": "Fichier actuel : {{name}}",
+    "voir": "Voir la quittance",
+    "saved": "Quittance DGI enregistrée.",
+    "telecharger_certificat": "Télécharger le certificat d'utilisation"
   }
 }

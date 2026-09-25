@@ -38,6 +38,8 @@ import {
   TrendingDown, TrendingUp, Minus, Download
 } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
+import { openDocument } from "@/lib/openDocument";
+import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -146,6 +148,11 @@ const UtilisationDetail = () => {
 
   // Apurement dialog
   const [showApur, setShowApur] = useState(false);
+  const [showQDgi, setShowQDgi] = useState(false);
+  const [qDgiForm, setQDgiForm] = useState({ numeroQuittance: "", dateQuittance: "", montant: "" });
+  const [qDgiFile, setQDgiFile] = useState<File | null>(null);
+  const [qDgiLoading, setQDgiLoading] = useState(false);
+  const [tvaPdfLoading, setTvaPdfLoading] = useState(false);
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
 
@@ -380,10 +387,43 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.apurerTVA(utilId, Number(apurMontant));
       toast({ title: tSuccess(), description: t("utilisations:toast.apurement_done") });
       setShowApur(false);
+      const u2 = await utilisationCreditApi.getById(utilId);
+      const cert2 = u2.certificatCreditId ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null) : null;
+      setUtil(u2);
+      if (cert2) setCert(cert2);
+      void generateUtilisationTvaPdf(u2, cert2).catch((err) => console.error("PDF generation failed", err));
       fetchAll();
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setApurLoading(false); }
+  };
+
+  const handleSaisirQuittanceDgi = async () => {
+    const montant = Number(qDgiForm.montant);
+    if (!qDgiForm.numeroQuittance.trim() || !qDgiForm.dateQuittance || !(montant > 0)) return;
+    if (!qDgiFile && !util?.quittanceDgi) return;
+    setQDgiLoading(true);
+    try {
+      await utilisationCreditApi.saisirQuittanceDgi(utilId, {
+        numeroQuittance: qDgiForm.numeroQuittance.trim(),
+        dateQuittance: `${qDgiForm.dateQuittance}T00:00:00Z`,
+        montant,
+      }, qDgiFile);
+      toast({ title: tSuccess(), description: t("utilisations:quittance_dgi.saved") });
+      setShowQDgi(false);
+      setQDgiFile(null);
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } finally { setQDgiLoading(false); }
+  };
+
+  const handleDownloadTvaPdf = async () => {
+    if (!util) return;
+    setTvaPdfLoading(true);
+    try { await generateUtilisationTvaPdf(util, cert); }
+    catch (e: any) { toast({ title: tError(), description: e.message, variant: "destructive" }); }
+    finally { setTvaPdfLoading(false); }
   };
 
   const handleRejetTemp = async () => {
@@ -495,10 +535,11 @@ const UtilisationDetail = () => {
   const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
   const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
   const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
-  const canEntrepriseReception = isEntreprise && isDouane && u.statut === "LIQUIDEE";
+  const canEntrepriseReception = isEntreprise && ((isDouane && u.statut === "LIQUIDEE") || (isTVA && u.statut === "APUREE"));
+  const canDGIQuittance = role === "DGI" && isTVA && (u.statut === "VALIDEE" || u.statut === "QUITTANCE_DGI_ENREGISTREE");
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
-  const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "VALIDEE";
+  const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "QUITTANCE_DGI_ENREGISTREE";
   const myHasVisa = decisions.some(d => d.role === role && d.decision === "VISA");
   const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "EN_CONTROLE_DGD", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
   const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
@@ -833,6 +874,37 @@ const UtilisationDetail = () => {
         )}
 
         {/* Traçabilité Apurement TVA */}
+        {isTVA && u.quittanceDgi && (
+          <Card className="border-s-4 border-s-teal-500">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittance_dgi.title")}</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><p className="text-muted-foreground">{t("utilisations:quittance_dgi.numero")}</p><p className="font-bold">{u.quittanceDgi.numeroQuittance}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:quittance_dgi.date")}</p><p className="font-medium">{formatDate(u.quittanceDgi.dateQuittance)}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:quittance_dgi.montant")}</p><p className="font-bold">{fmtAmt(u.quittanceDgi.montant)}</p></div>
+                <div>
+                  <p className="text-muted-foreground">{t("utilisations:quittance_dgi.justificatif")}</p>
+                  {(u.quittanceDgi.documentChemin || u.quittanceDgi.documentId) ? (
+                    <Button variant="link" size="sm" className="h-auto p-0" onClick={() => {
+                      openDocument({ id: u.quittanceDgi!.documentId, chemin: u.quittanceDgi!.documentChemin, nomFichier: u.quittanceDgi!.documentNomFichier })
+                        .catch((e) => toast({ title: tError(), description: e.message, variant: "destructive" }));
+                    }}><FileText className="h-3.5 w-3.5 me-1" /> {u.quittanceDgi.documentNomFichier || t("utilisations:quittance_dgi.voir")}</Button>
+                  ) : <p>—</p>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isTVA && (u.statut === "APUREE" || u.statut === "CLOTUREE") && (
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={handleDownloadTvaPdf} disabled={tvaPdfLoading}>
+              {tvaPdfLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <FileText className="h-4 w-4 me-2" />}
+              {t("utilisations:quittance_dgi.telecharger_certificat")}
+            </Button>
+          </div>
+        )}
+
         {isTVA && u.statut === "APUREE" && u.tvaNette != null && (
           <Card className="border-s-4 border-s-emerald-500">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><CircleDollarSign className="h-5 w-5 text-emerald-500" /> {t("utilisations:traceability_apur.title")}</CardTitle></CardHeader>
@@ -1030,7 +1102,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception) && (
+        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception || canDGIQuittance) && (
           <Card>
             <CardHeader><CardTitle className="text-base">{t("utilisations:detail.actions_section")}</CardTitle></CardHeader>
             <CardContent>
@@ -1094,6 +1166,18 @@ const UtilisationDetail = () => {
                     {receptionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                     <CheckCircle2 className="h-4 w-4 me-2" /> {t("utilisations:actions.accuser_reception")}
                   </Button>
+                )}
+                {canDGIQuittance && (
+                  <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => {
+                    const q = u.quittanceDgi;
+                    setQDgiForm({
+                      numeroQuittance: q?.numeroQuittance || "",
+                      dateQuittance: q?.dateQuittance ? q.dateQuittance.slice(0, 10) : "",
+                      montant: q?.montant != null ? String(q.montant) : "",
+                    });
+                    setQDgiFile(null);
+                    setShowQDgi(true);
+                  }}><FileText className="h-4 w-4 me-2" /> {u.quittanceDgi ? t("utilisations:quittance_dgi.modifier") : t("utilisations:quittance_dgi.deposer")}</Button>
                 )}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 me-2" /> {t("utilisations:actions.proceder_apurement")}</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 me-1" /> {t("utilisations:actions.rejet_temp")}</Button>}
@@ -1411,6 +1495,34 @@ const UtilisationDetail = () => {
       </Dialog>
 
       {/* Apurement Dialog */}
+      <Dialog open={showQDgi} onOpenChange={setShowQDgi}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittance_dgi.dialog_title", { id: u.id })}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{t("utilisations:quittance_dgi.intro")}</p>
+            <div><Label>{t("utilisations:quittance_dgi.numero")} *</Label><Input value={qDgiForm.numeroQuittance} onChange={e => setQDgiForm(f => ({ ...f, numeroQuittance: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t("utilisations:quittance_dgi.date")} *</Label><Input type="date" max={new Date().toISOString().slice(0, 10)} value={qDgiForm.dateQuittance} onChange={e => setQDgiForm(f => ({ ...f, dateQuittance: e.target.value }))} /></div>
+              <div><Label>{t("utilisations:quittance_dgi.montant")} *</Label><Input type="number" min="0" step="0.01" value={qDgiForm.montant} onChange={e => setQDgiForm(f => ({ ...f, montant: e.target.value }))} /></div>
+            </div>
+            <div>
+              <Label>{t("utilisations:quittance_dgi.fichier")} {!u.quittanceDgi && "*"}</Label>
+              <Input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={e => setQDgiFile(e.target.files?.[0] || null)} />
+              {!qDgiFile && u.quittanceDgi?.documentNomFichier && (
+                <p className="text-xs text-muted-foreground mt-1">{t("utilisations:quittance_dgi.fichier_actuel", { name: u.quittanceDgi.documentNomFichier })}</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQDgi(false)}>{t("utilisations:quittances_dialog.cancel")}</Button>
+            <Button className="bg-teal-600 hover:bg-teal-700" onClick={handleSaisirQuittanceDgi}
+              disabled={qDgiLoading || !qDgiForm.numeroQuittance.trim() || !qDgiForm.dateQuittance || !(Number(qDgiForm.montant) > 0) || (!qDgiFile && !u.quittanceDgi)}>
+              {qDgiLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:quittances_dialog.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showApur} onOpenChange={setShowApur}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>{t("utilisations:apurement_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
