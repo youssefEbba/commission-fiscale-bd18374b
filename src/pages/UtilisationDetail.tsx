@@ -35,7 +35,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   ArrowLeft, Loader2, Landmark, Ship, Building2, FileText, Upload, Info,
   AlertTriangle, CheckCircle2, CreditCard, XCircle, CircleDollarSign,
-  TrendingDown, TrendingUp, Minus, Download
+  TrendingDown, TrendingUp, Minus, Download, ShieldCheck
 } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { openDocument } from "@/lib/openDocument";
