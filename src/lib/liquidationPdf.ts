@@ -124,7 +124,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.text("EFI2", W - M, y - 14, { align: "right" });
   doc.setFont("helvetica", "bold").setFontSize(10);
   const annee = u.dateLiquidation ? new Date(u.dateLiquidation).getFullYear() : new Date().getFullYear();
-  doc.text(`N° ${u.id}/${annee}`, W - M, y + 4, { align: "right" });
+  doc.text(u.numeroCertificatUtilisation ? `N° ${u.numeroCertificatUtilisation}` : `N° ${u.id}/${annee}`, W - M, y + 4, { align: "right" });
   y += 24;
 
   // ====== I. IDENTIFICATION DE L'ENTREPRISE ======
