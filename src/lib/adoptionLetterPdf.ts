@@ -8,7 +8,7 @@ import type {
 } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 import signaturePresident from "@/assets/signature-president.png";
-import { getActiveSignatureDataUrl } from "@/lib/signatures";
+import { resolveApposition, type AppositionOptions } from "@/lib/signatures";
 import { hasCreditInterieur, hasCreditExterieur } from "@/lib/visas";
 
 const CURRENCY = "Ouguiya";
@@ -112,6 +112,7 @@ function creditNature(d: DemandeCorrectionDto): string {
 export async function generateAdoptionLetterPdf(
   d: DemandeCorrectionDto,
   ctx: AdoptionLetterContext = {},
+  apposition?: AppositionOptions,
 ): Promise<Blob> {
   const { entreprise, marche, convention, autorite } = ctx;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -328,9 +329,12 @@ export async function generateAdoptionLetterPdf(
   doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
   yy += 3;
-  const presidentSig = (await getActiveSignatureDataUrl("PRESIDENT")) || signaturePresident;
+  const { sig: presidentSig, cachet } = await resolveApposition(apposition, signaturePresident);
+  if (cachet) {
+    try { doc.addImage(cachet, "PNG", M + W - 80, yy - 2, 26, 26); } catch { /* ignore */ }
+  }
   try {
-    doc.addImage(presidentSig, "PNG", M + W - 52, yy, 48, 22);
+    if (presidentSig) doc.addImage(presidentSig, "PNG", M + W - 52, yy, 48, 22);
   } catch {
     // ignore si l'asset n'est pas chargé
   }

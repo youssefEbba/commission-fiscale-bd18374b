@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 import signaturePresident from "@/assets/signature-president.png";
-import { getActiveSignatureDataUrl } from "@/lib/signatures";
+import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 
 const CURRENCY = "Ouguiya";
 
@@ -105,7 +105,8 @@ export interface CertificatPdfContext {
 export async function generateCertificatToSignPdf(
   c: CertificatCreditDto,
   ctx: CertificatPdfContext = {},
-) {
+  opts: PdfOutputOptions = {},
+): Promise<Blob> {
   const { entreprise, marche, convention, autorite } = ctx;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -342,14 +343,18 @@ export async function generateCertificatToSignPdf(
   doc.text("Le Président de la Commission Fiscale", pageW / 2, y, { align: "center" });
   y += 4;
   // Signature du Président : image stockée côté serveur, repli sur l'asset local.
-  const presidentSig = (await getActiveSignatureDataUrl("PRESIDENT")) || signaturePresident;
+  const { sig: presidentSig, cachet } = await resolveApposition(opts.apposition, signaturePresident);
+  if (cachet) {
+    try { doc.addImage(cachet, "PNG", pageW / 2 - 50, y - 2, 26, 26); } catch { /* ignore */ }
+  }
   try {
     const sigW = 46;
     const sigH = 22;
+    if (!presidentSig) throw new Error("no signature");
     doc.addImage(presidentSig, "PNG", pageW / 2 - sigW / 2, y, sigW, sigH);
     y += sigH + 3;
   } catch {
-    y += 12;
+    y += cachet ? 25 : 22;
   }
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -360,5 +365,6 @@ export async function generateCertificatToSignPdf(
   const filename = `certificat-a-signer-${(c.reference || c.numero || c.id)
     .toString()
     .replace(/[^a-z0-9_-]/gi, "_")}.pdf`;
-  doc.save(filename);
+  if (opts.save !== false) doc.save(filename);
+  return doc.output("blob");
 }

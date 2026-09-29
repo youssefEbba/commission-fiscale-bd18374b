@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { getActiveSignatureDataUrl } from "@/lib/signatures";
+import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import autoTable from "jspdf-autotable";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 
@@ -81,7 +81,7 @@ function labelDottedValue(doc: jsPDF, x: number, y: number, label: string, value
   doc.text(value || "", vx + 2, y - 1);
 }
 
-export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null) {
+export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const M = 32;
@@ -235,15 +235,19 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.text("Fiscale", W - M, y, { align: "right" });
 
   // Signatures serveur : DGTCP (visa du trésor) et Président. Absentes = espace vide.
-  const [sigDgtcp, sigPresident] = await Promise.all([
+  const [sigDgtcp, pres] = await Promise.all([
     getActiveSignatureDataUrl("DGTCP"),
-    getActiveSignatureDataUrl("PRESIDENT"),
+    resolveApposition(opts.apposition),
   ]);
+  const sigPresident = pres.sig;
   const sigW = 110;
   const sigH = 44;
   const sigY = y + 6;
   if (sigDgtcp) {
     try { doc.addImage(sigDgtcp, "PNG", M, sigY, sigW, sigH); } catch { /* ignore */ }
+  }
+  if (pres.cachet) {
+    try { doc.addImage(pres.cachet, "PNG", W - M - sigW - 60, sigY - 4, 56, 56); } catch { /* ignore */ }
   }
   if (sigPresident) {
     try { doc.addImage(sigPresident, "PNG", W - M - sigW, sigY, sigW, sigH); } catch { /* ignore */ }
@@ -282,5 +286,6 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
     columnStyles: { 3: { halign: "right" } },
   });
 
-  doc.save(`utilisation-credit-impot-${u.certificatReference || u.id}.pdf`);
+  if (opts.save !== false) doc.save(`utilisation-credit-impot-${u.certificatReference || u.id}.pdf`);
+  return doc.output("blob");
 }
