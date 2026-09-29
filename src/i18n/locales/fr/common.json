@@ -113,5 +113,25 @@
     "forbidden": "Action non autorisée",
     "not_found": "Ressource introuvable",
     "server": "Erreur serveur"
+  },
+  "president_sign": {
+    "title": "Signature du document",
+    "intro": "Choisissez comment apposer la signature et le cachet du Président.",
+    "systeme_title": "Signer et cacheter automatiquement",
+    "systeme_desc": "La signature et le cachet enregistrés sont incrustés dans le PDF, puis le document est déposé au dossier.",
+    "systeme_btn": "Signer, cacheter et déposer",
+    "manquant": "Empreinte manquante : {{items}}. Seul le chemin manuel est disponible.",
+    "signature": "signature",
+    "cachet": "cachet",
+    "profil_link": "Déposer mes empreintes dans mon profil",
+    "manuel_title": "Signer à la main",
+    "manuel_desc": "Téléchargez le modèle non signé, signez-le et cachetez-le, scannez-le puis téléversez-le.",
+    "manuel_download": "Télécharger le modèle à signer",
+    "manuel_file": "Document signé scanné (PDF ou image)",
+    "manuel_upload": "Téléverser le document signé",
+    "loading": "Chargement des empreintes…",
+    "done": "Document signé déposé au dossier.",
+    "mode_systeme": "Apposé par le système",
+    "mode_manuel": "Signé à la main et scanné"
   }
 }
