@@ -12,6 +12,7 @@ import {
 import { formatAmount } from "@/i18n/format";
 import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits, firstVisaRoleCorrection, requiredPreVisaDocCorrection } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
+import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -166,6 +167,7 @@ const DemandeDetail = () => {
   const [marcheLoading, setMarcheLoading] = useState(false);
 
   const [adoptionOpen, setAdoptionOpen] = useState(false);
+  const [adoptSignOpen, setAdoptSignOpen] = useState(false);
   const [adoptionFile, setAdoptionFile] = useState<File | null>(null);
   const [adoptionUploading, setAdoptionUploading] = useState(false);
 
@@ -1121,7 +1123,7 @@ const DemandeDetail = () => {
                         </Button>
                       ))}
                       {role === "PRESIDENT" && selected.statut === "EN_VALIDATION" && !docs.some(d => ((d as any).codeDocument ?? d.type) === "LETTRE_ADOPTION" && d.actif !== false) && (
-                        <Button variant="outline" onClick={handleGenerateAdoptionLetter}>
+                        <Button variant="outline" onClick={() => setAdoptSignOpen(true)}>
                           <Download className="h-4 w-4 me-1" />
                           {t("demandes:detail.generate_adoption_letter")}
                         </Button>
@@ -1512,6 +1514,16 @@ const DemandeDetail = () => {
 
 
       {/* Adoption Dialog */}
+      {selected && (
+        <PresidentSignDialog
+          open={adoptSignOpen}
+          onOpenChange={setAdoptSignOpen}
+          filename={`lettre-adoption-${selected.reference || selected.numero || selected.id}.pdf`}
+          generate={(apposition) => generateAdoptionLetterPdf(selected, { entreprise: entrepriseDetail, marche: marcheDetail, convention: conventionDetail }, apposition)}
+          upload={async (file, mode) => { await demandeCorrectionApi.uploadDocument(selected.id, "LETTRE_ADOPTION", file, undefined, mode); }}
+          onDone={fetchDetail}
+        />
+      )}
       <Dialog open={adoptionOpen} onOpenChange={(v) => { setAdoptionOpen(v); if (!v) setAdoptionFile(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
