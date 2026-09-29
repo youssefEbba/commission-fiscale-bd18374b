@@ -897,10 +897,11 @@ export const demandeCorrectionApi = {
   remove: (id: number) => apiFetch<void>(`/demandes-correction/${id}`, { method: "DELETE" }),
   updateStatut: (id: number, statut: DemandeStatut, motifRejet?: string, decisionFinale?: boolean) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}${decisionFinale ? `&decisionFinale=true` : ""}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/demandes-correction/${id}/documents`).then(normalizeDocs),
-  uploadDocument: (id: number, type: string, file: File, message?: string) => {
+  uploadDocument: (id: number, type: string, file: File, message?: string, modeApposition?: ModeApposition) => {
     const formData = new FormData();
     formData.append("file", file);
     if (message) formData.append("message", message);
+    if (modeApposition) formData.append("modeApposition", modeApposition);
     return apiFetch<DocumentDto>(`/demandes-correction/${id}/documents?codeDocument=${encodeURIComponent(type)}`, {
       method: "POST",
       rawBody: formData,
@@ -1276,11 +1277,12 @@ export const certificatCreditApi = {
   reject: (id: number, motif: string) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/statut?statut=ANNULE&motif=${encodeURIComponent(motif)}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/certificats-credit/${id}/documents`).then(normalizeDocs),
-  uploadDocument: (id: number, type: string, file: File, message?: string) => {
+  uploadDocument: (id: number, type: string, file: File, message?: string, modeApposition?: ModeApposition) => {
     const formData = new FormData();
     formData.append("codeDocument", type);
     formData.append("file", file);
     if (message) formData.append("message", message);
+    if (modeApposition) formData.append("modeApposition", modeApposition);
     return apiFetch<DocumentDto>(`/certificats-credit/${id}/documents`, { method: "POST", rawBody: formData });
   },
   // Stock TVA déductible
@@ -1409,7 +1411,9 @@ export type UtilisationStatut =
   // Nouveau workflow douanier
   | "EN_CONTROLE_DGD" | "CHEQUE_SAISI" | "ENVOYEE_AU_TRESOR" | "QUITTANCES_ENREGISTREES"
   // Workflow TVA intérieure : quittance DGI après validation
-  | "QUITTANCE_DGI_ENREGISTREE";
+  | "QUITTANCE_DGI_ENREGISTREE"
+  // Émission du certificat d'utilisation par le Président (après LIQUIDEE / APUREE)
+  | "CERTIFICAT_EMIS";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export type TvaDeductibleStockSource = "UTILISATION_DOUANE" | "TRANSFERT_CREDIT";
@@ -1546,7 +1550,7 @@ export interface UtilisationCreditDto {
   soldeTVAApres?: number;
   // Quittance DGI (TVA intérieure, après validation)
   quittanceDgi?: QuittanceDgiDto | null;
-  // Certificat d'utilisation TVA (généré par la DGTCP à l'apurement)
+  // Certificat d'utilisation (émis par le Président, douane et TVA)
   numeroCertificatUtilisation?: string | null;
   dateCertificatUtilisation?: string | null;
   // Traçabilité sous-traitant
@@ -1601,7 +1605,19 @@ export interface CreateUtilisationCreditRequest {
   brouillon?: boolean;
 }
 
+export interface CertificatUtilisationEtatDto {
+  emissible: boolean;
+  codeBlocage: "ROLE_NON_HABILITE" | "STATUT_INCOMPATIBLE" | null | (string & {});
+  motifBlocage?: string | null;
+  statut?: UtilisationStatut;
+  statutPrealableAttendu?: UtilisationStatut | null;
+  numeroCertificatUtilisation?: string | null;
+  dateCertificatUtilisation?: string | null;
+  certificatSigneDepose?: boolean;
+}
+
 export type TypeDocumentUtilisation =
+  | "CERTIFICAT_UTILISATION"
   | "DEMANDE_UTILISATION"
   | "ORDRE_TRANSIT"
   | "DECLARATION_DOUANE"
@@ -1732,6 +1748,19 @@ export const utilisationCreditApi = {
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cloturer-reception`, {
       method: "POST",
     }),
+  /** État d'émission du certificat d'utilisation (pilote le bouton du Président). */
+  getCertificatUtilisationEtat: (id: number) =>
+    apiFetch<CertificatUtilisationEtatDto>(`/utilisations-credit/${id}/certificat-utilisation/etat`),
+  /** PRÉSIDENT — émission du certificat d'utilisation (idempotent). Statut → CERTIFICAT_EMIS. */
+  emettreCertificatUtilisation: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/certificat-utilisation`, { method: "POST" }),
+  /** ADMIN_SI — émission par substitution (motif obligatoire, certificat signé facultatif). */
+  emettreCertificatUtilisationAdmin: (id: number, motif: string, file?: File | null) => {
+    const fd = new FormData();
+    fd.append("motif", motif);
+    if (file) fd.append("file", file);
+    return apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/certificat-utilisation/admin`, { method: "POST", rawBody: fd });
+  },
   /** Liste des lignes du bulletin de liquidation pour une utilisation douanière. */
   getLignesBulletin: async (id: number) => {
     const raw = await apiFetch<any[]>(`/utilisations-credit/${id}/lignes-bulletin`);
@@ -1754,9 +1783,10 @@ export const utilisationCreditApi = {
       body: { tvaDeductibleUtilisee },
     }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/utilisations-credit/${id}/documents`).then(normalizeDocs),
-  uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File) => {
+  uploadDocument: (id: number, type: TypeDocumentUtilisation, file: File, modeApposition?: ModeApposition) => {
     const formData = new FormData();
     formData.append("file", file);
+    if (modeApposition) formData.append("modeApposition", modeApposition);
     return apiFetch<DocumentDto>(`/utilisations-credit/${id}/documents?codeDocument=${encodeURIComponent(type)}`, {
       method: "POST",
       rawBody: formData,
@@ -1938,6 +1968,7 @@ export const UTILISATION_STATUT_VALUES: readonly UtilisationStatut[] = [
   "CHEQUE_SAISI",
   "ENVOYEE_AU_TRESOR",
   "QUITTANCES_ENREGISTREES",
+  "CERTIFICAT_EMIS",
   "QUITTANCE_DGI_ENREGISTREE",
 ] as const;
 
@@ -2606,8 +2637,20 @@ export const dossierGedApi = {
 // Signatures (images PNG des signataires)
 // ============================================================
 
+export type SignatureType = "SIGNATURE" | "CACHET";
+export type ModeApposition = "MANUSCRIT_SCANNE" | "APPOSE_SYSTEME";
+
+export interface MesEmpreintesDto {
+  signature: SignatureDto | null;
+  cachet: SignatureDto | null;
+  signatureDataUrl: string | null;
+  cachetDataUrl: string | null;
+  cachetGeneriqueDuRole?: boolean;
+}
+
 export interface SignatureDto {
   id: number;
+  type?: SignatureType;
   utilisateurId?: number | null;
   utilisateurNom?: string | null;
   role: string;
@@ -2625,6 +2668,7 @@ export interface SignatureDto {
 }
 
 export interface SignatureListFilters {
+  type?: SignatureType;
   role?: string;
   utilisateurId?: number;
   activeOnly?: boolean;
@@ -2641,23 +2685,37 @@ export const SIGNATURE_CONSTRAINTS = {
 export const signatureApi = {
   list: (filters: SignatureListFilters = {}) => {
     const p = new URLSearchParams();
+    if (filters.type) p.set("type", filters.type);
     if (filters.role) p.set("role", filters.role);
     if (filters.utilisateurId != null) p.set("utilisateurId", String(filters.utilisateurId));
     if (filters.activeOnly != null) p.set("activeOnly", String(filters.activeOnly));
     const qs = p.toString();
     return apiFetch<SignatureDto[]>(`/signatures${qs ? `?${qs}` : ""}`);
   },
-  getActive: (role: string, utilisateurId?: number) => {
+  getActive: (role: string, utilisateurId?: number, type?: SignatureType) => {
     const p = new URLSearchParams({ role });
     if (utilisateurId != null) p.set("utilisateurId", String(utilisateurId));
+    if (type) p.set("type", type);
     return apiFetch<SignatureDto>(`/signatures/active?${p.toString()}`, { skipAuthRedirect: true });
   },
   getBase64: (id: number) =>
     apiFetch<{ dataUrl: string }>(`/signatures/${id}/base64`, { skipAuthRedirect: true }),
   contentUrl: (id: number) => `${API_BASE}/signatures/${id}/content`,
-  create: (params: { file: File; role: string; utilisateurId?: number; nomAffiche?: string; activer?: boolean }) => {
+  /** Empreintes (signature + cachet) de l'utilisateur connecté, avec repli sur l'empreinte générique du rôle. */
+  me: (withContent = false) =>
+    apiFetch<MesEmpreintesDto>(`/signatures/me?withContent=${withContent}`, { skipAuthRedirect: true }),
+  /** Dépôt depuis le profil : rôle et utilisateur déduits du jeton. */
+  createMe: (params: { file: File; type?: SignatureType; nomAffiche?: string }) => {
     const fd = new FormData();
     fd.append("file", params.file);
+    if (params.type) fd.append("type", params.type);
+    if (params.nomAffiche) fd.append("nomAffiche", params.nomAffiche);
+    return apiFetch<SignatureDto>("/signatures/me", { method: "POST", rawBody: fd });
+  },
+  create: (params: { file: File; role: string; utilisateurId?: number; nomAffiche?: string; activer?: boolean; type?: SignatureType }) => {
+    const fd = new FormData();
+    fd.append("file", params.file);
+    if (params.type) fd.append("type", params.type);
     fd.append("role", params.role);
     if (params.utilisateurId != null) fd.append("utilisateurId", String(params.utilisateurId));
     if (params.nomAffiche) fd.append("nomAffiche", params.nomAffiche);
