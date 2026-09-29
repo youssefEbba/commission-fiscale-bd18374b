@@ -96,7 +96,8 @@ const Utilisations = () => {
   const [data, setData] = useState<UtilisationCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatut, setFilterStatut] = useState("ALL");
+  const [filterStatut, setFilterStatut] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aEmettre") === "1" ? "A_EMETTRE" : "ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [tab, setTab] = useState("all");
 
@@ -569,7 +570,8 @@ const Utilisations = () => {
       (u.numeroDeclaration || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
-    const matchStatut = filterStatut === "ALL" || u.statut === filterStatut;
+    const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
+      (filterStatut === "A_EMETTRE" && (u.statut === "LIQUIDEE" || u.statut === "APUREE"));
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -643,6 +645,9 @@ const Utilisations = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("utilisations:list.filter_all")}</SelectItem>
+              {(role === "PRESIDENT" || role === "ADMIN_SI") && (
+                <SelectItem value="A_EMETTRE">{t("utilisations:certificat_utilisation.queue_filter")}</SelectItem>
+              )}
               {UTILISATION_STATUT_VALUES.map((k) => (
                 <SelectItem key={k} value={k}>{tStatutUtilisation(k)}</SelectItem>
               ))}
