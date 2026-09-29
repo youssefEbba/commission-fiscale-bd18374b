@@ -28,9 +28,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download,
+  AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download, PenLine,
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
 import CertificatAdminVisasCard from "@/components/admin/CertificatAdminVisasCard";
 
@@ -93,6 +94,7 @@ const MiseEnPlaceDetail = () => {
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
   const [activeOrg, setActiveOrg] = useState("DGI");
+  const [certSignOpen, setCertSignOpen] = useState(false);
 
   const [entreprise, setEntreprise] = useState<EntrepriseDto | null>(null);
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
@@ -271,7 +273,7 @@ const MiseEnPlaceDetail = () => {
 
   const canAnnuler = hasPermission("mise_en_place.annuler") && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
 
-  const hasCertDoc = docs.some(d => d.type === "CERTIFICAT_CREDIT_IMPOTS");
+  const hasCertDoc = docs.some(d => ((d as any).codeDocument ?? d.type) === "CERTIFICAT_CREDIT_IMPOTS" && d.actif !== false);
 
   const handleStatut = async (statut: CertificatStatut) => {
     setActionLoading(true);
@@ -622,40 +624,24 @@ const MiseEnPlaceDetail = () => {
               {role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (
                 <div className="w-full space-y-3">
                   {!hasCertDoc && (
-                    <>
-                      <div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() => { void generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }); }}
-                        >
-                          <Download className="h-4 w-4 me-1" /> Télécharger le certificat à signer
-                        </Button>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Téléchargez le certificat pré-rempli, signez-le, puis téléversez le document signé ci-dessous.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <UploadRow
-                          id="mep-cert-upload"
-                          label={t("mise_en_place:detail.president.upload_label") as string}
-                          file={certFile}
-                          onFileChange={setCertFile}
-                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                        />
-                        {!certFile && (
-                          <p className="text-xs text-amber-600">⚠️ {t("mise_en_place:detail.president.upload_warning")}</p>
-                        )}
-                      </div>
-                    </>
+                    <div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="border-primary text-primary"
+                        onClick={() => setCertSignOpen(true)}
+                      >
+                        <PenLine className="h-4 w-4 me-1" /> {t("common:president_sign.title")}
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-1">{t("common:president_sign.intro")}</p>
+                    </div>
                   )}
                   {hasCertDoc && !certFile && (
                     <div className="flex items-center gap-2 text-sm text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> {t("mise_en_place:detail.president.already_uploaded")}
                     </div>
                   )}
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={uploadingCert || (!hasCertDoc && !certFile)} onClick={handleUploadAndValidate}>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={uploadingCert || !hasCertDoc} onClick={handleUploadAndValidate}>
                     {uploadingCert && <Loader2 className="h-4 w-4 animate-spin me-1" />}
                     <ShieldCheck className="h-4 w-4 me-1" /> {t("mise_en_place:detail.president.validate_and_open")}
                   </Button>
@@ -1273,6 +1259,16 @@ const MiseEnPlaceDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {c && (
+        <PresidentSignDialog
+          open={certSignOpen}
+          onOpenChange={setCertSignOpen}
+          filename={`certificat-credit-impots-${String(c.reference || c.numero || c.id).replace(/[^a-z0-9_-]/gi, "_")}.pdf`}
+          generate={(apposition) => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }, { apposition, save: false })}
+          upload={async (file, mode) => { await certificatCreditApi.uploadDocument(c.id, "CERTIFICAT_CREDIT_IMPOTS", file, undefined, mode); }}
+          onDone={fetchData}
+        />
+      )}
     </DashboardLayout>
   );
 };

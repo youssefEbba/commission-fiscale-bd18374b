@@ -64,6 +64,10 @@
     "audit": {
       "label": "سجل التدقيق",
       "description": "الاطلاع على سجلات النشاط"
+    },
+    "certificats_utilisation_emettre": {
+      "label": "شهادات للإصدار",
+      "description": "استخدامات مصفاة أو مسواة في انتظار شهادة الاستخدام"
     }
   }
 }

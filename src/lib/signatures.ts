@@ -107,3 +107,32 @@ export async function validateSignatureFile(file: File): Promise<SignatureFileCh
 
   return { ok: true, width: dims.w, height: dims.h, dataUrl };
 }
+
+/**
+ * Chemin d'apposition choisi par le Président pour un document officiel.
+ * - AUTO : comportement historique (signature active du rôle, sans cachet).
+ * - MANUSCRIT_SCANNE : modèle vierge, sans aucune empreinte.
+ * - APPOSE_SYSTEME : incruste les empreintes fournies (GET /signatures/me?withContent=true).
+ */
+export interface AppositionOptions {
+  mode: "AUTO" | "MANUSCRIT_SCANNE" | "APPOSE_SYSTEME";
+  signatureDataUrl?: string | null;
+  cachetDataUrl?: string | null;
+}
+
+export interface PdfOutputOptions {
+  apposition?: AppositionOptions;
+  /** Faux = ne pas déclencher le téléchargement (le Blob est retourné). Défaut : vrai. */
+  save?: boolean;
+}
+
+export async function resolveApposition(
+  opts: AppositionOptions | undefined,
+  fallback?: string | null,
+): Promise<{ sig: string | null; cachet: string | null }> {
+  if (!opts || opts.mode === "AUTO") {
+    return { sig: (await getActiveSignatureDataUrl("PRESIDENT")) || fallback || null, cachet: null };
+  }
+  if (opts.mode === "MANUSCRIT_SCANNE") return { sig: null, cachet: null };
+  return { sig: opts.signatureDataUrl || null, cachet: opts.cachetDataUrl || null };
+}
