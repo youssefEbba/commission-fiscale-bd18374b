@@ -28,7 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Award, ArrowLeft, Loader2, FileText, CheckCircle, XCircle, ShieldCheck,
-  AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download,
+  AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download, PenLine,
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
@@ -94,6 +94,7 @@ const MiseEnPlaceDetail = () => {
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
   const [activeOrg, setActiveOrg] = useState("DGI");
+  const [certSignOpen, setCertSignOpen] = useState(false);
 
   const [entreprise, setEntreprise] = useState<EntrepriseDto | null>(null);
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
@@ -1258,6 +1259,16 @@ const MiseEnPlaceDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {c && (
+        <PresidentSignDialog
+          open={certSignOpen}
+          onOpenChange={setCertSignOpen}
+          filename={`certificat-credit-impots-${String(c.reference || c.numero || c.id).replace(/[^a-z0-9_-]/gi, "_")}.pdf`}
+          generate={(apposition) => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }, { apposition, save: false })}
+          upload={async (file, mode) => { await certificatCreditApi.uploadDocument(c.id, "CERTIFICAT_CREDIT_IMPOTS", file, undefined, mode); }}
+          onDone={fetchData}
+        />
+      )}
     </DashboardLayout>
   );
 };
