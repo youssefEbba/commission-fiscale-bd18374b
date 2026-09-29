@@ -52,6 +52,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   LIQUIDEE: "bg-green-100 text-green-800",
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
+  CERTIFICAT_EMIS: "bg-primary/15 text-primary",
   CLOTUREE: "bg-slate-200 text-slate-800",
   EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
   CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
