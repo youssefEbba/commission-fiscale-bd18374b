@@ -744,6 +744,9 @@ export interface DocumentDto {
   taille?: number;
   version?: number;
   actif?: boolean;
+  /** Chemin d'apposition de la signature (documents officiels du Président). */
+  modeApposition?: "MANUSCRIT_SCANNE" | "APPOSE_SYSTEME" | null;
+  signataireUtilisateurId?: number | null;
 }
 
 /**
