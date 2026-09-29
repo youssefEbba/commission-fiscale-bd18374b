@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { signatureApi, formatApiErrorMessage, ROLE_LABELS, type SignatureDto } from "@/lib/api";
+import { signatureApi, formatApiErrorMessage, ROLE_LABELS, type SignatureDto, type SignatureType } from "@/lib/api";
 import { clearSignatureCache, validateSignatureFile } from "@/lib/signatures";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,10 @@ interface SignatureManagerProps {
   /** Encapsuler dans une Card (défaut : true). */
   card?: boolean;
   onChanged?: () => void;
+  /** Nature de l'empreinte (défaut : SIGNATURE). */
+  type?: SignatureType;
+  /** Vrai = empreintes de l'utilisateur connecté (GET/POST /signatures/me). */
+  self?: boolean;
 }
 
 const SignatureManager = ({
@@ -42,7 +46,11 @@ const SignatureManager = ({
   description,
   card = true,
   onChanged,
+  type = "SIGNATURE",
+  self = false,
 }: SignatureManagerProps) => {
+  const isCachet = type === "CACHET";
+  const [generique, setGenerique] = useState(false);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<SignatureDto | null>(null);
@@ -56,8 +64,24 @@ const SignatureManager = ({
 
   const load = useCallback(async () => {
     setLoading(true);
+    if (self) {
+      try {
+        const me = await signatureApi.me(true);
+        const dto = isCachet ? me.cachet : me.signature;
+        const url = isCachet ? me.cachetDataUrl : me.signatureDataUrl;
+        // Empreinte générique du rôle (sans utilisateur) : visible mais pas modifiable comme la sienne.
+        const gen = !!dto && dto.utilisateurId == null;
+        setGenerique(gen);
+        setActive(gen ? null : dto);
+        setNomAffiche(!gen ? dto?.nomAffiche || "" : "");
+        setPreview(url || null);
+      } catch {
+        setActive(null); setPreview(null); setGenerique(false);
+      } finally { setLoading(false); }
+      return;
+    }
     try {
-      const dto = await signatureApi.getActive(role, utilisateurId);
+      const dto = await signatureApi.getActive(role, utilisateurId, type);
       setActive(dto);
       setNomAffiche(dto?.nomAffiche || "");
       if (dto?.id) {
@@ -77,7 +101,7 @@ const SignatureManager = ({
     } finally {
       setLoading(false);
     }
-  }, [role, utilisateurId]);
+  }, [role, utilisateurId, type, self, isCachet]);
 
   useEffect(() => {
     void load();
@@ -102,8 +126,11 @@ const SignatureManager = ({
         if (nomAffiche && nomAffiche !== (active.nomAffiche || "")) {
           await signatureApi.update(active.id, { nomAffiche });
         }
+      } else if (self) {
+        await signatureApi.createMe({ file: pending.file, type, nomAffiche: nomAffiche || undefined });
       } else {
         await signatureApi.create({
+          type,
           file: pending.file,
           role,
           utilisateurId,
@@ -148,6 +175,8 @@ const SignatureManager = ({
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <Badge variant="secondary">{ROLE_LABELS[role] || role}</Badge>
         {utilisateurNom && <span className="text-muted-foreground">{utilisateurNom}</span>}
+        <Badge variant="outline">{isCachet ? "Cachet" : "Signature"}</Badge>
+        {generique && <Badge variant="outline" className="text-muted-foreground">Cachet générique du rôle</Badge>}
         {active ? (
           <Badge className="bg-primary/10 text-primary border-primary/20">
             Active — version {active.version ?? 1}
