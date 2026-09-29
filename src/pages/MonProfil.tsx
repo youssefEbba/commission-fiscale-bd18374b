@@ -208,13 +208,24 @@ const MonProfil = () => {
         </Card>
 
         {profile && SIGNATAIRE_ROLES.includes(profile.role) && (
-          <SignatureManager
-            role={profile.role}
-            utilisateurId={profile.id}
-            utilisateurNom={profile.nomComplet}
-            title="Ma signature"
-            description="Cette image PNG (fond transparent) sera apposée automatiquement sur les documents que vous générez : certificat de crédit, lettre d'adoption, documents d'utilisation."
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SignatureManager
+              self
+              type="SIGNATURE"
+              role={profile.role}
+              utilisateurNom={profile.nomComplet}
+              title="Ma signature"
+              description="Image PNG à fond transparent, apposée lorsque vous choisissez « Signer et cacheter automatiquement »."
+            />
+            <SignatureManager
+              self
+              type="CACHET"
+              role={profile.role}
+              utilisateurNom={profile.nomComplet}
+              title="Mon cachet"
+              description="Image PNG à fond transparent. À défaut, le cachet générique du rôle déposé par l'administrateur est utilisé."
+            />
+          </div>
         )}
 
         <Card>

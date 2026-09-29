@@ -176,7 +176,7 @@ const SignatureManager = ({
         <Badge variant="secondary">{ROLE_LABELS[role] || role}</Badge>
         {utilisateurNom && <span className="text-muted-foreground">{utilisateurNom}</span>}
         <Badge variant="outline">{isCachet ? "Cachet" : "Signature"}</Badge>
-        {generique && <Badge variant="outline" className="text-muted-foreground">Cachet générique du rôle</Badge>}
+        {generique && <Badge variant="outline" className="text-muted-foreground">Empreinte générique du rôle</Badge>}
         {active ? (
           <Badge className="bg-primary/10 text-primary border-primary/20">
             Active — version {active.version ?? 1}
