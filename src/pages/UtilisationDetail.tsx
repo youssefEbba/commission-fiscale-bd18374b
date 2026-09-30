@@ -429,7 +429,8 @@ const UtilisationDetail = () => {
       setQDgiFile(null);
       fetchAll();
     } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+      const description = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_quittance_error")) : e.message;
+      toast({ title: tError(), description, variant: "destructive" });
     } finally { setQDgiLoading(false); }
   };
 

@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search,
@@ -11,7 +11,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { commissionRelaisApi, formatApiErrorMessage } from "@/lib/api";
+import { commissionRelaisApi, formatApiErrorMessage, utilisationCreditApi } from "@/lib/api";
 import { toast } from "sonner";
 import { emitErrorDialog } from "@/components/ErrorDialog";
 import LanguageSwitcher from "@/i18n/LanguageSwitcher";
@@ -53,7 +53,7 @@ const NAV_ENTRIES: NavEntry[] = [
   },
   { labelKey: "representants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
   { labelKey: "certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-  { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "ADMIN_SI"] },
+  { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "PRESIDENT", "ADMIN_SI"] },
   { labelKey: "simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
   { labelKey: "reporting", href: "/dashboard/reporting", icon: PieChart },
   {
@@ -97,9 +97,21 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout, hasRole, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation(["nav", "common"]);
+  const { t } = useTranslation(["nav", "common", "utilisations"]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [releasing, setReleasing] = useState(false);
+  const [aEmettreCount, setAEmettreCount] = useState(0);
+  const isPresident = user?.role === "PRESIDENT";
+
+  // File « Certificats à émettre » du Président : CHEQUE_SAISI (douane) et VALIDEE (TVA).
+  useEffect(() => {
+    if (!isPresident) return;
+    let alive = true;
+    utilisationCreditApi.getAll()
+      .then((list) => { if (alive) setAEmettreCount(list.filter((u) => (u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [isPresident, location.pathname]);
 
   const handleLogout = () => { logout(); navigate("/"); };
 
@@ -167,7 +179,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         return (
           <Link key={entry.href} to={entry.href} className={linkClass(entry.href)} onClick={closeMobile}>
             <entry.icon className="h-4 w-4" />
-            {t(`nav:${entry.labelKey}`)}
+            <span className="flex-1">{t(`nav:${entry.labelKey}`)}</span>
+            {entry.labelKey === "utilisations" && isPresident && aEmettreCount > 0 && (
+              <span className="rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-bold px-1.5 min-w-5 text-center" title={t("utilisations:certificat_utilisation.queue_filter")}>{aEmettreCount}</span>
+            )}
           </Link>
         );
       })}
