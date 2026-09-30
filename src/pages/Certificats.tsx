@@ -34,7 +34,7 @@ const PAGE_SIZES = [10, 20, 50, 100];
 const toInstant = (d: string, end = false) => (d ? `${d}T${end ? "23:59:59" : "00:00:00"}Z` : undefined);
 
 const EMPTY_CRITERES = {
-  nif: "", numeroMarche: "", conventionRef: "", projet: "",
+  entreprise: "", numeroMarche: "", conventionRef: "", projet: "",
   autoriteContractanteId: "all", statut: "all", from: "", to: "",
 };
 
@@ -95,7 +95,7 @@ const Certificats = () => {
     setLoading(true);
     try {
       const res = await certificatCreditConsultation.search({
-        nif: criteres.nif.trim() || undefined,
+        entreprise: criteres.entreprise.trim() || undefined,
         numeroMarche: criteres.numeroMarche.trim() || undefined,
         conventionRef: criteres.conventionRef.trim() || undefined,
         projet: criteres.projet.trim() || undefined,
@@ -241,7 +241,7 @@ const Certificats = () => {
               <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {!isEntreprise && (
                   <>
-                    <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.nif")}</Label><Input value={criteres.nif} onChange={(e) => setCriteres((p) => ({ ...p, nif: e.target.value }))} /></div>
+                    <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.entreprise")}</Label><Input value={criteres.entreprise} placeholder={t("certificats:list.filters.entreprise_placeholder")} onChange={(e) => setCriteres((p) => ({ ...p, entreprise: e.target.value }))} /></div>
                     <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.numero_marche")}</Label><Input value={criteres.numeroMarche} onChange={(e) => setCriteres((p) => ({ ...p, numeroMarche: e.target.value }))} /></div>
                     <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.convention")}</Label><Input value={criteres.conventionRef} onChange={(e) => setCriteres((p) => ({ ...p, conventionRef: e.target.value }))} /></div>
                     <div className="space-y-1"><Label className="text-xs">{t("certificats:list.filters.projet")}</Label><Input value={criteres.projet} onChange={(e) => setCriteres((p) => ({ ...p, projet: e.target.value }))} /></div>

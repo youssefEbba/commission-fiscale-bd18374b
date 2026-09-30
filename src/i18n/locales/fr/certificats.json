@@ -71,7 +71,9 @@
       "from": "Du",
       "to": "Au",
       "reset": "Réinitialiser",
-      "search": "Rechercher"
+      "search": "Rechercher",
+      "entreprise": "Entreprise",
+      "entreprise_placeholder": "Raison sociale ou NIF"
     },
     "pagination": {
       "range": "{{from}}–{{to}} sur {{total}} crédits",

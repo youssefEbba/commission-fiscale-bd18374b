@@ -42,6 +42,8 @@ import { openDocument } from "@/lib/openDocument";
 import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
+const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
+const CU_CARD_STATUTS: string[] = ["CHEQUE_SAISI", "VALIDEE", ...CU_POST_EMISSION, "CLOTUREE"];
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
   DEMANDEE: "bg-blue-100 text-blue-800",
@@ -238,7 +240,7 @@ const UtilisationDetail = () => {
       setUtil(u);
       setDocs(d);
       setDecisions(dec);
-      if ((role === "PRESIDENT" || role === "ADMIN_SI") && ["LIQUIDEE", "APUREE", "CERTIFICAT_EMIS", "CLOTUREE"].includes(u.statut)) {
+      if ((role === "PRESIDENT" || role === "ADMIN_SI") && CU_CARD_STATUTS.includes(u.statut)) {
         utilisationCreditApi.getCertificatUtilisationEtat(utilId).then(setCuEtat).catch(() => setCuEtat(null));
       } else {
         setCuEtat(null);
@@ -347,7 +349,8 @@ const UtilisationDetail = () => {
       toast({ title: t("utilisations:toast.envoi_tresor_title"), description: t("utilisations:toast.envoi_tresor_desc") });
       fetchAll();
     } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+      const description = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_envoi_error")) : e.message;
+      toast({ title: tError(), description, variant: "destructive" });
     } finally { setEnvoiLoading(false); }
   };
 
@@ -560,11 +563,14 @@ const UtilisationDetail = () => {
   const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
   const isEntreprise = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS";
   const canEntrepriseCheque = isEntreprise && isDouane && (u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE");
-  const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
+  const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && (u.statut === "CHEQUE_SAISI" || u.statut === "CERTIFICAT_EMIS");
+  const envoiTresorAttente = u.statut !== "CERTIFICAT_EMIS";
   const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
   const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
-  const canEntrepriseReception = isEntreprise && (u.statut === "CERTIFICAT_EMIS" || (isDouane && u.statut === "LIQUIDEE") || (isTVA && u.statut === "APUREE"));
-  const canDGIQuittance = role === "DGI" && isTVA && (u.statut === "VALIDEE" || u.statut === "QUITTANCE_DGI_ENREGISTREE");
+  const canEntrepriseReception = isEntreprise && ((isDouane && u.statut === "LIQUIDEE") || (isTVA && u.statut === "APUREE"));
+  const canDGIQuittance = role === "DGI" && isTVA && (u.statut === "VALIDEE" || u.statut === "CERTIFICAT_EMIS" || u.statut === "QUITTANCE_DGI_ENREGISTREE");
+  const qDgiAttente = u.statut === "VALIDEE";
+  const cuEmis = CU_POST_EMISSION.includes(u.statut) && (u.statut === "CERTIFICAT_EMIS" || !!u.numeroCertificatUtilisation);
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
   const canDGTCPApurer = role === "DGTCP" && isTVA && u.statut === "QUITTANCE_DGI_ENREGISTREE";
@@ -617,11 +623,11 @@ const UtilisationDetail = () => {
 
         {(() => {
           const stepKey =
-            u.statut === "LIQUIDEE" || (isTVA && u.statut === "APUREE") ? "attente_certificat_president"
-            : u.statut === "CERTIFICAT_EMIS" ? "attente_reception_emis"
+            (isDouane && u.statut === "CHEQUE_SAISI") || (isTVA && u.statut === "VALIDEE") ? "attente_certificat_president"
+            : u.statut === "CERTIFICAT_EMIS" ? (isDouane ? "attente_envoi_tresor" : "attente_quittance_dgi")
+            : u.statut === "LIQUIDEE" || (isTVA && u.statut === "APUREE") ? "attente_reception"
             : !isDouane ? null
-            :             u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE" ? "attente_cheque"
-            : u.statut === "CHEQUE_SAISI" ? "attente_envoi_tresor"
+            : u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE" ? "attente_cheque"
             : u.statut === "ENVOYEE_AU_TRESOR" ? "attente_quittances"
             : u.statut === "QUITTANCES_ENREGISTREES" ? "attente_liquidation"
             : null;
@@ -948,7 +954,7 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {["LIQUIDEE", "APUREE", "CERTIFICAT_EMIS", "CLOTUREE"].includes(u.statut) && (
+        {CU_CARD_STATUTS.includes(u.statut) && (
           <Card className="border-s-4 border-s-primary">
             <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> {t("utilisations:certificat_utilisation.title")}</CardTitle>
@@ -964,14 +970,14 @@ const UtilisationDetail = () => {
               {u.statut === "CLOTUREE" && !u.numeroCertificatUtilisation && (
                 <p className="text-xs text-muted-foreground">{t("utilisations:certificat_utilisation.historique")}</p>
               )}
-              {role === "PRESIDENT" && cuEtat && !cuEtat.emissible && u.statut !== "CERTIFICAT_EMIS" && u.statut !== "CLOTUREE" && cuEtat.motifBlocage && (
+              {role === "PRESIDENT" && cuEtat && !cuEtat.emissible && !cuEmis && u.statut !== "CLOTUREE" && cuEtat.motifBlocage && (
                 <p className="text-xs text-muted-foreground">{cuEtat.motifBlocage}</p>
               )}
               <div className="flex flex-wrap gap-2 justify-end">
-                {role === "PRESIDENT" && (cuEtat?.emissible || u.statut === "CERTIFICAT_EMIS") && (
+                {role === "PRESIDENT" && (cuEtat?.emissible || cuEmis) && (
                   <Button size="sm" onClick={() => setCuSignOpen(true)}>
                     <ShieldCheck className="h-4 w-4 me-2" />
-                    {u.statut === "CERTIFICAT_EMIS" ? t("utilisations:certificat_utilisation.resigner") : t("utilisations:certificat_utilisation.emettre")}
+                    {cuEmis ? t("utilisations:certificat_utilisation.resigner") : t("utilisations:certificat_utilisation.emettre")}
                   </Button>
                 )}
                 {role === "ADMIN_SI" && u.statut !== "CLOTUREE" && (
@@ -989,7 +995,7 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {isTVA && (u.statut === "CERTIFICAT_EMIS" || u.statut === "CLOTUREE" || (u.statut === "APUREE" && !!u.numeroCertificatUtilisation)) && (
+        {isTVA && !!u.numeroCertificatUtilisation && (
           <div className="flex justify-end">
             <Button size="sm" variant="outline" onClick={handleDownloadTvaPdf} disabled={tvaPdfLoading}>
               {tvaPdfLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <FileText className="h-4 w-4 me-2" />}
@@ -1226,9 +1232,9 @@ const UtilisationDetail = () => {
                   }}><CreditCard className="h-4 w-4 me-2" /> {t("utilisations:actions.saisir_cheque")}</Button>
                 )}
                 {canDGTCPEnvoyerTresor && (
-                  <Button className="bg-sky-600 hover:bg-sky-700" onClick={handleEnvoyerTresor} disabled={envoiLoading}>
+                  <Button className="bg-sky-600 hover:bg-sky-700" onClick={handleEnvoyerTresor} disabled={envoiLoading || envoiTresorAttente}>
                     {envoiLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
-                    <Ship className="h-4 w-4 me-2" /> {t("utilisations:actions.envoyer_tresor")}
+                    <Ship className="h-4 w-4 me-2" /> {envoiTresorAttente ? t("utilisations:certificat_utilisation.attente_envoi_tresor") : t("utilisations:actions.envoyer_tresor")}
                   </Button>
                 )}
                 {canDGTCPQuittances && (
@@ -1261,7 +1267,7 @@ const UtilisationDetail = () => {
                   </Button>
                 )}
                 {canDGIQuittance && (
-                  <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => {
+                  <Button className="bg-teal-600 hover:bg-teal-700" disabled={qDgiAttente} onClick={() => {
                     const q = u.quittanceDgi;
                     setQDgiForm({
                       numeroQuittance: q?.numeroQuittance || "",
@@ -1270,7 +1276,7 @@ const UtilisationDetail = () => {
                     });
                     setQDgiFile(null);
                     setShowQDgi(true);
-                  }}><FileText className="h-4 w-4 me-2" /> {u.quittanceDgi ? t("utilisations:quittance_dgi.modifier") : t("utilisations:quittance_dgi.deposer")}</Button>
+                  }}><FileText className="h-4 w-4 me-2" /> {qDgiAttente ? t("utilisations:certificat_utilisation.attente_quittance_dgi") : u.quittanceDgi ? t("utilisations:quittance_dgi.modifier") : t("utilisations:quittance_dgi.deposer")}</Button>
                 )}
                 {canDGTCPApurer && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setShowApur(true); setApurMontant(""); }}><CircleDollarSign className="h-4 w-4 me-2" /> {t("utilisations:actions.proceder_apurement")}</Button>}
                 {canRejetTemp && <Button variant="outline" className="text-amber-600 border-amber-300" onClick={() => { setShowRejet(true); setRejetMotif(""); setRejetDocs([]); }}><AlertTriangle className="h-4 w-4 me-1" /> {t("utilisations:actions.rejet_temp")}</Button>}
