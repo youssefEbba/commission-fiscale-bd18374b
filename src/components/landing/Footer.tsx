@@ -9,6 +9,7 @@ const Footer = () => {
   const productLinks = [
     { label: t("footer.links.features"), href: "#fonctionnalites" },
     { label: t("footer.links.process"), href: "#processus" },
+    { label: t("footer.links.documentation"), href: "#documentation" },
     { label: t("footer.links.login"), href: "/login" },
   ];
   const resourceLinks = [
@@ -62,10 +63,10 @@ const Footer = () => {
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> {t("footer.city")}
               </li>
               <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> contact@commissionfiscale.mr
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> contact@commission-fiscale.gov.mr
               </li>
               <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
-                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> +222 00 00 00 00
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> +222 12345678
               </li>
             </ul>
           </div>

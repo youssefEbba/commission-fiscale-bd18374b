@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, FileCheck } from "lucide-react";
+import { ArrowRight, FileCheck, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -61,6 +61,10 @@ const HeroSection = () => {
               <Link to="/login">{t("hero.cta_secondary")}</Link>
             </Button>
           </motion.div>
+
+          <p className="mt-6 inline-flex items-center gap-2 text-sm text-primary-foreground/80">
+            <ShieldCheck className="h-4 w-4 text-gold" /> {t("hero.secure_notice")}
+          </p>
 
           <motion.div
             initial={{ opacity: 0, y: 40 }}
