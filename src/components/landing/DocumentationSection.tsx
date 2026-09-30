@@ -31,7 +31,9 @@ const DocumentationSection = () => {
           <Download className="h-4 w-4" /> {t("docs.download")}
         </a>
       ) : (
-        <span className="shrink-0 text-xs text-muted-foreground">{t("docs.coming_soon")}</span>
+        <span title={t("docs.coming_soon")} className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground">
+          <Download className="h-4 w-4" /> {t("docs.download")}
+        </span>
       )}
     </div>
   );
