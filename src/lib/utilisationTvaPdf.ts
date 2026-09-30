@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { getActiveSignatureDataUrl } from "@/lib/signatures";
+import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 
 /**
@@ -62,7 +62,7 @@ function field(doc: jsPDF, x: number, y: number, label: string, value: string, x
   doc.setFont("helvetica", "normal");
 }
 
-export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null) {
+export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const M = 40;
@@ -177,7 +177,10 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   doc.text("auprès du Ministre des Finances", W / 2 + 40, y, { align: "center" }); y += 11;
   doc.text("NOM et SIGNATURE", W / 2 + 40, y, { align: "center" });
 
-  const sig = await getActiveSignatureDataUrl("PRESIDENT");
+  const { sig, cachet } = await resolveApposition(opts.apposition);
+  if (cachet) {
+    try { doc.addImage(cachet, "PNG", W / 2 - 75, y + 2, 56, 56); } catch { /* ignore */ }
+  }
   if (sig) {
     try { doc.addImage(sig, "PNG", W / 2 - 15, y + 4, 110, 44); } catch { /* ignore */ }
   }
@@ -185,5 +188,6 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
 
   doc.setLineWidth(0.6).rect(M, boxTop, R - M, y - boxTop);
 
-  doc.save(`certificat-utilisation-tva-${u.certificatReference || u.certificatCreditId || ""}-${u.id}.pdf`);
+  if (opts.save !== false) doc.save(`certificat-utilisation-tva-${u.certificatReference || u.certificatCreditId || ""}-${u.id}.pdf`);
+  return doc.output("blob");
 }

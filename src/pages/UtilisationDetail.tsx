@@ -35,11 +35,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   ArrowLeft, Loader2, Landmark, Ship, Building2, FileText, Upload, Info,
   AlertTriangle, CheckCircle2, CreditCard, XCircle, CircleDollarSign,
-  TrendingDown, TrendingUp, Minus, Download
+  TrendingDown, TrendingUp, Minus, Download, ShieldCheck
 } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { openDocument } from "@/lib/openDocument";
 import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
+import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -52,6 +53,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   LIQUIDEE: "bg-green-100 text-green-800",
   APUREE: "bg-green-100 text-green-800",
   REJETEE: "bg-red-100 text-red-800",
+  CERTIFICAT_EMIS: "bg-primary/15 text-primary",
   CLOTUREE: "bg-slate-200 text-slate-800",
   EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
   CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
@@ -153,6 +155,12 @@ const UtilisationDetail = () => {
   const [qDgiFile, setQDgiFile] = useState<File | null>(null);
   const [qDgiLoading, setQDgiLoading] = useState(false);
   const [tvaPdfLoading, setTvaPdfLoading] = useState(false);
+  const [cuEtat, setCuEtat] = useState<Awaited<ReturnType<typeof utilisationCreditApi.getCertificatUtilisationEtat>> | null>(null);
+  const [cuSignOpen, setCuSignOpen] = useState(false);
+  const [cuAdminOpen, setCuAdminOpen] = useState(false);
+  const [cuAdminMotif, setCuAdminMotif] = useState("");
+  const [cuAdminFile, setCuAdminFile] = useState<File | null>(null);
+  const [cuAdminLoading, setCuAdminLoading] = useState(false);
   const [apurMontant, setApurMontant] = useState("");
   const [apurLoading, setApurLoading] = useState(false);
 
@@ -230,6 +238,11 @@ const UtilisationDetail = () => {
       setUtil(u);
       setDocs(d);
       setDecisions(dec);
+      if ((role === "PRESIDENT" || role === "ADMIN_SI") && ["LIQUIDEE", "APUREE", "CERTIFICAT_EMIS", "CLOTUREE"].includes(u.statut)) {
+        utilisationCreditApi.getCertificatUtilisationEtat(utilId).then(setCuEtat).catch(() => setCuEtat(null));
+      } else {
+        setCuEtat(null);
+      }
       if (u.certificatCreditId) {
         certificatCreditApi.getById(u.certificatCreditId).then(setCert).catch(() => {});
         if (role === "DGTCP" || role === "ADMIN_SI") {
@@ -296,7 +309,6 @@ const UtilisationDetail = () => {
         : null;
       setUtil(u2);
       if (cert2) setCert(cert2);
-      void generateLiquidationPdf(u2, cert2).catch((err) => console.error("PDF generation failed", err));
       fetchAll();
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
@@ -377,7 +389,8 @@ const UtilisationDetail = () => {
       toast({ title: t("utilisations:toast.reception_done_title"), description: t("utilisations:toast.reception_done_desc") });
       fetchAll();
     } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+      const msg = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? t("utilisations:certificat_utilisation.non_emis_error") : e.message;
+      toast({ title: tError(), description: msg, variant: "destructive" });
     } finally { setReceptionLoading(false); }
   };
 
@@ -391,7 +404,6 @@ const UtilisationDetail = () => {
       const cert2 = u2.certificatCreditId ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null) : null;
       setUtil(u2);
       if (cert2) setCert(cert2);
-      void generateUtilisationTvaPdf(u2, cert2).catch((err) => console.error("PDF generation failed", err));
       fetchAll();
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
@@ -425,6 +437,22 @@ const UtilisationDetail = () => {
     catch (e: any) { toast({ title: tError(), description: e.message, variant: "destructive" }); }
     finally { setTvaPdfLoading(false); }
   };
+
+  const handleCuAdmin = async () => {
+    if (!cuAdminMotif.trim()) return;
+    setCuAdminLoading(true);
+    try {
+      const u2 = await utilisationCreditApi.emettreCertificatUtilisationAdmin(utilId, cuAdminMotif.trim(), cuAdminFile);
+      toast({ title: tSuccess(), description: t("utilisations:certificat_utilisation.emis_toast", { numero: u2?.numeroCertificatUtilisation || "" }) });
+      setCuAdminOpen(false); setCuAdminMotif(""); setCuAdminFile(null);
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } finally { setCuAdminLoading(false); }
+  };
+
+  const generateCuPdf = (target: UtilisationCreditDto, opts?: Parameters<typeof generateUtilisationTvaPdf>[2]) =>
+    target.type === "DOUANIER" ? generateLiquidationPdf(target, cert, opts) : generateUtilisationTvaPdf(target, cert, opts);
 
   const handleRejetTemp = async () => {
     if (!rejetMotif.trim() || rejetDocs.length === 0) return;
@@ -535,7 +563,7 @@ const UtilisationDetail = () => {
   const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
   const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
   const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
-  const canEntrepriseReception = isEntreprise && ((isDouane && u.statut === "LIQUIDEE") || (isTVA && u.statut === "APUREE"));
+  const canEntrepriseReception = isEntreprise && (u.statut === "CERTIFICAT_EMIS" || (isDouane && u.statut === "LIQUIDEE") || (isTVA && u.statut === "APUREE"));
   const canDGIQuittance = role === "DGI" && isTVA && (u.statut === "VALIDEE" || u.statut === "QUITTANCE_DGI_ENREGISTREE");
   const canDGTCPVerifyTVA = role === "DGTCP" && isTVA && u.statut === "DEMANDEE";
   const canDGTCPValideTVA = role === "DGTCP" && isTVA && u.statut === "EN_VERIFICATION";
@@ -587,13 +615,15 @@ const UtilisationDetail = () => {
           </Badge>
         </div>
 
-        {isDouane && (() => {
+        {(() => {
           const stepKey =
-            u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE" ? "attente_cheque"
+            u.statut === "LIQUIDEE" || (isTVA && u.statut === "APUREE") ? "attente_certificat_president"
+            : u.statut === "CERTIFICAT_EMIS" ? "attente_reception_emis"
+            : !isDouane ? null
+            :             u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE" ? "attente_cheque"
             : u.statut === "CHEQUE_SAISI" ? "attente_envoi_tresor"
             : u.statut === "ENVOYEE_AU_TRESOR" ? "attente_quittances"
             : u.statut === "QUITTANCES_ENREGISTREES" ? "attente_liquidation"
-            : u.statut === "LIQUIDEE" ? "attente_reception"
             : null;
           if (!stepKey) return null;
           return (
@@ -758,7 +788,7 @@ const UtilisationDetail = () => {
                 </TableBody>
               </Table>
               {(() => {
-                const visaStatuts: UtilisationStatut[] = ["EN_CONTROLE_DGD","VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE","CHEQUE_SAISI","ENVOYEE_AU_TRESOR","QUITTANCES_ENREGISTREES"];
+                const visaStatuts: UtilisationStatut[] = ["EN_CONTROLE_DGD","VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE","CERTIFICAT_EMIS","CHEQUE_SAISI","ENVOYEE_AU_TRESOR","QUITTANCES_ENREGISTREES"];
                 if (!visaStatuts.includes(u.statut)) return null;
                 const lignesAuCi = (u.lignes || []).filter(l => l.affectation === "AU_CI" && (Number(l.valeur) || 0) > 0);
                 const lignesAPayer = (u.lignes || []).filter(l => l.affectation === "A_PAYER" && (Number(l.valeur) || 0) > 0);
@@ -876,7 +906,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Traçabilité Liquidation Douane */}
-        {isDouane && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
+        {isDouane && (u.statut === "LIQUIDEE" || u.statut === "CERTIFICAT_EMIS" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
           <Card className="border-s-4 border-s-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>
@@ -918,7 +948,48 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {isTVA && (u.statut === "APUREE" || u.statut === "CLOTUREE") && (
+        {["LIQUIDEE", "APUREE", "CERTIFICAT_EMIS", "CLOTUREE"].includes(u.statut) && (
+          <Card className="border-s-4 border-s-primary">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> {t("utilisations:certificat_utilisation.title")}</CardTitle>
+              {cuEtat && (
+                <Badge variant="outline">{cuEtat.certificatSigneDepose ? t("utilisations:certificat_utilisation.signe_depose") : t("utilisations:certificat_utilisation.signe_absent")}</Badge>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.numero")}</p><p className="font-bold">{u.numeroCertificatUtilisation || t("utilisations:certificat_utilisation.non_emis")}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.date")}</p><p className="font-medium">{u.dateCertificatUtilisation ? formatDate(u.dateCertificatUtilisation) : "—"}</p></div>
+              </div>
+              {u.statut === "CLOTUREE" && !u.numeroCertificatUtilisation && (
+                <p className="text-xs text-muted-foreground">{t("utilisations:certificat_utilisation.historique")}</p>
+              )}
+              {role === "PRESIDENT" && cuEtat && !cuEtat.emissible && u.statut !== "CERTIFICAT_EMIS" && u.statut !== "CLOTUREE" && cuEtat.motifBlocage && (
+                <p className="text-xs text-muted-foreground">{cuEtat.motifBlocage}</p>
+              )}
+              <div className="flex flex-wrap gap-2 justify-end">
+                {role === "PRESIDENT" && (cuEtat?.emissible || u.statut === "CERTIFICAT_EMIS") && (
+                  <Button size="sm" onClick={() => setCuSignOpen(true)}>
+                    <ShieldCheck className="h-4 w-4 me-2" />
+                    {u.statut === "CERTIFICAT_EMIS" ? t("utilisations:certificat_utilisation.resigner") : t("utilisations:certificat_utilisation.emettre")}
+                  </Button>
+                )}
+                {role === "ADMIN_SI" && u.statut !== "CLOTUREE" && (
+                  <Button size="sm" variant="outline" onClick={() => setCuAdminOpen(true)}>
+                    <ShieldCheck className="h-4 w-4 me-2" /> {t("utilisations:certificat_utilisation.admin_title")}
+                  </Button>
+                )}
+                {role === "ADMIN_SI" && u.numeroCertificatUtilisation && (
+                  <Button size="sm" variant="outline" onClick={() => { void generateCuPdf(u, { apposition: { mode: "MANUSCRIT_SCANNE" } }); }}>
+                    <Download className="h-4 w-4 me-2" /> {t("utilisations:certificat_utilisation.admin_model")}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isTVA && (u.statut === "CERTIFICAT_EMIS" || u.statut === "CLOTUREE" || (u.statut === "APUREE" && !!u.numeroCertificatUtilisation)) && (
           <div className="flex justify-end">
             <Button size="sm" variant="outline" onClick={handleDownloadTvaPdf} disabled={tvaPdfLoading}>
               {tvaPdfLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <FileText className="h-4 w-4 me-2" />}
@@ -927,7 +998,7 @@ const UtilisationDetail = () => {
           </div>
         )}
 
-        {isTVA && u.statut === "APUREE" && u.tvaNette != null && (
+        {isTVA && (u.statut === "APUREE" || u.statut === "CERTIFICAT_EMIS" || u.statut === "CLOTUREE") && u.tvaNette != null && (
           <Card className="border-s-4 border-s-emerald-500">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><CircleDollarSign className="h-5 w-5 text-emerald-500" /> {t("utilisations:traceability_apur.title")}</CardTitle></CardHeader>
             <CardContent>
@@ -1708,6 +1779,46 @@ const UtilisationDetail = () => {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+      <PresidentSignDialog<UtilisationCreditDto>
+        open={cuSignOpen}
+        onOpenChange={setCuSignOpen}
+        title={t("utilisations:certificat_utilisation.emettre")}
+        filename={`certificat-utilisation-${u.id}.pdf`}
+        prepare={async () => {
+          // Ordre contraint : émettre d'abord pour obtenir le numéro, puis composer le PDF.
+          const u2 = await utilisationCreditApi.emettreCertificatUtilisation(utilId);
+          const fresh = await utilisationCreditApi.getById(utilId).catch(() => u2);
+          const merged = { ...u, ...fresh, lignes: fresh?.lignes?.length ? fresh.lignes : u.lignes } as UtilisationCreditDto;
+          toast({ title: tSuccess(), description: t("utilisations:certificat_utilisation.emis_toast", { numero: merged.numeroCertificatUtilisation || "" }) });
+          return merged;
+        }}
+        generate={(apposition, prepared) => generateCuPdf(prepared || u, { apposition, save: false })}
+        upload={async (file, mode) => { await utilisationCreditApi.uploadDocument(utilId, "CERTIFICAT_UTILISATION", file, mode); }}
+        onDone={fetchAll}
+      />
+      <Dialog open={cuAdminOpen} onOpenChange={(o) => { if (!cuAdminLoading) setCuAdminOpen(o); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t("utilisations:certificat_utilisation.admin_title")}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t("utilisations:certificat_utilisation.admin_desc")}</p>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>{t("utilisations:certificat_utilisation.admin_motif")} *</Label>
+              <Textarea value={cuAdminMotif} onChange={(e) => setCuAdminMotif(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1">
+              <Label>{t("utilisations:certificat_utilisation.admin_file")}</Label>
+              <Input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => setCuAdminFile(e.target.files?.[0] || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCuAdminOpen(false)} disabled={cuAdminLoading}>{t("common:actions.cancel")}</Button>
+            <Button onClick={handleCuAdmin} disabled={!cuAdminMotif.trim() || cuAdminLoading}>
+              {cuAdminLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+              {t("utilisations:certificat_utilisation.admin_submit")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

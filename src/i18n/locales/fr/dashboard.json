@@ -64,6 +64,10 @@
     "audit": {
       "label": "Journal d'audit",
       "description": "Consulter les logs d'activité"
+    },
+    "certificats_utilisation_emettre": {
+      "label": "Certificats à émettre",
+      "description": "Utilisations liquidées ou apurées en attente de votre certificat d'utilisation"
     }
   }
 }

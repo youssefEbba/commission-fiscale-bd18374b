@@ -36,6 +36,7 @@ const Signatures = () => {
   const [activeOnly, setActiveOnly] = useState(true);
 
   const [targetRole, setTargetRole] = useState<string>("PRESIDENT");
+  const [targetType, setTargetType] = useState<"SIGNATURE" | "CACHET">("SIGNATURE");
   const [targetUser, setTargetUser] = useState<string>("");
 
   const load = async () => {
@@ -124,8 +125,16 @@ const Signatures = () => {
               </div>
             </div>
 
+            <div className="flex gap-2">
+              {(["SIGNATURE", "CACHET"] as const).map((ty) => (
+                <Button key={ty} size="sm" variant={targetType === ty ? "default" : "outline"} onClick={() => setTargetType(ty)}>
+                  {ty === "SIGNATURE" ? "Signature" : "Cachet"}
+                </Button>
+              ))}
+            </div>
             <SignatureManager
-              key={`${targetRole}-${targetUser}`}
+              key={`${targetRole}-${targetUser}-${targetType}`}
+              type={targetType}
               role={targetRole}
               utilisateurId={targetUser ? Number(targetUser) : undefined}
               utilisateurNom={users.find((u) => String(u.id) === targetUser)?.nomComplet}
@@ -175,6 +184,7 @@ const Signatures = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Nature</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Utilisateur</TableHead>
                       <TableHead>Libellé</TableHead>
@@ -188,6 +198,7 @@ const Signatures = () => {
                   <TableBody>
                     {signatures.map((s) => (
                       <TableRow key={s.id}>
+                        <TableCell>{s.type === "CACHET" ? "Cachet" : "Signature"}</TableCell>
                         <TableCell>{ROLE_LABELS[s.role] || s.role}</TableCell>
                         <TableCell>{s.utilisateurNom || "—"}</TableCell>
                         <TableCell className="max-w-[220px] truncate">{s.nomAffiche || "—"}</TableCell>
@@ -205,7 +216,7 @@ const Signatures = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => { setTargetRole(s.role); setTargetUser(s.utilisateurId ? String(s.utilisateurId) : ""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                            onClick={() => { setTargetRole(s.role); setTargetType(s.type === "CACHET" ? "CACHET" : "SIGNATURE"); setTargetUser(s.utilisateurId ? String(s.utilisateurId) : ""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                           >
                             Gérer
                           </Button>
