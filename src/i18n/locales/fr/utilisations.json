@@ -576,12 +576,13 @@
   "next_step": {
     "title": "Prochaine étape",
     "attente_cheque": "Bulletin visé et annoté par la DGD. La main revient à l'entreprise pour la saisie du chèque, puis le dossier passera à la DGTCP.",
-    "attente_envoi_tresor": "Chèque saisi par l'entreprise. La main est à la DGTCP pour l'envoi au Trésor.",
+    "attente_envoi_tresor": "Certificat d'utilisation émis par le Président. La main est à la DGTCP pour l'envoi au Trésor.",
     "attente_quittances": "Dossier envoyé au Trésor. La DGTCP doit enregistrer les quittances.",
     "attente_liquidation": "Quittances enregistrées. La DGTCP doit procéder à la liquidation.",
     "attente_reception": "Utilisation liquidée. L'entreprise doit accuser réception pour clôturer.",
-    "attente_certificat_president": "Calcul de la DGTCP acquis. La main est au Président pour émettre et signer le certificat d'utilisation.",
-    "attente_reception_emis": "Certificat d'utilisation émis par le Président. L'entreprise doit accuser réception pour clôturer."
+    "attente_certificat_president": "La main est au Président pour émettre et signer le certificat d'utilisation, titre présenté ensuite pour obtenir la quittance.",
+    "attente_reception_emis": "Certificat d'utilisation émis par le Président. L'entreprise doit accuser réception pour clôturer.",
+    "attente_quittance_dgi": "Certificat d'utilisation émis par le Président. L'entreprise le présente à la DGI, qui dépose la quittance."
   },
   "certificat_utilisation": {
     "title": "Certificat d'utilisation",
@@ -603,6 +604,10 @@
     "queue_filter": "Certificats à émettre",
     "queue_badge": "À émettre",
     "historique": "Dossier historique : clôture sans émission du certificat par le Président.",
-    "non_emis_error": "Le certificat d'utilisation n'a pas encore été émis par le Président. Veuillez attendre son émission avant d'accuser réception."
+    "non_emis_error": "Le certificat d'utilisation n'a pas encore été émis par le Président. Veuillez attendre son émission avant d'accuser réception.",
+    "attente_envoi_tresor": "En attente du certificat du Président",
+    "attente_quittance_dgi": "En attente du certificat du Président",
+    "non_emis_envoi_error": "Le certificat d'utilisation doit être émis par le Président avant l'envoi au Trésor.",
+    "non_emis_quittance_error": "La quittance DGI suppose le certificat d'utilisation émis par le Président."
   }
 }

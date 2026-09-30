@@ -571,7 +571,7 @@ const Utilisations = () => {
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
-      (filterStatut === "A_EMETTRE" && (u.statut === "LIQUIDEE" || u.statut === "APUREE"));
+      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")));
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -639,6 +639,11 @@ const Utilisations = () => {
               aria-label={t("common:actions.search")}
             />
           </div>
+          {(role === "PRESIDENT" || role === "ADMIN_SI") && (
+            <Button variant={filterStatut === "A_EMETTRE" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_EMETTRE" ? "ALL" : "A_EMETTRE")}>
+              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
+            </Button>
+          )}
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48" aria-label={t("utilisations:list.columns.statut")}>
               <Filter className="h-4 w-4 me-2" /><SelectValue />
