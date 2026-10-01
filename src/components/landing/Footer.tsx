@@ -66,7 +66,7 @@ const Footer = () => {
                 <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> contact@commission-fiscale.gov.mr
               </li>
               <li className="flex items-start gap-2 text-sm text-primary-foreground/60">
-                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> +222 12345678
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" /> <span dir="ltr">+222 48 69 89 83</span>
               </li>
             </ul>
           </div>
