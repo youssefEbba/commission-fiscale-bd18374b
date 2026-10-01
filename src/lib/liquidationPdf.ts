@@ -286,6 +286,13 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
     columnStyles: { 3: { halign: "right" } },
   });
 
+  // QR de vérification en bas à droite de la page 1 (uniquement si le certificat est émis)
+  if (u.numeroCertificatUtilisation) {
+    doc.setPage(1);
+    const H = doc.internal.pageSize.getHeight();
+    const q = 71; // ~25 mm
+    await drawVerificationQr(doc, u.numeroCertificatUtilisation, W - M - q, H - q - 40, q, 7);
+  }
   if (opts.save !== false) doc.save(`utilisation-credit-impot-${u.certificatReference || u.id}.pdf`);
   return doc.output("blob");
 }

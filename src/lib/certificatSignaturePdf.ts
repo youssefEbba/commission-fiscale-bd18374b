@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import QRCode from "qrcode";
+import { drawVerificationQr } from "@/lib/verificationQr";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
 import signaturePresident from "@/assets/signature-president.png";
@@ -308,28 +308,10 @@ export async function generateCertificatToSignPdf(
   doc.text(fmtDate(c.dateValidite) || "", M + 35, yy);
   doc.line(M + 35, yy + 0.8, M + W - 60, yy + 0.8);
 
-  // ---------- QR code de vérification ----------
-  const verifyBase =
-    typeof window !== "undefined" ? window.location.origin : "";
-  const verifyUrl = `${verifyBase}/verifier-certificat?numero=${encodeURIComponent(numero)}`;
-  try {
-    const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-      margin: 0,
-      width: 256,
-      color: { dark: "#006633", light: "#ffffff" },
-    });
-    const qrSize = 28;
-    const qrX = M + W - qrSize - 4;
-    const qrY = y + h3 - qrSize - 10;
-    doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(80, 80, 80);
-    doc.text("Scannez pour vérifier", qrX + qrSize / 2, qrY + qrSize + 3, { align: "center" });
-    doc.text("l'authenticité du certificat", qrX + qrSize / 2, qrY + qrSize + 6, { align: "center" });
-    doc.setTextColor(0, 0, 0);
-  } catch {
-    // ignore QR errors
+  // ---------- QR code de vérification (code = numéro officiel) ----------
+  {
+    const qrSize = 25;
+    await drawVerificationQr(doc, numero, M + W - qrSize - 6, y + h3 - qrSize - 10, qrSize);
   }
 
   y += h3 + 8;
