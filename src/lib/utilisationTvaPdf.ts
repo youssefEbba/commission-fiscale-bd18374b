@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { drawVerificationQr } from "@/lib/verificationQr";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 
@@ -187,6 +188,14 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   y += 56;
 
   doc.setLineWidth(0.6).rect(M, boxTop, R - M, y - boxTop);
+
+  // QR de vérification en bas à droite (uniquement si le certificat est émis)
+  if (u.numeroCertificatUtilisation) {
+    const H = doc.internal.pageSize.getHeight();
+    const q = 71; // ~25 mm
+    if (y + q + 30 > H - 20) doc.addPage();
+    await drawVerificationQr(doc, u.numeroCertificatUtilisation, R - q, H - q - 40, q, 7);
+  }
 
   if (opts.save !== false) doc.save(`certificat-utilisation-tva-${u.certificatReference || u.certificatCreditId || ""}-${u.id}.pdf`);
   return doc.output("blob");

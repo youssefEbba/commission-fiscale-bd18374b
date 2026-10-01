@@ -6,7 +6,9 @@
     "register": "S'inscrire",
     "login": "Se connecter",
     "open_menu": "Ouvrir le menu",
-    "close_menu": "Fermer le menu"
+    "close_menu": "Fermer le menu",
+    "documentation": "Documentation",
+    "ministry": "Ministère des Finances"
   },
   "hero": {
     "badge": "Plateforme officielle — Commission Fiscale",
@@ -19,17 +21,30 @@
       "treated": "Demandes traitées",
       "delay": "Délai moyen",
       "secure": "Sécurisé"
-    }
+    },
+    "secure_notice": "Plateforme sécurisée, hébergée sur le site officiel du Gouvernement."
   },
   "process": {
     "kicker": "Processus simple",
     "title": "Comment ça fonctionne ?",
     "subtitle": "Un processus en 4 étapes pour soumettre et suivre votre demande de crédit d'impôt.",
     "steps": {
-      "submission": { "title": "Soumission", "desc": "Créez votre dossier et déposez les pièces nécessaires en ligne." },
-      "verification": { "title": "Vérification", "desc": "Les services vérifient la conformité et la complétude des informations." },
-      "validation": { "title": "Validation", "desc": "La Commission valide et notifie la décision avec traçabilité." },
-      "emission": { "title": "Émission", "desc": "Le certificat est émis et mis à disposition dans votre espace." }
+      "submission": {
+        "title": "Soumission",
+        "desc": "Créez votre dossier et déposez les pièces nécessaires en ligne."
+      },
+      "verification": {
+        "title": "Vérification",
+        "desc": "Les services vérifient la conformité et la complétude des informations."
+      },
+      "validation": {
+        "title": "Validation",
+        "desc": "La Commission valide et notifie la décision avec traçabilité."
+      },
+      "emission": {
+        "title": "Émission",
+        "desc": "Le certificat est émis et mis à disposition dans votre espace."
+      }
     }
   },
   "features": {
@@ -37,23 +52,40 @@
     "title": "Une plateforme moderne et performante",
     "subtitle": "Des outils pensés pour réduire les délais, améliorer la transparence et sécuriser vos opérations.",
     "items": {
-      "realtime": { "title": "Suivi en temps réel", "desc": "Suivez l'état de vos demandes à chaque étape du workflow." },
-      "fast": { "title": "Traitement rapide", "desc": "Circuits de validation optimisés pour réduire les délais." },
-      "secure": { "title": "Sécurité renforcée", "desc": "Accès sécurisé et gestion des rôles (DGD, DGI, DGB, Trésor…)." },
-      "notifications": { "title": "Notifications", "desc": "Recevez des notifications sur les validations, rejets et mises à jour." },
-      "documents": { "title": "Gestion des documents", "desc": "Déposez, consultez et téléchargez les pièces justificatives." },
-      "audit": { "title": "Audit & traçabilité", "desc": "Historique des actions et traçabilité complète des opérations." }
+      "realtime": {
+        "title": "Suivi en temps réel",
+        "desc": "Suivez l'état de vos demandes à chaque étape du workflow."
+      },
+      "fast": {
+        "title": "Traitement rapide",
+        "desc": "Circuits de validation optimisés pour réduire les délais."
+      },
+      "secure": {
+        "title": "Sécurité renforcée",
+        "desc": "Accès sécurisé et gestion des rôles (DGD, DGI, DGB, Trésor…)."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Recevez des notifications sur les validations, rejets et mises à jour."
+      },
+      "documents": {
+        "title": "Gestion des documents",
+        "desc": "Déposez, consultez et téléchargez les pièces justificatives."
+      },
+      "audit": {
+        "title": "Audit & traçabilité",
+        "desc": "Historique des actions et traçabilité complète des opérations."
+      }
     }
   },
   "cta": {
-    "title": "Prêt à simplifier vos démarches fiscales ?",
     "kicker": "Commencez dès maintenant",
     "subtitle": "Inscrivez-vous et suivez vos demandes de crédit d'impôt sur une plateforme sécurisée.",
     "primary": "Commencer maintenant",
     "secondary": "Se connecter"
   },
   "footer": {
-    "tagline": "Système de Gestion des Crédits d'Impôt",
+    "tagline": "Gestion des Crédits d'Impôt",
     "ministry": "Ministère des Finances — République Islamique de Mauritanie",
     "section_product": "Produit",
     "section_resources": "Ressources",
@@ -64,10 +96,27 @@
       "login": "Connexion",
       "help": "Centre d'aide",
       "security": "Politique de sécurité",
-      "faq": "FAQ"
+      "faq": "FAQ",
+      "documentation": "Documentation"
     },
     "city": "Nouakchott, Mauritanie",
     "rights": "© {{year}} Commission Fiscale — Tous droits réservés",
     "version": "Version : {{version}}"
+  },
+  "docs": {
+    "kicker": "Documentation",
+    "title": "Textes et formulaires de référence",
+    "subtitle": "Consultez les textes applicables et téléchargez les formulaires officiels.",
+    "coming_soon": "Bientôt disponible",
+    "download": "Télécharger",
+    "group_forms": "Formulaires à télécharger",
+    "items": {
+      "cgi": "Code général des impôts",
+      "cgd": "Code général des douanes",
+      "textes": "Arrêtés et décrets relatifs à la Commission fiscale",
+      "ef1": "Modèle d'offre fiscale EF1 (Excel)",
+      "ef2": "Modèle d'offre fiscale EF2 (Excel)",
+      "manuel": "Manuel de Procédure"
+    }
   }
 }

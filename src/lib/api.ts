@@ -1346,6 +1346,8 @@ export const certificatCreditApi = {
 
 export interface CertificatCreditSearchParams {
   nif?: string;
+  /** Raison sociale ou NIF, « contient », insensible à la casse. */
+  entreprise?: string;
   numeroMarche?: string;
   conventionRef?: string;
   projet?: string;

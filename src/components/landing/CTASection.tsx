@@ -20,10 +20,7 @@ const CTASection = () => {
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E\")" }} />
 
           <div className="relative">
-            <h2 className="mb-4 text-3xl font-extrabold text-primary-foreground md:text-4xl">
-              {t("cta.title")}
-            </h2>
-            <p className="mb-3 text-lg font-semibold text-gold">{t("cta.kicker")}</p>
+            <p className="mb-3 text-2xl md:text-3xl font-extrabold text-gold">{t("cta.kicker")}</p>
             <p className="mx-auto mb-10 max-w-lg text-primary-foreground/70">
               {t("cta.subtitle")}
             </p>
