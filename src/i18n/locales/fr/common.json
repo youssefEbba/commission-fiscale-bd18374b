@@ -133,5 +133,26 @@
     "done": "Document signé déposé au dossier.",
     "mode_systeme": "Apposé par le système",
     "mode_manuel": "Signé à la main et scanné"
+  },
+  "verification": {
+    "title": "Vérification d'un document officiel",
+    "subtitle": "Scannez le QR code ou saisissez le code imprimé sous le carré.",
+    "code_label": "Code du document",
+    "placeholder": "Ex. CU-007/2026",
+    "verify": "Vérifier",
+    "login": "Se connecter",
+    "code": "Code",
+    "type": "Type de document",
+    "entreprise": "Entreprise bénéficiaire",
+    "date": "Date d'émission",
+    "statut": "Statut",
+    "motifs": "Informations",
+    "unavailable": "Service de vérification indisponible. Réessayez dans quelques instants.",
+    "retry": "Réessayer",
+    "types": {
+      "CERTIFICAT_CREDIT": "Certificat de crédit d'impôt",
+      "CERTIFICAT_UTILISATION": "Certificat d'utilisation"
+    },
+    "note": "Ce contrôle confirme que le numéro correspond à un document enregistré par la Commission fiscale. Il ne remplace pas la signature et le cachet."
   }
 }
