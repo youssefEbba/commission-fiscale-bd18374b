@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { API_BASE, NGROK_HEADERS } from "@/lib/apiConfig";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import emblem from "@/assets/logo-official.png";
-import { usePageTitle } from "@/hooks/usePageTitle";
 
 type Severite = "success" | "warning" | "muted" | "destructive";
 
@@ -48,7 +47,6 @@ const fmtDate = (v?: string | null) => {
 
 export default function VerificationPublique() {
   const { t } = useTranslation("common");
-  usePageTitle?.(t("verification.title"));
   const [params, setParams] = useSearchParams();
   const initial = params.get("code") || "";
   const [code, setCode] = useState(initial);

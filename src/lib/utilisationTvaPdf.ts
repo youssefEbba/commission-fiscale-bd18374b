@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { drawVerificationQr } from "@/lib/verificationQr";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 
