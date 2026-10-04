@@ -184,12 +184,15 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   labelDottedValue(doc, M, y, "MAITRE D'OUVRAGE :", cert?.autoriteContractanteNom || "", 360); y += 14;
   labelDottedValue(doc, M, y, "MINISTÈRE DE TUTELLE :", cert?.autoriteContractanteMinistereTutelleNom || "", 360); y += 14;
-  const lettres = numberToFrenchWords(Math.round(montantTotal));
+  // Montant en lettres sans perte des centimes (pièce officielle).
+  const entier = Math.floor(montantTotal);
+  const centimes = Math.round((montantTotal - entier) * 100);
+  const lettres = numberToFrenchWords(entier) + (centimes > 0 ? ` Ouguiya et ${numberToFrenchWords(centimes)} centimes` : "");
   doc.setFont("helvetica", "bold").setFontSize(9);
   doc.text("LA SOMME DE :", M, y);
   doc.setFont("helvetica", "italic");
   const lettresW = W - M - (M + doc.getTextWidth("LA SOMME DE :") + 4);
-  const lettresLines = doc.splitTextToSize(lettres + " Ouguiya (MRU)", lettresW);
+  const lettresLines = doc.splitTextToSize(lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
   doc.text(lettresLines, M + doc.getTextWidth("LA SOMME DE :") + 6, y);
   y += 12 * lettresLines.length + 2;
   doc.setFont("helvetica", "normal");

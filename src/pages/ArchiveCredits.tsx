@@ -846,7 +846,7 @@ const ArchiveCredits = () => {
                   <div className="space-y-1.5">
                     <Label>{t("archive:f_montant_ht")} *</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       value={form.montantContratHt ?? ""}
                       onChange={(e) => setField("montantContratHt", e.target.value)}
                     />

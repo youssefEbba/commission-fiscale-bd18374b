@@ -403,7 +403,9 @@
     "empty": "Aucun document",
     "add": "Ajouter",
     "open": "Ouvrir",
-    "version_short": "v{{n}}"
+    "version_short": "v{{n}}",
+    "reservees_admin": "Pièce produite par l'administration, consultable après la liquidation du dossier.",
+    "reservees_admin_short": "Consultable après la liquidation"
   },
   "decisions_section": {
     "title_one": "Décisions & Rejets ({{count}})",
@@ -462,7 +464,9 @@
     "option_a_payer": "À PAYER (entreprise)",
     "upload": {
       "label": "Scan du bulletin annoté (optionnel)",
-      "file_prefix": "Fichier : {{name}}"
+      "file_prefix": "Fichier : {{name}}",
+      "required": "Le bulletin annoté est obligatoire pour le premier visa.",
+      "optional_reannotation": "facultatif : bulletin déjà déposé"
     },
     "lines_pending_one": "{{count}} ligne avec un montant > 0 sans affectation.",
     "lines_pending_other": "{{count}} lignes avec un montant > 0 sans affectation.",
@@ -582,7 +586,8 @@
     "attente_reception": "Utilisation liquidée. L'entreprise doit accuser réception pour clôturer.",
     "attente_certificat_president": "La main est au Président pour émettre et signer le certificat d'utilisation, titre présenté ensuite pour obtenir la quittance.",
     "attente_reception_emis": "Certificat d'utilisation émis par le Président. L'entreprise doit accuser réception pour clôturer.",
-    "attente_quittance_dgi": "Certificat d'utilisation émis par le Président. L'entreprise le présente à la DGI, qui dépose la quittance."
+    "attente_quittance_dgi": "Certificat d'utilisation émis par le Président. L'entreprise le présente à la DGI, qui dépose la quittance.",
+    "attente_controle_dgtcp": "La DGTCP doit contrôler le bulletin visé et le chèque certifié, puis transmettre le dossier au Président."
   },
   "certificat_utilisation": {
     "title": "Certificat d'utilisation",
@@ -609,5 +614,17 @@
     "attente_quittance_dgi": "En attente du certificat du Président",
     "non_emis_envoi_error": "Le certificat d'utilisation doit être émis par le Président avant l'envoi au Trésor.",
     "non_emis_quittance_error": "La quittance DGI suppose le certificat d'utilisation émis par le Président."
+  },
+  "transmission_president": {
+    "queue_filter": "Dossiers à contrôler",
+    "button": "Transmettre au Président",
+    "done": "Dossier contrôlé et transmis au Président."
+  },
+  "correction_rejet": {
+    "button": "Corriger le dossier",
+    "warning_title": "Attention avant de modifier les lignes du bulletin",
+    "warning_body": "Modifier les lignes du bulletin annule l'annotation de la DGD et invalide les totaux : les montants pris en charge et à payer seront à recalculer après un nouveau visa DGD, et le chèque déjà saisi ne sera plus valable. Une correction qui ne touche pas aux lignes ne change ni les totaux ni le chèque.",
+    "saved": "Correction enregistrée. Le dossier repassera par un nouveau visa de la DGD.",
+    "a_recalculer": "À recalculer après nouveau visa DGD"
   }
 }

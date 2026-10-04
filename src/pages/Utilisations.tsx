@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -56,6 +56,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   CLOTUREE: "bg-slate-200 text-slate-800",
   EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
   CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
+  TRANSMISE_AU_PRESIDENT: "bg-violet-100 text-violet-800",
   ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
   QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
@@ -97,13 +98,15 @@ const Utilisations = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState(() =>
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aEmettre") === "1" ? "A_EMETTRE" : "ALL");
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aEmettre") === "1" ? "A_EMETTRE"
+    : typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aControler") === "1" ? "A_CONTROLER" : "ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [tab, setTab] = useState("all");
 
   // Create / edit dialog
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingStatut, setEditingStatut] = useState<string | null>(null);
   const [createType, setCreateType] = useState<UtilisationType>("DOUANIER");
   const [pdfLoadingId, setPdfLoadingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<CreateUtilisationCreditRequest>>({ ...emptyDouane });
@@ -242,6 +245,16 @@ const Utilisations = () => {
   };
 
   useEffect(() => { fetchData(); fetchTransfertsExecutes(); }, []);
+  // Ouverture directe du formulaire de correction depuis la fiche (?edit=<id>), dossier INCOMPLETE.
+  const editParamHandled = useRef(false);
+  useEffect(() => {
+    if (editParamHandled.current || data.length === 0) return;
+    const id = Number(new URLSearchParams(window.location.search).get("edit"));
+    if (!id) return;
+    editParamHandled.current = true;
+    const target = data.find((x) => x.id === id && x.statut === "INCOMPLETE");
+    if (target) void openEditBrouillon(target);
+  }, [data]);
 
   const loadCertificatsAndRequirements = async () => {
     try {
@@ -303,6 +316,7 @@ const Utilisations = () => {
 
   const openEditBrouillon = async (u: UtilisationCreditDto) => {
     setEditingId(u.id);
+    setEditingStatut(u.statut);
     setCreateType(u.type);
     setForm({
       type: u.type,
@@ -472,6 +486,7 @@ const Utilisations = () => {
 
       let description: string;
       if (mode === "brouillon") description = t("utilisations:toast.draft_saved");
+      else if (editingId != null && editingStatut === "INCOMPLETE") description = t("utilisations:correction_rejet.saved");
       else if (editingId != null) description = t("utilisations:toast.submitted");
       else if (uploadEntries.length > 0) description = t("utilisations:toast.created_with_docs", { count: uploadEntries.length });
       else description = t("utilisations:toast.created");
@@ -571,7 +586,8 @@ const Utilisations = () => {
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
-      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")));
+      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE"))) ||
+      (filterStatut === "A_CONTROLER" && u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI");
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -641,7 +657,12 @@ const Utilisations = () => {
           </div>
           {(role === "PRESIDENT" || role === "ADMIN_SI") && (
             <Button variant={filterStatut === "A_EMETTRE" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_EMETTRE" ? "ALL" : "A_EMETTRE")}>
-              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
+              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
+            </Button>
+          )}
+          {(role === "DGTCP" || role === "ADMIN_SI") && (
+            <Button variant={filterStatut === "A_CONTROLER" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_CONTROLER" ? "ALL" : "A_CONTROLER")}>
+              {t("utilisations:transmission_president.queue_filter")} ({data.filter((u) => u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI").length})
             </Button>
           )}
           <Select value={filterStatut} onValueChange={setFilterStatut}>
@@ -652,6 +673,9 @@ const Utilisations = () => {
               <SelectItem value="ALL">{t("utilisations:list.filter_all")}</SelectItem>
               {(role === "PRESIDENT" || role === "ADMIN_SI") && (
                 <SelectItem value="A_EMETTRE">{t("utilisations:certificat_utilisation.queue_filter")}</SelectItem>
+              )}
+              {(role === "DGTCP" || role === "ADMIN_SI") && (
+                <SelectItem value="A_CONTROLER">{t("utilisations:transmission_president.queue_filter")}</SelectItem>
               )}
               {UTILISATION_STATUT_VALUES.map((k) => (
                 <SelectItem key={k} value={k}>{tStatutUtilisation(k)}</SelectItem>
@@ -743,6 +767,11 @@ const Utilisations = () => {
                               {t("utilisations:list.actions.process")}
                             </Button>
                           )}
+                          {u.statut === "INCOMPLETE" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS") && (
+                            <Button variant="outline" size="sm" onClick={() => openEditBrouillon(u)}>
+                              <Pencil className="h-4 w-4 me-1" /> {t("utilisations:correction_rejet.button")}
+                            </Button>
+                          )}
                           {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (() => {
                             const blockedByTransfert = u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId);
                             return (
@@ -807,6 +836,12 @@ const Utilisations = () => {
               <p className="text-xs text-muted-foreground">
                 {t("utilisations:create.type_immutable_hint")}
               </p>
+            )}
+            {editingId != null && editingStatut === "INCOMPLETE" && (
+              <div role="alert" className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">{t("utilisations:correction_rejet.warning_title")}</p>
+                <p className="mt-1">{t("utilisations:correction_rejet.warning_body")}</p>
+              </div>
             )}
           </DialogHeader>
           <div className="space-y-4">
@@ -1001,7 +1036,7 @@ const Utilisations = () => {
                   <div>
                     <Label>{t("utilisations:create.douane.montant_total")} *</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       min="0"
                       placeholder={t("utilisations:create.douane.montant_total_placeholder")}
                       value={form.montant ?? ""}
@@ -1033,7 +1068,7 @@ const Utilisations = () => {
                   {form.typeAchat === "DECOMPTE" && (
                     <div><Label>{t("utilisations:create.tva.numero_decompte")} *</Label><Input placeholder={t("utilisations:create.tva.numero_decompte_placeholder")} value={form.numeroDecompte || ""} onChange={e => setForm({ ...form, numeroDecompte: e.target.value })} /></div>
                   )}
-                  <div><Label>{t("utilisations:create.tva.montant_tva")} *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                  <div><Label>{t("utilisations:create.tva.montant_tva")} *</Label><Input type="number" step="0.01" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
                 </>
               )}
             </div>

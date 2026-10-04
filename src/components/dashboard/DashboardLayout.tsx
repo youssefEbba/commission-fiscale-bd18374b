@@ -103,12 +103,12 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const [aEmettreCount, setAEmettreCount] = useState(0);
   const isPresident = user?.role === "PRESIDENT";
 
-  // File « Certificats à émettre » du Président : CHEQUE_SAISI (douane) et VALIDEE (TVA).
+  // File « Certificats à émettre » du Président : TRANSMISE_AU_PRESIDENT (douane) et VALIDEE (TVA).
   useEffect(() => {
     if (!isPresident) return;
     let alive = true;
     utilisationCreditApi.getAll()
-      .then((list) => { if (alive) setAEmettreCount(list.filter((u) => (u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length); })
+      .then((list) => { if (alive) setAEmettreCount(list.filter((u) => (u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length); })
       .catch(() => {});
     return () => { alive = false; };
   }, [isPresident, location.pathname]);

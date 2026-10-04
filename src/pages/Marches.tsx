@@ -491,11 +491,11 @@ const Marches = () => {
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-2">
                 <Label>{t("marches:form.montant_required")}</Label>
-                <Input type="number" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+                <Input type="number" step="0.01" value={form.montantContratHt ?? ""} onChange={e => setForm(f => ({ ...f, montantContratHt: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
               </div>
               <div className="space-y-2">
                 <Label>{t("marches:form.montant_ttc")}</Label>
-                <Input type="number" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
+                <Input type="number" step="0.01" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
               </div>
               <div className="space-y-2">
                 <Label>{t("marches:form.devise")}</Label>

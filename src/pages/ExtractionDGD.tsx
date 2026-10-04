@@ -205,7 +205,7 @@ const ExtractionDGD = () => {
               <div className="flex items-center gap-2">
                 <label className="text-sm text-muted-foreground">Page de</label>
                 <Input
-                  type="number"
+                  type="number" step="0.01"
                   min={1}
                   placeholder="ex: 10"
                   value={pageFrom}
@@ -215,7 +215,7 @@ const ExtractionDGD = () => {
                 />
                 <label className="text-sm text-muted-foreground">à</label>
                 <Input
-                  type="number"
+                  type="number" step="0.01"
                   min={1}
                   placeholder="ex: 15"
                   value={pageTo}

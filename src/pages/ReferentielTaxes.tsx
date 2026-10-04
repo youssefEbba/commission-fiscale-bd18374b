@@ -241,7 +241,7 @@ const ReferentielTaxes = () => {
               <div>
                 <Label>Ordre d'affichage</Label>
                 <Input
-                  type="number"
+                  type="number" step="0.01"
                   min="0"
                   placeholder="1"
                   value={form.ordreAffichage ?? ""}

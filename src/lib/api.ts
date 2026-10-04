@@ -1418,7 +1418,9 @@ export type UtilisationStatut =
   // Workflow TVA intérieure : quittance DGI après validation
   | "QUITTANCE_DGI_ENREGISTREE"
   // Émission du certificat d'utilisation par le Président (après LIQUIDEE / APUREE)
-  | "CERTIFICAT_EMIS";
+  | "CERTIFICAT_EMIS"
+  // Contrôle DGTCP avant le Président (douane)
+  | "TRANSMISE_AU_PRESIDENT";
 export type UtilisationType = "DOUANIER" | "TVA_INTERIEURE";
 
 export type TvaDeductibleStockSource = "UTILISATION_DOUANE" | "TRANSFERT_CREDIT";
@@ -1726,6 +1728,9 @@ export const utilisationCreditApi = {
       rawBody: fd,
     });
   },
+  /** DGTCP — contrôle (bulletin visé + chèque saisi) puis transmission au Président. Idempotent. Statut → TRANSMISE_AU_PRESIDENT. */
+  transmettrePresident: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/transmission-president`, { method: "POST" }),
   /** DGTCP — envoi du dossier au Trésor. Statut → ENVOYEE_AU_TRESOR. Aucun body. */
   envoyerAuTresor: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/envoyer-au-tresor`, {
@@ -1971,6 +1976,7 @@ export const UTILISATION_STATUT_VALUES: readonly UtilisationStatut[] = [
   "CLOTUREE",
   "EN_CONTROLE_DGD",
   "CHEQUE_SAISI",
+  "TRANSMISE_AU_PRESIDENT",
   "ENVOYEE_AU_TRESOR",
   "QUITTANCES_ENREGISTREES",
   "CERTIFICAT_EMIS",

@@ -33,7 +33,7 @@ export interface FormatAmountOptions {
 
 export function formatAmount(
   n: number | string | null | undefined,
-  { currency = "MRU", numberingSystem = "latn", maximumFractionDigits = 0, minimumFractionDigits = 0 }: FormatAmountOptions = {},
+  { currency = "MRU", numberingSystem = "latn", maximumFractionDigits = 2, minimumFractionDigits = 0 }: FormatAmountOptions = {},
 ): string {
   const v = typeof n === "string" ? Number(n) : n;
   if (v == null || Number.isNaN(v as number)) return `0 ${currency}`;
