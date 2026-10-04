@@ -227,7 +227,7 @@ const UtilisationDetail = () => {
       ]);
       // Totaux invalidés par une correction du bulletin pendant un rejet temporaire : à recalculer après nouveau visa DGD.
       (u as any)._totauxARecalculer = u.type === "DOUANIER" && u.totalPrisEnCharge == null && u.totalAPayer == null
-        && ["INCOMPLETE", "A_RECONTROLER"].includes(u.statut) && decs.some((d: any) => d.role === "DGD" && d.decision === "VISA");
+        && ["INCOMPLETE", "A_RECONTROLER"].includes(u.statut) && (dec as any[]).some((d: any) => d.role === "DGD" && d.decision === "VISA");
       if (lignesFallback && Array.isArray(lignesFallback) && lignesFallback.length > 0 && !(u as any)._totauxARecalculer) {
         u.lignes = lignesFallback;
         if (u.totalPrisEnCharge == null) {
@@ -281,6 +281,11 @@ const UtilisationDetail = () => {
     const missing = lignes.filter(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]);
     if (missing.length > 0) {
       toast({ title: t("utilisations:toast.decisions_missing_title"), description: t("utilisations:toast.decisions_missing_desc", { count: missing.length }), variant: "destructive" });
+      return;
+    }
+    const bulletinActifExiste = docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false);
+    if (!liqBulletinFile && !bulletinActifExiste) {
+      toast({ title: tError(), description: t("utilisations:visa_dgd.upload.required"), variant: "destructive" });
       return;
     }
     setLiqLoading(true);
@@ -344,6 +349,18 @@ const UtilisationDetail = () => {
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
     } finally { setChequeLoading(false); }
+  };
+
+  const [transmissionLoading, setTransmissionLoading] = useState(false);
+  const handleTransmettrePresident = async () => {
+    setTransmissionLoading(true);
+    try {
+      await utilisationCreditApi.transmettrePresident(utilId);
+      toast({ title: tSuccess(), description: t("utilisations:transmission_president.done") });
+      fetchAll();
+    } catch (e: any) {
+      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } finally { setTransmissionLoading(false); }
   };
 
   const handleEnvoyerTresor = async () => {
@@ -536,7 +553,13 @@ const UtilisationDetail = () => {
     }
   };
 
+  // Toujours via GET /documents/{id}/download (applique la règle de confidentialité, 403 explicite).
   const openFile = (doc: DocumentDto) => {
+    if (doc.id) {
+      openDocument({ id: doc.id, nomFichier: doc.nomFichier }).catch((e: any) =>
+        toast({ title: tError(), description: e?.message, variant: "destructive" }));
+      return;
+    }
     if (!doc.chemin) return;
     let url = doc.chemin;
     if (!/^https?:\/\//i.test(url)) {
@@ -561,14 +584,18 @@ const UtilisationDetail = () => {
   const isDouane = u.type === "DOUANIER";
   const isTVA = u.type === "TVA_INTERIEURE";
   const tvaDocTypes = isTVA ? getUtilisationDocTypesTVA(u.typeAchat) : [];
-  const canUploadDoc = role === "ENTREPRISE" || role === "ADMIN_SI";
+  const canUploadDoc = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS" || role === "ADMIN_SI";
   const totalStockDisponible = tvaStock.reduce((s, x) => s + x.montantRestant, 0);
 
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
   const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
   const isEntreprise = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS";
   const canEntrepriseCheque = isEntreprise && isDouane && (u.statut === "EN_CONTROLE_DGD" || u.statut === "VISE");
-  const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && (u.statut === "CHEQUE_SAISI" || u.statut === "CERTIFICAT_EMIS");
+  const canDGTCPTransmettre = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
+  const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && (u.statut === "TRANSMISE_AU_PRESIDENT" || u.statut === "CERTIFICAT_EMIS");
+  const canEntrepriseCorriger = isEntreprise && u.statut === "INCOMPLETE" && decisions.some(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
+  const isRoleEntreprise = isEntreprise;
+  const piecesAdminReservees = isRoleEntreprise && !["LIQUIDEE", "APUREE", "CLOTUREE"].includes(u.statut);
   const envoiTresorAttente = u.statut !== "CERTIFICAT_EMIS";
   const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
   const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
@@ -583,7 +610,7 @@ const UtilisationDetail = () => {
   const canRejetTemp = !myHasVisa && (role === "DGD" || role === "DGTCP") && ["DEMANDEE", "EN_VERIFICATION", "EN_CONTROLE_DGD", "VISE", "VALIDEE", "A_RECONTROLER"].includes(u.statut);
   const canReject = (role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut)) ||
     (role === "DGTCP" && isTVA && ["DEMANDEE", "EN_VERIFICATION", "VALIDEE"].includes(u.statut)) ||
-    (role === "DGTCP" && isDouane && ["VISE", "EN_CONTROLE_DGD", "CHEQUE_SAISI", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES"].includes(u.statut));
+    (role === "DGTCP" && isDouane && ["VISE", "EN_CONTROLE_DGD", "CHEQUE_SAISI", "TRANSMISE_AU_PRESIDENT", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES"].includes(u.statut));
   const canDGDReVerify = role === "DGD" && isDouane && u.statut === "A_RECONTROLER";
   const canDGTCPReVerifyTVA = role === "DGTCP" && isTVA && u.statut === "A_RECONTROLER";
 
@@ -628,7 +655,8 @@ const UtilisationDetail = () => {
 
         {(() => {
           const stepKey =
-            (isDouane && u.statut === "CHEQUE_SAISI") || (isTVA && u.statut === "VALIDEE") ? "attente_certificat_president"
+            (isDouane && u.statut === "CHEQUE_SAISI") ? "attente_controle_dgtcp"
+            : (isDouane && u.statut === "TRANSMISE_AU_PRESIDENT") || (isTVA && u.statut === "VALIDEE") ? "attente_certificat_president"
             : u.statut === "CERTIFICAT_EMIS" ? (isDouane ? "attente_envoi_tresor" : "attente_quittance_dgi")
             : u.statut === "LIQUIDEE" || (isTVA && u.statut === "APUREE") ? "attente_reception"
             : !isDouane ? null
@@ -660,6 +688,7 @@ const UtilisationDetail = () => {
           const showAP = (u.totalAPayer != null && u.totalAPayer > 0) ? u.totalAPayer : (beforeVisa ? propAPayer : (u.totalAPayer ?? 0));
           const isPreview = beforeVisa && (propAuCi > 0 || propAPayer > 0) && (!u.totalPrisEnCharge && !u.totalAPayer);
           const montantTotal = isDouane && lignes.length > 0 ? lignes.reduce((s, l) => s + (Number(l.valeur) || 0), 0) : u.montant;
+          const aRecalculer = !!(u as any)._totauxARecalculer;
           const previewNote = isPreview ? <span className="block text-[10px] italic text-muted-foreground">{t("utilisations:detail.kpi.preview_note")}</span> : null;
 
           const Kpi = ({ icon: Icon, label, value, note, tone = "primary" }: { icon: any; label: string; value: React.ReactNode; note?: React.ReactNode; tone?: "primary" | "accent" | "muted" }) => (
@@ -680,8 +709,8 @@ const UtilisationDetail = () => {
           return (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Kpi icon={CreditCard} label={t("utilisations:detail.kpi.montant_total")} value={fmtAmt(montantTotal)} />
-              {isDouane && <Kpi icon={TrendingDown} label={t("utilisations:detail.kpi.total_au_ci")} value={fmtAmt(showCi)} note={previewNote} />}
-              {isDouane && <Kpi icon={CircleDollarSign} tone="accent" label={t("utilisations:detail.kpi.total_a_payer")} value={fmtAmt(showAP)} note={previewNote} />}
+              {isDouane && <Kpi icon={TrendingDown} label={t("utilisations:detail.kpi.total_au_ci")} value={aRecalculer ? <span className="text-sm font-medium italic text-muted-foreground">{t("utilisations:correction_rejet.a_recalculer")}</span> : fmtAmt(showCi)} note={aRecalculer ? null : previewNote} />}
+              {isDouane && <Kpi icon={CircleDollarSign} tone="accent" label={t("utilisations:detail.kpi.total_a_payer")} value={aRecalculer ? <span className="text-sm font-medium italic text-muted-foreground">{t("utilisations:correction_rejet.a_recalculer")}</span> : fmtAmt(showAP)} note={aRecalculer ? null : previewNote} />}
               {isTVA && <Kpi icon={Building2} label={t("utilisations:detail.kpi.tva_collectee")} value={fmtAmt(u.montantTVAInterieure)} />}
               {cert && (
                 <Kpi
@@ -799,7 +828,7 @@ const UtilisationDetail = () => {
                 </TableBody>
               </Table>
               {(() => {
-                const visaStatuts: UtilisationStatut[] = ["EN_CONTROLE_DGD","VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE","CERTIFICAT_EMIS","CHEQUE_SAISI","ENVOYEE_AU_TRESOR","QUITTANCES_ENREGISTREES"];
+                const visaStatuts: UtilisationStatut[] = ["EN_CONTROLE_DGD","VISE","VALIDEE","LIQUIDEE","APUREE","CLOTUREE","CERTIFICAT_EMIS","CHEQUE_SAISI","TRANSMISE_AU_PRESIDENT","ENVOYEE_AU_TRESOR","QUITTANCES_ENREGISTREES"];
                 if (!visaStatuts.includes(u.statut)) return null;
                 const lignesAuCi = (u.lignes || []).filter(l => l.affectation === "AU_CI" && (Number(l.valeur) || 0) > 0);
                 const lignesAPayer = (u.lignes || []).filter(l => l.affectation === "A_PAYER" && (Number(l.valeur) || 0) > 0);
@@ -897,11 +926,11 @@ const UtilisationDetail = () => {
                       <TableCell className="text-end font-medium">{fmtNum(q.montant)}</TableCell>
                       <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
                       <TableCell>
-                        {q.documentChemin ? (
-                          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => openFile({ chemin: q.documentChemin, nomFichier: q.documentNomFichier } as any)}>
+                        {((q as any).documentId || q.documentChemin) ? (
+                          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => openFile({ id: (q as any).documentId, chemin: q.documentChemin, nomFichier: q.documentNomFichier } as any)}>
                             <FileText className="h-3.5 w-3.5 me-1" /> {q.documentNomFichier || t("utilisations:quittances.see_doc")}
                           </Button>
-                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                        ) : <span className="text-xs text-muted-foreground">{piecesAdminReservees ? t("utilisations:documents.reservees_admin_short") : "—"}</span>}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -949,7 +978,7 @@ const UtilisationDetail = () => {
                   <p className="text-muted-foreground">{t("utilisations:quittance_dgi.justificatif")}</p>
                   {(u.quittanceDgi.documentChemin || u.quittanceDgi.documentId) ? (
                     <Button variant="link" size="sm" className="h-auto p-0" onClick={() => {
-                      openDocument({ id: u.quittanceDgi!.documentId, chemin: u.quittanceDgi!.documentChemin, nomFichier: u.quittanceDgi!.documentNomFichier })
+                      openDocument({ id: u.quittanceDgi!.documentId, chemin: u.quittanceDgi!.documentId ? undefined : u.quittanceDgi!.documentChemin, nomFichier: u.quittanceDgi!.documentNomFichier })
                         .catch((e) => toast({ title: tError(), description: e.message, variant: "destructive" }));
                     }}><FileText className="h-3.5 w-3.5 me-1" /> {u.quittanceDgi.documentNomFichier || t("utilisations:quittance_dgi.voir")}</Button>
                   ) : <p>—</p>}
@@ -1107,7 +1136,7 @@ const UtilisationDetail = () => {
                 return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
               });
               return visibleDocs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">{t("utilisations:documents.empty")}</p>
+                <p className="text-center text-muted-foreground py-4">{piecesAdminReservees ? t("utilisations:documents.reservees_admin") : t("utilisations:documents.empty")}</p>
               ) : (
                 <div className="space-y-2">
                   {visibleDocs.map(d => (
@@ -1119,7 +1148,7 @@ const UtilisationDetail = () => {
                           {t("utilisations:documents.version_short", { n: d.version || 1 })}
                         </p>
                       </div>
-                      {d.chemin && (
+                      {(d.id || d.chemin) && (
                         <Button variant="ghost" size="sm" onClick={() => openFile(d)}>{t("utilisations:documents.open")}</Button>
                       )}
                     </div>
@@ -1206,7 +1235,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception || canDGIQuittance) && (
+        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPTransmettre || canEntrepriseCorriger || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception || canDGIQuittance) && (
           <Card>
             <CardHeader><CardTitle className="text-base">{t("utilisations:detail.actions_section")}</CardTitle></CardHeader>
             <CardContent>
@@ -1235,6 +1264,17 @@ const UtilisationDetail = () => {
                     });
                     setShowCheque(true);
                   }}><CreditCard className="h-4 w-4 me-2" /> {t("utilisations:actions.saisir_cheque")}</Button>
+                )}
+                {canEntrepriseCorriger && (
+                  <Button variant="outline" onClick={() => navigate(`/dashboard/utilisations?edit=${u.id}`)}>
+                    <FileText className="h-4 w-4 me-2" /> {t("utilisations:correction_rejet.button")}
+                  </Button>
+                )}
+                {canDGTCPTransmettre && (
+                  <Button onClick={handleTransmettrePresident} disabled={transmissionLoading}>
+                    {transmissionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                    <Send className="h-4 w-4 me-2" /> {t("utilisations:transmission_president.button")}
+                  </Button>
                 )}
                 {canDGTCPEnvoyerTresor && (
                   <Button className="bg-sky-600 hover:bg-sky-700" onClick={handleEnvoyerTresor} disabled={envoiLoading || envoiTresorAttente}>
@@ -1415,10 +1455,10 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}</Label>
+                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` (${t("utilisations:visa_dgd.upload.optional_reannotation")})` : " *"}</Label>
                 <Input
                   type="file"
-                  accept=".pdf,image/*"
+                  accept=".pdf,.png,.jpg,.jpeg"
                   onChange={(e) => setLiqBulletinFile(e.target.files?.[0] || null)}
                 />
                 {liqBulletinFile && <p className="text-xs text-muted-foreground">{t("utilisations:visa_dgd.upload.file_prefix", { name: liqBulletinFile.name })}</p>}
