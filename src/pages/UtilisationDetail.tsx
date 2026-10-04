@@ -35,7 +35,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   ArrowLeft, Loader2, Landmark, Ship, Building2, FileText, Upload, Info,
   AlertTriangle, CheckCircle2, CreditCard, XCircle, CircleDollarSign,
-  TrendingDown, TrendingUp, Minus, Download, ShieldCheck
+  TrendingDown, TrendingUp, Minus, Download, ShieldCheck, Send
 } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { openDocument } from "@/lib/openDocument";
@@ -981,7 +981,7 @@ const UtilisationDetail = () => {
                       openDocument({ id: u.quittanceDgi!.documentId, chemin: u.quittanceDgi!.documentId ? undefined : u.quittanceDgi!.documentChemin, nomFichier: u.quittanceDgi!.documentNomFichier })
                         .catch((e) => toast({ title: tError(), description: e.message, variant: "destructive" }));
                     }}><FileText className="h-3.5 w-3.5 me-1" /> {u.quittanceDgi.documentNomFichier || t("utilisations:quittance_dgi.voir")}</Button>
-                  ) : <p>—</p>}
+                  ) : <p className="text-xs text-muted-foreground">{piecesAdminReservees ? t("utilisations:documents.reservees_admin_short") : "—"}</p>}
                 </div>
               </div>
             </CardContent>
