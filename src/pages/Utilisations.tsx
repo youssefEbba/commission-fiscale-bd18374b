@@ -56,6 +56,7 @@ const STATUT_COLORS: Record<UtilisationStatut, string> = {
   CLOTUREE: "bg-slate-200 text-slate-800",
   EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
   CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
+  TRANSMISE_AU_PRESIDENT: "bg-violet-100 text-violet-800",
   ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
   QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
   QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
@@ -571,7 +572,7 @@ const Utilisations = () => {
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
-      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")));
+      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")));
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -641,7 +642,7 @@ const Utilisations = () => {
           </div>
           {(role === "PRESIDENT" || role === "ADMIN_SI") && (
             <Button variant={filterStatut === "A_EMETTRE" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_EMETTRE" ? "ALL" : "A_EMETTRE")}>
-              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
+              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
             </Button>
           )}
           <Select value={filterStatut} onValueChange={setFilterStatut}>
