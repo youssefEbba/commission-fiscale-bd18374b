@@ -43,7 +43,7 @@ import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
-const CU_CARD_STATUTS: string[] = ["CHEQUE_SAISI", "VALIDEE", ...CU_POST_EMISSION, "CLOTUREE"];
+const CU_CARD_STATUTS: string[] = ["TRANSMISE_AU_PRESIDENT", "VALIDEE", ...CU_POST_EMISSION, "CLOTUREE"];
 const STATUT_COLORS: Record<UtilisationStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
   DEMANDEE: "bg-blue-100 text-blue-800",
@@ -225,7 +225,10 @@ const UtilisationDetail = () => {
           ? utilisationCreditApi.getLignesBulletin(utilId).catch(() => [])
           : Promise.resolve(null),
       ]);
-      if (lignesFallback && Array.isArray(lignesFallback) && lignesFallback.length > 0) {
+      // Totaux invalidés par une correction du bulletin pendant un rejet temporaire : à recalculer après nouveau visa DGD.
+      (u as any)._totauxARecalculer = u.type === "DOUANIER" && u.totalPrisEnCharge == null && u.totalAPayer == null
+        && ["INCOMPLETE", "A_RECONTROLER"].includes(u.statut) && decs.some((d: any) => d.role === "DGD" && d.decision === "VISA");
+      if (lignesFallback && Array.isArray(lignesFallback) && lignesFallback.length > 0 && !(u as any)._totauxARecalculer) {
         u.lignes = lignesFallback;
         if (u.totalPrisEnCharge == null) {
           u.totalPrisEnCharge = lignesFallback
