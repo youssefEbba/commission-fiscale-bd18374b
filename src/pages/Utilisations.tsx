@@ -1001,7 +1001,7 @@ const Utilisations = () => {
                   <div>
                     <Label>{t("utilisations:create.douane.montant_total")} *</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       min="0"
                       placeholder={t("utilisations:create.douane.montant_total_placeholder")}
                       value={form.montant ?? ""}
@@ -1033,7 +1033,7 @@ const Utilisations = () => {
                   {form.typeAchat === "DECOMPTE" && (
                     <div><Label>{t("utilisations:create.tva.numero_decompte")} *</Label><Input placeholder={t("utilisations:create.tva.numero_decompte_placeholder")} value={form.numeroDecompte || ""} onChange={e => setForm({ ...form, numeroDecompte: e.target.value })} /></div>
                   )}
-                  <div><Label>{t("utilisations:create.tva.montant_tva")} *</Label><Input type="number" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
+                  <div><Label>{t("utilisations:create.tva.montant_tva")} *</Label><Input type="number" step="0.01" min="0" placeholder="0" value={form.montantTVAInterieure ?? ""} onChange={e => setForm({ ...form, montantTVAInterieure: e.target.value ? Number(e.target.value) : undefined })} /></div>
                 </>
               )}
             </div>

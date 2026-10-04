@@ -519,11 +519,11 @@ const SousTraitance = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{t("sous_traitance:dialogs.create.fields.volumes")}</Label>
-                <Input type="number" value={form.volumes ?? ""} onChange={(e) => setForm({ ...form, volumes: e.target.value ? Number(e.target.value) : undefined })} />
+                <Input type="number" step="0.01" value={form.volumes ?? ""} onChange={(e) => setForm({ ...form, volumes: e.target.value ? Number(e.target.value) : undefined })} />
               </div>
               <div>
                 <Label>{t("sous_traitance:dialogs.create.fields.quantites")}</Label>
-                <Input type="number" value={form.quantites ?? ""} onChange={(e) => setForm({ ...form, quantites: e.target.value ? Number(e.target.value) : undefined })} />
+                <Input type="number" step="0.01" value={form.quantites ?? ""} onChange={(e) => setForm({ ...form, quantites: e.target.value ? Number(e.target.value) : undefined })} />
               </div>
             </div>
             <div className="flex items-center gap-3">

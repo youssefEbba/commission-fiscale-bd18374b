@@ -1643,7 +1643,7 @@ const UtilisationDetail = () => {
             </div>
             <div>
               <Label>{t("utilisations:apurement_dialog.tva_ded_label")} *</Label>
-              <Input type="number" min="0" value={apurMontant} onChange={e => setApurMontant(e.target.value)} />
+              <Input type="number" step="0.01" min="0" value={apurMontant} onChange={e => setApurMontant(e.target.value)} />
             </div>
             {apurMontant && u.montantTVAInterieure != null && (() => {
               const tvaNette = u.montantTVAInterieure - Number(apurMontant);

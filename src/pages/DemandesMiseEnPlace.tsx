@@ -960,7 +960,7 @@ const DemandesMiseEnPlace = () => {
                   <div className="space-y-1">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant")}</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       value={marcheForm.montantContratHt ?? ""}
                       onChange={e => setMarcheForm(f => ({ ...f, montantContratHt: e.target.value === "" ? undefined : Number(e.target.value) }))}
                     />
@@ -968,7 +968,7 @@ const DemandesMiseEnPlace = () => {
                   <div className="space-y-1">
                     <Label className="text-xs">{t("mise_en_place:dialogs.create.marche_montant_ttc")}</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       value={marcheForm.montantContratTtc ?? ""}
                       onChange={e => setMarcheForm(f => ({ ...f, montantContratTtc: e.target.value === "" ? undefined : Number(e.target.value) }))}
                     />
