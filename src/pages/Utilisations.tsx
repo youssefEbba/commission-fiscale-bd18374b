@@ -98,13 +98,15 @@ const Utilisations = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState(() =>
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aEmettre") === "1" ? "A_EMETTRE" : "ALL");
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aEmettre") === "1" ? "A_EMETTRE"
+    : typeof window !== "undefined" && new URLSearchParams(window.location.search).get("aControler") === "1" ? "A_CONTROLER" : "ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [tab, setTab] = useState("all");
 
   // Create / edit dialog
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingStatut, setEditingStatut] = useState<string | null>(null);
   const [createType, setCreateType] = useState<UtilisationType>("DOUANIER");
   const [pdfLoadingId, setPdfLoadingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<CreateUtilisationCreditRequest>>({ ...emptyDouane });
@@ -304,6 +306,7 @@ const Utilisations = () => {
 
   const openEditBrouillon = async (u: UtilisationCreditDto) => {
     setEditingId(u.id);
+    setEditingStatut(u.statut);
     setCreateType(u.type);
     setForm({
       type: u.type,
@@ -473,6 +476,7 @@ const Utilisations = () => {
 
       let description: string;
       if (mode === "brouillon") description = t("utilisations:toast.draft_saved");
+      else if (editingId != null && editingStatut === "INCOMPLETE") description = t("utilisations:correction_rejet.saved");
       else if (editingId != null) description = t("utilisations:toast.submitted");
       else if (uploadEntries.length > 0) description = t("utilisations:toast.created_with_docs", { count: uploadEntries.length });
       else description = t("utilisations:toast.created");
@@ -572,7 +576,8 @@ const Utilisations = () => {
       (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
-      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")));
+      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE"))) ||
+      (filterStatut === "A_CONTROLER" && u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI");
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -645,6 +650,11 @@ const Utilisations = () => {
               {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
             </Button>
           )}
+          {(role === "DGTCP" || role === "ADMIN_SI") && (
+            <Button variant={filterStatut === "A_CONTROLER" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_CONTROLER" ? "ALL" : "A_CONTROLER")}>
+              {t("utilisations:transmission_president.queue_filter")} ({data.filter((u) => u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI").length})
+            </Button>
+          )}
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="w-48" aria-label={t("utilisations:list.columns.statut")}>
               <Filter className="h-4 w-4 me-2" /><SelectValue />
@@ -653,6 +663,9 @@ const Utilisations = () => {
               <SelectItem value="ALL">{t("utilisations:list.filter_all")}</SelectItem>
               {(role === "PRESIDENT" || role === "ADMIN_SI") && (
                 <SelectItem value="A_EMETTRE">{t("utilisations:certificat_utilisation.queue_filter")}</SelectItem>
+              )}
+              {(role === "DGTCP" || role === "ADMIN_SI") && (
+                <SelectItem value="A_CONTROLER">{t("utilisations:transmission_president.queue_filter")}</SelectItem>
               )}
               {UTILISATION_STATUT_VALUES.map((k) => (
                 <SelectItem key={k} value={k}>{tStatutUtilisation(k)}</SelectItem>
@@ -744,6 +757,11 @@ const Utilisations = () => {
                               {t("utilisations:list.actions.process")}
                             </Button>
                           )}
+                          {u.statut === "INCOMPLETE" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS") && (
+                            <Button variant="outline" size="sm" onClick={() => openEditBrouillon(u)}>
+                              <Pencil className="h-4 w-4 me-1" /> {t("utilisations:correction_rejet.button")}
+                            </Button>
+                          )}
                           {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (() => {
                             const blockedByTransfert = u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId);
                             return (
@@ -808,6 +826,12 @@ const Utilisations = () => {
               <p className="text-xs text-muted-foreground">
                 {t("utilisations:create.type_immutable_hint")}
               </p>
+            )}
+            {editingId != null && editingStatut === "INCOMPLETE" && (
+              <div role="alert" className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">{t("utilisations:correction_rejet.warning_title")}</p>
+                <p className="mt-1">{t("utilisations:correction_rejet.warning_body")}</p>
+              </div>
             )}
           </DialogHeader>
           <div className="space-y-4">
