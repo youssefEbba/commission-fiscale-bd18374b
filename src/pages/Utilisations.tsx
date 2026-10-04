@@ -245,6 +245,16 @@ const Utilisations = () => {
   };
 
   useEffect(() => { fetchData(); fetchTransfertsExecutes(); }, []);
+  // Ouverture directe du formulaire de correction depuis la fiche (?edit=<id>), dossier INCOMPLETE.
+  const editParamHandled = useRef(false);
+  useEffect(() => {
+    if (editParamHandled.current || data.length === 0) return;
+    const id = Number(new URLSearchParams(window.location.search).get("edit"));
+    if (!id) return;
+    editParamHandled.current = true;
+    const target = data.find((x) => x.id === id && x.statut === "INCOMPLETE");
+    if (target) void openEditBrouillon(target);
+  }, [data]);
 
   const loadCertificatsAndRequirements = async () => {
     try {
