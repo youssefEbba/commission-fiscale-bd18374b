@@ -993,13 +993,18 @@ const MiseEnPlaceDetail = () => {
             const douanierActif = !(dgdRequired && montantCordon !== "" && cordonNum === 0) && dgdRequired;
             const cordonExpected = b != null && d != null ? b + (tc ?? 0) + d : null;
             const tvaExpected = g != null && d != null ? g - d : null;
-            const cordonMismatch = false;
-            const tvaMismatch = false;
+            // Contrôle de cohérence : crédit extérieur = b + c + d, TVA nette = g − d (tolérance 1 MRU, comme le backend).
+            const cordonMismatch = douanierActif && cordonExpected != null && montantCordon !== "" && Math.abs(cordonExpected - cordonNum) > 1;
+            const tvaMismatch = interieurActif && tvaExpected != null && Math.abs(tvaExpected - tvaNum) > 1;
+            // Dès que le crédit extérieur est positif, les lignes (b) et (d) sont obligatoires (le backend refuse une enveloppe non ventilée).
+            const bdRequired = douanierActif && montantCordon !== "" && cordonNum > 0;
+            const bdComplete = !bdRequired || (b != null && d != null);
             // Une enveloppe n'est obligatoire que si l'organisme correspondant est concerné.
             const baseValid =
               (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
               (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
-            const canSave = baseValid && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
+            const canSave = baseValid && bdComplete && !cordonMismatch && !tvaMismatch && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
+            const fmt2 = (v: number) => formatNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             return (
               <>
