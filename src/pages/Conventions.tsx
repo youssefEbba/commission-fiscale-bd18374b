@@ -777,7 +777,7 @@ const Conventions = () => {
             <div className="grid grid-cols-3 gap-3 items-end">
               <div className="space-y-2">
                 <Label>{t("conventions:fields.montant_devise")}</Label>
-                <Input type="number" value={form.montantDevise ?? ""} onChange={(e) => {
+                <Input type="number" step="0.01" value={form.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
                   setForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                 }} placeholder="1200000" />
@@ -1178,7 +1178,7 @@ const Conventions = () => {
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>{t("conventions:fields.montant_devise")}</Label>
-                <Input type="number" value={editForm.montantDevise ?? ""} onChange={(e) => {
+                <Input type="number" step="0.01" value={editForm.montantDevise ?? ""} onChange={(e) => {
                   const val = e.target.value ? Number(e.target.value) : undefined;
                   setEditForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                 }} />

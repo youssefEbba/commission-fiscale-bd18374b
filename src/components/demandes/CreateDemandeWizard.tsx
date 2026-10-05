@@ -1136,7 +1136,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                 <div className="grid grid-cols-3 gap-2">
                                   <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground">{t("demandes:wizard.fields.amount_devise")}</Label>
-                                    <Input type="number" value={newConvForm.montantDevise ?? ""} onChange={e => {
+                                    <Input type="number" step="0.01" value={newConvForm.montantDevise ?? ""} onChange={e => {
                                       const val = e.target.value ? Number(e.target.value) : undefined;
                                       setNewConvForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
                                     }} />
@@ -1299,7 +1299,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         {t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}
                       </Label>
                       <Input
-                        type="number"
+                        type="number" step="0.01"
                         min={0}
                         value={creditExtManuel}
                         placeholder={String(creditExterieurCalc || 0)}
@@ -1311,7 +1311,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         {t("demandes:wizard.modele_fiscal.totals.credit_interieur")}
                       </Label>
                       <Input
-                        type="number"
+                        type="number" step="0.01"
                         min={0}
                         value={creditIntManuel}
                         placeholder={String(fiscalite.creditInterieur || 0)}
@@ -1501,13 +1501,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         <TableRow key={i}>
                           <TableCell><Input className="h-7 text-xs" value={l.designation} onChange={e => updateImportation(i, "designation", e.target.value)} /></TableCell>
                           <TableCell><Input className="h-7 text-xs" value={l.unite} onChange={e => updateImportation(i, "unite", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" value={l.quantite || ""} onChange={e => updateImportation(i, "quantite", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" value={l.prixUnitaire || ""} onChange={e => updateImportation(i, "prixUnitaire", e.target.value)} /></TableCell>
+                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.quantite || ""} onChange={e => updateImportation(i, "quantite", e.target.value)} /></TableCell>
+                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.prixUnitaire || ""} onChange={e => updateImportation(i, "prixUnitaire", e.target.value)} /></TableCell>
                           {showNomenclature && <TableCell><Input className="h-7 text-xs" value={l.nomenclature || ""} onChange={e => updateImportation(i, "nomenclature", e.target.value)} /></TableCell>}
-                          <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxDD} onChange={e => updateImportation(i, "tauxDD", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxRS} onChange={e => updateImportation(i, "tauxRS", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxPSC} onChange={e => updateImportation(i, "tauxPSC", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" value={l.tauxTVA} onChange={e => updateImportation(i, "tauxTVA", e.target.value)} /></TableCell>
+                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxDD} onChange={e => updateImportation(i, "tauxDD", e.target.value)} /></TableCell>
+                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxRS} onChange={e => updateImportation(i, "tauxRS", e.target.value)} /></TableCell>
+                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxPSC} onChange={e => updateImportation(i, "tauxPSC", e.target.value)} /></TableCell>
+                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxTVA} onChange={e => updateImportation(i, "tauxTVA", e.target.value)} /></TableCell>
                           <TableCell className="text-end text-xs">{fmt(l.valeurDouane)}</TableCell>
                           <TableCell className="text-end text-xs">{fmt(l.dd)}</TableCell>
                           <TableCell className="text-end text-xs">{fmt(l.tvaDouane)}</TableCell>
@@ -1541,15 +1541,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.montant_ht")}</Label>
-                    <Input type="number" value={fiscalite.montantHT || ""} onChange={e => updateFiscalite("montantHT", parseFloat(e.target.value) || 0)} />
+                    <Input type="number" step="0.01" value={fiscalite.montantHT || ""} onChange={e => updateFiscalite("montantHT", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.taux_tva")}</Label>
-                    <Input type="number" value={fiscalite.tauxTVA} onChange={e => updateFiscalite("tauxTVA", parseFloat(e.target.value) || 0)} />
+                    <Input type="number" step="0.01" value={fiscalite.tauxTVA} onChange={e => updateFiscalite("tauxTVA", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.autres_taxes")}</Label>
-                    <Input type="number" value={fiscalite.autresTaxes || ""} onChange={e => updateFiscalite("autresTaxes", parseFloat(e.target.value) || 0)} />
+                    <Input type="number" step="0.01" value={fiscalite.autresTaxes || ""} onChange={e => updateFiscalite("autresTaxes", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.tva_collectee")}</Label>
@@ -1580,7 +1580,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_exterieur")}</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       min={0}
                       value={creditExtManuel}
                       placeholder={String(creditExterieurCalc || 0)}
@@ -1590,7 +1590,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.totals.credit_interieur")}</Label>
                     <Input
-                      type="number"
+                      type="number" step="0.01"
                       min={0}
                       value={creditIntManuel}
                       placeholder={String(fiscalite.creditInterieur || 0)}
@@ -1632,7 +1632,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Taux TVA %</Label>
-                    <Input type="number" value={dqeTauxTVA} onChange={e => setDqeTauxTVA(parseFloat(e.target.value) || 0)} />
+                    <Input type="number" step="0.01" value={dqeTauxTVA} onChange={e => setDqeTauxTVA(parseFloat(e.target.value) || 0)} />
                   </div>
                 </div>
 
@@ -1658,8 +1658,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <TableRow key={i}>
                         <TableCell><Input className="h-7 text-xs" value={l.designation} onChange={e => updateDqeLigne(i, "designation", e.target.value)} /></TableCell>
                         <TableCell><Input className="h-7 text-xs" value={l.unite} onChange={e => updateDqeLigne(i, "unite", e.target.value)} /></TableCell>
-                        <TableCell><Input className="h-7 text-xs" type="number" value={l.quantite || ""} onChange={e => updateDqeLigne(i, "quantite", e.target.value)} /></TableCell>
-                        <TableCell><Input className="h-7 text-xs" type="number" value={l.prixUnitaireHT || ""} onChange={e => updateDqeLigne(i, "prixUnitaireHT", e.target.value)} /></TableCell>
+                        <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.quantite || ""} onChange={e => updateDqeLigne(i, "quantite", e.target.value)} /></TableCell>
+                        <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.prixUnitaireHT || ""} onChange={e => updateDqeLigne(i, "prixUnitaireHT", e.target.value)} /></TableCell>
                         <TableCell className="text-end text-xs font-semibold">{fmt(l.montantHT)}</TableCell>
                         <TableCell>
                           {dqeLignes.length > 1 && (
