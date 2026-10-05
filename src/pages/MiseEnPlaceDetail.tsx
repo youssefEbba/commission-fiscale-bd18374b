@@ -993,13 +993,18 @@ const MiseEnPlaceDetail = () => {
             const douanierActif = !(dgdRequired && montantCordon !== "" && cordonNum === 0) && dgdRequired;
             const cordonExpected = b != null && d != null ? b + (tc ?? 0) + d : null;
             const tvaExpected = g != null && d != null ? g - d : null;
-            const cordonMismatch = false;
-            const tvaMismatch = false;
+            // Contrôle de cohérence : crédit extérieur = b + c + d, TVA nette = g − d (tolérance 1 MRU, comme le backend).
+            const cordonMismatch = douanierActif && cordonExpected != null && montantCordon !== "" && Math.abs(cordonExpected - cordonNum) > 1;
+            const tvaMismatch = interieurActif && tvaExpected != null && Math.abs(tvaExpected - tvaNum) > 1;
+            // Dès que le crédit extérieur est positif, les lignes (b) et (d) sont obligatoires (le backend refuse une enveloppe non ventilée).
+            const bdRequired = douanierActif && montantCordon !== "" && cordonNum > 0;
+            const bdComplete = !bdRequired || (b != null && d != null);
             // Une enveloppe n'est obligatoire que si l'organisme correspondant est concerné.
             const baseValid =
               (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
               (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
-            const canSave = baseValid && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
+            const canSave = baseValid && bdComplete && !cordonMismatch && !tvaMismatch && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
+            const fmt2 = (v: number) => formatNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             return (
               <>
@@ -1073,6 +1078,42 @@ const MiseEnPlaceDetail = () => {
                       </div>
                     </fieldset>
                   </div>
+
+                  {(douanierActif || interieurActif) && (
+                    <div className="rounded-lg border p-3 space-y-1.5 text-xs">
+                      {douanierActif && (() => {
+                        const comparable = cordonExpected != null && montantCordon !== "";
+                        const ok = comparable && Math.abs(cordonExpected! - cordonNum) <= 1;
+                        const ecart = comparable ? cordonNum - cordonExpected! : null;
+                        return (
+                          <p className={!comparable ? "text-muted-foreground" : ok ? "text-green-700" : "text-destructive"}>
+                            {t("mise_en_place:dialogs.montants.control_cordon", {
+                              sum: cordonExpected != null ? fmt2(cordonExpected) : "—",
+                              saisi: montantCordon !== "" ? fmt2(cordonNum) : "—",
+                              ecart: ecart != null ? (ecart > 0 ? `+${fmt2(ecart)}` : fmt2(ecart)) : "—",
+                            })}
+                          </p>
+                        );
+                      })()}
+                      {interieurActif && (() => {
+                        const comparable = tvaExpected != null;
+                        const ok = comparable && Math.abs(tvaExpected! - tvaNum) <= 1;
+                        const ecart = comparable ? tvaNum - tvaExpected! : null;
+                        return (
+                          <p className={!comparable ? "text-muted-foreground" : ok ? "text-green-700" : "text-destructive"}>
+                            {t("mise_en_place:dialogs.montants.control_tva", {
+                              sum: tvaExpected != null ? fmt2(tvaExpected) : "—",
+                              saisi: fmt2(tvaNum),
+                              ecart: ecart != null ? (ecart > 0 ? `+${fmt2(ecart)}` : fmt2(ecart)) : "—",
+                            })}
+                          </p>
+                        );
+                      })()}
+                      {bdRequired && !bdComplete && (
+                        <p className="text-destructive">{t("mise_en_place:dialogs.montants.bd_required_hint")}</p>
+                      )}
+                    </div>
+                  )}
 
                   {baseValid && (
                     <div className="rounded-lg bg-muted/50 border p-3 text-sm">
