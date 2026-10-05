@@ -285,7 +285,10 @@
       "bloc_douanier": "Crédit douanier",
       "bloc_douanier_off": "Enveloppe douanière à zéro : aucun champ requis.",
       "bloc_interieur": "Crédit intérieur",
-      "bloc_interieur_off": "Montant TVA intérieure à zéro : volet non applicable, aucun contrôle."
+      "bloc_interieur_off": "Montant TVA intérieure à zéro : volet non applicable, aucun contrôle.",
+      "control_cordon": "b + c + d = {{sum}} — crédit extérieur saisi : {{saisi}} — écart : {{ecart}}",
+      "control_tva": "g − d = {{sum}} — TVA intérieure saisie : {{saisi}} — écart : {{ecart}}",
+      "bd_required_hint": "Les lignes (b) et (d) sont obligatoires dès que le crédit extérieur est positif. Saisissez 0 si la ligne est sans objet."
     },
     "reject": {
       "title": "Rejeter la demande",
