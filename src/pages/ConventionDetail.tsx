@@ -132,7 +132,7 @@ const ConventionDetail = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/conventions")}>
+            <Button variant="outline" size="sm" onClick={smartBack}>
               <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("conventions:detail.back")}
             </Button>
             <div>
@@ -143,8 +143,43 @@ const ConventionDetail = () => {
               <p className="text-muted-foreground text-sm mt-1">{conv.intitule || "—"}</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className={`${STATUT_COLORS[conv.statut] || ""}`}>{tStatutConvention(conv.statut)}</Badge>
+            {conv.actif === false && (
+              <Badge variant="destructive">{t("conventions:activation.disabled_badge")}</Badge>
+            )}
+            {echeance && (
+              <Badge
+                variant="outline"
+                className={
+                  echeance.niveau === "depassee" || echeance.niveau === "critique"
+                    ? "border-destructive text-destructive"
+                    : "border-accent text-accent-foreground bg-accent/20"
+                }
+              >
+                <CalendarClock className="h-3.5 w-3.5 me-1" />
+                {echeance.niveau === "depassee"
+                  ? t("conventions:echeance.depassee", { date: formatDate(conv.dateFin) })
+                  : t("conventions:echeance.dans_jours", { jours: echeance.jours })}
+              </Badge>
+            )}
+            {canActivate && (
+              <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5">
+                {activationLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                <Label htmlFor="activation-switch" className="text-sm cursor-pointer">
+                  {conv.actif === false ? t("conventions:activation.activate") : t("conventions:activation.deactivate")}
+                </Label>
+                <Switch
+                  id="activation-switch"
+                  checked={conv.actif !== false}
+                  disabled={activationLoading}
+                  onCheckedChange={(checked) => {
+                    if (checked) handleActivation(true);
+                    else setConfirmDeactivate(true);
+                  }}
+                />
+              </div>
+            )}
             <Button variant="outline" onClick={() => setGedOpen(true)}>
               <Paperclip className="h-4 w-4 me-2" /> {t("conventions:detail.documents_button", { count: docs.length })}
             </Button>
@@ -189,6 +224,21 @@ const ConventionDetail = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={confirmDeactivate} onOpenChange={setConfirmDeactivate}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("conventions:activation.confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("conventions:activation.confirm_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleActivation(false)} disabled={activationLoading}>
+              <Power className="h-4 w-4 me-1" /> {t("conventions:activation.deactivate")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <DocumentGED
         open={gedOpen}
