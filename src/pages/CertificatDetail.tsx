@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DocumentGED from "@/components/ged/DocumentGED";
@@ -66,6 +67,7 @@ const CertificatDetail = () => {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/certificats");
   const { toast } = useToast();
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
   const [utilisations, setUtilisations] = useState<UtilisationCreditDto[]>([]);
@@ -222,7 +224,7 @@ const CertificatDetail = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("certificats:detail.back")}
           </Button>
           <div className="flex-1">
