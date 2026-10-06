@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 import { groupementApi, GroupementDto, formatApiErrorMessage } from "@/lib/api";
 import { Plus, Pencil, MoreHorizontal, Trash2, Loader2, RefreshCw, Users2, Search, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 
 const Groupements = () => {
   const { toast } = useToast();
@@ -126,13 +127,12 @@ const Groupements = () => {
                   </TableHeader>
                   <TableBody>
                     {filtered.map(g => (
-                      <TableRow
+                      <ClickableTableRow
                         key={g.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => g.id && navigate(`/dashboard/groupements/${g.id}`)}
+                        to={`/dashboard/groupements/${g.id}`}
                       >
                         <TableCell className="font-medium">
-                          <span className="text-primary hover:underline">{g.raisonSociale}</span>
+                          <Link to={`/dashboard/groupements/${g.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{g.raisonSociale}</Link>
                           {g.nomCommercial && <div className="text-xs text-muted-foreground">{g.nomCommercial}</div>}
                         </TableCell>
                         <TableCell>{g.chefDeFileRaisonSociale || "—"}</TableCell>
@@ -143,7 +143,7 @@ const Groupements = () => {
                             {g.actif === false ? "Inactif" : "Actif"}
                           </Badge>
                         </TableCell>
-                        <TableCell onClick={e => e.stopPropagation()}>
+                        <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -161,7 +161,7 @@ const Groupements = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                      </TableRow>
+                      </ClickableTableRow>
                     ))}
                   </TableBody>
                 </Table>
