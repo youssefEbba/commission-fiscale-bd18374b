@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { PDFDocument } from "pdf-lib";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -33,11 +33,13 @@ import {
   FileText, Search, RefreshCw, Plus, Loader2,
   CheckCircle, XCircle, Filter, Upload, File, Paperclip,
   ArrowUp, ArrowDown, Merge, MoreHorizontal, Eye, Edit,
-  Trash2, Ban, ShieldCheck, ShieldX,
+  Trash2, Ban, ShieldCheck, ShieldX, CalendarClock,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutConvention, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
+import { echeanceConvention } from "@/lib/conventionEcheance";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -629,14 +631,42 @@ const Conventions = () => {
                       </TableRow>
                     ) : (
                       paginated.map((c) => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium whitespace-nowrap">{c.reference || `#${c.id}`}</TableCell>
+                        <ClickableTableRow key={c.id} to={`/dashboard/conventions/${c.id}`}>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            <Link
+                              to={`/dashboard/conventions/${c.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-primary underline-offset-2 hover:underline"
+                            >
+                              {c.reference || `#${c.id}`}
+                            </Link>
+                          </TableCell>
                           <TableCell className="max-w-[320px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>
                           <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleurNom || c.bailleur || "—"}</TableCell>
                           <TableCell>
-                            <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
-                              {tStatutConvention(c.statut)}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
+                                {tStatutConvention(c.statut)}
+                              </Badge>
+                              {c.actif === false && (
+                                <Badge variant="destructive" className="text-xs">{t("conventions:activation.disabled_badge")}</Badge>
+                              )}
+                              {(() => {
+                                const ech = echeanceConvention(c.dateFin);
+                                if (!ech) return null;
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${ech.niveau === "avertissement" ? "border-accent text-accent-foreground bg-accent/20" : "border-destructive text-destructive"}`}
+                                  >
+                                    <CalendarClock className="h-3 w-3 me-1" />
+                                    {ech.niveau === "depassee"
+                                      ? t("conventions:echeance.depassee", { date: formatDate(c.dateFin) })
+                                      : t("conventions:echeance.dans_jours", { jours: ech.jours })}
+                                  </Badge>
+                                );
+                              })()}
+                            </div>
                           </TableCell>
                           <TableCell className="text-end">
                             <div className="flex items-center justify-end gap-1">
