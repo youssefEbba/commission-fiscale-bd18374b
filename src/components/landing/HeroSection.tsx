@@ -83,7 +83,7 @@ const HeroSection = () => {
       </div>
 
       <div className="absolute bottom-0 start-0 end-0">
-        <svg viewBox="0 0 1440 60" className="w-full fill-background">
+        <svg viewBox="0 0 1440 60" className="w-full fill-primary">
           <path d="M0,60 L0,20 Q720,0 1440,20 L1440,60 Z" />
         </svg>
       </div>

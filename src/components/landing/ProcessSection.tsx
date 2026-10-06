@@ -15,9 +15,9 @@ const ProcessSection = () => {
     <section id="processus" className="py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 text-center">
-          <span className="mb-3 inline-block text-xs font-bold uppercase tracking-widest text-primary">{t("process.kicker")}</span>
-          <h2 className="text-3xl font-extrabold text-foreground md:text-4xl">{t("process.title")}</h2>
-          <p className="mt-4 text-muted-foreground">{t("process.subtitle")}</p>
+          <span className="mb-3 inline-block text-xs font-bold uppercase tracking-widest text-gold">{t("process.kicker")}</span>
+          <h2 className="text-3xl font-extrabold text-primary-foreground md:text-4xl">{t("process.title")}</h2>
+          <p className="mt-4 text-primary-foreground/60">{t("process.subtitle")}</p>
         </div>
 
         <div className="grid gap-8 md:grid-cols-4">
@@ -28,14 +28,14 @@ const ProcessSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="group relative rounded-2xl border border-border bg-card p-6 text-center transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+              className="group relative rounded-2xl border border-gold/20 bg-dark-green/40 p-6 text-center transition-all hover:border-gold/50 hover:shadow-lg hover:shadow-black/20"
             >
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gold/10 text-gold transition-colors group-hover:bg-gold group-hover:text-accent-foreground">
                 <s.icon className="h-6 w-6" />
               </div>
               <span className="mb-2 block text-xs font-bold text-gold">{s.num}</span>
-              <h3 className="mb-2 text-lg font-bold text-foreground">{t(`process.steps.${s.key}.title`)}</h3>
-              <p className="text-sm text-muted-foreground">{t(`process.steps.${s.key}.desc`)}</p>
+              <h3 className="mb-2 text-lg font-bold text-primary-foreground">{t(`process.steps.${s.key}.title`)}</h3>
+              <p className="text-sm text-primary-foreground/60">{t(`process.steps.${s.key}.desc`)}</p>
             </motion.div>
           ))}
         </div>
