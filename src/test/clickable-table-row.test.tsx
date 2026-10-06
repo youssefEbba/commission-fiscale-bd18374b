@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, Link } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
