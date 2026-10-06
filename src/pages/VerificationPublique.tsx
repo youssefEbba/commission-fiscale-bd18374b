@@ -98,7 +98,7 @@ export default function VerificationPublique() {
         <div className="flex items-center gap-3 min-w-0">
           <img src={emblem} alt="" className="h-10 w-10" />
           <div className="leading-tight min-w-0">
-            <div className="text-xs text-muted-foreground">Ministère des Finances</div>
+            <div className="text-xs text-muted-foreground">{t("app.ministry")}</div>
             <div className="font-semibold truncate">Commission Fiscale</div>
           </div>
         </div>

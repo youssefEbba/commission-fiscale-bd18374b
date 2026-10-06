@@ -15,7 +15,7 @@ import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import { API_BASE } from "@/lib/apiConfig";
 
 const Login = () => {
-  const { t } = useTranslation("auth");
+  const { t } = useTranslation(["auth", "common"]);
   usePageTitle("auth:login.title");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -83,6 +83,7 @@ const Login = () => {
           <Link to="/" className="inline-flex items-center gap-2">
             <img src={logo} alt={t("brand.name")} className="h-12 w-12" />
             <div className="text-start leading-tight">
+              <span className="block text-[10px] font-medium text-muted-foreground">{t("common:app.ministry")}</span>
               <span className="block text-lg font-bold text-foreground">{t("brand.name")}</span>
               <span className="block text-xs font-medium text-accent tracking-wider uppercase">{t("brand.country")}</span>
             </div>
