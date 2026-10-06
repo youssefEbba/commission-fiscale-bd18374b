@@ -12,10 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
-import { ArrowLeft, FileText, Loader2, Paperclip } from "lucide-react";
+import { ArrowLeft, CalendarClock, FileText, Loader2, Paperclip, Power } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useSmartBack } from "@/hooks/useSmartBack";
+import { echeanceConvention } from "@/lib/conventionEcheance";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -35,8 +40,9 @@ const ConventionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { hasRole } = useAuth();
+  const { hasRole, hasPermission } = useAuth();
   const { t } = useTranslation(["conventions", "common"]);
+  const smartBack = useSmartBack("/dashboard/conventions");
 
   const [conv, setConv] = useState<ConventionDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +53,9 @@ const ConventionDetail = () => {
 
   const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isAdmin = hasRole(["ADMIN_SI"]);
+  const canActivate = hasPermission("convention.activate");
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [activationLoading, setActivationLoading] = useState(false);
 
   usePageTitle("conventions:detail.title", { ref: conv?.reference || `#${id}` });
 
@@ -102,6 +111,21 @@ const ConventionDetail = () => {
 
   const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
   const devise = conv.deviseOrigine || "MRU";
+  const echeance = echeanceConvention(conv.dateFin);
+
+  const handleActivation = async (actif: boolean) => {
+    setActivationLoading(true);
+    try {
+      const updated = await conventionApi.setActivation(conv.id, actif);
+      setConv(updated);
+      toast({ title: actif ? t("conventions:activation.success_on") : t("conventions:activation.success_off") });
+    } catch (e: any) {
+      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
+    } finally {
+      setActivationLoading(false);
+      setConfirmDeactivate(false);
+    }
+  };
 
   return (
     <DashboardLayout>
