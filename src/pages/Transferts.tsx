@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -357,8 +358,10 @@ const Transferts = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("transferts:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((tr) => (
-                    <TableRow key={tr.id}>
-                      <TableCell className="font-medium">#{tr.id}</TableCell>
+                    <ClickableTableRow key={tr.id} to={`/dashboard/transferts/${tr.id}`}>
+                      <TableCell className="font-medium">
+                        <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{tr.id}</Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{tr.certificatNumero || `Cert #${tr.certificatCreditId}`}</TableCell>
                       <TableCell className="font-medium">{formatAmount(tr.montant)}</TableCell>
                       <TableCell>
@@ -390,7 +393,7 @@ const Transferts = () => {
                           )}
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

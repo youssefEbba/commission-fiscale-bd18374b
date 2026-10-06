@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { entrepriseApi, EntrepriseDto } from "@/lib/api";
@@ -23,6 +24,7 @@ const Field = ({ label, value, icon: Icon }: { label: string; value: React.React
 const EntrepriseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard");
   const { toast } = useToast();
   const { t } = useTranslation(["demandes", "common"]);
   const [entreprise, setEntreprise] = useState<EntrepriseDto | null>(null);
@@ -70,7 +72,7 @@ const EntrepriseDetail = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl mx-auto">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="sm" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("demandes:detail.back")}
           </Button>
         </div>

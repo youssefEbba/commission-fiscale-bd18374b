@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -82,6 +83,7 @@ function getDocFileUrl(doc: DocumentDto): string {
 const MiseEnPlaceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/mise-en-place");
   const { user } = useAuth();
   const role = user?.role as AppRole;
   const { hasPermission, hasRole } = useAuth();
@@ -232,7 +234,7 @@ const MiseEnPlaceDetail = () => {
       <DashboardLayout>
         <div className="text-center py-20">
           <p className="text-muted-foreground">{t("mise_en_place:detail.not_found")}</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard/mise-en-place")}>
+          <Button variant="outline" className="mt-4" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("mise_en_place:detail.back")}
           </Button>
         </div>
@@ -455,7 +457,7 @@ const MiseEnPlaceDetail = () => {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" onClick={() => navigate("/dashboard/mise-en-place")}>
+            <Button variant="ghost" size="icon" className="shrink-0 mt-0.5" onClick={smartBack}>
               <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
             </Button>
             <div className="min-w-0">

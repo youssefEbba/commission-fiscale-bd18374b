@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -175,7 +176,7 @@ const Certificats = () => {
       {list.length === 0 ? (
         <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("certificats:list.empty")}</TableCell></TableRow>
       ) : list.map((c) => (
-        <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/certificats/${c.id}`)}>
+        <ClickableTableRow key={c.id} to={`/dashboard/certificats/${c.id}`}>
           <TableCell className="whitespace-nowrap">
             <CreditLink id={c.id} reference={c.reference} numero={c.numero} />
             {sousTraiteIds.has(c.id) && (
@@ -190,7 +191,7 @@ const Certificats = () => {
           <TableCell className="text-end whitespace-nowrap font-semibold">{formatAmount(c.soldeTVA)}</TableCell>
           <TableCell><Badge variant="outline" className="text-xs">{tStatutCertificat(c.statut)}</Badge></TableCell>
           <TableCell className="whitespace-nowrap">{c.dateEmission ? formatDate(c.dateEmission) : "—"}</TableCell>
-        </TableRow>
+        </ClickableTableRow>
       ))}
     </>
   );

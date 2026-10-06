@@ -1,6 +1,7 @@
 import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import CreditLink from "@/components/credits/CreditLink";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -132,6 +133,7 @@ const UtilisationDetail = () => {
   const role = user?.role as AppRole;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/utilisations");
   const { toast } = useToast();
   const tSuccess = () => t("common:states.success", { defaultValue: "Succès" });
   const tError = () => t("common:states.error", { defaultValue: "Erreur" });
@@ -623,7 +625,7 @@ const UtilisationDetail = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("utilisations:detail.back")}
           </Button>
           <div className="flex-1 min-w-0">

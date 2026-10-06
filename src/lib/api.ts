@@ -511,6 +511,8 @@ export interface ConventionDto {
   valideParUserId?: number;
   dateValidation?: string;
   motifRejet?: string;
+  /** false = convention désactivée : plus de nouveau rattachement, invisible aux AC. */
+  actif?: boolean;
 }
 
 export interface CreateConventionRequest {
@@ -561,6 +563,8 @@ export const conventionApi = {
   // NOT SUPPORTED BY BACKEND — kept for future use
   update: (id: number, data: CreateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
+  /** Active/désactive une convention (permission `convention.activate`). */
+  setActivation: (id: number, actif: boolean) => apiFetch<ConventionDto>(`/conventions/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`).then(normalizeDocs),
   deleteDocument: (conventionId: number, docId: number) => apiFetch<void>(`/conventions/${conventionId}/documents/${docId}`, { method: "DELETE" }),
   replaceDocument: (conventionId: number, docId: number, file: File) => {

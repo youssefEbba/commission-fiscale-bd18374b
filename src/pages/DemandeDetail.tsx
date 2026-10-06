@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -117,6 +118,7 @@ async function downloadDocAuthenticated(url: string, filename: string) {
 const DemandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/demandes");
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
@@ -519,7 +521,7 @@ const DemandeDetail = () => {
       <DashboardLayout>
         <div className="text-center py-20">
           <p className="text-muted-foreground">{t("demandes:detail.not_found")}</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard/demandes")}>
+          <Button variant="outline" className="mt-4" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("demandes:detail.back")}
           </Button>
         </div>
@@ -546,7 +548,7 @@ const DemandeDetail = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/demandes")} aria-label={t("demandes:detail.back")}>
+          <Button variant="ghost" size="icon" onClick={smartBack} aria-label={t("demandes:detail.back")}>
             <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
           </Button>
           <div>
