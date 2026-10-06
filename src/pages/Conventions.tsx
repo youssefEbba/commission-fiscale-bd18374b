@@ -710,11 +710,11 @@ const Conventions = () => {
                                       </DropdownMenuItem>
                                     </>
                                   )}
-                                </DropdownMenuContent>
+                              </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
                           </TableCell>
-                        </TableRow>
+                        </ClickableTableRow>
                       ))
                     )}
                   </TableBody>
