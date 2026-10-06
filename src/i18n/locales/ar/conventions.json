@@ -44,6 +44,19 @@
     "create": "إنشاء",
     "dismiss": "إلغاء"
   },
+  "activation": {
+    "disabled_badge": "معطَّلة",
+    "activate": "تفعيل الاتفاقية",
+    "deactivate": "تعطيل الاتفاقية",
+    "confirm_title": "تعطيل الاتفاقية؟",
+    "confirm_desc": "لن يمكن ربط أي سوق أو طلب جديد بهذه الاتفاقية، وستختفي من قوائم السلطات المتعاقدة. الملفات المرتبطة بها سلفاً لا تتأثر.",
+    "success_on": "تم تفعيل الاتفاقية",
+    "success_off": "تم تعطيل الاتفاقية"
+  },
+  "echeance": {
+    "depassee": "انقضت الصلاحية في {{date}}",
+    "dans_jours": "تنتهي خلال {{jours}} يوم"
+  },
   "fields": {
     "reference_required": "المرجع *",
     "project_reference": "مرجع المشروع",
