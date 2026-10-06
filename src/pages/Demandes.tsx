@@ -721,7 +721,7 @@ const Demandes = () => {
                             )}
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </ClickableTableRow>
                     ))
                   )}
                 </TableBody>
