@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { ArrowLeft, Loader2, FileText, Building2, Landmark, Award } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function CreditFiche() {
   const { reference = "" } = useParams();
   const ref = decodeURIComponent(reference);
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/certificats");
   const { toast } = useToast();
   usePageTitle("nav:credits_consultation");
 
@@ -46,7 +48,7 @@ export default function CreditFiche() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/certificats")}>
+        <Button variant="ghost" size="sm" onClick={smartBack}>
           <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> Retour à la recherche
         </Button>
 
