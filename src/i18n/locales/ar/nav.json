@@ -27,5 +27,9 @@
   "credits_consultation": "استعلام الاعتمادات",
   "groupements": "التجمعات",
   "signatures": "التوقيعات",
-  "archive_credits": "استرجاع الأرشيف"
+  "archive_credits": "استرجاع الأرشيف",
+  "referentiel_entites": "المرجعية",
+  "entreprises": "المؤسسات",
+  "autorites": "السلطات المتعاقدة",
+  "demandes_rattachement": "طلبات الإلحاق"
 }

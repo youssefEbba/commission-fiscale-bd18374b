@@ -6,6 +6,8 @@ interface RequestOptions {
   headers?: Record<string, string>;
   rawBody?: FormData;
   skipAuthRedirect?: boolean;
+  /** Route publique : n'envoie pas le jeton même si une session existe. */
+  noAuth?: boolean;
 }
 
 // Structured error from the backend (GlobalExceptionHandler)
@@ -103,7 +105,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
     headers["Content-Type"] = "application/json";
   }
 
-  if (token) {
+  if (token && !options.noAuth) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
@@ -158,7 +160,6 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
 // Auth
 export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { username: string; password: string; role: string; nomComplet?: string; email?: string; entrepriseId?: number; entrepriseRaisonSociale?: string; entrepriseNif?: string; entrepriseAdresse?: string; entrepriseSituationFiscale?: string; entrepriseNomCommercial?: string; entrepriseActivite?: string; entrepriseAutre?: string; autoriteContractanteId?: number; acMinistereTutelleNom?: string; acMinistereTutelleCode?: string; entrepriseEtrangere?: boolean; entrepriseRegistreCommerceEtranger?: string; }
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }
 
 // Commission Relais (impersonation)
@@ -229,7 +230,6 @@ export const ROLE_LABELS: Record<string, string> = {
 
 export const authApi = {
   login: (data: LoginRequest) => apiFetch<LoginResponse>("/auth/login", { method: "POST", body: data }),
-  register: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
   me: () => apiFetch<Record<string, unknown>>("/auth/me"),
   passwordResetCheckEmail: (email: string) =>
     apiFetch<{ exists: boolean }>("/auth/password-reset/check-email", { method: "POST", body: { email } }),
@@ -274,7 +274,6 @@ export const utilisateurApi = {
   changeMyPassword: (currentPassword: string, newPassword: string) =>
     apiFetch<void>("/utilisateurs/me/password", { method: "PATCH", body: { currentPassword, newPassword } }),
   setActif: (id: number, actif: boolean) => apiFetch<void>(`/utilisateurs/${id}/actif?actif=${actif}`, { method: "PATCH" }),
-  create: (data: RegisterRequest) => apiFetch<LoginResponse>("/auth/register", { method: "POST", body: data }),
   update: (id: number, data: UpdateUtilisateurRequest) => apiFetch<UtilisateurDto>(`/utilisateurs/${id}`, { method: "PUT", body: data }),
   delete: (id: number) => apiFetch<void>(`/utilisateurs/${id}`, { method: "DELETE" }),
   resetPassword: (id: number, newPassword: string) => apiFetch<void>(`/utilisateurs/${id}/reset-password`, { method: "PATCH", body: { password: newPassword } }),
@@ -363,6 +362,84 @@ export const groupementApi = {
   delete: (id: number) => apiFetch<void>(`/groupements/${id}`, { method: "DELETE" }),
 };
 
+
+// ── Rattachement (demande publique → validation du Président) ──
+export type RattachementRole = "ENTREPRISE" | "AUTORITE_CONTRACTANTE" | "AUTORITE_UPM" | "AUTORITE_UEP";
+export type TypeEntite = "ENTREPRISE" | "AUTORITE_CONTRACTANTE";
+export type StatutRattachement = "EN_ATTENTE" | "APPROUVEE" | "REFUSEE";
+export const RATTACHEMENT_ROLES: readonly RattachementRole[] = ["ENTREPRISE", "AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"];
+/** Le type d'entité se déduit de la qualité demandée. */
+export const typeEntiteForRole = (r: RattachementRole): TypeEntite => (r === "ENTREPRISE" ? "ENTREPRISE" : "AUTORITE_CONTRACTANTE");
+
+export interface EntitePubliqueDto { id: number; nom: string; }
+
+export interface DemandeRattachementDto {
+  id: number;
+  reference?: string;
+  statut: StatutRattachement;
+  username?: string;
+  nomComplet?: string;
+  email?: string;
+  telephone?: string;
+  roleDemande?: RattachementRole;
+  typeEntite?: TypeEntite;
+  entiteId?: number | null;
+  entiteNomAffiche?: string | null;
+  /** true = l'entité n'existe pas encore et sera créée telle que décrite à l'approbation. */
+  entiteNouvelle?: boolean;
+  entiteNom?: string | null;
+  entiteSigle?: string | null;
+  entiteNif?: string | null;
+  entiteAdresse?: string | null;
+  entiteActivite?: string | null;
+  entiteMinistereTutelle?: string | null;
+  motifRefus?: string | null;
+  dateDemande?: string;
+  dateDecision?: string | null;
+  decideurNom?: string | null;
+  documents?: DocumentDto[];
+}
+
+export interface CompteEntiteDto {
+  id: number;
+  username: string;
+  nomComplet?: string;
+  email?: string;
+  role: string;
+  actif: boolean;
+}
+
+export const rattachementPublicApi = {
+  getPieces: () => apiFetch<DocumentRequirementDto[]>("/public/rattachement/pieces", { noAuth: true, skipAuthRedirect: true }),
+  searchEntites: (type: TypeEntite, q: string) =>
+    apiFetch<EntitePubliqueDto[]>(`/public/rattachement/entites?type=${type}&q=${encodeURIComponent(q)}`, { noAuth: true, skipAuthRedirect: true }),
+  /** Champs texte + un champ fichier par code document (ex. `MANDAT_REPRESENTATION`). */
+  submit: (fields: Record<string, string | undefined>, files: Record<string, File>) => {
+    const fd = new FormData();
+    Object.entries(fields).forEach(([k, v]) => { if (v != null && v !== "") fd.append(k, v); });
+    Object.entries(files).forEach(([code, f]) => fd.append(code, f));
+    return apiFetch<DemandeRattachementDto>("/public/rattachement", { method: "POST", rawBody: fd, noAuth: true, skipAuthRedirect: true });
+  },
+};
+
+export const demandeRattachementApi = {
+  getAll: (statut?: StatutRattachement) => apiFetch<DemandeRattachementDto[]>(`/demandes-rattachement${statut ? `?statut=${statut}` : ""}`),
+  getById: (id: number) => apiFetch<DemandeRattachementDto>(`/demandes-rattachement/${id}`),
+  approuver: (id: number) => apiFetch<DemandeRattachementDto>(`/demandes-rattachement/${id}/approuver`, { method: "POST" }),
+  refuser: (id: number, motif: string) =>
+    apiFetch<DemandeRattachementDto>(`/demandes-rattachement/${id}/refuser?motif=${encodeURIComponent(motif)}`, { method: "POST" }),
+};
+
+export const entiteComptesApi = {
+  list: (type: TypeEntite, entiteId: number) => apiFetch<CompteEntiteDto[]>(`/entites/${type}/${entiteId}/comptes`),
+  create: (type: TypeEntite, entiteId: number, p: { username: string; motDePasse: string; role: string; nomComplet?: string; email?: string }) => {
+    const q = new URLSearchParams();
+    Object.entries(p).forEach(([k, v]) => { if (v) q.set(k, v); });
+    return apiFetch<CompteEntiteDto>(`/entites/${type}/${entiteId}/comptes?${q.toString()}`, { method: "POST" });
+  },
+  setActif: (type: TypeEntite, entiteId: number, utilisateurId: number, actif: boolean) =>
+    apiFetch<void>(`/entites/${type}/${entiteId}/comptes/${utilisateurId}/actif?actif=${actif}`, { method: "PATCH" }),
+};
 
 // Autorités Contractantes
 export interface AutoriteContractanteDto { id?: number; nom: string; sigle?: string; adresse?: string; telephone?: string; email?: string; ministereTutelleNom?: string; ministereTutelleCode?: string; }
