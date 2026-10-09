@@ -4,6 +4,9 @@ import { formatAmount, formatNumber } from "@/i18n/format";
 import { tTypeDocument, tTypeProjet, tDocRequirementLabel } from "@/i18n/enums";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { PDFDocument } from "pdf-lib";
+import { toast as sonnerToast } from "sonner";
+import i18nInstance from "@/i18n";
+import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
@@ -202,7 +205,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         conventionApi.getAll(),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
         bailleurApi.getAll().catch(() => [] as BailleurDto[]),
-        documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE").catch(() => [] as DocumentRequirementDto[]),
+        documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE", { depot: true }).catch(() => [] as DocumentRequirementDto[]),
         // getAll peut renvoyer 403 (rôles contrôleurs uniquement). En mode ENTREPRISE
         // / COMMISSION_RELAIS impersonnant, on retombera sur getByEntreprise dans l'effet ci-dessous.
         demandeCorrectionApi.getAll().catch(() => [] as DemandeCorrectionDto[]),
@@ -751,6 +754,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         }
       } catch (e) {
         console.warn("AI context upload failed (non-blocking):", e);
+      }
+
+      // Reçu de dépôt : à chaque soumission (pas pour un brouillon). Un échec ne remet
+      // jamais en cause la soumission, déjà acquise côté serveur.
+      if (!asBrouillon && demande.statut !== "BROUILLON") {
+        const libelles = Object.fromEntries(
+          gedDocTypes.map(r => [r.codeDocument || r.typeDocument || "", r.libelle || ""]).filter(([k, v]) => k && v),
+        );
+        void issueRecuDepot(demande, user?.nomComplet, libelles);
       }
 
       toast({
@@ -1764,4 +1776,28 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     />
     </>
   );
+}
+
+/** Génère le reçu, le propose au téléchargement et le téléverse (RECU_DEPOT, nouvelle version à chaque dépôt). */
+async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: string, libelles: Record<string, string> = {}) {
+  const tr = (k: string, o?: Record<string, unknown>) => i18nInstance.t(`demandes:recu.${k}`, o) as string;
+  const numero = demande.reference || demande.numero || `#${demande.id}`;
+  try {
+    const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
+    const blob = generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
+    const name = recuDepotFileName(demande);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
+    sonnerToast.success(tr("toast_ok"));
+  } catch (e) {
+    console.warn("Reçu de dépôt non enregistré :", e);
+    sonnerToast.error(tr("toast_fail_title"), {
+      description: tr("toast_fail_body", { numero }),
+      duration: 30000,
+      action: { label: tr("regenerate"), onClick: () => { void issueRecuDepot(demande, deposantNom, libelles); } },
+    });
+  }
 }

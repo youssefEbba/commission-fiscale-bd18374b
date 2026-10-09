@@ -2108,6 +2108,8 @@ export interface DocumentRequirementDto {
   typesAutorises: FormatFichier[];
   description?: string;
   ordreAffichage?: number;
+  /** true = pièce apportée par le demandeur ; false = produite par la Commission. */
+  deposableParLeDemandeur?: boolean;
 }
 
 export interface CreateDocumentRequirementRequest {
@@ -2122,8 +2124,9 @@ export interface CreateDocumentRequirementRequest {
 }
 
 export const documentRequirementApi = {
-  getByProcessus: (processus: ProcessusType) =>
-    apiFetch<DocumentRequirementDto[]>(`/document-requirements?processus=${processus}`),
+  /** `depot: true` → uniquement les pièces déposables par le demandeur (formulaire de dépôt). */
+  getByProcessus: (processus: ProcessusType, opts: { depot?: boolean } = {}) =>
+    apiFetch<DocumentRequirementDto[]>(`/document-requirements?processus=${processus}${opts.depot ? "&depot=true" : ""}`),
   create: (data: CreateDocumentRequirementRequest) =>
     apiFetch<DocumentRequirementDto>("/document-requirements", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateDocumentRequirementRequest>) =>

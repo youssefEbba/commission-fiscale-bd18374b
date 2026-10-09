@@ -97,7 +97,8 @@
       "required": "OBLIGATOIRE ?",
       "type": "TYPE",
       "description": "DESCRIPTION",
-      "actions": "ACTIONS"
+      "actions": "ACTIONS",
+      "famille": "FAMILLE"
     },
     "yes": "Oui",
     "no": "Non",
@@ -171,6 +172,10 @@
       "EXCEL": "Excel",
       "IMAGE": "Images",
       "PDF": "PDF"
+    },
+    "famille": {
+      "demandeur": "Apportée par le demandeur",
+      "commission": "Produite par la Commission"
     }
   }
 }

@@ -97,7 +97,8 @@
       "required": "إلزامية ؟",
       "type": "النوع",
       "description": "الوصف",
-      "actions": "الإجراءات"
+      "actions": "الإجراءات",
+      "famille": "الفئة"
     },
     "yes": "نعم",
     "no": "لا",
@@ -171,6 +172,10 @@
       "EXCEL": "Excel",
       "IMAGE": "صور",
       "PDF": "PDF"
+    },
+    "famille": {
+      "demandeur": "يقدّمها مقدّم الطلب",
+      "commission": "تُصدرها اللجنة"
     }
   }
 }
