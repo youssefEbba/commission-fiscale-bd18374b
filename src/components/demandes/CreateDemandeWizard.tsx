@@ -202,7 +202,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         conventionApi.getAll(),
         marcheApi.getAll().catch(() => [] as MarcheDto[]),
         bailleurApi.getAll().catch(() => [] as BailleurDto[]),
-        documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE").catch(() => [] as DocumentRequirementDto[]),
+        documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE", { depot: true }).catch(() => [] as DocumentRequirementDto[]),
         // getAll peut renvoyer 403 (rôles contrôleurs uniquement). En mode ENTREPRISE
         // / COMMISSION_RELAIS impersonnant, on retombera sur getByEntreprise dans l'effet ci-dessous.
         demandeCorrectionApi.getAll().catch(() => [] as DemandeCorrectionDto[]),
