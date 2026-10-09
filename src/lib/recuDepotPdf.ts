@@ -128,7 +128,8 @@ export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libel
   row(t("convention"), d.conventionReference);
   row(t("convention_intitule"), d.conventionIntitule);
   row(t("intitule_marche"), d.intituleMarche);
-  if (d.marcheId || d.marcheNumero) row(t("marche"), [d.marcheNumero, d.marcheIntitule].filter(Boolean).join(" — "));
+  const marcheLabel = [d.marche?.numeroMarche, d.marche?.intitule].filter(Boolean).join(" — ");
+  if (marcheLabel) row(t("marche"), marcheLabel);
   y += 6;
 
   const money = (n?: number) => formatAmount(n ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
