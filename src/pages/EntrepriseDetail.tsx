@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Building2, Loader2, Mail, MapPin, Phone } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useAuth } from "@/contexts/AuthContext";
+import EntiteComptesCard from "@/components/entites/EntiteComptesCard";
 
 const Field = ({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: React.ElementType }) => (
   <div className="space-y-1">
@@ -24,7 +26,8 @@ const Field = ({ label, value, icon: Icon }: { label: string; value: React.React
 const EntrepriseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const smartBack = useSmartBack("/dashboard");
+  const { hasPermission } = useAuth();
+  const smartBack = useSmartBack(hasPermission("rattachement.validate") ? "/dashboard/entreprises" : "/dashboard");
   const { toast } = useToast();
   const { t } = useTranslation(["demandes", "common"]);
   const [entreprise, setEntreprise] = useState<EntrepriseDto | null>(null);
@@ -105,6 +108,7 @@ const EntrepriseDetail = () => {
             )}
           </CardContent>
         </Card>
+        {hasPermission("rattachement.validate") && entreprise.id != null && <EntiteComptesCard type="ENTREPRISE" entiteId={entreprise.id} />}
       </div>
     </DashboardLayout>
   );

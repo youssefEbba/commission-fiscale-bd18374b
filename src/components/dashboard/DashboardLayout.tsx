@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search,
-  PenLine,
+  PenLine, Building2, UserCheck,
 
 } from "lucide-react";
 import logo from "@/assets/logo.svg";
@@ -22,6 +22,8 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   roles?: AppRole[];
+  /** Permission métier requise (en plus des rôles éventuels). */
+  permission?: string;
 }
 
 interface NavGroup {
@@ -70,6 +72,16 @@ const NAV_ENTRIES: NavEntry[] = [
     ],
   },
   {
+    labelKey: "referentiel_entites",
+    icon: Building2,
+    roles: ["PRESIDENT", "ADMIN_SI"],
+    children: [
+      { labelKey: "demandes_rattachement", href: "/dashboard/demandes-rattachement", icon: UserCheck, permission: "rattachement.validate" },
+      { labelKey: "entreprises", href: "/dashboard/entreprises", icon: Building2 },
+      { labelKey: "autorites", href: "/dashboard/autorites", icon: Landmark },
+    ],
+  },
+  {
     labelKey: "ged",
     icon: FolderOpen,
     roles: ["ADMIN_SI", "PRESIDENT"],
@@ -94,7 +106,7 @@ const NAV_ENTRIES: NavEntry[] = [
 ];
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
-  const { user, logout, hasRole, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
+  const { user, logout, hasRole, hasPermission, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation(["nav", "common", "utilisations"]);
@@ -164,6 +176,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               <CollapsibleContent className="ps-4 space-y-0.5 mt-0.5">
                 {entry.children.map((child) => {
                   if (child.roles && !hasRole(child.roles)) return null;
+                  if (child.permission && !hasPermission(child.permission)) return null;
                   return (
                     <Link key={child.href} to={child.href} className={linkClass(child.href)} onClick={closeMobile}>
                       <child.icon className="h-4 w-4" />

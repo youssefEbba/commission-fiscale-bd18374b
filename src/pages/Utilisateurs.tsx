@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -18,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Utilisateurs = () => {
+  const { t } = useTranslation(["rattachement"]);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") === "reset" || searchParams.get("tab") === "pending" ? searchParams.get("tab")! : "all";
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
@@ -158,31 +160,6 @@ const Utilisateurs = () => {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUser.role) { toast({ title: "Erreur", description: "Veuillez sélectionner un rôle", variant: "destructive" }); return; }
-    if (newUser.role === "AUTORITE_CONTRACTANTE" && !acForm.nom.trim()) {
-      toast({ title: "Erreur", description: "Veuillez saisir le nom de l'Autorité Contractante", variant: "destructive" }); return;
-    }
-    setCreating(true);
-    try {
-      let autoriteContractanteId: number | undefined;
-      if (newUser.role === "AUTORITE_CONTRACTANTE") {
-        const ac = await autoriteContractanteApi.create({ nom: acForm.nom, sigle: acForm.sigle || undefined, adresse: acForm.adresse || undefined, telephone: acForm.telephone || undefined, email: acForm.email || undefined, ministereTutelleNom: acForm.ministereTutelleNom || undefined, ministereTutelleCode: acForm.ministereTutelleCode || undefined });
-        autoriteContractanteId = ac.id;
-      }
-      await utilisateurApi.create({ username: newUser.username, password: newUser.password, role: newUser.role, nomComplet: newUser.nomComplet, email: newUser.email, autoriteContractanteId });
-      toast({ title: "Succès", description: "Compte créé avec succès" });
-      setNewUser({ username: "", password: "", nomComplet: "", email: "", role: "" });
-      setAcForm({ nom: "", sigle: "", adresse: "", telephone: "", email: "", ministereTutelleNom: "", ministereTutelleCode: "" });
-      setCreateOpen(false);
-      await fetchAll();
-    } catch (err: any) {
-      const msg = err?.message || "Impossible de créer le compte";
-      console.error("Create user error:", err);
-      toast({ title: "Erreur", description: msg, variant: "destructive" });
-    } finally { setCreating(false); }
-  };
 
   const AC_ROLES = ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"];
   const ENT_ROLES = ["ENTREPRISE", "SOUS_TRAITANT"];
@@ -413,84 +390,7 @@ const Utilisateurs = () => {
             <p className="text-muted-foreground text-sm mt-1">Créez, modifiez et gérez les comptes utilisateurs</p>
           </div>
           <div className="flex gap-2">
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  <UserPlus className="h-4 w-4 mr-2" /> Créer un compte
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Créer un nouveau compte</DialogTitle></DialogHeader>
-                <form onSubmit={handleCreate} className="space-y-4 mt-2">
-                  <div className="space-y-2">
-                    <Label>Nom complet</Label>
-                    <Input value={newUser.nomComplet} onChange={(e) => setNewUser((p) => ({ ...p, nomComplet: e.target.value }))} placeholder="Prénom et nom" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input type="email" value={newUser.email} onChange={(e) => setNewUser((p) => ({ ...p, email: e.target.value }))} placeholder="utilisateur@email.mr" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Identifiant</Label>
-                    <Input value={newUser.username} onChange={(e) => setNewUser((p) => ({ ...p, username: e.target.value }))} placeholder="Identifiant de connexion" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Rôle</Label>
-                    <Select value={newUser.role} onValueChange={(v) => setNewUser((p) => ({ ...p, role: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionnez un rôle" /></SelectTrigger>
-                      <SelectContent>
-                        {ROLE_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newUser.role === "AUTORITE_CONTRACTANTE" && (
-                    <div className="space-y-3 rounded-lg border border-border p-3 bg-muted/30">
-                      <p className="text-sm font-medium text-foreground">Informations de l'Autorité Contractante</p>
-                      <div className="space-y-2">
-                        <Label>Nom de l'AC *</Label>
-                        <Input value={acForm.nom} onChange={(e) => setAcForm((p) => ({ ...p, nom: e.target.value }))} placeholder="Ex: Ministère de l'Économie" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Sigle</Label>
-                        <Input value={acForm.sigle} onChange={(e) => setAcForm((p) => ({ ...p, sigle: e.target.value }))} placeholder="Ex: ME" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Adresse</Label>
-                        <Input value={acForm.adresse} onChange={(e) => setAcForm((p) => ({ ...p, adresse: e.target.value }))} placeholder="Adresse" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Ministère de tutelle</Label>
-                        <Input value={acForm.ministereTutelleNom} onChange={(e) => setAcForm((p) => ({ ...p, ministereTutelleNom: e.target.value }))} placeholder="Ex: Ministère des Finances" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Code ministère</Label>
-                        <Input value={acForm.ministereTutelleCode} onChange={(e) => setAcForm((p) => ({ ...p, ministereTutelleCode: e.target.value }))} placeholder="Ex: MF" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Téléphone</Label>
-                        <Input value={acForm.telephone} onChange={(e) => setAcForm((p) => ({ ...p, telephone: e.target.value }))} placeholder="Téléphone" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email AC</Label>
-                        <Input type="email" value={acForm.email} onChange={(e) => setAcForm((p) => ({ ...p, email: e.target.value }))} placeholder="contact@ac.mr" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label>Mot de passe</Label>
-                    <div className="relative">
-                      <Input type={showPassword ? "text" : "password"} value={newUser.password} onChange={(e) => setNewUser((p) => ({ ...p, password: e.target.value }))} placeholder="••••••••" required />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={creating || !newUser.role}>
-                    <UserPlus className="h-4 w-4 mr-2" />{creating ? "Création..." : "Créer le compte"}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <p className="text-xs text-muted-foreground max-w-xs self-center">{t("rattachement:users_notice")}</p>
             <Button variant="outline" onClick={fetchAll} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>

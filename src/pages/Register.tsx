@@ -1,355 +1,303 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { UserPlus, Eye, EyeOff, Building2, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Copy, Eye, EyeOff, Loader2, Paperclip, Search, Send } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/contexts/AuthContext";
-import { authApi } from "@/lib/api";
+import {
+  rattachementPublicApi, RATTACHEMENT_ROLES, typeEntiteForRole, formatApiErrorMessage,
+  type RattachementRole, type EntitePubliqueDto, type DocumentRequirementDto, type DemandeRattachementDto,
+} from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
+const ACCEPT: Record<string, string> = { PDF: ".pdf", IMAGE: ".png,.jpg,.jpeg", WORD: ".doc,.docx", EXCEL: ".xls,.xlsx" };
+
+/**
+ * Demande de rattachement publique : la personne décrit qui elle est, choisit (ou décrit) l'entité,
+ * joint ses justificatifs. Aucune entité ni aucun compte n'est créé ici : c'est l'approbation du Président.
+ */
 const Register = () => {
-  const { t } = useTranslation(["auth", "common"]);
+  const { t } = useTranslation(["auth", "rattachement", "common"]);
   usePageTitle("auth:register.title");
-
-  const ROLES = [
-    { value: "AUTORITE_CONTRACTANTE", label: t("roles.AUTORITE_CONTRACTANTE") },
-    { value: "ENTREPRISE", label: t("roles.ENTREPRISE") },
-  ];
-
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-    confirmPassword: "",
-    nomComplet: "",
-    email: "",
-    role: "",
-    entrepriseId: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [phoneError, setPhoneError] = useState("");
-  const [newEntreprise, setNewEntreprise] = useState({
-    raisonSociale: "",
-    nomCommercial: "",
-    nif: "",
-    adresse: "",
-    telephone: "",
-    email: "",
-    activite: "",
-    autre: "",
-    registreCommerceEtranger: "",
-  });
-  const [entrepriseEtrangere, setEntrepriseEtrangere] = useState(false);
+  const [form, setForm] = useState({ nomComplet: "", email: "", telephone: "", username: "", password: "", confirmPassword: "" });
+  const [role, setRole] = useState<RattachementRole | "">("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [newAC, setNewAC] = useState({
-    nom: "",
-    sigle: "",
-    adresse: "",
-    telephone: "",
-    email: "",
-    ministereTutelleNom: "",
-    ministereTutelleCode: "",
-  });
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<EntitePubliqueDto[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [entite, setEntite] = useState<EntitePubliqueDto | null>(null);
+  const [absente, setAbsente] = useState(false);
+  const [nouvelle, setNouvelle] = useState({ entiteNom: "", entiteSigle: "", entiteNif: "", entiteAdresse: "", entiteActivite: "", entiteMinistereTutelle: "" });
 
-  const validatePhone = (phone: string) => {
-    if (!phone) return "";
-    const cleaned = phone.replace(/\s/g, "");
-    if (!/^[234]\d{7}$/.test(cleaned)) {
-      return t("register.errors.phone_invalid");
-    }
-    return "";
-  };
+  const [pieces, setPieces] = useState<DocumentRequirementDto[]>([]);
+  const [piecesError, setPiecesError] = useState(false);
+  const [files, setFiles] = useState<Record<string, File>>({});
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState<DemandeRattachementDto | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const typeEntite = role ? typeEntiteForRole(role) : null;
+
+  useEffect(() => {
+    rattachementPublicApi.getPieces()
+      .then((p) => setPieces([...p].sort((a, b) => (a.ordreAffichage ?? 0) - (b.ordreAffichage ?? 0))))
+      .catch(() => setPiecesError(true));
+  }, []);
+
+  // Changer de qualité peut changer le type d'entité : on repart d'une sélection vide.
+  useEffect(() => { setEntite(null); setResults([]); setQ(""); }, [typeEntite]);
+
+  useEffect(() => {
+    if (!typeEntite || absente || entite || q.trim().length < 2) { setResults([]); return; }
+    const h = setTimeout(() => {
+      setSearching(true);
+      rattachementPublicApi.searchEntites(typeEntite, q.trim())
+        .then(setResults).catch(() => setResults([])).finally(() => setSearching(false));
+    }, 300);
+    return () => clearTimeout(h);
+  }, [q, typeEntite, absente, entite]);
+
+  const update = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const err = (description: string) => toast({ title: t("register.errors.title"), description, variant: "destructive" });
+  const pieceLabel = (p: DocumentRequirementDto) => p.libelle || p.codeDocument || p.typeDocument || "";
+  const pieceCode = (p: DocumentRequirementDto) => p.codeDocument || p.typeDocument || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) {
-      toast({ title: t("register.errors.title"), description: t("register.errors.passwords_dont_match"), variant: "destructive" });
-      return;
-    }
-    if (form.password.length < 6) {
-      toast({ title: t("register.errors.title"), description: t("register.errors.password_too_short"), variant: "destructive" });
-      return;
-    }
-    const entPhone = form.role === "ENTREPRISE" ? validatePhone(newEntreprise.telephone) : "";
-    const acPhone = form.role === "AUTORITE_CONTRACTANTE" ? validatePhone(newAC.telephone) : "";
-    if (entPhone || acPhone) {
-      toast({ title: t("register.errors.title"), description: entPhone || acPhone, variant: "destructive" });
-      return;
-    }
+    if (form.password.length < 6) return err(t("register.errors.password_too_short"));
+    if (form.password !== form.confirmPassword) return err(t("register.errors.passwords_dont_match"));
+    if (!role || !typeEntite) return err(t("register.errors.qualite_required"));
+    if (absente ? !nouvelle.entiteNom.trim() : !entite) return err(absente ? t("register.errors.entite_nom_required") : t("register.errors.entite_required"));
+    const missing = pieces.find((p) => p.obligatoire && !files[pieceCode(p)]);
+    if (missing) return err(t("register.errors.piece_required", { label: pieceLabel(missing) }));
+
     setLoading(true);
     try {
-      const registerData: any = {
-        username: form.username,
-        password: form.password,
-        role: form.role,
-        nomComplet: form.nomComplet,
-        email: form.email,
+      const fields: Record<string, string | undefined> = {
+        username: form.username.trim(), password: form.password, nomComplet: form.nomComplet.trim(),
+        email: form.email.trim(), telephone: form.telephone.trim(), roleDemande: role, typeEntite,
+        ...(absente
+          ? Object.fromEntries(Object.entries(nouvelle).map(([k, v]) => [k, v.trim()]))
+          : { entiteId: String(entite!.id) }),
       };
-
-      if (form.role === "ENTREPRISE") {
-        if (!newEntreprise.raisonSociale || (entrepriseEtrangere ? !newEntreprise.registreCommerceEtranger : !newEntreprise.nif)) {
-          toast({ title: t("register.errors.title"), description: t("register.errors.entreprise_required"), variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-        registerData.entrepriseRaisonSociale = newEntreprise.raisonSociale;
-        registerData.entrepriseNif = newEntreprise.nif || undefined;
-        if (entrepriseEtrangere) {
-          registerData.entrepriseEtrangere = true;
-          registerData.entrepriseRegistreCommerceEtranger = newEntreprise.registreCommerceEtranger;
-        }
-        registerData.entrepriseAdresse = newEntreprise.adresse;
-        registerData.entrepriseSituationFiscale = "";
-        if (newEntreprise.nomCommercial) registerData.entrepriseNomCommercial = newEntreprise.nomCommercial;
-        if (newEntreprise.activite) registerData.entrepriseActivite = newEntreprise.activite;
-        if (newEntreprise.autre) registerData.entrepriseAutre = newEntreprise.autre;
-      }
-
-      if (form.role === "AUTORITE_CONTRACTANTE") {
-        if (!newAC.nom) {
-          toast({ title: t("register.errors.title"), description: t("register.errors.ac_required"), variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-        registerData.acNom = newAC.nom;
-        registerData.acSigle = newAC.sigle;
-        registerData.acAdresse = newAC.adresse;
-        registerData.acTelephone = newAC.telephone;
-        registerData.acEmail = newAC.email;
-        if (newAC.ministereTutelleNom) registerData.acMinistereTutelleNom = newAC.ministereTutelleNom;
-        if (newAC.ministereTutelleCode) registerData.acMinistereTutelleCode = newAC.ministereTutelleCode;
-      }
-
-      await authApi.register(registerData);
-
-      toast({ title: t("register.success_title"), description: t("register.success_description") });
-      navigate("/login");
-    } catch (err: unknown) {
-      toast({
-        title: t("register.errors.register_failed_title"),
-        description: err instanceof Error ? err.message : t("register.errors.register_failed_default"),
-        variant: "destructive",
-      });
+      const res = await rattachementPublicApi.submit(fields, files);
+      setDone(res);
+      window.scrollTo({ top: 0 });
+    } catch (e2) {
+      err(formatApiErrorMessage(e2, t("register.errors.submit_failed")));
     } finally {
       setLoading(false);
     }
   };
 
-  const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
-  const updateEntreprise = (field: string, value: string) => setNewEntreprise((prev) => ({ ...prev, [field]: value }));
-  const updateAC = (field: string, value: string) => setNewAC((prev) => ({ ...prev, [field]: value }));
+  const copyRef = async () => {
+    if (!done?.reference) return;
+    try { await navigator.clipboard.writeText(done.reference); setCopied(true); toast({ title: t("register.done.copied") }); setTimeout(() => setCopied(false), 2000); } catch { /* noop */ }
+  };
+
+  const header = useMemo(() => (
+    <>
+      <div className="flex items-center justify-between">
+        <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+          {t("back_home")}
+        </Link>
+        <LanguageSwitcher variant="compact" />
+      </div>
+      <div className="text-center">
+        <Link to="/" className="inline-flex items-center gap-2">
+          <img src={logo} alt={t("brand.name")} className="h-12 w-12" />
+          <div className="text-start leading-tight">
+            <span className="block text-xl font-bold text-foreground">{t("common:app.ministry")}</span>
+            <span className="block text-base font-semibold text-foreground/80">{t("brand.name")}</span>
+            <span className="block text-xs font-medium text-accent tracking-wider uppercase">{t("brand.country")}</span>
+          </div>
+        </Link>
+      </div>
+    </>
+  ), [t]);
+
+  if (done) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+        <div className="w-full max-w-lg space-y-8">
+          {header}
+          <div className="rounded-xl border border-border bg-card p-8 shadow-lg space-y-6 text-center">
+            <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
+            <h1 className="text-2xl font-bold text-foreground">{t("register.done.title")}</h1>
+            <div className="rounded-lg border-2 border-accent bg-accent/10 p-5 space-y-3">
+              <p className="text-sm text-muted-foreground">{t("register.done.reference_label")}</p>
+              <p className="text-3xl font-bold tracking-wider text-foreground font-mono break-all" dir="ltr">{done.reference || `#${done.id}`}</p>
+              <Button type="button" variant="outline" size="sm" onClick={copyRef}>
+                {copied ? <Check className="h-4 w-4 me-1" /> : <Copy className="h-4 w-4 me-1" />}{t("register.done.copy")}
+              </Button>
+              <p className="text-xs text-muted-foreground">{t("register.done.keep")}</p>
+            </div>
+            <div className="text-start space-y-2">
+              <p className="font-semibold text-foreground">{t("register.done.next_title")}</p>
+              <ol className="list-decimal ps-5 space-y-1 text-sm text-muted-foreground">
+                <li>{t("register.done.next_1")}</li>
+                <li>{t("register.done.next_2", { email: done.email || form.email })}</li>
+                <li>{t("register.done.next_3")}</li>
+              </ol>
+            </div>
+            <Button asChild className="w-full"><Link to="/">{t("register.done.back_home")}</Link></Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-            {t("back_home")}
-          </Link>
-          <LanguageSwitcher variant="compact" />
-        </div>
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <img src={logo} alt={t("brand.name")} className="h-12 w-12" />
-            <div className="text-start leading-tight">
-              <span className="block text-xl font-bold text-foreground">{t("common:app.ministry")}</span>
-              <span className="block text-base font-semibold text-foreground/80">{t("brand.name")}</span>
-              <span className="block text-xs font-medium text-accent tracking-wider uppercase">{t("brand.country")}</span>
-            </div>
-          </Link>
-        </div>
+      <div className="w-full max-w-xl space-y-8">
+        {header}
+        <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-8 shadow-lg space-y-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">{t("register.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("register.subtitle")}</p>
+          </div>
 
-        <div className="rounded-xl border border-border bg-card p-8 shadow-lg">
-          <h1 className="text-2xl font-bold text-foreground text-center mb-2">{t("register.title")}</h1>
-          <p className="text-muted-foreground text-center text-sm mb-6">
-            {t("register.subtitle")}
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 1. Entité */}
+          <section className="space-y-4">
+            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_entite")}</h2>
             <div className="space-y-2">
-              <Label htmlFor="nomComplet">{t("register.nom_complet")}</Label>
-              <Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} placeholder={t("register.nom_complet_placeholder")} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">{t("register.email")}</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder={t("register.email_placeholder")} required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title={t("register.email_title")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reg-username">{t("register.username")}</Label>
-              <Input id="reg-username" value={form.username} onChange={(e) => update("username", e.target.value)} placeholder={t("register.username_placeholder")} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="role">{t("register.role")}</Label>
-              <Select value={form.role} onValueChange={(v) => update("role", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("register.role_placeholder")} />
-                </SelectTrigger>
+              <Label>{t("register.qualite")} *</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as RattachementRole)}>
+                <SelectTrigger><SelectValue placeholder={t("register.qualite_placeholder")} /></SelectTrigger>
                 <SelectContent>
-                  {ROLES.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
+                  {RATTACHEMENT_ROLES.map((r) => <SelectItem key={r} value={r}>{t(`rattachement:roles.${r}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {form.role === "ENTREPRISE" && (
-              <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
-                <div className="flex items-center gap-2 mb-1">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold">{t("register.entreprise.title")}</Label>
-                </div>
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.entreprise.raison_sociale")}</Label>
-                    <Input value={newEntreprise.raisonSociale} onChange={(e) => updateEntreprise("raisonSociale", e.target.value)} placeholder={t("register.entreprise.raison_sociale_placeholder")} required />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.entreprise.nom_commercial")}</Label>
-                    <Input value={newEntreprise.nomCommercial} onChange={(e) => updateEntreprise("nomCommercial", e.target.value)} placeholder={t("register.entreprise.nom_commercial_placeholder")} />
-                  </div>
-                  <label className="flex items-center gap-2 text-xs">
-                    <Checkbox checked={entrepriseEtrangere} onCheckedChange={(v) => setEntrepriseEtrangere(!!v)} />
-                    {t("register.entreprise.etrangere")}
-                  </label>
-                  {entrepriseEtrangere ? (
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.entreprise.rc_etranger")}</Label>
-                      <Input value={newEntreprise.registreCommerceEtranger} onChange={(e) => updateEntreprise("registreCommerceEtranger", e.target.value)} placeholder={t("register.entreprise.rc_etranger_placeholder")} required />
+            {typeEntite && (
+              <>
+                {!absente && (
+                  entite ? (
+                    <div className="flex items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary/5 p-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("register.entite_selected")} — {t(`rattachement:type_entite.${typeEntite}`)}</p>
+                        <p className="font-medium text-foreground">{entite.nom}</p>
+                      </div>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEntite(null)}>{t("register.entite_change")}</Button>
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.entreprise.nif")}</Label>
-                      <Input value={newEntreprise.nif} onChange={(e) => updateEntreprise("nif", e.target.value)} placeholder={t("register.entreprise.nif_placeholder")} required />
+                    <div className="space-y-2">
+                      <Label>{t("register.entite_search")} *</Label>
+                      <div className="relative">
+                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input className="ps-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("register.entite_search_placeholder")} />
+                        {searching && <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
+                      {q.trim().length >= 2 && !searching && (
+                        <div className="rounded-md border border-border max-h-56 overflow-auto">
+                          {results.length === 0
+                            ? <p className="p-3 text-sm text-muted-foreground">{t("register.entite_none")}</p>
+                            : results.map((r) => (
+                              <button type="button" key={r.id} onClick={() => setEntite(r)} className="block w-full text-start px-3 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+                                {r.nom}
+                              </button>
+                            ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.entreprise.activite")}</Label>
-                    <Input value={newEntreprise.activite} onChange={(e) => updateEntreprise("activite", e.target.value)} placeholder={t("register.entreprise.activite_placeholder")} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.entreprise.adresse")}</Label>
-                    <Input value={newEntreprise.adresse} onChange={(e) => updateEntreprise("adresse", e.target.value)} placeholder={t("register.entreprise.adresse_placeholder")} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.entreprise.telephone")}</Label>
-                      <Input value={newEntreprise.telephone} onChange={(e) => { updateEntreprise("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder={t("register.entreprise.telephone_placeholder")} pattern="[234]\d{7}" title={t("register.entreprise.telephone_title")} maxLength={8} />
-                      {phoneError && newEntreprise.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
+                  )
+                )}
+
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={absente} onCheckedChange={(c) => { setAbsente(!!c); setEntite(null); }} />
+                  {t("register.entite_absente")}
+                </label>
+
+                {absente && (
+                  <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
+                    <p className="text-xs text-muted-foreground">{t("register.entite_absente_hint")}</p>
+                    <div className="space-y-1"><Label>{t("register.e_nom")} *</Label><Input value={nouvelle.entiteNom} onChange={(e) => setNouvelle((p) => ({ ...p, entiteNom: e.target.value }))} required /></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>{t("register.e_sigle")}</Label><Input value={nouvelle.entiteSigle} onChange={(e) => setNouvelle((p) => ({ ...p, entiteSigle: e.target.value }))} /></div>
+                      <div className="space-y-1"><Label>{t("register.e_nif")}</Label><Input value={nouvelle.entiteNif} onChange={(e) => setNouvelle((p) => ({ ...p, entiteNif: e.target.value }))} /></div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.entreprise.email")}</Label>
-                      <Input type="email" value={newEntreprise.email} onChange={(e) => updateEntreprise("email", e.target.value)} placeholder={t("register.entreprise.email_placeholder")} />
-                    </div>
+                    <div className="space-y-1"><Label>{t("register.e_adresse")}</Label><Input value={nouvelle.entiteAdresse} onChange={(e) => setNouvelle((p) => ({ ...p, entiteAdresse: e.target.value }))} /></div>
+                    {typeEntite === "ENTREPRISE"
+                      ? <div className="space-y-1"><Label>{t("register.e_activite")}</Label><Input value={nouvelle.entiteActivite} onChange={(e) => setNouvelle((p) => ({ ...p, entiteActivite: e.target.value }))} /></div>
+                      : <div className="space-y-1"><Label>{t("register.e_ministere")}</Label><Input value={nouvelle.entiteMinistereTutelle} onChange={(e) => setNouvelle((p) => ({ ...p, entiteMinistereTutelle: e.target.value }))} /></div>}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.entreprise.autre")}</Label>
-                    <Input value={newEntreprise.autre} onChange={(e) => updateEntreprise("autre", e.target.value)} placeholder={t("register.entreprise.autre_placeholder")} maxLength={2000} />
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
+          </section>
 
-            {form.role === "AUTORITE_CONTRACTANTE" && (
-              <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
-                <div className="flex items-center gap-2 mb-1">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold">{t("register.ac.title")}</Label>
-                </div>
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.ac.nom")}</Label>
-                    <Input value={newAC.nom} onChange={(e) => updateAC("nom", e.target.value)} placeholder={t("register.ac.nom_placeholder")} required />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.ac.sigle")}</Label>
-                    <Input value={newAC.sigle} onChange={(e) => updateAC("sigle", e.target.value)} placeholder={t("register.ac.sigle_placeholder")} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.ac.ministere_nom")}</Label>
-                      <Input value={newAC.ministereTutelleNom} onChange={(e) => updateAC("ministereTutelleNom", e.target.value)} placeholder={t("register.ac.ministere_nom_placeholder")} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.ac.ministere_code")}</Label>
-                      <Input value={newAC.ministereTutelleCode} onChange={(e) => updateAC("ministereTutelleCode", e.target.value)} placeholder={t("register.ac.ministere_code_placeholder")} />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("register.ac.adresse")}</Label>
-                    <Input value={newAC.adresse} onChange={(e) => updateAC("adresse", e.target.value)} placeholder={t("register.ac.adresse_placeholder")} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.ac.telephone")}</Label>
-                      <Input value={newAC.telephone} onChange={(e) => { updateAC("telephone", e.target.value); setPhoneError(validatePhone(e.target.value)); }} placeholder={t("register.ac.telephone_placeholder")} pattern="[234]\d{7}" title={t("register.entreprise.telephone_title")} maxLength={8} />
-                      {phoneError && newAC.telephone && <p className="text-xs text-destructive">{phoneError}</p>}
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">{t("register.ac.email")}</Label>
-                      <Input type="email" value={newAC.email} onChange={(e) => updateAC("email", e.target.value)} placeholder={t("register.ac.email_placeholder")} />
-                    </div>
-                  </div>
+          {/* 2. Personne */}
+          <section className="space-y-4">
+            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_compte")}</h2>
+            <div className="space-y-1"><Label htmlFor="nomComplet">{t("register.nom_complet")} *</Label><Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} required /></div>
+            <div className="space-y-1">
+              <Label htmlFor="email">{t("register.email")} *</Label>
+              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required />
+              <p className="text-xs text-muted-foreground">{t("register.email_hint")}</p>
+            </div>
+            <div className="space-y-1"><Label htmlFor="tel">{t("register.telephone")}</Label><Input id="tel" type="tel" value={form.telephone} onChange={(e) => update("telephone", e.target.value)} /></div>
+            <div className="space-y-1"><Label htmlFor="reg-username">{t("register.username")} *</Label><Input id="reg-username" value={form.username} onChange={(e) => update("username", e.target.value)} autoComplete="username" required /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="pwd">{t("register.password")} *</Label>
+                <div className="relative">
+                  <Input id="pwd" type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => update("password", e.target.value)} autoComplete="new-password" required className="pe-10" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label={t("login.toggle_password_show")}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="reg-password">{t("register.password")}</Label>
-              <div className="relative">
-                <Input
-                  id="reg-password"
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  placeholder={t("register.password_placeholder")}
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t("login.toggle_password_hide") : t("login.toggle_password_show")} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <div className="space-y-1"><Label htmlFor="pwd2">{t("register.confirm_password")} *</Label><Input id="pwd2" type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} autoComplete="new-password" required /></div>
             </div>
+          </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t("register.confirm_password")}</Label>
-              <Input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                value={form.confirmPassword}
-                onChange={(e) => update("confirmPassword", e.target.value)}
-                placeholder={t("register.password_placeholder")}
-                required
-              />
-            </div>
+          {/* 3. Justificatifs */}
+          <section className="space-y-3">
+            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_pieces")}</h2>
+            {piecesError && <p className="text-sm text-destructive">{t("register.pieces_error")}</p>}
+            {pieces.map((p) => {
+              const code = pieceCode(p);
+              const f = files[code];
+              const accept = (p.typesAutorises || []).map((x) => ACCEPT[x]).filter(Boolean).join(",");
+              return (
+                <div key={code} className={`rounded-md border p-3 space-y-2 ${p.obligatoire ? "border-accent" : "border-border"}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground">{pieceLabel(p)}</span>
+                    <Badge variant={p.obligatoire ? "default" : "secondary"}>{p.obligatoire ? t("register.obligatoire") : t("register.facultatif")}</Badge>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer text-primary hover:underline">
+                    <Paperclip className="h-4 w-4" />
+                    <span className="truncate">{f ? f.name : t("register.choose_file")}</span>
+                    <input type="file" className="sr-only" accept={accept || undefined}
+                      onChange={(e) => { const file = e.target.files?.[0]; setFiles((prev) => { const n = { ...prev }; if (file) n[code] = file; else delete n[code]; return n; }); }} />
+                  </label>
+                  {!!p.typesAutorises?.length && <p className="text-xs text-muted-foreground">{t("register.formats", { formats: p.typesAutorises.join(", ") })}</p>}
+                </div>
+              );
+            })}
+          </section>
 
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading || !form.role}>
-              <UserPlus className="h-4 w-4 me-2" />
-              {loading ? t("register.submitting") : t("register.submit")}
-            </Button>
-          </form>
-
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Send className="h-4 w-4 me-2 rtl:rotate-180" />}
+            {loading ? t("register.submitting") : t("register.submit")}
+          </Button>
+          <p className="text-center text-sm text-muted-foreground">
             {t("register.have_account")}{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">
-              {t("register.login")}
-            </Link>
+            <Link to="/login" className="text-primary hover:underline font-medium">{t("register.login")}</Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   );
