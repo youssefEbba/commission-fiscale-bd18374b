@@ -1790,7 +1790,7 @@ async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: strin
     const a = document.createElement("a");
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new File([blob], name, { type: "application/pdf" }));
+    await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
     sonnerToast.success(tr("toast_ok"));
   } catch (e) {
     console.warn("Reçu de dépôt non enregistré :", e);
