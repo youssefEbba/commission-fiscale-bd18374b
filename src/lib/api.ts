@@ -617,7 +617,11 @@ export interface DemandeCorrectionDto {
   conventionReference?: string;
   conventionIntitule?: string;
   marcheId?: number;
+  /** Marché rattaché, renvoyé par le serveur comme objet imbriqué (`numeroMarche`, `reference`, `intitule`). */
+  marche?: MarcheDto | null;
+  /** @deprecated Non envoyé par le serveur (contrat antérieur) — lire `marche?.numeroMarche`. */
   marcheNumero?: string;
+  /** @deprecated Non envoyé par le serveur (contrat antérieur) — lire `marche?.intitule`. */
   marcheIntitule?: string;
   /** Trace : id du marché original conservé après une annulation (détachement). */
   marcheIdTrace?: number;
