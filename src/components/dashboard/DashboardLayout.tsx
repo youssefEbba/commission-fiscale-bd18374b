@@ -195,8 +195,8 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt={t("common:app.title")} className="h-8 w-8" />
           <div className="leading-tight">
-            <span className="block text-[10px] font-medium text-sidebar-foreground/60">{t("common:app.ministry")}</span>
-            <span className="block text-sm font-bold">{t("common:app.title")}</span>
+            <span className="block text-base font-bold">{t("common:app.ministry")}</span>
+            <span className="block text-xs font-semibold text-sidebar-foreground/85">{t("common:app.title")}</span>
             <span className="block text-[10px] font-medium text-sidebar-primary tracking-wider uppercase">{t("common:app.subtitle")}</span>
           </div>
         </Link>
@@ -263,8 +263,8 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <Link to="/" className="flex items-center gap-2">
               <img src={logo} alt={t("common:app.title")} className="h-7 w-7" />
               <div className="leading-tight">
-                <span className="block text-[9px] font-medium text-muted-foreground">{t("common:app.ministry")}</span>
-                <span className="block text-sm font-bold text-foreground">{t("common:app.title")}</span>
+                <span className="block text-sm font-bold text-foreground">{t("common:app.ministry")}</span>
+                <span className="block text-[11px] font-semibold text-muted-foreground">{t("common:app.title")}</span>
               </div>
             </Link>
           </div>
