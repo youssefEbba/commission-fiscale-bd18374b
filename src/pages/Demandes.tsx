@@ -24,7 +24,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -558,8 +559,10 @@ const Demandes = () => {
                     </TableRow>
                   ) : (
                     filtered.map((d) => (
-                      <TableRow key={d.id}>
-                        <TableCell className="font-medium">{displayRef(d)}</TableCell>
+                      <ClickableTableRow key={d.id} to={`/dashboard/demandes/${d.id}`}>
+                        <TableCell className="font-medium">
+                          <Link to={`/dashboard/demandes/${d.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(d)}</Link>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">{d.autoriteContractanteNom || "—"}</TableCell>
                         <TableCell>
                           <button
@@ -718,7 +721,7 @@ const Demandes = () => {
                             )}
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </ClickableTableRow>
                     ))
                   )}
                 </TableBody>

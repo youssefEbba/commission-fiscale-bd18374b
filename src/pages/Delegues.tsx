@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { delegueApi, DelegueDto, CreateDelegueRequest, ROLE_LABELS } from "@/lib/api";
@@ -11,19 +12,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Users, Plus, RefreshCw, Loader2, Search, UserCheck, UserX, MoreHorizontal, Pencil, FileText } from "lucide-react";
+import { Users, Plus, RefreshCw, Loader2, Search, UserCheck, UserX, MoreHorizontal, Pencil, FileText, Info } from "lucide-react";
 import DelegueEditDialog from "@/components/delegues/DelegueEditDialog";
 import DelegueMarchesDialog from "@/components/delegues/DelegueMarchesDialog";
 
 const Delegues = () => {
   const { toast } = useToast();
+  const { t } = useTranslation(["rattachement"]);
   const [delegues, setDelegues] = useState<DelegueDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState<CreateDelegueRequest>({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
-  const [creating, setCreating] = useState(false);
   const [toggling, setToggling] = useState<number | null>(null);
 
   // Edit & Marches dialogs
@@ -44,25 +43,6 @@ const Delegues = () => {
   };
 
   useEffect(() => { fetchDelegues(); }, []);
-
-  const handleCreate = async () => {
-    if (!form.username.trim() || !form.password.trim() || !form.nomComplet.trim()) {
-      toast({ title: "Erreur", description: "Identifiant, mot de passe et nom complet sont requis", variant: "destructive" });
-      return;
-    }
-    setCreating(true);
-    try {
-      await delegueApi.create(form);
-      toast({ title: "Succès", description: "Représentant créé" });
-      setCreateOpen(false);
-      setForm({ username: "", password: "", role: "AUTORITE_UPM", nomComplet: "", email: "" });
-      fetchDelegues();
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const toggleActif = async (d: DelegueDto) => {
     setToggling(d.id);
@@ -94,13 +74,15 @@ const Delegues = () => {
             <p className="text-muted-foreground text-sm mt-1">Gérez les représentants rattachés à votre autorité contractante</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Nouveau représentant
-            </Button>
             <Button variant="outline" onClick={fetchDelegues} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </Button>
           </div>
+        </div>
+
+        <div className="flex gap-2 rounded-md border border-accent bg-accent/10 p-3 text-sm text-foreground">
+          <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+          <p>{t("rattachement:delegues_notice")}</p>
         </div>
 
         <div className="relative max-w-sm">
@@ -181,50 +163,6 @@ const Delegues = () => {
         </Card>
       </div>
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nouveau représentant</DialogTitle>
-            <DialogDescription>Créez un compte représentant UPM ou UEP rattaché à votre autorité.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nom complet *</Label>
-              <Input value={form.nomComplet} onChange={e => setForm(f => ({ ...f, nomComplet: e.target.value }))} placeholder="Nom Prénom" />
-            </div>
-            <div className="space-y-2">
-              <Label>Identifiant *</Label>
-              <Input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} placeholder="upm1" />
-            </div>
-            <div className="space-y-2">
-              <Label>Mot de passe *</Label>
-              <Input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
-            </div>
-            <div className="space-y-2">
-              <Label>Rôle *</Label>
-              <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v as "AUTORITE_UPM" | "AUTORITE_UEP" }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="AUTORITE_UPM">Autorité UPM</SelectItem>
-                  <SelectItem value="AUTORITE_UEP">Autorité UEP</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreate} disabled={creating}>
-              {creating && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-              Créer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Dialog */}
       <DelegueEditDialog delegue={editDelegue} open={editOpen} onOpenChange={setEditOpen} onUpdated={fetchDelegues} />

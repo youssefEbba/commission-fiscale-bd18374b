@@ -23,8 +23,8 @@ const Navbar = () => {
         <a href="#" className="flex items-center gap-2">
           <img src={logo} alt={t("footer.tagline")} className="h-8 w-8" />
           <div className="leading-tight">
-            <span className="block text-[10px] font-medium text-primary-foreground/70">{t("nav.ministry")}</span>
-            <span className="block text-sm font-bold text-primary-foreground">Commission Fiscale</span>
+            <span className="block text-base font-bold text-primary-foreground">{t("nav.ministry")}</span>
+            <span className="block text-xs font-semibold text-primary-foreground/85">Commission Fiscale</span>
             <span className="block text-[10px] font-medium text-gold-light tracking-wider uppercase">Mauritanie</span>
           </div>
         </a>

@@ -461,6 +461,7 @@ const GedConfiguration = () => {
                           <TableRow>
                             <TableHead className="min-w-[200px]">{t("ged:config.table.document")}</TableHead>
                             <TableHead className="min-w-[120px]">{t("ged:config.table.required")}</TableHead>
+                            <TableHead className="min-w-[160px]">{t("ged:config.table.famille")}</TableHead>
                             <TableHead className="min-w-[250px]">{t("ged:config.table.type")}</TableHead>
                             <TableHead className="min-w-[250px]">{t("ged:config.table.description")}</TableHead>
                             <TableHead className="w-[100px]">{t("ged:config.table.actions")}</TableHead>
@@ -474,6 +475,15 @@ const GedConfiguration = () => {
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
                                   {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {req.deposableParLeDemandeur == null ? (
+                                  <span className="text-muted-foreground text-sm">—</span>
+                                ) : (
+                                  <Badge variant="outline" className={req.deposableParLeDemandeur ? "" : "border-accent text-accent-foreground bg-accent/20"}>
+                                    {req.deposableParLeDemandeur ? t("ged:config.famille.demandeur") : t("ged:config.famille.commission")}
+                                  </Badge>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">

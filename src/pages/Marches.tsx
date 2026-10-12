@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -350,8 +351,10 @@ const Marches = () => {
                       </TableRow>
                     ) : (
                       filtered.map(m => (
-                        <TableRow key={m.id}>
-                          <TableCell className="font-medium whitespace-nowrap">{displayRef(m)}</TableCell>
+                        <ClickableTableRow key={m.id} to={`/dashboard/marches/${m.id}`}>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            <Link to={`/dashboard/marches/${m.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(m)}</Link>
+                          </TableCell>
                           <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
                             {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -406,7 +409,7 @@ const Marches = () => {
                               </DropdownMenu>
                             </div>
                           </TableCell>
-                        </TableRow>
+                        </ClickableTableRow>
                       ))
                     )}
                   </TableBody>

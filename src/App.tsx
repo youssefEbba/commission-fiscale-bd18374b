@@ -50,6 +50,11 @@ import ReferentielTaxes from "./pages/ReferentielTaxes";
 import Groupements from "./pages/Groupements";
 import GroupementDetail from "./pages/GroupementDetail";
 import EntrepriseDetail from "./pages/EntrepriseDetail";
+import Entreprises from "./pages/Entreprises";
+import AutoritesContractantes from "./pages/AutoritesContractantes";
+import AutoriteDetail from "./pages/AutoriteDetail";
+import DemandesRattachement from "./pages/DemandesRattachement";
+import DemandeRattachementDetail from "./pages/DemandeRattachementDetail";
 import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
@@ -240,6 +245,11 @@ const App = () => (
                 <GroupementDetail />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/entreprises" element={<ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}><Entreprises /></ProtectedRoute>} />
+            <Route path="/dashboard/autorites" element={<ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}><AutoritesContractantes /></ProtectedRoute>} />
+            <Route path="/dashboard/autorites/:id" element={<ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}><AutoriteDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/demandes-rattachement" element={<ProtectedRoute><DemandesRattachement /></ProtectedRoute>} />
+            <Route path="/dashboard/demandes-rattachement/:id" element={<ProtectedRoute><DemandeRattachementDetail /></ProtectedRoute>} />
             <Route path="/dashboard/entreprises/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <EntrepriseDetail />

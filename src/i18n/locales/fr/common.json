@@ -2,7 +2,8 @@
   "app": {
     "title": "Commission Fiscale",
     "subtitle": "Mauritanie",
-    "full_name": "Commission Fiscale — Gestion des Crédits d'Impôt"
+    "full_name": "Commission Fiscale — Gestion des Crédits d'Impôt",
+    "ministry": "Ministère des Finances"
   },
   "language": {
     "label": "Langue",

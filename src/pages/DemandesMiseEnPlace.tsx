@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -615,8 +616,10 @@ const DemandesMiseEnPlace = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("mise_en_place:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.reference || `#${c.id}`}</TableCell>
+                    <ClickableTableRow key={c.id} to={`/dashboard/mise-en-place/${c.id}`}>
+                      <TableCell className="font-medium">
+                        <Link to={`/dashboard/mise-en-place/${c.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{c.reference || `#${c.id}`}</Link>
+                      </TableCell>
                       <TableCell>{getEntrepriseName(c)}</TableCell>
                       <TableCell>{getCorrectionName(c)}</TableCell>
                       <TableCell>{getMarcheName(c)}</TableCell>
@@ -679,7 +682,7 @@ const DemandesMiseEnPlace = () => {
                           )}
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

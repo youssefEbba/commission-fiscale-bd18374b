@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -706,8 +707,10 @@ const Utilisations = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("utilisations:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">#{u.id}</TableCell>
+                    <ClickableTableRow key={u.id} to={`/dashboard/utilisations/${u.id}`}>
+                      <TableCell className="font-medium">
+                        <Link to={`/dashboard/utilisations/${u.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{u.id}</Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         <div><CreditLink id={u.certificatCreditId} reference={u.certificatReference} numero={u.certificatNumero} /></div>
                         {u.certificatTitulaireRaisonSociale && (
@@ -815,7 +818,7 @@ const Utilisations = () => {
                           })()}
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +39,7 @@ const MarcheDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/marches");
   const { toast } = useToast();
   const { hasRole } = useAuth();
 
@@ -123,7 +125,7 @@ const MarcheDetail = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/marches")}>
+            <Button variant="outline" size="sm" onClick={smartBack}>
               <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("marches:detail.back")}
             </Button>
             <div>

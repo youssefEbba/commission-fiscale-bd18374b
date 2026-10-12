@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -26,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare } from "lucide-react";
+import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare, Stamp } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
@@ -277,6 +278,19 @@ const Transferts = () => {
     return () => { cancelled = true; };
   }, [data, isCircuitRole]);
 
+  // Visa direct depuis la file (DGD / DGI / DGTCP) — proposé seulement si le serveur dit visablePourMoi.
+  const handleViserRow = async (tr: TransfertCreditDto) => {
+    setActionLoading(tr.id);
+    try {
+      await transfertCreditApi.viser(tr.id);
+      toast({ title: t("transferts:circuit.toast_vise") });
+      setAViserIds((prev) => { const n = new Set(prev); n.delete(tr.id); return n; });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+    } finally { setActionLoading(null); }
+  };
+
   const filtered = data.filter((tr) => {
     if (onlyAViser && !aViserIds.has(tr.id)) return false;
     const ms = (tr.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) || String(tr.id).includes(search);
@@ -357,8 +371,10 @@ const Transferts = () => {
                   {filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("transferts:list.empty")}</TableCell></TableRow>
                   ) : filtered.map((tr) => (
-                    <TableRow key={tr.id}>
-                      <TableCell className="font-medium">#{tr.id}</TableCell>
+                    <ClickableTableRow key={tr.id} to={`/dashboard/transferts/${tr.id}`}>
+                      <TableCell className="font-medium">
+                        <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{tr.id}</Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{tr.certificatNumero || `Cert #${tr.certificatCreditId}`}</TableCell>
                       <TableCell className="font-medium">{formatAmount(tr.montant)}</TableCell>
                       <TableCell>
@@ -378,6 +394,17 @@ const Transferts = () => {
                           <Button variant="default" size="sm" onClick={() => navigate(`/dashboard/transferts/${tr.id}`)}>
                             <Eye className="h-4 w-4 me-1" /> {t("transferts:list.open")}
                           </Button>
+                          {aViserIds.has(tr.id) && role !== "PRESIDENT" && (
+                            <Button size="sm" disabled={actionLoading === tr.id} onClick={() => handleViserRow(tr)}>
+                              {actionLoading === tr.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Stamp className="h-4 w-4 me-1" />}
+                              {t("transferts:circuit.btn_viser")}
+                            </Button>
+                          )}
+                          {aViserIds.has(tr.id) && role === "PRESIDENT" && (
+                            <Button size="sm" variant="destructive" onClick={() => navigate(`/dashboard/transferts/${tr.id}`)}>
+                              <Stamp className="h-4 w-4 me-1" /> {t("transferts:circuit.btn_approuver")}
+                            </Button>
+                          )}
                           {canCreate && (tr.statut === "REJETE" || tr.statut === "ANNULEE") && (
                             <Button variant="outline" size="sm" onClick={() => openResubmit(tr)}>
                               <RotateCcw className="h-4 w-4 me-1" /> {t("transferts:list.resubmit")}
@@ -390,7 +417,7 @@ const Transferts = () => {
                           )}
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   ))}
                 </TableBody>
               </Table>

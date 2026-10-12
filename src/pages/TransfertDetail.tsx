@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -47,6 +48,7 @@ const UPLOAD_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "INC
 const TransfertDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const smartBack = useSmartBack("/dashboard/transferts");
   const { t } = useTranslation(["transferts", "common", "enums"]);
   usePageTitle("transferts:detail.title", { id: id ?? "" });
   const { user, hasPermission } = useAuth();
@@ -209,7 +211,7 @@ const TransfertDetail = () => {
       <DashboardLayout>
         <div className="text-center py-20 space-y-4">
           <p className="text-muted-foreground">{t("transferts:detail.not_found")}</p>
-          <Button variant="outline" onClick={() => navigate("/dashboard/transferts")}>
+          <Button variant="outline" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("transferts:detail.back_to_list")}
           </Button>
         </div>
@@ -222,7 +224,7 @@ const TransfertDetail = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/transferts")}>
+            <Button variant="outline" size="sm" onClick={smartBack}>
               <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("transferts:detail.back")}
             </Button>
             <div>

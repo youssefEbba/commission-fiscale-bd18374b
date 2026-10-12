@@ -19,7 +19,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer id="contact" className="border-t border-border bg-dark-green text-primary-foreground">
+    <footer id="contact" className="border-t-2 border-gold bg-dark-green text-primary-foreground">
       <div className="mx-auto max-w-7xl px-6 py-14">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
