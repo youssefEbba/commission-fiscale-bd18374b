@@ -34,7 +34,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   { key: "validation_finale", href: "/dashboard/demandes", icon: Shield, roles: ["PRESIDENT"] },
   { key: "certificats_signer", href: "/dashboard/certificats", icon: Award, roles: ["PRESIDENT"] },
   { key: "certificats_utilisation_emettre", href: "/dashboard/utilisations?aEmettre=1", icon: Award, roles: ["PRESIDENT"] },
-  { key: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGTCP", "PRESIDENT"] },
+  { key: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT"] },
   { key: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT"] },
   { key: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users, roles: ["ADMIN_SI", "PRESIDENT"] },
   { key: "audit", href: "/dashboard/audit", icon: BarChart3, roles: ["ADMIN_SI"] },

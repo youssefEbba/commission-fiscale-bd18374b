@@ -61,7 +61,7 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     labelKey: "operations",
     icon: ArrowRightLeft,
-    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"],
+    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
       // TODO: réactiver quand le back-end Modifications/Avenants sera disponible
       // { labelKey: "modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
