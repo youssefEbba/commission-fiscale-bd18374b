@@ -116,8 +116,8 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
                           </p>
                         ) : (
                           <>
-                            {!r.visablePourMoi && r.motifBlocage && (
-                              <p className="text-xs text-muted-foreground mt-1">{r.motifBlocage}</p>
+                            {!r.visablePourMoi && (r.motifBlocage || r.codeBlocage) && (
+                              <p className="text-xs text-muted-foreground mt-1">{r.motifBlocage || r.codeBlocage}</p>
                             )}
                             {r.visaPrealableManquant && (
                               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">

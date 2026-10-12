@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare } from "lucide-react";
+import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare, Stamp } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
