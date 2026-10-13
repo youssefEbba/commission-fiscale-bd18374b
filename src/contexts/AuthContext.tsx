@@ -11,7 +11,7 @@ const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
   DGB: [],
   DGD: ["mise_en_place.visa", "mise_en_place.rejet_temp"],
   AUTORITE_CONTRACTANTE: ["delegue.list", "delegue.update", "delegue.disable", "mise_en_place.annuler", "mise_en_place.creer", "mise_en_place.soumettre"],
-  ENTREPRISE: [],
+  ENTREPRISE: ["transfert.submit", "transfert.annuler", "transfert.entreprise.rejet.repondre"],
   ADMIN_SI: ["autorite.create", "autorite.update", "autorite.delete"],
   AUTORITE_UPM: [],
   AUTORITE_UEP: [],

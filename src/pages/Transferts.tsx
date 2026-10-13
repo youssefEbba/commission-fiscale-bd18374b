@@ -298,7 +298,9 @@ const Transferts = () => {
     return ms && matchStatut;
   });
 
-  const canCreate = role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE";
+  const canCreate = hasPermission("transfert.submit");
+  // La résolution d’un rejet temporaire appartient à celui qui l’a posé.
+  const isMyDecision = (d: DecisionCorrectionDto) => d.utilisateurId != null ? d.utilisateurId === user?.userId : d.role === role;
   // P7 : le visa et l'approbation se font depuis la fiche (circuit DGD → DGI → DGTCP → Président).
   const canValider = false;
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
@@ -526,7 +528,7 @@ const Transferts = () => {
                               {t("transferts:actions.repondre")}
                             </Button>
                           )}
-                          {d.rejetTempStatus === "OUVERT" && canRejetTemp && (
+                          {d.rejetTempStatus === "OUVERT" && canRejetTemp && isMyDecision(d) && (
                             <Button size="sm" onClick={() => handleResolve(d.id)}>
                               {t("transferts:actions.marquer_resolu")}
                             </Button>
