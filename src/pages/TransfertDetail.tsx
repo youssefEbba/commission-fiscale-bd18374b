@@ -120,7 +120,8 @@ const TransfertDetail = () => {
   const isCircuitRole = ["DGD", "DGI", "DGTCP", "PRESIDENT"].includes(role);
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
   const canRejetTemp = isCircuitRole;
-  const canResolveRejet = isCircuitRole;
+  // La résolution d’un rejet temporaire appartient à celui qui l’a posé.
+  const canResolveRejet = (d: DecisionCorrectionDto) => isCircuitRole && (d.utilisateurId != null ? d.utilisateurId === user?.userId : d.role === role);
   const [circuitKey, setCircuitKey] = useState(0);
   const canRespondRejet = role === "ENTREPRISE" && hasPermission("transfert.entreprise.rejet.repondre");
   const canAnnuler = role === "ENTREPRISE" && hasPermission("transfert.annuler");
@@ -456,14 +457,14 @@ const TransfertDetail = () => {
                         )}
                       </div>
 
-                      {isOuvert && (canRespondRejet || canResolveRejet) && (
+                      {isOuvert && (canRespondRejet || canResolveRejet(d)) && (
                         <div className="flex gap-2 px-4 py-2 border-t bg-muted/20 justify-end">
                           {canRespondRejet && (
                             <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setResponseMsg(""); }}>
                               {t("transferts:actions.repondre")}
                             </Button>
                           )}
-                          {canResolveRejet && (
+                          {canResolveRejet(d) && (
                             <Button size="sm" onClick={() => handleResolve(d.id)}>{t("transferts:actions.marquer_resolu")}</Button>
                           )}
                         </div>
