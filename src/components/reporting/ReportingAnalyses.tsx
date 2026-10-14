@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode } from "react";
+import { Fragment, useEffect, useState, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   reportingApi, ReportingParams, EngagementAxe, EngagementReportDto, EngagementLigneDto, EngagementEnveloppeDto,
@@ -131,11 +131,11 @@ export function EngagementSection({ params }: { params: ReportingParams }) {
                 </TableRow>
                 <TableRow>
                   {[0, 1, 2].map((i) => (
-                    <>
-                      <TableHead key={`a${i}`} className="text-end">{t(`${NS}.engagement.accorde`)}</TableHead>
-                      <TableHead key={`c${i}`} className="text-end">{t(`${NS}.engagement.consomme`)}</TableHead>
-                      <TableHead key={`r${i}`} className="text-end">{t(`${NS}.engagement.restant`)}</TableHead>
-                    </>
+                    <Fragment key={i}>
+                      <TableHead className="text-end">{t(`${NS}.engagement.accorde`)}</TableHead>
+                      <TableHead className="text-end">{t(`${NS}.engagement.consomme`)}</TableHead>
+                      <TableHead className="text-end">{t(`${NS}.engagement.restant`)}</TableHead>
+                    </Fragment>
                   ))}
                 </TableRow>
               </TableHeader>
