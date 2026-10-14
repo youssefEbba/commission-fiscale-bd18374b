@@ -116,8 +116,8 @@ const ArchiveCredits = () => {
       [...conventions]
         .filter((c) => !autoriteId || String(c.autoriteContractanteId ?? "") === autoriteId)
         .sort((x, y) => (x.reference || "").localeCompare(y.reference || "", "fr"))
-        .map((c) => ({ value: String(c.id), label: c.reference || `#${c.id}`, description: c.intitule || undefined })),
-    [conventions, autoriteId],
+        .map((c) => ({ value: String(c.id), label: c.actif === false ? `${c.reference || `#${c.id}`} — ${t("conventions:activation.disabled_badge")}` : (c.reference || `#${c.id}`), description: c.intitule || undefined })),
+    [conventions, autoriteId, t],
   );
   const bailleurOptions = useMemo(
     () =>

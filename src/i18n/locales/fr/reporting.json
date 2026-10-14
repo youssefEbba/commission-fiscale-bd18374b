@@ -5,11 +5,15 @@
     "filters_applied": "Filtres appliqués",
     "load_error_title": "Erreur de chargement",
     "load_error_fallback": "Impossible de charger les données de reporting",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "no_permission": "Le reporting n'est pas accessible avec votre profil."
   },
   "tabs": {
     "app": "Reporting applicatif",
-    "stats": "Statistiques crédits d'impôt"
+    "stats": "Statistiques crédits d'impôt",
+    "engagement": "Engagement",
+    "blocages": "Blocages",
+    "a_fermer": "À fermer"
   },
   "roles": {
     "PRESIDENT": "Présidence — vue nationale",
@@ -68,5 +72,75 @@
     "marches_title": "Marchés",
     "audit_actions": "Actions d'audit ({{count}})",
     "audit_top_entities": "Top entités modifiées"
+  },
+  "analyses": {
+    "truncated": "{{shown}} lignes affichées sur {{total}}",
+    "days": "{{count}} jour(s)",
+    "fiabilite": {
+      "A_VERIFIER": "À vérifier",
+      "EXPLIQUE": "Écart expliqué"
+    },
+    "engagement": {
+      "title": "Engagement des crédits",
+      "axe": "Regrouper par",
+      "axes": {
+        "AUTORITE_CONTRACTANTE": "Autorité contractante",
+        "BAILLEUR": "Bailleur",
+        "CONVENTION": "Convention",
+        "ENTREPRISE": "Entreprise"
+      },
+      "nb_certificats": "Crédits",
+      "env_hors_tva": "Droits et taxes hors TVA",
+      "env_tva_import": "TVA à l'import",
+      "env_tva_int": "TVA intérieure",
+      "accorde": "Accordé",
+      "consomme": "Consommé",
+      "restant": "Restant",
+      "ecart_mouvements": "Écart mouvements",
+      "ecart_ventilation": "Écart ventilation",
+      "restant_sup_accorde": "Restant > accordé",
+      "fiabilite": "Fiabilité",
+      "total": "Total du périmètre",
+      "note_explique": "Écart expliqué par une reprise d'archive ou une correction d'administrateur ({{count}} dossier(s) concerné(s)).",
+      "note_consomme": "Montants calculés par le serveur. Un consommé négatif correspond à un report à nouveau de TVA intérieure."
+    },
+    "blocages": {
+      "seuil": "Seuil (jours)",
+      "rejets_ouverts": "Rejets temporaires ouverts",
+      "plus_vieux_rejet": "Ancienneté du plus vieux rejet",
+      "rejets_title": "Rejets temporaires ouverts",
+      "dossier": "Dossier",
+      "direction": "Direction",
+      "agent": "Agent",
+      "date": "Date",
+      "anciennete": "Ancienneté (jours)",
+      "delais_title": "Délais par direction",
+      "nb_visas": "Visas",
+      "visas_admin": "Visas posés par un administrateur",
+      "note_visas_admin": "Les visas posés par un administrateur à la place de la direction sont exclus du délai moyen et comptés à part.",
+      "dossiers_title": "Dossiers en attente",
+      "type": "Type",
+      "statut": "Statut"
+    },
+    "a_fermer": {
+      "horizon": "Horizon (jours)",
+      "dormance": "Dormance (jours)",
+      "equip_declares": "Dossiers avec équipements déclarés",
+      "equip_non_renseignes": "Déclaration d'équipements non renseignée",
+      "equip_note": "« Non renseignée » : la question n'a jamais été posée sur ces dossiers ; le nombre avec équipements ne couvre que les dossiers renseignés.",
+      "echeance_title": "Crédits arrivant à échéance",
+      "dormants_title": "Crédits dormants",
+      "critere_dormance": "Critère de dormance",
+      "sans_date_title": "Crédits sans date de validité",
+      "sans_date_defaut": "Défaut de données : un crédit sans date de validité n'arrive jamais à échéance et ne déclenche donc aucune alerte.",
+      "certificat": "Crédit",
+      "entreprise": "Entreprise",
+      "date_validite": "Date de validité",
+      "derniere_activite": "Dernière activité",
+      "equipements": "Équipements",
+      "equip_oui": "Oui",
+      "equip_non": "Non",
+      "equip_non_renseigne": "Non renseigné"
+    }
   }
 }

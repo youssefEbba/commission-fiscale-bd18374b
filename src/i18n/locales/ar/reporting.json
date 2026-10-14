@@ -5,11 +5,15 @@
     "filters_applied": "تم تطبيق المرشحات",
     "load_error_title": "خطأ في التحميل",
     "load_error_fallback": "تعذّر تحميل بيانات التقارير",
-    "retry": "إعادة المحاولة"
+    "retry": "إعادة المحاولة",
+    "no_permission": "التقارير غير متاحة لملفك."
   },
   "tabs": {
     "app": "التقارير التطبيقية",
-    "stats": "إحصائيات الاعتمادات الضريبية"
+    "stats": "إحصائيات الاعتمادات الضريبية",
+    "engagement": "الالتزام",
+    "blocages": "العوائق",
+    "a_fermer": "للإغلاق"
   },
   "roles": {
     "PRESIDENT": "الرئاسة — رؤية وطنية",
@@ -68,5 +72,75 @@
     "marches_title": "الصفقات",
     "audit_actions": "إجراءات التدقيق ({{count}})",
     "audit_top_entities": "أكثر الكيانات تعديلاً"
+  },
+  "analyses": {
+    "truncated": "{{shown}} سطر معروض من أصل {{total}}",
+    "days": "{{count}} يوم",
+    "fiabilite": {
+      "A_VERIFIER": "يجب التحقق",
+      "EXPLIQUE": "فارق مُبرَّر"
+    },
+    "engagement": {
+      "title": "التزام الاعتمادات",
+      "axe": "التجميع حسب",
+      "axes": {
+        "AUTORITE_CONTRACTANTE": "السلطة المتعاقدة",
+        "BAILLEUR": "الممول",
+        "CONVENTION": "الاتفاقية",
+        "ENTREPRISE": "المؤسسة"
+      },
+      "nb_certificats": "الاعتمادات",
+      "env_hors_tva": "الرسوم والضرائب دون الضريبة على القيمة المضافة",
+      "env_tva_import": "الضريبة على القيمة المضافة عند الاستيراد",
+      "env_tva_int": "الضريبة الداخلية على القيمة المضافة",
+      "accorde": "الممنوح",
+      "consomme": "المستهلك",
+      "restant": "المتبقي",
+      "ecart_mouvements": "فارق الحركات",
+      "ecart_ventilation": "فارق التوزيع",
+      "restant_sup_accorde": "المتبقي > الممنوح",
+      "fiabilite": "الموثوقية",
+      "total": "إجمالي النطاق",
+      "note_explique": "فارق مبرر باسترجاع أرشيف أو تصحيح من المسؤول ({{count}} ملف معني).",
+      "note_consomme": "المبالغ محسوبة من طرف الخادم. المستهلك السالب يمثل ترحيلاً للضريبة الداخلية على القيمة المضافة."
+    },
+    "blocages": {
+      "seuil": "العتبة (أيام)",
+      "rejets_ouverts": "الرفض المؤقت المفتوح",
+      "plus_vieux_rejet": "أقدمية أقدم رفض",
+      "rejets_title": "الرفض المؤقت المفتوح",
+      "dossier": "الملف",
+      "direction": "المديرية",
+      "agent": "الموظف",
+      "date": "التاريخ",
+      "anciennete": "الأقدمية (أيام)",
+      "delais_title": "الآجال حسب المديرية",
+      "nb_visas": "التأشيرات",
+      "visas_admin": "تأشيرات وضعها مسؤول",
+      "note_visas_admin": "التأشيرات التي وضعها مسؤول بدلاً من المديرية مستبعدة من متوسط الأجل ومحسوبة على حدة.",
+      "dossiers_title": "الملفات قيد الانتظار",
+      "type": "النوع",
+      "statut": "الحالة"
+    },
+    "a_fermer": {
+      "horizon": "الأفق (أيام)",
+      "dormance": "الخمول (أيام)",
+      "equip_declares": "ملفات بمعدات مصرح بها",
+      "equip_non_renseignes": "تصريح المعدات غير مُعبّأ",
+      "equip_note": "«غير مُعبّأ»: لم يُطرح السؤال على هذه الملفات؛ عدد الملفات بمعدات يغطي الملفات المعبأة فقط.",
+      "echeance_title": "اعتمادات قريبة من الاستحقاق",
+      "dormants_title": "اعتمادات خاملة",
+      "critere_dormance": "معيار الخمول",
+      "sans_date_title": "اعتمادات بدون تاريخ صلاحية",
+      "sans_date_defaut": "خلل في البيانات: الاعتماد بدون تاريخ صلاحية لا يستحق أبداً، وبالتالي لا يطلق أي تنبيه.",
+      "certificat": "الاعتماد",
+      "entreprise": "المؤسسة",
+      "date_validite": "تاريخ الصلاحية",
+      "derniere_activite": "آخر نشاط",
+      "equipements": "المعدات",
+      "equip_oui": "نعم",
+      "equip_non": "لا",
+      "equip_non_renseigne": "غير مُعبّأ"
+    }
   }
 }
