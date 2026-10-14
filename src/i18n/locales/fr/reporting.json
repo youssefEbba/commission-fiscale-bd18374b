@@ -13,7 +13,8 @@
     "stats": "Statistiques crédits d'impôt",
     "engagement": "Engagement",
     "blocages": "Blocages",
-    "a_fermer": "À fermer"
+    "a_fermer": "À fermer",
+    "production": "Production"
   },
   "roles": {
     "PRESIDENT": "Présidence — vue nationale",
@@ -177,5 +178,40 @@
       "equip_ouvert_title": "Crédits ouverts avec équipements sous régime"
     },
     "na": "n/a"
+  },
+  "production": {
+    "granularite": "Granularité",
+    "gran": {
+      "MOIS": "Par mois",
+      "TRIMESTRE": "Par trimestre"
+    },
+    "cle_datation": "Clé de datation des montants",
+    "demandes": "Demandes",
+    "certificats": "Crédits",
+    "utilisations": "Utilisations",
+    "masse": "Masse accordée",
+    "consomme_mvt": "Consommé sur mouvements (période)",
+    "precedent": "Période précédente",
+    "variation": "Variation",
+    "chart_volumes": "Volumes par période",
+    "note_consomme": "Mesuré sur les mouvements de la période. Ce chiffre n'est pas le « consommé total (soldes) » de l'onglet Engagement : les dossiers repris de l'ancienne application ont des soldes sans mouvements, l'écart entre les deux est normal."
+  },
+  "export": {
+    "button": "Exporter (français)",
+    "global": "Tout exporter (français)",
+    "in_progress": "Export en cours…",
+    "error": "Échec de l'export",
+    "fr_note": "Le contenu du fichier est produit par le serveur en français (définitions et notes verrouillées).",
+    "formats": {
+      "xlsx": "Classeur Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF (.pdf)"
+    },
+    "blocs": {
+      "ENGAGEMENT": "Engagement",
+      "BLOCAGES": "Blocages",
+      "A_FERMER": "À fermer",
+      "PRODUCTION": "Production"
+    }
   }
 }

@@ -2744,7 +2744,63 @@ const withExtra = (params: ReportingParams | undefined, extra: Record<string, st
   return base ? `${base}&${parts.join("&")}` : `?${parts.join("&")}`;
 };
 
+export type ProductionGranularite = "MOIS" | "TRIMESTRE";
+export interface ProductionPointDto {
+  periode: string;
+  nbDemandes: number | null;
+  nbCertificats: number | null;
+  nbUtilisations: number | null;
+  masseAccordee: number | null;
+  consommeMouvementsPeriode: number | null;
+}
+export interface ProductionReportDto {
+  granularite: ProductionGranularite;
+  points: ProductionPointDto[];
+  cleDatation: string | null;
+  totalDemandes: number | null;
+  totalCertificats: number | null;
+  totalUtilisations: number | null;
+  totalMasseAccordee: number | null;
+  totalConsommeMouvements: number | null;
+  precedentDemandes: number | null;
+  precedentCertificats: number | null;
+  precedentMasseAccordee: number | null;
+  variationDemandesPct: number | null;
+  variationCertificatsPct: number | null;
+  variationMassePct: number | null;
+  filtersApplied?: boolean;
+}
+export type ReportingExportFormat = "xlsx" | "csv" | "pdf";
+export type ReportingBloc = "ENGAGEMENT" | "BLOCAGES" | "A_FERMER" | "PRODUCTION";
+export const REPORTING_BLOCS: ReportingBloc[] = ["ENGAGEMENT", "BLOCAGES", "A_FERMER", "PRODUCTION"];
+
+/** Télécharge un export serveur tel quel (fichier, jamais lu comme JSON). */
+async function downloadReportingExport(format: ReportingExportFormat, params?: ReportingParams, blocs?: ReportingBloc[]) {
+  const query = withExtra(params, { blocs: blocs && blocs.length ? blocs.join(",") : undefined });
+  const token = localStorage.getItem("auth_token");
+  const headers: Record<string, string> = { "ngrok-skip-browser-warning": "true" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/reporting/export.${format}${query}`, { headers });
+  if (!res.ok) {
+    let message = `Erreur ${res.status}`;
+    try { const j = JSON.parse(await res.text()); if (j?.message) message = j.message; } catch { /* noop */ }
+    throw new ApiRequestError({ status: res.status, code: "UNKNOWN", message });
+  }
+  const cd = res.headers.get("Content-Disposition") || "";
+  const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+  const d = new Date();
+  const fallback = `reporting-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}.${format}`;
+  const filename = m ? decodeURIComponent(m[1]) : fallback;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export const reportingApi = {
+  getProduction: (params?: ReportingParams, granularite?: ProductionGranularite) => apiFetch<ProductionReportDto>(`/reporting/production${withExtra(params, { granularite })}`, { skipAuthRedirect: true }),
+  downloadExport: downloadReportingExport,
   getEngagement: (params?: ReportingParams, axe?: EngagementAxe) => apiFetch<EngagementReportDto>(`/reporting/engagement${withExtra(params, { axe })}`, { skipAuthRedirect: true }),
   getBlocages: (params?: ReportingParams, seuilJours?: number) => apiFetch<BlocagesReportDto>(`/reporting/blocages${withExtra(params, { seuilJours })}`, { skipAuthRedirect: true }),
   getAFermer: (params?: ReportingParams, horizonJours?: number, dormanceJours?: number) => apiFetch<AFermerReportDto>(`/reporting/a-fermer${withExtra(params, { horizonJours, dormanceJours })}`, { skipAuthRedirect: true }),
