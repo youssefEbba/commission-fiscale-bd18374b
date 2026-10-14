@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Activity, Award, Wallet, Clock, Lock } from "lucide-react";
+import { Loader2, Activity, Award, Wallet, Clock, Lock, CalendarRange } from "lucide-react";
 import { EngagementSection, BlocagesSection, AFermerSection } from "@/components/reporting/ReportingAnalyses";
 import { isNationalRole, getRoleLabel } from "@/components/reporting/ReportingRoleConfig";
+import { ProductionSection } from "@/components/reporting/ReportingProduction";
+import { ExportBlocButton, ExportGlobalButton } from "@/components/reporting/ReportingExport";
 import ReportingFilters from "@/components/reporting/ReportingFilters";
 import ReportingKPIs from "@/components/reporting/ReportingKPIs";
 import ReportingCharts from "@/components/reporting/ReportingCharts";
@@ -165,10 +167,12 @@ const Reporting = () => {
               <TabsTrigger value="engagement"><Wallet className="h-4 w-4 me-1" />{t("reporting:tabs.engagement")}</TabsTrigger>
               <TabsTrigger value="blocages"><Clock className="h-4 w-4 me-1" />{t("reporting:tabs.blocages")}</TabsTrigger>
               <TabsTrigger value="a_fermer"><Lock className="h-4 w-4 me-1" />{t("reporting:tabs.a_fermer")}</TabsTrigger>
+              <TabsTrigger value="production"><CalendarRange className="h-4 w-4 me-1" />{t("reporting:tabs.production")}</TabsTrigger>
             </TabsList>
-            <TabsContent value="engagement"><EngagementSection params={appliedParams} /></TabsContent>
-            <TabsContent value="blocages"><BlocagesSection params={appliedParams} /></TabsContent>
-            <TabsContent value="a_fermer"><AFermerSection params={appliedParams} /></TabsContent>
+            <TabsContent value="engagement" className="space-y-3"><div className="flex justify-end"><ExportBlocButton params={appliedParams} bloc="ENGAGEMENT" /></div><EngagementSection params={appliedParams} /></TabsContent>
+            <TabsContent value="blocages" className="space-y-3"><div className="flex justify-end"><ExportBlocButton params={appliedParams} bloc="BLOCAGES" /></div><BlocagesSection params={appliedParams} /></TabsContent>
+            <TabsContent value="a_fermer" className="space-y-3"><div className="flex justify-end"><ExportBlocButton params={appliedParams} bloc="A_FERMER" /></div><AFermerSection params={appliedParams} /></TabsContent>
+            <TabsContent value="production" className="space-y-3"><div className="flex justify-end"><ExportBlocButton params={appliedParams} bloc="PRODUCTION" /></div><ProductionSection params={appliedParams} /></TabsContent>
 
             <TabsContent value="app" className="space-y-6">
               <ReportingKPIs summary={summary} role={role} />
