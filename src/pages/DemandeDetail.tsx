@@ -133,7 +133,7 @@ const DemandeDetail = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
 
-  usePageTitle("demandes:detail.title", { numero: selected?.numero || `#${selected?.id ?? id}` });
+  usePageTitle("demandes:detail.title", { numero: selected?.reference || selected?.numero || `#${selected?.id ?? id}` });
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState("");
