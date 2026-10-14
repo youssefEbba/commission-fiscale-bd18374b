@@ -4,7 +4,7 @@ import { LoginResponse } from "@/lib/api";
 export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT" | "COMMISSION_RELAIS";
 
 // Permissions granulaires par rôle
-const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
+const ROLE_PERMISSIONS_BASE: Record<AppRole, string[]> = {
   PRESIDENT: ["transfert.president.validate", "transfert.president.reject", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat", "mise_en_place.valider_president", "convention.activate", "autorite.create", "autorite.update", "autorite.delete", "rattachement.validate"],
   DGI: ["transfert.dgi.visa", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp"],
   DGTCP: ["transfert.dgtcp.update", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.dgtcp.validate", "mise_en_place.dgtcp.reject", "mise_en_place.ouvrir", "convention.activate"],
@@ -24,6 +24,11 @@ const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
     "commission.relais.release",
   ],
 };
+
+// `reporting.view` : détenue par tous les rôles sauf COMMISSION_RELAIS (non impersonant).
+const ROLE_PERMISSIONS: Record<AppRole, string[]> = Object.fromEntries(
+  Object.entries(ROLE_PERMISSIONS_BASE).map(([r, perms]) => [r, r === "COMMISSION_RELAIS" ? perms : [...perms, "reporting.view"]]),
+) as Record<AppRole, string[]>;
 
 interface AuthUser {
   token: string;

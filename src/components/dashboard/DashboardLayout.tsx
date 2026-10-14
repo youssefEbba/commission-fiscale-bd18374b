@@ -57,7 +57,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { labelKey: "certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "PRESIDENT", "ADMIN_SI"] },
   { labelKey: "simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
-  { labelKey: "reporting", href: "/dashboard/reporting", icon: PieChart },
+  { labelKey: "reporting", href: "/dashboard/reporting", icon: PieChart, permission: "reporting.view" },
   {
     labelKey: "operations",
     icon: ArrowRightLeft,
@@ -189,6 +189,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           );
         }
         if (entry.roles && !hasRole(entry.roles)) return null;
+        if (entry.permission && !hasPermission(entry.permission)) return null;
         return (
           <Link key={entry.href} to={entry.href} className={linkClass(entry.href)} onClick={closeMobile}>
             <entry.icon className="h-4 w-4" />
