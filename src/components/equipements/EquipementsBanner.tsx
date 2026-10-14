@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Truck, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { demandeCorrectionApi, DocumentDto } from "@/lib/api";
+import { demandeCorrectionApi, certificatCreditApi, DocumentDto } from "@/lib/api";
 import { openDocument } from "@/lib/openDocument";
 import { showApiError } from "@/lib/feedback";
 import { EQUIP_DOC } from "@/lib/equipements";
@@ -13,22 +13,30 @@ interface Props {
   present?: boolean | null;
   /** Demande de correction d'origine, porteuse de la pièce LISTE_EQUIPEMENTS. */
   demandeId?: number | null;
+  /** À défaut de demandeId : certificat dont la fiche porte demandeCorrectionId. */
+  certificatId?: number | null;
+  /** « cloture » : il reste des équipements, vérifier leur sort avant de fermer. */
+  variant?: "default" | "cloture";
   className?: string;
 }
 
 /** Avertissement « véhicules / équipements sous régime (plaques TT) » — jamais bloquant. */
-export default function EquipementsBanner({ present, demandeId, className }: Props) {
+export default function EquipementsBanner({ present, demandeId, certificatId, variant = "default", className }: Props) {
   const { t } = useTranslation("mise_en_place");
   const [docs, setDocs] = useState<DocumentDto[] | null>(null);
 
   useEffect(() => {
-    if (!present || !demandeId) return;
+    if (!present || (!demandeId && !certificatId)) return;
     let alive = true;
-    demandeCorrectionApi.getDocuments(demandeId)
+    const resolveId = demandeId
+      ? Promise.resolve(demandeId)
+      : certificatCreditApi.getById(certificatId!).then((c) => c.demandeCorrectionId);
+    resolveId
+      .then((id) => (id ? demandeCorrectionApi.getDocuments(id) : []))
       .then((all) => { if (alive) setDocs(all.filter((d) => (d.codeDocument || d.type) === EQUIP_DOC && d.actif !== false)); })
       .catch(() => { if (alive) setDocs([]); });
     return () => { alive = false; };
-  }, [present, demandeId]);
+  }, [present, demandeId, certificatId]);
 
   if (!present) return null;
 
@@ -37,8 +45,8 @@ export default function EquipementsBanner({ present, demandeId, className }: Pro
       <Truck className="h-4 w-4" />
       <AlertTitle>{t("equipements.banner_title")}</AlertTitle>
       <AlertDescription className="space-y-2">
-        <p className="text-sm">{t("equipements.banner_body")}</p>
-        {docs === null && demandeId ? (
+        <p className="text-sm">{t(variant === "cloture" ? "equipements.banner_body_cloture" : "equipements.banner_body")}</p>
+        {docs === null && (demandeId || certificatId) ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : docs && docs.length > 0 ? (
           <div className="flex flex-wrap gap-2">

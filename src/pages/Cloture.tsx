@@ -18,14 +18,18 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Archive, RefreshCw, Loader2, Plus, CheckCircle2, XCircle, Lock, Search, Eye,
+  Archive, Truck, RefreshCw, Loader2, Plus, CheckCircle2, XCircle, Lock, Search, Eye,
 } from "lucide-react";
+import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tMotifCloture, tTypeOperationCloture } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 
 const Cloture = () => {
-  const { t } = useTranslation(["cloture", "common"]);
+  const { t } = useTranslation(["cloture", "common", "mise_en_place"]);
+  const equipBadge = (on?: boolean | null) => on ? (
+    <Badge variant="outline" className="ms-2 border-accent bg-accent/10 text-foreground text-[10px]"><Truck className="h-3 w-3 me-1" />{t("mise_en_place:equipements.badge")}</Badge>
+  ) : null;
   usePageTitle("cloture:list.title");
   const { user } = useAuth();
   const role = user?.role as AppRole;
@@ -181,7 +185,7 @@ const Cloture = () => {
                   <TableBody>
                     {eligibleCerts.map((c) => (
                       <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.numero || `#${c.id}`}</TableCell>
+                        <TableCell className="font-medium">{c.numero || `#${c.id}`}{equipBadge(c.equipementsPresents)}</TableCell>
                         <TableCell>{formatAmount(c.soldeCordon)}</TableCell>
                         <TableCell>{formatAmount(c.soldeTVA)}</TableCell>
                         <TableCell>{formatDate(c.dateValidite)}</TableCell>
@@ -232,7 +236,7 @@ const Cloture = () => {
                   {propositions.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>{p.id}</TableCell>
-                      <TableCell className="font-medium">{p.certificatNumero || `#${p.certificatCreditId}`}</TableCell>
+                      <TableCell className="font-medium">{p.certificatNumero || `#${p.certificatCreditId}`}{equipBadge(p.equipementsPresents)}</TableCell>
                       <TableCell>
                         <Badge variant={p.typeOperation === "ANNULATION" ? "destructive" : "secondary"}>
                           {tTypeOperationCloture(p.typeOperation)}
@@ -250,7 +254,7 @@ const Cloture = () => {
                           {isPresident && p.approuvee === null && (
                             <>
                               <Button size="sm" variant="default" disabled={actionLoading === p.id}
-                                onClick={() => handleAction(p.id, "valider")} title={t("cloture:step2.approve")}>
+                                onClick={() => p.equipementsPresents ? setSelected(p) : handleAction(p.id, "valider")} title={t("cloture:step2.approve")}>
                                 {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                               </Button>
                               <Button size="sm" variant="destructive" disabled={actionLoading === p.id}
@@ -261,7 +265,7 @@ const Cloture = () => {
                           )}
                           {isDGTCP && p.approuvee === true && !p.dateCloture && (
                             <Button size="sm" variant="default" disabled={actionLoading === p.id}
-                              onClick={() => handleAction(p.id, "finaliser")}>
+                              onClick={() => p.equipementsPresents ? setSelected(p) : handleAction(p.id, "finaliser")}>
                               {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Lock className="h-4 w-4 me-1" /> {t("cloture:step3.finalize")}</>}
                             </Button>
                           )}
@@ -318,6 +322,10 @@ const Cloture = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {(() => {
+                const cert = eligibleCerts.find((c) => c.id === form.certificatCreditId);
+                return cert ? <EquipementsBanner variant="cloture" present={cert.equipementsPresents} demandeId={cert.demandeCorrectionId} certificatId={cert.id} /> : null;
+              })()}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowPropose(false)}>{t("cloture:step1.cancel")}</Button>
@@ -348,6 +356,25 @@ const Cloture = () => {
                 <div className="pt-2">
                   <span className="text-muted-foreground">{t("cloture:detail.approbation")}</span> {approbationBadge(selected.approuvee)}
                 </div>
+                <EquipementsBanner variant="cloture" present={selected.equipementsPresents} certificatId={selected.certificatCreditId} />
+                {((isPresident && selected.approuvee === null) || (isDGTCP && selected.approuvee === true && !selected.dateCloture)) && (
+                  <DialogFooter className="pt-2">
+                    {isPresident && selected.approuvee === null ? (
+                      <>
+                        <Button variant="destructive" disabled={actionLoading === selected.id} onClick={async () => { await handleAction(selected.id, "rejeter"); setSelected(null); }}>
+                          <XCircle className="h-4 w-4 me-1" /> {t("cloture:step2.reject")}
+                        </Button>
+                        <Button disabled={actionLoading === selected.id} onClick={async () => { await handleAction(selected.id, "valider"); setSelected(null); }}>
+                          {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle2 className="h-4 w-4 me-1" />} {t("cloture:step2.approve")}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button disabled={actionLoading === selected.id} onClick={async () => { await handleAction(selected.id, "finaliser"); setSelected(null); }}>
+                        {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Lock className="h-4 w-4 me-1" />} {t("cloture:step3.finalize")}
+                      </Button>
+                    )}
+                  </DialogFooter>
+                )}
               </div>
             )}
           </DialogContent>

@@ -2475,6 +2475,8 @@ export type MotifCloture = "RECEPTION_DEFINITIVE" | "SOLDE_ZERO" | "EXPIRATION_V
 export type TypeOperationCloture = "CLOTURE" | "ANNULATION";
 
 export interface ClotureCreditDto {
+  /** Dérivé de la demande de correction d'origine. null = non. */
+  equipementsPresents?: boolean | null;
   id: number;
   dateProposition?: string;
   dateCloture?: string;
