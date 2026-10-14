@@ -30,6 +30,10 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare, Stamp } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 
+// Permissions acceptées par le serveur pour POST /{id}/decisions (rejet temporaire) et PUT /decisions/{id}/resolve.
+const REJET_TEMP_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate", "transfert.president.reject"];
+const RESOLVE_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate"];
+
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
   EN_COURS: "bg-yellow-100 text-yellow-800",
@@ -304,7 +308,7 @@ const Transferts = () => {
   // P7 : le visa et l'approbation se font depuis la fiche (circuit DGD → DGI → DGTCP → Président).
   const canValider = false;
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
-  const canRejetTemp = ["DGD", "DGI", "DGTCP", "PRESIDENT"].includes(role);
+  const canRejetTemp = REJET_TEMP_PERMS.some(hasPermission);
   const canRespondRejet = role === "ENTREPRISE" && hasPermission("transfert.entreprise.rejet.repondre");
   const canAnnuler = role === "ENTREPRISE" && hasPermission("transfert.annuler");
 
@@ -528,7 +532,7 @@ const Transferts = () => {
                               {t("transferts:actions.repondre")}
                             </Button>
                           )}
-                          {d.rejetTempStatus === "OUVERT" && canRejetTemp && isMyDecision(d) && (
+                          {d.rejetTempStatus === "OUVERT" && RESOLVE_PERMS.some(hasPermission) && isMyDecision(d) && (
                             <Button size="sm" onClick={() => handleResolve(d.id)}>
                               {t("transferts:actions.marquer_resolu")}
                             </Button>

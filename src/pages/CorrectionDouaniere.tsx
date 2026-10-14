@@ -1,3 +1,4 @@
+import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -356,6 +357,7 @@ const CorrectionDouaniere = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {demande && <EquipementsBanner present={demande.equipementsPresents} demandeId={demande.id} />}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/demandes")}>
             <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("correction_douaniere:page.back")}

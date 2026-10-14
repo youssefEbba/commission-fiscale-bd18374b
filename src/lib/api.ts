@@ -666,6 +666,8 @@ export const conventionApi = {
 export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {
+  /** Véhicules/équipements sous régime (plaques TT). null = non. */
+  equipementsPresents?: boolean | null;
   id: number;
   numero?: string;
   /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
@@ -799,6 +801,7 @@ export interface Dqe {
 }
 
 export interface CreateDemandeCorrectionRequest {
+  equipementsPresents?: boolean;
   autoriteContractanteId?: number;
   /** Requis si `groupementId` absent (XOR logique). */
   entrepriseId?: number;
@@ -1223,6 +1226,8 @@ export interface CertificatRecapFiscal {
 }
 
 export interface CertificatCreditDto extends CertificatRecapFiscal {
+  /** Dérivé de la demande d'origine, lecture seule. */
+  equipementsPresents?: boolean | null;
   id: number;
   reference?: string;
   numero?: string;

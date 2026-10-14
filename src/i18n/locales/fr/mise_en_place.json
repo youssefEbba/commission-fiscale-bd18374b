@@ -377,5 +377,12 @@
     "statut_changed": "Statut: {{statut}}",
     "duplicate_active": "Un certificat de crédit actif existe déjà pour cette demande de correction.",
     "upload_failures": "Échec upload: {{list}}"
+  },
+  "equipements": {
+    "banner_title": "Véhicules et équipements sous régime (plaques TT)",
+    "banner_body": "Ce dossier comporte des véhicules ou équipements acquis sous régime douanier privilégié (plaques TT).",
+    "open_list": "Ouvrir la liste",
+    "list_unavailable": "Liste des équipements non disponible pour le moment.",
+    "open_error": "Impossible d'ouvrir la liste"
   }
 }
