@@ -2645,7 +2645,83 @@ function buildReportingQuery(params?: ReportingParams): string {
   return parts.length ? `?${parts.join("&")}` : "";
 }
 
+export type EngagementAxe = "AUTORITE_CONTRACTANTE" | "BAILLEUR" | "CONVENTION" | "ENTREPRISE";
+export type EngagementFiabilite = "CONFORME" | "EXPLIQUE" | "A_VERIFIER";
+
+/** Une enveloppe calculée par le serveur — ne jamais recalculer `consomme` à l'écran. */
+export interface EngagementEnveloppeDto { accorde: number | null; restant: number | null; consomme: number | null; }
+
+export interface EngagementLigneDto {
+  /** Identifiant de regroupement ; peut valoir `HORS_RATTACHEMENT` ou `NON_RENSEIGNE`. */
+  cle: string;
+  libelle?: string | null;
+  nbCertificats?: number | null;
+  droitsTaxesHorsTva: EngagementEnveloppeDto;
+  tvaImport: EngagementEnveloppeDto;
+  tvaInterieure: EngagementEnveloppeDto;
+  fiabilite?: EngagementFiabilite | null;
+  ecartMouvements?: number | null;
+  ecartVentilation?: number | null;
+  nbRestantSuperieurAccorde?: number | null;
+  nbDossiersRepriseOuCorriges?: number | null;
+}
+
+export interface EngagementReportDto {
+  axe?: EngagementAxe;
+  lignes: EngagementLigneDto[];
+  total: EngagementLigneDto;
+}
+
+export interface BlocageDossierDto {
+  type?: string | null; id?: number | null; reference?: string | null; statut?: string | null;
+  ageJours?: number | null; derniereDecision?: string | null;
+}
+export interface DelaiDirectionDto {
+  direction: string; nbVisas?: number | null; delaiMoyenJours?: number | null; nbVisasParAdmin?: number | null;
+}
+export interface RejetTempOuvertDto {
+  direction?: string | null; agent?: string | null; date?: string | null; ancienneteJours?: number | null;
+  dossierReference?: string | null; motif?: string | null;
+}
+export interface BlocagesReportDto {
+  definitionAge?: string | null;
+  definitionDelai?: string | null;
+  seuilJours?: number | null;
+  dossiersBloques?: BlocageDossierDto[];
+  dossiersBloquesTotal?: number | null;
+  dossiersBloquesTronques?: boolean;
+  delaisParDirection?: DelaiDirectionDto[];
+  rejetsTempOuverts?: RejetTempOuvertDto[];
+  rejetsTempOuvertsTotal?: number | null;
+  rejetsTempOuvertsTronques?: boolean;
+  anciennetePlusVieuxRejetJours?: number | null;
+}
+
+export interface AFermerCertificatDto {
+  id?: number | null; reference?: string | null; entrepriseRaisonSociale?: string | null; statut?: string | null;
+  dateValidite?: string | null; joursRestants?: number | null; derniereActivite?: string | null;
+  joursSansActivite?: number | null; equipementsDeclares?: boolean | null;
+}
+export interface AFermerReportDto {
+  definitionDormance?: string | null;
+  horizonJours?: number | null; dormanceJours?: number | null;
+  echeanceProche?: AFermerCertificatDto[]; echeanceProcheTotal?: number | null; echeanceProcheTronques?: boolean;
+  dormants?: AFermerCertificatDto[]; dormantsTotal?: number | null; dormantsTronques?: boolean;
+  certificatsSansDateValidite?: AFermerCertificatDto[]; certificatsSansDateValiditeTotal?: number | null; certificatsSansDateValiditeTronques?: boolean;
+  equipementsDeclares?: number | null; equipementsNonRenseignes?: number | null; equipementsReponses?: number | null;
+}
+
+const withExtra = (params: ReportingParams | undefined, extra: Record<string, string | number | undefined>) => {
+  const base = buildReportingQuery(params);
+  const parts = Object.entries(extra).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`);
+  if (!parts.length) return base;
+  return base ? `${base}&${parts.join("&")}` : `?${parts.join("&")}`;
+};
+
 export const reportingApi = {
+  getEngagement: (params?: ReportingParams, axe?: EngagementAxe) => apiFetch<EngagementReportDto>(`/reporting/engagement${withExtra(params, { axe })}`, { skipAuthRedirect: true }),
+  getBlocages: (params?: ReportingParams, seuilJours?: number) => apiFetch<BlocagesReportDto>(`/reporting/blocages${withExtra(params, { seuilJours })}`, { skipAuthRedirect: true }),
+  getAFermer: (params?: ReportingParams, horizonJours?: number, dormanceJours?: number) => apiFetch<AFermerReportDto>(`/reporting/a-fermer${withExtra(params, { horizonJours, dormanceJours })}`, { skipAuthRedirect: true }),
   getSummary: (params?: ReportingParams) => apiFetch<ReportingSummaryDto>(`/reporting/summary${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
   getDemandesTimeseries: (params?: ReportingParams) => apiFetch<TimeSeriesPointDto[]>(`/reporting/timeseries/demandes${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
 };
