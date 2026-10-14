@@ -78,7 +78,8 @@
     "days": "{{count}} jour(s)",
     "fiabilite": {
       "A_VERIFIER": "À vérifier",
-      "EXPLIQUE": "Écart expliqué"
+      "EXPLIQUE": "Écart expliqué",
+      "CONFORME": "Conforme"
     },
     "engagement": {
       "title": "Engagement des crédits",
@@ -90,19 +91,32 @@
         "ENTREPRISE": "Entreprise"
       },
       "nb_certificats": "Crédits",
-      "env_hors_tva": "Droits et taxes hors TVA",
+      "env_hors_tva": "Droits et taxes de douane hors TVA",
       "env_tva_import": "TVA à l'import",
       "env_tva_int": "TVA intérieure",
       "accorde": "Accordé",
       "consomme": "Consommé",
       "restant": "Restant",
-      "ecart_mouvements": "Écart mouvements",
-      "ecart_ventilation": "Écart ventilation",
-      "restant_sup_accorde": "Restant > accordé",
+      "ecart_mouvements": "Écart de contrôle (mouvements)",
+      "ecart_ventilation": "Écart de ventilation",
+      "restant_sup_accorde": "Crédits dont le restant dépasse l'accordé",
       "fiabilite": "Fiabilité",
       "total": "Total du périmètre",
       "note_explique": "Écart expliqué par une reprise d'archive ou une correction d'administrateur ({{count}} dossier(s) concerné(s)).",
-      "note_consomme": "Montants calculés par le serveur. Un consommé négatif correspond à un report à nouveau de TVA intérieure."
+      "note_consomme": "Montants calculés par le serveur. Un consommé négatif correspond à un report à nouveau de TVA intérieure.",
+      "env_total": "Total",
+      "filtrer": "Filtrer",
+      "trier": "Trier par",
+      "sort": {
+        "none": "Ordre du serveur",
+        "libelle": "Libellé",
+        "accordeTotal": "Total accordé",
+        "consommeSoldes": "Consommé",
+        "restantTotal": "Total restant"
+      },
+      "nb_ecart_ventilation": "Crédits avec écart de ventilation",
+      "nb_reprise": "{{count}} dossier(s) repris ou corrigé(s)",
+      "note_controle": "Le consommé de référence est calculé à partir des soldes. L'écart de contrôle le compare à un recalcul à partir des mouvements : un écart non nul est à examiner."
     },
     "blocages": {
       "seuil": "Seuil (jours)",
@@ -120,7 +134,18 @@
       "note_visas_admin": "Les visas posés par un administrateur à la place de la direction sont exclus du délai moyen et comptés à part.",
       "dossiers_title": "Dossiers en attente",
       "type": "Type",
-      "statut": "Statut"
+      "statut": "Statut",
+      "nb_immobiles": "Dossiers immobiles (seuil : {{seuil}} jours)",
+      "date_reference": "Date de référence",
+      "jours_depuis": "Jours depuis la dernière décision",
+      "note_repli": "Aucune décision n'a jamais été prise sur ce dossier : la durée est comptée depuis son dépôt.",
+      "motif": "Motif",
+      "delai_moyen": "Délai moyen (jours)",
+      "delai_max": "Délai maximum (jours)",
+      "circuits": {
+        "CORRECTION": "Circuit des demandes de correction",
+        "CERTIFICAT": "Circuit des crédits"
+      }
     },
     "a_fermer": {
       "horizon": "Horizon (jours)",
@@ -140,7 +165,17 @@
       "equipements": "Équipements",
       "equip_oui": "Oui",
       "equip_non": "Non",
-      "equip_non_renseigne": "Non renseigné"
-    }
+      "equip_non_renseigne": "Non renseigné",
+      "reference": "Référence",
+      "date_fin": "Date de fin",
+      "jours_avant": "Jours avant échéance",
+      "restant": "Restant immobilisé",
+      "jours_sans_activite": "Jours sans activité",
+      "montant_immobilise": "Montant immobilisé par les crédits échus avec solde",
+      "expires_title": "Crédits échus avec solde",
+      "conventions_title": "Conventions à échéance",
+      "equip_ouvert_title": "Crédits ouverts avec équipements sous régime"
+    },
+    "na": "n/a"
   }
 }
