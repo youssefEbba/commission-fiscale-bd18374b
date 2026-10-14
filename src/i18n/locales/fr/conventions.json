@@ -49,7 +49,7 @@
     "activate": "Activer la convention",
     "deactivate": "Désactiver la convention",
     "confirm_title": "Désactiver la convention ?",
-    "confirm_desc": "Plus aucun nouveau marché ni demande ne pourra être rattaché à cette convention, et elle disparaîtra des listes des autorités contractantes. Les dossiers déjà rattachés ne sont pas affectés.",
+    "confirm_desc": "Plus aucun nouveau marché ni aucune demande ne pourra être rattaché à cette convention. Elle reste dans la liste, marquée « Désactivée », et pourra être réactivée à tout moment. Les dossiers déjà rattachés continuent normalement.",
     "success_on": "Convention activée",
     "success_off": "Convention désactivée"
   },

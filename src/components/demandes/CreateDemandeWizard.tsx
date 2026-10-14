@@ -1061,7 +1061,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         }}
                         placeholder={t("demandes:wizard.fields.select_convention")}
                         searchPlaceholder={t("demandes:wizard.fields.search_convention")}
-                        options={conventions.map(c => ({
+                        options={conventions.filter(c => c.actif !== false || String(c.id) === conventionId).map(c => ({
                           value: String(c.id),
                           label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
                           keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
