@@ -383,6 +383,8 @@
     "banner_body": "Ce dossier comporte des véhicules ou équipements acquis sous régime douanier privilégié (plaques TT).",
     "open_list": "Ouvrir la liste",
     "list_unavailable": "Liste des équipements non disponible pour le moment.",
-    "open_error": "Impossible d'ouvrir la liste"
+    "open_error": "Impossible d'ouvrir la liste",
+    "banner_body_cloture": "Il reste des véhicules ou équipements acquis sous régime douanier privilégié (plaques TT) sur ce crédit. Vérifiez leur sort (régularisation ou réexportation) avant de le clôturer.",
+    "badge": "Plaques TT"
   }
 }
