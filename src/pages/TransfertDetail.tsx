@@ -30,6 +30,10 @@ import {
 import DocumentGED from "@/components/ged/DocumentGED";
 import TransfertVisasCircuit from "@/components/transferts/TransfertVisasCircuit";
 
+// Permissions acceptées par le serveur pour POST /{id}/decisions (rejet temporaire) et PUT /decisions/{id}/resolve.
+const REJET_TEMP_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate", "transfert.president.reject"];
+const RESOLVE_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate"];
+
 
 const STATUT_COLORS: Record<StatutTransfert, string> = {
   DEMANDE: "bg-blue-100 text-blue-800",
@@ -119,9 +123,9 @@ const TransfertDetail = () => {
   // P7 : visa/approbation pilotés par GET /visas (visablePourMoi). Le rejet temporaire est ouvert aux 4 rôles du circuit.
   const isCircuitRole = ["DGD", "DGI", "DGTCP", "PRESIDENT"].includes(role);
   const canRejeter = hasPermission("transfert.dgtcp.update") || hasPermission("transfert.president.reject");
-  const canRejetTemp = isCircuitRole;
+  const canRejetTemp = REJET_TEMP_PERMS.some(hasPermission);
   // La résolution d’un rejet temporaire appartient à celui qui l’a posé.
-  const canResolveRejet = (d: DecisionCorrectionDto) => isCircuitRole && (d.utilisateurId != null ? d.utilisateurId === user?.userId : d.role === role);
+  const canResolveRejet = (d: DecisionCorrectionDto) => RESOLVE_PERMS.some(hasPermission) && (d.utilisateurId != null ? d.utilisateurId === user?.userId : d.role === role);
   const [circuitKey, setCircuitKey] = useState(0);
   const canRespondRejet = role === "ENTREPRISE" && hasPermission("transfert.entreprise.rejet.repondre");
   const canAnnuler = role === "ENTREPRISE" && hasPermission("transfert.annuler");
