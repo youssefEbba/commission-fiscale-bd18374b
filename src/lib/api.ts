@@ -2648,67 +2648,93 @@ function buildReportingQuery(params?: ReportingParams): string {
 export type EngagementAxe = "AUTORITE_CONTRACTANTE" | "BAILLEUR" | "CONVENTION" | "ENTREPRISE";
 export type EngagementFiabilite = "CONFORME" | "EXPLIQUE" | "A_VERIFIER";
 
-/** Une enveloppe calculée par le serveur — ne jamais recalculer `consomme` à l'écran. */
-export interface EngagementEnveloppeDto { accorde: number | null; restant: number | null; consomme: number | null; }
+type Num = number | null;
 
+/** Ligne d'engagement (le `total` a exactement la même forme, `cle = "TOTAL"`). Aucun recalcul à l'écran. */
 export interface EngagementLigneDto {
-  /** Identifiant de regroupement ; peut valoir `HORS_RATTACHEMENT` ou `NON_RENSEIGNE`. */
+  /** Peut valoir `HORS_RATTACHEMENT` ou `NON_RENSEIGNE`. */
   cle: string;
   libelle?: string | null;
-  nbCertificats?: number | null;
-  droitsTaxesHorsTva: EngagementEnveloppeDto;
-  tvaImport: EngagementEnveloppeDto;
-  tvaInterieure: EngagementEnveloppeDto;
+  nbCertificats?: Num;
+  accordeCordonHorsTva?: Num; restantCordonHorsTva?: Num; consommeCordonHorsTva?: Num;
+  accordeTvaImport?: Num; restantTvaImport?: Num; consommeTvaImport?: Num;
+  accordeTvaInterieure?: Num; restantTvaInterieure?: Num; consommeTvaInterieure?: Num;
+  accordeTotal?: Num; restantTotal?: Num;
+  /** Le consommé de référence. */
+  consommeSoldes?: Num;
+  /** Recalcul de contrôle — ne pas présenter comme un second consommé. */
+  consommeMouvements?: Num;
+  ecartMouvements?: Num;
+  nbDossiersRepriseOuCorriges?: Num;
   fiabilite?: EngagementFiabilite | null;
-  ecartMouvements?: number | null;
-  ecartVentilation?: number | null;
-  nbRestantSuperieurAccorde?: number | null;
-  nbDossiersRepriseOuCorriges?: number | null;
 }
 
 export interface EngagementReportDto {
   axe?: EngagementAxe;
   lignes: EngagementLigneDto[];
   total: EngagementLigneDto;
+  ecartVentilation?: Num;
+  nbEcartVentilation?: Num;
+  ecartMouvements?: Num;
+  nbRestantSuperieurAccorde?: Num;
+  filtersApplied?: unknown;
 }
 
-export interface BlocageDossierDto {
+export interface DossierImmobileDto {
   type?: string | null; id?: number | null; reference?: string | null; statut?: string | null;
-  ageJours?: number | null; derniereDecision?: string | null;
+  dateReference?: string | null;
+  /** Vrai : aucune décision, la durée part du dépôt. */
+  dateDeRepli?: boolean | null;
+  joursDepuisDerniereDecision?: Num;
+  entrepriseRaisonSociale?: string | null;
 }
 export interface DelaiDirectionDto {
-  direction: string; nbVisas?: number | null; delaiMoyenJours?: number | null; nbVisasParAdmin?: number | null;
+  role: string;
+  circuit: "CORRECTION" | "CERTIFICAT" | (string & {});
+  nbVisas?: Num; delaiMoyenJours?: Num; delaiMaxJours?: Num; nbVisasParAdmin?: Num;
+  definitionDelai?: string | null;
 }
 export interface RejetTempOuvertDto {
-  direction?: string | null; agent?: string | null; date?: string | null; ancienneteJours?: number | null;
-  dossierReference?: string | null; motif?: string | null;
+  type?: string | null; dossierId?: number | null; reference?: string | null;
+  role?: string | null; agentUsername?: string | null; dateDecision?: string | null;
+  joursOuvert?: Num; motifRejet?: string | null;
 }
 export interface BlocagesReportDto {
+  seuilImmobiliteJours?: Num;
   definitionAge?: string | null;
-  definitionDelai?: string | null;
-  seuilJours?: number | null;
-  dossiersBloques?: BlocageDossierDto[];
-  dossiersBloquesTotal?: number | null;
-  dossiersBloquesTronques?: boolean;
-  delaisParDirection?: DelaiDirectionDto[];
+  dossiersImmobiles?: DossierImmobileDto[];
+  nbDossiersImmobiles?: Num;
+  dossiersImmobilesTronques?: boolean;
   rejetsTempOuverts?: RejetTempOuvertDto[];
-  rejetsTempOuvertsTotal?: number | null;
+  nbRejetsTempOuverts?: Num;
   rejetsTempOuvertsTronques?: boolean;
-  anciennetePlusVieuxRejetJours?: number | null;
+  anciennetePlusVieuxRejetJours?: Num;
+  delaisParDirection?: DelaiDirectionDto[];
+  filtersApplied?: unknown;
 }
 
-export interface AFermerCertificatDto {
-  id?: number | null; reference?: string | null; entrepriseRaisonSociale?: string | null; statut?: string | null;
-  dateValidite?: string | null; joursRestants?: number | null; derniereActivite?: string | null;
-  joursSansActivite?: number | null; equipementsDeclares?: boolean | null;
+export interface AFermerLigneDto {
+  type?: "CertificatCredit" | "Convention" | (string & {}) | null;
+  id?: number | null; reference?: string | null; statut?: string | null; entrepriseRaisonSociale?: string | null;
+  /** Instant ISO (certificats). */
+  dateValidite?: string | null;
+  /** Date civile « AAAA-MM-JJ » (conventions) — jamais de conversion de fuseau. */
+  dateFin?: string | null;
+  joursAvantEcheance?: Num;
+  restantTotal?: Num;
+  joursSansActivite?: Num;
 }
 export interface AFermerReportDto {
-  definitionDormance?: string | null;
-  horizonJours?: number | null; dormanceJours?: number | null;
-  echeanceProche?: AFermerCertificatDto[]; echeanceProcheTotal?: number | null; echeanceProcheTronques?: boolean;
-  dormants?: AFermerCertificatDto[]; dormantsTotal?: number | null; dormantsTronques?: boolean;
-  certificatsSansDateValidite?: AFermerCertificatDto[]; certificatsSansDateValiditeTotal?: number | null; certificatsSansDateValiditeTronques?: boolean;
-  equipementsDeclares?: number | null; equipementsNonRenseignes?: number | null; equipementsReponses?: number | null;
+  horizonEcheanceJours?: Num; seuilDormanceJours?: Num; definitionDormance?: string | null;
+  equipementsNonRenseignes?: Num;
+  montantImmobiliseExpires?: Num;
+  filtersApplied?: unknown;
+  certificatsExpiresAvecSolde?: AFermerLigneDto[]; nbCertificatsExpiresAvecSolde?: Num; certificatsExpiresTronques?: boolean;
+  certificatsExpirantProchainement?: AFermerLigneDto[]; nbCertificatsExpirantProchainement?: Num;
+  certificatsSansDateValidite?: AFermerLigneDto[]; nbCertificatsSansDateValidite?: Num;
+  conventionsAEcheance?: AFermerLigneDto[]; nbConventionsAEcheance?: Num;
+  equipementsSurCreditOuvert?: AFermerLigneDto[]; nbEquipementsSurCreditOuvert?: Num;
+  creditsDormants?: AFermerLigneDto[]; nbCreditsDormants?: Num; creditsDormantsTronques?: boolean;
 }
 
 const withExtra = (params: ReportingParams | undefined, extra: Record<string, string | number | undefined>) => {
