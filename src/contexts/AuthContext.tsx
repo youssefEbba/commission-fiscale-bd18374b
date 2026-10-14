@@ -72,7 +72,9 @@ function getStoredUser(): AuthUser | null {
   return null;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Conserve la même instance de contexte lors du rechargement à chaud (évite « useAuth must be used within AuthProvider »).
+const AuthContext: React.Context<AuthContextType | null> =
+  ((globalThis as any).__authContext ??= createContext<AuthContextType | null>(null));
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(getStoredUser);
