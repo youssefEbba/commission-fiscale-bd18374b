@@ -5,11 +5,16 @@
     "filters_applied": "Filtres appliqués",
     "load_error_title": "Erreur de chargement",
     "load_error_fallback": "Impossible de charger les données de reporting",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "no_permission": "Le reporting n'est pas accessible avec votre profil."
   },
   "tabs": {
     "app": "Reporting applicatif",
-    "stats": "Statistiques crédits d'impôt"
+    "stats": "Statistiques crédits d'impôt",
+    "engagement": "Engagement",
+    "blocages": "Blocages",
+    "a_fermer": "À fermer",
+    "production": "Production"
   },
   "roles": {
     "PRESIDENT": "Présidence — vue nationale",
@@ -68,5 +73,145 @@
     "marches_title": "Marchés",
     "audit_actions": "Actions d'audit ({{count}})",
     "audit_top_entities": "Top entités modifiées"
+  },
+  "analyses": {
+    "truncated": "{{shown}} lignes affichées sur {{total}}",
+    "days": "{{count}} jour(s)",
+    "fiabilite": {
+      "A_VERIFIER": "À vérifier",
+      "EXPLIQUE": "Écart expliqué",
+      "CONFORME": "Conforme"
+    },
+    "engagement": {
+      "title": "Engagement des crédits",
+      "axe": "Regrouper par",
+      "axes": {
+        "AUTORITE_CONTRACTANTE": "Autorité contractante",
+        "BAILLEUR": "Bailleur",
+        "CONVENTION": "Convention",
+        "ENTREPRISE": "Entreprise"
+      },
+      "nb_certificats": "Crédits",
+      "env_hors_tva": "Droits et taxes de douane hors TVA",
+      "env_tva_import": "TVA à l'import",
+      "env_tva_int": "TVA intérieure",
+      "accorde": "Accordé",
+      "consomme": "Consommé",
+      "restant": "Restant",
+      "ecart_mouvements": "Écart de contrôle (mouvements)",
+      "ecart_ventilation": "Écart de ventilation",
+      "restant_sup_accorde": "Crédits dont le restant dépasse l'accordé",
+      "fiabilite": "Fiabilité",
+      "total": "Total du périmètre",
+      "note_explique": "Écart expliqué par une reprise d'archive ou une correction d'administrateur ({{count}} dossier(s) concerné(s)).",
+      "note_consomme": "Montants calculés par le serveur. Un consommé négatif correspond à un report à nouveau de TVA intérieure.",
+      "env_total": "Total",
+      "filtrer": "Filtrer",
+      "trier": "Trier par",
+      "sort": {
+        "none": "Ordre du serveur",
+        "libelle": "Libellé",
+        "accordeTotal": "Total accordé",
+        "consommeSoldes": "Consommé",
+        "restantTotal": "Total restant"
+      },
+      "nb_ecart_ventilation": "Crédits avec écart de ventilation",
+      "nb_reprise": "{{count}} dossier(s) repris ou corrigé(s)",
+      "note_controle": "Le consommé de référence est calculé à partir des soldes. L'écart de contrôle le compare à un recalcul à partir des mouvements : un écart non nul est à examiner."
+    },
+    "blocages": {
+      "seuil": "Seuil (jours)",
+      "rejets_ouverts": "Rejets temporaires ouverts",
+      "plus_vieux_rejet": "Ancienneté du plus vieux rejet",
+      "rejets_title": "Rejets temporaires ouverts",
+      "dossier": "Dossier",
+      "direction": "Direction",
+      "agent": "Agent",
+      "date": "Date",
+      "anciennete": "Ancienneté (jours)",
+      "delais_title": "Délais par direction",
+      "nb_visas": "Visas",
+      "visas_admin": "Visas posés par un administrateur",
+      "note_visas_admin": "Les visas posés par un administrateur à la place de la direction sont exclus du délai moyen et comptés à part.",
+      "dossiers_title": "Dossiers en attente",
+      "type": "Type",
+      "statut": "Statut",
+      "nb_immobiles": "Dossiers immobiles (seuil : {{seuil}} jours)",
+      "date_reference": "Date de référence",
+      "jours_depuis": "Jours depuis la dernière décision",
+      "note_repli": "Aucune décision n'a jamais été prise sur ce dossier : la durée est comptée depuis son dépôt.",
+      "motif": "Motif",
+      "delai_moyen": "Délai moyen (jours)",
+      "delai_max": "Délai maximum (jours)",
+      "circuits": {
+        "CORRECTION": "Circuit des demandes de correction",
+        "CERTIFICAT": "Circuit des crédits"
+      }
+    },
+    "a_fermer": {
+      "horizon": "Horizon (jours)",
+      "dormance": "Dormance (jours)",
+      "equip_declares": "Dossiers avec équipements déclarés",
+      "equip_non_renseignes": "Déclaration d'équipements non renseignée",
+      "equip_note": "« Non renseignée » : la question n'a jamais été posée sur ces dossiers ; le nombre avec équipements ne couvre que les dossiers renseignés.",
+      "echeance_title": "Crédits arrivant à échéance",
+      "dormants_title": "Crédits dormants",
+      "critere_dormance": "Critère de dormance",
+      "sans_date_title": "Crédits sans date de validité",
+      "sans_date_defaut": "Défaut de données : un crédit sans date de validité n'arrive jamais à échéance et ne déclenche donc aucune alerte.",
+      "certificat": "Crédit",
+      "entreprise": "Entreprise",
+      "date_validite": "Date de validité",
+      "derniere_activite": "Dernière activité",
+      "equipements": "Équipements",
+      "equip_oui": "Oui",
+      "equip_non": "Non",
+      "equip_non_renseigne": "Non renseigné",
+      "reference": "Référence",
+      "date_fin": "Date de fin",
+      "jours_avant": "Jours avant échéance",
+      "restant": "Restant immobilisé",
+      "jours_sans_activite": "Jours sans activité",
+      "montant_immobilise": "Montant immobilisé par les crédits échus avec solde",
+      "expires_title": "Crédits échus avec solde",
+      "conventions_title": "Conventions à échéance",
+      "equip_ouvert_title": "Crédits ouverts avec équipements sous régime"
+    },
+    "na": "n/a"
+  },
+  "production": {
+    "granularite": "Granularité",
+    "gran": {
+      "MOIS": "Par mois",
+      "TRIMESTRE": "Par trimestre"
+    },
+    "cle_datation": "Clé de datation des montants",
+    "demandes": "Demandes",
+    "certificats": "Crédits",
+    "utilisations": "Utilisations",
+    "masse": "Masse accordée",
+    "consomme_mvt": "Consommé sur mouvements (période)",
+    "precedent": "Période précédente",
+    "variation": "Variation",
+    "chart_volumes": "Volumes par période",
+    "note_consomme": "Mesuré sur les mouvements de la période. Ce chiffre n'est pas le « consommé total (soldes) » de l'onglet Engagement : les dossiers repris de l'ancienne application ont des soldes sans mouvements, l'écart entre les deux est normal."
+  },
+  "export": {
+    "button": "Exporter (français)",
+    "global": "Tout exporter (français)",
+    "in_progress": "Export en cours…",
+    "error": "Échec de l'export",
+    "fr_note": "Le contenu du fichier est produit par le serveur en français (définitions et notes verrouillées).",
+    "formats": {
+      "xlsx": "Classeur Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF (.pdf)"
+    },
+    "blocs": {
+      "ENGAGEMENT": "Engagement",
+      "BLOCAGES": "Blocages",
+      "A_FERMER": "À fermer",
+      "PRODUCTION": "Production"
+    }
   }
 }

@@ -1,3 +1,4 @@
+import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -454,6 +455,7 @@ const MiseEnPlaceDetail = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
+        <EquipementsBanner present={c.equipementsPresents} demandeId={c.demandeCorrectionId} />
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
@@ -625,6 +627,8 @@ const MiseEnPlaceDetail = () => {
 
               {role === "PRESIDENT" && c.statut === "EN_VALIDATION_PRESIDENT" && (
                 <div className="w-full space-y-3">
+                  {/* Avertissement non bloquant au moment d'ouvrir le crédit */}
+                  <EquipementsBanner present={c.equipementsPresents} demandeId={c.demandeCorrectionId} />
                   {!hasCertDoc && (
                     <div>
                       <Button

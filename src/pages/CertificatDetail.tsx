@@ -1,3 +1,4 @@
+import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -223,6 +224,7 @@ const CertificatDetail = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
+        <EquipementsBanner present={c.equipementsPresents} demandeId={c.demandeCorrectionId} />
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={smartBack}>
             <ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" /> {t("certificats:detail.back")}

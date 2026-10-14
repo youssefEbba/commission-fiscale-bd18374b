@@ -1,3 +1,4 @@
+import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -133,7 +134,7 @@ const DemandeDetail = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
 
-  usePageTitle("demandes:detail.title", { numero: selected?.numero || `#${selected?.id ?? id}` });
+  usePageTitle("demandes:detail.title", { numero: selected?.reference || selected?.numero || `#${selected?.id ?? id}` });
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState("");
@@ -547,14 +548,15 @@ const DemandeDetail = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
+        <EquipementsBanner present={selected.equipementsPresents} demandeId={selected.id} />
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={smartBack} aria-label={t("demandes:detail.back")}>
             <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {selected.numero
-                ? t("demandes:detail.title", { numero: selected.numero })
+              {(selected.reference || selected.numero)
+                ? t("demandes:detail.title", { numero: (selected.reference || selected.numero) })
                 : t("demandes:detail.title_fallback", { id: selected.id })}
             </h1>
             <p className="text-sm text-muted-foreground">{t("demandes:detail.subtitle")}</p>

@@ -433,9 +433,11 @@ const Marches = () => {
           <div className="space-y-4">
             {!editing && (() => {
               const effectiveAcId = user?.actingAutoriteContractanteId ?? user?.autoriteContractanteId;
+              // Sélecteur : une convention désactivée n'accepte plus de rattachement.
+              const selectable = conventions.filter(c => c.actif !== false);
               const visibleConventions = effectiveAcId
-                ? conventions.filter(c => c.autoriteContractanteId === effectiveAcId || c.creeParAutoriteContractanteId === effectiveAcId)
-                : conventions;
+                ? selectable.filter(c => c.autoriteContractanteId === effectiveAcId || c.creeParAutoriteContractanteId === effectiveAcId)
+                : selectable;
               return (
               <div className="space-y-2">
                 <Label>{t("marches:form.convention")} <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span></Label>

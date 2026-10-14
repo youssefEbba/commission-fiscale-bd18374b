@@ -4,17 +4,17 @@ import { LoginResponse } from "@/lib/api";
 export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT" | "COMMISSION_RELAIS";
 
 // Permissions granulaires par rôle
-const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
-  PRESIDENT: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat", "mise_en_place.valider_president", "convention.activate", "autorite.create", "autorite.update", "autorite.delete", "rattachement.validate"],
-  DGI: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp"],
-  DGTCP: ["mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.dgtcp.validate", "mise_en_place.dgtcp.reject", "mise_en_place.ouvrir", "convention.activate"],
+const ROLE_PERMISSIONS_BASE: Record<AppRole, string[]> = {
+  PRESIDENT: ["transfert.president.validate", "transfert.president.reject", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat", "mise_en_place.valider_president", "convention.activate", "autorite.create", "autorite.update", "autorite.delete", "rattachement.validate"],
+  DGI: ["transfert.dgi.visa", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp"],
+  DGTCP: ["transfert.dgtcp.update", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.dgtcp.validate", "mise_en_place.dgtcp.reject", "mise_en_place.ouvrir", "convention.activate"],
   DGB: [],
-  DGD: ["mise_en_place.visa", "mise_en_place.rejet_temp"],
-  AUTORITE_CONTRACTANTE: ["delegue.list", "delegue.update", "delegue.disable", "mise_en_place.annuler", "mise_en_place.creer", "mise_en_place.soumettre"],
+  DGD: ["transfert.dgd.visa", "mise_en_place.visa", "mise_en_place.rejet_temp"],
+  AUTORITE_CONTRACTANTE: ["convention.activate", "delegue.list", "delegue.update", "delegue.disable", "mise_en_place.annuler", "mise_en_place.creer", "mise_en_place.soumettre"],
   ENTREPRISE: ["transfert.submit", "transfert.annuler", "transfert.entreprise.rejet.repondre"],
   ADMIN_SI: ["autorite.create", "autorite.update", "autorite.delete"],
-  AUTORITE_UPM: [],
-  AUTORITE_UEP: [],
+  AUTORITE_UPM: ["convention.activate"],
+  AUTORITE_UEP: ["convention.activate"],
   SOUS_TRAITANT: [],
   COMMISSION_RELAIS: [
     "commission.relais.list.entreprises",
@@ -24,6 +24,11 @@ const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
     "commission.relais.release",
   ],
 };
+
+// `reporting.view` : détenue par tous les rôles sauf COMMISSION_RELAIS (non impersonant).
+const ROLE_PERMISSIONS: Record<AppRole, string[]> = Object.fromEntries(
+  Object.entries(ROLE_PERMISSIONS_BASE).map(([r, perms]) => [r, r === "COMMISSION_RELAIS" ? perms : [...perms, "reporting.view"]]),
+) as Record<AppRole, string[]>;
 
 interface AuthUser {
   token: string;
@@ -72,7 +77,9 @@ function getStoredUser(): AuthUser | null {
   return null;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Conserve la même instance de contexte lors du rechargement à chaud (évite « useAuth must be used within AuthProvider »).
+const AuthContext: React.Context<AuthContextType | null> =
+  ((globalThis as any).__authContext ??= createContext<AuthContextType | null>(null));
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(getStoredUser);

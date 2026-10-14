@@ -48,6 +48,8 @@ import { Badge } from "@/components/ui/badge";
 import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 
 // ── helpers ──
+import { EQUIP_DOC } from "@/lib/equipements";
+
 const emptyImportation = (): ImportationLigne => ({
   designation: "", unite: "", quantite: 0, prixUnitaire: 0,
   nomenclature: "", tauxDD: 5, tauxRS: 2, tauxPSC: 1, tauxTVA: 16,
@@ -165,6 +167,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [gedDocTypes, setGedDocTypes] = useState<DocumentRequirementDto[]>([]);
 
   // Documents déjà téléversés (en mode édition)
+  const [equipementsPresents, setEquipementsPresents] = useState(false);
   const [existingDocs, setExistingDocs] = useState<Record<string, { id: number; nomFichier: string }>>({});
 
   // Drag and drop state
@@ -218,7 +221,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         setMarches(marc);
       }
       setBailleurs(bail);
-      setGedDocTypes(gedReqs.sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0)));
+      // LISTE_EQUIPEMENTS est rattachée à la case « plaques TT », pas à la liste générique.
+      setGedDocTypes(gedReqs.filter(r => (r.codeDocument || r.typeDocument) !== EQUIP_DOC).sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0)));
 
       // Statuts terminaux : la demande est close → le marché redevient sélectionnable
       const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
@@ -300,6 +304,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           setConventionId("");
           setMarcheId("");
           setIntituleMarche("");
+          setEquipementsPresents(false);
           setTypeProjet("BTP");
           setReferenceDossier("");
           setImportations([emptyImportation()]);
@@ -333,6 +338,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
+    setEquipementsPresents(!!editingDemande.equipementsPresents);
     const mf = editingDemande.modeleFiscal;
     if (mf) {
       if (mf.typeProjet) setTypeProjet(mf.typeProjet);
@@ -605,6 +611,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   const creditInterieur = creditIntManuel.trim() !== "" ? (parseFloat(creditIntManuel) || 0) : fiscalite.creditInterieur;
   const creditTotal = creditExterieur + creditInterieur;
+  // La case n'existe que si le crédit extérieur est positif.
+  const equipementsDeclares = creditExterieur > 0 && equipementsPresents;
 
   // ── DQE helpers ──
   const updateDqeLigne = (idx: number, field: keyof DqeLigne, value: string | number) => {
@@ -679,6 +687,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     }
 
 
+    if (!asBrouillon && equipementsDeclares && !docFiles[EQUIP_DOC] && !existingDocs[EQUIP_DOC]) {
+      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.equipements.file_required"), variant: "destructive" });
+      return;
+    }
+
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
 
@@ -695,6 +708,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         intituleMarche: intituleMarche?.trim() || selectedMarche?.intitule || undefined,
         creditExterieur: Number(creditExterieur) || 0,
         creditInterieur: Number(creditInterieur) || 0,
+        equipementsPresents: equipementsDeclares,
         modeleFiscal: {
           referenceDossier,
           typeProjet,
@@ -727,7 +741,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         demande = await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
       }
 
-      const docEntries = Object.entries(docFiles);
+      const docEntries = Object.entries(docFiles).filter(([type]) => type !== EQUIP_DOC || equipementsDeclares);
       for (const [type, file] of docEntries) {
         try {
           await demandeCorrectionApi.uploadDocument(demande.id, type, file);
@@ -1047,7 +1061,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         }}
                         placeholder={t("demandes:wizard.fields.select_convention")}
                         searchPlaceholder={t("demandes:wizard.fields.search_convention")}
-                        options={conventions.map(c => ({
+                        options={conventions.filter(c => c.actif !== false || String(c.id) === conventionId).map(c => ({
                           value: String(c.id),
                           label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
                           keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
@@ -1348,6 +1362,26 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 </div>
 
 
+
+                {creditExterieur > 0 && (
+                  <div className="rounded-lg border border-accent/40 bg-accent/5 p-3 space-y-2">
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <Checkbox checked={equipementsPresents} onCheckedChange={(v) => setEquipementsPresents(v === true)} className="mt-0.5" />
+                      <span className="text-sm font-medium">{t("demandes:wizard.equipements.checkbox")}</span>
+                    </label>
+                    {equipementsPresents && (
+                      <div className="space-y-1">
+                        <label htmlFor="wizard-doc-equipements" className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-accent/40 ${docFiles[EQUIP_DOC] || existingDocs[EQUIP_DOC] ? "border-emerald-300 bg-emerald-50/40" : "border-destructive/50"}`}>
+                          {docFiles[EQUIP_DOC] || existingDocs[EQUIP_DOC] ? <CheckCircle className="h-4 w-4 text-green-600 shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
+                          <span className="flex-1 text-sm">{t("demandes:wizard.equipements.file_label")} <span className="text-destructive">*</span></span>
+                          <span className="text-xs truncate max-w-[180px]">{docFiles[EQUIP_DOC]?.name || existingDocs[EQUIP_DOC]?.nomFichier || t("demandes:wizard.actions.browse")}</span>
+                          <input id="wizard-doc-equipements" type="file" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) setDocFiles(prev => ({ ...prev, [EQUIP_DOC]: f })); e.target.value = ""; }} />
+                        </label>
+                        <p className="text-xs text-muted-foreground">{t("demandes:wizard.equipements.file_hint")}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <h3 className="text-sm font-semibold mb-2">{t("demandes:wizard.fields.pieces_to_attach")} <span className="text-muted-foreground text-xs">{t("demandes:wizard.fields.pieces_ged_hint")}</span></h3>
                   {gedDocTypes.length === 0 ? (

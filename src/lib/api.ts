@@ -666,6 +666,8 @@ export const conventionApi = {
 export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {
+  /** Véhicules/équipements sous régime (plaques TT). null = non. */
+  equipementsPresents?: boolean | null;
   id: number;
   numero?: string;
   /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
@@ -799,6 +801,7 @@ export interface Dqe {
 }
 
 export interface CreateDemandeCorrectionRequest {
+  equipementsPresents?: boolean;
   autoriteContractanteId?: number;
   /** Requis si `groupementId` absent (XOR logique). */
   entrepriseId?: number;
@@ -1223,6 +1226,8 @@ export interface CertificatRecapFiscal {
 }
 
 export interface CertificatCreditDto extends CertificatRecapFiscal {
+  /** Dérivé de la demande d'origine, lecture seule. */
+  equipementsPresents?: boolean | null;
   id: number;
   reference?: string;
   numero?: string;
@@ -2470,6 +2475,8 @@ export type MotifCloture = "RECEPTION_DEFINITIVE" | "SOLDE_ZERO" | "EXPIRATION_V
 export type TypeOperationCloture = "CLOTURE" | "ANNULATION";
 
 export interface ClotureCreditDto {
+  /** Dérivé de la demande de correction d'origine. null = non. */
+  equipementsPresents?: boolean | null;
   id: number;
   dateProposition?: string;
   dateCloture?: string;
@@ -2638,7 +2645,165 @@ function buildReportingQuery(params?: ReportingParams): string {
   return parts.length ? `?${parts.join("&")}` : "";
 }
 
+export type EngagementAxe = "AUTORITE_CONTRACTANTE" | "BAILLEUR" | "CONVENTION" | "ENTREPRISE";
+export type EngagementFiabilite = "CONFORME" | "EXPLIQUE" | "A_VERIFIER";
+
+type Num = number | null;
+
+/** Ligne d'engagement (le `total` a exactement la même forme, `cle = "TOTAL"`). Aucun recalcul à l'écran. */
+export interface EngagementLigneDto {
+  /** Peut valoir `HORS_RATTACHEMENT` ou `NON_RENSEIGNE`. */
+  cle: string;
+  libelle?: string | null;
+  nbCertificats?: Num;
+  accordeCordonHorsTva?: Num; restantCordonHorsTva?: Num; consommeCordonHorsTva?: Num;
+  accordeTvaImport?: Num; restantTvaImport?: Num; consommeTvaImport?: Num;
+  accordeTvaInterieure?: Num; restantTvaInterieure?: Num; consommeTvaInterieure?: Num;
+  accordeTotal?: Num; restantTotal?: Num;
+  /** Le consommé de référence. */
+  consommeSoldes?: Num;
+  /** Recalcul de contrôle — ne pas présenter comme un second consommé. */
+  consommeMouvements?: Num;
+  ecartMouvements?: Num;
+  nbDossiersRepriseOuCorriges?: Num;
+  fiabilite?: EngagementFiabilite | null;
+}
+
+export interface EngagementReportDto {
+  axe?: EngagementAxe;
+  lignes: EngagementLigneDto[];
+  total: EngagementLigneDto;
+  ecartVentilation?: Num;
+  nbEcartVentilation?: Num;
+  ecartMouvements?: Num;
+  nbRestantSuperieurAccorde?: Num;
+  filtersApplied?: unknown;
+}
+
+export interface DossierImmobileDto {
+  type?: string | null; id?: number | null; reference?: string | null; statut?: string | null;
+  dateReference?: string | null;
+  /** Vrai : aucune décision, la durée part du dépôt. */
+  dateDeRepli?: boolean | null;
+  joursDepuisDerniereDecision?: Num;
+  entrepriseRaisonSociale?: string | null;
+}
+export interface DelaiDirectionDto {
+  role: string;
+  circuit: "CORRECTION" | "CERTIFICAT" | (string & {});
+  nbVisas?: Num; delaiMoyenJours?: Num; delaiMaxJours?: Num; nbVisasParAdmin?: Num;
+  definitionDelai?: string | null;
+}
+export interface RejetTempOuvertDto {
+  type?: string | null; dossierId?: number | null; reference?: string | null;
+  role?: string | null; agentUsername?: string | null; dateDecision?: string | null;
+  joursOuvert?: Num; motifRejet?: string | null;
+}
+export interface BlocagesReportDto {
+  seuilImmobiliteJours?: Num;
+  definitionAge?: string | null;
+  dossiersImmobiles?: DossierImmobileDto[];
+  nbDossiersImmobiles?: Num;
+  dossiersImmobilesTronques?: boolean;
+  rejetsTempOuverts?: RejetTempOuvertDto[];
+  nbRejetsTempOuverts?: Num;
+  rejetsTempOuvertsTronques?: boolean;
+  anciennetePlusVieuxRejetJours?: Num;
+  delaisParDirection?: DelaiDirectionDto[];
+  filtersApplied?: unknown;
+}
+
+export interface AFermerLigneDto {
+  type?: "CertificatCredit" | "Convention" | (string & {}) | null;
+  id?: number | null; reference?: string | null; statut?: string | null; entrepriseRaisonSociale?: string | null;
+  /** Instant ISO (certificats). */
+  dateValidite?: string | null;
+  /** Date civile « AAAA-MM-JJ » (conventions) — jamais de conversion de fuseau. */
+  dateFin?: string | null;
+  joursAvantEcheance?: Num;
+  restantTotal?: Num;
+  joursSansActivite?: Num;
+}
+export interface AFermerReportDto {
+  horizonEcheanceJours?: Num; seuilDormanceJours?: Num; definitionDormance?: string | null;
+  equipementsNonRenseignes?: Num;
+  montantImmobiliseExpires?: Num;
+  filtersApplied?: unknown;
+  certificatsExpiresAvecSolde?: AFermerLigneDto[]; nbCertificatsExpiresAvecSolde?: Num; certificatsExpiresTronques?: boolean;
+  certificatsExpirantProchainement?: AFermerLigneDto[]; nbCertificatsExpirantProchainement?: Num;
+  certificatsSansDateValidite?: AFermerLigneDto[]; nbCertificatsSansDateValidite?: Num;
+  conventionsAEcheance?: AFermerLigneDto[]; nbConventionsAEcheance?: Num;
+  equipementsSurCreditOuvert?: AFermerLigneDto[]; nbEquipementsSurCreditOuvert?: Num;
+  creditsDormants?: AFermerLigneDto[]; nbCreditsDormants?: Num; creditsDormantsTronques?: boolean;
+}
+
+const withExtra = (params: ReportingParams | undefined, extra: Record<string, string | number | undefined>) => {
+  const base = buildReportingQuery(params);
+  const parts = Object.entries(extra).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`);
+  if (!parts.length) return base;
+  return base ? `${base}&${parts.join("&")}` : `?${parts.join("&")}`;
+};
+
+export type ProductionGranularite = "MOIS" | "TRIMESTRE";
+export interface ProductionPointDto {
+  periode: string;
+  nbDemandes: number | null;
+  nbCertificats: number | null;
+  nbUtilisations: number | null;
+  masseAccordee: number | null;
+  consommeMouvementsPeriode: number | null;
+}
+export interface ProductionReportDto {
+  granularite: ProductionGranularite;
+  points: ProductionPointDto[];
+  cleDatation: string | null;
+  totalDemandes: number | null;
+  totalCertificats: number | null;
+  totalUtilisations: number | null;
+  totalMasseAccordee: number | null;
+  totalConsommeMouvements: number | null;
+  precedentDemandes: number | null;
+  precedentCertificats: number | null;
+  precedentMasseAccordee: number | null;
+  variationDemandesPct: number | null;
+  variationCertificatsPct: number | null;
+  variationMassePct: number | null;
+  filtersApplied?: boolean;
+}
+export type ReportingExportFormat = "xlsx" | "csv" | "pdf";
+export type ReportingBloc = "ENGAGEMENT" | "BLOCAGES" | "A_FERMER" | "PRODUCTION";
+export const REPORTING_BLOCS: ReportingBloc[] = ["ENGAGEMENT", "BLOCAGES", "A_FERMER", "PRODUCTION"];
+
+/** Télécharge un export serveur tel quel (fichier, jamais lu comme JSON). */
+async function downloadReportingExport(format: ReportingExportFormat, params?: ReportingParams, blocs?: ReportingBloc[]) {
+  const query = withExtra(params, { blocs: blocs && blocs.length ? blocs.join(",") : undefined });
+  const token = localStorage.getItem("auth_token");
+  const headers: Record<string, string> = { "ngrok-skip-browser-warning": "true" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/reporting/export.${format}${query}`, { headers });
+  if (!res.ok) {
+    let message = `Erreur ${res.status}`;
+    try { const j = JSON.parse(await res.text()); if (j?.message) message = j.message; } catch { /* noop */ }
+    throw new ApiRequestError({ status: res.status, code: "UNKNOWN", message });
+  }
+  const cd = res.headers.get("Content-Disposition") || "";
+  const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+  const d = new Date();
+  const fallback = `reporting-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}.${format}`;
+  const filename = m ? decodeURIComponent(m[1]) : fallback;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export const reportingApi = {
+  getProduction: (params?: ReportingParams, granularite?: ProductionGranularite) => apiFetch<ProductionReportDto>(`/reporting/production${withExtra(params, { granularite })}`, { skipAuthRedirect: true }),
+  downloadExport: downloadReportingExport,
+  getEngagement: (params?: ReportingParams, axe?: EngagementAxe) => apiFetch<EngagementReportDto>(`/reporting/engagement${withExtra(params, { axe })}`, { skipAuthRedirect: true }),
+  getBlocages: (params?: ReportingParams, seuilJours?: number) => apiFetch<BlocagesReportDto>(`/reporting/blocages${withExtra(params, { seuilJours })}`, { skipAuthRedirect: true }),
+  getAFermer: (params?: ReportingParams, horizonJours?: number, dormanceJours?: number) => apiFetch<AFermerReportDto>(`/reporting/a-fermer${withExtra(params, { horizonJours, dormanceJours })}`, { skipAuthRedirect: true }),
   getSummary: (params?: ReportingParams) => apiFetch<ReportingSummaryDto>(`/reporting/summary${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
   getDemandesTimeseries: (params?: ReportingParams) => apiFetch<TimeSeriesPointDto[]>(`/reporting/timeseries/demandes${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
 };
