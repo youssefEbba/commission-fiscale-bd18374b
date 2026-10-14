@@ -48,6 +48,8 @@ import { Badge } from "@/components/ui/badge";
 import GroupementFormDialog from "@/components/groupements/GroupementFormDialog";
 
 // ── helpers ──
+import { EQUIP_DOC } from "@/lib/equipements";
+
 const emptyImportation = (): ImportationLigne => ({
   designation: "", unite: "", quantite: 0, prixUnitaire: 0,
   nomenclature: "", tauxDD: 5, tauxRS: 2, tauxPSC: 1, tauxTVA: 16,
