@@ -553,8 +553,8 @@ const DemandeDetail = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {selected.numero
-                ? t("demandes:detail.title", { numero: selected.numero })
+              {(selected.reference || selected.numero)
+                ? t("demandes:detail.title", { numero: (selected.reference || selected.numero) })
                 : t("demandes:detail.title_fallback", { id: selected.id })}
             </h1>
             <p className="text-sm text-muted-foreground">{t("demandes:detail.subtitle")}</p>
