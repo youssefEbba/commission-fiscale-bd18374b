@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Gavel, Plus, RefreshCw, Loader2, Search, Edit, UserPlus, UserRoundPlus, X, FileText, Ban, MoreHorizontal, Eye } from "lucide-react";
-import { CreateDelegueRequest } from "@/lib/api";
+import { CreateDelegueRequest, TYPE_MARCHE_VALUES, type TypeMarche } from "@/lib/api";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePageTitle } from "@/hooks/usePageTitle";
