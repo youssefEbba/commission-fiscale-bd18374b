@@ -107,7 +107,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS" });
+    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null });
     setDialogOpen(true);
   };
 
@@ -122,6 +122,7 @@ const Marches = () => {
       montantContratTtc: m.montantContratTtc,
       deviseOrigine: m.deviseOrigine || "MRU",
       statut: m.statut,
+      typeMarche: m.typeMarche ?? null,
     });
     setDialogOpen(true);
   };
@@ -432,12 +433,8 @@ const Marches = () => {
           </DialogHeader>
           <div className="space-y-4">
             {!editing && (() => {
-              const effectiveAcId = user?.actingAutoriteContractanteId ?? user?.autoriteContractanteId;
-              // Sélecteur : une convention désactivée n'accepte plus de rattachement.
-              const selectable = conventions.filter(c => c.actif !== false);
-              const visibleConventions = effectiveAcId
-                ? selectable.filter(c => c.autoriteContractanteId === effectiveAcId || c.creeParAutoriteContractanteId === effectiveAcId)
-                : selectable;
+              // Périmètre AC (y compris en impersonation) filtré par le serveur ; ici seulement les conventions désactivées.
+              const visibleConventions = conventions.filter(c => c.actif !== false);
               return (
               <div className="space-y-2">
                 <Label>{t("marches:form.convention")} <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span></Label>
@@ -511,6 +508,15 @@ const Marches = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("marches:type_marche.type_marche")}</Label>
+              <Select value={form.typeMarche ?? ""} onValueChange={v => setForm(f => ({ ...f, typeMarche: v as TypeMarche }))}>
+                <SelectTrigger><SelectValue placeholder={t("marches:type_marche.type_placeholder")} /></SelectTrigger>
+                <SelectContent>
+                  {TYPE_MARCHE_VALUES.map((k) => (<SelectItem key={k} value={k}>{t(`marches:type_marche.${k}`)}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>{t("marches:form.statut")}</Label>
