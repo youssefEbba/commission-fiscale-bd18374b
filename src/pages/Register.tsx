@@ -58,8 +58,14 @@ const Register = () => {
       .catch(() => setPiecesError(true));
   }, []);
 
-  // Changer de qualité peut changer le type d'entité : on repart d'une sélection vide.
-  useEffect(() => { setEntite(null); setResults([]); setQ(""); }, [typeEntite]);
+  // Changer de qualité peut changer le type d'entité : on repart d'une sélection vide
+  // et on vide les champs propres à l'autre type (le serveur refuse un mélange).
+  useEffect(() => {
+    setEntite(null); setResults([]); setQ("");
+    setNouvelle((p) => typeEntite === "ENTREPRISE"
+      ? { ...p, entiteSigle: "", entiteMinistereTutelle: "" }
+      : { ...p, entiteNif: "", entiteActivite: "" });
+  }, [typeEntite]);
 
   useEffect(() => {
     if (!typeEntite || absente || entite) { setResults([]); return; }
@@ -91,7 +97,11 @@ const Register = () => {
         username: form.username.trim(), password: form.password, nomComplet: form.nomComplet.trim(),
         email: form.email.trim(), telephone: form.telephone.trim(), roleDemande: role, typeEntite,
         ...(absente
-          ? Object.fromEntries(Object.entries(nouvelle).map(([k, v]) => [k, v.trim()]))
+          ? Object.fromEntries(
+              (typeEntite === "ENTREPRISE"
+                ? (["entiteNom", "entiteNif", "entiteAdresse", "entiteActivite"] as const)
+                : (["entiteNom", "entiteSigle", "entiteAdresse", "entiteMinistereTutelle"] as const)
+              ).map((k) => [k, nouvelle[k].trim()]))
           : { entiteId: String(entite!.id) }),
       };
       const res = await rattachementPublicApi.submit(fields, files);
@@ -241,10 +251,15 @@ const Register = () => {
                   <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
                     <p className="text-xs text-muted-foreground">{t("register.entite_absente_hint")}</p>
                     <div className="space-y-1"><Label>{t("register.e_nom")} *</Label><Input value={nouvelle.entiteNom} onChange={(e) => setNouvelle((p) => ({ ...p, entiteNom: e.target.value }))} required /></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1"><Label>{t("register.e_sigle")}</Label><Input value={nouvelle.entiteSigle} onChange={(e) => setNouvelle((p) => ({ ...p, entiteSigle: e.target.value }))} /></div>
+                    {typeEntite === "ENTREPRISE" ? (
                       <div className="space-y-1"><Label>{t("register.e_nif")}</Label><Input value={nouvelle.entiteNif} onChange={(e) => setNouvelle((p) => ({ ...p, entiteNif: e.target.value }))} /></div>
-                    </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Label>{t("register.e_sigle")}</Label>
+                        <Input value={nouvelle.entiteSigle} onChange={(e) => setNouvelle((p) => ({ ...p, entiteSigle: e.target.value }))} />
+                        <p className="text-xs text-muted-foreground">{t("register.e_sigle_hint")}</p>
+                      </div>
+                    )}
                     <div className="space-y-1"><Label>{t("register.e_adresse")}</Label><Input value={nouvelle.entiteAdresse} onChange={(e) => setNouvelle((p) => ({ ...p, entiteAdresse: e.target.value }))} /></div>
                     {typeEntite === "ENTREPRISE"
                       ? <div className="space-y-1"><Label>{t("register.e_activite")}</Label><Input value={nouvelle.entiteActivite} onChange={(e) => setNouvelle((p) => ({ ...p, entiteActivite: e.target.value }))} /></div>
