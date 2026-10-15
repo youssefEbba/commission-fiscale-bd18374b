@@ -7,5 +7,18 @@
   },
   "detail": {
     "title": "Référentiels — Détail"
+  },
+  "parametres": {
+    "title": "Paramètres de contact",
+    "subtitle": "Coordonnées affichées dans le pied de page du site.",
+    "public_notice": "Valeur publique : affichée sur la page de connexion, avant toute authentification.",
+    "last_modified": "Modifié le {{date}}",
+    "never_modified": "Jamais modifié",
+    "save": "Enregistrer",
+    "saved": "Paramètre enregistré",
+    "error_load": "Impossible de charger les paramètres",
+    "error_save": "Impossible d'enregistrer le paramètre",
+    "empty": "Aucun paramètre.",
+    "too_long": "{{max}} caractères maximum"
   }
 }

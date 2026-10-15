@@ -93,14 +93,15 @@ const NAV_ENTRIES: NavEntry[] = [
   {
     labelKey: "parametrage",
     icon: Settings,
-    roles: ["ADMIN_SI"],
+    roles: ["ADMIN_SI", "PRESIDENT"],
     children: [
-      { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users },
-      { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag },
-      { labelKey: "signatures", href: "/dashboard/signatures", icon: PenLine },
-      { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag },
-      { labelKey: "archive_credits", href: "/dashboard/archive/credits", icon: Archive },
-      { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3 },
+      { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users, roles: ["ADMIN_SI"] },
+      { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag, roles: ["ADMIN_SI"] },
+      { labelKey: "signatures", href: "/dashboard/signatures", icon: PenLine, roles: ["ADMIN_SI"] },
+      { labelKey: "parametres", href: "/dashboard/parametres", icon: Settings, permission: "parametre.manage" },
+      { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag, roles: ["ADMIN_SI"] },
+      { labelKey: "archive_credits", href: "/dashboard/archive/credits", icon: Archive, roles: ["ADMIN_SI"] },
+      { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3, roles: ["ADMIN_SI"] },
     ],
   },
 ];
