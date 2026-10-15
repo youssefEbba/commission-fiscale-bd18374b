@@ -1,6 +1,6 @@
 {
   "users_notice": "La création de comptes d'entreprise ou d'autorité contractante passe désormais par une demande de rattachement validée par le Président, ou par la fiche de l'entité (Comptes rattachés).",
-  "delegues_notice": "Le rattachement d'une nouvelle personne à votre autorité passe désormais par une demande de rattachement, déposée depuis la page d'inscription et validée par le Président. Vous pouvez toujours modifier les coordonnées de vos représentants et couper leur accès.",
+  "delegues_notice": "L'ajout d'une nouvelle personne à votre autorité passe désormais par la création de compte (« Créer un compte » sur la page d'accueil), validée par le Président. Vous pouvez toujours modifier les coordonnées de vos représentants et couper leur accès.",
   "roles": {
     "ENTREPRISE": "Entreprise",
     "AUTORITE_CONTRACTANTE": "Autorité contractante",

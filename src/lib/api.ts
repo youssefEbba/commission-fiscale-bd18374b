@@ -668,6 +668,8 @@ export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" |
 export interface DemandeCorrectionDto {
   /** Véhicules/équipements sous régime (plaques TT). null = non. */
   equipementsPresents?: boolean | null;
+  /** Distinct de `equipementsPresents` : seule l'admission temporaire impose une réexportation. */
+  admissionTemporaire?: boolean | null;
   id: number;
   numero?: string;
   /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
@@ -802,6 +804,8 @@ export interface Dqe {
 
 export interface CreateDemandeCorrectionRequest {
   equipementsPresents?: boolean;
+  /** Régime du matériel : true = admission temporaire ; null = non renseigné. */
+  admissionTemporaire?: boolean | null;
   autoriteContractanteId?: number;
   /** Requis si `groupementId` absent (XOR logique). */
   entrepriseId?: number;
@@ -1081,7 +1085,12 @@ export interface MarcheDto {
   deviseOrigine?: string;
   statut: StatutMarche;
   delegueIds?: number[];
+  /** Nullable : les marchés anciens n'en portent pas — afficher « non renseigné », jamais de défaut. */
+  typeMarche?: TypeMarche | null;
 }
+
+export type TypeMarche = "FOURNITURE" | "PRESTATION" | "TRAVAUX";
+export const TYPE_MARCHE_VALUES: TypeMarche[] = ["FOURNITURE", "PRESTATION", "TRAVAUX"];
 
 /** Devises supportées pour les montants de contrat. */
 export const DEVISES = ["MRU", "USD", "EUR", "CNY", "AED", "SAR", "MAD", "GBP"] as const;
@@ -1099,6 +1108,8 @@ export interface CreateMarcheRequest {
   /** Devise des montants (MRU par défaut). */
   deviseOrigine?: string;
   statut?: StatutMarche;
+  /** Facultatif : absent = le serveur conserve la valeur existante. */
+  typeMarche?: TypeMarche | null;
 }
 
 /**

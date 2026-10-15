@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, FileCheck, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { FileCheck, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const HeroSection = () => {
@@ -48,19 +46,6 @@ const HeroSection = () => {
             {t("hero.subtitle")}
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col gap-4 sm:flex-row"
-          >
-            <Button size="lg" className="bg-gold text-accent-foreground font-semibold text-base px-8 hover:bg-gold-light gap-2" asChild>
-              <Link to="/register">{t("hero.cta_primary")} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></Link>
-            </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 font-semibold text-base px-8" asChild>
-              <Link to="/login">{t("hero.cta_secondary")}</Link>
-            </Button>
-          </motion.div>
 
           <p className="mt-6 inline-flex items-center gap-2 text-sm text-primary-foreground/80">
             <ShieldCheck className="h-4 w-4 text-gold" /> {t("hero.secure_notice")}
