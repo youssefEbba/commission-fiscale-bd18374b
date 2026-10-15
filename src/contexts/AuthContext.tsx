@@ -5,14 +5,14 @@ export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI"
 
 // Permissions granulaires par rôle
 const ROLE_PERMISSIONS_BASE: Record<AppRole, string[]> = {
-  PRESIDENT: ["transfert.president.validate", "transfert.president.reject", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat", "mise_en_place.valider_president", "convention.activate", "autorite.create", "autorite.update", "autorite.delete", "rattachement.validate"],
+  PRESIDENT: ["transfert.president.validate", "transfert.president.reject", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.generer_certificat", "mise_en_place.valider_president", "convention.activate", "autorite.create", "autorite.update", "autorite.delete", "rattachement.validate", "parametre.manage"],
   DGI: ["transfert.dgi.visa", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp"],
   DGTCP: ["transfert.dgtcp.update", "mise_en_place.annuler", "mise_en_place.visa", "mise_en_place.rejet_temp", "mise_en_place.montants", "mise_en_place.dgtcp.validate", "mise_en_place.dgtcp.reject", "mise_en_place.ouvrir", "convention.activate"],
   DGB: [],
   DGD: ["transfert.dgd.visa", "mise_en_place.visa", "mise_en_place.rejet_temp"],
   AUTORITE_CONTRACTANTE: ["convention.activate", "delegue.list", "delegue.update", "delegue.disable", "mise_en_place.annuler", "mise_en_place.creer", "mise_en_place.soumettre"],
   ENTREPRISE: ["transfert.submit", "transfert.annuler", "transfert.entreprise.rejet.repondre"],
-  ADMIN_SI: ["autorite.create", "autorite.update", "autorite.delete"],
+  ADMIN_SI: ["parametre.manage", "autorite.create", "autorite.update", "autorite.delete"],
   AUTORITE_UPM: ["convention.activate"],
   AUTORITE_UEP: ["convention.activate"],
   SOUS_TRAITANT: [],
