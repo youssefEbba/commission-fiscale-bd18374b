@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import { tStatutDemande, tStatutCertificat, tRole } from "@/i18n/enums";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import MainCourante from "@/components/dashboard/MainCourante";
 
 interface QuickAction {
   key: string;
@@ -94,22 +95,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((s) => (
-            <Card key={s.label}>
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">{s.label}</span>
-                  <s.icon className={`h-5 w-5 ${s.color}`} />
-                </div>
-                <p className="mt-2 text-2xl font-bold text-foreground">
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : s.value}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <MainCourante />
 
         {/* Quick Actions */}
         {myActions.length > 0 && (
@@ -136,67 +122,25 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Recent activity */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center justify-between">
-                <span>{t("sections.recent_demandes")}</span>
-                <Link to="/dashboard/demandes">
-                  <Button variant="ghost" size="sm" className="text-xs">{t("sections.view_all")} <ArrowRight className="h-3 w-3 ms-1 rtl:rotate-180" /></Button>
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-              ) : pendingDemandes.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">{t("sections.no_pending_demandes")}</p>
-              ) : (
-                <div className="space-y-2">
-                  {pendingDemandes.slice(0, 5).map((d) => (
-                    <div key={d.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{d.numero || t("labels.demande_default", { id: d.id })}</p>
-                        <p className="text-xs text-muted-foreground">{d.autoriteContractanteNom || "—"}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs">{tStatutDemande(d.statut)}</Badge>
-                    </div>
-                  ))}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-3">{t("main_courante.volumes")}</h2>
+        
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => (
+            <Card key={s.label}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">{s.label}</span>
+                  <s.icon className={`h-5 w-5 ${s.color}`} />
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <p className="mt-2 text-2xl font-bold text-foreground">
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : s.value}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center justify-between">
-                <span>{t("sections.recent_certificats")}</span>
-                <Link to="/dashboard/certificats">
-                  <Button variant="ghost" size="sm" className="text-xs">{t("sections.view_all")} <ArrowRight className="h-3 w-3 ms-1 rtl:rotate-180" /></Button>
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-              ) : pendingCertificats.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">{t("sections.no_pending_certificats")}</p>
-              ) : (
-                <div className="space-y-2">
-                  {pendingCertificats.slice(0, 5).map((c) => (
-                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{c.reference || t("labels.certificat_default", { id: c.id })}</p>
-                        <p className="text-xs text-muted-foreground">{c.entrepriseNom || "—"}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs">{tStatutCertificat(c.statut)}</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </DashboardLayout>

@@ -2809,6 +2809,34 @@ async function downloadReportingExport(format: ReportingExportFormat, params?: R
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// ===================== MAIN COURANTE =====================
+export type MainCouranteProcessus = "CORRECTION" | "MISE_EN_PLACE" | "TRANSFERT" | "CLOTURE" | "REJET_TEMPORAIRE" | string;
+export interface MainCouranteLigneDto {
+  processus: MainCouranteProcessus;
+  type: string;
+  id: number;
+  reference?: string | null;
+  statut?: string | null;
+  entrepriseRaisonSociale?: string | null;
+  action: string;
+  dateReference?: string | null;
+  joursDAttente?: number | null;
+}
+/** Forme exacte non figée : chaîne ou objet { processus, raison }. */
+export type MainCouranteNonCouvert = string | { processus?: string; raison?: string; message?: string };
+export interface MainCouranteDto {
+  lignes: MainCouranteLigneDto[];
+  total: number;
+  parProcessus: Record<string, number>;
+  processusCouverts: string[];
+  processusNonCouverts: MainCouranteNonCouvert[];
+  definitionAttente: string;
+  tronquee: boolean;
+}
+export const mainCouranteApi = {
+  get: () => apiFetch<MainCouranteDto>("/main-courante"),
+};
+
 export const reportingApi = {
   getProduction: (params?: ReportingParams, granularite?: ProductionGranularite) => apiFetch<ProductionReportDto>(`/reporting/production${withExtra(params, { granularite })}`, { skipAuthRedirect: true }),
   downloadExport: downloadReportingExport,
