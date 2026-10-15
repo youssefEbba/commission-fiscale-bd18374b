@@ -3138,5 +3138,5 @@ export const parametrePublicApi = {
 export const parametreApi = {
   list: () => apiFetch<ParametreDto[]>("/parametres"),
   update: (cle: string, valeur: string) =>
-    apiFetch<ParametreDto>(`/parametres/${encodeURIComponent(cle)}`, { method: "PUT", body: JSON.stringify({ valeur }) }),
+    apiFetch<ParametreDto>(`/parametres/${encodeURIComponent(cle)}`, { method: "PUT", body: { valeur } }),
 };
