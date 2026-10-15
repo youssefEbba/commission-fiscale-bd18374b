@@ -1,3 +1,6 @@
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ChevronsUpDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -35,6 +38,7 @@ const Register = () => {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<EntitePubliqueDto[]>([]);
   const [searching, setSearching] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [entite, setEntite] = useState<EntitePubliqueDto | null>(null);
   const [absente, setAbsente] = useState(false);
   const [nouvelle, setNouvelle] = useState({ entiteNom: "", entiteSigle: "", entiteNif: "", entiteAdresse: "", entiteActivite: "", entiteMinistereTutelle: "" });
@@ -58,7 +62,7 @@ const Register = () => {
   useEffect(() => { setEntite(null); setResults([]); setQ(""); }, [typeEntite]);
 
   useEffect(() => {
-    if (!typeEntite || absente || entite || q.trim().length < 2) { setResults([]); return; }
+    if (!typeEntite || absente || entite) { setResults([]); return; }
     const h = setTimeout(() => {
       setSearching(true);
       rattachementPublicApi.searchEntites(typeEntite, q.trim())
@@ -195,22 +199,35 @@ const Register = () => {
                   ) : (
                     <div className="space-y-2">
                       <Label>{t("register.entite_search")} *</Label>
-                      <div className="relative">
-                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input className="ps-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("register.entite_search_placeholder")} />
-                        {searching && <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
-                      </div>
-                      {q.trim().length >= 2 && !searching && (
-                        <div className="rounded-md border border-border max-h-56 overflow-auto">
-                          {results.length === 0
-                            ? <p className="p-3 text-sm text-muted-foreground">{t("register.entite_none")}</p>
-                            : results.map((r) => (
-                              <button type="button" key={r.id} onClick={() => setEntite(r)} className="block w-full text-start px-3 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
-                                {r.nom}
-                              </button>
-                            ))}
-                        </div>
-                      )}
+                      <Popover open={listOpen} onOpenChange={setListOpen}>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" role="combobox" aria-expanded={listOpen} className="w-full justify-between font-normal text-muted-foreground">
+                            {t("register.entite_search_placeholder")}
+                            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput value={q} onValueChange={setQ} placeholder={t("register.entite_search_placeholder")} />
+                            <CommandList>
+                              {searching ? (
+                                <div className="flex justify-center p-3"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+                              ) : (
+                                <>
+                                  <CommandEmpty>{t("register.entite_none")}</CommandEmpty>
+                                  <CommandGroup>
+                                    {results.map((r) => (
+                                      <CommandItem key={r.id} value={String(r.id)} onSelect={() => { setEntite(r); setListOpen(false); }}>
+                                        {r.nom}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   )
                 )}
