@@ -143,8 +143,12 @@ const Register = () => {
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-        <div className="w-full max-w-lg space-y-8">
+      <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-24 -end-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+        </div>
+        <div className="relative w-full max-w-lg space-y-8">
           {header}
           <div className="rounded-xl border border-border bg-card p-8 shadow-lg space-y-6 text-center">
             <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
@@ -173,8 +177,12 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-xl space-y-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-24 -end-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+      </div>
+      <div className="relative w-full max-w-xl space-y-8">
         {header}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-8 shadow-lg space-y-8">
           <div className="text-center">
@@ -184,7 +192,10 @@ const Register = () => {
 
           {/* 1. Entité */}
           <section className="space-y-4">
-            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_entite")}</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-foreground border-b border-border pb-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">1</span>
+              {t("register.section_entite")}
+            </h2>
             <div className="space-y-2">
               <Label>{t("register.qualite")} *</Label>
               <Select value={role} onValueChange={(v) => setRole(v as RattachementRole)}>
@@ -272,14 +283,17 @@ const Register = () => {
 
           {/* 2. Personne */}
           <section className="space-y-4">
-            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_compte")}</h2>
-            <div className="space-y-1"><Label htmlFor="nomComplet">{t("register.nom_complet")} *</Label><Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} required /></div>
+            <h2 className="flex items-center gap-2 font-semibold text-foreground border-b border-border pb-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">2</span>
+              {t("register.section_compte")}
+            </h2>
+            <div className="space-y-1"><Label htmlFor="nomComplet">{t("register.nom_complet")} *</Label><Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} autoComplete="name" required /></div>
             <div className="space-y-1">
               <Label htmlFor="email">{t("register.email")} *</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required />
+              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" inputMode="email" required />
               <p className="text-xs text-muted-foreground">{t("register.email_hint")}</p>
             </div>
-            <div className="space-y-1"><Label htmlFor="tel">{t("register.telephone")}</Label><Input id="tel" type="tel" value={form.telephone} onChange={(e) => update("telephone", e.target.value)} /></div>
+            <div className="space-y-1"><Label htmlFor="tel">{t("register.telephone")}</Label><Input id="tel" type="tel" value={form.telephone} onChange={(e) => update("telephone", e.target.value)} autoComplete="tel" inputMode="tel" /></div>
             <div className="space-y-1"><Label htmlFor="reg-username">{t("register.username")} *</Label><Input id="reg-username" value={form.username} onChange={(e) => update("username", e.target.value)} autoComplete="username" required /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -291,13 +305,29 @@ const Register = () => {
                   </button>
                 </div>
               </div>
-              <div className="space-y-1"><Label htmlFor="pwd2">{t("register.confirm_password")} *</Label><Input id="pwd2" type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} autoComplete="new-password" required /></div>
+              <div className="space-y-1">
+                <Label htmlFor="pwd2">{t("register.confirm_password")} *</Label>
+                <Input id="pwd2" type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} autoComplete="new-password" required
+                  aria-invalid={!!form.confirmPassword && form.password !== form.confirmPassword} />
+                {form.confirmPassword && form.password !== form.confirmPassword && (
+                  <p className="text-xs text-destructive">{t("register.errors.passwords_dont_match")}</p>
+                )}
+                {form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 6 && (
+                  <p className="flex items-center gap-1 text-xs text-primary"><Check className="h-3 w-3" />{t("register.passwords_match")}</p>
+                )}
+              </div>
             </div>
+            {form.password && form.password.length < 6 && (
+              <p className="text-xs text-muted-foreground">{t("register.errors.password_too_short")}</p>
+            )}
           </section>
 
           {/* 3. Justificatifs */}
           <section className="space-y-3">
-            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_pieces")}</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-foreground border-b border-border pb-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">3</span>
+              {t("register.section_pieces")}
+            </h2>
             {piecesError && <p className="text-sm text-destructive">{t("register.pieces_error")}</p>}
             {pieces.map((p) => {
               const code = pieceCode(p);
