@@ -99,6 +99,8 @@
     "rate_value": "1 {{currency}} = {{rate}} MRU",
     "rate_error": "Impossible de récupérer le taux pour {{currency}} → MRU",
     "missing_required": "Référence et intitulé sont obligatoires",
+    "date_signature_future": "La date de signature ne peut pas être postérieure à aujourd'hui",
+    "date_fin_past": "La date de fin ne peut pas être antérieure à aujourd'hui",
     "success": "Convention créée",
     "success_with_docs": "Convention créée avec {{count}} document(s)"
   },
