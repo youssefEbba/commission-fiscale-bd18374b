@@ -128,5 +128,13 @@
     "delegue_removed": "Représentant retiré du marché",
     "delegue_created": "Représentant créé",
     "delegue_form_required": "Nom complet, identifiant et mot de passe sont requis"
+  },
+  "type_marche": {
+    "type_marche": "Type de marché",
+    "type_placeholder": "Non renseigné",
+    "FOURNITURE": "Fourniture",
+    "PRESTATION": "Prestation de services",
+    "TRAVAUX": "Travaux",
+    "non_renseigne": "Non renseigné"
   }
 }

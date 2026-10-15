@@ -128,5 +128,13 @@
     "delegue_removed": "تم سحب الممثل من الصفقة",
     "delegue_created": "تم إنشاء الممثل",
     "delegue_form_required": "الاسم الكامل والمعرّف وكلمة المرور مطلوبة"
+  },
+  "type_marche": {
+    "type_marche": "نوع الصفقة",
+    "type_placeholder": "غير مُعبّأ",
+    "FOURNITURE": "توريد",
+    "PRESTATION": "تقديم خدمات",
+    "TRAVAUX": "أشغال",
+    "non_renseigne": "غير مُعبّأ"
   }
 }
