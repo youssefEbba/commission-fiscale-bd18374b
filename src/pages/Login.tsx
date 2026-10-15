@@ -69,8 +69,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-24 -end-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+      </div>
+      <div className="relative w-full max-w-md space-y-8">
         <div className="flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
@@ -112,6 +116,8 @@ const Login = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={t("login.username_placeholder")}
+                autoComplete="username"
+                autoFocus
                 required
               />
             </div>
@@ -125,6 +131,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t("login.password_placeholder")}
+                  autoComplete="current-password"
                   required
                 />
                 <button
@@ -138,7 +145,7 @@ const Login = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading || !username.trim() || !password}>
               <LogIn className="h-4 w-4 me-2" />
               {loading ? t("login.submitting") : t("login.submit")}
             </Button>
