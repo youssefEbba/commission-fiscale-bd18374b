@@ -69,5 +69,29 @@
       "label": "Certificats à émettre",
       "description": "Utilisations liquidées ou apurées en attente de votre certificat d'utilisation"
     }
+  },
+  "main_courante": {
+    "title": "Main courante",
+    "subtitle": "Ce qui attend votre intervention",
+    "empty": "Rien n'attend votre intervention",
+    "total": "{{count}} tâche(s)",
+    "tronquee": "{{shown}} lignes affichées sur {{total}}",
+    "non_couverts": "Processus non couverts par cette liste",
+    "all": "Tout",
+    "col_action": "Action attendue",
+    "col_reference": "Référence",
+    "col_statut": "Statut",
+    "col_entreprise": "Entreprise",
+    "col_jours": "Jours d'attente",
+    "load_error": "Impossible de charger la main courante",
+    "volumes": "Indicateurs de volume",
+    "processus": {
+      "CORRECTION": "Correction",
+      "MISE_EN_PLACE": "Mise en place",
+      "TRANSFERT": "Transfert",
+      "CLOTURE": "Clôture",
+      "REJET_TEMPORAIRE": "Rejet temporaire",
+      "UTILISATION": "Utilisation"
+    }
   }
 }
