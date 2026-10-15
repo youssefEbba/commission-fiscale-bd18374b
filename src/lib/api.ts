@@ -3115,3 +3115,28 @@ export const archiveCreditApi = {
   codesTaxe: () => apiFetch<string[]>("/archive/credits/codes-taxe"),
 };
 
+
+// ============= Paramètres applicatifs =============
+/** Réponse plate de `GET /api/public/parametres` : uniquement les clés de la liste blanche serveur. */
+export type ParametresPublics = Record<string, string>;
+
+export interface ParametreDto {
+  cle: string;
+  valeur: string | null;
+  /** Libellé à afficher (jamais la clé). */
+  description?: string | null;
+  dateModification?: string | null;
+  publique: boolean;
+}
+
+export const PARAMETRE_VALEUR_MAX = 512;
+
+export const parametrePublicApi = {
+  get: () => apiFetch<ParametresPublics>("/public/parametres", { noAuth: true, skipAuthRedirect: true }),
+};
+
+export const parametreApi = {
+  list: () => apiFetch<ParametreDto[]>("/parametres"),
+  update: (cle: string, valeur: string) =>
+    apiFetch<ParametreDto>(`/parametres/${encodeURIComponent(cle)}`, { method: "PUT", body: JSON.stringify({ valeur }) }),
+};
