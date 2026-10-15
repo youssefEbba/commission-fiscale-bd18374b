@@ -48,6 +48,8 @@ const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   ANNULEE: "bg-gray-100 text-gray-800",
 };
 
+const todayIso = new Date().toISOString().slice(0, 10);
+
 const Conventions = () => {
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
@@ -777,11 +779,11 @@ const Conventions = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>{t("conventions:fields.date_signature")}</Label>
-                <Input type="date" value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+                <Input type="date" max={todayIso} value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>{t("conventions:fields.date_fin")}</Label>
-                <Input type="date" value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
+                <Input type="date" min={todayIso} value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
               </div>
             </div>
 
