@@ -99,6 +99,8 @@
     "rate_value": "1 {{currency}} = {{rate}} أوقية",
     "rate_error": "تعذّر جلب سعر {{currency}} ← أوقية",
     "missing_required": "المرجع والعنوان إلزاميان",
+    "date_signature_future": "لا يمكن أن يكون تاريخ التوقيع بعد تاريخ اليوم",
+    "date_fin_past": "لا يمكن أن يكون تاريخ الانتهاء قبل تاريخ اليوم",
     "success": "تم إنشاء الاتفاقية",
     "success_with_docs": "تم إنشاء الاتفاقية مع {{count}} مستند"
   },

@@ -368,6 +368,14 @@ const Conventions = () => {
       toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.missing_required"), variant: "destructive" });
       return;
     }
+    if (form.dateSignature && form.dateSignature > todayIso) {
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.date_signature_future"), variant: "destructive" });
+      return;
+    }
+    if (form.dateFin && form.dateFin < todayIso) {
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.date_fin_past"), variant: "destructive" });
+      return;
+    }
     setCreating(true);
     try {
       const created = await conventionApi.create(form);
