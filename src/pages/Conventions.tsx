@@ -315,8 +315,11 @@ const Conventions = () => {
       const mergedBytes = await mergedPdf.save();
       const mergedBlob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
-      // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
-      setCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
+      // Garde le type CONVENTION_CONTRAT si un des fichiers fusionnés l'était, pour ne pas bloquer la création
+      const mergedType: TypeDocumentConvention = createDocs.some(d => d.type === "CONVENTION_CONTRAT")
+        ? "CONVENTION_CONTRAT" as TypeDocumentConvention
+        : "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention;
+      setCreateDocs([{ type: mergedType, file: mergedFile }]);
       toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.merge_success", { count: pdfFiles.length }) });
     } catch (e: any) {
       toast({ title: t("conventions:docs.merge_error"), description: e.message || t("conventions:docs.merge_error_desc"), variant: "destructive" });
@@ -818,7 +821,10 @@ const Conventions = () => {
               </div>
               <div className="space-y-2">
                 <Label>{t("conventions:fields.montant_mru_auto")}</Label>
-                <Input readOnly value={form.montantMru != null ? formatNumber(form.montantMru) : "—"} className="bg-muted" />
+                <Input type="number" step="0.01" value={form.montantMru ?? ""} onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setForm(f => ({ ...f, montantMru: val }));
+                }} placeholder="0" />
               </div>
             </div>
             {tauxLoading && (
