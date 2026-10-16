@@ -420,6 +420,9 @@ export const rattachementPublicApi = {
     Object.entries(files).forEach(([code, f]) => fd.append(code, f));
     return apiFetch<DemandeRattachementDto>("/public/rattachement", { method: "POST", rawBody: fd, noAuth: true, skipAuthRedirect: true });
   },
+  /** Suivi public d'une demande par sa référence (ex. RT-002-10/2026). */
+  suivi: (reference: string) =>
+    apiFetch<DemandeRattachementDto>(`/public/rattachement/suivi?reference=${encodeURIComponent(reference)}`, { noAuth: true, skipAuthRedirect: true }),
 };
 
 export const demandeRattachementApi = {
