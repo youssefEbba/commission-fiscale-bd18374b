@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FileCheck, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useTranslation("landing");
@@ -50,6 +51,13 @@ const HeroSection = () => {
           <p className="mt-6 inline-flex items-center gap-2 text-sm text-primary-foreground/80">
             <ShieldCheck className="h-4 w-4 text-gold" /> {t("hero.secure_notice")}
           </p>
+
+          <Link
+            to="/suivi"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-2 text-sm font-semibold text-gold-light transition-colors hover:bg-gold/20"
+          >
+            {t("hero.suivi_cta")}
+          </Link>
 
           <motion.div
             initial={{ opacity: 0, y: 40 }}
