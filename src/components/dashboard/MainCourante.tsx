@@ -50,7 +50,7 @@ const MainCourante = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {!data && !error && <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}
-        {error && <p className="text-sm text-destructive">{t("main_courante.load_error")}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         {data && data.processusNonCouverts?.length > 0 && (
           <div className="rounded-md border border-accent/40 bg-accent/10 p-3 text-sm space-y-1">
