@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
-import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert } from "@/lib/api";
+import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert, formatApiErrorMessage } from "@/lib/api";
 
 const hrefFor = (l: MainCouranteLigneDto): string => {
   if (l.type === "DemandeCorrection") return `/dashboard/demandes/${l.id}`;
@@ -26,11 +26,13 @@ const nonCouvertText = (n: MainCouranteNonCouvert) =>
 const MainCourante = () => {
   const { t } = useTranslation("dashboard");
   const [data, setData] = useState<MainCouranteDto | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [filtre, setFiltre] = useState<string | null>(null);
 
   useEffect(() => {
-    mainCouranteApi.get().then(setData).catch(() => setError(true));
+    mainCouranteApi.get()
+      .then(setData)
+      .catch((err) => setError(formatApiErrorMessage(err, t("main_courante.load_error"))));
   }, []);
 
   const tp = (p: string) => t(`main_courante.processus.${p}`, { defaultValue: p });
@@ -48,7 +50,7 @@ const MainCourante = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {!data && !error && <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}
-        {error && <p className="text-sm text-destructive">{t("main_courante.load_error")}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         {data && data.processusNonCouverts?.length > 0 && (
           <div className="rounded-md border border-accent/40 bg-accent/10 p-3 text-sm space-y-1">
