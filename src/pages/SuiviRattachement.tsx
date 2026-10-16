@@ -40,22 +40,27 @@ export default function SuiviRattachement() {
   const { t } = useTranslation("rattachement");
   usePageTitle("rattachement:suivi.title");
   const [params, setParams] = useSearchParams();
-  const initial = params.get("ref") || "";
-  const [reference, setReference] = useState(initial);
+  const initialRef = params.get("ref") || "";
+  const initialEmail = params.get("email") || "";
+  const [reference, setReference] = useState(initialRef);
+  const [email, setEmail] = useState(initialEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DemandeRattachementDto | null>(null);
 
-  const search = useCallback(async (raw: string) => {
-    const value = raw.trim();
-    if (!value) return;
+  const search = useCallback(async (rawRef: string, rawEmail: string) => {
+    const ref = rawRef.trim();
+    const mail = rawEmail.trim();
+    if (!ref || !mail) return;
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const dto = await rattachementPublicApi.suivi(value);
+      const dto = await rattachementPublicApi.suivi(ref, mail);
       setResult(dto);
     } catch (e: unknown) {
+      // Référence inconnue et e-mail non concordant rendent exactement la même
+      // erreur 404 : ne jamais chercher à les distinguer (protection volontaire).
       const status = (e as { status?: number })?.status;
       setError(t(status === 404 ? "suivi.not_found" : "suivi.unavailable"));
     } finally {
@@ -64,15 +69,19 @@ export default function SuiviRattachement() {
   }, [t]);
 
   useEffect(() => {
-    if (initial) search(initial);
+    if (initialRef && initialEmail) search(initialRef, initialEmail);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const v = reference.trim();
-    setParams(v ? { ref: v } : {});
-    search(v);
+    const ref = reference.trim();
+    const mail = email.trim();
+    const next: Record<string, string> = {};
+    if (ref) next.ref = ref;
+    if (mail) next.email = mail;
+    setParams(next);
+    search(ref, mail);
   };
 
   const StatutIcon = result ? STATUT_ICON[result.statut] : null;
@@ -96,9 +105,9 @@ export default function SuiviRattachement() {
           <p className="text-base text-muted-foreground mt-1">{t("suivi.subtitle")}</p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-2">
-          <label htmlFor="reference" className="text-sm font-medium">{t("suivi.reference_label")}</label>
-          <div className="flex gap-2">
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="reference" className="text-sm font-medium">{t("suivi.reference_label")}</label>
             <Input
               id="reference"
               dir="ltr"
@@ -108,10 +117,25 @@ export default function SuiviRattachement() {
               className="h-14 text-lg font-mono uppercase"
               autoCapitalize="characters"
             />
-            <Button type="submit" size="lg" className="h-14 px-5" disabled={loading || !reference.trim()}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
-              <span className="ms-2 hidden sm:inline">{t("suivi.search")}</span>
-            </Button>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium">{t("suivi.email_label")}</label>
+            <div className="flex gap-2">
+              <Input
+                id="email"
+                type="email"
+                dir="ltr"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("suivi.email_placeholder")}
+                className="h-14 text-lg"
+                autoComplete="email"
+              />
+              <Button type="submit" size="lg" className="h-14 px-5" disabled={loading || !reference.trim() || !email.trim()}>
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+                <span className="ms-2 hidden sm:inline">{t("suivi.search")}</span>
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground">{t("suivi.hint")}</p>
         </form>
@@ -119,7 +143,7 @@ export default function SuiviRattachement() {
         {error && (
           <div role="alert" className="rounded-lg border-2 border-destructive p-4 space-y-3">
             <p className="text-base font-medium text-destructive">{error}</p>
-            <Button variant="outline" onClick={() => search(reference)} disabled={loading || !reference.trim()}>
+            <Button variant="outline" onClick={() => search(reference, email)} disabled={loading || !reference.trim() || !email.trim()}>
               {t("suivi.retry")}
             </Button>
           </div>
@@ -135,7 +159,6 @@ export default function SuiviRattachement() {
               </div>
             </div>
             <dl className="divide-y text-base">
-              <Row label={t("suivi.demandeur")}>{result.nomComplet || "—"}</Row>
               <Row label={t("suivi.qualite")}>
                 {result.roleDemande ? t(`roles.${result.roleDemande}`) : "—"}
               </Row>
@@ -145,9 +168,9 @@ export default function SuiviRattachement() {
                   <Badge variant="secondary" className="ms-2 text-xs">{t("queue.entite_a_creer")}</Badge>
                 )}
               </Row>
-              <Row label={t("suivi.date_demande")}><span dir="ltr">{fmtDate(result.dateDemande)}</span></Row>
-              {result.dateDecision && (
-                <Row label={t("suivi.date_decision")}><span dir="ltr">{fmtDate(result.dateDecision)}</span></Row>
+              <Row label={t("suivi.date_demande")}><span dir="ltr">{fmtDate(result.dateDepot || result.dateDemande)}</span></Row>
+              {(result.dateTraitement || result.dateDecision) && (
+                <Row label={t("suivi.date_decision")}><span dir="ltr">{fmtDate(result.dateTraitement || result.dateDecision)}</span></Row>
               )}
             </dl>
             {result.statut === "REFUSEE" && result.motifRefus && (

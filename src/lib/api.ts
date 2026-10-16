@@ -396,6 +396,9 @@ export interface DemandeRattachementDto {
   motifRefus?: string | null;
   dateDemande?: string;
   dateDecision?: string | null;
+  /** Champs de la réponse publique de suivi (volontairement pauvre : pas de nom ni de téléphone). */
+  dateDepot?: string;
+  dateTraitement?: string | null;
   decideurNom?: string | null;
   documents?: DocumentDto[];
 }
@@ -420,9 +423,12 @@ export const rattachementPublicApi = {
     Object.entries(files).forEach(([code, f]) => fd.append(code, f));
     return apiFetch<DemandeRattachementDto>("/public/rattachement", { method: "POST", rawBody: fd, noAuth: true, skipAuthRedirect: true });
   },
-  /** Suivi public d'une demande par sa référence (ex. RT-002-10/2026). */
-  suivi: (reference: string) =>
-    apiFetch<DemandeRattachementDto>(`/public/rattachement/suivi?reference=${encodeURIComponent(reference)}`, { noAuth: true, skipAuthRedirect: true }),
+  /** Suivi public d'une demande : référence (ex. RT-002-10/2026) + e-mail du dépôt, les deux obligatoires. */
+  suivi: (reference: string, email: string) =>
+    apiFetch<DemandeRattachementDto>(
+      `/public/rattachement/suivi?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`,
+      { noAuth: true, skipAuthRedirect: true },
+    ),
 };
 
 export const demandeRattachementApi = {
