@@ -91,7 +91,9 @@
       "TRANSFERT": "التحويل",
       "CLOTURE": "الإغلاق",
       "REJET_TEMPORAIRE": "رفض مؤقت",
-      "UTILISATION": "الاستخدام"
+      "UTILISATION": "الاستخدام",
+      "BROUILLON": "مسودة",
+      "ADMINISTRATION": "الإدارة"
     }
   }
 }

@@ -2216,7 +2216,11 @@ export interface DocumentRequirementDto {
   ordreAffichage?: number;
   /** true = pièce apportée par le demandeur ; false = produite par la Commission. */
   deposableParLeDemandeur?: boolean;
+  /** ENTREE = fournie par le déposant ; SORTIE = produite par la Commission. Absent ⇒ ENTREE. */
+  sens?: DocumentSens;
 }
+
+export type DocumentSens = "ENTREE" | "SORTIE";
 
 export interface CreateDocumentRequirementRequest {
   processus: ProcessusType;
@@ -2227,6 +2231,7 @@ export interface CreateDocumentRequirementRequest {
   typesAutorises: FormatFichier[];
   description?: string;
   ordreAffichage?: number;
+  sens?: DocumentSens;
 }
 
 export const documentRequirementApi = {

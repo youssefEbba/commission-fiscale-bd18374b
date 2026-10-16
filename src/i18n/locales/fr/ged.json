@@ -54,7 +54,7 @@
     },
     "state_active": "Actif",
     "state_replaced": "Remplacé",
-    "empty": "Aucun document",
+    "empty": "Aucun document disponible pour le moment",
     "replace": "Remplacer",
     "confirm": "Confirmer",
     "cancel": "Annuler",
@@ -98,7 +98,7 @@
       "type": "TYPE",
       "description": "DESCRIPTION",
       "actions": "ACTIONS",
-      "famille": "FAMILLE"
+      "famille": "ORIGINE"
     },
     "yes": "Oui",
     "no": "Non",
@@ -123,7 +123,8 @@
       "ordre_label": "Ordre d'affichage",
       "cancel": "Annuler",
       "submit_edit": "Modifier",
-      "submit_create": "Ajouter"
+      "submit_create": "Ajouter",
+      "sens_label": "Origine et communication de la pièce"
     },
     "toast": {
       "added": "Document ajouté",
@@ -176,6 +177,12 @@
     "famille": {
       "demandeur": "Apportée par le demandeur",
       "commission": "Produite par la Commission"
+    },
+    "sens": {
+      "ENTREE": "Pièce fournie par le déposant",
+      "ENTREE_help": "Visible du déposant à tout moment",
+      "SORTIE": "Pièce produite par la Commission",
+      "SORTIE_help": "Remise au déposant en fin de processus"
     }
   }
 }
