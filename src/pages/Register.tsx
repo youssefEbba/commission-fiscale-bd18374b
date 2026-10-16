@@ -170,6 +170,9 @@ const Register = () => {
               </ol>
             </div>
             <Button asChild className="w-full"><Link to="/">{t("register.done.back_home")}</Link></Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to={`/suivi${done.reference ? `?ref=${encodeURIComponent(done.reference)}` : ""}`}>{t("register.done.track")}</Link>
+            </Button>
           </div>
         </div>
       </div>

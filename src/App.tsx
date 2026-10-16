@@ -60,6 +60,7 @@ import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
 import VerificationPublique from "./pages/VerificationPublique";
+import SuiviRattachement from "./pages/SuiviRattachement";
 import ArchiveCredits from "./pages/ArchiveCredits";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/presentation" element={<Presentation />} />
             <Route path="/verification" element={<VerificationPublique />} />
+            <Route path="/suivi" element={<SuiviRattachement />} />
             <Route path="/verifier-certificat" element={<ProtectedRoute><VerifierCertificat /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
