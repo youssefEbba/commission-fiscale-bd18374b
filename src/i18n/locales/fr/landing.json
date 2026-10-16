@@ -3,12 +3,13 @@
     "features": "Fonctionnalités",
     "process": "Comment ça marche",
     "contact": "Contact",
-    "register": "S'inscrire",
+    "register": "Créer un compte",
     "login": "Se connecter",
     "open_menu": "Ouvrir le menu",
     "close_menu": "Fermer le menu",
     "documentation": "Documentation",
-    "ministry": "Ministère des Finances"
+    "ministry": "Ministère des Finances",
+    "suivi": "Suivre ma demande"
   },
   "hero": {
     "badge": "Plateforme officielle — Commission Fiscale",
@@ -22,7 +23,8 @@
       "delay": "Délai moyen",
       "secure": "Sécurisé"
     },
-    "secure_notice": "Plateforme sécurisée, hébergée sur le site officiel du Gouvernement."
+    "secure_notice": "Plateforme sécurisée, hébergée sur le site officiel du Gouvernement.",
+    "suivi_cta": "Suivre ma demande de création de compte"
   },
   "process": {
     "kicker": "Processus simple",
@@ -99,7 +101,6 @@
       "faq": "FAQ",
       "documentation": "Documentation"
     },
-    "city": "Nouakchott, Mauritanie",
     "rights": "© {{year}} Commission Fiscale — Tous droits réservés",
     "version": "Version : {{version}}"
   },

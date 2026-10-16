@@ -565,10 +565,13 @@
       "pdfs_merged": "{{count}} PDF fusionnés."
     },
     "equipements": {
-      "checkbox": "Des véhicules ou équipements sous régime (plaques TT) sont acquis sur ce marché",
+      "checkbox": "Du matériel (véhicules ou équipements) est nécessaire à ce marché",
       "file_label": "Liste des véhicules et équipements (plaques TT)",
-      "file_hint": "Pièce obligatoire dès que la case est cochée.",
-      "file_required": "Joignez la liste des véhicules et équipements (plaques TT) avant de soumettre."
+      "file_hint": "Pièce facultative : elle aide au suivi mais n'est jamais exigée.",
+      "regime_question": "Sous quel régime ce matériel entre-t-il ?",
+      "regime_at": "Admission temporaire (plaques TT, réexportation obligatoire)",
+      "regime_def": "Importation définitive ou matériel déjà sur le territoire",
+      "regime_hint": "Seule l'admission temporaire crée une obligation de réexportation à la clôture."
     }
   },
   "recu": {

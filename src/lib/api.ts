@@ -396,6 +396,9 @@ export interface DemandeRattachementDto {
   motifRefus?: string | null;
   dateDemande?: string;
   dateDecision?: string | null;
+  /** Champs de la réponse publique de suivi (volontairement pauvre : pas de nom ni de téléphone). */
+  dateDepot?: string;
+  dateTraitement?: string | null;
   decideurNom?: string | null;
   documents?: DocumentDto[];
 }
@@ -420,6 +423,12 @@ export const rattachementPublicApi = {
     Object.entries(files).forEach(([code, f]) => fd.append(code, f));
     return apiFetch<DemandeRattachementDto>("/public/rattachement", { method: "POST", rawBody: fd, noAuth: true, skipAuthRedirect: true });
   },
+  /** Suivi public d'une demande : référence (ex. RT-002-10/2026) + e-mail du dépôt, les deux obligatoires. */
+  suivi: (reference: string, email: string) =>
+    apiFetch<DemandeRattachementDto>(
+      `/public/rattachement/suivi?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`,
+      { noAuth: true, skipAuthRedirect: true },
+    ),
 };
 
 export const demandeRattachementApi = {
@@ -668,6 +677,8 @@ export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" |
 export interface DemandeCorrectionDto {
   /** Véhicules/équipements sous régime (plaques TT). null = non. */
   equipementsPresents?: boolean | null;
+  /** Distinct de `equipementsPresents` : seule l'admission temporaire impose une réexportation. */
+  admissionTemporaire?: boolean | null;
   id: number;
   numero?: string;
   /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
@@ -802,6 +813,8 @@ export interface Dqe {
 
 export interface CreateDemandeCorrectionRequest {
   equipementsPresents?: boolean;
+  /** Régime du matériel : true = admission temporaire ; null = non renseigné. */
+  admissionTemporaire?: boolean | null;
   autoriteContractanteId?: number;
   /** Requis si `groupementId` absent (XOR logique). */
   entrepriseId?: number;
@@ -1081,7 +1094,12 @@ export interface MarcheDto {
   deviseOrigine?: string;
   statut: StatutMarche;
   delegueIds?: number[];
+  /** Nullable : les marchés anciens n'en portent pas — afficher « non renseigné », jamais de défaut. */
+  typeMarche?: TypeMarche | null;
 }
+
+export type TypeMarche = "FOURNITURE" | "PRESTATION" | "TRAVAUX";
+export const TYPE_MARCHE_VALUES: TypeMarche[] = ["FOURNITURE", "PRESTATION", "TRAVAUX"];
 
 /** Devises supportées pour les montants de contrat. */
 export const DEVISES = ["MRU", "USD", "EUR", "CNY", "AED", "SAR", "MAD", "GBP"] as const;
@@ -1099,6 +1117,8 @@ export interface CreateMarcheRequest {
   /** Devise des montants (MRU par défaut). */
   deviseOrigine?: string;
   statut?: StatutMarche;
+  /** Facultatif : absent = le serveur conserve la valeur existante. */
+  typeMarche?: TypeMarche | null;
 }
 
 /**
@@ -2798,6 +2818,34 @@ async function downloadReportingExport(format: ReportingExportFormat, params?: R
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// ===================== MAIN COURANTE =====================
+export type MainCouranteProcessus = "CORRECTION" | "MISE_EN_PLACE" | "TRANSFERT" | "CLOTURE" | "REJET_TEMPORAIRE" | string;
+export interface MainCouranteLigneDto {
+  processus: MainCouranteProcessus;
+  type: string;
+  id: number;
+  reference?: string | null;
+  statut?: string | null;
+  entrepriseRaisonSociale?: string | null;
+  action: string;
+  dateReference?: string | null;
+  joursDAttente?: number | null;
+}
+/** Forme exacte non figée : chaîne ou objet { processus, raison }. */
+export type MainCouranteNonCouvert = string | { processus?: string; raison?: string; message?: string };
+export interface MainCouranteDto {
+  lignes: MainCouranteLigneDto[];
+  total: number;
+  parProcessus: Record<string, number>;
+  processusCouverts: string[];
+  processusNonCouverts: MainCouranteNonCouvert[];
+  definitionAttente: string;
+  tronquee: boolean;
+}
+export const mainCouranteApi = {
+  get: () => apiFetch<MainCouranteDto>("/main-courante"),
+};
+
 export const reportingApi = {
   getProduction: (params?: ReportingParams, granularite?: ProductionGranularite) => apiFetch<ProductionReportDto>(`/reporting/production${withExtra(params, { granularite })}`, { skipAuthRedirect: true }),
   downloadExport: downloadReportingExport,
@@ -3104,3 +3152,28 @@ export const archiveCreditApi = {
   codesTaxe: () => apiFetch<string[]>("/archive/credits/codes-taxe"),
 };
 
+
+// ============= Paramètres applicatifs =============
+/** Réponse plate de `GET /api/public/parametres` : uniquement les clés de la liste blanche serveur. */
+export type ParametresPublics = Record<string, string>;
+
+export interface ParametreDto {
+  cle: string;
+  valeur: string | null;
+  /** Libellé à afficher (jamais la clé). */
+  description?: string | null;
+  dateModification?: string | null;
+  publique: boolean;
+}
+
+export const PARAMETRE_VALEUR_MAX = 512;
+
+export const parametrePublicApi = {
+  get: () => apiFetch<ParametresPublics>("/public/parametres", { noAuth: true, skipAuthRedirect: true }),
+};
+
+export const parametreApi = {
+  list: () => apiFetch<ParametreDto[]>("/parametres"),
+  update: (cle: string, valeur: string) =>
+    apiFetch<ParametreDto>(`/parametres/${encodeURIComponent(cle)}`, { method: "PUT", body: { valeur } }),
+};

@@ -1,6 +1,6 @@
 {
   "users_notice": "La création de comptes d'entreprise ou d'autorité contractante passe désormais par une demande de rattachement validée par le Président, ou par la fiche de l'entité (Comptes rattachés).",
-  "delegues_notice": "Le rattachement d'une nouvelle personne à votre autorité passe désormais par une demande de rattachement, déposée depuis la page d'inscription et validée par le Président. Vous pouvez toujours modifier les coordonnées de vos représentants et couper leur accès.",
+  "delegues_notice": "L'ajout d'une nouvelle personne à votre autorité passe désormais par la création de compte (« Créer un compte » sur la page d'accueil), validée par le Président. Vous pouvez toujours modifier les coordonnées de vos représentants et couper leur accès.",
   "roles": {
     "ENTREPRISE": "Entreprise",
     "AUTORITE_CONTRACTANTE": "Autorité contractante",
@@ -140,5 +140,24 @@
     "created": "Compte créé",
     "toggled_on": "Compte réactivé",
     "toggled_off": "Compte désactivé"
+  },
+  "suivi": {
+    "title": "Suivre ma demande de création de compte",
+    "subtitle": "Saisissez la référence reçue au dépôt (ex. RT-002-10/2026) et l'adresse e-mail utilisée dans la demande.",
+    "reference_label": "Référence de suivi",
+    "placeholder": "RT-000-00/0000",
+    "email_label": "Adresse e-mail utilisée lors du dépôt",
+    "email_placeholder": "prenom.nom@exemple.com",
+    "search": "Rechercher",
+    "hint": "La référence figure sur l'écran de confirmation affiché après le dépôt ; l'e-mail doit être celui saisi dans la demande.",
+    "retry": "Réessayer",
+    "not_found": "Aucune demande ne correspond à cette référence et à cette adresse e-mail. Vérifiez la saisie.",
+    "unavailable": "Le suivi est momentanément indisponible. Réessayez plus tard.",
+    "qualite": "Qualité demandée",
+    "entite": "Entité visée",
+    "date_demande": "Date de la demande",
+    "date_decision": "Date de la décision",
+    "approved_hint": "Votre compte est activé : vous pouvez vous connecter avec l'identifiant choisi lors de la demande.",
+    "back_home": "Retour à l'accueil"
   }
 }

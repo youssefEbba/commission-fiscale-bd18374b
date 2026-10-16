@@ -48,6 +48,8 @@ const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   ANNULEE: "bg-gray-100 text-gray-800",
 };
 
+const todayIso = new Date().toISOString().slice(0, 10);
+
 const Conventions = () => {
   const { user, hasRole } = useAuth();
   const role = user?.role as AppRole;
@@ -315,8 +317,11 @@ const Conventions = () => {
       const mergedBytes = await mergedPdf.save();
       const mergedBlob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
       const mergedFile = new window.File([mergedBlob], "convention_fusionnee.pdf", { type: "application/pdf" });
-      // Replace all docs with the single merged file typed as CONVENTION_JOIGNED_DOCUMENT
-      setCreateDocs([{ type: "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention, file: mergedFile }]);
+      // Garde le type CONVENTION_CONTRAT si un des fichiers fusionnés l'était, pour ne pas bloquer la création
+      const mergedType: TypeDocumentConvention = createDocs.some(d => d.type === "CONVENTION_CONTRAT")
+        ? "CONVENTION_CONTRAT" as TypeDocumentConvention
+        : "CONVENTION_JOIGNED_DOCUMENT" as TypeDocumentConvention;
+      setCreateDocs([{ type: mergedType, file: mergedFile }]);
       toast({ title: t("common:success.title", "Succès"), description: t("conventions:docs.merge_success", { count: pdfFiles.length }) });
     } catch (e: any) {
       toast({ title: t("conventions:docs.merge_error"), description: e.message || t("conventions:docs.merge_error_desc"), variant: "destructive" });
@@ -361,6 +366,14 @@ const Conventions = () => {
   const handleCreate = async () => {
     if (!form.reference || !form.intitule) {
       toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.missing_required"), variant: "destructive" });
+      return;
+    }
+    if (form.dateSignature && form.dateSignature > todayIso) {
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.date_signature_future"), variant: "destructive" });
+      return;
+    }
+    if (form.dateFin && form.dateFin < todayIso) {
+      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.date_fin_past"), variant: "destructive" });
       return;
     }
     setCreating(true);
@@ -774,11 +787,11 @@ const Conventions = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>{t("conventions:fields.date_signature")}</Label>
-                <Input type="date" value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
+                <Input type="date" max={todayIso} value={form.dateSignature} onChange={(e) => setForm(f => ({ ...f, dateSignature: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>{t("conventions:fields.date_fin")}</Label>
-                <Input type="date" value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
+                <Input type="date" min={todayIso} value={form.dateFin} onChange={(e) => setForm(f => ({ ...f, dateFin: e.target.value }))} />
               </div>
             </div>
 
@@ -818,7 +831,10 @@ const Conventions = () => {
               </div>
               <div className="space-y-2">
                 <Label>{t("conventions:fields.montant_mru_auto")}</Label>
-                <Input readOnly value={form.montantMru != null ? formatNumber(form.montantMru) : "—"} className="bg-muted" />
+                <Input type="number" step="0.01" value={form.montantMru ?? ""} onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setForm(f => ({ ...f, montantMru: val }));
+                }} placeholder="0" />
               </div>
             </div>
             {tauxLoading && (

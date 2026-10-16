@@ -151,9 +151,9 @@
     "a_fermer": {
       "horizon": "Horizon (jours)",
       "dormance": "Dormance (jours)",
-      "equip_declares": "Dossiers avec équipements déclarés",
-      "equip_non_renseignes": "Déclaration d'équipements non renseignée",
-      "equip_note": "« Non renseignée » : la question n'a jamais été posée sur ces dossiers ; le nombre avec équipements ne couvre que les dossiers renseignés.",
+      "equip_declares": "Matériel sous admission temporaire",
+      "equip_non_renseignes": "Régime non renseigné",
+      "equip_note": "« Régime non renseigné » : le régime d'entrée du matériel n'a pas été indiqué sur ces dossiers. Le champ est récent, ce nombre est donc élevé au début ; seule l'admission temporaire crée une obligation de réexportation.",
       "echeance_title": "Crédits arrivant à échéance",
       "dormants_title": "Crédits dormants",
       "critere_dormance": "Critère de dormance",
@@ -175,7 +175,7 @@
       "montant_immobilise": "Montant immobilisé par les crédits échus avec solde",
       "expires_title": "Crédits échus avec solde",
       "conventions_title": "Conventions à échéance",
-      "equip_ouvert_title": "Crédits ouverts avec équipements sous régime"
+      "equip_ouvert_title": "Crédits ouverts avec matériel sous admission temporaire"
     },
     "na": "n/a"
   },

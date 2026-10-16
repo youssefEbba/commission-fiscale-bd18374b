@@ -1,3 +1,6 @@
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ChevronsUpDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -35,6 +38,7 @@ const Register = () => {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<EntitePubliqueDto[]>([]);
   const [searching, setSearching] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [entite, setEntite] = useState<EntitePubliqueDto | null>(null);
   const [absente, setAbsente] = useState(false);
   const [nouvelle, setNouvelle] = useState({ entiteNom: "", entiteSigle: "", entiteNif: "", entiteAdresse: "", entiteActivite: "", entiteMinistereTutelle: "" });
@@ -54,11 +58,17 @@ const Register = () => {
       .catch(() => setPiecesError(true));
   }, []);
 
-  // Changer de qualité peut changer le type d'entité : on repart d'une sélection vide.
-  useEffect(() => { setEntite(null); setResults([]); setQ(""); }, [typeEntite]);
+  // Changer de qualité peut changer le type d'entité : on repart d'une sélection vide
+  // et on vide les champs propres à l'autre type (le serveur refuse un mélange).
+  useEffect(() => {
+    setEntite(null); setResults([]); setQ("");
+    setNouvelle((p) => typeEntite === "ENTREPRISE"
+      ? { ...p, entiteSigle: "", entiteMinistereTutelle: "" }
+      : { ...p, entiteNif: "", entiteActivite: "" });
+  }, [typeEntite]);
 
   useEffect(() => {
-    if (!typeEntite || absente || entite || q.trim().length < 2) { setResults([]); return; }
+    if (!typeEntite || absente || entite) { setResults([]); return; }
     const h = setTimeout(() => {
       setSearching(true);
       rattachementPublicApi.searchEntites(typeEntite, q.trim())
@@ -87,7 +97,11 @@ const Register = () => {
         username: form.username.trim(), password: form.password, nomComplet: form.nomComplet.trim(),
         email: form.email.trim(), telephone: form.telephone.trim(), roleDemande: role, typeEntite,
         ...(absente
-          ? Object.fromEntries(Object.entries(nouvelle).map(([k, v]) => [k, v.trim()]))
+          ? Object.fromEntries(
+              (typeEntite === "ENTREPRISE"
+                ? (["entiteNom", "entiteNif", "entiteAdresse", "entiteActivite"] as const)
+                : (["entiteNom", "entiteSigle", "entiteAdresse", "entiteMinistereTutelle"] as const)
+              ).map((k) => [k, nouvelle[k].trim()]))
           : { entiteId: String(entite!.id) }),
       };
       const res = await rattachementPublicApi.submit(fields, files);
@@ -129,8 +143,12 @@ const Register = () => {
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-        <div className="w-full max-w-lg space-y-8">
+      <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-24 -end-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+        </div>
+        <div className="relative w-full max-w-lg space-y-8">
           {header}
           <div className="rounded-xl border border-border bg-card p-8 shadow-lg space-y-6 text-center">
             <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
@@ -152,6 +170,9 @@ const Register = () => {
               </ol>
             </div>
             <Button asChild className="w-full"><Link to="/">{t("register.done.back_home")}</Link></Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to={`/suivi?${new URLSearchParams({ ...(done.reference ? { ref: done.reference } : {}), ...((done.email || form.email) ? { email: done.email || form.email } : {}) }).toString()}`}>{t("register.done.track")}</Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -159,8 +180,12 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-xl space-y-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-24 -end-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+      </div>
+      <div className="relative w-full max-w-xl space-y-8">
         {header}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-8 shadow-lg space-y-8">
           <div className="text-center">
@@ -170,7 +195,10 @@ const Register = () => {
 
           {/* 1. Entité */}
           <section className="space-y-4">
-            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_entite")}</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-foreground border-b border-border pb-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">1</span>
+              {t("register.section_entite")}
+            </h2>
             <div className="space-y-2">
               <Label>{t("register.qualite")} *</Label>
               <Select value={role} onValueChange={(v) => setRole(v as RattachementRole)}>
@@ -195,22 +223,35 @@ const Register = () => {
                   ) : (
                     <div className="space-y-2">
                       <Label>{t("register.entite_search")} *</Label>
-                      <div className="relative">
-                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input className="ps-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("register.entite_search_placeholder")} />
-                        {searching && <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
-                      </div>
-                      {q.trim().length >= 2 && !searching && (
-                        <div className="rounded-md border border-border max-h-56 overflow-auto">
-                          {results.length === 0
-                            ? <p className="p-3 text-sm text-muted-foreground">{t("register.entite_none")}</p>
-                            : results.map((r) => (
-                              <button type="button" key={r.id} onClick={() => setEntite(r)} className="block w-full text-start px-3 py-2 text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
-                                {r.nom}
-                              </button>
-                            ))}
-                        </div>
-                      )}
+                      <Popover open={listOpen} onOpenChange={setListOpen}>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" role="combobox" aria-expanded={listOpen} className="w-full justify-between font-normal text-muted-foreground">
+                            {t("register.entite_search_placeholder")}
+                            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput value={q} onValueChange={setQ} placeholder={t("register.entite_search_placeholder")} />
+                            <CommandList>
+                              {searching ? (
+                                <div className="flex justify-center p-3"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+                              ) : (
+                                <>
+                                  <CommandEmpty>{t("register.entite_none")}</CommandEmpty>
+                                  <CommandGroup>
+                                    {results.map((r) => (
+                                      <CommandItem key={r.id} value={String(r.id)} onSelect={() => { setEntite(r); setListOpen(false); }}>
+                                        {r.nom}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   )
                 )}
@@ -224,10 +265,15 @@ const Register = () => {
                   <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
                     <p className="text-xs text-muted-foreground">{t("register.entite_absente_hint")}</p>
                     <div className="space-y-1"><Label>{t("register.e_nom")} *</Label><Input value={nouvelle.entiteNom} onChange={(e) => setNouvelle((p) => ({ ...p, entiteNom: e.target.value }))} required /></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1"><Label>{t("register.e_sigle")}</Label><Input value={nouvelle.entiteSigle} onChange={(e) => setNouvelle((p) => ({ ...p, entiteSigle: e.target.value }))} /></div>
+                    {typeEntite === "ENTREPRISE" ? (
                       <div className="space-y-1"><Label>{t("register.e_nif")}</Label><Input value={nouvelle.entiteNif} onChange={(e) => setNouvelle((p) => ({ ...p, entiteNif: e.target.value }))} /></div>
-                    </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Label>{t("register.e_sigle")}</Label>
+                        <Input value={nouvelle.entiteSigle} onChange={(e) => setNouvelle((p) => ({ ...p, entiteSigle: e.target.value }))} />
+                        <p className="text-xs text-muted-foreground">{t("register.e_sigle_hint")}</p>
+                      </div>
+                    )}
                     <div className="space-y-1"><Label>{t("register.e_adresse")}</Label><Input value={nouvelle.entiteAdresse} onChange={(e) => setNouvelle((p) => ({ ...p, entiteAdresse: e.target.value }))} /></div>
                     {typeEntite === "ENTREPRISE"
                       ? <div className="space-y-1"><Label>{t("register.e_activite")}</Label><Input value={nouvelle.entiteActivite} onChange={(e) => setNouvelle((p) => ({ ...p, entiteActivite: e.target.value }))} /></div>
@@ -240,14 +286,17 @@ const Register = () => {
 
           {/* 2. Personne */}
           <section className="space-y-4">
-            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_compte")}</h2>
-            <div className="space-y-1"><Label htmlFor="nomComplet">{t("register.nom_complet")} *</Label><Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} required /></div>
+            <h2 className="flex items-center gap-2 font-semibold text-foreground border-b border-border pb-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">2</span>
+              {t("register.section_compte")}
+            </h2>
+            <div className="space-y-1"><Label htmlFor="nomComplet">{t("register.nom_complet")} *</Label><Input id="nomComplet" value={form.nomComplet} onChange={(e) => update("nomComplet", e.target.value)} autoComplete="name" required /></div>
             <div className="space-y-1">
               <Label htmlFor="email">{t("register.email")} *</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required />
+              <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" inputMode="email" required />
               <p className="text-xs text-muted-foreground">{t("register.email_hint")}</p>
             </div>
-            <div className="space-y-1"><Label htmlFor="tel">{t("register.telephone")}</Label><Input id="tel" type="tel" value={form.telephone} onChange={(e) => update("telephone", e.target.value)} /></div>
+            <div className="space-y-1"><Label htmlFor="tel">{t("register.telephone")}</Label><Input id="tel" type="tel" value={form.telephone} onChange={(e) => update("telephone", e.target.value)} autoComplete="tel" inputMode="tel" /></div>
             <div className="space-y-1"><Label htmlFor="reg-username">{t("register.username")} *</Label><Input id="reg-username" value={form.username} onChange={(e) => update("username", e.target.value)} autoComplete="username" required /></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -259,13 +308,29 @@ const Register = () => {
                   </button>
                 </div>
               </div>
-              <div className="space-y-1"><Label htmlFor="pwd2">{t("register.confirm_password")} *</Label><Input id="pwd2" type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} autoComplete="new-password" required /></div>
+              <div className="space-y-1">
+                <Label htmlFor="pwd2">{t("register.confirm_password")} *</Label>
+                <Input id="pwd2" type={showPassword ? "text" : "password"} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} autoComplete="new-password" required
+                  aria-invalid={!!form.confirmPassword && form.password !== form.confirmPassword} />
+                {form.confirmPassword && form.password !== form.confirmPassword && (
+                  <p className="text-xs text-destructive">{t("register.errors.passwords_dont_match")}</p>
+                )}
+                {form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 6 && (
+                  <p className="flex items-center gap-1 text-xs text-primary"><Check className="h-3 w-3" />{t("register.passwords_match")}</p>
+                )}
+              </div>
             </div>
+            {form.password && form.password.length < 6 && (
+              <p className="text-xs text-muted-foreground">{t("register.errors.password_too_short")}</p>
+            )}
           </section>
 
           {/* 3. Justificatifs */}
           <section className="space-y-3">
-            <h2 className="font-semibold text-foreground border-b border-border pb-1">{t("register.section_pieces")}</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-foreground border-b border-border pb-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">3</span>
+              {t("register.section_pieces")}
+            </h2>
             {piecesError && <p className="text-sm text-destructive">{t("register.pieces_error")}</p>}
             {pieces.map((p) => {
               const code = pieceCode(p);

@@ -168,6 +168,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Documents déjà téléversés (en mode édition)
   const [equipementsPresents, setEquipementsPresents] = useState(false);
+  const [admissionTemporaire, setAdmissionTemporaire] = useState<boolean | null>(null);
   const [existingDocs, setExistingDocs] = useState<Record<string, { id: number; nomFichier: string }>>({});
 
   // Drag and drop state
@@ -339,6 +340,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
     setEquipementsPresents(!!editingDemande.equipementsPresents);
+    setAdmissionTemporaire(editingDemande.admissionTemporaire ?? null);
     const mf = editingDemande.modeleFiscal;
     if (mf) {
       if (mf.typeProjet) setTypeProjet(mf.typeProjet);
@@ -687,10 +689,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     }
 
 
-    if (!asBrouillon && equipementsDeclares && !docFiles[EQUIP_DOC] && !existingDocs[EQUIP_DOC]) {
-      toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.equipements.file_required"), variant: "destructive" });
-      return;
-    }
+    // Liste des équipements : jamais exigée (décision de la Commission).
 
     const selectedMarche = marcheId ? marches.find(m => String(m.id) === marcheId) : null;
     const finalConventionId = conventionId ? Number(conventionId) : selectedMarche?.conventionId;
@@ -709,6 +708,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         creditExterieur: Number(creditExterieur) || 0,
         creditInterieur: Number(creditInterieur) || 0,
         equipementsPresents: equipementsDeclares,
+        // Sans matériel, pas d'admission temporaire ; avec matériel, régime tel que choisi (null = non renseigné).
+        admissionTemporaire: equipementsDeclares ? admissionTemporaire : false,
         modeleFiscal: {
           referenceDossier,
           typeProjet,
@@ -1371,9 +1372,19 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                     </label>
                     {equipementsPresents && (
                       <div className="space-y-1">
-                        <label htmlFor="wizard-doc-equipements" className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-accent/40 ${docFiles[EQUIP_DOC] || existingDocs[EQUIP_DOC] ? "border-emerald-300 bg-emerald-50/40" : "border-destructive/50"}`}>
+                        <p className="text-sm font-medium">{t("demandes:wizard.equipements.regime_question")}</p>
+                        <div role="radiogroup" className="space-y-1">
+                          {([true, false] as const).map((v) => (
+                            <label key={String(v)} className="flex items-start gap-2 cursor-pointer text-sm">
+                              <input type="radio" name="wizard-regime" className="mt-1" checked={admissionTemporaire === v} onChange={() => setAdmissionTemporaire(v)} />
+                              <span>{t(v ? "demandes:wizard.equipements.regime_at" : "demandes:wizard.equipements.regime_def")}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground pb-1">{t("demandes:wizard.equipements.regime_hint")}</p>
+                        <label htmlFor="wizard-doc-equipements" className={`flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-accent/40 ${docFiles[EQUIP_DOC] || existingDocs[EQUIP_DOC] ? "border-emerald-300 bg-emerald-50/40" : "border-border"}`}>
                           {docFiles[EQUIP_DOC] || existingDocs[EQUIP_DOC] ? <CheckCircle className="h-4 w-4 text-green-600 shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
-                          <span className="flex-1 text-sm">{t("demandes:wizard.equipements.file_label")} <span className="text-destructive">*</span></span>
+                          <span className="flex-1 text-sm">{t("demandes:wizard.equipements.file_label")}</span>
                           <span className="text-xs truncate max-w-[180px]">{docFiles[EQUIP_DOC]?.name || existingDocs[EQUIP_DOC]?.nomFichier || t("demandes:wizard.actions.browse")}</span>
                           <input id="wizard-doc-equipements" type="file" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) setDocFiles(prev => ({ ...prev, [EQUIP_DOC]: f })); e.target.value = ""; }} />
                         </label>

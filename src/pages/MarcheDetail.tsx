@@ -154,6 +154,7 @@ const MarcheDetail = () => {
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label={t("marches:fields.numero")} value={marche.numeroMarche} />
             <Field label={t("marches:fields.intitule")} value={marche.intitule} />
+            <Field label={t("marches:type_marche.type_marche")} value={marche.typeMarche ? t(`marches:type_marche.${marche.typeMarche}`) : t("marches:type_marche.non_renseigne")} />
             <Field label={t("marches:fields.date_signature")} value={formatDate(marche.dateSignature)} />
             <Field
               label={t("marches:fields.montant_ht")}

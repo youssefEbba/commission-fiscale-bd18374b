@@ -18,6 +18,7 @@ import Utilisations from "./pages/Utilisations";
 import Utilisateurs from "./pages/Utilisateurs";
 import MonProfil from "./pages/MonProfil";
 import Signatures from "./pages/Signatures";
+import Parametres from "./pages/Parametres";
 import Roles from "./pages/Roles";
 import AuditLogs from "./pages/AuditLogs";
 import Simulation from "./pages/Simulation";
@@ -59,6 +60,7 @@ import ConventionDetail from "./pages/ConventionDetail";
 import MarcheDetail from "./pages/MarcheDetail";
 import VerifierCertificat from "./pages/VerifierCertificat";
 import VerificationPublique from "./pages/VerificationPublique";
+import SuiviRattachement from "./pages/SuiviRattachement";
 import ArchiveCredits from "./pages/ArchiveCredits";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { I18nBootstrap } from "@/i18n/bootstrap";
@@ -81,6 +83,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/presentation" element={<Presentation />} />
             <Route path="/verification" element={<VerificationPublique />} />
+            <Route path="/suivi" element={<SuiviRattachement />} />
             <Route path="/verifier-certificat" element={<ProtectedRoute><VerifierCertificat /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
@@ -193,6 +196,7 @@ const App = () => (
             <Route path="/dashboard/profil" element={<ProtectedRoute><MonProfil /></ProtectedRoute>} />
             <Route path="/dashboard/utilisateurs" element={<ProtectedRoute adminOnly><Utilisateurs /></ProtectedRoute>} />
             <Route path="/dashboard/roles" element={<ProtectedRoute adminOnly><Roles /></ProtectedRoute>} />
+            <Route path="/dashboard/parametres" element={<ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}><Parametres /></ProtectedRoute>} />
             <Route path="/dashboard/signatures" element={<ProtectedRoute adminOnly><Signatures /></ProtectedRoute>} />
             <Route path="/dashboard/audit" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
             <Route path="/dashboard/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />

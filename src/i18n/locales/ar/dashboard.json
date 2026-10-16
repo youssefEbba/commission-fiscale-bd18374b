@@ -1,7 +1,7 @@
 {
-  "page_title": "لوحة القيادة",
+  "page_title": "سجل المهام",
   "greeting": "مرحبًا، {{name}}",
-  "welcome": "مرحبًا بك في لوحة القيادة",
+  "welcome": "مرحبًا بك في سجل المهام",
   "stats": {
     "demandes": "الطلبات",
     "certificats": "الشهادات",
@@ -68,6 +68,30 @@
     "certificats_utilisation_emettre": {
       "label": "شهادات للإصدار",
       "description": "استخدامات مصفاة أو مسواة في انتظار شهادة الاستخدام"
+    }
+  },
+  "main_courante": {
+    "title": "سجل المهام",
+    "subtitle": "ما ينتظر تدخلكم",
+    "empty": "لا شيء ينتظر تدخلكم",
+    "total": "{{count}} مهمة",
+    "tronquee": "{{shown}} سطرًا معروضًا من {{total}}",
+    "non_couverts": "عمليات غير مشمولة بهذه القائمة",
+    "all": "الكل",
+    "col_action": "الإجراء المطلوب",
+    "col_reference": "المرجع",
+    "col_statut": "الحالة",
+    "col_entreprise": "المؤسسة",
+    "col_jours": "أيام الانتظار",
+    "load_error": "تعذر تحميل سجل المهام",
+    "volumes": "مؤشرات الحجم",
+    "processus": {
+      "CORRECTION": "التصحيح",
+      "MISE_EN_PLACE": "التفعيل",
+      "TRANSFERT": "التحويل",
+      "CLOTURE": "الإغلاق",
+      "REJET_TEMPORAIRE": "رفض مؤقت",
+      "UTILISATION": "الاستخدام"
     }
   }
 }
