@@ -360,7 +360,7 @@ const Utilisations = () => {
   };
 
   const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
-    return getFilteredRequirements().filter((r) => r.obligatoire && !createDocFiles[String(r.id)]);
+    return getFilteredRequirements().filter((r) => r.obligatoire && r.sens !== "SORTIE" && !createDocFiles[String(r.id)]);
   };
 
   const errorTitle = () => t("common:errors.title", { defaultValue: "Erreur" });
