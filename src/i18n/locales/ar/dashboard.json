@@ -1,7 +1,7 @@
 {
-  "page_title": "لوحة القيادة",
+  "page_title": "سجل المهام",
   "greeting": "مرحبًا، {{name}}",
-  "welcome": "مرحبًا بك في لوحة القيادة",
+  "welcome": "مرحبًا بك في سجل المهام",
   "stats": {
     "demandes": "الطلبات",
     "certificats": "الشهادات",
