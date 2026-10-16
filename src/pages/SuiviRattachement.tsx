@@ -40,22 +40,27 @@ export default function SuiviRattachement() {
   const { t } = useTranslation("rattachement");
   usePageTitle("rattachement:suivi.title");
   const [params, setParams] = useSearchParams();
-  const initial = params.get("ref") || "";
-  const [reference, setReference] = useState(initial);
+  const initialRef = params.get("ref") || "";
+  const initialEmail = params.get("email") || "";
+  const [reference, setReference] = useState(initialRef);
+  const [email, setEmail] = useState(initialEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DemandeRattachementDto | null>(null);
 
-  const search = useCallback(async (raw: string) => {
-    const value = raw.trim();
-    if (!value) return;
+  const search = useCallback(async (rawRef: string, rawEmail: string) => {
+    const ref = rawRef.trim();
+    const mail = rawEmail.trim();
+    if (!ref || !mail) return;
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const dto = await rattachementPublicApi.suivi(value);
+      const dto = await rattachementPublicApi.suivi(ref, mail);
       setResult(dto);
     } catch (e: unknown) {
+      // Référence inconnue et e-mail non concordant rendent exactement la même
+      // erreur 404 : ne jamais chercher à les distinguer (protection volontaire).
       const status = (e as { status?: number })?.status;
       setError(t(status === 404 ? "suivi.not_found" : "suivi.unavailable"));
     } finally {
@@ -64,15 +69,19 @@ export default function SuiviRattachement() {
   }, [t]);
 
   useEffect(() => {
-    if (initial) search(initial);
+    if (initialRef && initialEmail) search(initialRef, initialEmail);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const v = reference.trim();
-    setParams(v ? { ref: v } : {});
-    search(v);
+    const ref = reference.trim();
+    const mail = email.trim();
+    const next: Record<string, string> = {};
+    if (ref) next.ref = ref;
+    if (mail) next.email = mail;
+    setParams(next);
+    search(ref, mail);
   };
 
   const StatutIcon = result ? STATUT_ICON[result.statut] : null;
