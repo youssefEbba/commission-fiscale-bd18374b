@@ -8,7 +8,8 @@
     "open_menu": "Ouvrir le menu",
     "close_menu": "Fermer le menu",
     "documentation": "Documentation",
-    "ministry": "Ministère des Finances"
+    "ministry": "Ministère des Finances",
+    "suivi": "Suivre ma demande"
   },
   "hero": {
     "badge": "Plateforme officielle — Commission Fiscale",
@@ -22,7 +23,8 @@
       "delay": "Délai moyen",
       "secure": "Sécurisé"
     },
-    "secure_notice": "Plateforme sécurisée, hébergée sur le site officiel du Gouvernement."
+    "secure_notice": "Plateforme sécurisée, hébergée sur le site officiel du Gouvernement.",
+    "suivi_cta": "Suivre ma demande de création de compte"
   },
   "process": {
     "kicker": "Processus simple",
