@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
-import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert } from "@/lib/api";
+import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert, formatApiErrorMessage } from "@/lib/api";
 
 const hrefFor = (l: MainCouranteLigneDto): string => {
   if (l.type === "DemandeCorrection") return `/dashboard/demandes/${l.id}`;
@@ -26,11 +26,13 @@ const nonCouvertText = (n: MainCouranteNonCouvert) =>
 const MainCourante = () => {
   const { t } = useTranslation("dashboard");
   const [data, setData] = useState<MainCouranteDto | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [filtre, setFiltre] = useState<string | null>(null);
 
   useEffect(() => {
-    mainCouranteApi.get().then(setData).catch(() => setError(true));
+    mainCouranteApi.get()
+      .then(setData)
+      .catch((err) => setError(formatApiErrorMessage(err, t("main_courante.load_error"))));
   }, []);
 
   const tp = (p: string) => t(`main_courante.processus.${p}`, { defaultValue: p });
