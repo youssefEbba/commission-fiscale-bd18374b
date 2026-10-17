@@ -1299,7 +1299,7 @@ export interface CreateCertificatCreditRequest extends CertificatRecapFiscal {
   brouillon?: boolean;
 }
 
-/** Corps de PATCH /certificats-credit/{id}/montants. Récap fiscal optionnel. */
+/** Corps de POST /certificats-credit/{id}/montants. Récap fiscal optionnel. */
 export interface UpdateCertificatCreditMontantsRequest extends CertificatRecapFiscal {
   montantCordon: number;
   montantTVAInterieure: number;
@@ -1385,7 +1385,7 @@ export const certificatCreditApi = {
     recap?: CertificatRecapFiscal,
   ) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
-      method: "PATCH",
+      method: "POST",
       body: { montantCordon, montantTVAInterieure, ...(recap ?? {}) } satisfies UpdateCertificatCreditMontantsRequest,
     }),
   reject: (id: number, motif: string) =>

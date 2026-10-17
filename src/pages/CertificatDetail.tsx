@@ -7,7 +7,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
-import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+import AdminCorrectionCard, { type AdminCorrectionField } from "@/components/admin/AdminCorrectionCard";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut,
@@ -562,7 +562,7 @@ const CertificatDetail = () => {
         <AdminCorrectionCard
           entity="CERTIFICAT"
           entityId={c.id}
-          fields={[
+          fields={([
             { key: "dateValidite", label: "Date de validité", type: "date", value: c.dateValidite ?? "" },
             {
               key: "montantCordon", label: "Montant cordon", type: "number", value: c.montantCordon ?? "",
@@ -578,7 +578,7 @@ const CertificatDetail = () => {
             { key: "taxesConsommation", label: "(c) Taxes de consommation", type: "number", value: c.taxesConsommation ?? "" },
             { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
             { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
-          ].map(field => ({
+          ] satisfies AdminCorrectionField[]).map(field => ({
             ...field,
             disabled: !canCorrectCertificatField(field.key, utilisationPresence),
             hint: !canCorrectCertificatField(field.key, utilisationPresence)
