@@ -5,6 +5,14 @@
     "full_name": "Commission Fiscale — Gestion des Crédits d'Impôt",
     "ministry": "Ministère des Finances"
   },
+  "editability": {
+    "amounts_locked": "Une fois le crédit ouvert, ses soldes sont consommés par les utilisations : les montants du récapitulatif ne sont plus modifiables.",
+    "amounts_used": "Modification des montants impossible : des demandes d'utilisation existent déjà sur ce crédit.",
+    "usage_unknown": "La présence de demandes d'utilisation n'a pas pu être vérifiée : la modification de ces montants est indisponible pour le moment.",
+    "quota_used": "Ce montant ne peut plus être corrigé : des demandes d'utilisation existent déjà sur ce crédit.",
+    "convention_cancelled": "Cette convention est annulée : sa réactivation est impossible.",
+    "market_documents_error": "Impossible de charger les documents du marché."
+  },
   "language": {
     "label": "Langue",
     "switch": "Changer la langue",

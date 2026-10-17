@@ -20,6 +20,8 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { canEditMarche } from "@/lib/marcheEditability";
+import { formatApiErrorMessage } from "@/lib/api";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -51,6 +53,7 @@ const MarcheDetail = () => {
   const [gedOpen, setGedOpen] = useState(false);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState<string | null>(null);
 
   usePageTitle("marches:detail.title", { ref: marche ? displayRef(marche) : "" });
 
@@ -79,10 +82,13 @@ const MarcheDetail = () => {
   const loadDocs = async () => {
     if (!id) return;
     setDocsLoading(true);
+    setDocsError(null);
+    setDocs([]);
     try {
       setDocs(await marcheApi.getDocuments(Number(id)));
-    } catch {
+    } catch (error) {
       setDocs([]);
+      setDocsError(formatApiErrorMessage(error, t("marches:detail.load_error")));
     } finally {
       setDocsLoading(false);
     }
@@ -113,7 +119,7 @@ const MarcheDetail = () => {
     );
   }
 
-  const canManage = (isAC || isDelegate) && marche.statut !== "CLOTURE" && marche.statut !== "ANNULE";
+  const canManage = (isAC || isDelegate) && canEditMarche(marche.statut) && !docsError;
   const delegueDetails = (marche.delegueIds || [])
     .map(dId => delegues.find(d => d.id === dId))
     .filter(Boolean) as DelegueDto[];
@@ -144,10 +150,12 @@ const MarcheDetail = () => {
               <Badge variant="outline">{t("marches:type.attribution")}</Badge>
             )}
             <Button variant="outline" onClick={() => setGedOpen(true)}>
-              <Paperclip className="h-4 w-4 me-2" /> {t("marches:detail.documents_count", { count: docs.length })}
+              <Paperclip className="h-4 w-4 me-2" /> {docsError ? t("marches:actions.documents") : t("marches:detail.documents_count", { count: docs.length })}
             </Button>
           </div>
         </div>
+
+        {docsError && <p role="alert" className="text-sm text-destructive whitespace-pre-wrap">{docsError}</p>}
 
         <Card>
           <CardHeader><CardTitle className="text-base">{t("marches:detail.sections.general")}</CardTitle></CardHeader>
@@ -215,6 +223,7 @@ const MarcheDetail = () => {
         documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}
         loading={docsLoading}
+        loadError={docsError}
         canUpload={canManage}
         canManageDocuments={canManage}
         onUpload={handleUpload}

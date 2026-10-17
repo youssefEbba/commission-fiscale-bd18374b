@@ -15,6 +15,7 @@ import {
   documentRequirementApi,
   autoriteContractanteApi,
   type AutoriteContractanteDto,
+  utilisationCreditApi, formatApiErrorMessage,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
+import { certificatAmountRestriction, canCorrectCertificatField, canManuallySetCertificatStatus, type UtilisationPresence } from "@/lib/certificatEditability";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -93,6 +95,8 @@ const MiseEnPlaceDetail = () => {
   const { t } = useTranslation(["mise_en_place", "common", "enums"]);
 
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
+  const [utilisationPresence, setUtilisationPresence] = useState<UtilisationPresence>("unknown");
+  const [marcheDocsError, setMarcheDocsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
@@ -158,6 +162,8 @@ const MiseEnPlaceDetail = () => {
     setAdminRefreshKey((k) => k + 1);
     if (!id) return;
     setLoading(true);
+    setUtilisationPresence("unknown");
+    setMarcheDocsError(null);
     try {
       const cert = await certificatCreditApi.getById(Number(id));
       setCertificat(cert);
@@ -166,7 +172,13 @@ const MiseEnPlaceDetail = () => {
         certificatCreditApi.getDocuments(cert.id).catch(() => [] as DocumentDto[]),
         certificatCreditApi.getDecisions(cert.id).catch(() => []),
         cert.demandeCorrectionId ? demandeCorrectionApi.getDocuments(cert.demandeCorrectionId).catch(() => [] as DocumentDto[]) : Promise.resolve([] as DocumentDto[]),
-        cert.marcheId ? marcheApi.getDocuments(cert.marcheId).catch(() => [] as DocumentDto[]) : Promise.resolve([] as DocumentDto[]),
+        cert.marcheId ? marcheApi.getDocuments(cert.marcheId).catch((error) => {
+          setMarcheDocsError(formatApiErrorMessage(error, t("common:editability.market_documents_error")));
+          return [] as DocumentDto[];
+        }) : Promise.resolve([] as DocumentDto[]),
+        utilisationCreditApi.getByCertificat(cert.id)
+          .then((items) => setUtilisationPresence(items.length ? "present" : "none"))
+          .catch(() => setUtilisationPresence("unknown")),
       ]);
       const tagged: DocumentDto[] = [
         ...certDocsRes.map((d) => ({ ...d, _source: "certificat" } as any)),
@@ -266,12 +278,13 @@ const MiseEnPlaceDetail = () => {
   const isDecisionRole = ["DGI", "DGTCP", "DGD", "PRESIDENT"].includes(role as string) && !roleExcluded;
   const isACOrEntreprise = role === "AUTORITE_CONTRACTANTE" || role === "ENTREPRISE";
   const isClosed = ["OUVERT", "ANNULE", "CLOTURE"].includes(c.statut);
+  const amountRestriction = certificatAmountRestriction(c.statut, utilisationPresence);
 
   const isInControle = c.statut === "EN_CONTROLE" || c.statut === "INCOMPLETE" || c.statut === "A_RECONTROLER";
   const canDoVisa = isControlRole && isInControle && !myHasVisa && !myHasOpenRejet;
   const canDoRejetTemp = isControlRole && isInControle && !myHasVisa;
 
-  const canMontants = role === "DGTCP" && isInControle && c.montantCordon == null;
+  const canMontants = role === "DGTCP" && isInControle && c.montantCordon == null && !amountRestriction;
   const dgtcpMontantsRequired = role === "DGTCP" && isInControle && c.montantCordon == null;
 
   const canAnnuler = hasPermission("mise_en_place.annuler") && !["OUVERT", "CLOTURE", "ANNULE"].includes(c.statut);
@@ -279,6 +292,7 @@ const MiseEnPlaceDetail = () => {
   const hasCertDoc = docs.some(d => ((d as any).codeDocument ?? d.type) === "CERTIFICAT_CREDIT_IMPOTS" && d.actif !== false);
 
   const handleStatut = async (statut: CertificatStatut) => {
+    if (!canManuallySetCertificatStatus(statut)) return;
     setActionLoading(true);
     try {
       await certificatCreditApi.updateStatut(c.id, statut);
@@ -324,6 +338,7 @@ const MiseEnPlaceDetail = () => {
   };
 
   const openMontantsDialog = (admin: boolean) => {
+    if (amountRestriction) return;
     setMontantsAdminMode(admin);
     setMontantsMotif("");
     setShowMontants(true);
@@ -573,6 +588,10 @@ const MiseEnPlaceDetail = () => {
         <Card>
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">{t("mise_en_place:detail.actions_block.title")}</h3>
+            {amountRestriction && (role === "DGTCP" || canAdminOverride) && (
+              <p className="mb-3 text-sm text-muted-foreground">{t(`common:editability.${amountRestriction}`)}</p>
+            )}
+            {marcheDocsError && <p role="alert" className="mb-3 text-sm text-destructive whitespace-pre-wrap">{marcheDocsError}</p>}
             <div className="flex flex-wrap gap-2">
               {c.statut === "ENVOYEE" && isControlRole && (
                 <Button variant="default" disabled={actionLoading} onClick={async () => {
@@ -1009,7 +1028,7 @@ const MiseEnPlaceDetail = () => {
             const baseValid =
               (!dgdRequired || (montantCordon !== "" && cordonNum >= 0)) &&
               (!dgiRequired || (montantTVAInt !== "" && tvaNum >= 0));
-            const canSave = baseValid && bdComplete && !cordonMismatch && !tvaMismatch && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
+            const canSave = !amountRestriction && baseValid && bdComplete && !cordonMismatch && !tvaMismatch && !savingMontants && (!montantsAdminMode || !!montantsMotif.trim());
             const fmt2 = (v: number) => formatNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             return (
@@ -1143,6 +1162,7 @@ const MiseEnPlaceDetail = () => {
                 <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-3">
                   <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:me-auto">{t("mise_en_place:dialogs.montants.cancel")}</Button>
                   <Button disabled={!canSave} onClick={async () => {
+                    if (amountRestriction) return;
                     setSavingMontants(true);
                     try {
                       const recap: Record<string, number> = {};
@@ -1183,7 +1203,7 @@ const MiseEnPlaceDetail = () => {
 
       {/* Visas & ouverture administrateur (ADMIN_SI) */}
       <div className="mt-6 space-y-4">
-        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={() => openMontantsDialog(true)} onGenerateCertificatToSign={() => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite })} />
+        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={amountRestriction ? undefined : () => openMontantsDialog(true)} onGenerateCertificatToSign={() => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite })} />
       </div>
 
       <Dialog open={adminResolveId != null} onOpenChange={(o) => { if (!o && !adminResolveLoading) setAdminResolveId(null); }}>
@@ -1227,7 +1247,13 @@ const MiseEnPlaceDetail = () => {
             { key: "taxesConsommation", label: "(c) Taxes de consommation", type: "number", value: c.taxesConsommation ?? "" },
             { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
             { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
-          ]}
+          ].map(field => ({
+            ...field,
+            disabled: !canCorrectCertificatField(field.key, utilisationPresence),
+            hint: !canCorrectCertificatField(field.key, utilisationPresence)
+              ? t(`common:editability.${utilisationPresence === "present" ? "quota_used" : "usage_unknown"}`)
+              : field.hint,
+          }))}
           documents={docs.filter((d) => (d as any)._source === "certificat")}
           extraDocTypes={docTypesDemandables}
           docLabel={(code) => tTypeDocument(code)}
