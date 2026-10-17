@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { echeanceConvention } from "@/lib/conventionEcheance";
+import { canSetConventionActivation } from "@/lib/conventionEditability";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -114,6 +115,7 @@ const ConventionDetail = () => {
   const echeance = echeanceConvention(conv.dateFin);
 
   const handleActivation = async (actif: boolean) => {
+    if (!canSetConventionActivation(conv.statut, actif)) return;
     setActivationLoading(true);
     try {
       const updated = await conventionApi.setActivation(conv.id, actif);
@@ -172,12 +174,15 @@ const ConventionDetail = () => {
                 <Switch
                   id="activation-switch"
                   checked={conv.actif !== false}
-                  disabled={activationLoading}
+                  disabled={activationLoading || !canSetConventionActivation(conv.statut, conv.actif === false)}
                   onCheckedChange={(checked) => {
                     if (checked) handleActivation(true);
                     else setConfirmDeactivate(true);
                   }}
                 />
+                {!canSetConventionActivation(conv.statut, true) && conv.actif === false && (
+                  <span className="text-xs text-muted-foreground">{t("common:editability.convention_cancelled")}</span>
+                )}
               </div>
             )}
             <Button variant="outline" onClick={() => setGedOpen(true)}>

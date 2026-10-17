@@ -7,7 +7,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { GEDDocument, GEDDocumentType } from "@/components/ged/DocumentGED";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
-import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
+import AdminCorrectionCard, { type AdminCorrectionField } from "@/components/admin/AdminCorrectionCard";
 import {
   certificatCreditApi, CertificatCreditDto, CertificatStatut,
   utilisationCreditApi, UtilisationCreditDto, UtilisationStatut,
@@ -24,6 +24,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource, tDocRequirementLabel } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { canCorrectCertificatField, type UtilisationPresence } from "@/lib/certificatEditability";
 
 const STATUT_COLORS_CERT: Record<CertificatStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -72,6 +73,7 @@ const CertificatDetail = () => {
   const { toast } = useToast();
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
   const [utilisations, setUtilisations] = useState<UtilisationCreditDto[]>([]);
+  const [utilisationPresence, setUtilisationPresence] = useState<UtilisationPresence>("unknown");
   const [loading, setLoading] = useState(true);
   const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
 
@@ -91,6 +93,7 @@ const CertificatDetail = () => {
     if (!id) return;
     const certId = Number(id);
     setLoading(true);
+    setUtilisationPresence("unknown");
 
     const fetchCert = async (): Promise<CertificatCreditDto> => {
       try {
@@ -121,8 +124,8 @@ const CertificatDetail = () => {
         try {
           const all = await utilisationCreditApi.getAll();
           return all.filter((u) => u.certificatCreditId === certId);
-        } catch {
-          return [];
+        } catch (error) {
+          throw error;
         }
       }
     };
@@ -141,6 +144,7 @@ const CertificatDetail = () => {
 
         setCertificat(certResult.value);
         setUtilisations(utilsResult.status === "fulfilled" ? utilsResult.value : []);
+        setUtilisationPresence(utilsResult.status === "fulfilled" ? (utilsResult.value.length ? "present" : "none") : "unknown");
         setTvaStock(stockResult.status === "fulfilled" ? stockResult.value : []);
       })
       .catch(() => {
@@ -558,7 +562,7 @@ const CertificatDetail = () => {
         <AdminCorrectionCard
           entity="CERTIFICAT"
           entityId={c.id}
-          fields={[
+          fields={([
             { key: "dateValidite", label: "Date de validité", type: "date", value: c.dateValidite ?? "" },
             {
               key: "montantCordon", label: "Montant cordon", type: "number", value: c.montantCordon ?? "",
@@ -574,7 +578,13 @@ const CertificatDetail = () => {
             { key: "taxesConsommation", label: "(c) Taxes de consommation", type: "number", value: c.taxesConsommation ?? "" },
             { key: "montantMarcheHt", label: "(f) Montant du marché HT", type: "number", value: c.montantMarcheHt ?? "" },
             { key: "tvaCollecteeTravaux", label: "(g) TVA collectée sur les travaux", type: "number", value: c.tvaCollecteeTravaux ?? "" },
-          ]}
+          ] satisfies AdminCorrectionField[]).map(field => ({
+            ...field,
+            disabled: !canCorrectCertificatField(field.key, utilisationPresence),
+            hint: !canCorrectCertificatField(field.key, utilisationPresence)
+              ? t(`common:editability.${utilisationPresence === "present" ? "quota_used" : "usage_unknown"}`)
+              : field.hint,
+          }))}
           documents={gedDocs as unknown as DocumentDto[]}
           extraDocTypes={gedDocTypes.map((o) => o.value)}
           docLabel={(code) => gedDocTypes.find((o) => o.value === code)?.label ?? tTypeDocument(code)}

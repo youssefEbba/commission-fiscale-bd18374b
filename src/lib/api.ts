@@ -68,6 +68,7 @@ export function getApiErrorBusinessCode(err: unknown): string | undefined {
 /** Construit un message utilisateur lisible à partir d'une erreur API. */
 export function formatApiErrorMessage(err: unknown, fallback = "Une erreur est survenue"): string {
   if (!isApiError(err)) return (err as Error)?.message || fallback;
+  if (err.message?.trim()) return err.message;
   const code = getApiErrorBusinessCode(err);
   switch (code) {
     case "MARCHE_HORS_PERIMETRE_AC":
@@ -1298,7 +1299,7 @@ export interface CreateCertificatCreditRequest extends CertificatRecapFiscal {
   brouillon?: boolean;
 }
 
-/** Corps de PATCH /certificats-credit/{id}/montants. Récap fiscal optionnel. */
+/** Corps de POST /certificats-credit/{id}/montants. Récap fiscal optionnel. */
 export interface UpdateCertificatCreditMontantsRequest extends CertificatRecapFiscal {
   montantCordon: number;
   montantTVAInterieure: number;
@@ -1384,7 +1385,7 @@ export const certificatCreditApi = {
     recap?: CertificatRecapFiscal,
   ) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
-      method: "PATCH",
+      method: "POST",
       body: { montantCordon, montantTVAInterieure, ...(recap ?? {}) } satisfies UpdateCertificatCreditMontantsRequest,
     }),
   reject: (id: number, motif: string) =>

@@ -31,6 +31,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { canEditMarche } from "@/lib/marcheEditability";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -70,6 +71,7 @@ const Marches = () => {
   const [gedMarche, setGedMarche] = useState<MarcheDto | null>(null);
   const [gedDocs, setGedDocs] = useState<DocumentDto[]>([]);
   const [gedLoading, setGedLoading] = useState(false);
+  const [gedError, setGedError] = useState<string | null>(null);
 
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelMarche, setCancelMarche] = useState<MarcheDto | null>(null);
@@ -112,6 +114,7 @@ const Marches = () => {
   };
 
   const openEdit = (m: MarcheDto) => {
+    if (!canEditMarche(m.statut)) return;
     setEditing(m);
     setForm({
       conventionId: m.conventionId || 0,
@@ -195,11 +198,14 @@ const Marches = () => {
     setGedMarche(m);
     setGedOpen(true);
     setGedLoading(true);
+    setGedError(null);
+    setGedDocs([]);
     try {
       const docs = await marcheApi.getDocuments(m.id);
       setGedDocs(docs);
-    } catch {
+    } catch (error) {
       setGedDocs([]);
+      setGedError(formatApiErrorMessage(error, t("marches:detail.load_error")));
     } finally {
       setGedLoading(false);
     }
@@ -209,8 +215,15 @@ const Marches = () => {
     await marcheApi.uploadDocument(marcheId, type as TypeDocumentMarche, file);
   };
   const handleGedRefresh = async (marcheId: number) => {
-    const docs = await marcheApi.getDocuments(marcheId);
-    setGedDocs(docs);
+    setGedError(null);
+    try {
+      const docs = await marcheApi.getDocuments(marcheId);
+      setGedDocs(docs);
+    } catch (error) {
+      setGedDocs([]);
+      setGedError(formatApiErrorMessage(error, t("marches:detail.load_error")));
+      throw error;
+    }
   };
   const handleGedDelete = async (marcheId: number, docId: number) => {
     await marcheApi.deleteDocument(marcheId, docId);
@@ -241,6 +254,7 @@ const Marches = () => {
   };
 
   const handleSubmit = async () => {
+    if (editing && !canEditMarche(editing.statut)) return;
     if (!form.numeroMarche?.trim()) {
       toast({ title: errTitle, description: t("marches:form.errors.numero_required"), variant: "destructive" });
       return;
@@ -392,7 +406,7 @@ const Marches = () => {
                                   <DropdownMenuItem onClick={() => openGed(m)}>
                                     <FileText className="h-4 w-4 me-2" /> {t("marches:actions.ged")}
                                   </DropdownMenuItem>
-                                  {isAC && m.statut !== "CLOTURE" && m.statut !== "ANNULE" && (
+                                  {isAC && canEditMarche(m.statut) && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => openEdit(m)}>
@@ -653,8 +667,9 @@ const Marches = () => {
         documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={gedDocs}
         loading={gedLoading}
-        canUpload={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
-        canManageDocuments={(isAC || isDelegate) && gedMarche?.statut !== "CLOTURE" && gedMarche?.statut !== "ANNULE"}
+        loadError={gedError}
+        canUpload={(isAC || isDelegate) && canEditMarche(gedMarche?.statut) && !gedError}
+        canManageDocuments={(isAC || isDelegate) && canEditMarche(gedMarche?.statut) && !gedError}
         onUpload={handleGedUpload}
         onRefresh={handleGedRefresh}
         onDeleteDocument={handleGedDelete}
