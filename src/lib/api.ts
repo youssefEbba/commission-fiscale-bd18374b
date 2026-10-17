@@ -68,6 +68,7 @@ export function getApiErrorBusinessCode(err: unknown): string | undefined {
 /** Construit un message utilisateur lisible à partir d'une erreur API. */
 export function formatApiErrorMessage(err: unknown, fallback = "Une erreur est survenue"): string {
   if (!isApiError(err)) return (err as Error)?.message || fallback;
+  if (err.message?.trim()) return err.message;
   const code = getApiErrorBusinessCode(err);
   switch (code) {
     case "MARCHE_HORS_PERIMETRE_AC":

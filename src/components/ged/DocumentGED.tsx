@@ -41,6 +41,7 @@ interface DocumentGEDProps {
   documentTypes: GEDDocumentType[];
   documents: GEDDocument[];
   loading: boolean;
+  loadError?: string | null;
   canUpload: boolean;
   canManageDocuments?: boolean;
   onUpload: (dossierId: number, type: string, file: File) => Promise<void>;
@@ -59,7 +60,7 @@ const getFileIcon = (filename: string) => {
 
 const DocumentGED = ({
   open, onOpenChange, title, dossierId, documentTypes,
-  documents, loading, canUpload, canManageDocuments, onUpload, onRefresh,
+  documents, loading, loadError, canUpload, canManageDocuments, onUpload, onRefresh,
   onDeleteDocument, onReplaceDocument,
 }: DocumentGEDProps) => {
   const { t } = useTranslation();
@@ -242,6 +243,11 @@ const DocumentGED = ({
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="flex items-start gap-2 border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p className="whitespace-pre-wrap break-words">{loadError}</p>
           </div>
         ) : (
           <div className="space-y-4">

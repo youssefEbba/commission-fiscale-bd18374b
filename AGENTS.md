@@ -6,3 +6,6 @@
 - Permissions métier : passer par `hasPermission(...)` du `AuthContext` (JWT d'abord, repli `ROLE_PERMISSIONS`) — ne pas reproduire de règle métier par rôle dans les pages.
 - Création de comptes : passe uniquement par la demande de rattachement publique (`rattachementPublicApi`) validée par le Président, ou par les comptes rattachés d'une entité (`EntiteComptesCard`) — `/api/auth/register` n'existe plus côté serveur, ne jamais le réintroduire.
 - Référentiels d'entités (entreprises, autorités) : réutiliser `EntiteReferentielPage` (liste + CRUD conditionné aux permissions) plutôt que de dupliquer une page par type.
+- Centralize announced server write restrictions per object in `certificatEditability`, `marcheEditability`, and `conventionEditability`; keep permissions separate so future server capabilities can replace status-derived checks.
+- Track credit utilisation presence as unknown/none/present from the existing server query; never infer absence from a failed request, and keep admin descriptive corrections independent of initial amount-entry locks.
+- DocumentGED accepts an explicit load error; callers must distinguish inaccessible market documents from a successful empty list and must clear stale documents when loading fails.
