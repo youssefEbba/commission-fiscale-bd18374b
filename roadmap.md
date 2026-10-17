@@ -1,5 +1,11 @@
 # Roadmap — recette Commission Fiscale (06/10/2026)
 
+## Écritures selon le stade (17/10/2026)
+- [ ] Centraliser les restrictions crédits, marchés et activation des conventions.
+- [ ] Adapter montants, transitions, corrections administrateur et modification des marchés.
+- [ ] Distinguer les erreurs de chargement des documents du marché d'une liste vide.
+- [ ] Préserver les messages serveur, traduire les explications FR/AR et tester les règles.
+
 ## 1. Conventions : périmètre, activation, échéance
 - [x] `ConventionDto.actif` + `conventionApi.setActivation` (PATCH /api/conventions/{id}/activation)
 - [x] Interrupteur d'activation sur la fiche (permission `convention.activate`), confirmation avant désactivation
