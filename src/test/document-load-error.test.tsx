@@ -2,7 +2,10 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import DocumentGED from "@/components/ged/DocumentGED";
 
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock("react-i18next", async (importOriginal) => ({
+  ...await importOriginal<typeof import("react-i18next")>(),
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
 afterEach(cleanup);
 const props = {
   open: true, onOpenChange: vi.fn(), title: "Documents", dossierId: 1,
