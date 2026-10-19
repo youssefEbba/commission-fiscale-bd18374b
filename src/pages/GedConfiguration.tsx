@@ -56,6 +56,7 @@ const GedConfiguration = () => {
   const [newTypeLibelle, setNewTypeLibelle] = useState("");
   const [newTypeLibelleAr, setNewTypeLibelleAr] = useState("");
   const [obligatoire, setObligatoire] = useState(true);
+  const [sens, setSens] = useState<"ENTREE" | "SORTIE">("ENTREE");
   const [typesAutorises, setTypesAutorises] = useState<FormatFichier[]>(["PDF", "WORD", "EXCEL", "IMAGE"]);
   const [description, setDescription] = useState("");
   const [ordreAffichage, setOrdreAffichage] = useState(1);
@@ -239,6 +240,7 @@ const GedConfiguration = () => {
     setEditItem(null);
     setTypeDocument("");
     setObligatoire(true);
+    setSens("ENTREE");
     setTypesAutorises(["PDF", "WORD", "EXCEL", "IMAGE"]);
     setDescription("");
     setOrdreAffichage(1);
@@ -264,6 +266,7 @@ const GedConfiguration = () => {
     setDialogProcessus(item.processus as ProcessusType);
     setTypeDocument(item.codeDocument || item.typeDocument || "");
     setObligatoire(item.obligatoire);
+    setSens(item.sens === "SORTIE" ? "SORTIE" : "ENTREE");
     setTypesAutorises(item.typesAutorises || []);
     setDescription(item.description || "");
     setOrdreAffichage(item.ordreAffichage || 1);
@@ -309,6 +312,7 @@ const GedConfiguration = () => {
       codeDocument: codeFinal,
       libelle: libelleInline,
       obligatoire,
+      sens,
       typesAutorises,
       description: description.trim(),
       ordreAffichage,
@@ -477,13 +481,9 @@ const GedConfiguration = () => {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {req.deposableParLeDemandeur == null ? (
-                                  <span className="text-muted-foreground text-sm">—</span>
-                                ) : (
-                                  <Badge variant="outline" className={req.deposableParLeDemandeur ? "" : "border-accent text-accent-foreground bg-accent/20"}>
-                                    {req.deposableParLeDemandeur ? t("ged:config.famille.demandeur") : t("ged:config.famille.commission")}
-                                  </Badge>
-                                )}
+                                <Badge variant="outline" className={req.sens === "SORTIE" ? "border-accent text-accent-foreground bg-accent/20" : ""}>
+                                  {req.sens === "SORTIE" ? t("ged:config.sens.SORTIE") : t("ged:config.sens.ENTREE")}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
@@ -597,6 +597,18 @@ const GedConfiguration = () => {
               <Label>{t("ged:config.dialog.required_label")}</Label>
               <Switch checked={obligatoire} onCheckedChange={setObligatoire} />
               <span className="text-sm text-muted-foreground">{obligatoire ? t("ged:config.yes") : t("ged:config.no")}</span>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("ged:config.dialog.sens_label")}</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(["ENTREE", "SORTIE"] as const).map((v) => (
+                  <button key={v} type="button" onClick={() => setSens(v)}
+                    className={`rounded-md border p-3 text-start transition-colors ${sens === v ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>
+                    <div className="text-sm font-medium text-foreground">{t(`ged:config.sens.${v}`)}</div>
+                    <div className="text-xs text-muted-foreground">{t(`ged:config.sens.${v}_help`)}</div>
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>{t("ged:config.dialog.formats_label")}</Label>

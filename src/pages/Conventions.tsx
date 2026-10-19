@@ -950,7 +950,7 @@ const Conventions = () => {
             <Button onClick={handleCreate} disabled={
               creating || !form.reference || !form.intitule ||
               (gedRequirements.length > 0
-                ? gedRequirements.filter(r => r.obligatoire).some(r => !createDocs.some(d => d.type === r.typeDocument))
+                ? gedRequirements.filter(r => r.obligatoire && r.sens !== "SORTIE").some(r => !createDocs.some(d => d.type === r.typeDocument))
                 : !createDocs.some(d => d.type === "CONVENTION_CONTRAT"))
             }>
               {creating ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Plus className="h-4 w-4 me-1" />}

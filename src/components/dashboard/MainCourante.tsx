@@ -17,6 +17,9 @@ const hrefFor = (l: MainCouranteLigneDto): string => {
     if (l.processus === "CLOTURE") return `/dashboard/cloture`;
     return `/dashboard/certificats/${l.id}`;
   }
+  if (l.type === "UtilisationCredit") return `/dashboard/utilisations/${l.id}`;
+  if (l.type === "DemandeRattachement") return `/dashboard/demandes-rattachement/${l.id}`;
+  if (l.type === "DemandeResetPassword") return `/dashboard/utilisateurs`;
   return "/dashboard";
 };
 

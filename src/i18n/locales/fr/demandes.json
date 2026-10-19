@@ -101,7 +101,7 @@
     },
     "pieces": {
       "title": "Pièces du dossier",
-      "empty": "Aucun document associé",
+      "empty": "Aucun document disponible pour le moment",
       "to_correct": "À corriger",
       "locked": "Verrouillé",
       "new_version": "Nouvelle version",

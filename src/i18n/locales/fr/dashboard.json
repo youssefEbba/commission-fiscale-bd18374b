@@ -91,7 +91,9 @@
       "TRANSFERT": "Transfert",
       "CLOTURE": "Clôture",
       "REJET_TEMPORAIRE": "Rejet temporaire",
-      "UTILISATION": "Utilisation"
+      "UTILISATION": "Utilisation",
+      "BROUILLON": "Brouillon",
+      "ADMINISTRATION": "Administration"
     }
   }
 }

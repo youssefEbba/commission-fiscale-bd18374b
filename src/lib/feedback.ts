@@ -3,9 +3,10 @@ import i18n from "@/i18n";
 import { formatApiErrorMessage, isApiError } from "@/lib/api";
 import { emitErrorDialog } from "@/components/ErrorDialog";
 
-/** Tente de traduire une erreur API via `errors.<code>`, sinon retombe sur le message brut. */
+/** Preserve the server's user-facing message before attempting a generic translation. */
 function translateApiError(err: unknown, fallback: string): string {
   if (isApiError(err)) {
+    if (err.message?.trim()) return err.message;
     const code = err.code;
     if (code) {
       const key = `errors:${code.toLowerCase()}`;

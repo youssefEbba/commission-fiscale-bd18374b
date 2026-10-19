@@ -34,6 +34,7 @@ export interface AdminCorrectionField {
   value?: string | number | null;
   /** Message d'avertissement affiché sous le champ (ex. verrou 409). */
   hint?: string;
+  disabled?: boolean;
 }
 
 interface AdminCorrectionCardProps {
@@ -111,7 +112,7 @@ const AdminCorrectionCard = ({
   };
 
   // Seuls les champs réellement modifiés sont envoyés (patch partiel).
-  const changedFields = fields.filter((f) => (values[f.key] ?? "") !== (initial[f.key] ?? ""));
+  const changedFields = fields.filter((f) => !f.disabled && (values[f.key] ?? "") !== (initial[f.key] ?? ""));
   const hasDocReplacement = !!docCode && !!docFile;
   const canSubmit = motif.trim().length > 0 && (changedFields.length > 0 || hasDocReplacement);
 
@@ -219,6 +220,8 @@ const AdminCorrectionCard = ({
                         id={`admin-field-${f.key}`}
                         type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
                         value={values[f.key] ?? ""}
+                        disabled={f.disabled}
+                        step={f.type === "number" ? "0.01" : undefined}
                         onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
                       />
                       {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
