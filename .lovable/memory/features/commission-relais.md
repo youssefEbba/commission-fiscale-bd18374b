@@ -21,5 +21,5 @@ Rôle `COMMISSION_RELAIS` (compte de démo `commission_relais` / `123456`) perme
 - En impersonation, `hasRole(["ENTREPRISE"])` ou `hasRole(["AUTORITE_CONTRACTANTE"])` réussit naturellement → toute la sidebar et toutes les routes métier deviennent disponibles sans modification.
 
 ## Restrictions
-- Le back interdit les actions sensibles en impersonation (gestion délégués notamment).
+- En relais, le compte a tous les accès du compte rattaché à l'entité représentée, et aucun de plus (délégués compris : consultation, modification, activation, affectations ; la création reste impossible pour tous). Les marchés vus en relais sont ceux de l'autorité représentée uniquement.
 - Ne jamais ajouter le rôle `COMMISSION_RELAIS` dans les `allowedRoles` des routes métier : laisser le rôle effectif faire le travail.
