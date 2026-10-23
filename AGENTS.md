@@ -9,3 +9,4 @@
 - Centralize announced server write restrictions per object in `certificatEditability`, `marcheEditability`, and `conventionEditability`; keep permissions separate so future server capabilities can replace status-derived checks.
 - Track credit utilisation presence as unknown/none/present from the existing server query; never infer absence from a failed request, and keep admin descriptive corrections independent of initial amount-entry locks.
 - DocumentGED accepts an explicit load error; callers must distinguish inaccessible market documents from a successful empty list and must clear stale documents when loading fails.
+- Commission relais : pendant une prise de relais, `AuthContext` utilise l'entité représentée (`acting*`) comme `autoriteContractanteId`/`entrepriseId` du compte (`resolveEntityIds`) — aucun écran ne doit bloquer ou masquer une action « parce qu'en relais », le serveur décide.
