@@ -130,3 +130,16 @@
 .excel-native-preview tr:hover td {
   background: hsl(var(--primary) / 0.04);
 }
+
+/* Masquer les flèches des champs numériques dans tous les formulaires */
+@layer base {
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
