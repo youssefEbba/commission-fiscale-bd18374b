@@ -66,6 +66,27 @@ interface AuthContextType {
 
 const ADMIN_ROLES: AppRole[] = ["PRESIDENT", "ADMIN_SI"];
 
+/**
+ * En prise de relais, l'entité du compte « commission_relais » est vide : l'entité
+ * représentée (acting*) tient lieu d'entité du compte, comme le fait le serveur.
+ * Hors relais, seules les entités du compte sont retenues.
+ */
+export function resolveEntityIds(input: {
+  impersonating: boolean;
+  autoriteContractanteId?: number;
+  entrepriseId?: number;
+  actingAutoriteContractanteId?: number;
+  actingEntrepriseId?: number;
+}): { autoriteContractanteId?: number; entrepriseId?: number } {
+  if (!input.impersonating) {
+    return { autoriteContractanteId: input.autoriteContractanteId, entrepriseId: input.entrepriseId };
+  }
+  return {
+    autoriteContractanteId: input.actingAutoriteContractanteId ?? input.autoriteContractanteId,
+    entrepriseId: input.actingEntrepriseId ?? input.entrepriseId,
+  };
+}
+
 function getStoredUser(): AuthUser | null {
   try {
     const stored = localStorage.getItem("auth_user");
@@ -99,6 +120,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const actingAutoriteContractanteId = (data as any).actingAutoriteContractanteId ?? (payload as any).actingAutoriteContractanteId;
     // nativeRole: priority to existing native role (preserved across impersonations), else current role
     const nativeRole = (previous?.nativeRole as AppRole) || (data.role as AppRole);
+    const entityIds = resolveEntityIds({
+      impersonating,
+      autoriteContractanteId: data.autoriteContractanteId,
+      entrepriseId: data.entrepriseId,
+      actingAutoriteContractanteId,
+      actingEntrepriseId,
+    });
     return {
       token: data.token,
       userId: data.userId,
@@ -106,8 +134,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       role: data.role as AppRole,
       nativeRole,
       nomComplet: data.nomComplet,
-      autoriteContractanteId: data.autoriteContractanteId,
-      entrepriseId: data.entrepriseId,
+      autoriteContractanteId: entityIds.autoriteContractanteId,
+      entrepriseId: entityIds.entrepriseId,
       permissions,
       impersonating,
       actingEntrepriseId,
