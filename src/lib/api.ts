@@ -385,6 +385,9 @@ export interface DemandeRattachementDto {
   roleDemande?: RattachementRole;
   typeEntite?: TypeEntite;
   entiteId?: number | null;
+  /** Nom de l'entité existante choisie, résolu par le serveur (champ réellement renvoyé). */
+  entiteNomResolu?: string | null;
+  /** Ancien nom supposé — conservé en repli uniquement. */
   entiteNomAffiche?: string | null;
   /** true = l'entité n'existe pas encore et sera créée telle que décrite à l'approbation. */
   entiteNouvelle?: boolean;
@@ -395,11 +398,14 @@ export interface DemandeRattachementDto {
   entiteActivite?: string | null;
   entiteMinistereTutelle?: string | null;
   motifRefus?: string | null;
+  /** Date de dépôt renvoyée par le serveur. */
+  dateCreation?: string;
   dateDemande?: string;
   dateDecision?: string | null;
   /** Champs de la réponse publique de suivi (volontairement pauvre : pas de nom ni de téléphone). */
   dateDepot?: string;
   dateTraitement?: string | null;
+  traiteParUsername?: string | null;
   decideurNom?: string | null;
   documents?: DocumentDto[];
 }

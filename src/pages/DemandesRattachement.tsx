@@ -71,10 +71,10 @@ export default function DemandesRattachement() {
                         <TableCell>{d.nomComplet || d.username}<div className="text-xs text-muted-foreground">{d.email}</div></TableCell>
                         <TableCell>{d.roleDemande ? t(`roles.${d.roleDemande}`) : "—"}</TableCell>
                         <TableCell>
-                          {d.entiteNomAffiche || d.entiteNom || "—"}
+                          {d.entiteNomResolu || d.entiteNomAffiche || d.entiteNom || "—"}
                           {d.entiteNouvelle && <Badge variant="outline" className="ms-2 border-accent">{t("queue.entite_a_creer")}</Badge>}
                         </TableCell>
-                        <TableCell>{formatDateTime(d.dateDemande)}</TableCell>
+                        <TableCell>{formatDateTime(d.dateCreation || d.dateDemande)}</TableCell>
                         <TableCell><Badge variant={statutVariant(d.statut)}>{t(`statut.${d.statut}`)}</Badge></TableCell>
                       </ClickableTableRow>
                     );
