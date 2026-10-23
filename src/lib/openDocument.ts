@@ -41,7 +41,7 @@ async function fetchAsBlob(url: string): Promise<Blob> {
       status: res.status,
       code: body?.code || `HTTP_${res.status}`,
       message: body?.message || body?.error || text.slice(0, 200) || `HTTP ${res.status}`,
-    } as never);
+    });
   }
   return res.blob();
 }
