@@ -4,6 +4,7 @@
 // puis ouvre le fichier via une URL blob (fonctionne sur Chrome/Firefox).
 // ============================================
 import { API_BASE, NGROK_HEADERS } from "./apiConfig";
+import { ApiRequestError } from "./api";
 
 export interface OpenableDoc {
   id?: number | string;
@@ -31,12 +32,16 @@ async function fetchAsBlob(url: string): Promise<Blob> {
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(url, { headers });
   if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try {
-      const t = await res.text();
-      if (t) msg += ` — ${t.slice(0, 200)}`;
-    } catch { /* noop */ }
-    throw new Error(msg);
+    // Le serveur renvoie une erreur structurée : afficher son message lisible, pas le JSON brut.
+    let text = "";
+    try { text = await res.text(); } catch { /* noop */ }
+    let body: { message?: string; error?: string; code?: string } | null = null;
+    try { body = text ? JSON.parse(text) : null; } catch { body = null; }
+    throw new ApiRequestError({
+      status: res.status,
+      code: body?.code || `HTTP_${res.status}`,
+      message: body?.message || body?.error || text.slice(0, 200) || `HTTP ${res.status}`,
+    } as never);
   }
   return res.blob();
 }
