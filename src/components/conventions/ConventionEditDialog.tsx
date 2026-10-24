@@ -15,7 +15,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { CheckCircle, Edit, Loader2 } from "lucide-react";
 import { formatNumber } from "@/i18n/format";
 import {
-  buildUpdateConventionRequest, conventionToEditForm, ConventionEditForm,
+  buildUpdateConventionRequest, conventionToEditForm, ConventionEditForm, conventionDateError,
 } from "@/lib/conventionEditability";
 
 /** Devises proposées si le référentiel serveur est vide ou indisponible (mêmes valeurs qu'à la création). */
@@ -101,12 +101,10 @@ const ConventionEditDialog = ({ convention, open, onOpenChange, onSaved }: Props
       toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.missing_required"), variant: "destructive" });
       return;
     }
-    if (form.dateSignature && form.dateSignature > today) {
-      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.date_signature_future"), variant: "destructive" });
-      return;
-    }
-    if (form.dateFin && form.dateFin < today) {
-      toast({ title: t("common:errors.title", "Erreur"), description: t("conventions:create.date_fin_past"), variant: "destructive" });
+    // Seules les dates modifiées sont contrôlées : une date enregistrée déjà passée n'empêche pas de corriger un autre champ.
+    const dateError = conventionDateError(form, today, conventionToEditForm(convention));
+    if (dateError) {
+      toast({ title: t("common:errors.title", "Erreur"), description: t(`conventions:create.${dateError}`), variant: "destructive" });
       return;
     }
     setSaving(true);

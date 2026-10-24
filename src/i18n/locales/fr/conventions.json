@@ -167,7 +167,10 @@
   "cancel_dialog": {
     "title": "Annuler la convention",
     "confirm": "Êtes-vous sûr de vouloir annuler la convention {{ref}} ? Cette action est irréversible.",
-    "success": "Convention annulée"
+    "success": "Convention annulée",
+    "definitive": "Une convention annulée ne peut plus être réactivée ni modifiée.",
+    "motif_optional": "Motif (facultatif)",
+    "motif_placeholder": "Indiquer le motif de l'annulation…"
   },
   "statut_change": {
     "success": "Convention {{label}}"

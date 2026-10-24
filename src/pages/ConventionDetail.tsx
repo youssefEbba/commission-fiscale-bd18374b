@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
-import { ArrowLeft, CalendarClock, FileText, Loader2, Paperclip, Pencil, Power } from "lucide-react";
+import { ArrowLeft, Ban, CalendarClock, FileText, Loader2, Paperclip, Pencil, Power } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
@@ -21,8 +21,9 @@ import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { echeanceConvention } from "@/lib/conventionEcheance";
-import { canSetConventionActivation, canEditConvention } from "@/lib/conventionEditability";
+import { canSetConventionActivation, canEditConvention, conventionCancelMode } from "@/lib/conventionEditability";
 import ConventionEditDialog from "@/components/conventions/ConventionEditDialog";
+import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -59,6 +60,7 @@ const ConventionDetail = () => {
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [activationLoading, setActivationLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   usePageTitle("conventions:detail.title", { ref: conv?.reference || `#${id}` });
 
@@ -114,6 +116,7 @@ const ConventionDetail = () => {
 
   const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
   const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"));
+  const cancelMode = conventionCancelMode(conv, user?.autoriteContractanteId, hasPermission("convention.annuler"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const devise = conv.deviseOrigine || "MRU";
   const echeance = echeanceConvention(conv.dateFin);
 
@@ -193,6 +196,11 @@ const ConventionDetail = () => {
                 <Pencil className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
               </Button>
             )}
+            {cancelMode && (
+              <Button variant="outline" className="text-destructive" onClick={() => setCancelOpen(true)}>
+                <Ban className="h-4 w-4 me-2" /> {t("conventions:actions.cancel")}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setGedOpen(true)}>
               <Paperclip className="h-4 w-4 me-2" /> {t("conventions:detail.documents_button", { count: docs.length })}
             </Button>
@@ -258,6 +266,14 @@ const ConventionDetail = () => {
         open={editOpen}
         onOpenChange={setEditOpen}
         onSaved={(updated) => { setConv(updated); load(); }}
+      />
+
+      <ConventionCancelDialog
+        convention={conv}
+        mode={cancelMode}
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        onCancelled={(updated) => { if (updated) setConv(updated); load(); }}
       />
 
       <DocumentGED
