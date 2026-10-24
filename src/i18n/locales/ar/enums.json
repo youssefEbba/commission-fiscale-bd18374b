@@ -226,7 +226,8 @@
     "DEMANDE_UTILISATION": "طلب الاستخدام",
     "DEMANDE_MOTIVEE_TRANSFERT": "طلب مُعلَّل للتحويل",
     "DECLARATION_CLOTURE_DOUANE": "إقرار الإقفال الجمركي",
-    "LISTE_CREDITS_A_CLOTURER": "قائمة الأرصدة الواجب إقفالها"
+    "LISTE_CREDITS_A_CLOTURER": "قائمة الأرصدة الواجب إقفالها",
+    "RECU_DEPOT": "وصل الإيداع"
   },
   "type_utilisation": {
     "DOUANE": "الجمارك",
