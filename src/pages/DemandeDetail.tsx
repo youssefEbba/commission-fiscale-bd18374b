@@ -1021,7 +1021,7 @@ const DemandeDetail = () => {
         )}
 
         {/* Visas de la commission — substitution administrateur */}
-        <AdminVisasCard demandeId={selected.id} onSuccess={fetchDetail} onGenerateAdoptionLetter={handleGenerateAdoptionLetter} />
+        <AdminVisasCard demandeId={selected.id} demande={selected} onSuccess={() => { fetchDetail(); pageVisa.reload(); }} onGenerateAdoptionLetter={handleGenerateAdoptionLetter} />
 
         {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
         <AdminCorrectionCard
