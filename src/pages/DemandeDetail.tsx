@@ -38,6 +38,8 @@ import { API_BASE } from "@/lib/apiConfig";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
 import AdminVisasCard from "@/components/admin/AdminVisasCard";
+import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
+import { openDocument, downloadDocument } from "@/lib/openDocument";
 
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -130,6 +132,7 @@ const DemandeDetail = () => {
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [recuBusy, setRecuBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
@@ -530,6 +533,36 @@ const DemandeDetail = () => {
     );
   }
 
+  // Reçu de dépôt : toujours proposé à l'autorité contractante (y compris en relais) dès que la demande est déposée.
+  const canSeeRecu = hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"]) && selected.statut !== "BROUILLON";
+  const docCode = (d: DocumentDto) => ((d as any).codeDocument ?? d.type) as string;
+  const recuDoc = [...docs.filter(d => docCode(d) === "RECU_DEPOT")]
+    .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
+  const handleRecu = async (mode: "open" | "download") => {
+    setRecuBusy(true);
+    try {
+      if (recuDoc) {
+        await (mode === "open" ? openDocument(recuDoc) : downloadDocument(recuDoc));
+        return;
+      }
+      // Reçu enregistré absent : reconstitution à partir du dossier (statut actuel omis).
+      const blob = generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true });
+      const url = URL.createObjectURL(blob);
+      if (mode === "open" && window.open(url, "_blank", "noopener,noreferrer")) {
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = url; a.download = recuDepotFileName(selected);
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch (e: any) {
+      toast({ title: t("demandes:detail.recu_card.error"), description: e?.message, variant: "destructive" });
+    } finally {
+      setRecuBusy(false);
+    }
+  };
+
   const decs = selected.decisions || [];
   const DECISION_ROLES_LIST = ["DGD", "DGTCP", "DGI", "DGB"];
 
@@ -623,6 +656,29 @@ const DemandeDetail = () => {
             </div>
           </CardContent>
         </Card>
+
+        {canSeeRecu && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 flex flex-wrap items-center gap-3">
+              <FileText className="h-8 w-8 text-primary shrink-0" />
+              <div className="flex-1 min-w-[12rem]">
+                <p className="text-sm font-semibold">{t("demandes:detail.recu_card.title")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {recuDoc ? t("demandes:detail.recu_card.description") : t("demandes:detail.recu_card.not_stored")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" disabled={recuBusy} onClick={() => handleRecu("open")}>
+                  <ExternalLink className="h-4 w-4 me-1" /> {t("demandes:detail.recu_card.open")}
+                </Button>
+                <Button size="sm" disabled={recuBusy} onClick={() => handleRecu("download")}>
+                  {recuBusy ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
+                  {t("demandes:detail.recu_card.download")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Crédits demandés */}
         {(() => {
@@ -905,7 +961,8 @@ const DemandeDetail = () => {
               <div className="space-y-2">
                 {(() => {
                   const SPECIAL_TYPES = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
-                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type));
+                  // Le reçu de dépôt a sa propre carte pour l'autorité contractante.
+                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
                   const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
                     const key = (d.type && d.type.trim()) ? d.type : `__doc_${d.id}`;
                     if (!acc[key]) acc[key] = [];
