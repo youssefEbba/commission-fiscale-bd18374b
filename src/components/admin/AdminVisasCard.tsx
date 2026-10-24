@@ -162,6 +162,9 @@ const AdminVisasCard = ({ demandeId, demande, onSuccess, onGenerateAdoptionLette
                           </span>
                         </p>
                       )}
+                      {!v.pose && v.saisieMontantsExigee && (
+                        <p className="text-[11px] text-muted-foreground">{t("correction_douaniere:montants.admin_row_hint")}</p>
+                      )}
                       {!v.pose && !v.visableParAdmin && v.motifBlocage && (
                         <p className="text-[11px] text-amber-700 flex items-start gap-1">
                           <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> {v.motifBlocage}
