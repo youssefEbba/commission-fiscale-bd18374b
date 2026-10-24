@@ -226,7 +226,8 @@
     "DEMANDE_UTILISATION": "Demande d'utilisation",
     "DEMANDE_MOTIVEE_TRANSFERT": "Demande motivée de transfert",
     "DECLARATION_CLOTURE_DOUANE": "Déclaration de clôture douane",
-    "LISTE_CREDITS_A_CLOTURER": "Liste des crédits à clôturer"
+    "LISTE_CREDITS_A_CLOTURER": "Liste des crédits à clôturer",
+    "RECU_DEPOT": "Reçu de dépôt"
   },
   "type_utilisation": {
     "DOUANE": "Douane",
