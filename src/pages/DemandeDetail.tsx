@@ -704,17 +704,18 @@ const DemandeDetail = () => {
                 <div className="grid gap-3 sm:grid-cols-3 text-sm">
                   <div className="rounded-lg border border-border p-3">
                     <span className="text-muted-foreground text-xs">Crédit intérieur (DGI)</span>
-                    <p className="font-medium">{hasInt ? `${formatAmount(ci)} MRU` : "—"}</p>
+                    <p className="font-medium">{hasInt ? formatAmount(ci) : "—"}</p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <span className="text-muted-foreground text-xs">Crédit extérieur (DGD)</span>
-                    <p className="font-medium">{hasExt ? `${formatAmount(ce)} MRU` : "—"}</p>
+                    <p className="font-medium">{hasExt ? formatAmount(ce) : "—"}</p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <span className="text-muted-foreground text-xs">Total</span>
-                    <p className="font-semibold">{hasInt || hasExt ? `${formatAmount(ci + ce)} MRU` : "—"}</p>
+                    <p className="font-semibold">{hasInt || hasExt ? formatAmount(ci + ce) : "—"}</p>
                   </div>
                 </div>
+                <CorrectionCreditsComparison demande={selected} />
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs text-muted-foreground">Visas requis :</span>
                   {visas.map((v) => (
