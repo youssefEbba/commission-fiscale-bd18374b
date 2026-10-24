@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { demandeCorrectionApi, type VisaEtatDto } from "@/lib/api";
-import { formatApiErrorMessage } from "@/lib/api";
+import { demandeCorrectionApi, formatApiErrorMessage, type VisaEtatDto } from "@/lib/api";
 
 const DIRECTIONS = ["DGD", "DGTCP", "DGI", "DGB"];
 
