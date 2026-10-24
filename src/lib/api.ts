@@ -713,10 +713,13 @@ export interface DemandeCorrectionDto {
   reference?: string;
   /** Intitulé libre du marché (remplace la création de marché dans le wizard de correction). */
   intituleMarche?: string;
-  /** Enveloppe crédit extérieur (douane). Si 0 → DGD exclue du workflow. */
+  /** Crédit extérieur retenu (après correction le cas échéant) — celui qui compte pour la suite. */
   creditExterieur?: number;
-  /** Enveloppe crédit intérieur (TVA int.). Si 0 → DGI exclue du workflow. */
+  /** Crédit intérieur retenu (après correction le cas échéant). */
   creditInterieur?: number;
+  /** Déclaration d'origine de l'autorité ; null tant qu'aucune correction n'a été saisie. */
+  creditExterieurDeclare?: number | null;
+  creditInterieurDeclare?: number | null;
   statut: DemandeStatut;
   dateDepot?: string;
   autoriteContractanteId?: number;
@@ -921,6 +924,9 @@ export interface DecisionCorrectionDto {
   visaParAdmin?: boolean;
   /** Motif de la substitution administrateur. */
   motifAdmin?: string | null;
+  /** Crédits fixés par ce visa (non nuls seulement pour le visa qui a saisi les montants). */
+  creditExterieurRetenu?: number | null;
+  creditInterieurRetenu?: number | null;
 }
 
 /** État d'un visa de la commission (vue administrateur). */
@@ -939,6 +945,8 @@ export interface VisaEtatDto {
   visaPrealableManquant: "DGD" | "DGI" | null;
   visableParAdmin: boolean;
   motifBlocage: string | null;
+  /** Vrai sur la seule ligne de la direction qui saisit les crédits retenus avec son visa. */
+  saisieMontantsExigee?: boolean;
 }
 
 export interface VisaAdminResponseDto {
@@ -1044,24 +1052,29 @@ export const demandeCorrectionApi = {
   /** État ordonné des visas (DGD, DGTCP, DGI, DGB, PRESIDENT) — vue administrateur. */
   getVisas: (id: number) => apiFetch<VisaEtatDto[]>(`/demandes-correction/${id}/visas`),
   /** Pose du visa par l'administrateur à la place du titulaire (multipart). */
-  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null) => {
+  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null, montants?: CorrectionMontants | null) => {
     const fd = new FormData();
     fd.append("role", role);
     fd.append("motif", motif);
     if (file) fd.append("file", file);
+    // Uniquement si la ligne du rôle remplacé porte `saisieMontantsExigee: true`.
+    if (montants) {
+      fd.append("creditExterieur", String(montants.creditExterieur));
+      fd.append("creditInterieur", String(montants.creditInterieur));
+    }
     return apiFetch<VisaAdminResponseDto>(`/demandes-correction/${id}/visas/admin`, {
       method: "POST",
       rawBody: fd,
     });
   },
-  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+  /**
+   * `montants` : uniquement pour le VISA de la direction dont la ligne `/visas`
+   * porte `saisieMontantsExigee: true` — jamais pour les autres cas.
+   */
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[], montants?: CorrectionMontants | null) =>
     apiFetch<DecisionCorrectionDto>(`/demandes-correction/${id}/decisions`, {
       method: "POST",
-      body: {
-        decision,
-        ...(motifRejet ? { motifRejet } : {}),
-        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
-      },
+      body: buildCorrectionDecisionBody(decision, motifRejet, documentsDemandes, montants),
     }),
   // Réponse message seul à un rejet temporaire
   postRejetTempResponse: (decisionId: number, message: string) =>
