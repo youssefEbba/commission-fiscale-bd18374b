@@ -460,6 +460,7 @@ const CorrectionDouaniere = () => {
                                   )}
                                 </div>
                                 {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{dec.motifRejet}</p>}
+                                {dec.decision === "VISA" && <DecisionMontantsRetenus decision={dec} className="mt-1" />}
                                 {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1.5">
                                     <span className="text-[10px] text-muted-foreground">{t("correction_douaniere:decisions.docs_requested")}</span>
