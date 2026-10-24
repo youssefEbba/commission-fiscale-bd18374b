@@ -675,6 +675,8 @@ export const conventionApi = {
   /** Remplacement complet (permission `convention.update`, convention EN_ATTENTE, AC titulaire ou créatrice). */
   update: (id: number, data: UpdateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
+  /** Annulation par l'autorité titulaire ou créatrice (permission `convention.annuler`, convention EN_ATTENTE). Motif facultatif. */
+  annuler: (id: number, motif?: string) => apiFetch<ConventionDto>(`/conventions/${id}/annuler${motif ? `?motif=${encodeURIComponent(motif)}` : ""}`, { method: "POST" }),
   /** Active/désactive une convention (permission `convention.activate`). */
   setActivation: (id: number, actif: boolean) => apiFetch<ConventionDto>(`/conventions/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`).then(normalizeDocs),

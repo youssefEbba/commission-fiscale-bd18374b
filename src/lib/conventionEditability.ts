@@ -79,3 +79,42 @@ export function buildUpdateConventionRequest(form: ConventionEditForm): UpdateCo
     montantMru: numOrNull(form.montantMru),
   };
 }
+
+/**
+ * Chemin d'annulation d'une convention, selon qui annule.
+ * - "autorite" : POST /api/conventions/{id}/annuler — mêmes trois conditions que la modification,
+ *   avec la permission `convention.annuler` (AC, UPM, UEP, relais en autorité).
+ * - "statut" : PATCH /statut?statut=ANNULEE — administration / Président, inchangé
+ *   (le serveur y refuse seulement une convention validée).
+ * Le Président détient `convention.annuler` mais n'a pas d'autorité : il reste sur la route de statut.
+ */
+export type ConventionCancelMode = "autorite" | "statut" | null;
+
+export function conventionCancelMode(
+  conv: Pick<ConventionDto, "statut" | "autoriteContractanteId" | "creeParAutoriteContractanteId">,
+  userAutoriteContractanteId: number | null | undefined,
+  hasAnnulerPermission: boolean,
+  isAdministration: boolean,
+): ConventionCancelMode {
+  if (canEditConvention(conv, userAutoriteContractanteId, hasAnnulerPermission)) return "autorite";
+  if (isAdministration && conv.statut !== "VALIDE" && conv.statut !== "ANNULEE") return "statut";
+  return null;
+}
+
+/**
+ * Contrôle des dates côté interface (le serveur ne les contrôle pas).
+ * En modification (`initial` fourni), une date n'est contrôlée que si elle a changé :
+ * une convention dont la date de fin est déjà passée reste enregistrable pour corriger un autre champ.
+ */
+export type ConventionDateError = "date_signature_future" | "date_fin_past";
+
+export function conventionDateError(
+  dates: { dateSignature?: string | null; dateFin?: string | null },
+  today: string,
+  initial?: { dateSignature?: string | null; dateFin?: string | null },
+): ConventionDateError | null {
+  const changed = (k: "dateSignature" | "dateFin") => !initial || (dates[k] || "") !== (initial[k] || "");
+  if (dates.dateSignature && changed("dateSignature") && dates.dateSignature > today) return "date_signature_future";
+  if (dates.dateFin && changed("dateFin") && dates.dateFin < today) return "date_fin_past";
+  return null;
+}
