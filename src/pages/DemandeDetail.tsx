@@ -38,6 +38,9 @@ import { API_BASE } from "@/lib/apiConfig";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
 import AdminVisasCard from "@/components/admin/AdminVisasCard";
+import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
+import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
+import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
 import { openDocument, downloadDocument } from "@/lib/openDocument";
 
@@ -157,10 +160,6 @@ const DemandeDetail = () => {
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
   const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
 
-  const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
-  const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
-  const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
-  const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
 
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -188,17 +187,12 @@ const DemandeDetail = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
-  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
-  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
-
-  // Document à uploader obligatoirement avant le visa — miroir exact du backend
-  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
-  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
-  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
+  // Visa d'une direction : document pré-visa et crédits retenus pilotés par `GET /visas` (CorrectionVisaDialog).
+  const [visaTarget, setVisaTarget] = useState<DemandeCorrectionDto | null>(null);
+  const pageVisa = useCorrectionVisaState(selected?.id, role, !!selected);
   const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
     PRESIDENT: { docType: "LETTRE_ADOPTION" },
   } as const;
-  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
@@ -281,16 +275,6 @@ const DemandeDetail = () => {
     } finally { setMarcheLoading(false); }
   };
 
-  const handleTempVisa = async (demandeId: number) => {
-    setActionLoading(demandeId);
-    try {
-      await demandeCorrectionApi.postDecision(demandeId, "VISA");
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.visa_temp_applied") });
-      fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
-    } finally { setActionLoading(null); }
-  };
 
   const handleTempReject = async (demandeId: number, motif: string, documentsDemandes?: string[]) => {
     setActionLoading(demandeId);
@@ -303,37 +287,6 @@ const DemandeDetail = () => {
     } finally { setActionLoading(null); }
   };
 
-  const checkAndHandleVisa = async (demandeId: number) => {
-    const docType = requiredPreVisaDocCorrection(role, resolveCredits(selected));
-    setPendingDocType(docType);
-    if (docType) {
-      try {
-        const documents = await demandeCorrectionApi.getDocuments(demandeId);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
-        if (!hasDoc) { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
-      } catch { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
-    }
-    await handleTempVisa(demandeId);
-  };
-
-  const confirmVisa = () => {
-    if (visaConfirmId != null) checkAndHandleVisa(visaConfirmId);
-    setVisaConfirmOpen(false);
-  };
-
-  const handleOffreCorrigeeUploadAndVisa = async () => {
-    if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
-    setOffreCorrigeeUploading(true);
-    try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, pendingDocType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
-      setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null);
-      await handleTempVisa(offreCorrigeePendingId);
-      fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
-    } finally { setOffreCorrigeeUploading(false); setOffreCorrigeePendingId(null); }
-  };
 
   const [reactivateOpen, setReactivateOpen] = useState(false);
   const [reactivating, setReactivating] = useState(false);
