@@ -625,6 +625,25 @@ export interface CreateConventionRequest {
 }
 
 /**
+ * Corps de PUT /api/conventions/{id} — remplacement complet : un champ omis ou `null` est effacé.
+ * Pas d'`autoriteContractanteId` : l'autorité titulaire ne se change pas.
+ */
+export interface UpdateConventionRequest {
+  reference: string;
+  intitule: string;
+  bailleurId: number | null;
+  /** AAAA-MM-JJ */
+  dateSignature: string | null;
+  /** AAAA-MM-JJ */
+  dateFin: string | null;
+  montantDevise: number | null;
+  montantMru: number | null;
+  deviseOrigine: string | null;
+  tauxChange: number | null;
+  projectReference: string | null;
+}
+
+/**
  * Valeurs ordonnées de ConventionStatut pour les filtres / dropdowns.
  * Libellés via `tStatutConvention(code)` (cf. `enums.statut_convention.*`).
  */
@@ -653,8 +672,8 @@ export const conventionApi = {
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
-  // NOT SUPPORTED BY BACKEND — kept for future use
-  update: (id: number, data: CreateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
+  /** Remplacement complet (permission `convention.update`, convention EN_ATTENTE, AC titulaire ou créatrice). */
+  update: (id: number, data: UpdateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   /** Active/désactive une convention (permission `convention.activate`). */
   setActivation: (id: number, actif: boolean) => apiFetch<ConventionDto>(`/conventions/${id}/activation?actif=${actif}`, { method: "PATCH" }),
