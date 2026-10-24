@@ -40,8 +40,9 @@ import { tStatutConvention, tTypeDocument, tDocRequirementLabel } from "@/i18n/e
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { echeanceConvention } from "@/lib/conventionEcheance";
-import { canEditConvention } from "@/lib/conventionEditability";
+import { canEditConvention, conventionCancelMode } from "@/lib/conventionEditability";
 import ConventionEditDialog, { DEFAULT_DEVISES } from "@/components/conventions/ConventionEditDialog";
+import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -55,6 +56,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
 const Conventions = () => {
   const { user, hasRole, hasPermission } = useAuth();
   const canUpdate = hasPermission("convention.update");
+  const canAnnuler = hasPermission("convention.annuler");
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -83,10 +85,9 @@ const Conventions = () => {
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
-  // Cancel dialog (AC only)
+  // Cancel dialog : route autorité ou route de statut selon conventionCancelMode
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelConvention, setCancelConvention] = useState<ConventionDto | null>(null);
-  const [cancelling, setCancelling] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
@@ -439,25 +440,11 @@ const Conventions = () => {
     }
   };
 
-  // Cancel convention (AC only)
+  // Annulation : chemin choisi par conventionCancelMode (autorité titulaire/créatrice ou administration)
+  const cancelModeOf = (conv: ConventionDto) => conventionCancelMode(conv, user?.autoriteContractanteId, canAnnuler, isAdmin);
   const openCancel = (conv: ConventionDto) => {
     setCancelConvention(conv);
     setCancelOpen(true);
-  };
-
-  const handleCancel = async () => {
-    if (!cancelConvention) return;
-    setCancelling(true);
-    try {
-      await conventionApi.updateStatut(cancelConvention.id, "ANNULEE");
-      toast({ title: t("common:success.title", "Succès"), description: t("conventions:cancel_dialog.success") });
-      setCancelOpen(false);
-      fetchConventions();
-    } catch (e: any) {
-      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
-    } finally {
-      setCancelling(false);
-    }
   };
 
   const openDocuments = async (conv: ConventionDto) => {
@@ -674,7 +661,7 @@ const Conventions = () => {
                                       </DropdownMenuItem>
                                     </>
                                   )}
-                                  {(canEditConvention(c, user?.autoriteContractanteId, canUpdate) || ((isAC || isAdmin) && c.statut !== "VALIDE")) && (
+                                  {(canEditConvention(c, user?.autoriteContractanteId, canUpdate) || cancelModeOf(c)) && (
                                     <DropdownMenuSeparator />
                                   )}
                                   {canEditConvention(c, user?.autoriteContractanteId, canUpdate) && (
@@ -682,7 +669,7 @@ const Conventions = () => {
                                       <Edit className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
                                     </DropdownMenuItem>
                                   )}
-                                  {(isAC || isAdmin) && c.statut !== "VALIDE" && (
+                                  {cancelModeOf(c) && (
                                     <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
                                       <Ban className="h-4 w-4 me-2" /> {t("conventions:actions.cancel")}
                                     </DropdownMenuItem>
@@ -1189,25 +1176,13 @@ const Conventions = () => {
       </Dialog>
 
       {/* Cancel Dialog */}
-      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Ban className="h-5 w-5" /> {t("conventions:cancel_dialog.title")}
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t("conventions:cancel_dialog.confirm", { ref: cancelConvention?.reference || cancelConvention?.intitule || "" })}
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("conventions:actions.keep")}</Button>
-            <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
-              {cancelling ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Ban className="h-4 w-4 me-1" />}
-              {t("conventions:actions.cancel_yes")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConventionCancelDialog
+        convention={cancelConvention}
+        mode={cancelConvention ? cancelModeOf(cancelConvention) : null}
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        onCancelled={() => fetchConventions()}
+      />
     </DashboardLayout>
   );
 };
