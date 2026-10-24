@@ -86,35 +86,35 @@ const GedConfiguration = () => {
 
   const conventionReqQuery = useQuery({
     queryKey: ["document-requirements", "CONVENTION"],
-    queryFn: () => documentRequirementApi.getByProcessus("CONVENTION"),
+    queryFn: () => documentRequirementApi.getConfiguration("CONVENTION"),
   });
   const marcheReqQuery = useQuery({
     queryKey: ["document-requirements", "MARCHE"],
-    queryFn: () => documentRequirementApi.getByProcessus("MARCHE"),
+    queryFn: () => documentRequirementApi.getConfiguration("MARCHE"),
   });
   const correctionQuery = useQuery({
     queryKey: ["document-requirements", "CORRECTION_OFFRE_FISCALE"],
-    queryFn: () => documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE"),
+    queryFn: () => documentRequirementApi.getConfiguration("CORRECTION_OFFRE_FISCALE"),
   });
   const miseEnPlaceQuery = useQuery({
     queryKey: ["document-requirements", "MISE_EN_PLACE_CI"],
-    queryFn: () => documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+    queryFn: () => documentRequirementApi.getConfiguration("MISE_EN_PLACE_CI"),
   });
   const exterieurQuery = useQuery({
     queryKey: ["document-requirements", "UTILISATION_CI_EXTERIEUR"],
-    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
+    queryFn: () => documentRequirementApi.getConfiguration("UTILISATION_CI_EXTERIEUR"),
   });
   const interieurQuery = useQuery({
     queryKey: ["document-requirements", "UTILISATION_CI_INTERIEUR"],
-    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
+    queryFn: () => documentRequirementApi.getConfiguration("UTILISATION_CI_INTERIEUR"),
   });
   const transfertQuery = useQuery({
     queryKey: ["document-requirements", "TRANSFERT_CREDIT"],
-    queryFn: () => documentRequirementApi.getByProcessus("TRANSFERT_CREDIT"),
+    queryFn: () => documentRequirementApi.getConfiguration("TRANSFERT_CREDIT"),
   });
   const sousTraitanceQuery = useQuery({
     queryKey: ["document-requirements", "SOUS_TRAITANCE"],
-    queryFn: () => documentRequirementApi.getByProcessus("SOUS_TRAITANCE"),
+    queryFn: () => documentRequirementApi.getConfiguration("SOUS_TRAITANCE"),
   });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {

@@ -2246,9 +2246,16 @@ export interface DocumentRequirementDto {
   deposableParLeDemandeur?: boolean;
   /** ENTREE = fournie par le déposant ; SORTIE = produite par la Commission. Absent ⇒ ENTREE. */
   sens?: DocumentSens;
+  /** false = pièce désactivée (reste listée en configuration seulement). Absent ⇒ active. */
+  actif?: boolean;
+  /** true = pièce exigée par le circuit : ni désactivable ni supprimable. */
+  pieceDuCircuit?: boolean;
 }
 
 export type DocumentSens = "ENTREE" | "SORTIE";
+
+/** Une pièce est active sauf si le serveur renvoie explicitement `actif: false`. */
+export const isRequirementActive = (r: Pick<DocumentRequirementDto, "actif">) => r.actif !== false;
 
 export interface CreateDocumentRequirementRequest {
   processus: ProcessusType;
@@ -2262,14 +2269,26 @@ export interface CreateDocumentRequirementRequest {
   sens?: DocumentSens;
 }
 
+const requirementsUrl = (processus: ProcessusType, depot?: boolean) =>
+  `/document-requirements?processus=${processus}${depot ? "&depot=true" : ""}`;
+
 export const documentRequirementApi = {
-  /** `depot: true` → uniquement les pièces déposables par le demandeur (formulaire de dépôt). */
-  getByProcessus: (processus: ProcessusType, opts: { depot?: boolean } = {}) =>
-    apiFetch<DocumentRequirementDto[]>(`/document-requirements?processus=${processus}${opts.depot ? "&depot=true" : ""}`),
+  /**
+   * Pièces actives d'un process (pièces attendues, compteurs, pièces à réclamer…).
+   * Les pièces désactivées sont écartées ici, une fois pour tous les écrans métier.
+   * `depot: true` → uniquement les pièces déposables par le demandeur (formulaire de dépôt).
+   */
+  getByProcessus: async (processus: ProcessusType, opts: { depot?: boolean } = {}) =>
+    (await apiFetch<DocumentRequirementDto[]>(requirementsUrl(processus, opts.depot))).filter(isRequirementActive),
+  /** Écran de configuration uniquement : inclut les pièces désactivées pour pouvoir les réactiver. */
+  getConfiguration: (processus: ProcessusType) =>
+    apiFetch<DocumentRequirementDto[]>(requirementsUrl(processus)),
   create: (data: CreateDocumentRequirementRequest) =>
     apiFetch<DocumentRequirementDto>("/document-requirements", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateDocumentRequirementRequest>) =>
     apiFetch<DocumentRequirementDto>(`/document-requirements/${id}`, { method: "PUT", body: data }),
+  setActivation: (id: number, actif: boolean) =>
+    apiFetch<DocumentRequirementDto>(`/document-requirements/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   delete: (id: number) =>
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
 };
