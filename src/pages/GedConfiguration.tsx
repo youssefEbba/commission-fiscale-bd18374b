@@ -14,9 +14,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto } from "@/lib/api";
+import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto, isRequirementActive } from "@/lib/api";
 import { tTypeDocument } from "@/i18n/enums";
-import { Plus, Pencil, Trash2, X, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type ProcessusSectionConfig = { key: string; processus: ProcessusType };
 
@@ -48,6 +52,7 @@ const GedConfiguration = () => {
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [catalogueExpanded, setCatalogueExpanded] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const toggleSection = (key: string) => setExpandedSections((p) => ({ ...p, [key]: !p[key] }));
 
   const [typeDocument, setTypeDocument] = useState("");
@@ -86,35 +91,35 @@ const GedConfiguration = () => {
 
   const conventionReqQuery = useQuery({
     queryKey: ["document-requirements", "CONVENTION"],
-    queryFn: () => documentRequirementApi.getByProcessus("CONVENTION"),
+    queryFn: () => documentRequirementApi.getConfiguration("CONVENTION"),
   });
   const marcheReqQuery = useQuery({
     queryKey: ["document-requirements", "MARCHE"],
-    queryFn: () => documentRequirementApi.getByProcessus("MARCHE"),
+    queryFn: () => documentRequirementApi.getConfiguration("MARCHE"),
   });
   const correctionQuery = useQuery({
     queryKey: ["document-requirements", "CORRECTION_OFFRE_FISCALE"],
-    queryFn: () => documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE"),
+    queryFn: () => documentRequirementApi.getConfiguration("CORRECTION_OFFRE_FISCALE"),
   });
   const miseEnPlaceQuery = useQuery({
     queryKey: ["document-requirements", "MISE_EN_PLACE_CI"],
-    queryFn: () => documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
+    queryFn: () => documentRequirementApi.getConfiguration("MISE_EN_PLACE_CI"),
   });
   const exterieurQuery = useQuery({
     queryKey: ["document-requirements", "UTILISATION_CI_EXTERIEUR"],
-    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR"),
+    queryFn: () => documentRequirementApi.getConfiguration("UTILISATION_CI_EXTERIEUR"),
   });
   const interieurQuery = useQuery({
     queryKey: ["document-requirements", "UTILISATION_CI_INTERIEUR"],
-    queryFn: () => documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR"),
+    queryFn: () => documentRequirementApi.getConfiguration("UTILISATION_CI_INTERIEUR"),
   });
   const transfertQuery = useQuery({
     queryKey: ["document-requirements", "TRANSFERT_CREDIT"],
-    queryFn: () => documentRequirementApi.getByProcessus("TRANSFERT_CREDIT"),
+    queryFn: () => documentRequirementApi.getConfiguration("TRANSFERT_CREDIT"),
   });
   const sousTraitanceQuery = useQuery({
     queryKey: ["document-requirements", "SOUS_TRAITANCE"],
-    queryFn: () => documentRequirementApi.getByProcessus("SOUS_TRAITANCE"),
+    queryFn: () => documentRequirementApi.getConfiguration("SOUS_TRAITANCE"),
   });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
@@ -159,8 +164,26 @@ const GedConfiguration = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
       toast({ title: t("ged:config.toast.deleted") });
+      setDeleteTarget(null);
     },
-    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+    onError: (e: Error) => {
+      // 404 = déjà supprimée : rafraîchir pour retirer la ligne, message serveur tel quel.
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
+      setDeleteTarget(null);
+      toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" });
+    },
+  });
+
+  const activationMutation = useMutation({
+    mutationFn: ({ id, actif }: { id: number; actif: boolean }) => documentRequirementApi.setActivation(id, actif),
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
+      toast({ title: vars.actif ? t("ged:config.requirement.activated") : t("ged:config.requirement.deactivated") });
+    },
+    onError: (e: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
+      toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" });
+    },
   });
 
   // Catalogue mutations
@@ -464,6 +487,7 @@ const GedConfiguration = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="min-w-[200px]">{t("ged:config.table.document")}</TableHead>
+                            <TableHead className="min-w-[140px]">{t("ged:config.requirement.table_actif")}</TableHead>
                             <TableHead className="min-w-[120px]">{t("ged:config.table.required")}</TableHead>
                             <TableHead className="min-w-[160px]">{t("ged:config.table.famille")}</TableHead>
                             <TableHead className="min-w-[250px]">{t("ged:config.table.type")}</TableHead>
@@ -472,9 +496,38 @@ const GedConfiguration = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {sorted.map((req) => (
-                            <TableRow key={req.id}>
-                              <TableCell className="font-medium">{req.libelle || labelOfCode(req.codeDocument || req.typeDocument)}</TableCell>
+                          {sorted.map((req) => {
+                            const active = isRequirementActive(req);
+                            const locked = req.pieceDuCircuit === true;
+                            const name = req.libelle || labelOfCode(req.codeDocument || req.typeDocument);
+                            return (
+                            <TableRow key={req.id} className={active ? undefined : "opacity-60"}>
+                              <TableCell className="font-medium">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span>{name}</span>
+                                  {!active && <Badge variant="secondary">{t("ged:config.requirement.desactivee")}</Badge>}
+                                </div>
+                                {locked && (
+                                  <p className="mt-1 flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                                    <Lock className="h-3 w-3 shrink-0" />
+                                    {t("ged:config.requirement.circuit_lock")}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={active}
+                                    disabled={locked || activationMutation.isPending}
+                                    onCheckedChange={(v) => activationMutation.mutate({ id: req.id, actif: v })}
+                                    aria-label={t("ged:config.requirement.activation_label")}
+                                    title={locked ? t("ged:config.requirement.circuit_lock") : undefined}
+                                  />
+                                  <span className="text-xs text-muted-foreground">
+                                    {active ? t("ged:config.requirement.actif") : t("ged:config.requirement.inactif")}
+                                  </span>
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
                                   {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
@@ -502,13 +555,22 @@ const GedConfiguration = () => {
                                   <Button variant="ghost" size="icon" onClick={() => openEdit(req)} aria-label={t("ged:config.dialog.submit_edit")}>
                                     <Pencil className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive" aria-label={t("ged:config.toast.deleted")}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={locked}
+                                    onClick={() => setDeleteTarget({ id: req.id, name })}
+                                    className="text-destructive hover:text-destructive disabled:opacity-30"
+                                    aria-label={t("ged:config.requirement.delete_label")}
+                                    title={locked ? t("ged:config.requirement.circuit_lock") : t("ged:config.requirement.delete_label")}
+                                  >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -520,6 +582,27 @@ const GedConfiguration = () => {
           })}
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleteMutation.isPending && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("ged:config.requirement.delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("ged:config.requirement.delete_desc", { name: deleteTarget?.name ?? "" })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>{t("ged:config.requirement.delete_cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); if (deleteTarget) deleteMutation.mutate(deleteTarget.id); }}
+            >
+              {t("ged:config.requirement.delete_confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="sm:max-w-lg">

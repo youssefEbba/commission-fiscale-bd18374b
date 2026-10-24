@@ -1,4 +1,5 @@
 import { API_BASE } from "./apiConfig";
+import { buildCorrectionDecisionBody, type CorrectionMontants } from "./correctionMontants";
 
 interface RequestOptions {
   method?: string;
@@ -385,6 +386,9 @@ export interface DemandeRattachementDto {
   roleDemande?: RattachementRole;
   typeEntite?: TypeEntite;
   entiteId?: number | null;
+  /** Nom de l'entité existante choisie, résolu par le serveur (champ réellement renvoyé). */
+  entiteNomResolu?: string | null;
+  /** Ancien nom supposé — conservé en repli uniquement. */
   entiteNomAffiche?: string | null;
   /** true = l'entité n'existe pas encore et sera créée telle que décrite à l'approbation. */
   entiteNouvelle?: boolean;
@@ -395,11 +399,14 @@ export interface DemandeRattachementDto {
   entiteActivite?: string | null;
   entiteMinistereTutelle?: string | null;
   motifRefus?: string | null;
+  /** Date de dépôt renvoyée par le serveur. */
+  dateCreation?: string;
   dateDemande?: string;
   dateDecision?: string | null;
   /** Champs de la réponse publique de suivi (volontairement pauvre : pas de nom ni de téléphone). */
   dateDepot?: string;
   dateTraitement?: string | null;
+  traiteParUsername?: string | null;
   decideurNom?: string | null;
   documents?: DocumentDto[];
 }
@@ -619,6 +626,25 @@ export interface CreateConventionRequest {
 }
 
 /**
+ * Corps de PUT /api/conventions/{id} — remplacement complet : un champ omis ou `null` est effacé.
+ * Pas d'`autoriteContractanteId` : l'autorité titulaire ne se change pas.
+ */
+export interface UpdateConventionRequest {
+  reference: string;
+  intitule: string;
+  bailleurId: number | null;
+  /** AAAA-MM-JJ */
+  dateSignature: string | null;
+  /** AAAA-MM-JJ */
+  dateFin: string | null;
+  montantDevise: number | null;
+  montantMru: number | null;
+  deviseOrigine: string | null;
+  tauxChange: number | null;
+  projectReference: string | null;
+}
+
+/**
  * Valeurs ordonnées de ConventionStatut pour les filtres / dropdowns.
  * Libellés via `tStatutConvention(code)` (cf. `enums.statut_convention.*`).
  */
@@ -647,9 +673,11 @@ export const conventionApi = {
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
-  // NOT SUPPORTED BY BACKEND — kept for future use
-  update: (id: number, data: CreateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
+  /** Remplacement complet (permission `convention.update`, convention EN_ATTENTE, AC titulaire ou créatrice). */
+  update: (id: number, data: UpdateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
+  /** Annulation par l'autorité titulaire ou créatrice (permission `convention.annuler`, convention EN_ATTENTE). Motif facultatif. */
+  annuler: (id: number, motif?: string) => apiFetch<ConventionDto>(`/conventions/${id}/annuler${motif ? `?motif=${encodeURIComponent(motif)}` : ""}`, { method: "POST" }),
   /** Active/désactive une convention (permission `convention.activate`). */
   setActivation: (id: number, actif: boolean) => apiFetch<ConventionDto>(`/conventions/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`).then(normalizeDocs),
@@ -686,10 +714,13 @@ export interface DemandeCorrectionDto {
   reference?: string;
   /** Intitulé libre du marché (remplace la création de marché dans le wizard de correction). */
   intituleMarche?: string;
-  /** Enveloppe crédit extérieur (douane). Si 0 → DGD exclue du workflow. */
+  /** Crédit extérieur retenu (après correction le cas échéant) — celui qui compte pour la suite. */
   creditExterieur?: number;
-  /** Enveloppe crédit intérieur (TVA int.). Si 0 → DGI exclue du workflow. */
+  /** Crédit intérieur retenu (après correction le cas échéant). */
   creditInterieur?: number;
+  /** Déclaration d'origine de l'autorité ; null tant qu'aucune correction n'a été saisie. */
+  creditExterieurDeclare?: number | null;
+  creditInterieurDeclare?: number | null;
   statut: DemandeStatut;
   dateDepot?: string;
   autoriteContractanteId?: number;
@@ -894,6 +925,9 @@ export interface DecisionCorrectionDto {
   visaParAdmin?: boolean;
   /** Motif de la substitution administrateur. */
   motifAdmin?: string | null;
+  /** Crédits fixés par ce visa (non nuls seulement pour le visa qui a saisi les montants). */
+  creditExterieurRetenu?: number | null;
+  creditInterieurRetenu?: number | null;
 }
 
 /** État d'un visa de la commission (vue administrateur). */
@@ -912,6 +946,8 @@ export interface VisaEtatDto {
   visaPrealableManquant: "DGD" | "DGI" | null;
   visableParAdmin: boolean;
   motifBlocage: string | null;
+  /** Vrai sur la seule ligne de la direction qui saisit les crédits retenus avec son visa. */
+  saisieMontantsExigee?: boolean;
 }
 
 export interface VisaAdminResponseDto {
@@ -1017,24 +1053,29 @@ export const demandeCorrectionApi = {
   /** État ordonné des visas (DGD, DGTCP, DGI, DGB, PRESIDENT) — vue administrateur. */
   getVisas: (id: number) => apiFetch<VisaEtatDto[]>(`/demandes-correction/${id}/visas`),
   /** Pose du visa par l'administrateur à la place du titulaire (multipart). */
-  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null) => {
+  poserVisaAdmin: (id: number, role: string, motif: string, file?: File | null, montants?: CorrectionMontants | null) => {
     const fd = new FormData();
     fd.append("role", role);
     fd.append("motif", motif);
     if (file) fd.append("file", file);
+    // Uniquement si la ligne du rôle remplacé porte `saisieMontantsExigee: true`.
+    if (montants) {
+      fd.append("creditExterieur", String(montants.creditExterieur));
+      fd.append("creditInterieur", String(montants.creditInterieur));
+    }
     return apiFetch<VisaAdminResponseDto>(`/demandes-correction/${id}/visas/admin`, {
       method: "POST",
       rawBody: fd,
     });
   },
-  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[]) =>
+  /**
+   * `montants` : uniquement pour le VISA de la direction dont la ligne `/visas`
+   * porte `saisieMontantsExigee: true` — jamais pour les autres cas.
+   */
+  postDecision: (id: number, decision: DecisionType, motifRejet?: string, documentsDemandes?: string[], montants?: CorrectionMontants | null) =>
     apiFetch<DecisionCorrectionDto>(`/demandes-correction/${id}/decisions`, {
       method: "POST",
-      body: {
-        decision,
-        ...(motifRejet ? { motifRejet } : {}),
-        ...(documentsDemandes && documentsDemandes.length > 0 ? { documentsDemandes } : {}),
-      },
+      body: buildCorrectionDecisionBody(decision, motifRejet, documentsDemandes, montants),
     }),
   // Réponse message seul à un rejet temporaire
   postRejetTempResponse: (decisionId: number, message: string) =>
@@ -2219,9 +2260,16 @@ export interface DocumentRequirementDto {
   deposableParLeDemandeur?: boolean;
   /** ENTREE = fournie par le déposant ; SORTIE = produite par la Commission. Absent ⇒ ENTREE. */
   sens?: DocumentSens;
+  /** false = pièce désactivée (reste listée en configuration seulement). Absent ⇒ active. */
+  actif?: boolean;
+  /** true = pièce exigée par le circuit : ni désactivable ni supprimable. */
+  pieceDuCircuit?: boolean;
 }
 
 export type DocumentSens = "ENTREE" | "SORTIE";
+
+/** Une pièce est active sauf si le serveur renvoie explicitement `actif: false`. */
+export const isRequirementActive = (r: Pick<DocumentRequirementDto, "actif">) => r.actif !== false;
 
 export interface CreateDocumentRequirementRequest {
   processus: ProcessusType;
@@ -2235,14 +2283,26 @@ export interface CreateDocumentRequirementRequest {
   sens?: DocumentSens;
 }
 
+const requirementsUrl = (processus: ProcessusType, depot?: boolean) =>
+  `/document-requirements?processus=${processus}${depot ? "&depot=true" : ""}`;
+
 export const documentRequirementApi = {
-  /** `depot: true` → uniquement les pièces déposables par le demandeur (formulaire de dépôt). */
-  getByProcessus: (processus: ProcessusType, opts: { depot?: boolean } = {}) =>
-    apiFetch<DocumentRequirementDto[]>(`/document-requirements?processus=${processus}${opts.depot ? "&depot=true" : ""}`),
+  /**
+   * Pièces actives d'un process (pièces attendues, compteurs, pièces à réclamer…).
+   * Les pièces désactivées sont écartées ici, une fois pour tous les écrans métier.
+   * `depot: true` → uniquement les pièces déposables par le demandeur (formulaire de dépôt).
+   */
+  getByProcessus: async (processus: ProcessusType, opts: { depot?: boolean } = {}) =>
+    (await apiFetch<DocumentRequirementDto[]>(requirementsUrl(processus, opts.depot))).filter(isRequirementActive),
+  /** Écran de configuration uniquement : inclut les pièces désactivées pour pouvoir les réactiver. */
+  getConfiguration: (processus: ProcessusType) =>
+    apiFetch<DocumentRequirementDto[]>(requirementsUrl(processus)),
   create: (data: CreateDocumentRequirementRequest) =>
     apiFetch<DocumentRequirementDto>("/document-requirements", { method: "POST", body: data }),
   update: (id: number, data: Partial<CreateDocumentRequirementRequest>) =>
     apiFetch<DocumentRequirementDto>(`/document-requirements/${id}`, { method: "PUT", body: data }),
+  setActivation: (id: number, actif: boolean) =>
+    apiFetch<DocumentRequirementDto>(`/document-requirements/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   delete: (id: number) =>
     apiFetch<void>(`/document-requirements/${id}`, { method: "DELETE" }),
 };

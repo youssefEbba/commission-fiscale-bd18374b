@@ -224,5 +224,31 @@
     "final_adopted": "Demande adoptée (décision finale)",
     "final_rejected": "Demande rejetée (décision finale)",
     "generic_error": "Une erreur est survenue"
+  },
+  "montants": {
+    "title": "Crédits retenus par la correction",
+    "hint": "Les montants déclarés par l'autorité contractante sont proposés : gardez-les ou modifiez-les.",
+    "ext_label": "Crédit extérieur retenu",
+    "int_label": "Crédit intérieur retenu",
+    "declared": "Déclaré par l'autorité contractante : {{value}}",
+    "err_required": "Saisissez le crédit extérieur et le crédit intérieur retenus.",
+    "err_negative": "Les crédits retenus ne peuvent pas être négatifs.",
+    "err_none_positive": "Au moins un des deux crédits doit être strictement positif.",
+    "action_hint": "Avec votre visa, vous saisirez le crédit extérieur et le crédit intérieur retenus par la correction.",
+    "admin_row_hint": "Ce visa fixe le crédit extérieur et le crédit intérieur retenus.",
+    "retenu_line": "Crédits retenus — extérieur : {{ext}} · intérieur : {{int}}",
+    "card_declared": "Déclaré par l'autorité contractante",
+    "card_retained": "Retenu après correction",
+    "col_ext": "Crédit extérieur",
+    "col_int": "Crédit intérieur"
+  },
+  "visa_dialog": {
+    "title": "Apposer mon visa",
+    "irreversible": "Cette action est irréversible. Vérifiez les éléments ci-dessous avant de confirmer.",
+    "loading": "Vérification de ce que ce visa exige…",
+    "state_error": "Impossible de vérifier ce que ce visa exige : {{message}}. Vous pouvez réessayer ; le serveur contrôlera le visa à l'envoi.",
+    "retry": "Réessayer",
+    "confirm": "Confirmer le visa",
+    "success_title": "Succès"
   }
 }

@@ -99,6 +99,14 @@
       "download": "Télécharger",
       "unavailable": "Non disponible"
     },
+    "recu_card": {
+      "title": "Reçu de dépôt",
+      "description": "Attestation du dépôt de votre demande, à conserver.",
+      "open": "Ouvrir",
+      "download": "Télécharger le reçu",
+      "not_stored": "Le reçu enregistré n'est pas disponible : il sera reconstitué à partir des informations du dossier.",
+      "error": "Impossible de télécharger le reçu"
+    },
     "pieces": {
       "title": "Pièces du dossier",
       "empty": "Aucun document disponible pour le moment",

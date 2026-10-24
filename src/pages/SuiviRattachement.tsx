@@ -163,7 +163,7 @@ export default function SuiviRattachement() {
                 {result.roleDemande ? t(`roles.${result.roleDemande}`) : "—"}
               </Row>
               <Row label={t("suivi.entite")}>
-                {result.entiteNomAffiche || result.entiteNom || "—"}
+                {result.entiteNomResolu || result.entiteNomAffiche || result.entiteNom || "—"}
                 {result.entiteNouvelle && (
                   <Badge variant="secondary" className="ms-2 text-xs">{t("queue.entite_a_creer")}</Badge>
                 )}

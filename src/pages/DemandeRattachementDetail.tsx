@@ -130,7 +130,7 @@ export default function DemandeRattachementDetail() {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label={t("detail.f_type")} value={d.typeEntite ? t(`type_entite.${d.typeEntite}`) : null} />
-              <Field label={t("detail.f_nom")} value={d.entiteNouvelle ? d.entiteNom : (d.entiteNomAffiche || d.entiteNom)} />
+              <Field label={t("detail.f_nom")} value={d.entiteNouvelle ? d.entiteNom : (d.entiteNomResolu || d.entiteNomAffiche || d.entiteNom)} />
               {d.entiteNouvelle && (
                 <>
                   <Field label={t("detail.f_sigle")} value={d.entiteSigle} />
@@ -154,7 +154,7 @@ export default function DemandeRattachementDetail() {
             <Field label={t("detail.f_username")} value={d.username} />
             <Field label={t("detail.f_email")} value={d.email} />
             <Field label={t("detail.f_telephone")} value={d.telephone} />
-            <Field label={t("detail.f_date")} value={formatDateTime(d.dateDemande)} />
+            <Field label={t("detail.f_date")} value={formatDateTime(d.dateCreation || d.dateDemande)} />
           </CardContent>
         </Card>
 
@@ -169,7 +169,7 @@ export default function DemandeRattachementDetail() {
               </div>
             ) : (
               <div className="space-y-2 text-sm">
-                {d.dateDecision && <p className="text-muted-foreground">{t("detail.decided_on", { date: formatDateTime(d.dateDecision) })}{d.decideurNom ? ` — ${d.decideurNom}` : ""}</p>}
+                {(d.dateTraitement || d.dateDecision) && <p className="text-muted-foreground">{t("detail.decided_on", { date: formatDateTime(d.dateTraitement || d.dateDecision) })}{(d.traiteParUsername || d.decideurNom) ? ` — ${d.traiteParUsername || d.decideurNom}` : ""}</p>}
                 {d.statut === "REFUSEE" && d.motifRefus && <Field label={t("detail.motif_refus")} value={d.motifRefus} />}
               </div>
             )}

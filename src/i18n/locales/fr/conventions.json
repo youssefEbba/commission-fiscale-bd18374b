@@ -153,7 +153,9 @@
     "title": "Modifier la convention",
     "select_bailleur": "Sélectionner",
     "search_bailleur": "Rechercher un bailleur…",
-    "success": "Convention modifiée"
+    "success": "Convention modifiée",
+    "full_replace_hint": "Modifiable tant que la DGB n'a pas validé la convention. Tous les champs sont enregistrés tels qu'affichés : un champ laissé vide sera effacé.",
+    "autorite_fixed": "L'autorité contractante titulaire ne peut pas être changée."
   },
   "reject": {
     "title": "Rejeter la convention",
@@ -165,7 +167,10 @@
   "cancel_dialog": {
     "title": "Annuler la convention",
     "confirm": "Êtes-vous sûr de vouloir annuler la convention {{ref}} ? Cette action est irréversible.",
-    "success": "Convention annulée"
+    "success": "Convention annulée",
+    "definitive": "Une convention annulée ne peut plus être réactivée ni modifiée.",
+    "motif_optional": "Motif (facultatif)",
+    "motif_placeholder": "Indiquer le motif de l'annulation…"
   },
   "statut_change": {
     "success": "Convention {{label}}"

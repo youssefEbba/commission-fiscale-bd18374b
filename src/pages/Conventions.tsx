@@ -40,6 +40,9 @@ import { tStatutConvention, tTypeDocument, tDocRequirementLabel } from "@/i18n/e
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { echeanceConvention } from "@/lib/conventionEcheance";
+import { canEditConvention, conventionCancelMode } from "@/lib/conventionEditability";
+import ConventionEditDialog, { DEFAULT_DEVISES } from "@/components/conventions/ConventionEditDialog";
+import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -51,7 +54,9 @@ const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
 const todayIso = new Date().toISOString().slice(0, 10);
 
 const Conventions = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
+  const canUpdate = hasPermission("convention.update");
+  const canAnnuler = hasPermission("convention.annuler");
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -70,15 +75,9 @@ const Conventions = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailConvention, setDetailConvention] = useState<ConventionDto | null>(null);
 
-  // Edit dialog (AC only)
+  // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
   const [editConvention, setEditConvention] = useState<ConventionDto | null>(null);
-  const [editForm, setEditForm] = useState<CreateConventionRequest>({
-    reference: "", intitule: "", bailleurId: undefined,
-    dateSignature: "", dateFin: "",
-    montantDevise: undefined, deviseOrigine: "", montantMru: undefined, tauxChange: undefined,
-  });
-  const [editing, setEditing] = useState(false);
 
   // Reject dialog
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -86,10 +85,9 @@ const Conventions = () => {
   const [rejectMotif, setRejectMotif] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
-  // Cancel dialog (AC only)
+  // Cancel dialog : route autorité ou route de statut selon conventionCancelMode
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelConvention, setCancelConvention] = useState<ConventionDto | null>(null);
-  const [cancelling, setCancelling] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateConventionRequest>({
@@ -160,14 +158,7 @@ const Conventions = () => {
     try { setBailleurs(await bailleurApi.getAll()); } catch { /* ignore */ } finally { setBailleursLoading(false); }
   };
 
-  const defaultDevises: DeviseDto[] = [
-    { id: -1, code: "EUR", libelle: "Euro", symbole: "€" },
-    { id: -2, code: "USD", libelle: "Dollar américain", symbole: "$" },
-    { id: -3, code: "CNY", libelle: "Yuan chinois", symbole: "¥" },
-    { id: -4, code: "SAR", libelle: "Riyal saoudien", symbole: "﷼" },
-    { id: -5, code: "AED", libelle: "Dirham des Émirats", symbole: "د.إ" },
-    { id: -6, code: "QAR", libelle: "Riyal qatari", symbole: "﷼" },
-  ];
+  const defaultDevises: DeviseDto[] = DEFAULT_DEVISES;
 
   const fetchDevises = async () => {
     setDevisesLoading(true);
@@ -421,38 +412,10 @@ const Conventions = () => {
     setDetailOpen(true);
   };
 
-  // Open edit dialog (AC only)
+  // Modification : visible seulement si canEditConvention (permission + EN_ATTENTE + AC titulaire/créatrice)
   const openEdit = (conv: ConventionDto) => {
     setEditConvention(conv);
-    setEditForm({
-      reference: conv.reference || "",
-      intitule: conv.intitule || "",
-      bailleurId: conv.bailleurId,
-      dateSignature: conv.dateSignature || "",
-      dateFin: conv.dateFin || "",
-      montantDevise: conv.montantDevise,
-      deviseOrigine: conv.deviseOrigine || "",
-      montantMru: conv.montantMru,
-      tauxChange: conv.tauxChange,
-    });
-    fetchBailleurs();
-    fetchDevises();
     setEditOpen(true);
-  };
-
-  const handleEdit = async () => {
-    if (!editConvention || !editForm.reference || !editForm.intitule) return;
-    setEditing(true);
-    try {
-      await conventionApi.update(editConvention.id, editForm);
-      toast({ title: t("common:success.title", "Succès"), description: t("conventions:edit.success") });
-      setEditOpen(false);
-      fetchConventions();
-    } catch (e: any) {
-      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
-    } finally {
-      setEditing(false);
-    }
   };
 
   // Open reject dialog
@@ -477,25 +440,11 @@ const Conventions = () => {
     }
   };
 
-  // Cancel convention (AC only)
+  // Annulation : chemin choisi par conventionCancelMode (autorité titulaire/créatrice ou administration)
+  const cancelModeOf = (conv: ConventionDto) => conventionCancelMode(conv, user?.autoriteContractanteId, canAnnuler, isAdmin);
   const openCancel = (conv: ConventionDto) => {
     setCancelConvention(conv);
     setCancelOpen(true);
-  };
-
-  const handleCancel = async () => {
-    if (!cancelConvention) return;
-    setCancelling(true);
-    try {
-      await conventionApi.updateStatut(cancelConvention.id, "ANNULEE");
-      toast({ title: t("common:success.title", "Succès"), description: t("conventions:cancel_dialog.success") });
-      setCancelOpen(false);
-      fetchConventions();
-    } catch (e: any) {
-      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
-    } finally {
-      setCancelling(false);
-    }
   };
 
   const openDocuments = async (conv: ConventionDto) => {
@@ -712,16 +661,18 @@ const Conventions = () => {
                                       </DropdownMenuItem>
                                     </>
                                   )}
-                                  {(isAC || isAdmin) && c.statut !== "VALIDE" && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => openEdit(c)}>
-                                        <Edit className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
-                                        <Ban className="h-4 w-4 me-2" /> {t("conventions:actions.cancel")}
-                                      </DropdownMenuItem>
-                                    </>
+                                  {(canEditConvention(c, user?.autoriteContractanteId, canUpdate) || cancelModeOf(c)) && (
+                                    <DropdownMenuSeparator />
+                                  )}
+                                  {canEditConvention(c, user?.autoriteContractanteId, canUpdate) && (
+                                    <DropdownMenuItem onClick={() => openEdit(c)}>
+                                      <Edit className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
+                                    </DropdownMenuItem>
+                                  )}
+                                  {cancelModeOf(c) && (
+                                    <DropdownMenuItem onClick={() => openCancel(c)} className="text-destructive">
+                                      <Ban className="h-4 w-4 me-2" /> {t("conventions:actions.cancel")}
+                                    </DropdownMenuItem>
                                   )}
                               </DropdownMenuContent>
                               </DropdownMenu>
@@ -1184,70 +1135,13 @@ const Conventions = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5" /> {t("conventions:edit.title")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pe-1">
-            <div className="space-y-2">
-              <Label>{t("conventions:fields.reference_required")}</Label>
-              <Input value={editForm.reference} onChange={(e) => setEditForm(f => ({ ...f, reference: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>{t("conventions:fields.intitule_required")}</Label>
-              <Input value={editForm.intitule} onChange={(e) => setEditForm(f => ({ ...f, intitule: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>{t("conventions:fields.bailleur")}</Label>
-              <SearchableSelect
-                value={editForm.bailleurId != null ? String(editForm.bailleurId) : ""}
-                onValueChange={(v) => setEditForm(f => ({ ...f, bailleurId: v ? Number(v) : undefined }))}
-                placeholder={bailleursLoading ? t("conventions:create.loading") : t("conventions:edit.select_bailleur")}
-                searchPlaceholder={t("conventions:edit.search_bailleur")}
-                options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>{t("conventions:fields.date_signature")}</Label>
-                <Input type="date" value={editForm.dateSignature} onChange={(e) => setEditForm(f => ({ ...f, dateSignature: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("conventions:fields.date_fin")}</Label>
-                <Input type="date" value={editForm.dateFin} onChange={(e) => setEditForm(f => ({ ...f, dateFin: e.target.value }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>{t("conventions:fields.montant_devise")}</Label>
-                <Input type="number" step="0.01" value={editForm.montantDevise ?? ""} onChange={(e) => {
-                  const val = e.target.value ? Number(e.target.value) : undefined;
-                  setEditForm(f => ({ ...f, montantDevise: val, montantMru: val && f.tauxChange ? Math.round(val * f.tauxChange * 100) / 100 : undefined }));
-                }} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("conventions:fields.taux")}</Label>
-                <Input readOnly value={editForm.tauxChange != null ? formatNumber(editForm.tauxChange) : "—"} className="bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("conventions:fields.mru")}</Label>
-                <Input readOnly value={editForm.montantMru != null ? formatNumber(editForm.montantMru) : "—"} className="bg-muted" />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>{t("conventions:actions.dismiss")}</Button>
-            <Button onClick={handleEdit} disabled={editing || !editForm.reference || !editForm.intitule}>
-              {editing ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle className="h-4 w-4 me-1" />}
-              {t("conventions:actions.save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Dialog — EN_ATTENTE, AC titulaire ou créatrice */}
+      <ConventionEditDialog
+        convention={editConvention}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={() => fetchConventions(search.trim() || undefined)}
+      />
 
       {/* Reject Dialog */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
@@ -1282,25 +1176,13 @@ const Conventions = () => {
       </Dialog>
 
       {/* Cancel Dialog */}
-      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Ban className="h-5 w-5" /> {t("conventions:cancel_dialog.title")}
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t("conventions:cancel_dialog.confirm", { ref: cancelConvention?.reference || cancelConvention?.intitule || "" })}
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("conventions:actions.keep")}</Button>
-            <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
-              {cancelling ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Ban className="h-4 w-4 me-1" />}
-              {t("conventions:actions.cancel_yes")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConventionCancelDialog
+        convention={cancelConvention}
+        mode={cancelConvention ? cancelModeOf(cancelConvention) : null}
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        onCancelled={() => fetchConventions()}
+      />
     </DashboardLayout>
   );
 };

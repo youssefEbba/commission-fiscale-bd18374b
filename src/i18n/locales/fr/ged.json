@@ -183,6 +183,21 @@
       "ENTREE_help": "Visible du déposant à tout moment",
       "SORTIE": "Pièce produite par la Commission",
       "SORTIE_help": "Remise au déposant en fin de processus"
+    },
+    "requirement": {
+      "actif": "Actif",
+      "inactif": "Inactif",
+      "desactivee": "Désactivée",
+      "circuit_lock": "Pièce exigée par le circuit, elle ne peut pas être retirée",
+      "activation_label": "Activer ou désactiver la pièce",
+      "delete_label": "Supprimer la pièce",
+      "activated": "Pièce réactivée",
+      "deactivated": "Pièce désactivée",
+      "delete_title": "Supprimer cette pièce du process ?",
+      "delete_desc": "« {{name}} » disparaîtra du process et ne sera plus proposée ni demandée. Les documents déjà déposés restent consultables. Vous pourrez la rétablir en la recréant avec le formulaire d'ajout.",
+      "delete_confirm": "Supprimer",
+      "delete_cancel": "Annuler",
+      "table_actif": "ÉTAT"
     }
   }
 }
