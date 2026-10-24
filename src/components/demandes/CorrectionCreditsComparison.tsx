@@ -6,7 +6,7 @@ import type { DemandeCorrectionDto, DecisionCorrectionDto } from "@/lib/api";
 const amount = (v: number | string | null | undefined) => (v == null || v === "" ? "—" : formatAmount(v));
 
 /** « Déclaré par l'autorité contractante » / « Retenu après correction » — seulement si la correction est saisie. */
-export const CorrectionCreditsComparison = ({ demande }: { demande: DemandeCorrectionDto }) => {
+export const CorrectionCreditsComparison = ({ demande, className = "" }: { demande: DemandeCorrectionDto; className?: string }) => {
   const { t } = useTranslation();
   if (!hasDeclaredMontants(demande)) return null;
   const rows = [
@@ -24,7 +24,7 @@ export const CorrectionCreditsComparison = ({ demande }: { demande: DemandeCorre
     },
   ];
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className={`overflow-x-auto rounded-lg border border-border ${className}`}>
       <table className="w-full text-sm">
         <thead className="bg-muted/40 text-xs text-muted-foreground">
           <tr>

@@ -385,9 +385,7 @@ const CorrectionDouaniere = () => {
                       <p>{formatDate(demande.dateDepot)}</p>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <CorrectionCreditsComparison demande={demande} />
-                  </div>
+                  <CorrectionCreditsComparison demande={demande} className="mt-4" />
                 </CardContent>
               </Card>
 
