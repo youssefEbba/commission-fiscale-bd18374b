@@ -14,9 +14,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto } from "@/lib/api";
+import { documentRequirementApi, DocumentRequirementDto, CreateDocumentRequirementRequest, ProcessusType, FormatFichier, referentielTypeDocumentApi, ReferentielTypeDocumentDto, isRequirementActive } from "@/lib/api";
 import { tTypeDocument } from "@/i18n/enums";
-import { Plus, Pencil, Trash2, X, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, X, BookOpen, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type ProcessusSectionConfig = { key: string; processus: ProcessusType };
 
@@ -48,6 +52,7 @@ const GedConfiguration = () => {
   const [editItem, setEditItem] = useState<DocumentRequirementDto | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [catalogueExpanded, setCatalogueExpanded] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const toggleSection = (key: string) => setExpandedSections((p) => ({ ...p, [key]: !p[key] }));
 
   const [typeDocument, setTypeDocument] = useState("");
@@ -564,7 +569,8 @@ const GedConfiguration = () => {
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -576,6 +582,27 @@ const GedConfiguration = () => {
           })}
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleteMutation.isPending && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("ged:config.requirement.delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("ged:config.requirement.delete_desc", { name: deleteTarget?.name ?? "" })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>{t("ged:config.requirement.delete_cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); if (deleteTarget) deleteMutation.mutate(deleteTarget.id); }}
+            >
+              {t("ged:config.requirement.delete_confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="sm:max-w-lg">
