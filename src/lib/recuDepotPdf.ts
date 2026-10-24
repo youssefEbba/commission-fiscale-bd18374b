@@ -104,7 +104,7 @@ export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libel
   };
 
   section(t("section_depot"));
-  row(t("reference"), d.reference || d.numero);
+  row(t("reference"), d.reference);
   row(t("date_depot"), d.dateDepot ? formatDateTime(d.dateDepot) : null);
   if (!regenerated) row(t("statut"), d.statut ? tStatutDemande(d.statut) : null);
   y += 6;
