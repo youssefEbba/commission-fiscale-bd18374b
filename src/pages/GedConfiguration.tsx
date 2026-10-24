@@ -159,8 +159,26 @@ const GedConfiguration = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
       toast({ title: t("ged:config.toast.deleted") });
+      setDeleteTarget(null);
     },
-    onError: (e: Error) => toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" }),
+    onError: (e: Error) => {
+      // 404 = déjà supprimée : rafraîchir pour retirer la ligne, message serveur tel quel.
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
+      setDeleteTarget(null);
+      toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" });
+    },
+  });
+
+  const activationMutation = useMutation({
+    mutationFn: ({ id, actif }: { id: number; actif: boolean }) => documentRequirementApi.setActivation(id, actif),
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
+      toast({ title: vars.actif ? t("ged:config.requirement.activated") : t("ged:config.requirement.deactivated") });
+    },
+    onError: (e: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["document-requirements"] });
+      toast({ title: t("ged:config.toast.error"), description: e.message, variant: "destructive" });
+    },
   });
 
   // Catalogue mutations
@@ -464,6 +482,7 @@ const GedConfiguration = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="min-w-[200px]">{t("ged:config.table.document")}</TableHead>
+                            <TableHead className="min-w-[140px]">{t("ged:config.requirement.table_actif")}</TableHead>
                             <TableHead className="min-w-[120px]">{t("ged:config.table.required")}</TableHead>
                             <TableHead className="min-w-[160px]">{t("ged:config.table.famille")}</TableHead>
                             <TableHead className="min-w-[250px]">{t("ged:config.table.type")}</TableHead>
@@ -472,9 +491,38 @@ const GedConfiguration = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {sorted.map((req) => (
-                            <TableRow key={req.id}>
-                              <TableCell className="font-medium">{req.libelle || labelOfCode(req.codeDocument || req.typeDocument)}</TableCell>
+                          {sorted.map((req) => {
+                            const active = isRequirementActive(req);
+                            const locked = req.pieceDuCircuit === true;
+                            const name = req.libelle || labelOfCode(req.codeDocument || req.typeDocument);
+                            return (
+                            <TableRow key={req.id} className={active ? undefined : "opacity-60"}>
+                              <TableCell className="font-medium">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span>{name}</span>
+                                  {!active && <Badge variant="secondary">{t("ged:config.requirement.desactivee")}</Badge>}
+                                </div>
+                                {locked && (
+                                  <p className="mt-1 flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                                    <Lock className="h-3 w-3 shrink-0" />
+                                    {t("ged:config.requirement.circuit_lock")}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={active}
+                                    disabled={locked || activationMutation.isPending}
+                                    onCheckedChange={(v) => activationMutation.mutate({ id: req.id, actif: v })}
+                                    aria-label={t("ged:config.requirement.activation_label")}
+                                    title={locked ? t("ged:config.requirement.circuit_lock") : undefined}
+                                  />
+                                  <span className="text-xs text-muted-foreground">
+                                    {active ? t("ged:config.requirement.actif") : t("ged:config.requirement.inactif")}
+                                  </span>
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <Badge variant={req.obligatoire ? "default" : "secondary"}>
                                   {req.obligatoire ? t("ged:config.yes") : t("ged:config.no")}
@@ -502,7 +550,15 @@ const GedConfiguration = () => {
                                   <Button variant="ghost" size="icon" onClick={() => openEdit(req)} aria-label={t("ged:config.dialog.submit_edit")}>
                                     <Pencil className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(req.id)} className="text-destructive hover:text-destructive" aria-label={t("ged:config.toast.deleted")}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={locked}
+                                    onClick={() => setDeleteTarget({ id: req.id, name })}
+                                    className="text-destructive hover:text-destructive disabled:opacity-30"
+                                    aria-label={t("ged:config.requirement.delete_label")}
+                                    title={locked ? t("ged:config.requirement.circuit_lock") : t("ged:config.requirement.delete_label")}
+                                  >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
