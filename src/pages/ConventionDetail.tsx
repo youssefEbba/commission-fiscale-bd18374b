@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
-import { ArrowLeft, CalendarClock, FileText, Loader2, Paperclip, Power } from "lucide-react";
+import { ArrowLeft, CalendarClock, FileText, Loader2, Paperclip, Pencil, Power } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
@@ -21,7 +21,8 @@ import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { echeanceConvention } from "@/lib/conventionEcheance";
-import { canSetConventionActivation } from "@/lib/conventionEditability";
+import { canSetConventionActivation, canEditConvention } from "@/lib/conventionEditability";
+import ConventionEditDialog from "@/components/conventions/ConventionEditDialog";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -41,7 +42,7 @@ const ConventionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { hasRole, hasPermission } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
   const { t } = useTranslation(["conventions", "common"]);
   const smartBack = useSmartBack("/dashboard/conventions");
 
@@ -57,6 +58,7 @@ const ConventionDetail = () => {
   const canActivate = hasPermission("convention.activate");
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [activationLoading, setActivationLoading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   usePageTitle("conventions:detail.title", { ref: conv?.reference || `#${id}` });
 
@@ -111,6 +113,7 @@ const ConventionDetail = () => {
   }
 
   const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
+  const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"));
   const devise = conv.deviseOrigine || "MRU";
   const echeance = echeanceConvention(conv.dateFin);
 
@@ -185,6 +188,11 @@ const ConventionDetail = () => {
                 )}
               </div>
             )}
+            {canEdit && (
+              <Button variant="outline" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setGedOpen(true)}>
               <Paperclip className="h-4 w-4 me-2" /> {t("conventions:detail.documents_button", { count: docs.length })}
             </Button>
@@ -244,6 +252,13 @@ const ConventionDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ConventionEditDialog
+        convention={conv}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={(updated) => { setConv(updated); load(); }}
+      />
 
       <DocumentGED
         open={gedOpen}
