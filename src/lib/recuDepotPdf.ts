@@ -15,11 +15,13 @@ export interface RecuDepotInput {
   deposantNom?: string;
   /** Libellés paramétrés par code document (sinon traduction de l'enum). */
   libelles?: Record<string, string>;
+  /** Reçu reconstitué après coup (reçu enregistré indisponible) : le statut actuel n'est pas celui du dépôt, il est omis. */
+  regenerated?: boolean;
 }
 
 const t = (k: string, o?: Record<string, unknown>) => i18n.t(`demandes:recu.${k}`, o) as string;
 
-export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libelles = {} }: RecuDepotInput): Blob {
+export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libelles = {}, regenerated = false }: RecuDepotInput): Blob {
   const rtl = i18n.language?.startsWith("ar");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
@@ -102,16 +104,15 @@ export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libel
   };
 
   section(t("section_depot"));
-  row(t("numero"), d.numero);
-  row(t("reference"), d.reference);
+  row(t("reference"), d.reference || d.numero);
   row(t("date_depot"), d.dateDepot ? formatDateTime(d.dateDepot) : null);
-  row(t("statut"), d.statut ? tStatutDemande(d.statut) : null);
+  if (!regenerated) row(t("statut"), d.statut ? tStatutDemande(d.statut) : null);
   y += 6;
 
   section(t("section_deposant"));
   row(t("autorite"), d.autoriteContractanteNom);
   row(t("ministere_tutelle"), d.autoriteContractanteMinistereTutelleNom);
-  row(t("deposant_nom"), deposantNom);
+  if (deposantNom || !regenerated) row(t("deposant_nom"), deposantNom);
   y += 6;
 
   section(t("section_titulaire"));
