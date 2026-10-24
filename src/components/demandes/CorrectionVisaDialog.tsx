@@ -63,7 +63,7 @@ const CorrectionVisaDialog = ({ demande, role, onClose, onDone }: Props) => {
   }, [demande?.id, visaState.error, fallbackDocType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const montants = saisieExigee ? parseMontants(draft) : null;
-  const stateLoading = visaState.loading && !row && !visaState.error;
+  const stateLoading = visaState.active && !visaState.visas && !visaState.error;
   const canSubmit = !!demande && !submitting && !stateLoading && (!needsFile || !!file) && (!saisieExigee || !!montants);
   const docLabel = docType ? tTypeDocument(docType) : "";
 
