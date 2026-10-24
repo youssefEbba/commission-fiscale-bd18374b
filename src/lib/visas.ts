@@ -26,6 +26,11 @@ export function isPositive(v: number | string | null | undefined): boolean {
  * correction), ils se trouvent alors dans `modeleFiscal.recapitulatif`.
  */
 export function resolveCredits(d?: any): CreditsSource {
+  // Une fois la correction saisie (déclaration d'origine conservée à part), les montants
+  // racine sont les montants RETENUS — y compris un zéro : le modèle fiscal ne fait plus foi.
+  if (d && (d.creditExterieurDeclare != null || d.creditInterieurDeclare != null)) {
+    return { creditInterieur: d.creditInterieur ?? null, creditExterieur: d.creditExterieur ?? null };
+  }
   const recap = d?.modeleFiscal?.recapitulatif;
   const fiscInt = d?.modeleFiscal?.fiscaliteInterieure;
   const creditInterieur = isPositive(d?.creditInterieur)

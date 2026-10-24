@@ -38,6 +38,9 @@ import { API_BASE } from "@/lib/apiConfig";
 import DiscussionCommissionPanel from "@/components/explication/DiscussionCommissionPanel";
 import AdminCorrectionCard from "@/components/admin/AdminCorrectionCard";
 import AdminVisasCard from "@/components/admin/AdminVisasCard";
+import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
+import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
+import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
 import { openDocument, downloadDocument } from "@/lib/openDocument";
 
@@ -157,10 +160,6 @@ const DemandeDetail = () => {
   const [rejectDecisionFinale, setRejectDecisionFinale] = useState(false);
   const [rejectDocsDemandes, setRejectDocsDemandes] = useState<string[]>([]);
 
-  const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
-  const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
-  const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
-  const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
 
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -188,17 +187,12 @@ const DemandeDetail = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
-  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
-  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
-
-  // Document à uploader obligatoirement avant le visa — miroir exact du backend
-  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
-  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
-  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
+  // Visa d'une direction : document pré-visa et crédits retenus pilotés par `GET /visas` (CorrectionVisaDialog).
+  const [visaTarget, setVisaTarget] = useState<DemandeCorrectionDto | null>(null);
+  const pageVisa = useCorrectionVisaState(selected?.id, role, !!selected);
   const UPLOAD_BEFORE_PRESIDENT_VALIDATE = {
     PRESIDENT: { docType: "LETTRE_ADOPTION" },
   } as const;
-  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
   const transitions = ROLE_TRANSITIONS[role] || [];
 
   const fetchDetail = async () => {
@@ -281,16 +275,6 @@ const DemandeDetail = () => {
     } finally { setMarcheLoading(false); }
   };
 
-  const handleTempVisa = async (demandeId: number) => {
-    setActionLoading(demandeId);
-    try {
-      await demandeCorrectionApi.postDecision(demandeId, "VISA");
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.visa_temp_applied") });
-      fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
-    } finally { setActionLoading(null); }
-  };
 
   const handleTempReject = async (demandeId: number, motif: string, documentsDemandes?: string[]) => {
     setActionLoading(demandeId);
@@ -303,37 +287,6 @@ const DemandeDetail = () => {
     } finally { setActionLoading(null); }
   };
 
-  const checkAndHandleVisa = async (demandeId: number) => {
-    const docType = requiredPreVisaDocCorrection(role, resolveCredits(selected));
-    setPendingDocType(docType);
-    if (docType) {
-      try {
-        const documents = await demandeCorrectionApi.getDocuments(demandeId);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
-        if (!hasDoc) { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
-      } catch { setOffreCorrigeePendingId(demandeId); setOffreCorrigeeOpen(true); return; }
-    }
-    await handleTempVisa(demandeId);
-  };
-
-  const confirmVisa = () => {
-    if (visaConfirmId != null) checkAndHandleVisa(visaConfirmId);
-    setVisaConfirmOpen(false);
-  };
-
-  const handleOffreCorrigeeUploadAndVisa = async () => {
-    if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
-    setOffreCorrigeeUploading(true);
-    try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, pendingDocType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
-      setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null);
-      await handleTempVisa(offreCorrigeePendingId);
-      fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
-    } finally { setOffreCorrigeeUploading(false); setOffreCorrigeePendingId(null); }
-  };
 
   const [reactivateOpen, setReactivateOpen] = useState(false);
   const [reactivating, setReactivating] = useState(false);
@@ -704,17 +657,18 @@ const DemandeDetail = () => {
                 <div className="grid gap-3 sm:grid-cols-3 text-sm">
                   <div className="rounded-lg border border-border p-3">
                     <span className="text-muted-foreground text-xs">Crédit intérieur (DGI)</span>
-                    <p className="font-medium">{hasInt ? `${formatAmount(ci)} MRU` : "—"}</p>
+                    <p className="font-medium">{hasInt ? formatAmount(ci) : "—"}</p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <span className="text-muted-foreground text-xs">Crédit extérieur (DGD)</span>
-                    <p className="font-medium">{hasExt ? `${formatAmount(ce)} MRU` : "—"}</p>
+                    <p className="font-medium">{hasExt ? formatAmount(ce) : "—"}</p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <span className="text-muted-foreground text-xs">Total</span>
-                    <p className="font-semibold">{hasInt || hasExt ? `${formatAmount(ci + ce)} MRU` : "—"}</p>
+                    <p className="font-semibold">{hasInt || hasExt ? formatAmount(ci + ce) : "—"}</p>
                   </div>
                 </div>
+                <CorrectionCreditsComparison demande={selected} />
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs text-muted-foreground">Visas requis :</span>
                   {visas.map((v) => (
@@ -767,6 +721,7 @@ const DemandeDetail = () => {
                 {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">{t("demandes:detail.org_status.all_resolved")}</p>}
                 {!hasVisa && !hasRejets && <p className="text-muted-foreground text-xs mt-0.5">{t("demandes:detail.org_status.awaiting")}</p>}
                 {hasVisa && visaDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">{t("demandes:detail.org_status.on", { date: formatDate(visaDec.dateDecision) })}</p>}
+                {hasVisa && visaDec && <DecisionMontantsRetenus decision={visaDec} className="mt-0.5" />}
                 {hasVisa && visaDec?.visaParAdmin && (
                   <div className="mt-1 space-y-0.5">
                     <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">{t("demandes:detail.admin_visas.by_admin")}</Badge>
@@ -856,7 +811,7 @@ const DemandeDetail = () => {
                   {isMyRole && !hasVisa && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
                     <div className="flex gap-2 mt-2 justify-center">
                       {canVisa && (
-                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => checkAndHandleVisa(selected.id)}>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => setVisaTarget(selected)}>
                           {t("demandes:detail.org_status.apply_visa")}
                         </Button>
                       )}
@@ -1066,7 +1021,7 @@ const DemandeDetail = () => {
         )}
 
         {/* Visas de la commission — substitution administrateur */}
-        <AdminVisasCard demandeId={selected.id} onSuccess={fetchDetail} onGenerateAdoptionLetter={handleGenerateAdoptionLetter} />
+        <AdminVisasCard demandeId={selected.id} demande={selected} onSuccess={() => { fetchDetail(); pageVisa.reload(); }} onGenerateAdoptionLetter={handleGenerateAdoptionLetter} />
 
         {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
         <AdminCorrectionCard
@@ -1107,10 +1062,15 @@ const DemandeDetail = () => {
               {(() => {
                 const myHasVisa = decs.some(d => d.role === role && d.decision === "VISA");
                 const myOpenRejets = decs.filter(d => d.role === role && d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-                const firstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
-                const firstVisaDone = !firstRole || decs.some(d => d.role === firstRole && d.decision === "VISA");
+                // Visa préalable : `visaPrealableManquant` du serveur (suit les crédits retenus) ;
+                // repli sur la déduction locale si l'état des visas n'a pas pu être lu.
+                const localFirstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
+                const firstVisaDone = !localFirstRole || decs.some(d => d.role === localFirstRole && d.decision === "VISA");
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
+                const firstRole = pageVisa.row ? pageVisa.row.visaPrealableManquant : localFirstRole;
+                const blocked = pageVisa.row
+                  ? !!pageVisa.row.visaPrealableManquant && !isPres
+                  : !!localFirstRole && (role as string) !== localFirstRole && !isPres && !firstVisaDone;
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (
@@ -1136,7 +1096,7 @@ const DemandeDetail = () => {
                           if (isVisaAction && (myHasVisa || myOpenRejets.length > 0)) return null;
                           if (isRejetAction && myHasVisa) return null;
                           return (
-                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : (setVisaConfirmId(selected.id), setVisaConfirmOpen(true))}>
+                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : setVisaTarget(selected)}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
                             {tTransition(tr.labelKey)}
                           </Button>
@@ -1457,26 +1417,6 @@ const DemandeDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Offre Corrigée Upload */}
-      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
-            <DialogDescription>{t("demandes:dialogs.offre_corrigee.description_short")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>{t("demandes:dialogs.offre_corrigee.file_label_short")}</Label>
-            <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
-            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
-              {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
-              {t("demandes:dialogs.offre_corrigee.submit")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Entreprise detail */}
       <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>
@@ -1689,20 +1629,12 @@ const DemandeDetail = () => {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CorrectionVisaDialog
+        demande={visaTarget}
+        role={role}
+        onClose={() => setVisaTarget(null)}
+        onDone={async () => { await Promise.all([fetchDetail(), pageVisa.reload()]); }}
+      />
     </DashboardLayout>
   );
 };

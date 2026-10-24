@@ -21,7 +21,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
+import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
+import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
@@ -93,9 +95,6 @@ const CorrectionDouaniere = () => {
   const [responseMessage, setResponseMessage] = useState("");
   const [responseLoading, setResponseLoading] = useState(false);
 
-  const [preVisaUploadOpen, setPreVisaUploadOpen] = useState(false);
-  const [preVisaFile, setPreVisaFile] = useState<File | null>(null);
-  const [preVisaLoading, setPreVisaLoading] = useState(false);
 
   const [entrepriseDetail, setEntrepriseDetail] = useState<any | null>(null);
   const [entrepriseLoading, setEntrepriseLoading] = useState(false);
@@ -112,7 +111,7 @@ const CorrectionDouaniere = () => {
   const [traiterFile, setTraiterFile] = useState<File | null>(null);
   const [traiterOpen, setTraiterOpen] = useState(false);
   const [traiterSubmitting, setTraiterSubmitting] = useState(false);
-  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
+  const [visaTarget, setVisaTarget] = useState<DemandeCorrectionDto | null>(null);
 
   const errTitle = t("common:errors.generic_title", { defaultValue: "Erreur" });
   const okTitle = t("common:success.generic_title", { defaultValue: "Succès" });
@@ -226,47 +225,17 @@ const CorrectionDouaniere = () => {
   };
 
   const userRole = user?.role;
-  // Le document pré-visa dépend uniquement des montants (DGD → offre corrigée si crédit ext. > 0,
-  // DGI → crédit intérieur si crédit ext. = 0 et crédit int. > 0).
-  const preVisaDocType = requiredPreVisaDocCorrection(userRole, resolveCredits(demande));
+  // État serveur des visas pour mon rôle (document pré-visa, visa préalable, saisie des crédits).
+  const pageVisa = useCorrectionVisaState(demande?.id, userRole, !!demande);
+  // Document pré-visa : `codeDocumentRequis` du serveur ; repli sur la déduction locale par les montants.
+  const preVisaDocType = pageVisa.row
+    ? pageVisa.row.codeDocumentRequis
+    : requiredPreVisaDocCorrection(userRole, resolveCredits(demande));
   const uploadReq = preVisaDocType ? { docType: preVisaDocType } : null;
   const uploadReqLabel = uploadReq ? tTypeDocument(uploadReq.docType) : "";
-  const hasUploadedRequiredDoc = uploadReq ? docs.some(d => d.type === uploadReq.docType) : true;
-
-
-  const handlePreVisaUpload = async () => {
-    if (!demande || !uploadReq || !preVisaFile) return;
-    setPreVisaLoading(true);
-    try {
-      await demandeCorrectionApi.uploadDocument(demande.id, uploadReq.docType, preVisaFile);
-      toast({ title: okTitle, description: t("correction_douaniere:toast.pre_visa_success", { label: uploadReqLabel }) });
-      await fetchDocs();
-      setPreVisaUploadOpen(false); setPreVisaFile(null);
-      await demandeCorrectionApi.postDecision(demande.id, "VISA");
-      toast({ title: okTitle, description: t("correction_douaniere:toast.visa_success") });
-      await fetchDecisions(); await fetchDemande();
-    } catch (e: any) {
-      toast({ title: errTitle, description: e.message, variant: "destructive" });
-    } finally { setPreVisaLoading(false); }
-  };
-
-  const handleTempVisa = async () => {
-    if (!demande) return;
-    if (uploadReq && !hasUploadedRequiredDoc) { setPreVisaUploadOpen(true); return; }
-    setActionLoading(true);
-    try {
-      await demandeCorrectionApi.postDecision(demande.id, "VISA");
-      toast({ title: okTitle, description: t("correction_douaniere:toast.visa_temp_success") });
-      await fetchDecisions(); await fetchDemande();
-    } catch (e: any) {
-      toast({ title: errTitle, description: e.message, variant: "destructive" });
-    } finally { setActionLoading(false); }
-  };
-
-  const confirmVisa = () => {
-    setVisaConfirmOpen(false);
-    handleTempVisa();
-  };
+  const hasUploadedRequiredDoc = !uploadReq
+    ? true
+    : pageVisa.row ? pageVisa.row.documentRequisPresent : docs.some(d => d.type === uploadReq.docType);
 
   const handleTempReject = async () => {
     if (!demande || !rejectMotif.trim() || rejectDocsDemandes.length === 0) return;
@@ -345,11 +314,15 @@ const CorrectionDouaniere = () => {
 
   const isDGD = userRole === "DGD";
   const isPresident = userRole === "PRESIDENT";
-  // Le rôle qui doit viser en premier est celui qui a un document pré-visa à fournir
-  // (DGD si crédit extérieur > 0, sinon DGI si crédit intérieur > 0).
-  const firstVisaRole = firstVisaRoleCorrection(resolveCredits(demande));
-  const firstVisaDone = !firstVisaRole || decisions.some(d => d.role === firstVisaRole && d.decision === "VISA");
-  const blockedByFirst = !!firstVisaRole && userRole !== firstVisaRole && !isPresident && !firstVisaDone;
+  // Le rôle qui doit viser en premier est celui qui a un document pré-visa à fournir.
+  // Source : `visaPrealableManquant` du serveur (tient compte des crédits retenus) ;
+  // repli sur la déduction locale si l'état des visas n'a pas pu être lu.
+  const localFirstVisaRole = firstVisaRoleCorrection(resolveCredits(demande));
+  const localFirstVisaDone = !localFirstVisaRole || decisions.some(d => d.role === localFirstVisaRole && d.decision === "VISA");
+  const firstVisaRole = pageVisa.row ? pageVisa.row.visaPrealableManquant : localFirstVisaRole;
+  const blockedByFirst = pageVisa.row
+    ? !!pageVisa.row.visaPrealableManquant && !isPresident
+    : !!localFirstVisaRole && userRole !== localFirstVisaRole && !isPresident && !localFirstVisaDone;
 
   const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES.includes(d.type));
   const dash = t("correction_douaniere:info.dash");
@@ -412,6 +385,7 @@ const CorrectionDouaniere = () => {
                       <p>{formatDate(demande.dateDepot)}</p>
                     </div>
                   </div>
+                  <CorrectionCreditsComparison demande={demande} className="mt-4" />
                 </CardContent>
               </Card>
 
@@ -487,6 +461,7 @@ const CorrectionDouaniere = () => {
                                   )}
                                 </div>
                                 {dec.motifRejet && <p className="text-xs text-muted-foreground italic mt-1">{dec.motifRejet}</p>}
+                                {dec.decision === "VISA" && <DecisionMontantsRetenus decision={dec} className="mt-1" />}
                                 {dec.documentsDemandes && dec.documentsDemandes.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1.5">
                                     <span className="text-[10px] text-muted-foreground">{t("correction_douaniere:decisions.docs_requested")}</span>
@@ -795,7 +770,7 @@ const CorrectionDouaniere = () => {
                     {blockedByFirst && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
                         <p className="font-medium">{t("correction_douaniere:actions.blocked_by_first_title", { role: firstVisaRole })}</p>
-                        <p className="mt-1">{t("correction_douaniere:actions.blocked_by_first_body", { role: firstVisaRole })}</p>
+                        <p className="mt-1">{pageVisa.row?.motifBlocage || t("correction_douaniere:actions.blocked_by_first_body", { role: firstVisaRole })}</p>
                       </div>
                     )}
 
@@ -806,12 +781,13 @@ const CorrectionDouaniere = () => {
                       </div>
                     )}
 
+                    {!blockedByFirst && !myHasVisa && pageVisa.saisieExigee && (
+                      <p className="text-xs text-muted-foreground">{t("correction_douaniere:montants.action_hint")}</p>
+                    )}
+
                     <Button
                       className="w-full"
-                      onClick={() => {
-                        if (uploadReq && !hasUploadedRequiredDoc) { setPreVisaFile(null); setPreVisaUploadOpen(true); }
-                        else setVisaConfirmOpen(true);
-                      }}
+                      onClick={() => setVisaTarget(demande)}
                       disabled={actionLoading || blockedByFirst || myHasVisa || myOpenRejets.length > 0}
                     >
                       {actionLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <CheckCircle className="h-4 w-4 me-2" />}
@@ -1084,28 +1060,6 @@ const CorrectionDouaniere = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Pre-Visa Upload Dialog */}
-      <Dialog open={preVisaUploadOpen} onOpenChange={setPreVisaUploadOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("correction_douaniere:dialog.pre_visa.title", { label: uploadReqLabel })}</DialogTitle>
-            <DialogDescription>{t("correction_douaniere:dialog.pre_visa.description", { label: uploadReqLabel })}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">{t("correction_douaniere:dialog.pre_visa.file_label")}</Label>
-              <Input type="file" onChange={(e) => setPreVisaFile(e.target.files?.[0] || null)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPreVisaUploadOpen(false)}>{t("correction_douaniere:dialog.pre_visa.cancel")}</Button>
-            <Button disabled={!preVisaFile || preVisaLoading} onClick={handlePreVisaUpload}>
-              {preVisaLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
-              {t("correction_douaniere:dialog.pre_visa.upload")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Upload Dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
@@ -1303,20 +1257,12 @@ const CorrectionDouaniere = () => {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CorrectionVisaDialog
+        demande={visaTarget}
+        role={userRole}
+        onClose={() => setVisaTarget(null)}
+        onDone={async () => { await Promise.all([fetchDocs(), fetchDecisions(), fetchDemande(), pageVisa.reload()]); }}
+      />
     </DashboardLayout>
   );
 };

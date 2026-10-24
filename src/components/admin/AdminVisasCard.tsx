@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { demandeCorrectionApi, VisaEtatDto } from "@/lib/api";
+import { demandeCorrectionApi, VisaEtatDto, type DemandeCorrectionDto } from "@/lib/api";
+import CorrectionMontantsFields from "@/components/demandes/CorrectionMontantsFields";
+import {
+  declaredMontants, initialMontantsDraft, parseMontants, type CorrectionMontantsDraft,
+} from "@/lib/correctionMontants";
 import { useAuth } from "@/contexts/AuthContext";
 import { tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
@@ -20,13 +24,15 @@ const ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png";
 
 interface Props {
   demandeId: number;
+  /** Demande (préremplissage des crédits retenus quand la ligne exige leur saisie). */
+  demande?: DemandeCorrectionDto | null;
   /** Rafraîchit la demande parente après un visa administrateur. */
   onSuccess?: () => void;
   /** Génère la lettre d'adoption (même PDF que pour le Président). */
   onGenerateAdoptionLetter?: () => void | Promise<void>;
 }
 
-const AdminVisasCard = ({ demandeId, onSuccess, onGenerateAdoptionLetter }: Props) => {
+const AdminVisasCard = ({ demandeId, demande, onSuccess, onGenerateAdoptionLetter }: Props) => {
   const [generating, setGenerating] = useState(false);
   const { t } = useTranslation();
   const { hasPermission, hasRole } = useAuth();
@@ -38,6 +44,7 @@ const AdminVisasCard = ({ demandeId, onSuccess, onGenerateAdoptionLetter }: Prop
   const [motif, setMotif] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [draft, setDraft] = useState<CorrectionMontantsDraft>(() => initialMontantsDraft(demande));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,19 +66,24 @@ const AdminVisasCard = ({ demandeId, onSuccess, onGenerateAdoptionLetter }: Prop
     setTarget(v);
     setMotif("");
     setFile(null);
+    setDraft(initialMontantsDraft(demande));
   };
 
   const roleLabel = (role: string) => t(`roles:${role}`, { defaultValue: role });
 
   const fileRequired = !!target?.codeDocumentRequis && !target?.documentRequisPresent;
+  // Saisie des crédits retenus : uniquement si la ligne du rôle remplacé l'exige (serveur).
+  const saisieExigee = target?.saisieMontantsExigee === true;
+  const montants = saisieExigee ? parseMontants(draft) : null;
 
   const submit = async () => {
     if (!target) return;
     if (!motif.trim()) return;
     if (fileRequired && !file) return;
+    if (saisieExigee && !montants) return;
     setSubmitting(true);
     try {
-      const res = await demandeCorrectionApi.poserVisaAdmin(demandeId, target.role, motif.trim(), file);
+      const res = await demandeCorrectionApi.poserVisaAdmin(demandeId, target.role, motif.trim(), file, saisieExigee ? montants : undefined);
       if (Array.isArray(res?.visas)) setVisas(res.visas);
       else await load();
       setTarget(null);
@@ -150,6 +162,9 @@ const AdminVisasCard = ({ demandeId, onSuccess, onGenerateAdoptionLetter }: Prop
                           </span>
                         </p>
                       )}
+                      {!v.pose && v.saisieMontantsExigee && (
+                        <p className="text-[11px] text-muted-foreground">{t("correction_douaniere:montants.admin_row_hint")}</p>
+                      )}
                       {!v.pose && !v.visableParAdmin && v.motifBlocage && (
                         <p className="text-[11px] text-amber-700 flex items-start gap-1">
                           <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> {v.motifBlocage}
@@ -224,13 +239,21 @@ const AdminVisasCard = ({ demandeId, onSuccess, onGenerateAdoptionLetter }: Prop
                 <Input type="file" accept={ACCEPT} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               </div>
             )}
+            {saisieExigee && (
+              <CorrectionMontantsFields
+                draft={draft}
+                onChange={setDraft}
+                declared={declaredMontants(demande)}
+                disabled={submitting}
+              />
+            )}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setTarget(null)} disabled={submitting}>
               {t("common:actions.cancel")}
             </Button>
-            <Button onClick={submit} disabled={submitting || !motif.trim() || (fileRequired && !file)}>
+            <Button onClick={submit} disabled={submitting || !motif.trim() || (fileRequired && !file) || (saisieExigee && !montants)}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin me-1" />}
               {t("demandes:detail.admin_visas.confirm")}
             </Button>

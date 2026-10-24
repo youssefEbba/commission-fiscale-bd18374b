@@ -27,13 +27,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import CreateDemandeWizard from "@/components/demandes/CreateDemandeWizard";
+import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
-import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits, requiredPreVisaDocCorrection } from "@/lib/visas";
+import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -107,8 +108,8 @@ const Demandes = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const [visaConfirmOpen, setVisaConfirmOpen] = useState(false);
-  const [visaConfirmId, setVisaConfirmId] = useState<number | null>(null);
+  // Visa d'une direction : document pré-visa et crédits retenus pilotés par `GET /visas`.
+  const [visaTarget, setVisaTarget] = useState<DemandeCorrectionDto | null>(null);
 
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
@@ -125,11 +126,6 @@ const Demandes = () => {
   const [responseMessage, setResponseMessage] = useState("");
   const [responseSending, setResponseSending] = useState(false);
 
-  const [offreCorrigeeOpen, setOffreCorrigeeOpen] = useState(false);
-  const [offreCorrigeeFile, setOffreCorrigeeFile] = useState<File | null>(null);
-  const [offreCorrigeeUploading, setOffreCorrigeeUploading] = useState(false);
-  const [offreCorrigeePendingId, setOffreCorrigeePendingId] = useState<number | null>(null);
-  const [pendingDocType, setPendingDocType] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDemande, setEditingDemande] = useState<DemandeCorrectionDto | null>(null);
@@ -265,76 +261,6 @@ const Demandes = () => {
       });
       fetchDemandes();
       if (selected?.id === id) setSelected(updated);
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // Document à uploader obligatoirement avant le visa — miroir exact du backend
-  // (VisaRequirementResolver) : DGD si creditExterieur > 0 ; DGI si creditInterieur > 0
-  // ET creditExterieur = 0. Aucun document si les deux crédits sont nuls.
-  const uploadBeforeVisaLabel = pendingDocType ? tTypeDocument(pendingDocType) : undefined;
-
-  const checkAndHandleVisa = async (id: number) => {
-    const demande = demandes.find(x => x.id === id) ?? (selected?.id === id ? selected : undefined);
-    const docType = requiredPreVisaDocCorrection(role, resolveCredits(demande));
-    setPendingDocType(docType);
-    if (docType) {
-      try {
-        const documents = await demandeCorrectionApi.getDocuments(id);
-        const hasDoc = documents.some(d => ((d as any).codeDocument ?? d.type) === docType && d.actif !== false);
-        if (!hasDoc) {
-          setOffreCorrigeePendingId(id);
-          setOffreCorrigeeOpen(true);
-          return;
-        }
-      } catch {
-        setOffreCorrigeePendingId(id);
-        setOffreCorrigeeOpen(true);
-        return;
-      }
-    }
-    await handleTempVisa(id);
-  };
-
-  const confirmVisa = () => {
-    if (visaConfirmId != null) checkAndHandleVisa(visaConfirmId);
-    setVisaConfirmOpen(false);
-  };
-
-  const handleOffreCorrigeeUploadAndVisa = async () => {
-    if (!offreCorrigeePendingId || !offreCorrigeeFile) return;
-    setOffreCorrigeeUploading(true);
-    try {
-      await demandeCorrectionApi.uploadDocument(offreCorrigeePendingId, pendingDocType || "OFFRE_CORRIGEE", offreCorrigeeFile);
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") }) });
-      setOffreCorrigeeOpen(false);
-      setOffreCorrigeeFile(null);
-      await handleTempVisa(offreCorrigeePendingId);
-      if (selected?.id === offreCorrigeePendingId) {
-        const documents = await demandeCorrectionApi.getDocuments(offreCorrigeePendingId);
-        setDocs(documents);
-      }
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
-    } finally {
-      setOffreCorrigeeUploading(false);
-      setOffreCorrigeePendingId(null);
-    }
-  };
-
-  const handleTempVisa = async (id: number) => {
-    setActionLoading(id);
-    try {
-      await demandeCorrectionApi.postDecision(id, "VISA");
-      toast({ title: t("demandes:toast.success"), description: t("demandes:toast.visa_temp_applied") });
-      fetchDemandes();
-      if (selected) {
-        const full = await demandeCorrectionApi.getById(id);
-        setSelected(full);
-      }
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
     } finally {
@@ -682,7 +608,7 @@ const Demandes = () => {
 
                                     const actionItems = [
                                       ...visaTransitions.map((tr, idx) => (
-                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => { setVisaConfirmId(d.id); setVisaConfirmOpen(true); }}>
+                                        <DropdownMenuItem key={`v-${idx}`} disabled={actionLoading === d.id} onClick={() => setVisaTarget(d)}>
                                           <tr.icon className="h-4 w-4 me-2" />
                                           {tTransition(tr.labelKey)}
                                         </DropdownMenuItem>
@@ -953,31 +879,6 @@ const Demandes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Offre Corrigée Upload Dialog */}
-      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
-            <DialogDescription>
-              {t("demandes:dialogs.offre_corrigee.description", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_required_fallback") })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("demandes:dialogs.offre_corrigee.file_label", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</Label>
-              <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
-            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
-              {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
-              {t("demandes:dialogs.offre_corrigee.submit")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Cancel confirmation */}
       <Dialog open={cancelOpen} onOpenChange={(v) => { if (!v) { setCancelOpen(false); setCancelTargetId(null); } }}>
         <DialogContent className="sm:max-w-md">
@@ -1018,20 +919,19 @@ const Demandes = () => {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CorrectionVisaDialog
+        demande={visaTarget}
+        role={role}
+        onClose={() => setVisaTarget(null)}
+        onDone={async () => {
+          const id = visaTarget?.id;
+          fetchDemandes();
+          if (selected && id === selected.id) {
+            setSelected(await demandeCorrectionApi.getById(id));
+            setDocs(await demandeCorrectionApi.getDocuments(id));
+          }
+        }}
+      />
     </DashboardLayout>
   );
 };
