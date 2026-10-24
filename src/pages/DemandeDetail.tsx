@@ -767,6 +767,7 @@ const DemandeDetail = () => {
                 {allResolved && !hasVisa && <p className="text-emerald-700 font-medium text-xs mt-0.5">{t("demandes:detail.org_status.all_resolved")}</p>}
                 {!hasVisa && !hasRejets && <p className="text-muted-foreground text-xs mt-0.5">{t("demandes:detail.org_status.awaiting")}</p>}
                 {hasVisa && visaDec?.dateDecision && <p className="text-muted-foreground text-[10px] mt-0.5">{t("demandes:detail.org_status.on", { date: formatDate(visaDec.dateDecision) })}</p>}
+                {hasVisa && visaDec && <DecisionMontantsRetenus decision={visaDec} className="mt-0.5" />}
                 {hasVisa && visaDec?.visaParAdmin && (
                   <div className="mt-1 space-y-0.5">
                     <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">{t("demandes:detail.admin_visas.by_admin")}</Badge>
@@ -856,7 +857,7 @@ const DemandeDetail = () => {
                   {isMyRole && !hasVisa && !["ADOPTEE", "NOTIFIEE", "REJETEE", "ANNULEE"].includes(selected.statut) && (
                     <div className="flex gap-2 mt-2 justify-center">
                       {canVisa && (
-                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => checkAndHandleVisa(selected.id)}>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={actionLoading === selected.id} onClick={() => setVisaTarget(selected)}>
                           {t("demandes:detail.org_status.apply_visa")}
                         </Button>
                       )}
@@ -1107,10 +1108,15 @@ const DemandeDetail = () => {
               {(() => {
                 const myHasVisa = decs.some(d => d.role === role && d.decision === "VISA");
                 const myOpenRejets = decs.filter(d => d.role === role && d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-                const firstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
-                const firstVisaDone = !firstRole || decs.some(d => d.role === firstRole && d.decision === "VISA");
+                // Visa préalable : `visaPrealableManquant` du serveur (suit les crédits retenus) ;
+                // repli sur la déduction locale si l'état des visas n'a pas pu être lu.
+                const localFirstRole = firstVisaRoleCorrection(resolveCredits(selected as any));
+                const firstVisaDone = !localFirstRole || decs.some(d => d.role === localFirstRole && d.decision === "VISA");
                 const isPres = (role as string) === "PRESIDENT";
-                const blocked = !!firstRole && (role as string) !== firstRole && !isPres && !firstVisaDone;
+                const firstRole = pageVisa.row ? pageVisa.row.visaPrealableManquant : localFirstRole;
+                const blocked = pageVisa.row
+                  ? !!pageVisa.row.visaPrealableManquant && !isPres
+                  : !!localFirstRole && (role as string) !== localFirstRole && !isPres && !firstVisaDone;
                 return (
                   <div className="space-y-2">
                     {myHasVisa && (
@@ -1136,7 +1142,7 @@ const DemandeDetail = () => {
                           if (isVisaAction && (myHasVisa || myOpenRejets.length > 0)) return null;
                           if (isRejetAction && myHasVisa) return null;
                           return (
-                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : (setVisaConfirmId(selected.id), setVisaConfirmOpen(true))}>
+                          <Button key={idx} variant={isRejetAction ? "destructive" : "default"} disabled={actionLoading === selected.id} onClick={() => isRejetAction ? openRejectDialog(selected.id) : setVisaTarget(selected)}>
                             {actionLoading === selected.id ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <tr.icon className="h-4 w-4 me-1" />}
                             {tTransition(tr.labelKey)}
                           </Button>
@@ -1457,26 +1463,6 @@ const DemandeDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Offre Corrigée Upload */}
-      <Dialog open={offreCorrigeeOpen} onOpenChange={(v) => { setOffreCorrigeeOpen(v); if (!v) { setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("demandes:dialogs.offre_corrigee.title", { label: uploadBeforeVisaLabel || t("demandes:dialogs.offre_corrigee.label_fallback") })}</DialogTitle>
-            <DialogDescription>{t("demandes:dialogs.offre_corrigee.description_short")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>{t("demandes:dialogs.offre_corrigee.file_label_short")}</Label>
-            <Input type="file" onChange={(e) => setOffreCorrigeeFile(e.target.files?.[0] || null)} />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffreCorrigeeOpen(false); setOffreCorrigeeFile(null); setOffreCorrigeePendingId(null); }}>{t("demandes:dialogs.offre_corrigee.cancel")}</Button>
-            <Button onClick={handleOffreCorrigeeUploadAndVisa} disabled={offreCorrigeeUploading || !offreCorrigeeFile}>
-              {offreCorrigeeUploading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <Upload className="h-4 w-4 me-1" />}
-              {t("demandes:dialogs.offre_corrigee.submit")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Entreprise detail */}
       <Dialog open={entrepriseDialogOpen} onOpenChange={setEntrepriseDialogOpen}>
@@ -1689,20 +1675,12 @@ const DemandeDetail = () => {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={visaConfirmOpen} onOpenChange={setVisaConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Action irréversible</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Êtes-vous sûr de vouloir apposer votre visa ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setVisaConfirmOpen(false)}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmVisa}>Confirmer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CorrectionVisaDialog
+        demande={visaTarget}
+        role={role}
+        onClose={() => setVisaTarget(null)}
+        onDone={async () => { await Promise.all([fetchDetail(), pageVisa.reload()]); }}
+      />
     </DashboardLayout>
   );
 };
