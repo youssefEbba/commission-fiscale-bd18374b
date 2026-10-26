@@ -41,6 +41,7 @@ import {
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { openDocument } from "@/lib/openDocument";
 import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
+import { certificatUtilisationVisible, isDeposantUtilisation, utilisationClotureMode } from "@/lib/utilisationCloture";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
@@ -129,7 +130,7 @@ function numberToFrenchWords(n: number): string {
 
 const UtilisationDetail = () => {
   const { t } = useTranslation(["utilisations", "common", "errors"]);
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -188,7 +189,10 @@ const UtilisationDetail = () => {
   const [quittancesLoading, setQuittancesLoading] = useState(false);
 
   const [envoiLoading, setEnvoiLoading] = useState(false);
-  const [receptionLoading, setReceptionLoading] = useState(false);
+  // Clôture DGTCP (ou substitution ADMIN_SI avec motif)
+  const [showCloture, setShowCloture] = useState(false);
+  const [clotureMotif, setClotureMotif] = useState("");
+  const [clotureLoading, setClotureLoading] = useState(false);
 
   // Rejet temp dialog
   const [showRejet, setShowRejet] = useState(false);
@@ -408,16 +412,20 @@ const UtilisationDetail = () => {
     } finally { setQuittancesLoading(false); }
   };
 
-  const handleClotureReception = async () => {
-    setReceptionLoading(true);
+  const handleCloturer = async (withMotif: boolean) => {
+    const motif = clotureMotif.trim();
+    if (withMotif && !motif) return;
+    setClotureLoading(true);
     try {
-      await utilisationCreditApi.cloturerReception(utilId);
-      toast({ title: t("utilisations:toast.reception_done_title"), description: t("utilisations:toast.reception_done_desc") });
+      await utilisationCreditApi.cloturer(utilId, withMotif ? motif : undefined);
+      toast({ title: t("utilisations:toast.cloture_done_title"), description: t("utilisations:toast.cloture_done_desc") });
+      setShowCloture(false);
+      setClotureMotif("");
       fetchAll();
     } catch (e: any) {
-      const msg = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? t("utilisations:certificat_utilisation.non_emis_error") : e.message;
+      const msg = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_error")) : e.message;
       toast({ title: tError(), description: msg, variant: "destructive" });
-    } finally { setReceptionLoading(false); }
+    } finally { setClotureLoading(false); }
   };
 
   const handleApurement = async () => {
@@ -596,12 +604,13 @@ const UtilisationDetail = () => {
   const canDGTCPTransmettre = role === "DGTCP" && isDouane && u.statut === "CHEQUE_SAISI";
   const canDGTCPEnvoyerTresor = role === "DGTCP" && isDouane && (u.statut === "TRANSMISE_AU_PRESIDENT" || u.statut === "CERTIFICAT_EMIS");
   const canEntrepriseCorriger = isEntreprise && u.statut === "INCOMPLETE" && decisions.some(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
-  const isRoleEntreprise = isEntreprise;
-  const piecesAdminReservees = isRoleEntreprise && !["LIQUIDEE", "APUREE", "CLOTUREE"].includes(u.statut);
+  // Déposant : le certificat d'utilisation et les pièces de sortie ne sont visibles qu'une fois communicables (serveur).
+  const cuVisible = certificatUtilisationVisible(role, u);
+  const piecesAdminReservees = isDeposantUtilisation(role) && !u.certificatUtilisationCommunicable;
   const envoiTresorAttente = u.statut !== "CERTIFICAT_EMIS";
   const canDGTCPQuittances = role === "DGTCP" && isDouane && (u.statut === "ENVOYEE_AU_TRESOR" || u.statut === "QUITTANCES_ENREGISTREES");
   const canDGTCPLiquider = role === "DGTCP" && isDouane && (u.statut === "QUITTANCES_ENREGISTREES" || u.statut === "VISE");
-  const canEntrepriseReception = isEntreprise && ((isDouane && u.statut === "LIQUIDEE") || (isTVA && u.statut === "APUREE"));
+  const clotureMode = utilisationClotureMode(role, hasPermission, u);
   const canDGIQuittance = role === "DGI" && isTVA && (u.statut === "VALIDEE" || u.statut === "CERTIFICAT_EMIS" || u.statut === "QUITTANCE_DGI_ENREGISTREE");
   const qDgiAttente = u.statut === "VALIDEE";
   const cuEmis = CU_POST_EMISSION.includes(u.statut) && (u.statut === "CERTIFICAT_EMIS" || !!u.numeroCertificatUtilisation);
@@ -948,7 +957,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Traçabilité Liquidation Douane */}
-        {isDouane && (u.statut === "LIQUIDEE" || u.statut === "CERTIFICAT_EMIS" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
+        {cuVisible && isDouane && (u.statut === "LIQUIDEE" || u.statut === "CERTIFICAT_EMIS" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
           <Card className="border-s-4 border-s-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>
@@ -990,7 +999,7 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {CU_CARD_STATUTS.includes(u.statut) && (
+        {cuVisible && CU_CARD_STATUTS.includes(u.statut) && (
           <Card className="border-s-4 border-s-primary">
             <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-base flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> {t("utilisations:certificat_utilisation.title")}</CardTitle>
@@ -1031,7 +1040,7 @@ const UtilisationDetail = () => {
           </Card>
         )}
 
-        {isTVA && !!u.numeroCertificatUtilisation && (
+        {cuVisible && isTVA && !!u.numeroCertificatUtilisation && (
           <div className="flex justify-end">
             <Button size="sm" variant="outline" onClick={handleDownloadTvaPdf} disabled={tvaPdfLoading}>
               {tvaPdfLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <FileText className="h-4 w-4 me-2" />}
@@ -1237,7 +1246,7 @@ const UtilisationDetail = () => {
         )}
 
         {/* Actions */}
-        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPTransmettre || canEntrepriseCorriger || canDGTCPEnvoyerTresor || canDGTCPQuittances || canEntrepriseReception || canDGIQuittance) && (
+        {(canDGDVerify || canDGDAnnoterEtViser || canDGTCPLiquider || canDGTCPVerifyTVA || canDGTCPValideTVA || canDGTCPApurer || canRejetTemp || canReject || canDGDReVerify || canDGTCPReVerifyTVA || canEntrepriseCheque || canDGTCPTransmettre || canEntrepriseCorriger || canDGTCPEnvoyerTresor || canDGTCPQuittances || !!clotureMode || canDGIQuittance) && (
           <Card>
             <CardHeader><CardTitle className="text-base">{t("utilisations:detail.actions_section")}</CardTitle></CardHeader>
             <CardContent>
@@ -1294,7 +1303,7 @@ const UtilisationDetail = () => {
                             montant: q.montant,
                             referencePaiement: q.referencePaiement,
                           }))
-                        : [{ numeroQuittance: "", dateQuittance: "", montant: u.totalAPayer || 0, referencePaiement: "" }]
+                        : [{ numeroQuittance: "", dateQuittance: "", montant: u.totalPrisEnCharge || 0, referencePaiement: "" }]
                     );
                     setQuittancesFiles({});
                     setShowQuittances(true);
@@ -1307,10 +1316,10 @@ const UtilisationDetail = () => {
                   {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                   <Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.liquider_certificat")}
                 </Button>}
-                {canEntrepriseReception && (
-                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleClotureReception} disabled={receptionLoading}>
-                    {receptionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
-                    <CheckCircle2 className="h-4 w-4 me-2" /> {t("utilisations:actions.accuser_reception")}
+                {clotureMode && (
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setClotureMotif(""); setShowCloture(true); }} disabled={clotureLoading}>
+                    {clotureLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
+                    <CheckCircle2 className="h-4 w-4 me-2" /> {t("utilisations:actions.cloturer")}
                   </Button>
                 )}
                 {canDGIQuittance && (
@@ -1570,6 +1579,33 @@ const UtilisationDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Clôture de l'utilisation — DGTCP (confirmation) ou ADMIN_SI (motif obligatoire) */}
+      <Dialog open={showCloture} onOpenChange={o => { if (!clotureLoading) setShowCloture(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{t("utilisations:cloture_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">{t("utilisations:cloture_dialog.confirm_text")}</p>
+            {clotureMode === "ADMIN" && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">{t("utilisations:cloture_dialog.admin_desc")}</p>
+                <Label>{t("utilisations:cloture_dialog.motif_label")} *</Label>
+                <Textarea value={clotureMotif} onChange={e => setClotureMotif(e.target.value)} className="min-h-[80px]" />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCloture(false)} disabled={clotureLoading}>{t("utilisations:cloture_dialog.cancel")}</Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={clotureLoading || (clotureMode === "ADMIN" && !clotureMotif.trim())}
+              onClick={() => handleCloturer(clotureMode === "ADMIN")}
+            >
+              {clotureLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:cloture_dialog.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Quittances Dialog */}
       <Dialog open={showQuittances} onOpenChange={setShowQuittances}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -1577,7 +1613,7 @@ const UtilisationDetail = () => {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               {t("utilisations:quittances_dialog.intro")}
-              {u.totalAPayer != null && <> {t("utilisations:quittances_dialog.intro_expected", { montant: fmtAmt(u.totalAPayer) })}</>}
+              {u.totalPrisEnCharge != null && <> {t("utilisations:quittances_dialog.intro_expected", { montant: fmtAmt(u.totalPrisEnCharge) })}</>}
             </p>
             {quittancesForm.map((q, idx) => (
               <div key={idx} className="space-y-2 p-2 rounded border">
