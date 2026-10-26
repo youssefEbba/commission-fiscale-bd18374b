@@ -1712,6 +1712,11 @@ export interface UtilisationCreditDto {
   // Certificat d'utilisation (émis par le Président, douane et TVA)
   numeroCertificatUtilisation?: string | null;
   dateCertificatUtilisation?: string | null;
+  /**
+   * Vrai pour les directions. Pour le déposant, vrai seulement à l'envoi au Trésor (douane)
+   * ou à l'enregistrement de la quittance DGI (TVA) ; tant que faux, numéro et date sont `null`.
+   */
+  certificatUtilisationCommunicable?: boolean;
   // Traçabilité sous-traitant
   certificatTitulaireEntrepriseId?: number;
   certificatTitulaireRaisonSociale?: string;
@@ -1905,11 +1910,15 @@ export const utilisationCreditApi = {
   },
   /** Lecture seule des quittances Trésor d'une utilisation douanière. */
   getQuittances: (id: number) => apiFetch<QuittanceTresorDto[]>(`/utilisations-credit/${id}/quittances`),
-  /** Entreprise — accusé de réception du certificat d'utilisation. Statut → CLOTUREE. */
-  cloturerReception: (id: number) =>
-    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/cloturer-reception`, {
-      method: "POST",
-    }),
+  /**
+   * DGTCP — clôture de l'utilisation une fois le crédit débité (LIQUIDEE / APUREE).
+   * ADMIN_SI peut s'y substituer avec un motif obligatoire. Statut → CLOTUREE.
+   */
+  cloturer: (id: number, motif?: string) =>
+    apiFetch<UtilisationCreditDto>(
+      `/utilisations-credit/${id}/cloture${motif ? `?motif=${encodeURIComponent(motif)}` : ""}`,
+      { method: "POST" },
+    ),
   /** État d'émission du certificat d'utilisation (pilote le bouton du Président). */
   getCertificatUtilisationEtat: (id: number) =>
     apiFetch<CertificatUtilisationEtatDto>(`/utilisations-credit/${id}/certificat-utilisation/etat`),

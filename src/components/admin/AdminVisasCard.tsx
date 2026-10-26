@@ -35,8 +35,9 @@ interface Props {
 const AdminVisasCard = ({ demandeId, demande, onSuccess, onGenerateAdoptionLetter }: Props) => {
   const [generating, setGenerating] = useState(false);
   const { t } = useTranslation();
-  const { hasPermission, hasRole } = useAuth();
-  const canOverride = hasPermission("correction.visa.admin_override") || hasRole(["ADMIN_SI"]);
+  const { hasRole } = useAuth();
+  // Substitution réservée à l'ADMIN_SI : le Président peut porter la permission dans son JWT mais ne doit pas voir ce panneau.
+  const canOverride = hasRole(["ADMIN_SI"]);
 
   const [visas, setVisas] = useState<VisaEtatDto[] | null>(null);
   const [loading, setLoading] = useState(false);

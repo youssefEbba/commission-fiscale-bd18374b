@@ -1,8 +1,10 @@
 import jsPDF from "jspdf";
+import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import autoTable from "jspdf-autotable";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
+import { montantCiADeduire } from "@/lib/utilisationCloture";
 
 const fmt = (v: any) =>
   v != null && !isNaN(Number(v))
@@ -41,28 +43,6 @@ function numberToFrenchWords(n: number): string {
   return s;
 }
 
-// ---------- Texte arabe (rendu canvas, jsPDF/Helvetica ne gère pas l'arabe) ----------
-function drawArabicRight(doc: jsPDF, text: string, xRight: number, yBaseline: number, sizePt: number, bold = false) {
-  try {
-    const scale = 4;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const font = `${bold ? "bold " : ""}${sizePt * scale}px "Noto Naskh Arabic", "Amiri", "Arial", sans-serif`;
-    ctx.font = font;
-    const w = Math.ceil(ctx.measureText(text).width) + 4;
-    const h = Math.ceil(sizePt * scale * 1.5);
-    canvas.width = w; canvas.height = h;
-    ctx.font = font;
-    ctx.direction = "rtl";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = "#000";
-    ctx.fillText(text, w - 2, sizePt * scale * 1.1);
-    const wPt = w / scale, hPt = h / scale;
-    doc.addImage(canvas.toDataURL("image/png"), "PNG", xRight - wPt, yBaseline - sizePt * 1.1, wPt, hPt);
-  } catch { /* ignore */ }
-}
 
 // ---------- Helpers de dessin ----------
 function drawDottedLine(doc: jsPDF, x1: number, y: number, x2: number) {
@@ -88,26 +68,13 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   const M = 32;
   let y = 36;
 
-  // ====== EN-TÊTE ======
-  doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text("République Islamique de Mauritanie", M, y);
-  drawArabicRight(doc, "الجمهورية الإسلامية الموريتانية", W - M, y, 10, true);
-  y += 12;
-  doc.setFont("helvetica", "normal").setFontSize(9);
-  doc.text("Ministère des Finances", M, y);
-  drawArabicRight(doc, "وزارة المالية", W - M, y, 9);
-  y += 11;
-  doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text("COMMISSION FISCALE", M, y);
-  drawArabicRight(doc, "اللجنة الجبائية", W - M, y, 10, true);
-  y += 6;
+  // ====== EN-TÊTE institutionnel (identique au certificat) ======
+  y = drawOfficialHeader(doc, "pt");
   doc.setDrawColor(0).setLineWidth(0.6);
   doc.line(M, y, W - M, y);
-  y += 18;
-
-  doc.setFont("helvetica", "bold").setFontSize(11);
-  doc.text("COMMISSION FISCALE", W / 2, y, { align: "center" });
   y += 16;
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", W / 2, y, { align: "center" });
   // souligné
@@ -126,6 +93,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.setFont("helvetica", "bold").setFontSize(10);
   const annee = u.dateLiquidation ? new Date(u.dateLiquidation).getFullYear() : new Date().getFullYear();
   doc.text(u.numeroCertificatUtilisation ? `N° ${u.numeroCertificatUtilisation}` : `N° ${u.id}/${annee}`, W - M, y + 4, { align: "right" });
+  const cadreTop = y + 8;
   y += 24;
 
   // ====== I. IDENTIFICATION DE L'ENTREPRISE ======
@@ -184,15 +152,16 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   labelDottedValue(doc, M, y, "MAITRE D'OUVRAGE :", cert?.autoriteContractanteNom || "", 360); y += 14;
   labelDottedValue(doc, M, y, "MINISTÈRE DE TUTELLE :", cert?.autoriteContractanteMinistereTutelleNom || "", 360); y += 14;
-  // Montant en lettres sans perte des centimes (pièce officielle).
-  const entier = Math.floor(montantTotal);
-  const centimes = Math.round((montantTotal - entier) * 100);
+  // Somme à déduire = montant CI (part prise en charge), en chiffres et en lettres, centimes compris.
+  const montantCi = montantCiADeduire(u, montantTotal);
+  const entier = Math.floor(montantCi);
+  const centimes = Math.round((montantCi - entier) * 100);
   const lettres = numberToFrenchWords(entier) + (centimes > 0 ? ` Ouguiya et ${numberToFrenchWords(centimes)} centimes` : "");
   doc.setFont("helvetica", "bold").setFontSize(9);
   doc.text("LA SOMME DE :", M, y);
   doc.setFont("helvetica", "italic");
   const lettresW = W - M - (M + doc.getTextWidth("LA SOMME DE :") + 4);
-  const lettresLines = doc.splitTextToSize(lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
+  const lettresLines = doc.splitTextToSize(`${fmt(montantCi)} MRU — ` + lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
   doc.text(lettresLines, M + doc.getTextWidth("LA SOMME DE :") + 6, y);
   y += 12 * lettresLines.length + 2;
   doc.setFont("helvetica", "normal");
@@ -260,7 +229,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   // Encadré général
   doc.setDrawColor(0).setLineWidth(0.6);
-  doc.rect(M - 6, 116, W - 2 * (M - 6), y + 60 - 116);
+  doc.rect(M - 6, cadreTop, W - 2 * (M - 6), y + 60 - cadreTop);
 
   // ====== Détail bulletin sur page 2 (annexe) ======
   doc.addPage();

@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
@@ -68,9 +69,9 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   const W = doc.internal.pageSize.getWidth();
   const M = 40;
   const R = W - M;
-  let y = 50;
+  // ===== En-tête institutionnel (identique au certificat) =====
+  let y = drawOfficialHeader(doc, "pt") + 14;
 
-  // ===== En-tête =====
   doc.setFont("helvetica", "bold").setFontSize(12);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", W / 2, y, { align: "center" });
   y += 15;
