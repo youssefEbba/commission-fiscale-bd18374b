@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
+import emblem from "@/assets/logo-official.png";
 
 /**
  * Certificat d'utilisation du crédit d'impôt — Crédit intérieur (TVA déductible).
@@ -69,6 +70,10 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   const M = 40;
   const R = W - M;
   let y = 50;
+
+  // ===== Emblème officiel (même taille/position que la lettre d'adoption : 24 mm à 12 mm / 8 mm) =====
+  const MM = 72 / 25.4;
+  try { doc.addImage(emblem, "PNG", 12 * MM, 8 * MM, 24 * MM, 24 * MM); } catch { /* ignore */ }
 
   // ===== En-tête =====
   doc.setFont("helvetica", "bold").setFontSize(12);
