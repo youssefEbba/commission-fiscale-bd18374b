@@ -43,28 +43,6 @@ function numberToFrenchWords(n: number): string {
   return s;
 }
 
-// ---------- Texte arabe (rendu canvas, jsPDF/Helvetica ne gère pas l'arabe) ----------
-function drawArabicRight(doc: jsPDF, text: string, xRight: number, yBaseline: number, sizePt: number, bold = false) {
-  try {
-    const scale = 4;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const font = `${bold ? "bold " : ""}${sizePt * scale}px "Noto Naskh Arabic", "Amiri", "Arial", sans-serif`;
-    ctx.font = font;
-    const w = Math.ceil(ctx.measureText(text).width) + 4;
-    const h = Math.ceil(sizePt * scale * 1.5);
-    canvas.width = w; canvas.height = h;
-    ctx.font = font;
-    ctx.direction = "rtl";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = "#000";
-    ctx.fillText(text, w - 2, sizePt * scale * 1.1);
-    const wPt = w / scale, hPt = h / scale;
-    doc.addImage(canvas.toDataURL("image/png"), "PNG", xRight - wPt, yBaseline - sizePt * 1.1, wPt, hPt);
-  } catch { /* ignore */ }
-}
 
 // ---------- Helpers de dessin ----------
 function drawDottedLine(doc: jsPDF, x1: number, y: number, x2: number) {
