@@ -5,7 +5,7 @@ import emblem from "@/assets/logo-official.png";
 import signaturePresident from "@/assets/signature-president.png";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 
-const CURRENCY = "Ouguiya";
+const CURRENCY = "MRU";
 
 // Sanitize a string for jsPDF's built-in (Helvetica) fonts, which don't ship
 // some Unicode whitespace/dashes. In particular the narrow no-break space
@@ -99,7 +99,7 @@ export interface CertificatPdfContext {
 /**
  * Génère un PDF "Certificat de Crédit d'Impôts" pré-rempli, à signer par le Président.
  * - En-tête institutionnel avec emblème officiel de la République Islamique de Mauritanie.
- * - Montants exprimés en Ouguiya.
+ * - Montants exprimés en MRU.
  * - QR code de vérification (scan pour contrôler l'authenticité du certificat).
  */
 export async function generateCertificatToSignPdf(
