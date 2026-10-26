@@ -134,6 +134,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.setFont("helvetica", "bold").setFontSize(10);
   const annee = u.dateLiquidation ? new Date(u.dateLiquidation).getFullYear() : new Date().getFullYear();
   doc.text(u.numeroCertificatUtilisation ? `N° ${u.numeroCertificatUtilisation}` : `N° ${u.id}/${annee}`, W - M, y + 4, { align: "right" });
+  const cadreTop = y + 8;
   y += 24;
 
   // ====== I. IDENTIFICATION DE L'ENTREPRISE ======
@@ -269,7 +270,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   // Encadré général
   doc.setDrawColor(0).setLineWidth(0.6);
-  doc.rect(M - 6, 116, W - 2 * (M - 6), y + 60 - 116);
+  doc.rect(M - 6, cadreTop, W - 2 * (M - 6), y + 60 - cadreTop);
 
   // ====== Détail bulletin sur page 2 (annexe) ======
   doc.addPage();
