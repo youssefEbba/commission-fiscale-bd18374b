@@ -90,32 +90,13 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   const M = 32;
   let y = 36;
 
-  // ====== Emblème officiel (même taille/position que la lettre d'adoption : 24 mm à 12 mm / 8 mm) ======
-  const MM = 72 / 25.4;
-  const logoX = 12 * MM, logoY = 8 * MM, logoS = 24 * MM;
-  try { doc.addImage(emblem, "PNG", logoX, logoY, logoS, logoS); } catch { /* ignore */ }
-  const hx = logoX + logoS + 8; // texte FR à droite de l'emblème
-
-  // ====== EN-TÊTE ======
-  doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text("République Islamique de Mauritanie", hx, y);
-  drawArabicRight(doc, "الجمهورية الإسلامية الموريتانية", W - M, y, 10, true);
-  y += 12;
-  doc.setFont("helvetica", "normal").setFontSize(9);
-  doc.text("Ministère des Finances", hx, y);
-  drawArabicRight(doc, "وزارة المالية", W - M, y, 9);
-  y += 11;
-  doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text("COMMISSION FISCALE", hx, y);
-  drawArabicRight(doc, "اللجنة الجبائية", W - M, y, 10, true);
-  y = Math.max(y + 6, logoY + logoS + 4);
+  // ====== EN-TÊTE institutionnel (identique au certificat) ======
+  y = drawOfficialHeader(doc, "pt");
   doc.setDrawColor(0).setLineWidth(0.6);
   doc.line(M, y, W - M, y);
-  y += 14;
-
-  doc.setFont("helvetica", "bold").setFontSize(11);
-  doc.text("COMMISSION FISCALE", W / 2, y, { align: "center" });
   y += 16;
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", W / 2, y, { align: "center" });
   // souligné

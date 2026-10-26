@@ -79,10 +79,8 @@ export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libel
     if (y + need > H - 90) { doc.addPage(); y = 50; }
   };
 
-  // ===== En-tête =====
-  draw(t("republique"), W / 2, 10, true, "center"); y += 14;
-  draw(t("ministere"), W / 2, 10, false, "center"); y += 14;
-  draw(t("commission").toUpperCase(), W / 2, 12, true, "center"); y += 10;
+  // ===== En-tête institutionnel (identique au certificat) =====
+  y = drawOfficialHeader(doc, "pt");
   doc.setDrawColor(0).setLineWidth(0.8).line(M, y, W - M, y); y += 28;
   draw(t("title").toUpperCase(), W / 2, 16, true, "center"); y += 18;
   draw(t("subtitle"), W / 2, 10, false, "center", "#444"); y += 24;

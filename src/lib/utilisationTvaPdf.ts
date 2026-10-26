@@ -69,13 +69,9 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   const W = doc.internal.pageSize.getWidth();
   const M = 40;
   const R = W - M;
-  let y = 50;
+  // ===== En-tête institutionnel (identique au certificat) =====
+  let y = drawOfficialHeader(doc, "pt") + 14;
 
-  // ===== Emblème officiel (même taille/position que la lettre d'adoption : 24 mm à 12 mm / 8 mm) =====
-  const MM = 72 / 25.4;
-  try { doc.addImage(emblem, "PNG", 12 * MM, 8 * MM, 24 * MM, 24 * MM); } catch { /* ignore */ }
-
-  // ===== En-tête =====
   doc.setFont("helvetica", "bold").setFontSize(12);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", W / 2, y, { align: "center" });
   y += 15;
