@@ -1,8 +1,8 @@
 import jsPDF from "jspdf";
+import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
-import emblem from "@/assets/logo-official.png";
 
 /**
  * Certificat d'utilisation du crédit d'impôt — Crédit intérieur (TVA déductible).

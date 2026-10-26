@@ -1,9 +1,9 @@
 import jsPDF from "jspdf";
+import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import autoTable from "jspdf-autotable";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
-import emblem from "@/assets/logo-official.png";
 import { montantCiADeduire } from "@/lib/utilisationCloture";
 
 const fmt = (v: any) =>

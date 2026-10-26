@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import i18n from "@/i18n";
 import { formatAmount, formatDateTime } from "@/i18n/format";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
