@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save, Download } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
+import { certificatUtilisationVisible } from "@/lib/utilisationCloture";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -263,8 +264,8 @@ const Utilisations = () => {
         role === "ENTREPRISE" && (user as any)?.entrepriseId
           ? certificatCreditApi.getByEntreprise((user as any).entrepriseId)
           : certificatCreditApi.getAll(),
-        documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR").catch(() => []),
-        documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR").catch(() => []),
+        documentRequirementApi.getByProcessus("UTILISATION_CI_EXTERIEUR", { depot: true }).catch(() => []),
+        documentRequirementApi.getByProcessus("UTILISATION_CI_INTERIEUR", { depot: true }).catch(() => []),
       ]);
       setCertificats(certs);
       if (extReqs.length > 0 || intReqs.length > 0) {
@@ -742,7 +743,7 @@ const Utilisations = () => {
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)} title={t("utilisations:list.actions.view_detail")} aria-label={t("utilisations:list.actions.view_detail")}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {u.type === "DOUANIER" && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE" || u.statut === "APUREE") && (
+                          {u.type === "DOUANIER" && (u.statut === "LIQUIDEE" || u.statut === "CLOTUREE" || u.statut === "APUREE") && certificatUtilisationVisible(role, u) && (
                             <Button
                               variant="ghost"
                               size="sm"

@@ -11,7 +11,7 @@ import signaturePresident from "@/assets/signature-president.png";
 import { resolveApposition, type AppositionOptions } from "@/lib/signatures";
 import { hasCreditInterieur, hasCreditExterieur } from "@/lib/visas";
 
-const CURRENCY = "Ouguiya";
+const CURRENCY = "MRU";
 
 const safe = (s: string) =>
   s
@@ -80,9 +80,10 @@ const section = (
   doc.setLineWidth(0.2);
   doc.rect(x + 1, y + 1, w - 2, h - 2);
   doc.setFillColor(255, 255, 255);
-  doc.rect(x + 3, y - 2.5, doc.getTextWidth(title) + 4, 5, "F");
+  // Mesure du titre dans sa police réelle (le cadre est désormais dessiné après son contenu).
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
+  doc.rect(x + 3, y - 2.5, doc.getTextWidth(title) + 4, 5, "F");
   doc.setTextColor(0, 102, 51);
   doc.text(title, x + 5, y + 1.2);
   doc.setTextColor(0, 0, 0);
@@ -168,26 +169,33 @@ export async function generateAdoptionLetterPdf(
   doc.setLineWidth(0.2);
   doc.line(refValueX, 55, pageW - M - 4, 55);
 
-  let y = 64;
+  // Mise en page compacte : chaque cadre suit son contenu réel pour tenir sur une page A4.
+  const SEC_TOP = 6.5; // du bord haut du cadre à la 1re ligne
+  const ROW = 5.5; // interligne entre champs
+  const SEC_BOTTOM = 3.5; // de la dernière ligne au bord bas
+  const SEC_GAP = 5; // entre deux cadres (place pour le titre posé sur le bord)
+
+  let y = 61;
 
   // ---------- I - Identification demande ----------
-  const h1 = 30;
-  section(doc, "I – IDENTIFICATION DE LA DEMANDE", M, y, W, h1);
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  let yy = y + 8;
+  let yy = y + SEC_TOP;
 
   yy += inlineField(doc, "RÉFÉRENCE", refLisible, M + 4, yy, M + W - 4);
-  yy += 7;
+  yy += ROW;
   yy += inlineField(doc, "DATE DE DÉPÔT", fmtDate(d.dateDepot), M + 4, yy, M + W - 4);
-  yy += 7;
+  yy += ROW;
   yy += inlineField(doc, "NATURE DU CRÉDIT", creditNature(d), M + 4, yy, M + W - 4);
 
-  y += h1 + 6;
+  const h1 = yy - y + SEC_BOTTOM;
+  section(doc, "I – IDENTIFICATION DE LA DEMANDE", M, y, W, h1);
+  y += h1 + SEC_GAP;
 
   // ---------- II - Identification entreprise ----------
-  const h2 = 38;
-  section(doc, "II – IDENTIFICATION DE L'ENTREPRISE / GROUPEMENT", M, y, W, h2);
-  yy = y + 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  yy = y + SEC_TOP;
 
   const nifRaw = entreprise?.nifAffiche || entreprise?.nif || d.entrepriseNif || "";
   const nifChars = String(nifRaw).padEnd(10, " ").slice(0, 10);
@@ -201,21 +209,23 @@ export async function generateAdoptionLetterPdf(
     if (ch) doc.text(ch, bx + 3, yy, { align: "center" });
     doc.text("/", bx + 7, yy);
   }
-  yy += 7;
+  yy += ROW;
 
   const raisonSociale = d.groupementRaisonSociale
     ? `${d.groupementRaisonSociale} (groupement, chef de file)`
     : entreprise?.raisonSociale || d.entrepriseRaisonSociale || "";
   yy += inlineField(doc, "NOM et PRÉNOM OU RAISON SOCIALE", raisonSociale, M + 4, yy, M + W - 4);
-  yy += 7;
+  yy += ROW;
   yy += inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
 
-  y += h2 + 6;
+  const h2 = yy - y + SEC_BOTTOM;
+  section(doc, "II – IDENTIFICATION DE L'ENTREPRISE / GROUPEMENT", M, y, W, h2);
+  y += h2 + SEC_GAP;
 
   // ---------- III - Identification marché / convention ----------
-  const h3 = 44;
-  section(doc, "III – IDENTIFICATION DU MARCHÉ / CONVENTION", M, y, W, h3);
-  yy = y + 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  yy = y + SEC_TOP;
 
   const marcheRef = d.marcheNumero || marche?.numeroMarche || (d.marcheId ? `#${d.marcheId}` : "");
   const marcheIntitule =
@@ -226,15 +236,14 @@ export async function generateAdoptionLetterPdf(
     (marche as any)?.objet ||
     "";
   yy += inlineField(doc, "INTITULÉ DU MARCHÉ", marcheIntitule, M + 4, yy, M + W - 4);
-  yy += 7;
+  yy += ROW;
 
   const objet = [marcheRef, marcheIntitule].filter(Boolean).join(" - ");
 
   const convRef = d.conventionReference || convention?.reference || "";
   const convIntitule = d.conventionIntitule || convention?.intitule || "";
   yy += inlineField(doc, "CONVENTION", [convRef, convIntitule].filter(Boolean).join(" - "), M + 4, yy, M + W - 4);
-  yy += 7;
-
+  yy += ROW;
 
   const autoriteLabel = autorite?.nom || d.autoriteContractanteNom || "";
   const ministere = autorite?.ministereTutelleNom || "";
@@ -247,24 +256,28 @@ export async function generateAdoptionLetterPdf(
     M + W - 4,
   );
 
-  y += h3 + 6;
+  const h3 = yy - y + SEC_BOTTOM;
+  section(doc, "III – IDENTIFICATION DU MARCHÉ / CONVENTION", M, y, W, h3);
+  y += h3 + SEC_GAP;
 
   // ---------- IV - Crédits demandés ----------
-  const h4 = 36;
-  section(doc, "IV – CRÉDITS DEMANDÉS", M, y, W, h4);
-  yy = y + 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  yy = y + SEC_TOP;
 
   const creditExt = d.creditExterieur || 0;
   const creditInt = d.creditInterieur || 0;
   const total = creditExt + creditInt;
 
   yy += inlineField(doc, "CRÉDIT EXTÉRIEUR (douane)", fmtMontant(creditExt), M + 4, yy, M + W / 2 - 4);
-  yy += 7;
+  yy += ROW;
   yy += inlineField(doc, "CRÉDIT INTÉRIEUR (TVA)", fmtMontant(creditInt), M + 4, yy, M + W / 2 - 4);
-  yy += 7;
+  yy += ROW;
   yy += inlineField(doc, "TOTAL", fmtMontant(total), M + 4, yy, M + W / 2 - 4);
 
-  y += h4 + 6;
+  const h4 = yy - y + SEC_BOTTOM;
+  section(doc, "IV – CRÉDITS DEMANDÉS", M, y, W, h4);
+  y += h4 + SEC_GAP;
 
   // ---------- V - Décision ----------
   doc.setFont("helvetica", "normal");
@@ -281,16 +294,20 @@ export async function generateAdoptionLetterPdf(
   ];
 
   // Pré-calcul de la hauteur réelle du bloc V (texte + signature)
+  const LINE = 4.8;
+  const PARA_GAP = 0.8;
+  const BLANK = 3;
   const wrapped = decisionText.map((line) =>
     line ? (doc.splitTextToSize(line, W - 8) as string[]) : null,
   );
   let textH = 0;
-  for (const lines of wrapped) textH += lines ? 5 * lines.length + 1 : 4;
-  const signatureH = 6 + 5 + 3 + 24 + 4;
-  const h5 = 8 + textH + signatureH;
+  for (const lines of wrapped) textH += lines ? LINE * lines.length + PARA_GAP : BLANK;
+  // titre signataire + emblème/cachet (24 mm) + trait
+  const signatureH = 4 + 3 + 24 + 2;
+  const h5 = SEC_TOP + textH + signatureH;
 
-  const FOOTER_Y = 285;
-  const BOTTOM_LIMIT = FOOTER_Y - 8;
+  const FOOTER_Y = 287;
+  const BOTTOM_LIMIT = FOOTER_Y - 5;
   const drawFooter = () => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
@@ -301,7 +318,7 @@ export async function generateAdoptionLetterPdf(
     doc.setTextColor(0);
   };
 
-  // Saut de page si le bloc décision ne tient pas entièrement
+  // Saut de page en ultime recours (contenu exceptionnellement long)
   if (y + h5 > BOTTOM_LIMIT) {
     drawFooter();
     doc.addPage();
@@ -309,22 +326,22 @@ export async function generateAdoptionLetterPdf(
   }
 
   section(doc, "V – DÉCISION DE LA COMMISSION", M, y, W, h5);
-  yy = y + 8;
+  yy = y + SEC_TOP;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   for (const lines of wrapped) {
     if (!lines) {
-      yy += 4;
+      yy += BLANK;
       continue;
     }
-    doc.text(lines, M + 4, yy);
-    yy += 5 * lines.length + 1;
+    doc.text(lines, M + 4, yy, { lineHeightFactor: LINE / (10 * 0.3528) });
+    yy += LINE * lines.length + PARA_GAP;
   }
 
   // Signature
-  yy += 6;
+  yy += 4;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
@@ -338,7 +355,7 @@ export async function generateAdoptionLetterPdf(
   } catch {
     // ignore si l'asset n'est pas chargé
   }
-  yy += 24;
+  yy += 23;
   doc.setDrawColor(0);
   doc.setLineWidth(0.2);
   doc.line(M + W - 70, yy, M + W - 4, yy);

@@ -3,6 +3,8 @@ import { drawVerificationQr } from "@/lib/verificationQr";
 import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import autoTable from "jspdf-autotable";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
+import emblem from "@/assets/logo-official.png";
+import { montantCiADeduire } from "@/lib/utilisationCloture";
 
 const fmt = (v: any) =>
   v != null && !isNaN(Number(v))
@@ -88,22 +90,28 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   const M = 32;
   let y = 36;
 
+  // ====== Emblème officiel (même taille/position que la lettre d'adoption : 24 mm à 12 mm / 8 mm) ======
+  const MM = 72 / 25.4;
+  const logoX = 12 * MM, logoY = 8 * MM, logoS = 24 * MM;
+  try { doc.addImage(emblem, "PNG", logoX, logoY, logoS, logoS); } catch { /* ignore */ }
+  const hx = logoX + logoS + 8; // texte FR à droite de l'emblème
+
   // ====== EN-TÊTE ======
   doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text("République Islamique de Mauritanie", M, y);
+  doc.text("République Islamique de Mauritanie", hx, y);
   drawArabicRight(doc, "الجمهورية الإسلامية الموريتانية", W - M, y, 10, true);
   y += 12;
   doc.setFont("helvetica", "normal").setFontSize(9);
-  doc.text("Ministère des Finances", M, y);
+  doc.text("Ministère des Finances", hx, y);
   drawArabicRight(doc, "وزارة المالية", W - M, y, 9);
   y += 11;
   doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text("COMMISSION FISCALE", M, y);
+  doc.text("COMMISSION FISCALE", hx, y);
   drawArabicRight(doc, "اللجنة الجبائية", W - M, y, 10, true);
-  y += 6;
+  y = Math.max(y + 6, logoY + logoS + 4);
   doc.setDrawColor(0).setLineWidth(0.6);
   doc.line(M, y, W - M, y);
-  y += 18;
+  y += 14;
 
   doc.setFont("helvetica", "bold").setFontSize(11);
   doc.text("COMMISSION FISCALE", W / 2, y, { align: "center" });
@@ -184,15 +192,16 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   labelDottedValue(doc, M, y, "MAITRE D'OUVRAGE :", cert?.autoriteContractanteNom || "", 360); y += 14;
   labelDottedValue(doc, M, y, "MINISTÈRE DE TUTELLE :", cert?.autoriteContractanteMinistereTutelleNom || "", 360); y += 14;
-  // Montant en lettres sans perte des centimes (pièce officielle).
-  const entier = Math.floor(montantTotal);
-  const centimes = Math.round((montantTotal - entier) * 100);
+  // Somme à déduire = montant CI (part prise en charge), en chiffres et en lettres, centimes compris.
+  const montantCi = montantCiADeduire(u, montantTotal);
+  const entier = Math.floor(montantCi);
+  const centimes = Math.round((montantCi - entier) * 100);
   const lettres = numberToFrenchWords(entier) + (centimes > 0 ? ` Ouguiya et ${numberToFrenchWords(centimes)} centimes` : "");
   doc.setFont("helvetica", "bold").setFontSize(9);
   doc.text("LA SOMME DE :", M, y);
   doc.setFont("helvetica", "italic");
   const lettresW = W - M - (M + doc.getTextWidth("LA SOMME DE :") + 4);
-  const lettresLines = doc.splitTextToSize(lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
+  const lettresLines = doc.splitTextToSize(`${fmt(montantCi)} MRU — ` + lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
   doc.text(lettresLines, M + doc.getTextWidth("LA SOMME DE :") + 6, y);
   y += 12 * lettresLines.length + 2;
   doc.setFont("helvetica", "normal");

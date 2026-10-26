@@ -72,7 +72,9 @@
     "CLOTUREE": "مغلقة",
     "REJETEE": "مرفوضة",
     "REJET_TEMPORAIRE": "رفض مؤقت",
-    "ANNULEE": "ملغاة"
+    "ANNULEE": "ملغاة",
+    "TRANSMISE_AU_PRESIDENT": "أُحيلت إلى الرئيس",
+    "CERTIFICAT_EMIS": "أصدر الرئيس الشهادة"
   },
   "statut_demande": {
     "BROUILLON": "مسودة",
@@ -81,7 +83,7 @@
     "INCOMPLETE": "غير مكتملة",
     "RECEVABLE": "مقبولة شكلاً",
     "EN_EVALUATION": "قيد التقييم",
-    "EN_VALIDATION": "قيد المصادقة",
+    "EN_VALIDATION": "قيد مصادقة الرئيس",
     "EN_INSTRUCTION": "قيد الدراسة",
     "ADOPTEE": "معتمدة",
     "REJETEE": "مرفوضة",
