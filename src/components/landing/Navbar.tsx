@@ -44,7 +44,7 @@ const Navbar = () => {
 
         <div className="hidden items-center gap-3 md:flex">
           <LanguageSwitcher variant="compact" className="text-primary-foreground hover:bg-primary/20 hover:text-primary-foreground" />
-          <Button variant="outline" className="border-gold text-gold hover:bg-gold/20 hover:text-gold" asChild>
+          <Button variant="ghost" className="border-2 border-gold bg-transparent font-semibold text-gold hover:bg-gold hover:text-accent-foreground" asChild>
             <Link to="/register">{t("nav.register")}</Link>
           </Button>
           <Button className="bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
@@ -77,7 +77,7 @@ const Navbar = () => {
           ))}
           <div className="mt-4 flex flex-col gap-2">
             <div className="flex justify-end"><LanguageSwitcher variant="compact" className="text-primary-foreground hover:bg-primary/20 hover:text-primary-foreground" /></div>
-            <Button variant="outline" className="w-full border-gold text-gold hover:bg-gold/20 hover:text-gold" asChild>
+            <Button variant="ghost" className="w-full border-2 border-gold bg-transparent font-semibold text-gold hover:bg-gold hover:text-accent-foreground" asChild>
               <Link to="/register">{t("nav.register")}</Link>
             </Button>
             <Button className="w-full bg-gold text-accent-foreground font-semibold hover:bg-gold-light" asChild>
