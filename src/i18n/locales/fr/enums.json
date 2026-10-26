@@ -72,7 +72,9 @@
     "CLOTUREE": "Clôturée",
     "REJETEE": "Rejetée",
     "REJET_TEMPORAIRE": "Rejet temporaire",
-    "ANNULEE": "Annulée"
+    "ANNULEE": "Annulée",
+    "TRANSMISE_AU_PRESIDENT": "Transmise au Président",
+    "CERTIFICAT_EMIS": "Certificat émis par le Président"
   },
   "statut_demande": {
     "BROUILLON": "Brouillon",
@@ -81,7 +83,7 @@
     "INCOMPLETE": "Incomplète",
     "RECEVABLE": "Recevable",
     "EN_EVALUATION": "En évaluation",
-    "EN_VALIDATION": "En validation",
+    "EN_VALIDATION": "En validation Président",
     "EN_INSTRUCTION": "En instruction",
     "ADOPTEE": "Adoptée",
     "REJETEE": "Rejetée",
