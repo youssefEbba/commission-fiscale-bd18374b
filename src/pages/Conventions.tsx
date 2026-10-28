@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { PDFDocument } from "pdf-lib";
@@ -1052,11 +1053,9 @@ const Conventions = () => {
                       <TableCell className="text-end">
                         <div className="flex gap-1 justify-end">
                           {doc.chemin && (
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={doc.chemin} target="_blank" rel="noopener noreferrer">
-                                <FileText className="h-4 w-4 me-1" /> {t("conventions:actions.open")}
-                              </a>
-                            </Button>
+                            <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} icon={FileText} iconClassName="h-4 w-4 me-1" variant="outline" size="sm">
+                              {t("conventions:actions.open")}
+                            </DocumentButton>
                           )}
                           {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
                             <>

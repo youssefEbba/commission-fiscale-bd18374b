@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -647,9 +648,9 @@ const ReferentielProjets = () => {
                           <span className="flex-1 truncate">{doc.nomFichier}</span>
                           <Badge variant="secondary" className="text-[10px]">{doc.type.replace(/_/g, " ")}</Badge>
                           {doc.chemin && (
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" asChild>
-                              <a href={doc.chemin} target="_blank" rel="noopener noreferrer">Ouvrir</a>
-                            </Button>
+                            <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                              Ouvrir
+                            </DocumentButton>
                           )}
                         </div>
                       ))}

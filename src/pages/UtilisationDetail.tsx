@@ -162,7 +162,7 @@ const UtilisationDetail = () => {
   const [qDgiFile, setQDgiFile] = useState<File | null>(null);
   const [qDgiLoading, setQDgiLoading] = useState(false);
   const [tvaPdfLoading, setTvaPdfLoading] = useState(false);
-  const liqPdfKey = `generate:cu-douane:${utilId}`;
+  const liqPdfKey = `generate:cu-douane:${id}`;
   const liqPdfPending = useDocumentTaskPending(liqPdfKey);
   const [cuEtat, setCuEtat] = useState<Awaited<ReturnType<typeof utilisationCreditApi.getCertificatUtilisationEtat>> | null>(null);
   const [cuSignOpen, setCuSignOpen] = useState(false);

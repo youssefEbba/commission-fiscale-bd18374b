@@ -4,7 +4,7 @@ import { Truck, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { demandeCorrectionApi, certificatCreditApi, DocumentDto } from "@/lib/api";
-import { openDocument } from "@/lib/openDocument";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { showApiError } from "@/lib/feedback";
 import { EQUIP_DOC } from "@/lib/equipements";
 
@@ -51,9 +51,9 @@ export default function EquipementsBanner({ present, demandeId, certificatId, va
         ) : docs && docs.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {docs.map((d) => (
-              <Button key={d.id} size="sm" variant="outline" onClick={() => openDocument(d).catch((e) => showApiError(e, t("equipements.open_error")))}>
-                <ExternalLink className="h-3.5 w-3.5 me-1" /> {t("equipements.open_list")}{docs.length > 1 && d.version ? ` (v${d.version})` : ""}
-              </Button>
+              <DocumentButton key={d.id} doc={d} icon={ExternalLink} size="sm" variant="outline" onError={(e) => showApiError(e, t("equipements.open_error"))}>
+                {t("equipements.open_list")}{docs.length > 1 && d.version ? ` (v${d.version})` : ""}
+              </DocumentButton>
             ))}
           </div>
         ) : (
