@@ -8,6 +8,7 @@ import { Loader2, ShieldCheck, ShieldAlert, ScanLine, RefreshCw, Download } from
 import { apiFetch, certificatCreditApi, marcheApi, entrepriseApi, conventionApi, autoriteContractanteApi } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import { trackDocumentTask } from "@/lib/openDocument";
 import { useToast } from "@/hooks/use-toast";
 
 const formatCurrency = (n: number) => `${formatAmount(n)} Ouguiya`;
@@ -83,7 +84,7 @@ export default function VerifierCertificat() {
       const autorite = convention?.autoriteContractanteId
         ? await autoriteContractanteApi.getById(convention.autoriteContractanteId).catch(() => null)
         : null;
-      await generateCertificatToSignPdf(cert, { entreprise, marche, convention, autorite });
+      await trackDocumentTask(`generate:cert-sign:${cert.id}`, "generate", undefined, () => generateCertificatToSignPdf(cert, { entreprise, marche, convention, autorite }));
     } catch (e: any) {
       toast({
         variant: "destructive",

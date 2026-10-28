@@ -35,6 +35,7 @@ import {
   AlertTriangle, History, Wallet, Upload, MessageSquare, Send, Download, PenLine,
 } from "lucide-react";
 import { generateCertificatToSignPdf } from "@/lib/certificatSignaturePdf";
+import { trackDocumentTask } from "@/lib/openDocument";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 import AdminCorrectionCard, { type AdminCorrectionField } from "@/components/admin/AdminCorrectionCard";
 import CertificatAdminVisasCard from "@/components/admin/CertificatAdminVisasCard";
@@ -1204,7 +1205,7 @@ const MiseEnPlaceDetail = () => {
 
       {/* Visas & ouverture administrateur (ADMIN_SI) */}
       <div className="mt-6 space-y-4">
-        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={amountRestriction ? undefined : () => openMontantsDialog(true)} onGenerateCertificatToSign={() => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite })} />
+        <CertificatAdminVisasCard certificatId={c.id} statut={c.statut} onSuccess={fetchData} refreshKey={adminRefreshKey} onOpenMontantsAdmin={amountRestriction ? undefined : () => openMontantsDialog(true)} onGenerateCertificatToSign={() => trackDocumentTask(`generate:cert-sign:${c.id}`, "generate", undefined, () => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }))} />
       </div>
 
       <Dialog open={adminResolveId != null} onOpenChange={(o) => { if (!o && !adminResolveLoading) setAdminResolveId(null); }}>
