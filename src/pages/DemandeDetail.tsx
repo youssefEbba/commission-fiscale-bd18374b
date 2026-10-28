@@ -479,17 +479,12 @@ const DemandeDetail = () => {
         await (mode === "open" ? openDocument(recuDoc) : downloadDocument(recuDoc));
         return;
       }
-      // Reçu enregistré absent : reconstitution à partir du dossier (statut actuel omis).
-      const blob = generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true });
-      const url = URL.createObjectURL(blob);
-      if (mode === "open" && window.open(url, "_blank", "noopener,noreferrer")) {
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-        return;
-      }
-      const a = document.createElement("a");
-      a.href = url; a.download = recuDepotFileName(selected);
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      // Reçu enregistré absent : reconstitution à partir du dossier (statut actuel omis), avec attente visible.
+      const name = recuDepotFileName(selected);
+      await trackDocumentTask(`recu-depot:${selected.id}:${mode}`, "generate", name, async () => {
+        await new Promise((r) => setTimeout(r, 0)); // laisse l'attente s'afficher avant la génération
+        presentBlob(generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
+      });
     } catch (e: any) {
       toast({ title: t("demandes:detail.recu_card.error"), description: e?.message, variant: "destructive" });
     } finally {
