@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Truck, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { demandeCorrectionApi, certificatCreditApi, DocumentDto } from "@/lib/api";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { showApiError } from "@/lib/feedback";
