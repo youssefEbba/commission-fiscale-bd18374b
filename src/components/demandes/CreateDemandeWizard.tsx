@@ -7,6 +7,7 @@ import { PDFDocument } from "pdf-lib";
 import { toast as sonnerToast } from "sonner";
 import i18nInstance from "@/i18n";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
+import { trackDocumentTask, presentBlob } from "@/lib/openDocument";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,

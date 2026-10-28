@@ -42,7 +42,7 @@ import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
 import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
 import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
-import { openDocument, downloadDocument, trackDocumentTask } from "@/lib/openDocument";
+import { openDocument, downloadDocument, trackDocumentTask, presentBlob } from "@/lib/openDocument";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 
 
