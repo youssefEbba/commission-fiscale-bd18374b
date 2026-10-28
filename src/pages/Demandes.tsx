@@ -36,6 +36,7 @@ import { API_BASE } from "@/lib/apiConfig";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
+import { trackDocumentTask } from "@/lib/openDocument";
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
