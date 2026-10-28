@@ -80,7 +80,7 @@ function describeApiError(e: unknown, fallback: string, dupMsg: string): string 
 }
 
 function getDocFileUrl(doc: DocumentDto): string {
-  if (!doc.chemin) return "#";
+  if (!doc.chemin) return "";
   if (doc.chemin.startsWith("http")) return doc.chemin;
   return `${API_BASE}/documents/download/${doc.id}`;
 }
@@ -849,7 +849,7 @@ const DemandesMiseEnPlace = () => {
                             <p className="text-xs text-muted-foreground">{tTypeDocument(doc.type)}</p>
                           </div>
                         </div>
-                        <DocumentButton doc={{ url: getDocFileUrl(doc), nomFichier: doc.nomFichier }} variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-primary">{t("mise_en_place:detail.documents.download")}</DocumentButton>
+                        <DocumentButton doc={{ url: getDocFileUrl(doc) || undefined, id: doc.id, nomFichier: doc.nomFichier }} variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-primary">{t("mise_en_place:detail.documents.download")}</DocumentButton>
                       </div>
                     ))}
                   </div>
@@ -1121,7 +1121,7 @@ const DemandesMiseEnPlace = () => {
                         <p className="text-sm font-medium truncate">{tTypeDocument(doc.type)}</p>
                         <p className="text-xs text-muted-foreground truncate">{doc.nomFichier || doc.chemin || `#${doc.id}`}</p>
                       </div>
-                      <DocumentButton doc={{ url: getDocFileUrl(doc), nomFichier: doc.nomFichier }} icon={Eye} iconClassName="h-3 w-3 me-1" variant="link" className="h-auto p-0 text-xs text-primary shrink-0">
+                      <DocumentButton doc={{ url: getDocFileUrl(doc) || undefined, id: doc.id, nomFichier: doc.nomFichier }} icon={Eye} iconClassName="h-3 w-3 me-1" variant="link" className="h-auto p-0 text-xs text-primary shrink-0">
                         {t("mise_en_place:detail.documents.open")}
                       </DocumentButton>
                     </div>

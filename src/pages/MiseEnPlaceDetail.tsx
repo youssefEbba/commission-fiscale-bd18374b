@@ -79,7 +79,7 @@ const DOC_TYPES_FALLBACK = [
 const DECISION_ROLES_LIST = ["DGI", "DGD", "DGTCP", "PRESIDENT"];
 
 function getDocFileUrl(doc: DocumentDto): string {
-  if (!doc.chemin) return "#";
+  if (!doc.chemin) return "";
   if (doc.chemin.startsWith("http")) return doc.chemin;
   return `${API_BASE}/documents/download/${doc.id}`;
 }
@@ -943,7 +943,7 @@ const MiseEnPlaceDetail = () => {
                           </p>
                         </div>
                       </div>
-                      <DocumentButton doc={{ url: getDocFileUrl(doc), nomFichier: doc.nomFichier }} variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-primary">{t("mise_en_place:detail.documents.download")}</DocumentButton>
+                      <DocumentButton doc={{ url: getDocFileUrl(doc) || undefined, id: doc.id, nomFichier: doc.nomFichier }} variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-primary">{t("mise_en_place:detail.documents.download")}</DocumentButton>
                     </div>
                   );
                 })}
