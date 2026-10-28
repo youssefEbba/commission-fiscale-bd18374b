@@ -97,29 +97,6 @@ function getDocFileUrl(doc: DocumentDto): string {
   return "";
 }
 
-async function openDocInNewTab(url: string) {
-  const token = localStorage.getItem("auth_token");
-  const res = await fetch(url, {
-    headers: { Authorization: token ? `Bearer ${token}` : "", "ngrok-skip-browser-warning": "true" },
-  });
-  if (!res.ok) throw new Error("open failed");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  window.open(objectUrl, "_blank");
-}
-
-async function downloadDocAuthenticated(url: string, filename: string) {
-  const token = localStorage.getItem("auth_token");
-  const res = await fetch(url, {
-    headers: { Authorization: token ? `Bearer ${token}` : "", "ngrok-skip-browser-warning": "true" },
-  });
-  if (!res.ok) throw new Error("download failed");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl; a.download = filename; a.click();
-  URL.revokeObjectURL(objectUrl);
-}
 
 const DemandeDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -887,12 +864,12 @@ const DemandeDetail = () => {
                         <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{t(SPECIAL_DOC_LABEL_KEYS[docType])}</p>
                         {doc && fileUrl ? (
                           <div className="flex items-center justify-center gap-2 mt-2">
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => openDocInNewTab(fileUrl)}>
-                              <ExternalLink className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.open")}
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => downloadDocAuthenticated(fileUrl, doc.nomFichier)}>
-                              <Download className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.download")}
-                            </Button>
+                            <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
+                              {t("demandes:detail.decision_docs.open")}
+                            </DocumentButton>
+                            <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} mode="download" icon={Download} iconClassName="h-3 w-3 me-1" variant="outline" size="sm" className="h-7 px-2 text-[10px]">
+                              {t("demandes:detail.decision_docs.download")}
+                            </DocumentButton>
                           </div>
                         ) : (
                           <p className="text-[10px] text-muted-foreground mt-1">{t("demandes:detail.decision_docs.unavailable")}</p>
@@ -964,16 +941,14 @@ const DemandeDetail = () => {
                             )}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            {fileUrl && (
+                            {fileUrl && uploaded && (
                               <>
-                                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
-                                  <ExternalLink className="h-3.5 w-3.5 me-1" /> {t("demandes:detail.pieces.open")}
-                                </Button>
-                                <a href={fileUrl} download={uploaded?.nomFichier || label}>
-                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                    <Download className="h-3.5 w-3.5 me-1" /> {t("demandes:detail.pieces.download")}
-                                  </Button>
-                                </a>
+                                <DocumentButton doc={{ id: uploaded.id, chemin: uploaded.chemin, nomFichier: uploaded.nomFichier || label }} icon={ExternalLink} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                  {t("demandes:detail.pieces.open")}
+                                </DocumentButton>
+                                <DocumentButton doc={{ id: uploaded.id, chemin: uploaded.chemin, nomFichier: uploaded.nomFichier || label }} mode="download" icon={Download} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                  {t("demandes:detail.pieces.download")}
+                                </DocumentButton>
                               </>
                             )}
                             {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
@@ -990,7 +965,11 @@ const DemandeDetail = () => {
                               <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span>v{v.version || '?'} — {v.nomFichier}</span>
                                 <span>{formatDate(v.dateUpload)}</span>
-                                {v.chemin && <a href={getDocFileUrl(v)} target="_blank" rel="noopener noreferrer" className="underline">{t("demandes:detail.pieces.download")}</a>}
+                                {v.chemin && (
+                                  <DocumentButton doc={{ id: v.id, chemin: v.chemin, nomFichier: v.nomFichier }} mode="download" variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-muted-foreground underline">
+                                    {t("demandes:detail.pieces.download")}
+                                  </DocumentButton>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1217,9 +1196,9 @@ const DemandeDetail = () => {
                           <FileText className="h-3.5 w-3.5" />
                           <span>{rec.pieceJointeNomFichier}</span>
                           {rec.pieceJointeChemin && (
-                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.pieceJointeChemin!)}>
-                              <ExternalLink className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.open")}
-                            </Button>
+                            <DocumentButton doc={{ url: rec.pieceJointeChemin, nomFichier: rec.pieceJointeNomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-6 px-2 text-[10px]">
+                              {t("demandes:detail.decision_docs.open")}
+                            </DocumentButton>
                           )}
                         </div>
                       )}
@@ -1231,9 +1210,9 @@ const DemandeDetail = () => {
                               <FileText className="h-3 w-3 text-red-600" />
                               <span className="font-medium">{rec.reponseRejetNomFichier}</span>
                               {rec.reponseRejetChemin && (
-                                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.reponseRejetChemin!)}>
-                                  <ExternalLink className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.open")}
-                                </Button>
+                                <DocumentButton doc={{ url: rec.reponseRejetChemin, nomFichier: rec.reponseRejetNomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-6 px-2 text-[10px]">
+                                  {t("demandes:detail.decision_docs.open")}
+                                </DocumentButton>
                               )}
                             </div>
                           )}
