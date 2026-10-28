@@ -1,4 +1,3 @@
-import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -163,6 +162,8 @@ const UtilisationDetail = () => {
   const [qDgiFile, setQDgiFile] = useState<File | null>(null);
   const [qDgiLoading, setQDgiLoading] = useState(false);
   const [tvaPdfLoading, setTvaPdfLoading] = useState(false);
+  const liqPdfKey = `generate:cu-douane:${utilId}`;
+  const liqPdfPending = useDocumentTaskPending(liqPdfKey);
   const [cuEtat, setCuEtat] = useState<Awaited<ReturnType<typeof utilisationCreditApi.getCertificatUtilisationEtat>> | null>(null);
   const [cuSignOpen, setCuSignOpen] = useState(false);
   const [cuAdminOpen, setCuAdminOpen] = useState(false);
