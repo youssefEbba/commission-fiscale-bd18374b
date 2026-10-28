@@ -17,7 +17,7 @@ function useExport(params: ReportingParams) {
   const run = async (format: ReportingExportFormat, blocs?: ReportingBloc[]) => {
     setBusy(true);
     try {
-      await trackDocumentTask(`download:reporting:${format}:${(blocs || []).join(",")}`, "download", `export.${format}`, () => reportingApi.downloadExport(format, params, blocs));
+      await trackDocumentTask(`download:reporting:${format}:${(blocs || []).join(",")}`, "download", undefined, () => reportingApi.downloadExport(format, params, blocs));
     } catch (e: any) {
       toast({ variant: "destructive", title: t("reporting:export.error") as string, description: e?.message });
     } finally {
