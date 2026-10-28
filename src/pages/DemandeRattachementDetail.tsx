@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, ArrowLeft, Building2, CheckCircle2, Download, ExternalLink, FileText, Loader2, User, XCircle } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { demandeRattachementApi, type DemandeRattachementDto, type DocumentDto } from "@/lib/api";
-import { openDocument, downloadDocument } from "@/lib/openDocument";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { showApiError, showSuccess } from "@/lib/feedback";
 import { formatDateTime } from "@/i18n/format";
 import { tTypeDocument } from "@/i18n/enums";
@@ -65,11 +65,6 @@ export default function DemandeRattachementDetail() {
     finally { setActing(false); }
   };
 
-  const open = async (doc: DocumentDto, download = false) => {
-    try { await (download ? downloadDocument : openDocument)({ id: doc.id, nomFichier: doc.nomFichier }); }
-    catch (e) { showApiError(e, t("detail.open_error")); }
-  };
-
   if (loading) return <DashboardLayout><div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></DashboardLayout>;
   if (!d) return <DashboardLayout><p className="text-center text-muted-foreground py-20">{t("detail.not_found")}</p></DashboardLayout>;
 
@@ -103,8 +98,8 @@ export default function DemandeRattachementDetail() {
                         <p className="text-xs text-muted-foreground truncate">{doc.nomFichier}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={() => open(doc)}><ExternalLink className="h-4 w-4 me-1" />{t("detail.open_doc")}</Button>
-                        <Button size="sm" variant="outline" onClick={() => open(doc, true)}><Download className="h-4 w-4 me-1" />{t("detail.download")}</Button>
+                        <DocumentButton doc={{ id: doc.id, nomFichier: doc.nomFichier }} icon={ExternalLink} iconClassName="h-4 w-4 me-1" size="sm" onError={(e) => showApiError(e, t("detail.open_error"))}>{t("detail.open_doc")}</DocumentButton>
+                        <DocumentButton doc={{ id: doc.id, nomFichier: doc.nomFichier }} mode="download" icon={Download} iconClassName="h-4 w-4 me-1" size="sm" variant="outline" onError={(e) => showApiError(e, t("detail.open_error"))}>{t("detail.download")}</DocumentButton>
                       </div>
                     </li>
                   );

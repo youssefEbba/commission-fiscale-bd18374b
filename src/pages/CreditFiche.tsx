@@ -12,7 +12,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { tStatutCertificat, tStatutUtilisation, tTypeDocument } from "@/i18n/enums";
 import { displayRef } from "@/lib/displayRef";
-import { openDocument } from "@/lib/openDocument";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { certificatCreditConsultation, CertificatCreditFicheDto } from "@/lib/api";
 
 const Field = ({ label, value }: { label: string; value?: string | number | null }) => (
@@ -126,7 +126,7 @@ export default function CreditFiche() {
                         <TableCell className="max-w-[280px] truncate">{d.nomFichier || "—"}</TableCell>
                         <TableCell>{d.dateUpload ? formatDate(d.dateUpload) : "—"}</TableCell>
                         <TableCell className="text-end">
-                          <Button size="sm" variant="outline" onClick={() => void openDocument(d)}>Ouvrir</Button>
+                          <DocumentButton doc={d} size="sm" variant="outline">Ouvrir</DocumentButton>
                         </TableCell>
                       </TableRow>
                     ))}

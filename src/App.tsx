@@ -63,6 +63,7 @@ import VerificationPublique from "./pages/VerificationPublique";
 import SuiviRattachement from "./pages/SuiviRattachement";
 import ArchiveCredits from "./pages/ArchiveCredits";
 import { ErrorDialog } from "@/components/ErrorDialog";
+import { DocumentTaskIndicator } from "@/components/documents/DocumentTaskIndicator";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <ErrorDialog />
+        <DocumentTaskIndicator />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />

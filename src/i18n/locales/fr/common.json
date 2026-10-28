@@ -163,5 +163,18 @@
       "CERTIFICAT_UTILISATION": "Certificat d'utilisation"
     },
     "note": "Ce contrôle confirme que le numéro correspond à un document enregistré par la Commission fiscale. Il ne remplace pas la signature et le cachet."
+  },
+  "documents": {
+    "opening": "Ouverture du document…",
+    "downloading": "Téléchargement du document…",
+    "generating": "Préparation du document…",
+    "many_in_progress": "{{count}} documents en cours…",
+    "opening_short": "Ouverture…",
+    "downloading_short": "Téléchargement…",
+    "waiting_tab_title": "Ouverture du document…",
+    "waiting_tab_body": "Veuillez patienter, le document arrive. Cet onglet l'affichera dès qu'il sera prêt.",
+    "open_error": "Impossible d'ouvrir le document",
+    "download_error": "Impossible de télécharger le document",
+    "not_found": "Document introuvable"
   }
 }

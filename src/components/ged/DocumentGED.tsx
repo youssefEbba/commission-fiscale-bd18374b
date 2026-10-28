@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { API_BASE } from "@/lib/apiConfig";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -103,40 +103,12 @@ const DocumentGED = ({
     }
   };
 
-  const openFile = async (doc: GEDDocument) => {
-    if (!doc.chemin) return;
-    let url = doc.chemin;
-    if (!/^https?:\/\//i.test(url)) {
-      const apiOrigin = API_BASE.replace(/\/api\/?$/, "");
-      url = apiOrigin + (url.startsWith("/") ? "" : "/") + url;
-    }
-    // Récupération authentifiée + bypass ngrok warning, puis ouverture via blob
-    try {
-      const token = localStorage.getItem("auth_token");
-      const headers: Record<string, string> = { "ngrok-skip-browser-warning": "true" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const win = window.open(blobUrl, "_blank", "noopener,noreferrer");
-      if (!win) {
-        // Fallback téléchargement si popup bloqué
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = doc.nomFichier || "document";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-    } catch (e: any) {
-      toast({
-        title: t("ged:toast.error_title"),
-        description: t("ged:toast.open_error", { defaultValue: "Impossible d'ouvrir le document. Vérifiez que le tunnel backend est actif." }) + (e?.message ? ` (${e.message})` : ""),
-        variant: "destructive",
-      });
-    }
+  const onOpenError = (e: any) => {
+    toast({
+      title: t("ged:toast.error_title"),
+      description: t("ged:toast.open_error", { defaultValue: "Impossible d'ouvrir le document. Vérifiez que le tunnel backend est actif." }) + (e?.message ? ` (${e.message})` : ""),
+      variant: "destructive",
+    });
   };
 
   const handleReplaceDoc = async () => {
@@ -186,13 +158,15 @@ const DocumentGED = ({
               <div className="flex items-center gap-2">
                 {getFileIcon(d.nomFichier)}
                 {d.chemin ? (
-                  <button
-                    type="button"
-                    onClick={() => openFile(d)}
-                    className="text-primary underline text-xs hover:text-primary/80 transition-colors text-start"
+                  <DocumentButton
+                    doc={{ id: d.id, chemin: d.chemin, nomFichier: d.nomFichier }}
+                    variant="link"
+                    iconClassName="h-3 w-3 me-1"
+                    onError={onOpenError}
+                    className="h-auto p-0 text-primary underline text-xs hover:text-primary/80 transition-colors text-start whitespace-normal"
                   >
                     {d.nomFichier}
-                  </button>
+                  </DocumentButton>
                 ) : (
                   <span className="text-xs">{d.nomFichier}</span>
                 )}
