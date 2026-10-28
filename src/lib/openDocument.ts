@@ -6,11 +6,11 @@
 // Attente : chaque ouverture / téléchargement / génération est suivi dans un
 // registre global (indicateur `DocumentTaskIndicator` + boutons `DocumentButton`).
 // Un second clic sur le même document réutilise la tâche en cours au lieu de
-// relancer la requête. À l'ouverture, un onglet d'attente est ouvert tout de
-// suite (dans le geste de l'utilisateur, donc non bloqué) puis remplacé par
-// le fichier ; il est refermé si le serveur refuse.
+// relancer la requête. L'attente reste sur la page courante : l'onglet du
+// fichier ne s'ouvre qu'à sa réception.
 // ============================================
 import i18n from "@/i18n";
+import { toast } from "sonner";
 import { API_BASE, NGROK_HEADERS } from "./apiConfig";
 import { ApiRequestError } from "./api";
 
@@ -111,43 +111,6 @@ async function fetchAsBlob(url: string): Promise<Blob> {
   return res.blob();
 }
 
-// ---------- Onglet d'attente ----------
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
-}
-
-function openWaitingTab(name: string | undefined): Window | null {
-  let win: Window | null = null;
-  try { win = window.open("", "_blank"); } catch { win = null; }
-  if (!win) return null;
-  try {
-    win.opener = null;
-    const rtl = (i18n.language || "fr").startsWith("ar");
-    const title = i18n.t("common:documents.waiting_tab_title") as string;
-    const body = i18n.t("common:documents.waiting_tab_body") as string;
-    const d = win.document;
-    d.title = title;
-    d.documentElement.lang = rtl ? "ar" : "fr";
-    d.documentElement.dir = rtl ? "rtl" : "ltr";
-    d.body.innerHTML = `
-      <style>
-        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f4f6f3;color:#1f3b2c}
-        .box{text-align:center;padding:32px;max-width:420px}
-        .spin{width:42px;height:42px;margin:0 auto 18px;border:4px solid #d7e2d9;border-top-color:#1f6b45;border-radius:50%;animation:s 0.9s linear infinite}
-        h1{font-size:17px;margin:0 0 8px}
-        p{font-size:13px;margin:0;color:#56695d;word-break:break-word}
-        @keyframes s{to{transform:rotate(360deg)}}
-      </style>
-      <div class="box" role="status" aria-live="polite">
-        <div class="spin"></div>
-        <h1>${escapeHtml(title)}</h1>
-        ${name ? `<p><strong>${escapeHtml(name)}</strong></p>` : ""}
-        <p>${escapeHtml(body)}</p>
-      </div>`;
-  } catch { /* onglet non modifiable : il sera simplement remplacé */ }
-  return win;
-}
-
 /** Types que le navigateur sait afficher dans un onglet (sinon : téléchargement). */
 function isViewable(blob: Blob): boolean {
   const type = (blob.type || "").toLowerCase();
@@ -158,36 +121,29 @@ function displayName(doc: OpenableDoc): string | undefined {
   return doc.nomFichier || doc.nom || undefined;
 }
 
-/** Ouvre le document dans un nouvel onglet (auth JWT + bypass ngrok), avec attente visible. */
+/**
+ * Ouvre le document dans un nouvel onglet (auth JWT + bypass ngrok).
+ * L'attente se fait sur la page courante ; l'onglet ne s'ouvre qu'une fois le fichier reçu.
+ */
 export function openDocument(doc: OpenableDoc): Promise<void> {
   const url = resolveDocumentUrl(doc);
   if (!url) return Promise.reject(new Error(i18n.t("common:documents.not_found") as string));
-  const key = documentTaskKey(doc, "open");
   const name = displayName(doc);
-  // Onglet ouvert tout de suite (geste utilisateur) ; un second clic ne rouvre rien.
-  const tab = isDocumentTaskPending(key) ? null : openWaitingTab(name);
-  return trackDocumentTask(key, "open", name, async () => {
-    let blob: Blob;
-    try {
-      blob = await fetchAsBlob(url);
-    } catch (e) {
-      try { tab?.close(); } catch { /* noop */ }
-      throw e;
-    }
+  return trackDocumentTask(documentTaskKey(doc, "open"), "open", name, async () => {
+    const blob = await fetchAsBlob(url);
     const blobUrl = URL.createObjectURL(blob);
     const filename = name || "document";
-    if (isViewable(blob)) {
-      let shown = false;
-      if (tab && !tab.closed) {
-        try { tab.location.replace(blobUrl); shown = true; } catch { shown = false; }
-      }
-      if (!shown) shown = !!window.open(blobUrl, "_blank", "noopener,noreferrer");
-      if (!shown) triggerDownloadFromBlob(blobUrl, filename); // popup bloquée -> téléchargement
-    } else {
-      try { tab?.close(); } catch { /* noop */ }
+    if (!isViewable(blob)) {
       triggerDownloadFromBlob(blobUrl, filename);
+    } else if (!window.open(blobUrl, "_blank", "noopener,noreferrer")) {
+      // Le navigateur a bloqué l'ouverture automatique (attente longue) : proposer un clic.
+      toast.success(i18n.t("common:documents.ready") as string, {
+        description: name,
+        duration: 15_000,
+        action: { label: i18n.t("common:documents.open_now") as string, onClick: () => { window.open(blobUrl, "_blank", "noopener,noreferrer"); } },
+      });
     }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60_000);
   });
 }
 
