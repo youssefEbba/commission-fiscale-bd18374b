@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
@@ -848,7 +849,7 @@ const DemandesMiseEnPlace = () => {
                             <p className="text-xs text-muted-foreground">{tTypeDocument(doc.type)}</p>
                           </div>
                         </div>
-                        <a href={getDocFileUrl(doc)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">{t("mise_en_place:detail.documents.download")}</a>
+                        <DocumentButton doc={{ url: getDocFileUrl(doc), nomFichier: doc.nomFichier }} variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-primary">{t("mise_en_place:detail.documents.download")}</DocumentButton>
                       </div>
                     ))}
                   </div>
@@ -1120,9 +1121,9 @@ const DemandesMiseEnPlace = () => {
                         <p className="text-sm font-medium truncate">{tTypeDocument(doc.type)}</p>
                         <p className="text-xs text-muted-foreground truncate">{doc.nomFichier || doc.chemin || `#${doc.id}`}</p>
                       </div>
-                      <a href={getDocFileUrl(doc)} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0">
-                        <Eye className="h-3 w-3" /> {t("mise_en_place:detail.documents.open")}
-                      </a>
+                      <DocumentButton doc={{ url: getDocFileUrl(doc), nomFichier: doc.nomFichier }} icon={Eye} iconClassName="h-3 w-3 me-1" variant="link" className="h-auto p-0 text-xs text-primary shrink-0">
+                        {t("mise_en_place:detail.documents.open")}
+                      </DocumentButton>
                     </div>
                   ))}
                 </div>

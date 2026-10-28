@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -942,7 +943,7 @@ const MiseEnPlaceDetail = () => {
                           </p>
                         </div>
                       </div>
-                      <a href={getDocFileUrl(doc)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">{t("mise_en_place:detail.documents.download")}</a>
+                      <DocumentButton doc={{ url: getDocFileUrl(doc), nomFichier: doc.nomFichier }} variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-primary">{t("mise_en_place:detail.documents.download")}</DocumentButton>
                     </div>
                   );
                 })}

@@ -45,6 +45,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 import { API_BASE } from "@/lib/apiConfig";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 import { requiredVisasCorrection, requiredPreVisaDocCorrection, resolveCredits, firstVisaRoleCorrection } from "@/lib/visas";
 
 function getDocFileUrl(doc: DocumentDto): string {
@@ -630,9 +631,9 @@ const CorrectionDouaniere = () => {
                             {doc ? (
                               <div className="flex items-center justify-center gap-1 mt-2">
                                 {fileUrl && (
-                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => window.open(fileUrl, "_blank")}>
-                                    <ExternalLink className="h-3 w-3 me-1" /> {t("correction_douaniere:decisions.open")}
-                                  </Button>
+                                  <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
+                                    {t("correction_douaniere:decisions.open")}
+                                  </DocumentButton>
                                 )}
                               </div>
                             ) : (
@@ -705,14 +706,12 @@ const CorrectionDouaniere = () => {
                                 <div className="flex items-center gap-1 shrink-0">
                                   {activeDoc && fileUrl && (
                                     <>
-                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
-                                        <ExternalLink className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:documents.open")}
-                                      </Button>
-                                      <a href={fileUrl} download={activeDoc.nomFichier || label}>
-                                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                          <Download className="h-3.5 w-3.5 me-1" /> {t("correction_douaniere:documents.download")}
-                                        </Button>
-                                      </a>
+                                      <DocumentButton doc={{ id: activeDoc.id, chemin: activeDoc.chemin, nomFichier: activeDoc.nomFichier || label }} icon={ExternalLink} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                        {t("correction_douaniere:documents.open")}
+                                      </DocumentButton>
+                                      <DocumentButton doc={{ id: activeDoc.id, chemin: activeDoc.chemin, nomFichier: activeDoc.nomFichier || label }} mode="download" icon={Download} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                        {t("correction_douaniere:documents.download")}
+                                      </DocumentButton>
                                     </>
                                   )}
                                 </div>
@@ -901,9 +900,9 @@ const CorrectionDouaniere = () => {
                                 <FileText className="h-3.5 w-3.5" />
                                 <span>{rec.pieceJointeNomFichier}</span>
                                 {rec.pieceJointeChemin && (
-                                  <a href={rec.pieceJointeChemin} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                                    <ExternalLink className="h-3 w-3" /> {t("correction_douaniere:reclamation.open_file")}
-                                  </a>
+                                  <DocumentButton doc={{ url: rec.pieceJointeChemin, nomFichier: rec.pieceJointeNomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="link" className="h-auto p-0 text-xs text-primary">
+                                    {t("correction_douaniere:reclamation.open_file")}
+                                  </DocumentButton>
                                 )}
                               </div>
                             )}
@@ -915,9 +914,9 @@ const CorrectionDouaniere = () => {
                                     <FileText className="h-3 w-3 text-red-600" />
                                     <span className="font-medium">{rec.reponseRejetNomFichier}</span>
                                     {rec.reponseRejetChemin && (
-                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => window.open(rec.reponseRejetChemin!, "_blank")}>
-                                        <ExternalLink className="h-3 w-3 me-1" /> {t("correction_douaniere:reclamation.open_file")}
-                                      </Button>
+                                      <DocumentButton doc={{ url: rec.reponseRejetChemin, nomFichier: rec.reponseRejetNomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-6 px-2 text-[10px]">
+                                        {t("correction_douaniere:reclamation.open_file")}
+                                      </DocumentButton>
                                     )}
                                   </div>
                                 )}
