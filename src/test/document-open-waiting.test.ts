@@ -22,13 +22,11 @@ describe("attente à l'ouverture des documents", () => {
     expect(getDocumentTasks()).toHaveLength(0);
   });
 
-  it("l'onglet d'attente est refermé si le serveur refuse le document", async () => {
-    const tab = { opener: {}, closed: false, close: vi.fn(), document: document.implementation.createHTMLDocument(""), location: { replace: vi.fn() } };
-    vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+  it("aucun onglet n'est ouvert avant la réception du fichier, ni si le serveur refuse", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ code: "ACCES_REFUSE", message: "Pièce non communicable" }), { status: 403 })));
     await expect(openDocument({ id: 42, nomFichier: "quittance.pdf" })).rejects.toThrow("Pièce non communicable");
-    expect(tab.close).toHaveBeenCalledTimes(1);
-    expect(tab.location.replace).not.toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
   });
 
   it("ouvrir et télécharger le même document sont deux attentes distinctes", () => {
