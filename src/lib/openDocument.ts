@@ -130,21 +130,26 @@ export function openDocument(doc: OpenableDoc): Promise<void> {
   if (!url) return Promise.reject(new Error(i18n.t("common:documents.not_found") as string));
   const name = displayName(doc);
   return trackDocumentTask(documentTaskKey(doc, "open"), "open", name, async () => {
-    const blob = await fetchAsBlob(url);
-    const blobUrl = URL.createObjectURL(blob);
-    const filename = name || "document";
-    if (!isViewable(blob)) {
-      triggerDownloadFromBlob(blobUrl, filename);
-    } else if (!window.open(blobUrl, "_blank", "noopener,noreferrer")) {
-      // Le navigateur a bloqué l'ouverture automatique (attente longue) : proposer un clic.
-      toast.success(i18n.t("common:documents.ready") as string, {
-        description: name,
-        duration: 15_000,
-        action: { label: i18n.t("common:documents.open_now") as string, onClick: () => { window.open(blobUrl, "_blank", "noopener,noreferrer"); } },
-      });
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60_000);
+    presentBlob(await fetchAsBlob(url), name || "document", "open");
   });
+}
+
+/**
+ * Affiche (onglet) ou télécharge un fichier déjà en mémoire (PDF généré dans le navigateur).
+ * Si l'onglet est bloqué par le navigateur, propose un bouton « Ouvrir ».
+ */
+export function presentBlob(blob: Blob, filename: string, mode: "open" | "download"): void {
+  const blobUrl = URL.createObjectURL(blob);
+  if (mode === "download" || !isViewable(blob)) {
+    triggerDownloadFromBlob(blobUrl, filename);
+  } else if (!window.open(blobUrl, "_blank", "noopener,noreferrer")) {
+    toast.success(i18n.t("common:documents.ready") as string, {
+      description: filename,
+      duration: 15_000,
+      action: { label: i18n.t("common:documents.open_now") as string, onClick: () => { window.open(blobUrl, "_blank", "noopener,noreferrer"); } },
+    });
+  }
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60_000);
 }
 
 /** Force le téléchargement du document (auth JWT + bypass ngrok), avec attente visible. */
@@ -153,10 +158,7 @@ export function downloadDocument(doc: OpenableDoc): Promise<void> {
   if (!url) return Promise.reject(new Error(i18n.t("common:documents.not_found") as string));
   const name = displayName(doc);
   return trackDocumentTask(documentTaskKey(doc, "download"), "download", name, async () => {
-    const blob = await fetchAsBlob(url);
-    const blobUrl = URL.createObjectURL(blob);
-    triggerDownloadFromBlob(blobUrl, name || "document");
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    presentBlob(await fetchAsBlob(url), name || "document", "download");
   });
 }
 

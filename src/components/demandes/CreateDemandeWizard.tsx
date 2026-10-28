@@ -7,6 +7,7 @@ import { PDFDocument } from "pdf-lib";
 import { toast as sonnerToast } from "sonner";
 import i18nInstance from "@/i18n";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
+import { trackDocumentTask, presentBlob } from "@/lib/openDocument";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
@@ -1828,14 +1829,13 @@ async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: strin
   const tr = (k: string, o?: Record<string, unknown>) => i18nInstance.t(`demandes:recu.${k}`, o) as string;
   const numero = demande.reference || demande.numero || `#${demande.id}`;
   try {
-    const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
-    const blob = generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
     const name = recuDepotFileName(demande);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
+    await trackDocumentTask(`recu-depot:${demande.id}:issue`, "generate", name, async () => {
+      const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
+      const blob = generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
+      presentBlob(blob, name, "download");
+      await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
+    });
     sonnerToast.success(tr("toast_ok"));
   } catch (e) {
     console.warn("Reçu de dépôt non enregistré :", e);
