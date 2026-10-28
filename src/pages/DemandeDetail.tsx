@@ -42,7 +42,8 @@ import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
 import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
 import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
-import { openDocument, downloadDocument } from "@/lib/openDocument";
+import { openDocument, downloadDocument, trackDocumentTask } from "@/lib/openDocument";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
@@ -112,7 +113,7 @@ const DemandeDetail = () => {
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
-  const [recuBusy, setRecuBusy] = useState(false);
+  const [recuBusy, setRecuBusy] = useState<false | "open" | "download">(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
@@ -337,13 +338,16 @@ const DemandeDetail = () => {
   const handleGenerateAdoptionLetter = async () => {
     if (!selected) return;
     try {
-      const blob = await generateAdoptionLetterPdf(selected, {
-        entreprise: entrepriseDetail,
-        marche: marcheDetail,
-        convention: conventionDetail,
-      });
       const ref = selected.reference || selected.numero || String(selected.id);
-      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      const fileName = `lettre-adoption-${ref}.pdf`;
+      await trackDocumentTask(`generate:adoption:${selected.id}`, "generate", fileName, async () => {
+        const blob = await generateAdoptionLetterPdf(selected, {
+          entreprise: entrepriseDetail,
+          marche: marcheDetail,
+          convention: conventionDetail,
+        });
+        downloadBlob(blob, fileName);
+      });
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
@@ -469,7 +473,7 @@ const DemandeDetail = () => {
   const recuDoc = [...docs.filter(d => docCode(d) === "RECU_DEPOT")]
     .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
   const handleRecu = async (mode: "open" | "download") => {
-    setRecuBusy(true);
+    setRecuBusy(mode);
     try {
       if (recuDoc) {
         await (mode === "open" ? openDocument(recuDoc) : downloadDocument(recuDoc));
@@ -598,11 +602,11 @@ const DemandeDetail = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled={recuBusy} onClick={() => handleRecu("open")}>
-                  <ExternalLink className="h-4 w-4 me-1" /> {t("demandes:detail.recu_card.open")}
+                <Button variant="ghost" size="sm" disabled={!!recuBusy} aria-busy={recuBusy === "open" || undefined} onClick={() => handleRecu("open")}>
+                  {recuBusy === "open" ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <ExternalLink className="h-4 w-4 me-1" />} {t("demandes:detail.recu_card.open")}
                 </Button>
-                <Button size="sm" disabled={recuBusy} onClick={() => handleRecu("download")}>
-                  {recuBusy ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
+                <Button size="sm" disabled={!!recuBusy} aria-busy={recuBusy === "download" || undefined} onClick={() => handleRecu("download")}>
+                  {recuBusy === "download" ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
                   {t("demandes:detail.recu_card.download")}
                 </Button>
               </div>

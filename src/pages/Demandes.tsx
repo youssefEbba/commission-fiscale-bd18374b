@@ -150,9 +150,11 @@ const Demandes = () => {
 
   const handleGenerateAdoptionLetter = async (d: DemandeCorrectionDto) => {
     try {
-      const blob = await generateAdoptionLetterPdf(d);
       const ref = d.reference || d.numero || String(d.id);
-      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      const fileName = `lettre-adoption-${ref}.pdf`;
+      await trackDocumentTask(`generate:adoption:${d.id}`, "generate", fileName, async () => {
+        downloadBlob(await generateAdoptionLetterPdf(d), fileName);
+      });
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
