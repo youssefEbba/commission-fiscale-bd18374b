@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
@@ -364,7 +365,7 @@ const Transferts = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("transferts:columns.id")}</TableHead>
                     <TableHead>{t("transferts:columns.certificat")}</TableHead>
                     <TableHead>{t("transferts:columns.montant")}</TableHead>
@@ -376,9 +377,10 @@ const Transferts = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("transferts:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((tr) => (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("transferts:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((tr, rowIdx) => (
                     <ClickableTableRow key={tr.id} to={`/dashboard/transferts/${tr.id}`}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{tr.id}</Link>
                       </TableCell>

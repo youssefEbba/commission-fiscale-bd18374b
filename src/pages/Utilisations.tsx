@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
@@ -694,7 +695,7 @@ const Utilisations = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("utilisations:list.columns.id")}</TableHead>
                     <TableHead>{t("utilisations:list.columns.certificat")}</TableHead>
                     <TableHead>{t("utilisations:list.columns.demandeur")}</TableHead>
@@ -707,9 +708,10 @@ const Utilisations = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("utilisations:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((u) => (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("utilisations:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((u, rowIdx) => (
                     <ClickableTableRow key={u.id} to={`/dashboard/utilisations/${u.id}`}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/utilisations/${u.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{u.id}</Link>
                       </TableCell>

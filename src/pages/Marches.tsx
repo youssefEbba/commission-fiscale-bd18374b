@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
@@ -350,7 +351,7 @@ const Marches = () => {
               <div className="overflow-x-auto">
                 <Table className="min-w-[700px]">
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>{t("marches:columns.numero")}</TableHead>
                       <TableHead>{t("marches:columns.intitule")}</TableHead>
                       <TableHead className="text-end">{t("marches:columns.montant_ht")}</TableHead>
@@ -362,11 +363,12 @@ const Marches = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
                       </TableRow>
                     ) : (
-                      filtered.map(m => (
+                      filtered.map((m, rowIdx) => (
                         <ClickableTableRow key={m.id} to={`/dashboard/marches/${m.id}`}>
+                          <RowNumberCell n={rowIdx + 1} />
                           <TableCell className="font-medium whitespace-nowrap">
                             <Link to={`/dashboard/marches/${m.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(m)}</Link>
                           </TableCell>

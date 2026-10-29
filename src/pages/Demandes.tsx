@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -472,7 +473,7 @@ const Demandes = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("demandes:columns.numero")}</TableHead>
                     <TableHead>{t("demandes:columns.ac")}</TableHead>
                     <TableHead>{t("demandes:columns.entreprise")}</TableHead>
@@ -485,11 +486,12 @@ const Demandes = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("demandes:list.empty")}</TableCell>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("demandes:list.empty")}</TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map((d) => (
+                    filtered.map((d, rowIdx) => (
                       <ClickableTableRow key={d.id} to={`/dashboard/demandes/${d.id}`}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-medium">
                           <Link to={`/dashboard/demandes/${d.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(d)}</Link>
                         </TableCell>

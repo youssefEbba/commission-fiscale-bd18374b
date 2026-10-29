@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -349,7 +350,7 @@ const ReferentielProjets = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>Réf.</TableHead>
                     <TableHead>Nom du projet</TableHead>
                     <TableHead>Autorité Contractante</TableHead>
@@ -362,11 +363,12 @@ const ReferentielProjets = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun projet</TableCell>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun projet</TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map((p) => (
+                    filtered.map((p, rowIdx) => (
                       <TableRow key={p.id}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-medium">{p.reference || `#${p.id}`}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.nomProjet || p.intitule || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{p.autoriteContractanteNom || "—"}</TableCell>

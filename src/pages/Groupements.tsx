@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ const Groupements = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>Raison sociale</TableHead>
                       <TableHead>Chef de file</TableHead>
                       <TableHead>NIF (chef de file)</TableHead>
@@ -126,11 +127,12 @@ const Groupements = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map(g => (
+                    {filtered.map((g, rowIdx) => (
                       <ClickableTableRow
                         key={g.id}
                         to={`/dashboard/groupements/${g.id}`}
                       >
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-medium">
                           <Link to={`/dashboard/groupements/${g.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{g.raisonSociale}</Link>
                           {g.nomCommercial && <div className="text-xs text-muted-foreground">{g.nomCommercial}</div>}

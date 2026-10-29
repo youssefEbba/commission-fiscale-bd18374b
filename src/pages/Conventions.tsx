@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -577,7 +578,7 @@ const Conventions = () => {
               <div className="overflow-x-auto">
                 <Table className="min-w-[600px] [&_th]:h-10 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2">
                    <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>{t("conventions:columns.reference")}</TableHead>
                       <TableHead>{t("conventions:columns.intitule")}</TableHead>
                       <TableHead>{t("conventions:columns.bailleur")}</TableHead>
@@ -588,13 +589,14 @@ const Conventions = () => {
                   <TableBody>
                     {paginated.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                           {t("conventions:list.empty")}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginated.map((c) => (
+                      paginated.map((c, rowIdx) => (
                         <ClickableTableRow key={c.id} to={`/dashboard/conventions/${c.id}`}>
+                          <RowNumberCell n={(currentPage - 1) * PAGE_SIZE + rowIdx + 1} />
                           <TableCell className="font-medium whitespace-nowrap">
                             <Link
                               to={`/dashboard/conventions/${c.id}`}

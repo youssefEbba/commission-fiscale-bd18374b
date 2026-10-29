@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useNavigate } from "react-router-dom";
 import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -169,7 +170,7 @@ const CommissionRelais = () => {
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>{mode === "ENTREPRISE" ? "Raison sociale" : "Nom"}</TableHead>
                       <TableHead>{mode === "ENTREPRISE" ? "NIF" : "Sigle"}</TableHead>
                       <TableHead>Statut</TableHead>
@@ -179,20 +180,21 @@ const CommissionRelais = () => {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10">
+                        <TableCell colSpan={5} className="text-center py-10">
                           <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
                           Chargement…
                         </TableCell>
                       </TableRow>
                     ) : rows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10 text-muted-foreground text-sm">
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground text-sm">
                           Aucun résultat.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      rows.map((r) => (
+                      rows.map((r, rowIdx) => (
                         <TableRow key={r.id}>
+                          <RowNumberCell n={page * PAGE_SIZE + rowIdx + 1} />
                           <TableCell className="font-medium">{r.primary}</TableCell>
                           <TableCell className="text-muted-foreground">{r.secondary}</TableCell>
                           <TableCell>

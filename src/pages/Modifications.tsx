@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -188,7 +189,7 @@ const Modifications = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("modifications:list.columns.id")}</TableHead>
                     <TableHead>{t("modifications:list.columns.description")}</TableHead>
                     <TableHead>{t("modifications:list.columns.certificat")}</TableHead>
@@ -201,12 +202,13 @@ const Modifications = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         {t("modifications:list.empty")}
                       </TableCell>
                     </TableRow>
-                  ) : filtered.map((a) => (
+                  ) : filtered.map((a, rowIdx) => (
                     <TableRow key={a.id}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-mono text-xs">{a.id}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{a.description || a.type || "—"}</TableCell>
                       <TableCell className="text-xs">{a.certificatNumero || "—"}</TableCell>

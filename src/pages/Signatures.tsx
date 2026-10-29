@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import SignatureManager from "@/components/signatures/SignatureManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -183,7 +184,7 @@ const Signatures = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>Nature</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Utilisateur</TableHead>
@@ -196,8 +197,9 @@ const Signatures = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {signatures.map((s) => (
+                    {signatures.map((s, rowIdx) => (
                       <TableRow key={s.id}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell>{s.type === "CACHET" ? "Cachet" : "Signature"}</TableCell>
                         <TableCell>{ROLE_LABELS[s.role] || s.role}</TableCell>
                         <TableCell>{s.utilisateurNom || "—"}</TableCell>

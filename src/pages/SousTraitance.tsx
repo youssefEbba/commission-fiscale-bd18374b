@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -322,7 +323,7 @@ const SousTraitance = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("sous_traitance:list.columns.id")}</TableHead>
                     <TableHead>{t("sous_traitance:list.columns.certificat")}</TableHead>
                     <TableHead>{t("sous_traitance:list.columns.sous_traitant")}</TableHead>
@@ -336,9 +337,10 @@ const SousTraitance = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("sous_traitance:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((row) => (
+                    <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">{t("sous_traitance:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((row, rowIdx) => (
                     <TableRow key={row.id}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">#{row.id}</TableCell>
                       <TableCell className="text-muted-foreground">{row.certificatNumero || t("sous_traitance:list.cert_fallback", { id: row.certificatCreditId })}</TableCell>
                       <TableCell>{row.sousTraitantEntrepriseRaisonSociale || t("sous_traitance:list.ent_fallback", { id: row.sousTraitantEntrepriseId })}</TableCell>

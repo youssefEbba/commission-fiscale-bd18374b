@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
@@ -599,7 +600,7 @@ const DemandesMiseEnPlace = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead className="text-start">{t("mise_en_place:list.columns.reference")}</TableHead>
                     <TableHead className="text-start">{t("mise_en_place:list.columns.entreprise")}</TableHead>
                     <TableHead className="text-start">{t("mise_en_place:list.columns.correction")}</TableHead>
@@ -610,9 +611,10 @@ const DemandesMiseEnPlace = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("mise_en_place:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((c) => (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("mise_en_place:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((c, rowIdx) => (
                     <ClickableTableRow key={c.id} to={`/dashboard/mise-en-place/${c.id}`}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/mise-en-place/${c.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{c.reference || `#${c.id}`}</Link>
                       </TableCell>
