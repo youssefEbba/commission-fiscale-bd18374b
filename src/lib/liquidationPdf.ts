@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
@@ -63,7 +64,7 @@ function labelDottedValue(doc: jsPDF, x: number, y: number, label: string, value
 }
 
 export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const M = 32;
   let y = 36;
@@ -255,7 +256,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
     ]],
     headStyles: { fillColor: [22, 101, 52] },
     footStyles: { fillColor: [240, 240, 240], textColor: 20 },
-    styles: { fontSize: 9 },
+    styles: { fontSize: 9, font: PDF_FONT },
     columnStyles: { 3: { halign: "right" } },
   });
 

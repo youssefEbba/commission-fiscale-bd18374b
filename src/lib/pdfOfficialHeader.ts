@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { PDF_FONT } from "@/lib/pdfFonts";
 import emblem from "@/assets/logo-official.png";
 
 /**

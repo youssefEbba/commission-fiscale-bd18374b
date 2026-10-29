@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
@@ -108,7 +109,7 @@ export async function generateCertificatToSignPdf(
   opts: PdfOutputOptions = {},
 ): Promise<Blob> {
   const { entreprise, marche, convention, autorite } = ctx;
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const doc = applyOfficialFont(new jsPDF({ unit: "mm", format: "a4" }));
   const pageW = doc.internal.pageSize.getWidth();
   const M = 12;
   const W = pageW - M * 2;

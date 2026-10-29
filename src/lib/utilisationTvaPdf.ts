@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
@@ -65,7 +66,7 @@ function field(doc: jsPDF, x: number, y: number, label: string, value: string, x
 }
 
 export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const M = 40;
   const R = W - M;

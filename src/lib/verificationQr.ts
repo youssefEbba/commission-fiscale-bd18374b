@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { PDF_FONT } from "@/lib/pdfFonts";
 import QRCode from "qrcode";
 
 /** URL absolue de l'écran public de vérification pour un code de document. */
