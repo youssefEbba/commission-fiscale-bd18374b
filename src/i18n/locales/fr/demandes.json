@@ -97,7 +97,8 @@
       "lettre_adoption": "Lettre d'Adoption",
       "open": "Ouvrir",
       "download": "Télécharger",
-      "unavailable": "Non disponible"
+      "unavailable": "Non disponible",
+      "before_adoption_hint": "Visible des membres de la Commission dès le dépôt ; l'autorité contractante et l'entreprise y accèdent après l'adoption."
     },
     "recu_card": {
       "title": "Reçu de dépôt",
