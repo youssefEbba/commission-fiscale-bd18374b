@@ -26,3 +26,12 @@
 - [x] i18n-check + typecheck OK
 - [x] Tests vitest (9) : ligne cliquable + seuils d'échéance
 - [ ] Contrôle visuel authentifié — bloqué : aucune session de test disponible dans le bac à sable
+
+## Réunion d'équipe — partie 1 (29/10/2026)
+- [x] GED : sections Inscription (RATTACHEMENT_COMPTE), Modification, Clôture
+- [ ] Rejets temporaires : pièces proposées = GED du processus (correction, utilisation, transfert, mise en place)
+- [ ] Offre corrigée visible des membres de la Commission avant adoption
+- [ ] Colonne N° dans toutes les listes
+- [ ] « Nom de l'entreprise », « Intitulé du projet de marché », champ `referenceAppelOffre`
+- [ ] Nouveau format des références (exemples, encodage des liens)
+- Hors périmètre : conventions/marchés multi-liens (partie 2)
