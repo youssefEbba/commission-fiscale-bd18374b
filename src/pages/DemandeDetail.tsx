@@ -593,6 +593,10 @@ const DemandeDetail = () => {
                   <p className="font-medium text-muted-foreground">—</p>
                 )}
               </div>
+              <div>
+                <span className="text-muted-foreground">{t("demandes:detail.fields.reference_appel_offre")}</span>
+                <p className="font-medium">{selected.referenceAppelOffre?.trim() || "—"}</p>
+              </div>
 
             </div>
           </CardContent>
@@ -1022,7 +1026,8 @@ const DemandeDetail = () => {
           entity="DEMANDE"
           entityId={selected.id}
           fields={[
-            { key: "intituleMarche", label: "Intitulé du marché", type: "text", value: selected.intituleMarche ?? "" },
+            { key: "intituleMarche", label: t("demandes:detail.fields.marche"), type: "text", value: selected.intituleMarche ?? "" },
+            { key: "referenceAppelOffre", label: t("demandes:detail.fields.reference_appel_offre"), type: "text", value: selected.referenceAppelOffre ?? "" },
             { key: "creditInterieur", label: "Crédit intérieur", type: "number", value: selected.creditInterieur ?? "" },
             { key: "creditExterieur", label: "Crédit extérieur", type: "number", value: selected.creditExterieur ?? "" },
           ]}
@@ -1481,7 +1486,7 @@ const DemandeDetail = () => {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{marcheDetail.numeroMarche || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{marcheDetail.statut || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">{t("demandes:detail.fields.marche")}</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>
