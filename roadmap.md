@@ -29,9 +29,9 @@
 
 ## Réunion d'équipe — partie 1 (29/10/2026)
 - [x] GED : sections Inscription (RATTACHEMENT_COMPTE), Modification, Clôture
-- [ ] Rejets temporaires : pièces proposées = GED du processus (correction, utilisation, transfert, mise en place)
-- [ ] Offre corrigée visible des membres de la Commission avant adoption
-- [ ] Colonne N° dans toutes les listes
-- [ ] « Nom de l'entreprise », « Intitulé du projet de marché », champ `referenceAppelOffre`
-- [ ] Nouveau format des références (exemples, encodage des liens)
+- [x] Rejets temporaires : pièces proposées = GED du processus (correction, utilisation, transfert, mise en place)
+- [x] Offre corrigée visible des membres de la Commission avant adoption
+- [x] Colonne N° dans toutes les listes
+- [x] « Nom de l'entreprise », « Intitulé du projet de marché », champ `referenceAppelOffre`
+- [x] Nouveau format des références (exemples, encodage des liens)
 - Hors périmètre : conventions/marchés multi-liens (partie 2)
