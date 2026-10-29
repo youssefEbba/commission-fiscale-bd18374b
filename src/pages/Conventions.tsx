@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,12 +8,8 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   conventionApi, ConventionDto, ConventionStatut,
-  CONVENTION_STATUT_VALUES, CreateConventionRequest,
+  CONVENTION_STATUT_VALUES,
   DocumentDto, TypeDocumentConvention, CONVENTION_DOCUMENT_TYPES,
-  bailleurApi, BailleurDto, CreateBailleurRequest,
-  deviseApi, DeviseDto, CreateDeviseRequest,
-  forexApi,
-  documentRequirementApi, DocumentRequirementDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -33,18 +29,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   FileText, Search, RefreshCw, Plus, Loader2,
-  CheckCircle, XCircle, Filter, Upload, File, Paperclip,
-  ArrowUp, ArrowDown, Merge, MoreHorizontal, Eye, Edit,
+  XCircle, Filter, Upload, File, Paperclip,
+  Merge, MoreHorizontal, Eye, Edit,
   Trash2, Ban, ShieldCheck, ShieldX, CalendarClock,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutConvention, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
+import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { echeanceConvention } from "@/lib/conventionEcheance";
-import { canEditConvention, conventionCancelMode } from "@/lib/conventionEditability";
-import ConventionEditDialog, { DEFAULT_DEVISES } from "@/components/conventions/ConventionEditDialog";
+import { canEditConvention, conventionCancelMode, conventionAutorites, conventionBailleurs } from "@/lib/conventionEditability";
+import ConventionEditDialog from "@/components/conventions/ConventionEditDialog";
 import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
+import ConventionCreateDialog from "@/components/conventions/ConventionCreateDialog";
 
 const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -53,7 +50,8 @@ const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
   ANNULEE: "bg-gray-100 text-gray-800",
 };
 
-const todayIso = new Date().toISOString().slice(0, 10);
+/** Noms séparés par une virgule (principal en tête), « — » si aucun. */
+const joinNoms = (list: { nom: string }[]) => (list.length ? list.map((x) => x.nom).join(", ") : "—");
 
 const Conventions = () => {
   const { user, hasRole, hasPermission } = useAuth();
@@ -287,7 +285,8 @@ const Conventions = () => {
       (c.reference || "").toLowerCase().includes(s) ||
       (c.projectReference || "").toLowerCase().includes(s) ||
       (c.intitule || "").toLowerCase().includes(s) ||
-      (c.bailleurNom || c.bailleur || "").toLowerCase().includes(s)
+      joinNoms(conventionBailleurs(c)).toLowerCase().includes(s) ||
+      joinNoms(conventionAutorites(c)).toLowerCase().includes(s)
     );
     const matchStatut = filterStatut === "ALL" || c.statut === filterStatut;
     return matchSearch && matchStatut;
@@ -349,12 +348,13 @@ const Conventions = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="min-w-[600px] [&_th]:h-10 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2">
+                <Table className="min-w-[860px] [&_th]:h-10 [&_th]:px-3 [&_td]:px-3 [&_td]:py-2">
                    <TableHeader>
                     <TableRow><RowNumberHead />
                       <TableHead>{t("conventions:columns.reference")}</TableHead>
                       <TableHead>{t("conventions:columns.intitule")}</TableHead>
-                      <TableHead>{t("conventions:columns.bailleur")}</TableHead>
+                      <TableHead>{t("conventions:columns.autorites")}</TableHead>
+                      <TableHead>{t("conventions:columns.bailleurs")}</TableHead>
                       <TableHead>{t("conventions:columns.statut")}</TableHead>
                       <TableHead className="text-end">{t("conventions:columns.actions")}</TableHead>
                     </TableRow>
@@ -362,7 +362,7 @@ const Conventions = () => {
                   <TableBody>
                     {paginated.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           {t("conventions:list.empty")}
                         </TableCell>
                       </TableRow>
@@ -380,7 +380,12 @@ const Conventions = () => {
                             </Link>
                           </TableCell>
                           <TableCell className="max-w-[320px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground whitespace-nowrap">{c.bailleurNom || c.bailleur || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground max-w-[220px]" title={joinNoms(conventionAutorites(c))}>
+                            <span className="line-clamp-2">{joinNoms(conventionAutorites(c))}</span>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground max-w-[200px]" title={joinNoms(conventionBailleurs(c))}>
+                            <span className="line-clamp-2">{joinNoms(conventionBailleurs(c))}</span>
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap items-center gap-1">
                               <Badge className={`text-xs ${STATUT_COLORS[c.statut] || ""}`}>
@@ -437,10 +442,10 @@ const Conventions = () => {
                                       </DropdownMenuItem>
                                     </>
                                   )}
-                                  {(canEditConvention(c, user?.autoriteContractanteId, canUpdate) || cancelModeOf(c)) && (
+                                  {(canEditConvention(c, user?.autoriteContractanteId, canUpdate, isAdmin) || cancelModeOf(c)) && (
                                     <DropdownMenuSeparator />
                                   )}
-                                  {canEditConvention(c, user?.autoriteContractanteId, canUpdate) && (
+                                  {canEditConvention(c, user?.autoriteContractanteId, canUpdate, isAdmin) && (
                                     <DropdownMenuItem onClick={() => openEdit(c)}>
                                       <Edit className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
                                     </DropdownMenuItem>
@@ -626,7 +631,7 @@ const Conventions = () => {
                 <div><span className="text-muted-foreground">{t("conventions:fields.statut")} :</span> <Badge className={`text-xs ms-1 ${STATUT_COLORS[detailConvention.statut] || ""}`}>{tStatutConvention(detailConvention.statut)}</Badge></div>
               </div>
               <div><span className="text-muted-foreground">{t("conventions:fields.intitule")} :</span> <span className="font-medium">{detailConvention.intitule || "—"}</span></div>
-              <div><span className="text-muted-foreground">{t("conventions:fields.bailleur")} :</span> {detailConvention.bailleurNom || detailConvention.bailleur || "—"}</div>
+              <div><span className="text-muted-foreground">{t("conventions:fields.bailleurs")} :</span> {joinNoms(conventionBailleurs(detailConvention))}</div>
               <div><span className="text-muted-foreground">{t("conventions:fields.descriptif")} :</span> {detailConvention.bailleurDetails || "—"}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">{t("conventions:fields.date_signature")} :</span> {formatDate(detailConvention.dateSignature)}</div>
@@ -637,8 +642,8 @@ const Conventions = () => {
                 <div><span className="text-muted-foreground">{t("conventions:fields.taux")} :</span><br />{detailConvention.tauxChange != null ? formatNumber(detailConvention.tauxChange) : "—"}</div>
                 <div><span className="text-muted-foreground">{t("conventions:fields.montant_mru")} :</span><br />{detailConvention.montantMru != null ? formatAmount(detailConvention.montantMru, { currency: "MRU", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"}</div>
               </div>
-              {detailConvention.autoriteContractanteNom && (
-                <div><span className="text-muted-foreground">{t("conventions:fields.autorite_contractante")} :</span> {detailConvention.autoriteContractanteNom}</div>
+              {conventionAutorites(detailConvention).length > 0 && (
+                <div><span className="text-muted-foreground">{t("conventions:fields.autorites")} :</span> {joinNoms(conventionAutorites(detailConvention))}</div>
               )}
               {detailConvention.motifRejet && (
                 <div className="bg-destructive/10 rounded p-2"><span className="text-destructive font-medium">{t("conventions:fields.motif_rejet")} :</span> {detailConvention.motifRejet}</div>
@@ -649,7 +654,7 @@ const Conventions = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog — EN_ATTENTE, AC titulaire ou créatrice */}
+      {/* Edit Dialog — AC titulaire/créatrice en attente ; Président/administrateur sauf annulée */}
       <ConventionEditDialog
         convention={editConvention}
         open={editOpen}
