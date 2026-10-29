@@ -275,7 +275,7 @@ const Marches = () => {
       toast({ title: errTitle, description: t("marches:form.errors.montant_required"), variant: "destructive" });
       return;
     }
-    if (!editing && convIds.length === 0) {
+    if ((!editing || isAdministration) && convIds.length === 0) {
       toast({ title: errTitle, description: t("marches:form.errors.convention_required"), variant: "destructive" });
       return;
     }
