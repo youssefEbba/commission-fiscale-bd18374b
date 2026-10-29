@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -1012,19 +1013,7 @@ const CorrectionDouaniere = () => {
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 {t("correction_douaniere:dialog.reject_temp.docs_label")} <span className="text-destructive">*</span>
               </Label>
-              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
-                  <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
-                    <Checkbox
-                      checked={rejectDocsDemandes.includes(dt)}
-                      onCheckedChange={(checked) => {
-                        setRejectDocsDemandes(prev => checked ? [...prev, dt] : prev.filter(v => v !== dt));
-                      }}
-                    />
-                    <span>{tTypeDocument(dt)}</span>
-                  </label>
-                ))}
-              </div>
+              <GedPiecesChecklist processus="CORRECTION_OFFRE_FISCALE" value={rejectDocsDemandes} onChange={setRejectDocsDemandes} />
               {rejectDocsDemandes.length === 0 && (
                 <p className="text-xs text-destructive mt-1">{t("correction_douaniere:dialog.reject_temp.select_at_least_one")}</p>
               )}
