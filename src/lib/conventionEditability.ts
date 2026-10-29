@@ -1,4 +1,4 @@
-import type { ConventionDto, UpdateConventionRequest } from "@/lib/api";
+import type { ConventionDto, EntiteRefDto, UpdateConventionRequest } from "@/lib/api";
 
 /** Closing remains allowed even when a convention has been cancelled. */
 export function canSetConventionActivation(statut: string, actif: boolean) {
@@ -6,18 +6,20 @@ export function canSetConventionActivation(statut: string, actif: boolean) {
 }
 
 /**
- * Modification d'une convention (PUT /api/conventions/{id}) : les trois conditions ensemble.
- * - permission `convention.update` ;
- * - convention encore en attente de validation DGB ;
- * - autorité du compte (ou autorité représentée en relais) titulaire OU créatrice.
- * La permission seule ne suffit pas : le Président la détient aussi.
+ * Modification d'une convention (PUT /api/conventions/{id}), permission `convention.update` requise.
+ * - Président / administrateur (`isAdministration`) : à tout statut sauf ANNULEE.
+ * - Autorité : convention encore en attente de validation DGB, et autorité du compte
+ *   (ou autorité représentée en relais) titulaire OU créatrice.
+ * La permission seule ne suffit pas : la DGB ou une autorité tierce n'y ont pas droit.
  */
 export function canEditConvention(
   conv: Pick<ConventionDto, "statut" | "autoriteContractanteId" | "creeParAutoriteContractanteId">,
   userAutoriteContractanteId: number | null | undefined,
   hasUpdatePermission: boolean,
+  isAdministration = false,
 ): boolean {
   if (!hasUpdatePermission) return false;
+  if (isAdministration) return conv.statut !== "ANNULEE";
   if (conv.statut !== "EN_ATTENTE") return false;
   if (userAutoriteContractanteId == null) return false;
   return (
@@ -30,7 +32,8 @@ export interface ConventionEditForm {
   reference: string;
   intitule: string;
   projectReference: string;
-  bailleurId?: number | null;
+  /** Bailleurs ordonnés, le premier = principal. */
+  bailleurIds: number[];
   dateSignature: string;
   dateFin: string;
   deviseOrigine: string;
@@ -51,7 +54,7 @@ export function conventionToEditForm(conv: ConventionDto): ConventionEditForm {
     reference: conv.reference ?? "",
     intitule: conv.intitule ?? "",
     projectReference: conv.projectReference ?? "",
-    bailleurId: conv.bailleurId ?? null,
+    bailleurIds: conventionBailleurs(conv).map((b) => b.id),
     dateSignature: conv.dateSignature ? conv.dateSignature.slice(0, 10) : "",
     dateFin: conv.dateFin ? conv.dateFin.slice(0, 10) : "",
     deviseOrigine: conv.deviseOrigine ?? "",
@@ -70,7 +73,8 @@ export function buildUpdateConventionRequest(form: ConventionEditForm): UpdateCo
     reference: form.reference.trim(),
     intitule: form.intitule.trim(),
     projectReference: textOrNull(form.projectReference),
-    bailleurId: form.bailleurId ?? null,
+    bailleurId: form.bailleurIds[0] ?? null,
+    bailleurIds: [...form.bailleurIds],
     dateSignature: textOrNull(form.dateSignature),
     dateFin: textOrNull(form.dateFin),
     deviseOrigine: textOrNull(form.deviseOrigine),
@@ -117,4 +121,38 @@ export function conventionDateError(
   if (dates.dateSignature && changed("dateSignature") && dates.dateSignature > today) return "date_signature_future";
   if (dates.dateFin && changed("dateFin") && dates.dateFin < today) return "date_fin_past";
   return null;
+}
+
+/**
+ * Liste ordonnée {id, nom} avec repli sur l'élément principal quand le serveur n'envoie pas la liste.
+ * Le principal reste en tête ; aucun doublon.
+ */
+function withPrincipal(list: EntiteRefDto[] | undefined, principalId?: number | null, principalNom?: string | null): EntiteRefDto[] {
+  const out: EntiteRefDto[] = [];
+  const seen = new Set<number>();
+  const push = (r: EntiteRefDto) => { if (r.id != null && !seen.has(r.id)) { seen.add(r.id); out.push(r); } };
+  if (list && list.length) list.forEach(push);
+  else if (principalId != null) push({ id: principalId, nom: principalNom || `#${principalId}` });
+  return out;
+}
+
+/** Autorités contractantes reliées (principale en tête). */
+export function conventionAutorites(conv: Pick<ConventionDto, "autorites" | "autoriteContractanteId" | "autoriteContractanteNom">): EntiteRefDto[] {
+  return withPrincipal(conv.autorites, conv.autoriteContractanteId, conv.autoriteContractanteNom);
+}
+
+/** Bailleurs (principal en tête). */
+export function conventionBailleurs(conv: Pick<ConventionDto, "bailleurs" | "bailleurId" | "bailleurNom" | "bailleur">): EntiteRefDto[] {
+  return withPrincipal(conv.bailleurs, conv.bailleurId, conv.bailleurNom || conv.bailleur);
+}
+
+/** Conventions d'un marché (principale en tête), repli sur `conventionId`. */
+export function marcheConventionIds(m: { conventionIds?: number[]; conventionId?: number }): number[] {
+  if (m.conventionIds && m.conventionIds.length) return Array.from(new Set(m.conventionIds));
+  return m.conventionId ? [m.conventionId] : [];
+}
+
+/** Relier / délier une autorité : Président et administrateur, avec `convention.update`. Une convention annulée n'est plus modifiable. */
+export function canManageConventionAutorites(conv: Pick<ConventionDto, "statut">, hasUpdatePermission: boolean, isAdministration: boolean): boolean {
+  return hasUpdatePermission && isAdministration && conv.statut !== "ANNULEE";
 }
