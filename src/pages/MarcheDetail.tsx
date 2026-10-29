@@ -22,6 +22,7 @@ import { formatAmount, formatDate } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { canEditMarche } from "@/lib/marcheEditability";
 import { formatApiErrorMessage } from "@/lib/api";
+import { conventionBailleurs, marcheConventionIds } from "@/lib/conventionEditability";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -46,7 +47,8 @@ const MarcheDetail = () => {
   const { hasRole } = useAuth();
 
   const [marche, setMarche] = useState<MarcheDto | null>(null);
-  const [convention, setConvention] = useState<ConventionDto | null>(null);
+  /** Conventions du marché dans l'ordre serveur (principale en tête) ; null = lecture refusée/échouée. */
+  const [conventions, setConventions] = useState<{ id: number; conv: ConventionDto | null }[]>([]);
   const [delegues, setDelegues] = useState<DelegueDto[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,7 +71,12 @@ const MarcheDetail = () => {
       const m = await marcheApi.getById(Number(id));
       setMarche(m);
       const tasks: Promise<any>[] = [];
-      if (m.conventionId) tasks.push(conventionApi.getById(m.conventionId).then(setConvention).catch(() => {}));
+      const ids = marcheConventionIds(m);
+      tasks.push(
+        Promise.allSettled(ids.map((cid) => conventionApi.getById(cid))).then((res) =>
+          setConventions(ids.map((cid, i) => ({ id: cid, conv: res[i].status === "fulfilled" ? (res[i] as PromiseFulfilledResult<ConventionDto>).value : null }))),
+        ),
+      );
       tasks.push(delegueApi.getAll().then(setDelegues).catch(() => {}));
       await Promise.allSettled(tasks);
     } catch (e: any) {
@@ -124,7 +131,7 @@ const MarcheDetail = () => {
     .map(dId => delegues.find(d => d.id === dId))
     .filter(Boolean) as DelegueDto[];
 
-  const devise = convention?.deviseOrigine || "MRU";
+  const devise = conventions[0]?.conv?.deviseOrigine || "MRU";
 
   return (
     <DashboardLayout>
@@ -169,6 +176,7 @@ const MarcheDetail = () => {
               value={formatAmount(marche.montantContratHt ?? marche.montantContratTtc, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             />
             <Field label={t("marches:fields.statut")} value={tStatutMarche(marche.statut)} />
+            <Field label={t("marches:fields.autorite")} value={marche.autoriteContractanteNom || "—"} />
             <Field
               label={t("marches:fields.type")}
               value={marche.demandeCorrectionId ? t("marches:type.contrat_long") : t("marches:type.attribution")}
@@ -176,23 +184,26 @@ const MarcheDetail = () => {
           </CardContent>
         </Card>
 
-        {convention && (
+        {conventions.length > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">{t("marches:detail.sections.convention")}</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Field
-                label={t("marches:fields.reference")}
-                value={
-                  <button
-                    className="text-primary hover:underline"
-                    onClick={() => navigate(`/dashboard/conventions/${convention.id}`)}
-                  >
-                    {convention.reference || `#${convention.id}`}
-                  </button>
-                }
-              />
-              <Field label={t("marches:fields.intitule")} value={convention.intitule} />
-              <Field label={t("marches:fields.bailleur")} value={convention.bailleurNom || convention.bailleur} />
+            <CardHeader><CardTitle className="text-base">{t("marches:detail.sections.conventions")}</CardTitle></CardHeader>
+            <CardContent>
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {conventions.map(({ id: cid, conv }, i) => (
+                  <li key={cid} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.5fr)] gap-2 px-3 py-2 text-sm items-center">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <button className="text-primary hover:underline truncate" onClick={() => navigate(`/dashboard/conventions/${cid}`)}>
+                        {conv?.reference || `#${cid}`}
+                      </button>
+                      {i === 0 && <Badge variant="secondary" className="text-[10px] shrink-0">{t("marches:detail.convention_principale")}</Badge>}
+                    </div>
+                    <span className="text-foreground truncate" title={conv?.intitule || ""}>{conv?.intitule || "—"}</span>
+                    <span className="text-muted-foreground truncate">
+                      {conv ? (conventionBailleurs(conv).map((b) => b.nom).join(", ") || "—") : "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         )}
