@@ -607,7 +607,14 @@ export interface ConventionDto {
   motifRejet?: string;
   /** false = convention désactivée : plus de nouveau rattachement, invisible aux AC. */
   actif?: boolean;
+  /** Toutes les autorités contractantes reliées, la principale (`autoriteContractanteId`) en tête. */
+  autorites?: EntiteRefDto[];
+  /** Tous les bailleurs, le principal (`bailleurId`) en tête. */
+  bailleurs?: EntiteRefDto[];
 }
+
+/** Référence courte {id, nom} renvoyée dans les listes liées (autorités, bailleurs). */
+export interface EntiteRefDto { id: number; nom: string; }
 
 export interface CreateConventionRequest {
   reference?: string;
@@ -615,6 +622,8 @@ export interface CreateConventionRequest {
   intitule?: string;
   /** ID du bailleur (issu de GET /api/bailleurs). Le descriptif provient désormais du bailleur lui-même. */
   bailleurId?: number | null;
+  /** Tous les bailleurs (facultatif) ; le premier devient le principal. */
+  bailleurIds?: number[];
   dateSignature?: string;
   dateFin?: string;
   montantDevise?: number;
@@ -633,6 +642,8 @@ export interface UpdateConventionRequest {
   reference: string;
   intitule: string;
   bailleurId: number | null;
+  /** Remplace la liste des bailleurs ; le premier devient le principal (= `bailleurId`). */
+  bailleurIds?: number[];
   /** AAAA-MM-JJ */
   dateSignature: string | null;
   /** AAAA-MM-JJ */
@@ -673,11 +684,15 @@ export const conventionApi = {
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
-  /** Remplacement complet (permission `convention.update`, convention EN_ATTENTE, AC titulaire ou créatrice). */
+  /** Remplacement complet (`convention.update`) : AC titulaire/créatrice en EN_ATTENTE, Président/administrateur à tout statut sauf ANNULEE. */
   update: (id: number, data: UpdateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   /** Annulation par l'autorité titulaire ou créatrice (permission `convention.annuler`, convention EN_ATTENTE). Motif facultatif. */
   annuler: (id: number, motif?: string) => apiFetch<ConventionDto>(`/conventions/${id}/annuler${motif ? `?motif=${encodeURIComponent(motif)}` : ""}`, { method: "POST" }),
+  /** Relie une autorité contractante (Président / administrateur, `convention.update`). */
+  lierAutorite: (id: number, autoriteId: number) => apiFetch<ConventionDto | void>(`/conventions/${id}/autorites/${autoriteId}`, { method: "POST" }),
+  /** Délie une autorité : 409 si elle a un marché ou une demande sous cette convention, 400 si c'est la dernière. */
+  delierAutorite: (id: number, autoriteId: number) => apiFetch<ConventionDto | void>(`/conventions/${id}/autorites/${autoriteId}`, { method: "DELETE" }),
   /** Active/désactive une convention (permission `convention.activate`). */
   setActivation: (id: number, actif: boolean) => apiFetch<ConventionDto>(`/conventions/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`).then(normalizeDocs),
@@ -1145,6 +1160,11 @@ export interface MarcheDto {
   delegueIds?: number[];
   /** Nullable : les marchés anciens n'en portent pas — afficher « non renseigné », jamais de défaut. */
   typeMarche?: TypeMarche | null;
+  /** Toutes les conventions du marché, la principale (`conventionId`) en tête. */
+  conventionIds?: number[];
+  /** Autorité contractante qui porte le marché. */
+  autoriteContractanteId?: number;
+  autoriteContractanteNom?: string;
 }
 
 export type TypeMarche = "FOURNITURE" | "PRESTATION" | "TRAVAUX";
@@ -1154,7 +1174,13 @@ export const TYPE_MARCHE_VALUES: TypeMarche[] = ["FOURNITURE", "PRESTATION", "TR
 export const DEVISES = ["MRU", "USD", "EUR", "CNY", "AED", "SAR", "MAD", "GBP"] as const;
 
 export interface CreateMarcheRequest {
+  /** Convention principale (obligatoire à la création) = `conventionIds[0]`. */
   conventionId?: number;
+  /**
+   * Toutes les conventions, la principale en tête. Facultatif à la création ;
+   * en modification, réservé au Président et à l'administrateur (le premier devient la principale).
+   */
+  conventionIds?: number[];
   demandeCorrectionId?: number;
   numeroMarche?: string;
   intitule?: string;
@@ -2227,10 +2253,13 @@ export const notificationApi = {
 // Bailleurs (référentiel)
 export interface BailleurDto { id: number; nom: string; details?: string; }
 export interface CreateBailleurRequest { nom: string; details?: string; }
+export interface UpdateBailleurRequest { nom: string; details?: string | null; }
 
 export const bailleurApi = {
   getAll: () => apiFetch<BailleurDto[]>("/bailleurs"),
   create: (data: CreateBailleurRequest) => apiFetch<BailleurDto>("/bailleurs", { method: "POST", body: data }),
+  /** Président / administrateur (`bailleur.update`). */
+  update: (id: number, data: UpdateBailleurRequest) => apiFetch<BailleurDto>(`/bailleurs/${id}`, { method: "PUT", body: data }),
   /** Liste des conventions liées à un bailleur (droits convention.view ou convention.view.all). */
   getConventions: (id: number) => apiFetch<ConventionDto[]>(`/bailleurs/${id}/conventions`),
 };
