@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
+import { applyOfficialFont, loadOfficialWebFonts, CANVAS_FONT_AR, CANVAS_FONT_FR } from "@/lib/pdfFonts";
 import i18n from "@/i18n";
 import { formatAmount, formatDateTime } from "@/i18n/format";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
@@ -7,8 +8,8 @@ import type { DemandeCorrectionDto, DocumentDto } from "@/lib/api";
 
 /**
  * Reçu de dépôt d'une demande de correction (code document RECU_DEPOT).
- * Tout le texte est rendu via canvas (Helvetica de jsPDF ne gère ni l'arabe ni tous les accents),
- * dans la langue courante, avec le sens d'écriture adapté.
+ * Tout le texte est rendu via canvas (pour gérer l'arabe et le sens d'écriture), dans la langue courante,
+ * avec la police officielle Ouguiya (LouguiyaFR / Louguiya), chargée avant la génération.
  */
 export interface RecuDepotInput {
   demande: DemandeCorrectionDto;
@@ -22,9 +23,10 @@ export interface RecuDepotInput {
 
 const t = (k: string, o?: Record<string, unknown>) => i18n.t(`demandes:recu.${k}`, o) as string;
 
-export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libelles = {}, regenerated = false }: RecuDepotInput): Blob {
+export async function generateRecuDepotPdf({ demande: d, documents, deposantNom, libelles = {}, regenerated = false }: RecuDepotInput): Promise<Blob> {
+  await loadOfficialWebFonts();
   const rtl = i18n.language?.startsWith("ar");
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const M = 40;
@@ -34,7 +36,7 @@ export function generateRecuDepotPdf({ demande: d, documents, deposantNom, libel
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d")!;
   const fontOf = (size: number, bold: boolean) =>
-    `${bold ? "bold " : ""}${size * scale}px ${rtl ? '"Noto Sans Arabic", "Noto Naskh Arabic", Arial' : "Helvetica, Arial"}, sans-serif`;
+    `${bold ? "bold " : ""}${size * scale}px ${rtl ? `"${CANVAS_FONT_AR}", "${CANVAS_FONT_FR}", "Noto Sans Arabic", Arial` : `"${CANVAS_FONT_FR}", Arial`}, sans-serif`;
 
   const wrap = (text: string, size: number, bold: boolean, maxW: number): string[] => {
     ctx.font = fontOf(size, bold);

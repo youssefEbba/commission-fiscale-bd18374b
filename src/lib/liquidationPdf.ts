@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
@@ -53,17 +54,17 @@ function drawDottedLine(doc: jsPDF, x1: number, y: number, x2: number) {
   doc.setDrawColor(0);
 }
 function labelDottedValue(doc: jsPDF, x: number, y: number, label: string, value: string, valueMaxW: number) {
-  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.setFont(PDF_FONT, "bold").setFontSize(9);
   doc.text(label, x, y);
   const labelW = doc.getTextWidth(label);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   const vx = x + labelW + 4;
   drawDottedLine(doc, vx, y + 1, vx + valueMaxW);
   doc.text(value || "", vx + 2, y - 1);
 }
 
 export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const M = 32;
   let y = 36;
@@ -74,7 +75,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.line(M, y, W - M, y);
   y += 16;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(12);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", W / 2, y, { align: "center" });
   // souligné
@@ -88,16 +89,16 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.line(W / 2 - t2W / 2, y + 2, W / 2 + t2W / 2, y + 2);
 
   // Référence EFI2 / N°
-  doc.setFont("helvetica", "italic").setFontSize(10);
+  doc.setFont(PDF_FONT, "italic").setFontSize(10);
   doc.text("EFI2", W - M, y - 14, { align: "right" });
-  doc.setFont("helvetica", "bold").setFontSize(10);
+  doc.setFont(PDF_FONT, "bold").setFontSize(10);
   const annee = u.dateLiquidation ? new Date(u.dateLiquidation).getFullYear() : new Date().getFullYear();
   doc.text(u.numeroCertificatUtilisation ? `N° ${u.numeroCertificatUtilisation}` : `N° ${u.id}/${annee}`, W - M, y + 4, { align: "right" });
   const cadreTop = y + 8;
   y += 24;
 
   // ====== I. IDENTIFICATION DE L'ENTREPRISE ======
-  doc.setFont("helvetica", "bold").setFontSize(10);
+  doc.setFont(PDF_FONT, "bold").setFontSize(10);
   doc.text("I. IDENTIFICATION DE L'ENTREPRISE", M, y);
   y += 14;
   doc.setFontSize(9);
@@ -111,7 +112,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   y += 18;
 
   // ====== II. UTILISATION DU CRÉDIT D'IMPOT ======
-  doc.setFont("helvetica", "bold").setFontSize(10);
+  doc.setFont(PDF_FONT, "bold").setFontSize(10);
   doc.text("II. UTILISATION DU CRÉDIT D'IMPOT  ( Crédit douanier )", M, y);
   y += 14;
   doc.setFontSize(9);
@@ -127,7 +128,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   y += 20;
 
   // Bloc déduction
-  doc.setFontSize(9).setFont("helvetica", "normal");
+  doc.setFontSize(9).setFont(PDF_FONT, "normal");
   const phraseY = y;
   doc.text("Veuillez déduire du crédit d'impots N° :", M, phraseY);
   let cx = M + doc.getTextWidth("Veuillez déduire du crédit d'impots N° :") + 4;
@@ -157,14 +158,14 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   const entier = Math.floor(montantCi);
   const centimes = Math.round((montantCi - entier) * 100);
   const lettres = numberToFrenchWords(entier) + (centimes > 0 ? ` Ouguiya et ${numberToFrenchWords(centimes)} centimes` : "");
-  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.setFont(PDF_FONT, "bold").setFontSize(9);
   doc.text("LA SOMME DE :", M, y);
-  doc.setFont("helvetica", "italic");
+  doc.setFont(PDF_FONT, "italic");
   const lettresW = W - M - (M + doc.getTextWidth("LA SOMME DE :") + 4);
   const lettresLines = doc.splitTextToSize(`${fmt(montantCi)} MRU — ` + lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
   doc.text(lettresLines, M + doc.getTextWidth("LA SOMME DE :") + 6, y);
   y += 12 * lettresLines.length + 2;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
 
   labelDottedValue(doc, M, y, "Déclarant :", "", 280); y += 13;
   labelDottedValue(doc, M, y, "référence :", "", 280); y += 13;
@@ -173,16 +174,16 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   labelDottedValue(doc, M + 220, y, "Le", dt(u.dateLiquidation || u.dateCreation), 140);
   y += 18;
 
-  doc.setFont("helvetica", "italic").setFontSize(9);
+  doc.setFont(PDF_FONT, "italic").setFontSize(9);
   doc.text("Signature et Cachet de l'Entreprise", M, y);
   y += 18;
 
   // ====== III. VALIDITÉ DU CRÉDIT D'IMPOT ======
-  doc.setFont("helvetica", "bold").setFontSize(10);
+  doc.setFont(PDF_FONT, "bold").setFontSize(10);
   doc.text("III. VALIDITE DU CRÉDIT D'IMPOT", M, y);
   y += 14;
 
-  doc.setFont("helvetica", "normal").setFontSize(9);
+  doc.setFont(PDF_FONT, "normal").setFontSize(9);
   const para =
     `Le président de la Commission Fiscale auprès du Ministre des Finances Certifie que l'entreprise dispose du crédit d'impot N° ${u.certificatReference || "—"} du ${dt(u.dateCreation)} dont le solde permet l'imputation du montant sollicité.`;
   const paraLines = doc.splitTextToSize(para, W - 2 * M);
@@ -193,14 +194,14 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   const soldeInterieur = cert?.soldeTVA ?? 0;
   const totalRestant = soldeDouanier + soldeInterieur;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text(`Solde crédit Douanier : ${fmt(soldeDouanier)} MRU`, M, y); y += 12;
   doc.text(`Solde crédit Intérieur : ${fmt(soldeInterieur)} MRU`, M, y); y += 12;
   doc.text(`Total solde restant : ${fmt(totalRestant)} MRU`, M, y);
   y += 26;
 
   // ====== Signatures ======
-  doc.setFont("helvetica", "bold").setFontSize(10);
+  doc.setFont(PDF_FONT, "bold").setFontSize(10);
   doc.text("VISA du trésor public", M, y);
   doc.text(`Date : ${dt(u.dateLiquidation || u.dateCreation)}`, W / 2, y, { align: "center" });
   doc.text("Le Président de la Commission", W - M, y, { align: "right" });
@@ -233,7 +234,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   // ====== Détail bulletin sur page 2 (annexe) ======
   doc.addPage();
-  doc.setFont("helvetica", "bold").setFontSize(12);
+  doc.setFont(PDF_FONT, "bold").setFontSize(12);
   doc.text("Annexe — Détail du bulletin de liquidation", W / 2, 50, { align: "center" });
   const lignes = u.lignes || [];
   autoTable(doc, {
@@ -255,7 +256,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
     ]],
     headStyles: { fillColor: [22, 101, 52] },
     footStyles: { fillColor: [240, 240, 240], textColor: 20 },
-    styles: { fontSize: 9 },
+    styles: { fontSize: 9, font: PDF_FONT },
     columnStyles: { 3: { halign: "right" } },
   });
 
