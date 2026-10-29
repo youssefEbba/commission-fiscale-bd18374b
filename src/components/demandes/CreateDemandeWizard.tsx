@@ -107,6 +107,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [groupements, setGroupements] = useState<GroupementDto[]>([]);
   // Intitulé libre du marché (Phase A — remplace la création de marché dans le wizard de correction).
   const [intituleMarche, setIntituleMarche, clearIntituleMarche] = usePersistedState<string>("demande:intituleMarche", "");
+  // Référence de l'appel d'offres : facultative, 100 caractères max.
+  const [referenceAppelOffre, setReferenceAppelOffre] = usePersistedState<string>("demande:referenceAppelOffre", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
   const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
   const [loadingData, setLoadingData] = useState(false);
@@ -340,6 +342,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
+    setReferenceAppelOffre(editingDemande.referenceAppelOffre || "");
     setEquipementsPresents(!!editingDemande.equipementsPresents);
     setAdmissionTemporaire(editingDemande.admissionTemporaire ?? null);
     const mf = editingDemande.modeleFiscal;
@@ -706,6 +709,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
         // Phase A : intitulé libre + enveloppes crédit (routing dynamique des visas côté back).
         intituleMarche: intituleMarche?.trim() || selectedMarche?.intitule || undefined,
+        referenceAppelOffre: referenceAppelOffre.trim() || null,
         creditExterieur: Number(creditExterieur) || 0,
         creditInterieur: Number(creditInterieur) || 0,
         equipementsPresents: equipementsDeclares,
@@ -792,7 +796,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
-          "demande:entrepriseId", "demande:groupementId", "demande:titulaireType", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
+          "demande:entrepriseId", "demande:groupementId", "demande:titulaireType", "demande:conventionId", "demande:marcheId", "demande:intituleMarche", "demande:referenceAppelOffre",
           "demande:typeProjet", "demande:refDossier",
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
@@ -1314,6 +1318,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <p className="text-xs text-muted-foreground">
                         {t("demandes:wizard.fields.intitule_marche_hint")}
                       </p>
+                    </div>
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-sm" htmlFor="reference-appel-offre">
+                        {t("demandes:wizard.fields.reference_appel_offre")}
+                        <span className="text-muted-foreground text-xs ms-1">{t("demandes:wizard.fields.optional")}</span>
+                      </Label>
+                      <Input
+                        id="reference-appel-offre"
+                        value={referenceAppelOffre}
+                        maxLength={100}
+                        onChange={(e) => setReferenceAppelOffre(e.target.value.slice(0, 100))}
+                        placeholder={t("demandes:wizard.fields.reference_appel_offre_placeholder")}
+                      />
+                      <p className="text-xs text-muted-foreground text-end">{referenceAppelOffre.length}/100</p>
                     </div>
                   </div>
                 </div>
