@@ -184,7 +184,7 @@
     "load_error": "Impossible de charger la convention",
     "documents_button": "Documents ({{count}})",
     "section_general": "Informations générales",
-    "section_dates_financial": "Dates & financier",
+    "section_dates_financial": "Informations de la convention",
     "section_validation": "Suivi de validation"
   }
 }
