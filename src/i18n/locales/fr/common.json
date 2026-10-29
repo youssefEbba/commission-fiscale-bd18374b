@@ -175,6 +175,12 @@
     "download_error": "Impossible de télécharger le document",
     "not_found": "Document introuvable",
     "ready": "Document prêt",
-    "open_now": "Ouvrir"
+    "open_now": "Ouvrir",
+    "ged_pieces": {
+      "loading": "Chargement des pièces paramétrées dans la GED…",
+      "error": "Impossible de charger les pièces paramétrées dans la GED : {{message}}",
+      "empty": "Aucune pièce active n'est paramétrée dans la GED pour ce processus.",
+      "retry": "Réessayer"
+    }
   }
 }
