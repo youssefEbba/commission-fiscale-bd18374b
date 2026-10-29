@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import CreditLink from "@/components/credits/CreditLink";
@@ -1760,14 +1761,7 @@ const UtilisationDetail = () => {
             </div>
             <div>
               <Label>{t("utilisations:rejet_temp_dialog.docs_label")} *</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto mt-2">
-                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(dt => (
-                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox checked={rejetDocs.includes(dt)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt))} />
-                    <span className="text-sm">{tTypeDocument(dt)}</span>
-                  </label>
-                ))}
-              </div>
+              <GedPiecesChecklist className="mt-2" processus={isDouane ? "UTILISATION_CI_EXTERIEUR" : isTVA ? "UTILISATION_CI_INTERIEUR" : null} value={rejetDocs} onChange={setRejetDocs} />
             </div>
           </div>
           <DialogFooter>

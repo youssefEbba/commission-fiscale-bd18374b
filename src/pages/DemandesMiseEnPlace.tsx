@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
@@ -1241,19 +1242,7 @@ const DemandesMiseEnPlace = () => {
             <div className="space-y-2">
               <Label>{t("mise_en_place:dialogs.rejet_temp.docs_label")}</Label>
               <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.rejet_temp.docs_hint")}</p>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {MISE_EN_PLACE_DOC_TYPES.map((dt) => (
-                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      checked={rejetTempDocs.includes(dt)}
-                      onCheckedChange={(checked) => {
-                        setRejetTempDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt));
-                      }}
-                    />
-                    <span className="text-sm">{tTypeDocument(dt)}</span>
-                  </label>
-                ))}
-              </div>
+              <GedPiecesChecklist processus="MISE_EN_PLACE_CI" value={rejetTempDocs} onChange={setRejetTempDocs} />
             </div>
           </div>
           <DialogFooter>
