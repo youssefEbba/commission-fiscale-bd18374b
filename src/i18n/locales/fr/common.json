@@ -80,14 +80,15 @@
     "commentaire": "Commentaire",
     "motif": "Motif",
     "entreprise": "Entreprise",
-    "raison_sociale": "Raison sociale",
+    "raison_sociale": "Nom de l'entreprise",
     "nom": "Nom",
     "prenom": "Prénom",
     "email": "Email",
     "telephone": "Téléphone",
     "adresse": "Adresse",
     "actions": "Actions",
-    "search_placeholder": "Rechercher…"
+    "search_placeholder": "Rechercher…",
+    "row_number": "N°"
   },
   "pagination": {
     "page": "Page",
@@ -147,7 +148,7 @@
     "title": "Vérification d'un document officiel",
     "subtitle": "Scannez le QR code ou saisissez le code imprimé sous le carré.",
     "code_label": "Code du document",
-    "placeholder": "Ex. CU-007/2026",
+    "placeholder": "Ex. CU-0007-2026",
     "verify": "Vérifier",
     "login": "Se connecter",
     "code": "Code",
@@ -175,6 +176,12 @@
     "download_error": "Impossible de télécharger le document",
     "not_found": "Document introuvable",
     "ready": "Document prêt",
-    "open_now": "Ouvrir"
+    "open_now": "Ouvrir",
+    "ged_pieces": {
+      "loading": "Chargement des pièces paramétrées dans la GED…",
+      "error": "Impossible de charger les pièces paramétrées dans la GED : {{message}}",
+      "empty": "Aucune pièce active n'est paramétrée dans la GED pour ce processus.",
+      "retry": "Réessayer"
+    }
   }
 }

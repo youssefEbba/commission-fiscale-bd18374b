@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -35,6 +36,7 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE" },
   { key: "MODIFICATION", processus: "MODIFICATION_CI" },
   { key: "CLOTURE", processus: "CLOTURE_CI" },
+  { key: "RATTACHEMENT", processus: "RATTACHEMENT_COMPTE" },
 ];
 
 const FORMAT_VALUES: FormatFichier[] = ["WORD", "EXCEL", "IMAGE", "PDF"];
@@ -121,6 +123,18 @@ const GedConfiguration = () => {
     queryKey: ["document-requirements", "SOUS_TRAITANCE"],
     queryFn: () => documentRequirementApi.getConfiguration("SOUS_TRAITANCE"),
   });
+  const modificationQuery = useQuery({
+    queryKey: ["document-requirements", "MODIFICATION_CI"],
+    queryFn: () => documentRequirementApi.getConfiguration("MODIFICATION_CI"),
+  });
+  const clotureQuery = useQuery({
+    queryKey: ["document-requirements", "CLOTURE_CI"],
+    queryFn: () => documentRequirementApi.getConfiguration("CLOTURE_CI"),
+  });
+  const rattachementQuery = useQuery({
+    queryKey: ["document-requirements", "RATTACHEMENT_COMPTE"],
+    queryFn: () => documentRequirementApi.getConfiguration("RATTACHEMENT_COMPTE"),
+  });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
     CONVENTION: { data: conventionReqQuery.data || [], isLoading: conventionReqQuery.isLoading },
@@ -131,6 +145,9 @@ const GedConfiguration = () => {
     UTILISATION_CI_INTERIEUR: { data: interieurQuery.data || [], isLoading: interieurQuery.isLoading },
     TRANSFERT_CREDIT: { data: transfertQuery.data || [], isLoading: transfertQuery.isLoading },
     SOUS_TRAITANCE: { data: sousTraitanceQuery.data || [], isLoading: sousTraitanceQuery.isLoading },
+    MODIFICATION_CI: { data: modificationQuery.data || [], isLoading: modificationQuery.isLoading },
+    CLOTURE_CI: { data: clotureQuery.data || [], isLoading: clotureQuery.isLoading },
+    RATTACHEMENT_COMPTE: { data: rattachementQuery.data || [], isLoading: rattachementQuery.isLoading },
   };
 
   const createMutation = useMutation({
@@ -398,7 +415,7 @@ const GedConfiguration = () => {
               <div className="overflow-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead className="min-w-[220px]">{t("ged:config.catalogue.code")}</TableHead>
                       <TableHead className="min-w-[260px]">{t("ged:config.catalogue.libelle")}</TableHead>
                       <TableHead className="min-w-[160px]">{t("ged:config.catalogue.libelle_ar")}</TableHead>
@@ -407,8 +424,9 @@ const GedConfiguration = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {[...referentiel].sort((a, b) => a.code.localeCompare(b.code)).map((rt) => (
+                    {[...referentiel].sort((a, b) => a.code.localeCompare(b.code)).map((rt, rowIdx) => (
                       <TableRow key={rt.code}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-mono text-xs">{rt.code}</TableCell>
                         <TableCell>{rt.libelle}</TableCell>
                         <TableCell dir="rtl" className="text-sm">{rt.libelleAr || "—"}</TableCell>
@@ -485,7 +503,7 @@ const GedConfiguration = () => {
                     <div className="overflow-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
+                          <TableRow><RowNumberHead />
                             <TableHead className="min-w-[200px]">{t("ged:config.table.document")}</TableHead>
                             <TableHead className="min-w-[140px]">{t("ged:config.requirement.table_actif")}</TableHead>
                             <TableHead className="min-w-[120px]">{t("ged:config.table.required")}</TableHead>
@@ -496,12 +514,13 @@ const GedConfiguration = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {sorted.map((req) => {
+                          {sorted.map((req, rowIdx) => {
                             const active = isRequirementActive(req);
                             const locked = req.pieceDuCircuit === true;
                             const name = req.libelle || labelOfCode(req.codeDocument || req.typeDocument);
                             return (
                             <TableRow key={req.id} className={active ? undefined : "opacity-60"}>
+                              <RowNumberCell n={rowIdx + 1} />
                               <TableCell className="font-medium">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span>{name}</span>

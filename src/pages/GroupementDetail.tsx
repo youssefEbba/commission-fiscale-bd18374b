@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
@@ -125,20 +126,21 @@ const GroupementDetail = () => {
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Raison sociale</TableHead>
+                      <TableRow><RowNumberHead />
+                        <TableHead>Nom de l'entreprise</TableHead>
                         <TableHead>NIF</TableHead>
                         <TableHead>Adresse</TableHead>
                         <TableHead className="w-24">Rôle</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {membres.map((m: EntrepriseDto) => (
+                      {membres.map((m: EntrepriseDto, rowIdx) => (
                         <TableRow
                           key={m.id}
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => m.id && navigate(`/dashboard/entreprises/${m.id}`)}
                         >
+                          <RowNumberCell n={rowIdx + 1} />
                           <TableCell className="font-medium text-primary hover:underline">{m.raisonSociale || "—"}</TableCell>
                           <TableCell>{m.nifAffiche || m.nif || "—"}</TableCell>
                           <TableCell>{m.adresse || "—"}</TableCell>

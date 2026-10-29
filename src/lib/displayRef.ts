@@ -1,9 +1,10 @@
 /**
- * Helper d'affichage des références lisibles (`PREFIXE-NN/AAAA`) livrées en Phase B.
+ * Helper d'affichage des références lisibles (`PREFIXE-NNNN-MM-AAAA`, ex. `DC-0010-10-2026` ;
+ * `CU-NNNN-AAAA` pour le certificat d'utilisation).
  * Priorité `reference` sinon fallback `numero` sinon fallback `#id`.
  *
  * Utilisation :
- *   displayRef(demande)               // "DC-01/2025" ou "1234" ou "#42"
+ *   displayRef(demande)               // "DC-0010-10-2026" ou "1234" ou "#42"
  *   displayRef(marche, "SM")          // avec préfixe par défaut si aucun code
  */
 export function displayRef(

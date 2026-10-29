@@ -55,10 +55,11 @@
       "statut": "الحالة",
       "date_depot": "تاريخ الإيداع",
       "convention": "الاتفاقية",
-      "marche": "الصفقة",
+      "marche": "عنوان مشروع الصفقة",
       "convention_fallback": "اتفاقية #{{id}}",
       "marche_fallback": "صفقة #{{id}}",
-      "marche_detached": "صفقة #{{id}} (منفصلة)"
+      "marche_detached": "صفقة #{{id}} (منفصلة)",
+      "reference_appel_offre": "مرجع طلب العروض"
     },
     "generate_adoption_letter": "تحميل رسالة الاعتماد",
     "org_status": {
@@ -97,7 +98,8 @@
       "lettre_adoption": "رسالة الاعتماد",
       "open": "فتح",
       "download": "تحميل",
-      "unavailable": "غير متاح"
+      "unavailable": "غير متاح",
+      "before_adoption_hint": "متاح لأعضاء اللجنة فور الإيداع؛ ولا تطّلع عليه السلطة المتعاقدة والمؤسسة إلا بعد الاعتماد."
     },
     "recu_card": {
       "title": "إيصال الإيداع",
@@ -223,7 +225,7 @@
     },
     "entreprise_info": {
       "title": "معلومات المؤسسة",
-      "raison_sociale": "الاسم الاجتماعي",
+      "raison_sociale": "اسم المؤسسة",
       "nif": "الرقم الضريبي",
       "adresse": "العنوان",
       "situation_fiscale": "الوضع الضريبي",
@@ -397,7 +399,7 @@
       "convention": "الاتفاقية",
       "select_convention": "اختر اتفاقية",
       "search_convention": "البحث عن اتفاقية...",
-      "intitule_marche": "عنوان الصفقة",
+      "intitule_marche": "عنوان مشروع الصفقة",
       "intitule_marche_placeholder": "مثال: بناء سد...",
       "intitule_marche_hint": "لا يتم إنشاء صفقة هنا: سيتم إرسال العنوان الحر مع الطلب.",
       "reference_placeholder": "المرجع *",
@@ -430,7 +432,7 @@
       "pieces_ged_hint": "(حسب إعداد إدارة الوثائق)",
       "pieces_empty": "لا توجد وثائق مهيأة لهذه العملية في إدارة الوثائق.",
       "already_provided": "تم تقديمه — {{name}}",
-      "raison_sociale": "التسمية الاجتماعية",
+      "raison_sociale": "اسم المؤسسة",
       "raison_sociale_placeholder": "مثال: شركة مؤسستي ذ.م.م",
       "nif": "رقم التعريف الجبائي",
       "nif_hint": "(8 أحرف بالضبط)",
@@ -459,7 +461,10 @@
       "titulaire_entreprise": "مؤسسة",
       "titulaire_groupement": "تجمع",
       "groupement_placeholder": "اختر تجمعاً",
-      "groupement_empty": "لا يوجد تجمع"
+      "groupement_empty": "لا يوجد تجمع",
+      "reference_appel_offre": "مرجع طلب العروض",
+      "reference_appel_offre_placeholder": "مثال: AOI-0012-2026",
+      "optional": "(اختياري)"
     },
     "modele_fiscal": {
       "section_parameters": "النموذج الضريبي — المعطيات",
@@ -535,7 +540,7 @@
     },
     "errors": {
       "load_data": "تعذر تحميل البيانات",
-      "raison_sociale_required": "التسمية الاجتماعية إلزامية",
+      "raison_sociale_required": "اسم المؤسسة إلزامي",
       "nif_required": "يجب أن يحتوي رقم التعريف الجبائي على 8 أحرف بالضبط",
       "ref_intitule_required": "المرجع والعنوان إلزاميان",
       "numero_marche_required": "رقم الصفقة إلزامي",
@@ -547,7 +552,7 @@
       "entreprise_required": "يرجى اختيار مؤسسة",
       "convention_required": "يرجى اختيار اتفاقية",
       "convention_or_marche_required": "يرجى اختيار اتفاقية أو صفقة",
-      "intitule_marche_required": "يرجى إدخال عنوان الصفقة",
+      "intitule_marche_required": "يرجى إدخال عنوان مشروع الصفقة",
       "save_failed": "فشل الحفظ",
       "submit_failed": "فشل الإرسال",
       "merge_impossible_title": "تعذر الدمج",
@@ -598,14 +603,14 @@
     "ministere_tutelle": "الوزارة الوصية",
     "deposant_nom": "أودعه",
     "section_titulaire": "صاحب الصفقة",
-    "raison_sociale": "التسمية الاجتماعية",
+    "raison_sociale": "اسم المؤسسة",
     "nif": "الرقم الجبائي",
     "groupement": "التجمع",
     "nif_chef_file": "الرقم الجبائي (رئيس التجمع)",
     "section_objet": "الموضوع",
     "convention": "الاتفاقية",
     "convention_intitule": "عنوان الاتفاقية",
-    "intitule_marche": "عنوان الصفقة",
+    "intitule_marche": "عنوان مشروع الصفقة",
     "marche": "الصفقة",
     "section_montants": "المبالغ المصرّح بها",
     "credit_interieur": "الرصيد الداخلي",
@@ -620,6 +625,7 @@
     "toast_ok": "تم حفظ إيصال الإيداع في الملف وتنزيله",
     "toast_fail_title": "تم إيداع الطلب — لم يُحفظ الإيصال",
     "toast_fail_body": "تم إرسال طلبك {{numero}} بنجاح. فشل فقط حفظ الإيصال؛ يمكنك إعادة إنشائه.",
-    "regenerate": "إعادة إنشاء الإيصال"
+    "regenerate": "إعادة إنشاء الإيصال",
+    "reference_appel_offre": "مرجع طلب العروض"
   }
 }

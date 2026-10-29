@@ -96,7 +96,7 @@
   "created_ok": "تم إنشاء الكيان واختياره",
   "error_create": "تعذر إنشاء الكيان",
   "select_bailleur": "اختر ممولاً",
-  "f_raison_sociale": "التسمية الاجتماعية",
+  "f_raison_sociale": "اسم المؤسسة",
   "f_nom": "الاسم",
   "f_sigle": "الاختصار",
   "f_reference": "المرجع",

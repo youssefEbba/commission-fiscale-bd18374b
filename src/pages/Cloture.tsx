@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -174,7 +175,7 @@ const Cloture = () => {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>{t("cloture:list.eligible.columns.numero")}</TableHead>
                       <TableHead>{t("cloture:list.eligible.columns.solde_cordon")}</TableHead>
                       <TableHead>{t("cloture:list.eligible.columns.solde_tva")}</TableHead>
@@ -183,8 +184,9 @@ const Cloture = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {eligibleCerts.map((c) => (
+                    {eligibleCerts.map((c, rowIdx) => (
                       <TableRow key={c.id}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-medium">{c.numero || `#${c.id}`}{equipBadge(c.equipementsPresents)}</TableCell>
                         <TableCell>{formatAmount(c.soldeCordon)}</TableCell>
                         <TableCell>{formatAmount(c.soldeTVA)}</TableCell>
@@ -221,7 +223,7 @@ const Cloture = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("cloture:list.propositions.columns.id")}</TableHead>
                     <TableHead>{t("cloture:list.propositions.columns.certificat")}</TableHead>
                     <TableHead>{t("cloture:list.propositions.columns.type")}</TableHead>
@@ -233,8 +235,9 @@ const Cloture = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {propositions.map((p) => (
+                  {propositions.map((p, rowIdx) => (
                     <TableRow key={p.id}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell>{p.id}</TableCell>
                       <TableCell className="font-medium">{p.certificatNumero || `#${p.certificatCreditId}`}{equipBadge(p.equipementsPresents)}</TableCell>
                       <TableCell>

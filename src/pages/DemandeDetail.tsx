@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -45,6 +46,8 @@ import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
 import { openDocument, downloadDocument, trackDocumentTask, presentBlob } from "@/lib/openDocument";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 
+
+const CORRECTED_OFFER_TYPES = ["OFFRE_FISCALE_CORRIGEE", "OFFRE_CORRIGEE", "CREDIT_INTERIEUR"];
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -470,6 +473,15 @@ const DemandeDetail = () => {
   // Reçu de dépôt : toujours proposé à l'autorité contractante (y compris en relais) dès que la demande est déposée.
   const canSeeRecu = hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"]) && selected.statut !== "BROUILLON";
   const docCode = (d: DocumentDto) => ((d as any).codeDocument ?? d.type) as string;
+  // Offre corrigée : visible des membres de la Commission dès son dépôt, avant l'adoption.
+  // L'autorité contractante et l'entreprise ne la voient qu'après l'adoption (le serveur ne la leur renvoie pas avant).
+  const isAdoptedForDocs = selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE";
+  const isCommissionViewer = hasRole(["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"]);
+  const decisionDocSlots: string[] = isAdoptedForDocs
+    ? ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"]
+    : isCommissionViewer
+      ? CORRECTED_OFFER_TYPES.filter(tp => docs.some(d => d.type === tp || docCode(d) === tp))
+      : [];
   const recuDoc = [...docs.filter(d => docCode(d) === "RECU_DEPOT")]
     .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
   const handleRecu = async (mode: "open" | "download") => {
@@ -580,6 +592,10 @@ const DemandeDetail = () => {
                 ) : (
                   <p className="font-medium text-muted-foreground">—</p>
                 )}
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t("demandes:detail.fields.reference_appel_offre")}</span>
+                <p className="font-medium">{selected.referenceAppelOffre?.trim() || "—"}</p>
               </div>
 
             </div>
@@ -840,27 +856,30 @@ const DemandeDetail = () => {
         </Card>
 
         {/* Documents de décision */}
-        {(selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE") && (() => {
-          const SPECIAL_DOC_TYPES_LIST = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+        {decisionDocSlots.length > 0 && (() => {
           const SPECIAL_DOC_LABEL_KEYS: Record<string, string> = {
             OFFRE_FISCALE_CORRIGEE: "demandes:detail.decision_docs.offre_fiscale_corrigee",
             LETTRE_ADOPTION: "demandes:detail.decision_docs.lettre_adoption",
           };
-          const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES_LIST.includes(d.type));
+          const specialDocs = docs.filter(d => decisionDocSlots.includes(d.type) || decisionDocSlots.includes(docCode(d)));
           return (
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" /> {t("demandes:detail.decision_docs.title")}
                 </h3>
+                {!isAdoptedForDocs && (
+                  <p className="text-xs text-muted-foreground mb-3">{t("demandes:detail.decision_docs.before_adoption_hint")}</p>
+                )}
                 <div className="grid grid-cols-2 gap-3">
-                  {SPECIAL_DOC_TYPES_LIST.map((docType) => {
-                    const doc = specialDocs.find(d => d.type === docType);
+                  {decisionDocSlots.map((docType) => {
+                    const doc = [...specialDocs.filter(d => d.type === docType || docCode(d) === docType)]
+                      .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
                     const fileUrl = doc ? getDocFileUrl(doc) : null;
                     return (
                       <div key={docType} className={`rounded-xl border-2 p-4 text-center transition-colors ${doc ? "border-primary/40 bg-primary/5 hover:bg-primary/10" : "border-dashed border-muted-foreground/20 bg-muted/20"}`}>
                         {doc ? <Download className="h-8 w-8 text-primary mx-auto mb-2" /> : <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />}
-                        <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{t(SPECIAL_DOC_LABEL_KEYS[docType])}</p>
+                        <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{SPECIAL_DOC_LABEL_KEYS[docType] ? t(SPECIAL_DOC_LABEL_KEYS[docType]) : tTypeDocument(docType)}</p>
                         {doc && fileUrl ? (
                           <div className="flex items-center justify-center gap-2 mt-2">
                             <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
@@ -891,9 +910,10 @@ const DemandeDetail = () => {
             ) : (
               <div className="space-y-2">
                 {(() => {
-                  const SPECIAL_TYPES = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+                  // Pièces déjà présentées dans « Documents de décision » (ou masquées avant l'adoption).
+                  const SPECIAL_TYPES = Array.from(new Set(["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION", ...decisionDocSlots]));
                   // Le reçu de dépôt a sa propre carte pour l'autorité contractante.
-                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
+                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !SPECIAL_TYPES.includes(docCode(d)) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
                   const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
                     const key = (d.type && d.type.trim()) ? d.type : `__doc_${d.id}`;
                     if (!acc[key]) acc[key] = [];
@@ -1006,7 +1026,8 @@ const DemandeDetail = () => {
           entity="DEMANDE"
           entityId={selected.id}
           fields={[
-            { key: "intituleMarche", label: "Intitulé du marché", type: "text", value: selected.intituleMarche ?? "" },
+            { key: "intituleMarche", label: t("demandes:detail.fields.marche"), type: "text", value: selected.intituleMarche ?? "" },
+            { key: "referenceAppelOffre", label: t("demandes:detail.fields.reference_appel_offre"), type: "text", value: selected.referenceAppelOffre ?? "", maxLength: 100 },
             { key: "creditInterieur", label: "Crédit intérieur", type: "number", value: selected.creditInterieur ?? "" },
             { key: "creditExterieur", label: "Crédit extérieur", type: "number", value: selected.creditExterieur ?? "" },
           ]}
@@ -1374,14 +1395,7 @@ const DemandeDetail = () => {
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" /> {t("demandes:dialogs.reject.docs_label_short")} <span className="text-destructive">*</span>
                 </Label>
-                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                  {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
-                    <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
-                      <Checkbox checked={rejectDocsDemandes.includes(dt)} onCheckedChange={(checked) => setRejectDocsDemandes(prev => checked ? [...prev, dt] : prev.filter(v => v !== dt))} />
-                      <span>{tTypeDocument(dt)}</span>
-                    </label>
-                  ))}
-                </div>
+                <GedPiecesChecklist processus="CORRECTION_OFFRE_FISCALE" value={rejectDocsDemandes} onChange={setRejectDocsDemandes} />
                 {rejectDocsDemandes.length === 0 && <p className="text-xs text-destructive mt-1">{t("demandes:dialogs.reject.select_at_least_one")}</p>}
               </div>
             )}
@@ -1472,7 +1486,7 @@ const DemandeDetail = () => {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{marcheDetail.numeroMarche || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{marcheDetail.statut || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">{t("demandes:detail.fields.marche")}</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>

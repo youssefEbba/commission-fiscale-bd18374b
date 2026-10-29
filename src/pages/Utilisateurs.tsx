@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -295,7 +296,7 @@ const Utilisateurs = () => {
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow><RowNumberHead />
                 <TableHead>Nom complet</TableHead>
                 <TableHead>Identifiant</TableHead>
                 <TableHead>Email</TableHead>
@@ -307,11 +308,12 @@ const Utilisateurs = () => {
             <TableBody>
               {pageData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun utilisateur trouvé</TableCell>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun utilisateur trouvé</TableCell>
                 </TableRow>
               ) : (
-                pageData.map((u) => (
+                pageData.map((u, rowIdx) => (
                   <TableRow key={u.id}>
+                    <RowNumberCell n={(paginated ? (currentPage - 1) * pageSize : 0) + rowIdx + 1} />
                     <TableCell className="font-medium text-foreground">{u.nomComplet || "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{u.username}</TableCell>
                     <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
@@ -458,7 +460,7 @@ const Utilisateurs = () => {
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>Identifiant</TableHead>
                       <TableHead>Nom complet</TableHead>
                       <TableHead>Email</TableHead>
@@ -472,12 +474,12 @@ const Utilisateurs = () => {
                   <TableBody>
                     {resetRequests.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                           Aucune demande
                         </TableCell>
                       </TableRow>
                     ) : (
-                      resetRequests.map((r) => {
+                      resetRequests.map((r, rowIdx) => {
                         const statutBadge = r.statut === "EN_ATTENTE"
                           ? <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"><Clock className="h-3 w-3 mr-1" /> En attente</Badge>
                           : r.statut === "APPROUVEE"
@@ -485,6 +487,7 @@ const Utilisateurs = () => {
                             : <Badge className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/10"><XCircle className="h-3 w-3 mr-1" /> Refusée</Badge>;
                         return (
                           <TableRow key={r.id}>
+                            <RowNumberCell n={rowIdx + 1} />
                             <TableCell className="text-muted-foreground">{r.username}</TableCell>
                             <TableCell className="font-medium text-foreground">{r.nomComplet || "—"}</TableCell>
                             <TableCell className="text-muted-foreground">{r.email || "—"}</TableCell>

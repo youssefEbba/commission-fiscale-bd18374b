@@ -60,7 +60,7 @@
       "select_search_placeholder": "Rechercher (nom, NIF)…",
       "nif_prefix": "NIF : {{nif}}",
       "fields": {
-        "raison_sociale": "Raison sociale *",
+        "raison_sociale": "Nom de l'entreprise *",
         "nif": "NIF *",
         "adresse": "Adresse",
         "situation_fiscale": "Situation fiscale",
@@ -95,7 +95,7 @@
     "unknown_error": "Erreur inconnue",
     "select_certificat": "Veuillez sélectionner un certificat",
     "select_entreprise": "Veuillez sélectionner une entreprise",
-    "fill_raison_nif": "Veuillez remplir la raison sociale et le NIF",
+    "fill_raison_nif": "Veuillez remplir le nom de l'entreprise et le NIF",
     "docs_upload_error": "Sous-traitance créée mais erreur lors de l'upload des documents : {{error}}",
     "success_title": "Succès",
     "created": "Sous-traitance créée et demande soumise",

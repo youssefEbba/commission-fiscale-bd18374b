@@ -90,7 +90,7 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
 
   const handleCreateEntreprise = async () => {
     if (!newEnt.raisonSociale.trim()) {
-      toast({ title: "Validation", description: "La raison sociale est obligatoire.", variant: "destructive" });
+      toast({ title: "Validation", description: "Le nom de l'entreprise est obligatoire.", variant: "destructive" });
       return;
     }
     if (newEnt.entrepriseEtrangere) {
@@ -122,7 +122,7 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
   };
 
   const validationError = (): string | null => {
-    if (!form.raisonSociale.trim()) return "La raison sociale est obligatoire.";
+    if (!form.raisonSociale.trim()) return "Le nom de l'entreprise est obligatoire.";
     if (form.membreIds.length < 2) return "Un groupement doit compter au moins 2 membres.";
     if (!form.chefDeFileId) return "Sélectionnez un chef de file parmi les membres.";
     if (!form.membreIds.includes(form.chefDeFileId)) return "Le chef de file doit faire partie des membres.";
@@ -194,7 +194,7 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label>Raison sociale <span className="text-destructive">*</span></Label>
+              <Label>Nom de l'entreprise <span className="text-destructive">*</span></Label>
               <Input value={form.raisonSociale} onChange={e => setForm(p => ({ ...p, raisonSociale: e.target.value }))} />
             </div>
             <div className="space-y-1">
@@ -228,7 +228,7 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
               <div className="rounded-md border bg-muted/30 p-3 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Raison sociale <span className="text-destructive">*</span></Label>
+                    <Label className="text-xs">Nom de l'entreprise <span className="text-destructive">*</span></Label>
                     <Input value={newEnt.raisonSociale} onChange={e => setNewEnt(p => ({ ...p, raisonSociale: e.target.value }))} />
                   </div>
                   <div className="space-y-1">

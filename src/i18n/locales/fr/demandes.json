@@ -55,10 +55,11 @@
       "statut": "Statut",
       "date_depot": "Date de dépôt",
       "convention": "Convention",
-      "marche": "Marché",
+      "marche": "Intitulé du projet de marché",
       "convention_fallback": "Convention #{{id}}",
       "marche_fallback": "Marché #{{id}}",
-      "marche_detached": "Marché #{{id}} (détaché)"
+      "marche_detached": "Marché #{{id}} (détaché)",
+      "reference_appel_offre": "Référence de l'appel d'offres"
     },
     "generate_adoption_letter": "Télécharger la lettre d'adoption",
     "org_status": {
@@ -97,7 +98,8 @@
       "lettre_adoption": "Lettre d'Adoption",
       "open": "Ouvrir",
       "download": "Télécharger",
-      "unavailable": "Non disponible"
+      "unavailable": "Non disponible",
+      "before_adoption_hint": "Visible des membres de la Commission dès le dépôt ; l'autorité contractante et l'entreprise y accèdent après l'adoption."
     },
     "recu_card": {
       "title": "Reçu de dépôt",
@@ -223,7 +225,7 @@
     },
     "entreprise_info": {
       "title": "Informations de l'entreprise",
-      "raison_sociale": "Raison sociale",
+      "raison_sociale": "Nom de l'entreprise",
       "nif": "NIF",
       "adresse": "Adresse",
       "situation_fiscale": "Situation fiscale",
@@ -397,7 +399,7 @@
       "convention": "Convention",
       "select_convention": "Sélectionnez une convention",
       "search_convention": "Rechercher une convention...",
-      "intitule_marche": "Intitulé du marché",
+      "intitule_marche": "Intitulé du projet de marché",
       "intitule_marche_placeholder": "Ex : Construction du barrage de...",
       "intitule_marche_hint": "Aucun marché n'est créé ici : l'intitulé libre sera transmis avec la demande.",
       "reference_placeholder": "Référence *",
@@ -430,7 +432,7 @@
       "pieces_ged_hint": "(selon configuration GED)",
       "pieces_empty": "Aucun document configuré pour ce processus dans la GED.",
       "already_provided": "Déjà fourni — {{name}}",
-      "raison_sociale": "Raison sociale",
+      "raison_sociale": "Nom de l'entreprise",
       "raison_sociale_placeholder": "Ex: SARL Mon Entreprise",
       "nif": "NIF",
       "nif_hint": "(exactement 8 caractères)",
@@ -459,7 +461,10 @@
       "titulaire_entreprise": "Entreprise",
       "titulaire_groupement": "Groupement",
       "groupement_placeholder": "Sélectionner un groupement",
-      "groupement_empty": "Aucun groupement"
+      "groupement_empty": "Aucun groupement",
+      "reference_appel_offre": "Référence de l'appel d'offres",
+      "reference_appel_offre_placeholder": "Ex : AOI-0012-2026",
+      "optional": "(facultatif)"
     },
     "modele_fiscal": {
       "section_parameters": "Modèle fiscal — Paramètres",
@@ -535,7 +540,7 @@
     },
     "errors": {
       "load_data": "Impossible de charger les données",
-      "raison_sociale_required": "La raison sociale est obligatoire",
+      "raison_sociale_required": "Le nom de l'entreprise est obligatoire",
       "nif_required": "Le NIF doit contenir exactement 8 caractères",
       "ref_intitule_required": "Référence et intitulé sont obligatoires",
       "numero_marche_required": "Le numéro de marché est obligatoire",
@@ -547,7 +552,7 @@
       "entreprise_required": "Veuillez sélectionner une entreprise",
       "convention_required": "Veuillez sélectionner une convention",
       "convention_or_marche_required": "Veuillez sélectionner une convention ou un marché",
-      "intitule_marche_required": "Veuillez saisir l'intitulé du marché",
+      "intitule_marche_required": "Veuillez saisir l'intitulé du projet de marché",
       "save_failed": "Échec de l'enregistrement",
       "submit_failed": "Échec de la soumission",
       "merge_impossible_title": "Fusion impossible",
@@ -598,14 +603,14 @@
     "ministere_tutelle": "Ministère de tutelle",
     "deposant_nom": "Déposé par",
     "section_titulaire": "Titulaire",
-    "raison_sociale": "Raison sociale",
+    "raison_sociale": "Nom de l'entreprise",
     "nif": "NIF",
     "groupement": "Groupement",
     "nif_chef_file": "NIF (chef de file)",
     "section_objet": "Objet",
     "convention": "Convention",
     "convention_intitule": "Intitulé de la convention",
-    "intitule_marche": "Intitulé du marché",
+    "intitule_marche": "Intitulé du projet de marché",
     "marche": "Marché",
     "section_montants": "Montants déclarés",
     "credit_interieur": "Crédit intérieur",
@@ -620,6 +625,7 @@
     "toast_ok": "Reçu de dépôt enregistré dans le dossier et téléchargé",
     "toast_fail_title": "Demande bien déposée — reçu non enregistré",
     "toast_fail_body": "Votre demande {{numero}} est bien partie. Seul l'enregistrement du reçu a échoué ; vous pouvez le régénérer.",
-    "regenerate": "Régénérer le reçu"
+    "regenerate": "Régénérer le reçu",
+    "reference_appel_offre": "Référence de l'appel d'offres"
   }
 }

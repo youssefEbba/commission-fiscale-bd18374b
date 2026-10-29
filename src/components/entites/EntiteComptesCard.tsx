@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
 import { Loader2, UserPlus, UserX, UserCheck, Users } from "lucide-react";
 import { entiteComptesApi, type CompteEntiteDto, type TypeEntite } from "@/lib/api";
@@ -75,13 +76,14 @@ export default function EntiteComptesCard({ type, entiteId }: { type: TypeEntite
           : comptes.length === 0 ? <p className="text-sm text-muted-foreground py-4 text-center">{t("comptes.empty")}</p>
           : (
             <Table>
-              <TableHeader><TableRow>
+              <TableHeader><TableRow><RowNumberHead />
                 <TableHead>{t("comptes.col_nom")}</TableHead><TableHead>{t("comptes.col_username")}</TableHead>
                 <TableHead>{t("comptes.col_role")}</TableHead><TableHead>{t("comptes.col_etat")}</TableHead><TableHead className="text-end">{t("actions.actions")}</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {comptes.map((c) => (
+                {comptes.map((c, rowIdx) => (
                   <TableRow key={c.id} className={c.actif ? "" : "opacity-70"}>
+                    <RowNumberCell n={rowIdx + 1} />
                     <TableCell className="font-medium">{c.nomComplet || "—"}<div className="text-xs text-muted-foreground">{c.email}</div></TableCell>
                     <TableCell dir="ltr" className="text-start">{c.username}</TableCell>
                     <TableCell>{tRole(c.role)}</TableCell>

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
@@ -363,7 +365,7 @@ const Transferts = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("transferts:columns.id")}</TableHead>
                     <TableHead>{t("transferts:columns.certificat")}</TableHead>
                     <TableHead>{t("transferts:columns.montant")}</TableHead>
@@ -375,9 +377,10 @@ const Transferts = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("transferts:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((tr) => (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("transferts:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((tr, rowIdx) => (
                     <ClickableTableRow key={tr.id} to={`/dashboard/transferts/${tr.id}`}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{tr.id}</Link>
                       </TableCell>
@@ -579,19 +582,7 @@ const Transferts = () => {
             </div>
             <div>
               <Label>{t("transferts:rejet_temp.pieces_label")} <span className="text-destructive">*</span></Label>
-              <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
-                {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                  <div key={d} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`rt-${d}`}
-                      checked={rejetDocs.includes(d)}
-                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d] : prev.filter(x => x !== d))}
-                    />
-                    <label htmlFor={`rt-${d}`} className="text-sm cursor-pointer">{tTypeDocument(d)}</label>
-                  </div>
-                ))}
-
-              </div>
+              <GedPiecesChecklist className="mt-2" processus="TRANSFERT_CREDIT" value={rejetDocs} onChange={setRejetDocs} />
             </div>
           </div>
           <DialogFooter>

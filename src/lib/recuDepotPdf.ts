@@ -130,6 +130,7 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
   row(t("convention"), d.conventionReference);
   row(t("convention_intitule"), d.conventionIntitule);
   row(t("intitule_marche"), d.intituleMarche);
+  if (d.referenceAppelOffre?.trim()) row(t("reference_appel_offre"), d.referenceAppelOffre);
   const marcheLabel = [d.marche?.numeroMarche, d.marche?.intitule].filter(Boolean).join(" — ");
   if (marcheLabel) row(t("marche"), marcheLabel);
   y += 6;

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -471,7 +473,7 @@ const Demandes = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("demandes:columns.numero")}</TableHead>
                     <TableHead>{t("demandes:columns.ac")}</TableHead>
                     <TableHead>{t("demandes:columns.entreprise")}</TableHead>
@@ -484,11 +486,12 @@ const Demandes = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("demandes:list.empty")}</TableCell>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("demandes:list.empty")}</TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map((d) => (
+                    filtered.map((d, rowIdx) => (
                       <ClickableTableRow key={d.id} to={`/dashboard/demandes/${d.id}`}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-medium">
                           <Link to={`/dashboard/demandes/${d.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(d)}</Link>
                         </TableCell>
@@ -848,21 +851,7 @@ const Demandes = () => {
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                   {t("demandes:dialogs.reject.docs_label")} <span className="text-destructive">*</span>
                 </Label>
-                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                  {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
-                    <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
-                      <Checkbox
-                        checked={rejectDocsDemandes.includes(dt)}
-                        onCheckedChange={(checked) => {
-                          setRejectDocsDemandes(prev =>
-                            checked ? [...prev, dt] : prev.filter(v => v !== dt)
-                          );
-                        }}
-                      />
-                      <span>{tTypeDocument(dt)}</span>
-                    </label>
-                  ))}
-                </div>
+                <GedPiecesChecklist processus="CORRECTION_OFFRE_FISCALE" value={rejectDocsDemandes} onChange={setRejectDocsDemandes} />
                 {rejectDocsDemandes.length === 0 && (
                   <p className="text-xs text-destructive mt-1">{t("demandes:dialogs.reject.select_at_least_one")}</p>
                 )}

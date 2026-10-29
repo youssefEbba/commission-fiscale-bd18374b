@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead } from "@/components/ui/row-number";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Info, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
@@ -104,7 +105,7 @@ const MainCourante = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">N°</TableHead>
+                  <RowNumberHead />
                   <TableHead>{t("main_courante.col_action")}</TableHead>
                   <TableHead>{t("main_courante.col_reference")}</TableHead>
                   <TableHead>{t("main_courante.col_entreprise")}</TableHead>

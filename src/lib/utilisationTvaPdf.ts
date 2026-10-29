@@ -92,7 +92,7 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   doc.text("I - IDENTIFICATION DE L'ENTREPRISE", M + 6, y);
   y += 16;
   field(doc, M + 6, y, "N° DE COMPTE CONTRIBUABLE", "", R - 6); y += 16;
-  field(doc, M + 6, y, "NOM et PRENOMS OU RAISON SOCIALE", u.entrepriseNom || cert?.entrepriseRaisonSociale || cert?.entrepriseNom || "", R - 6); y += 16;
+  field(doc, M + 6, y, "NOM et PRENOMS OU NOM DE L'ENTREPRISE", u.entrepriseNom || cert?.entrepriseRaisonSociale || cert?.entrepriseNom || "", R - 6); y += 16;
   field(doc, M + 6, y, "AUTRES DENOMINATION/ ENSEIGNE COMMERCIALE", "", R - 6); y += 16;
   field(doc, M + 6, y, "ADRESSE SIEGE", "", R - 6); y += 16;
   field(doc, M + 6, y, "BP", "", M + 170);

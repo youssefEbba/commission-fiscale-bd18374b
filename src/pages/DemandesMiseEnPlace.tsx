@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
@@ -56,15 +58,9 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Types de documents demandables en rejet temporaire pour la mise en place (P4).
-// Valeurs brutes alignées sur l'enum TypeDocument backend ; libellés traduits via tTypeDocument().
-const MISE_EN_PLACE_DOC_TYPES = [
-  "LETTRE_SAISINE",
-  "CONTRAT",
-  "LETTRE_NOTIFICATION_CONTRAT",
-  "CERTIFICAT_NIF",
-  "LETTRE_CORRECTION",
-];
+// Pièces demandables en rejet temporaire : celles de la GED (MISE_EN_PLACE_CI), cf. GedPiecesChecklist.
+
+
 
 const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
 
@@ -604,7 +600,7 @@ const DemandesMiseEnPlace = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead className="text-start">{t("mise_en_place:list.columns.reference")}</TableHead>
                     <TableHead className="text-start">{t("mise_en_place:list.columns.entreprise")}</TableHead>
                     <TableHead className="text-start">{t("mise_en_place:list.columns.correction")}</TableHead>
@@ -615,9 +611,10 @@ const DemandesMiseEnPlace = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("mise_en_place:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((c) => (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("mise_en_place:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((c, rowIdx) => (
                     <ClickableTableRow key={c.id} to={`/dashboard/mise-en-place/${c.id}`}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/mise-en-place/${c.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{c.reference || `#${c.id}`}</Link>
                       </TableCell>
@@ -1241,19 +1238,7 @@ const DemandesMiseEnPlace = () => {
             <div className="space-y-2">
               <Label>{t("mise_en_place:dialogs.rejet_temp.docs_label")}</Label>
               <p className="text-xs text-muted-foreground">{t("mise_en_place:dialogs.rejet_temp.docs_hint")}</p>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {MISE_EN_PLACE_DOC_TYPES.map((dt) => (
-                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      checked={rejetTempDocs.includes(dt)}
-                      onCheckedChange={(checked) => {
-                        setRejetTempDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt));
-                      }}
-                    />
-                    <span className="text-sm">{tTypeDocument(dt)}</span>
-                  </label>
-                ))}
-              </div>
+              <GedPiecesChecklist processus="MISE_EN_PLACE_CI" value={rejetTempDocs} onChange={setRejetTempDocs} />
             </div>
           </div>
           <DialogFooter>

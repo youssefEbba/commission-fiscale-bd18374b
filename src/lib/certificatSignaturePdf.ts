@@ -183,7 +183,7 @@ export async function generateCertificatToSignPdf(
   yy += 7;
   yy += inlineField(
     doc,
-    "NOM et PRÉNOM OU RAISON SOCIALE",
+    "NOM et PRÉNOM OU NOM DE L'ENTREPRISE",
     entreprise?.raisonSociale || c.entrepriseRaisonSociale || c.entrepriseNom || "",
     M + 4,
     yy,

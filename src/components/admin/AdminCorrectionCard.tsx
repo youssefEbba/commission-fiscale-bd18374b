@@ -35,6 +35,8 @@ export interface AdminCorrectionField {
   /** Message d'avertissement affiché sous le champ (ex. verrou 409). */
   hint?: string;
   disabled?: boolean;
+  /** Longueur maximale (champs texte). */
+  maxLength?: number;
 }
 
 interface AdminCorrectionCardProps {
@@ -222,6 +224,7 @@ const AdminCorrectionCard = ({
                         value={values[f.key] ?? ""}
                         disabled={f.disabled}
                         step={f.type === "number" ? "0.01" : undefined}
+                        maxLength={f.maxLength}
                         onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
                       />
                       {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}

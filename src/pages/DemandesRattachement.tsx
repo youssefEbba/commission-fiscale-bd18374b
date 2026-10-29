@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Loader2, RefreshCw } from "lucide-react";
@@ -57,16 +58,17 @@ export default function DemandesRattachement() {
             : items.length === 0 ? <p className="text-center text-sm text-muted-foreground py-12">{t("queue.empty")}</p>
             : (
               <Table>
-                <TableHeader><TableRow>
+                <TableHeader><TableRow><RowNumberHead />
                   <TableHead>{t("queue.col_reference")}</TableHead><TableHead>{t("queue.col_demandeur")}</TableHead>
                   <TableHead>{t("queue.col_qualite")}</TableHead><TableHead>{t("queue.col_entite")}</TableHead>
                   <TableHead>{t("queue.col_date")}</TableHead><TableHead>{t("queue.col_statut")}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {items.map((d) => {
+                  {items.map((d, rowIdx) => {
                     const href = `/dashboard/demandes-rattachement/${d.id}`;
                     return (
                       <ClickableTableRow key={d.id} to={href}>
+                        <RowNumberCell n={rowIdx + 1} />
                         <TableCell className="font-medium"><Link to={href} className="text-primary underline-offset-2 hover:underline" dir="ltr">{d.reference || `#${d.id}`}</Link></TableCell>
                         <TableCell>{d.nomComplet || d.username}<div className="text-xs text-muted-foreground">{d.email}</div></TableCell>
                         <TableCell>{d.roleDemande ? t(`roles.${d.roleDemande}`) : "—"}</TableCell>

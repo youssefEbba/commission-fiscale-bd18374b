@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
@@ -171,12 +172,13 @@ const Certificats = () => {
 
   const pageTitle = t(`certificats:list.role_titles.${role}`, { defaultValue: t("certificats:list.role_titles.DEFAULT") });
 
-  const Rows = ({ list }: { list: CertificatCreditDto[] }) => (
+  const Rows = ({ list, offset = 0 }: { list: CertificatCreditDto[]; offset?: number }) => (
     <>
       {list.length === 0 ? (
-        <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("certificats:list.empty")}</TableCell></TableRow>
-      ) : list.map((c) => (
+        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">{t("certificats:list.empty")}</TableCell></TableRow>
+      ) : list.map((c, rowIdx) => (
         <ClickableTableRow key={c.id} to={`/dashboard/certificats/${c.id}`}>
+          <RowNumberCell n={offset + rowIdx + 1} />
           <TableCell className="whitespace-nowrap">
             <CreditLink id={c.id} reference={c.reference} numero={c.numero} />
             {sousTraiteIds.has(c.id) && (
@@ -199,6 +201,7 @@ const Certificats = () => {
   const Head = () => (
     <TableHeader>
       <TableRow>
+        <RowNumberHead />
         <TableHead>{t("certificats:list.columns.ref")}</TableHead>
         <TableHead>{t("certificats:list.columns.entreprise")}</TableHead>
         <TableHead>{t("certificats:list.columns.marche")}</TableHead>
@@ -288,8 +291,8 @@ const Certificats = () => {
                     <Head />
                     <TableBody>
                       {loading ? (
-                        <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
-                      ) : <Rows list={items} />}
+                        <TableRow><TableCell colSpan={10} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
+                      ) : <Rows list={items} offset={page * size} />}
                     </TableBody>
                   </Table>
                 </div>
@@ -356,8 +359,8 @@ const Certificats = () => {
                       <Head />
                       <TableBody>
                         {jLoading ? (
-                          <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
-                        ) : <Rows list={journal?.certificats?.content || []} />}
+                          <TableRow><TableCell colSpan={10} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
+                        ) : <Rows list={journal?.certificats?.content || []} offset={jPage * size} />}
                       </TableBody>
                     </Table>
                   </div>
