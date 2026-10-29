@@ -47,6 +47,8 @@ import { openDocument, downloadDocument, trackDocumentTask, presentBlob } from "
 import { DocumentButton } from "@/components/documents/DocumentButton";
 
 
+const CORRECTED_OFFER_TYPES = ["OFFRE_FISCALE_CORRIGEE", "OFFRE_CORRIGEE", "CREDIT_INTERIEUR"];
+
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
   RECUE: "bg-blue-100 text-blue-800",
@@ -471,6 +473,15 @@ const DemandeDetail = () => {
   // Reçu de dépôt : toujours proposé à l'autorité contractante (y compris en relais) dès que la demande est déposée.
   const canSeeRecu = hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"]) && selected.statut !== "BROUILLON";
   const docCode = (d: DocumentDto) => ((d as any).codeDocument ?? d.type) as string;
+  // Offre corrigée : visible des membres de la Commission dès son dépôt, avant l'adoption.
+  // L'autorité contractante et l'entreprise ne la voient qu'après l'adoption (le serveur ne la leur renvoie pas avant).
+  const isAdoptedForDocs = selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE";
+  const isCommissionViewer = hasRole(["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"]);
+  const decisionDocSlots: string[] = isAdoptedForDocs
+    ? ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"]
+    : isCommissionViewer
+      ? CORRECTED_OFFER_TYPES.filter(tp => docs.some(d => d.type === tp || docCode(d) === tp))
+      : [];
   const recuDoc = [...docs.filter(d => docCode(d) === "RECU_DEPOT")]
     .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
   const handleRecu = async (mode: "open" | "download") => {
@@ -841,27 +852,30 @@ const DemandeDetail = () => {
         </Card>
 
         {/* Documents de décision */}
-        {(selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE") && (() => {
-          const SPECIAL_DOC_TYPES_LIST = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+        {decisionDocSlots.length > 0 && (() => {
           const SPECIAL_DOC_LABEL_KEYS: Record<string, string> = {
             OFFRE_FISCALE_CORRIGEE: "demandes:detail.decision_docs.offre_fiscale_corrigee",
             LETTRE_ADOPTION: "demandes:detail.decision_docs.lettre_adoption",
           };
-          const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES_LIST.includes(d.type));
+          const specialDocs = docs.filter(d => decisionDocSlots.includes(d.type) || decisionDocSlots.includes(docCode(d)));
           return (
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" /> {t("demandes:detail.decision_docs.title")}
                 </h3>
+                {!isAdoptedForDocs && (
+                  <p className="text-xs text-muted-foreground mb-3">{t("demandes:detail.decision_docs.before_adoption_hint")}</p>
+                )}
                 <div className="grid grid-cols-2 gap-3">
-                  {SPECIAL_DOC_TYPES_LIST.map((docType) => {
-                    const doc = specialDocs.find(d => d.type === docType);
+                  {decisionDocSlots.map((docType) => {
+                    const doc = [...specialDocs.filter(d => d.type === docType || docCode(d) === docType)]
+                      .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
                     const fileUrl = doc ? getDocFileUrl(doc) : null;
                     return (
                       <div key={docType} className={`rounded-xl border-2 p-4 text-center transition-colors ${doc ? "border-primary/40 bg-primary/5 hover:bg-primary/10" : "border-dashed border-muted-foreground/20 bg-muted/20"}`}>
                         {doc ? <Download className="h-8 w-8 text-primary mx-auto mb-2" /> : <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />}
-                        <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{t(SPECIAL_DOC_LABEL_KEYS[docType])}</p>
+                        <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{SPECIAL_DOC_LABEL_KEYS[docType] ? t(SPECIAL_DOC_LABEL_KEYS[docType]) : tTypeDocument(docType)}</p>
                         {doc && fileUrl ? (
                           <div className="flex items-center justify-center gap-2 mt-2">
                             <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
@@ -892,9 +906,10 @@ const DemandeDetail = () => {
             ) : (
               <div className="space-y-2">
                 {(() => {
-                  const SPECIAL_TYPES = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+                  // Pièces déjà présentées dans « Documents de décision » (ou masquées avant l'adoption).
+                  const SPECIAL_TYPES = Array.from(new Set(["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION", ...decisionDocSlots]));
                   // Le reçu de dépôt a sa propre carte pour l'autorité contractante.
-                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
+                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !SPECIAL_TYPES.includes(docCode(d)) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
                   const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
                     const key = (d.type && d.type.trim()) ? d.type : `__doc_${d.id}`;
                     if (!acc[key]) acc[key] = [];
