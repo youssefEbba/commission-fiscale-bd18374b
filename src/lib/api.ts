@@ -710,10 +710,12 @@ export interface DemandeCorrectionDto {
   admissionTemporaire?: boolean | null;
   id: number;
   numero?: string;
-  /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
+  /** Référence lisible (`DC-NNNN-MM-AAAA`, ex. `DC-0010-10-2026`), à privilégier à l'affichage. */
   reference?: string;
-  /** Intitulé libre du marché (remplace la création de marché dans le wizard de correction). */
+  /** Intitulé libre du projet de marché (remplace la création de marché dans le wizard de correction). */
   intituleMarche?: string;
+  /** Référence de l'appel d'offres (facultative, 100 caractères max). */
+  referenceAppelOffre?: string | null;
   /** Crédit extérieur retenu (après correction le cas échéant) — celui qui compte pour la suite. */
   creditExterieur?: number;
   /** Crédit intérieur retenu (après correction le cas échéant). */
@@ -855,8 +857,10 @@ export interface CreateDemandeCorrectionRequest {
   conventionId?: number;
   /** Optionnel (rétro-compat). Le marché réel est créé lors de la mise en place. */
   marcheId?: number;
-  /** Intitulé libre du marché — requis lorsque `marcheId` n'est pas fourni. */
+  /** Intitulé libre du projet de marché — requis lorsque `marcheId` n'est pas fourni. */
   intituleMarche?: string;
+  /** Référence de l'appel d'offres (facultative, 100 caractères max ; `null` = non renseignée). */
+  referenceAppelOffre?: string | null;
   /** Défaut 0 côté back. Au moins un des deux crédits doit être > 0 à la soumission. */
   creditExterieur?: number;
   creditInterieur?: number;
@@ -865,6 +869,9 @@ export interface CreateDemandeCorrectionRequest {
   /** Si true, la demande reste au statut BROUILLON sans notifier les services. */
   brouillon?: boolean;
 }
+
+/** PUT /demandes-correction/{id} : remplacement complet, mêmes champs que la création. */
+export type UpdateDemandeCorrectionRequest = CreateDemandeCorrectionRequest;
 
 export interface DocumentDto {
   id: number;
@@ -1031,7 +1038,7 @@ export const demandeCorrectionApi = {
   getByDelegue: (userId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-delegue/${userId}`),
   create: (data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>("/demandes-correction", { method: "POST", body: data }),
   /** Édition d'une demande (autorisée si BROUILLON / RECUE / INCOMPLETE et aucun visa). */
-  update: (id: number, data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`, { method: "PUT", body: data }),
+  update: (id: number, data: UpdateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`, { method: "PUT", body: data }),
   /** Soumission d'un brouillon : passe en RECUE et notifie les services. */
   soumettre: (id: number) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/soumettre`, { method: "POST" }),
   /** Suppression définitive — réservée au statut BROUILLON. */
@@ -1528,6 +1535,8 @@ export interface CertificatCreditFicheDto {
   marche?: MarcheDto;
   autoriteContractante?: AutoriteContractanteDto;
   intituleMarche?: string;
+  /** Référence de l'appel d'offres de la demande de correction d'origine. */
+  referenceAppelOffre?: string | null;
   documents?: DocumentDto[];
   utilisations?: UtilisationCreditDto[];
   tvaStock?: TvaDeductibleStockDto[];
@@ -2007,6 +2016,8 @@ export interface AdminCorrectionDemandePayload {
   creditInterieur?: number;
   creditExterieur?: number;
   intituleMarche?: string;
+  /** Référence de l'appel d'offres (100 caractères max). */
+  referenceAppelOffre?: string | null;
 }
 
 export interface AdminCorrectionCertificatPayload {
