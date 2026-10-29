@@ -483,7 +483,7 @@ const DemandeDetail = () => {
       const name = recuDepotFileName(selected);
       await trackDocumentTask(`recu-depot:${selected.id}:${mode}`, "generate", name, async () => {
         await new Promise((r) => setTimeout(r, 0)); // laisse l'attente s'afficher avant la génération
-        presentBlob(generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
+        presentBlob(await generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
       });
     } catch (e: any) {
       toast({ title: t("demandes:detail.recu_card.error"), description: e?.message, variant: "destructive" });

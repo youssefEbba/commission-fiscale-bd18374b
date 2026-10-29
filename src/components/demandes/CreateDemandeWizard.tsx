@@ -1832,7 +1832,7 @@ async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: strin
     const name = recuDepotFileName(demande);
     await trackDocumentTask(`recu-depot:${demande.id}:issue`, "generate", name, async () => {
       const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
-      const blob = generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
+      const blob = await generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
       presentBlob(blob, name, "download");
       await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
     });
