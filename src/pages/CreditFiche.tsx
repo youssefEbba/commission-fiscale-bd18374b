@@ -94,6 +94,7 @@ export default function CreditFiche() {
                 <CardContent className="grid grid-cols-2 gap-3">
                   <Field label="Intitulé" value={fiche?.intituleMarche || fiche?.marche?.intitule || c.marcheIntitule} />
                   <Field label="N° marché" value={fiche?.marche?.numeroMarche} />
+                  <Field label="Référence de l'appel d'offres" value={fiche?.referenceAppelOffre ?? undefined} />
                   <Field label="Montant HT" value={fiche?.marche?.montantContratHt != null ? formatAmount(fiche.marche.montantContratHt) : undefined} />
                   <Field label="Date de signature" value={fiche?.marche?.dateSignature ? formatDate(fiche.marche.dateSignature) : undefined} />
                 </CardContent>
