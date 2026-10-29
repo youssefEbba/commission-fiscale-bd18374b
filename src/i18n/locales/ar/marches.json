@@ -19,9 +19,11 @@
     "sections": {
       "general": "المعلومات العامة",
       "convention": "الاتفاقية المرتبطة",
-      "delegues": "الممثلون المعيّنون"
+      "delegues": "الممثلون المعيّنون",
+      "conventions": "اتفاقيات الصفقة"
     },
-    "delegues_empty": "لا يوجد ممثل معيّن."
+    "delegues_empty": "لا يوجد ممثل معيّن.",
+    "convention_principale": "رئيسية"
   },
   "columns": {
     "numero": "رقم الإسناد / الصفقة",
@@ -29,7 +31,9 @@
     "montant_ht": "المبلغ دون الرسوم",
     "statut": "الحالة",
     "type": "النوع",
-    "actions": "إجراءات"
+    "actions": "إجراءات",
+    "conventions": "الاتفاقيات",
+    "autorite": "السلطة المتعاقدة"
   },
   "type": {
     "contrat": "صفقة / عقد",
@@ -44,7 +48,8 @@
     "statut": "الحالة",
     "type": "النوع",
     "reference": "المرجع",
-    "bailleur": "الممول"
+    "bailleur": "الممول",
+    "autorite": "السلطة المتعاقدة"
   },
   "form": {
     "title_edit": "تعديل",
@@ -74,10 +79,18 @@
     "errors": {
       "numero_required": "رقم الصفقة مطلوب",
       "montant_required": "مبلغ العقد دون الرسوم مطلوب",
-      "submit_failed": "فشلت العملية"
+      "submit_failed": "فشلت العملية",
+      "convention_required": "اختر اتفاقية واحدة على الأقل"
     },
     "montant_ttc": "مبلغ العقد شامل الضريبة",
-    "devise": "العملة"
+    "devise": "العملة",
+    "conventions": "الاتفاقيات",
+    "conventions_add_placeholder": "إضافة اتفاقية",
+    "convention_principale": "رئيسية",
+    "convention_make_principale": "جعلها رئيسية",
+    "convention_remove": "إزالة",
+    "convention_create": "إنشاء اتفاقية",
+    "conventions_hint": "الاتفاقية الأولى في القائمة هي الاتفاقية الرئيسية للصفقة."
   },
   "assign": {
     "title": "إدارة الممثلين",

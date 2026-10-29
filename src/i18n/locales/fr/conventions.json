@@ -23,7 +23,9 @@
     "type": "Type",
     "filename": "Nom du fichier",
     "date": "Date",
-    "action": "Action"
+    "action": "Action",
+    "autorites": "Autorités contractantes",
+    "bailleurs": "Bailleurs"
   },
   "actions": {
     "view": "Voir",
@@ -81,7 +83,12 @@
     "autorite_contractante": "Autorité contractante",
     "validated_by": "Validée par (user ID)",
     "motif_rejet": "Motif de rejet",
-    "statut": "Statut"
+    "statut": "Statut",
+    "bailleurs_required": "Bailleurs de fonds *",
+    "bailleurs": "Bailleurs de fonds",
+    "autorites": "Autorités contractantes",
+    "bailleur_principal": "Bailleur principal",
+    "autorite_principale": "Autorité contractante principale"
   },
   "create": {
     "title": "Nouvelle Convention",
@@ -139,7 +146,9 @@
     "name_placeholder": "Banque Mondiale",
     "details": "Détails",
     "details_placeholder": "Description…",
-    "added": "Bailleur ajouté"
+    "added": "Bailleur ajouté",
+    "edit_title": "Modifier le bailleur",
+    "updated": "Bailleur modifié"
   },
   "devise": {
     "modal_title": "Nouvelle devise",
@@ -155,7 +164,9 @@
     "search_bailleur": "Rechercher un bailleur…",
     "success": "Convention modifiée",
     "full_replace_hint": "Modifiable tant que la DGB n'a pas validé la convention. Tous les champs sont enregistrés tels qu'affichés : un champ laissé vide sera effacé.",
-    "autorite_fixed": "L'autorité contractante titulaire ne peut pas être changée."
+    "autorite_fixed": "L'autorité contractante titulaire ne peut pas être changée.",
+    "full_replace_hint_admin": "Modifiable à tout statut, sauf si la convention est annulée. Tous les champs sont enregistrés tels qu'affichés : un champ laissé vide sera effacé.",
+    "autorites_hint": "Les autorités reliées se gèrent depuis la fiche de la convention."
   },
   "reject": {
     "title": "Rejeter la convention",
@@ -186,5 +197,32 @@
     "section_general": "Informations générales",
     "section_dates_financial": "Informations de la convention",
     "section_validation": "Suivi de validation"
+  },
+  "bailleurs": {
+    "add_placeholder": "Ajouter un bailleur",
+    "principal": "Principal",
+    "make_principal": "Rendre principal",
+    "remove": "Retirer",
+    "hint": "Le premier bailleur de la liste est le bailleur principal."
+  },
+  "liens": {
+    "autorites_title": "Autorités contractantes reliées",
+    "autorites_empty": "Aucune autorité contractante reliée.",
+    "principale": "Principale",
+    "link_action": "Relier une autorité",
+    "link_title": "Relier une autorité contractante",
+    "link_desc": "L'autorité choisie verra la convention {{ref}} et pourra y rattacher ses marchés.",
+    "link_placeholder": "Sélectionner une autorité",
+    "link_search": "Rechercher une autorité…",
+    "link_empty": "Aucune autre autorité disponible.",
+    "link_confirm": "Relier",
+    "linked": "Autorité reliée à la convention",
+    "unlink_action": "Délier",
+    "unlink_title": "Délier l'autorité ?",
+    "unlink_desc": "{{nom}} ne sera plus reliée à cette convention. Le serveur refuse si elle y a déjà un marché ou une demande de correction, ou si c'est la dernière autorité.",
+    "unlinked": "{{nom}} n'est plus reliée à la convention",
+    "autorites_load_error": "Impossible de charger les autorités contractantes",
+    "bailleurs_title": "Bailleurs de fonds",
+    "bailleurs_empty": "Aucun bailleur."
   }
 }
