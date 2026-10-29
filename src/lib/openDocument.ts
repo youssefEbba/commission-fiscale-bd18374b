@@ -18,7 +18,12 @@ export interface OpenableDoc {
 export function resolveDocumentUrl(doc: OpenableDoc): string | null {
   const raw = doc.url || doc.chemin;
   if (raw) {
-    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^https?:\/\//i.test(raw)) {
+      return raw.replace(
+        /^http:\/\/commission-fiscale\.gov\.mr(?=\/|$)/i,
+        "https://commission-fiscale.gov.mr"
+      );
+    }
     const origin = API_BASE.replace(/\/api\/?$/, "");
     return origin + (raw.startsWith("/") ? "" : "/") + raw.replace(/\\/g, "/");
   }
