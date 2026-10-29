@@ -431,7 +431,7 @@ export const rattachementPublicApi = {
     Object.entries(files).forEach(([code, f]) => fd.append(code, f));
     return apiFetch<DemandeRattachementDto>("/public/rattachement", { method: "POST", rawBody: fd, noAuth: true, skipAuthRedirect: true });
   },
-  /** Suivi public d'une demande : référence (ex. RT-002-10/2026) + e-mail du dépôt, les deux obligatoires. */
+  /** Suivi public d'une demande : référence (ex. RT-0002-10-2026) + e-mail du dépôt, les deux obligatoires. */
   suivi: (reference: string, email: string) =>
     apiFetch<DemandeRattachementDto>(
       `/public/rattachement/suivi?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`,
@@ -1128,7 +1128,7 @@ export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE" | "ANNULE";
 
 export interface MarcheDto {
   id: number;
-  /** Référence lisible (`DM-NN/AAAA`). */
+  /** Référence lisible (`DM-NNNN-MM-AAAA`). */
   reference?: string;
   conventionId?: number;
   demandeCorrectionId?: number;
@@ -1663,7 +1663,7 @@ export interface DecisionLigneRequest {
 
 export interface UtilisationCreditDto {
   id: number;
-  /** Référence lisible (`DU-NN/AAAA`). */
+  /** Référence lisible (`DU-NNNN-MM-AAAA`). */
   reference?: string;
   certificatCreditId: number;
   type?: UtilisationType;
@@ -1675,7 +1675,7 @@ export interface UtilisationCreditDto {
   description?: string;
   entrepriseNom?: string;
   entrepriseId?: number;
-  /** Référence lisible du crédit (ex. CR-001-01/2026). À afficher en priorité. */
+  /** Référence lisible du crédit (ex. CR-0001-01-2026). À afficher en priorité. */
   certificatReference?: string;
   /** Numéro technique du crédit, repli si `certificatReference` est absente. */
   certificatNumero?: string;

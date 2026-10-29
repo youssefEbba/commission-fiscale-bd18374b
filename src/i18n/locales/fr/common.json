@@ -148,7 +148,7 @@
     "title": "Vérification d'un document officiel",
     "subtitle": "Scannez le QR code ou saisissez le code imprimé sous le carré.",
     "code_label": "Code du document",
-    "placeholder": "Ex. CU-007/2026",
+    "placeholder": "Ex. CU-0007-2026",
     "verify": "Vérifier",
     "login": "Se connecter",
     "code": "Code",

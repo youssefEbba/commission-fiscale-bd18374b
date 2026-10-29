@@ -143,9 +143,9 @@
   },
   "suivi": {
     "title": "Suivre ma demande de création de compte",
-    "subtitle": "Saisissez la référence reçue au dépôt (ex. RT-002-10/2026) et l'adresse e-mail utilisée dans la demande.",
+    "subtitle": "Saisissez la référence reçue au dépôt (ex. RT-0002-10-2026) et l'adresse e-mail utilisée dans la demande.",
     "reference_label": "Référence de suivi",
-    "placeholder": "RT-000-00/0000",
+    "placeholder": "RT-0000-00-0000",
     "email_label": "Adresse e-mail utilisée lors du dépôt",
     "email_placeholder": "prenom.nom@exemple.com",
     "search": "Rechercher",
