@@ -184,7 +184,7 @@
     "load_error": "تعذّر تحميل الاتفاقية",
     "documents_button": "المستندات ({{count}})",
     "section_general": "المعلومات العامة",
-    "section_dates_financial": "التواريخ والمعطيات المالية",
+    "section_dates_financial": "معلومات الاتفاقية",
     "section_validation": "متابعة المصادقة"
   }
 }
