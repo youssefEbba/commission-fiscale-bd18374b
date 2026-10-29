@@ -35,6 +35,7 @@ const PROCESSUS_SECTIONS: ProcessusSectionConfig[] = [
   { key: "SOUS_TRAITANCE", processus: "SOUS_TRAITANCE" },
   { key: "MODIFICATION", processus: "MODIFICATION_CI" },
   { key: "CLOTURE", processus: "CLOTURE_CI" },
+  { key: "RATTACHEMENT", processus: "RATTACHEMENT_COMPTE" },
 ];
 
 const FORMAT_VALUES: FormatFichier[] = ["WORD", "EXCEL", "IMAGE", "PDF"];
@@ -121,6 +122,18 @@ const GedConfiguration = () => {
     queryKey: ["document-requirements", "SOUS_TRAITANCE"],
     queryFn: () => documentRequirementApi.getConfiguration("SOUS_TRAITANCE"),
   });
+  const modificationQuery = useQuery({
+    queryKey: ["document-requirements", "MODIFICATION_CI"],
+    queryFn: () => documentRequirementApi.getConfiguration("MODIFICATION_CI"),
+  });
+  const clotureQuery = useQuery({
+    queryKey: ["document-requirements", "CLOTURE_CI"],
+    queryFn: () => documentRequirementApi.getConfiguration("CLOTURE_CI"),
+  });
+  const rattachementQuery = useQuery({
+    queryKey: ["document-requirements", "RATTACHEMENT_COMPTE"],
+    queryFn: () => documentRequirementApi.getConfiguration("RATTACHEMENT_COMPTE"),
+  });
 
   const queriesByProcessus: Partial<Record<ProcessusType, { data: DocumentRequirementDto[]; isLoading: boolean }>> = {
     CONVENTION: { data: conventionReqQuery.data || [], isLoading: conventionReqQuery.isLoading },
@@ -131,6 +144,9 @@ const GedConfiguration = () => {
     UTILISATION_CI_INTERIEUR: { data: interieurQuery.data || [], isLoading: interieurQuery.isLoading },
     TRANSFERT_CREDIT: { data: transfertQuery.data || [], isLoading: transfertQuery.isLoading },
     SOUS_TRAITANCE: { data: sousTraitanceQuery.data || [], isLoading: sousTraitanceQuery.isLoading },
+    MODIFICATION_CI: { data: modificationQuery.data || [], isLoading: modificationQuery.isLoading },
+    CLOTURE_CI: { data: clotureQuery.data || [], isLoading: clotureQuery.isLoading },
+    RATTACHEMENT_COMPTE: { data: rattachementQuery.data || [], isLoading: rattachementQuery.isLoading },
   };
 
   const createMutation = useMutation({

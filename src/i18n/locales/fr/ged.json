@@ -166,7 +166,8 @@
       "TRANSFERT_CREDIT": "Transfert de crédit (Douane → Intérieur)",
       "SOUS_TRAITANCE": "Sous-traitance",
       "MODIFICATION_CI": "Modification / Avenant (P8)",
-      "CLOTURE_CI": "Clôture / Annulation (P11)"
+      "CLOTURE_CI": "Clôture / Annulation (P11)",
+      "RATTACHEMENT_COMPTE": "Inscription — pièces justificatives"
     },
     "formats": {
       "WORD": "Word",

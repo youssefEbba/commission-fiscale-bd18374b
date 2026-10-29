@@ -166,7 +166,8 @@
       "TRANSFERT_CREDIT": "تحويل الرصيد (جمارك ← داخلي)",
       "SOUS_TRAITANCE": "المناولة",
       "MODIFICATION_CI": "التعديل / الملحق (P8)",
-      "CLOTURE_CI": "الإقفال / الإلغاء (P11)"
+      "CLOTURE_CI": "الإقفال / الإلغاء (P11)",
+      "RATTACHEMENT_COMPTE": "التسجيل — الوثائق الثبوتية"
     },
     "formats": {
       "WORD": "Word",
