@@ -1027,7 +1027,7 @@ const DemandeDetail = () => {
           entityId={selected.id}
           fields={[
             { key: "intituleMarche", label: t("demandes:detail.fields.marche"), type: "text", value: selected.intituleMarche ?? "" },
-            { key: "referenceAppelOffre", label: t("demandes:detail.fields.reference_appel_offre"), type: "text", value: selected.referenceAppelOffre ?? "" },
+            { key: "referenceAppelOffre", label: t("demandes:detail.fields.reference_appel_offre"), type: "text", value: selected.referenceAppelOffre ?? "", maxLength: 100 },
             { key: "creditInterieur", label: "Crédit intérieur", type: "number", value: selected.creditInterieur ?? "" },
             { key: "creditExterieur", label: "Crédit extérieur", type: "number", value: selected.creditExterieur ?? "" },
           ]}
