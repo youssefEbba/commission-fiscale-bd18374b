@@ -301,13 +301,16 @@ export async function generateCertificatToSignPdf(
   inlineField(doc, "TOTAL du crédit d'impôt", fmtMontant(totalNum), M + 8, yy, M + W - 4);
   yy += 9;
   doc.setFont(PDF_FONT, "normal");
-  doc.text("Ces crédits sont disponibles à compter du", M + 4, yy);
-  doc.text(fmtDate(c.dateEmission) || "", M + 62, yy);
-  doc.line(M + 62, yy + 0.8, M + W - 60, yy + 0.8);
+  // Valeur placée après la largeur réelle du libellé (dépend de la police).
+  const dateLine = (label: string, value: string, minOffset: number) => {
+    const vx = Math.max(M + minOffset, M + 4 + doc.getTextWidth(label) + 2);
+    doc.text(label, M + 4, yy);
+    doc.text(value, vx, yy);
+    doc.line(vx, yy + 0.8, M + W - 60, yy + 0.8);
+  };
+  dateLine("Ces crédits sont disponibles à compter du", fmtDate(c.dateEmission) || "", 62);
   yy += 7;
-  doc.text("Date de validité :", M + 4, yy);
-  doc.text(fmtDate(c.dateValidite) || "", M + 35, yy);
-  doc.line(M + 35, yy + 0.8, M + W - 60, yy + 0.8);
+  dateLine("Date de validité :", fmtDate(c.dateValidite) || "", 35);
 
   // ---------- QR code de vérification (code = numéro officiel) ----------
   {
