@@ -118,7 +118,7 @@ const Groupements = () => {
                 <Table>
                   <TableHeader>
                     <TableRow><RowNumberHead />
-                      <TableHead>Raison sociale</TableHead>
+                      <TableHead>Nom de l'entreprise</TableHead>
                       <TableHead>Chef de file</TableHead>
                       <TableHead>NIF (chef de file)</TableHead>
                       <TableHead>Membres</TableHead>

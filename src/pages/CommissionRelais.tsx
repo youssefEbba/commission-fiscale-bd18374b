@@ -171,7 +171,7 @@ const CommissionRelais = () => {
                 <Table>
                   <TableHeader>
                     <TableRow><RowNumberHead />
-                      <TableHead>{mode === "ENTREPRISE" ? "Raison sociale" : "Nom"}</TableHead>
+                      <TableHead>{mode === "ENTREPRISE" ? "Nom de l'entreprise" : "Nom"}</TableHead>
                       <TableHead>{mode === "ENTREPRISE" ? "NIF" : "Sigle"}</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead className="text-right">Action</TableHead>

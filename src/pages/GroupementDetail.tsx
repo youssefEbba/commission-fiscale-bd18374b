@@ -127,7 +127,7 @@ const GroupementDetail = () => {
                   <Table>
                     <TableHeader>
                       <TableRow><RowNumberHead />
-                        <TableHead>Raison sociale</TableHead>
+                        <TableHead>Nom de l'entreprise</TableHead>
                         <TableHead>NIF</TableHead>
                         <TableHead>Adresse</TableHead>
                         <TableHead className="w-24">Rôle</TableHead>

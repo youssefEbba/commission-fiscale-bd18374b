@@ -67,7 +67,7 @@ export default function CreditFiche() {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> Entreprise</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 gap-3">
-                  <Field label="Raison sociale" value={fiche?.entreprise?.raisonSociale || c.entrepriseRaisonSociale} />
+                  <Field label="Nom de l'entreprise" value={fiche?.entreprise?.raisonSociale || c.entrepriseRaisonSociale} />
                   <Field label="NIF" value={fiche?.entreprise?.nifAffiche || fiche?.entreprise?.nif} />
                   <Field label="RC étranger" value={fiche?.entreprise?.registreCommerceEtranger} />
                   <Field label="Groupement" value={fiche?.groupement?.raisonSociale} />

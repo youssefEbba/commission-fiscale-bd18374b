@@ -96,7 +96,7 @@
   "created_ok": "Entité créée et sélectionnée",
   "error_create": "Impossible de créer l'entité",
   "select_bailleur": "Sélectionner un bailleur",
-  "f_raison_sociale": "Raison sociale",
+  "f_raison_sociale": "Nom de l'entreprise",
   "f_nom": "Nom",
   "f_sigle": "Sigle",
   "f_reference": "Référence",

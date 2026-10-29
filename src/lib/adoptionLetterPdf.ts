@@ -215,7 +215,7 @@ export async function generateAdoptionLetterPdf(
   const raisonSociale = d.groupementRaisonSociale
     ? `${d.groupementRaisonSociale} (groupement, chef de file)`
     : entreprise?.raisonSociale || d.entrepriseRaisonSociale || "";
-  yy += inlineField(doc, "NOM et PRÉNOM OU RAISON SOCIALE", raisonSociale, M + 4, yy, M + W - 4);
+  yy += inlineField(doc, "NOM et PRÉNOM OU NOM DE L'ENTREPRISE", raisonSociale, M + 4, yy, M + W - 4);
   yy += ROW;
   yy += inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
 

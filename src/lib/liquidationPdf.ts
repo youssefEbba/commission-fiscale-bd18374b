@@ -103,7 +103,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   y += 14;
   doc.setFontSize(9);
   labelDottedValue(doc, M, y, "NIF :", "", 200); y += 14;
-  labelDottedValue(doc, M, y, "NOM ET PRÉNOM OU RAISON SOCIALE :", u.entrepriseNom || "", 260); y += 14;
+  labelDottedValue(doc, M, y, "NOM ET PRÉNOM OU NOM DE L'ENTREPRISE :", u.entrepriseNom || "", 260); y += 14;
   labelDottedValue(doc, M, y, "AUTRES DÉNOMINATION/ ENSEIGNE COMMERCIALE :", "", 200); y += 14;
   labelDottedValue(doc, M, y, "ADRESSE/SIÈGE :", "", 320); y += 14;
   labelDottedValue(doc, M, y, "BP :", "", 80);
