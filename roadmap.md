@@ -34,4 +34,12 @@
 - [x] Colonne N° dans toutes les listes
 - [x] « Nom de l'entreprise », « Intitulé du projet de marché », champ `referenceAppelOffre`
 - [x] Nouveau format des références (exemples, encodage des liens)
-- Hors périmètre : conventions/marchés multi-liens (partie 2)
+- [x] Conventions/marchés multi-liens : voir partie 2
+
+## Réunion d'équipe — partie 2 (29/10/2026)
+- [x] Conventions : colonnes autorités/bailleurs, fiche avec relier/délier (Président/admin)
+- [x] Bailleurs multiples en création/modification, création à la volée, modification d'un bailleur
+- [x] Modification d'une convention par Président/admin à tout statut sauf annulée
+- [x] Marchés : conventions multiples, autorité porteuse, création de convention à la volée, modification Président/admin
+- [x] FR/AR, tests, typecheck
+- [ ] Contrôle visuel authentifié — bloqué : aucune session de test

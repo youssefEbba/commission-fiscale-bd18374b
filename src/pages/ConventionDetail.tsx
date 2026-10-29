@@ -24,6 +24,7 @@ import { echeanceConvention } from "@/lib/conventionEcheance";
 import { canSetConventionActivation, canEditConvention, conventionCancelMode } from "@/lib/conventionEditability";
 import ConventionEditDialog from "@/components/conventions/ConventionEditDialog";
 import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
+import ConventionLiensCard from "@/components/conventions/ConventionLiensCard";
 
 const STATUT_COLORS: Record<string, string> = {
   EN_ATTENTE: "bg-orange-100 text-orange-800",
@@ -115,7 +116,7 @@ const ConventionDetail = () => {
   }
 
   const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
-  const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"));
+  const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const cancelMode = conventionCancelMode(conv, user?.autoriteContractanteId, hasPermission("convention.annuler"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const devise = conv.deviseOrigine || "MRU";
   const echeance = echeanceConvention(conv.dateFin);
@@ -213,11 +214,15 @@ const ConventionDetail = () => {
             <Field label={t("conventions:fields.reference_required").replace(" *", "")} value={conv.reference} />
             <Field label={t("conventions:fields.project_reference")} value={conv.projectReference} />
             <Field label={t("conventions:fields.intitule")} value={conv.intitule} />
-            <Field label={t("conventions:fields.bailleur")} value={conv.bailleurNom || conv.bailleur} />
+            <Field label={t("conventions:fields.bailleur_principal")} value={conv.bailleurNom || conv.bailleur} />
             <Field label={t("conventions:fields.bailleur_details")} value={conv.bailleurDetails} />
-            <Field label={t("conventions:fields.autorite_contractante")} value={conv.autoriteContractanteNom} />
+            <Field label={t("conventions:fields.autorite_principale")} value={conv.autoriteContractanteNom} />
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ConventionLiensCard convention={conv} onChanged={load} />
+        </div>
 
         <Card>
           <CardHeader><CardTitle className="text-base">{t("conventions:detail.section_dates_financial")}</CardTitle></CardHeader>

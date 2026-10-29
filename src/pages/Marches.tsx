@@ -33,6 +33,9 @@ import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
 import { formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { canEditMarche } from "@/lib/marcheEditability";
+import { marcheConventionIds } from "@/lib/conventionEditability";
+import { OrderedMultiSelect } from "@/components/ui/ordered-multi-select";
+import ConventionCreateDialog from "@/components/conventions/ConventionCreateDialog";
 
 const STATUT_COLORS: Record<StatutMarche, string> = {
   EN_COURS: "bg-blue-100 text-blue-800",
@@ -47,6 +50,9 @@ const Marches = () => {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
+  /** Président et administrateur : modification de tout marché modifiable, conventions comprises. */
+  const isAdministration = hasRole(["PRESIDENT", "ADMIN_SI"]);
   const [marches, setMarches] = useState<MarcheDto[]>([]);
   const [conventions, setConventions] = useState<ConventionDto[]>([]);
   const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
@@ -57,6 +63,9 @@ const Marches = () => {
   const [editing, setEditing] = useState<MarcheDto | null>(null);
   const [form, setForm] = useState<CreateMarcheRequest>({ conventionId: 0, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, statut: "EN_COURS" });
   const [submitting, setSubmitting] = useState(false);
+  /** Conventions du marché, la principale en tête (= conventionId). */
+  const [convIds, setConvIds] = useState<number[]>([]);
+  const [convCreateOpen, setConvCreateOpen] = useState(false);
 
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignMarche, setAssignMarche] = useState<MarcheDto | null>(null);
@@ -111,6 +120,7 @@ const Marches = () => {
   const openCreate = () => {
     setEditing(null);
     setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null });
+    setConvIds([]);
     setDialogOpen(true);
   };
 
@@ -128,6 +138,7 @@ const Marches = () => {
       statut: m.statut,
       typeMarche: m.typeMarche ?? null,
     });
+    setConvIds(marcheConventionIds(m));
     setDialogOpen(true);
   };
 
@@ -264,7 +275,17 @@ const Marches = () => {
       toast({ title: errTitle, description: t("marches:form.errors.montant_required"), variant: "destructive" });
       return;
     }
+    if ((!editing || isAdministration) && convIds.length === 0) {
+      toast({ title: errTitle, description: t("marches:form.errors.convention_required"), variant: "destructive" });
+      return;
+    }
     const payload: CreateMarcheRequest = { ...form };
+    // Création : toutes les conventions choisies, la première = principale.
+    // Modification : seuls le Président et l'administrateur changent les conventions.
+    if (!editing || isAdministration) {
+      payload.conventionId = convIds[0];
+      payload.conventionIds = [...convIds];
+    }
     if (payload.montantContratHt == null) delete payload.montantContratHt;
     if (payload.montantContratTtc == null) delete payload.montantContratTtc;
     if (!payload.deviseOrigine) payload.deviseOrigine = "MRU";
@@ -307,8 +328,12 @@ const Marches = () => {
     );
   });
 
-  const isAC = hasRole(["AUTORITE_CONTRACTANTE"]);
   const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
+
+  const conventionLabel = (id: number) => {
+    const c = conventions.find(x => x.id === id);
+    return c ? (c.reference || `#${c.id}`) : `#${id}`;
+  };
 
   const conventionDevise = (conventionId?: number) => {
     const c = conventions.find(x => x.id === conventionId);
@@ -349,11 +374,13 @@ const Marches = () => {
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="min-w-[700px]">
+                <Table className="min-w-[1000px]">
                   <TableHeader>
                     <TableRow><RowNumberHead />
                       <TableHead>{t("marches:columns.numero")}</TableHead>
                       <TableHead>{t("marches:columns.intitule")}</TableHead>
+                      <TableHead>{t("marches:columns.conventions")}</TableHead>
+                      <TableHead>{t("marches:columns.autorite")}</TableHead>
                       <TableHead className="text-end">{t("marches:columns.montant_ht")}</TableHead>
                       <TableHead>{t("marches:columns.statut")}</TableHead>
                       <TableHead>{t("marches:columns.type")}</TableHead>
@@ -363,7 +390,7 @@ const Marches = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
                       </TableRow>
                     ) : (
                       filtered.map((m, rowIdx) => (
@@ -373,6 +400,22 @@ const Marches = () => {
                             <Link to={`/dashboard/marches/${m.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(m)}</Link>
                           </TableCell>
                           <TableCell className="max-w-[260px] truncate" title={m.intitule || ""}>{m.intitule || "—"}</TableCell>
+                          <TableCell className="max-w-[200px]">
+                            {(() => {
+                              const ids = marcheConventionIds(m);
+                              if (ids.length === 0) return <span className="text-muted-foreground">—</span>;
+                              return (
+                                <div className="flex flex-wrap gap-1">
+                                  {ids.map((cid, i) => (
+                                    <Link key={cid} to={`/dashboard/conventions/${cid}`} onClick={(e) => e.stopPropagation()}>
+                                      <Badge variant={i === 0 ? "secondary" : "outline"} className="text-xs font-normal hover:underline">{conventionLabel(cid)}</Badge>
+                                    </Link>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground max-w-[200px] truncate" title={m.autoriteContractanteNom || ""}>{m.autoriteContractanteNom || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
                             {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
@@ -408,12 +451,16 @@ const Marches = () => {
                                   <DropdownMenuItem onClick={() => openGed(m)}>
                                     <FileText className="h-4 w-4 me-2" /> {t("marches:actions.ged")}
                                   </DropdownMenuItem>
-                                  {isAC && canEditMarche(m.statut) && (
+                                  {(isAC || isAdministration) && canEditMarche(m.statut) && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => openEdit(m)}>
                                         <Edit className="h-4 w-4 me-2" /> {t("marches:actions.edit")}
                                       </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {isAC && canEditMarche(m.statut) && (
+                                    <>
                                       <DropdownMenuItem onClick={() => openAssign(m)}>
                                         <UserPlus className="h-4 w-4 me-2" /> {t("marches:actions.assign")}
                                       </DropdownMenuItem>
@@ -448,23 +495,48 @@ const Marches = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {!editing && (() => {
+            {(!editing || isAdministration) && (() => {
               // Périmètre AC (y compris en impersonation) filtré par le serveur ; ici seulement les conventions désactivées.
               const visibleConventions = conventions.filter(c => c.actif !== false);
               return (
               <div className="space-y-2">
-                <Label>{t("marches:form.convention")} <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span></Label>
-                <SearchableSelect
-                  value={form.conventionId ? String(form.conventionId) : ""}
-                  onValueChange={v => setForm(f => ({ ...f, conventionId: Number(v), demandeCorrectionId: undefined }))}
-                  placeholder={visibleConventions.length === 0 ? t("marches:form.convention_empty_scope") : t("marches:form.convention_placeholder")}
-                  searchPlaceholder={t("marches:form.convention_search")}
+                <Label>
+                  {t("marches:form.conventions")}{" "}
+                  {!editing && <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span>}
+                </Label>
+                <OrderedMultiSelect
                   options={visibleConventions.map(c => ({
                     value: String(c.id),
                     label: `${c.reference || `#${c.id}`} — ${c.intitule || ""}`,
                     keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
                   }))}
+                  values={convIds.map(String)}
+                  onChange={(vals) => {
+                    const ids = vals.map(Number);
+                    setConvIds(ids);
+                    // La demande de correction choisie doit relever d'une des conventions retenues.
+                    setForm(f => {
+                      const d = demandes.find(x => x.id === f.demandeCorrectionId);
+                      return d && d.conventionId && !ids.includes(d.conventionId) ? { ...f, demandeCorrectionId: undefined } : f;
+                    });
+                  }}
+                  labelOf={(v) => {
+                    const c = conventions.find(x => x.id === Number(v));
+                    return c ? `${c.reference || `#${c.id}`} — ${c.intitule || ""}` : `#${v}`;
+                  }}
+                  placeholder={visibleConventions.length === 0 ? t("marches:form.convention_empty_scope") : t("marches:form.conventions_add_placeholder")}
+                  searchPlaceholder={t("marches:form.convention_search")}
+                  principalLabel={t("marches:form.convention_principale")}
+                  makePrincipalLabel={t("marches:form.convention_make_principale")}
+                  removeLabel={t("marches:form.convention_remove")}
+                  addon={(isAC || isAdministration) ? (
+                    <Button type="button" variant="outline" size="icon" onClick={() => setConvCreateOpen(true)}
+                      title={t("marches:form.convention_create")} aria-label={t("marches:form.convention_create")}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  ) : undefined}
                 />
+                <p className="text-xs text-muted-foreground">{t("marches:form.conventions_hint")}</p>
               </div>
               );
             })()}
@@ -473,7 +545,7 @@ const Marches = () => {
               const eligibles = demandes
                 .filter(d => d.statut === "ADOPTEE" || d.statut === "NOTIFIEE")
                 .filter(d => !d.marcheId && !linkedIds.has(d.id))
-                .filter(d => !form.conventionId || d.conventionId === form.conventionId);
+                .filter(d => convIds.length === 0 || (d.conventionId != null && convIds.includes(d.conventionId)));
               return (
                 <div className="space-y-2">
                   <Label>{t("marches:form.demande_correction")}</Label>
@@ -555,6 +627,16 @@ const Marches = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Création d'une convention à la volée : ajoutée aux conventions du marché */}
+      <ConventionCreateDialog
+        open={convCreateOpen}
+        onOpenChange={setConvCreateOpen}
+        onCreated={(created) => {
+          setConventions(prev => [created, ...prev.filter(c => c.id !== created.id)]);
+          setConvIds(prev => (prev.includes(created.id) ? prev : [...prev, created.id]));
+        }}
+      />
 
       {/* Assign Delegate Dialog */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
