@@ -87,7 +87,8 @@
     "telephone": "Téléphone",
     "adresse": "Adresse",
     "actions": "Actions",
-    "search_placeholder": "Rechercher…"
+    "search_placeholder": "Rechercher…",
+    "row_number": "N°"
   },
   "pagination": {
     "page": "Page",

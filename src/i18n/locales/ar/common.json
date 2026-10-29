@@ -87,7 +87,8 @@
     "telephone": "الهاتف",
     "adresse": "العنوان",
     "actions": "الإجراءات",
-    "search_placeholder": "بحث…"
+    "search_placeholder": "بحث…",
+    "row_number": "الرقم"
   },
   "pagination": {
     "page": "صفحة",
