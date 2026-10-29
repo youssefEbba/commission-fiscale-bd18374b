@@ -57,15 +57,9 @@ const STATUT_COLORS: Record<CertificatStatut, string> = {
   ANNULE: "bg-red-100 text-red-800",
 };
 
-// Types de documents demandables en rejet temporaire pour la mise en place (P4).
-// Valeurs brutes alignées sur l'enum TypeDocument backend ; libellés traduits via tTypeDocument().
-const MISE_EN_PLACE_DOC_TYPES = [
-  "LETTRE_SAISINE",
-  "CONTRAT",
-  "LETTRE_NOTIFICATION_CONTRAT",
-  "CERTIFICAT_NIF",
-  "LETTRE_CORRECTION",
-];
+// Pièces demandables en rejet temporaire : celles de la GED (MISE_EN_PLACE_CI), cf. GedPiecesChecklist.
+
+
 
 const DECISION_ROLES_LIST = ["DGI", "DGTCP", "DGB", "DGD", "PRESIDENT"];
 
