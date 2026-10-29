@@ -7,6 +7,7 @@ import {
   forexApi,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,9 @@ import { CheckCircle, Edit, Loader2 } from "lucide-react";
 import { formatNumber } from "@/i18n/format";
 import {
   buildUpdateConventionRequest, conventionToEditForm, ConventionEditForm, conventionDateError,
+  conventionAutorites, conventionBailleurs,
 } from "@/lib/conventionEditability";
+import BailleursField from "./BailleursField";
 
 /** Devises proposées si le référentiel serveur est vide ou indisponible (mêmes valeurs qu'à la création). */
 export const DEFAULT_DEVISES: DeviseDto[] = [
@@ -46,6 +49,8 @@ interface Props {
 const ConventionEditDialog = ({ convention, open, onOpenChange, onSaved }: Props) => {
   const { t } = useTranslation(["conventions", "common"]);
   const { toast } = useToast();
+  const { hasRole } = useAuth();
+  const isAdministration = hasRole(["PRESIDENT", "ADMIN_SI"]);
   const [form, setForm] = useState<ConventionEditForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [bailleurs, setBailleurs] = useState<BailleurDto[]>([]);
@@ -128,13 +133,13 @@ const ConventionEditDialog = ({ convention, open, onOpenChange, onSaved }: Props
           <DialogTitle className="flex items-center gap-2">
             <Edit className="h-5 w-5" /> {t("conventions:edit.title")}
           </DialogTitle>
-          <DialogDescription>{t("conventions:edit.full_replace_hint")}</DialogDescription>
+          <DialogDescription>{isAdministration ? t("conventions:edit.full_replace_hint_admin") : t("conventions:edit.full_replace_hint")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 max-h-[65vh] overflow-y-auto pe-1">
           <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">{t("conventions:fields.autorite_contractante")} : </span>
-            <span className="font-medium text-foreground">{convention.autoriteContractanteNom || "—"}</span>
-            <p className="text-xs text-muted-foreground mt-1">{t("conventions:edit.autorite_fixed")}</p>
+            <span className="text-muted-foreground">{t("conventions:fields.autorites")} : </span>
+            <span className="font-medium text-foreground">{conventionAutorites(convention).map((a) => a.nom).join(", ") || "—"}</span>
+            <p className="text-xs text-muted-foreground mt-1">{t("conventions:edit.autorites_hint")}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -150,16 +155,15 @@ const ConventionEditDialog = ({ convention, open, onOpenChange, onSaved }: Props
             <Label>{t("conventions:fields.intitule_required")}</Label>
             <Input value={form.intitule} onChange={(e) => set({ intitule: e.target.value })} placeholder={t("conventions:create.intitule_placeholder")} />
           </div>
-          <div className="space-y-2">
-            <Label>{t("conventions:fields.bailleur")}</Label>
-            <SearchableSelect
-              value={form.bailleurId != null ? String(form.bailleurId) : ""}
-              onValueChange={(v) => set({ bailleurId: v ? Number(v) : null })}
-              placeholder={bailleursLoading ? t("conventions:create.loading") : t("conventions:create.select_bailleur")}
-              searchPlaceholder={t("conventions:create.search_bailleur")}
-              options={bailleurs.map((b) => ({ value: String(b.id), label: b.nom }))}
-            />
-          </div>
+          <BailleursField
+            label={t("conventions:fields.bailleurs")}
+            bailleurs={bailleurs}
+            setBailleurs={setBailleurs}
+            loading={bailleursLoading}
+            value={form.bailleurIds}
+            onChange={(ids) => set({ bailleurIds: ids })}
+            knownNames={Object.fromEntries(conventionBailleurs(convention).map((b) => [b.id, b.nom]))}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>{t("conventions:fields.date_signature")}</Label>
