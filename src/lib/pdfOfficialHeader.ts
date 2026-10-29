@@ -17,21 +17,21 @@ export function drawOfficialHeader(doc: jsPDF, unit: "mm" | "pt"): number {
     // ignore si l'asset n'est pas chargé
   }
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setTextColor(0, 102, 51);
   doc.setFontSize(10);
   doc.text("République Islamique de Mauritanie", cx, 12 * k, { align: "center" });
-  doc.setFont("helvetica", "italic");
+  doc.setFont(PDF_FONT, "italic");
   doc.setFontSize(9);
   doc.text("Honneur — Fraternité — Justice", cx, 17 * k, { align: "center" });
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(12);
   doc.text("MINISTÈRE DES FINANCES", cx, 24 * k, { align: "center" });
   doc.setFontSize(10);
   doc.text("Commission Fiscale auprès du Ministre des Finances", cx, 29 * k, { align: "center" });
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   return 34 * k;
 }

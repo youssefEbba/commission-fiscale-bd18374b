@@ -29,11 +29,11 @@ export async function drawVerificationQr(
     doc.addImage(dataUrl, "PNG", x, y, size, size);
     const cx = x + size / 2;
     const lh = fontSize * (doc.getLineHeightFactor?.() ?? 1.15) * (size > 40 ? 1 : 0.3528);
-    doc.setFont("helvetica", "italic").setFontSize(fontSize).setTextColor(60, 60, 60);
+    doc.setFont(PDF_FONT, "italic").setFontSize(fontSize).setTextColor(60, 60, 60);
     doc.text("Vérifiez l'authenticité de ce document", cx, y + size + lh * 1.1, { align: "center" });
-    doc.setFont("helvetica", "bold");
+    doc.setFont(PDF_FONT, "bold");
     doc.text(code, cx, y + size + lh * 2.2, { align: "center" });
-    doc.setTextColor(0, 0, 0).setFont("helvetica", "normal");
+    doc.setTextColor(0, 0, 0).setFont(PDF_FONT, "normal");
   } catch {
     /* QR non bloquant */
   }

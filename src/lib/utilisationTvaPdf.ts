@@ -51,17 +51,17 @@ function dotted(doc: jsPDF, x1: number, y: number, x2: number) {
 }
 /** Libellé + ligne pointillée jusqu'à xEnd, valeur écrite au-dessus. */
 function field(doc: jsPDF, x: number, y: number, label: string, value: string, xEnd: number, bold = false) {
-  doc.setFont("helvetica", bold ? "bold" : "normal").setFontSize(9);
+  doc.setFont(PDF_FONT, bold ? "bold" : "normal").setFontSize(9);
   doc.text(label, x, y);
   const vx = x + doc.getTextWidth(label) + 4;
   dotted(doc, vx, y + 1.5, xEnd);
   if (value) {
-    doc.setFont("helvetica", "bold");
+    doc.setFont(PDF_FONT, "bold");
     const maxW = xEnd - vx - 4;
     const v = doc.splitTextToSize(value, maxW)[0] as string;
     doc.text(v, vx + 2, y - 1);
   }
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
 }
 
 export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
@@ -72,7 +72,7 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   // ===== En-tête institutionnel (identique au certificat) =====
   let y = drawOfficialHeader(doc, "pt") + 14;
 
-  doc.setFont("helvetica", "bold").setFontSize(12);
+  doc.setFont(PDF_FONT, "bold").setFontSize(12);
   doc.text("MARCHES PUBLICS A FINANCEMENT EXTERIEUR", W / 2, y, { align: "center" });
   y += 15;
   doc.text("UTILISATION DU CREDIT D'IMPOTS", W / 2, y, { align: "center" });
@@ -87,7 +87,7 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
 
   // ===== I. Identification =====
   y += 14;
-  doc.setFont("helvetica", "bold").setFontSize(9.5);
+  doc.setFont(PDF_FONT, "bold").setFontSize(9.5);
   doc.text("I - IDENTIFICATION DE L'ENTREPRISE", M + 6, y);
   y += 16;
   field(doc, M + 6, y, "N° DE COMPTE CONTRIBUABLE", "", R - 6); y += 16;
@@ -102,7 +102,7 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
 
   // ===== II. Utilisation =====
   y += 16;
-  doc.setFont("helvetica", "bold").setFontSize(9.5);
+  doc.setFont(PDF_FONT, "bold").setFontSize(9.5);
   doc.text("II - UTILISATION DU CREDIT D'IMPOTS (Crédit intérieur) - TVA DEDUCTIBLE", M + 6, y);
   y += 16;
   field(doc, M + 6, y, "Facture N° :", u.numeroFacture || "", M + 300);
@@ -122,16 +122,16 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   field(doc, M + 6, y, "De", u.certificatTitulaireRaisonSociale || "", R - 6); y += 20;
   field(doc, M + 40, y, "A", "NOUAKCHOTT", M + 240);
   field(doc, M + 250, y, "Le", dt(u.dateCertificatUtilisation || u.dateCreation), R - 40); y += 16;
-  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.setFont(PDF_FONT, "bold").setFontSize(9);
   doc.text("Signature et cachet de l'entreprise", W / 2, y, { align: "center" }); y += 16;
   field(doc, M + 6, y, "Délai d'exécution :", "", R - 6, true); y += 10;
   doc.line(M, y, R, y);
 
   // Récapitulatif d'apurement (traçabilité)
   y += 14;
-  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.setFont(PDF_FONT, "bold").setFontSize(9);
   doc.text("Récapitulatif de l'apurement TVA", M + 6, y); y += 13;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   const recap: [string, string][] = [
     ["TVA collectée", fmt(u.montantTVAInterieure)],
     ["TVA déductible imputée", fmt(u.tvaDeductibleUtilisee)],
@@ -158,9 +158,9 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
 
   // ===== III. Validité =====
   y += 18;
-  doc.setFont("helvetica", "bold").setFontSize(12);
+  doc.setFont(PDF_FONT, "bold").setFontSize(12);
   doc.text("III - Validité du Crédit d'Impôts", M + 6, y); y += 16;
-  doc.setFont("helvetica", "normal").setFontSize(9);
+  doc.setFont(PDF_FONT, "normal").setFontSize(9);
   doc.text("Le président de Commission fiscale auprès du Ministre des Finances certifie que l'entreprise dispose d'un crédit", M + 6, y); y += 12;
   doc.text("d'impôt", M + 6, y); y += 14;
   field(doc, M + 6, y, "N°", u.certificatReference || cert?.reference || "", M + 220);
@@ -168,13 +168,13 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   doc.text("dont", R - 6, y, { align: "right" }); y += 16;
   doc.text("Le solde permet l'imputation du montant sollicité", M + 6, y);
   if (u.soldeTVAApres != null) {
-    doc.setFont("helvetica", "bold");
+    doc.setFont(PDF_FONT, "bold");
     doc.text(`Solde crédit intérieur restant : ${fmt(u.soldeTVAApres)} MRU`, R - 6, y, { align: "right" });
-    doc.setFont("helvetica", "normal");
+    doc.setFont(PDF_FONT, "normal");
   }
   y += 24;
   field(doc, W / 2 - 60, y, "A NOUAKCHOTT, LE", dt(u.dateCertificatUtilisation || new Date().toISOString()), W / 2 + 140); y += 14;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text("Le Président de la Commission Fiscale", W / 2 + 40, y, { align: "center" }); y += 11;
   doc.text("auprès du Ministre des Finances", W / 2 + 40, y, { align: "center" }); y += 11;
   doc.text("NOM et SIGNATURE", W / 2 + 40, y, { align: "center" });

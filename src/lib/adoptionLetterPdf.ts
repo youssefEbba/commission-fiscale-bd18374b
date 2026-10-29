@@ -45,10 +45,10 @@ const inlineField = (
   y: number,
   endX: number,
 ): number => {
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text(label, x, y);
   const lw = doc.getTextWidth(label);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   const valueX = x + lw + 2;
   const available = Math.max(10, endX - valueX);
   const v = value ? safe(String(value)) : "";
@@ -81,7 +81,7 @@ const section = (
   doc.rect(x + 1, y + 1, w - 2, h - 2);
   doc.setFillColor(255, 255, 255);
   // Mesure du titre dans sa police réelle (le cadre est désormais dessiné après son contenu).
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(10);
   doc.rect(x + 3, y - 2.5, doc.getTextWidth(title) + 4, 5, "F");
   doc.setTextColor(0, 102, 51);
@@ -129,15 +129,15 @@ export async function generateAdoptionLetterPdf(
   }
 
   // ---------- En-tête ----------
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setTextColor(0, 102, 51);
   doc.setFontSize(10);
   doc.text("République Islamique de Mauritanie", pageW / 2, 12, { align: "center" });
   doc.setFontSize(9);
-  doc.setFont("helvetica", "italic");
+  doc.setFont(PDF_FONT, "italic");
   doc.text("Honneur — Fraternité — Justice", pageW / 2, 17, { align: "center" });
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(12);
   doc.text("MINISTÈRE DES FINANCES", pageW / 2, 24, { align: "center" });
@@ -157,12 +157,12 @@ export async function generateAdoptionLetterPdf(
   doc.setDrawColor(0, 0, 0);
 
   // ---------- N° ----------
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(11);
   const refLabel = "Réf. demande :";
   const refLabelX = pageW - M - 80;
   doc.text(refLabel, refLabelX, 54);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   const refLisible = d.reference || d.numero || "";
   const refValueX = refLabelX + doc.getTextWidth(refLabel) + 3;
   doc.text(safe(refLisible), refValueX, 54);
@@ -178,7 +178,7 @@ export async function generateAdoptionLetterPdf(
   let y = 61;
 
   // ---------- I - Identification demande ----------
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(9);
   let yy = y + SEC_TOP;
 
@@ -193,15 +193,15 @@ export async function generateAdoptionLetterPdf(
   y += h1 + SEC_GAP;
 
   // ---------- II - Identification entreprise ----------
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(10);
   yy = y + SEC_TOP;
 
   const nifRaw = entreprise?.nifAffiche || entreprise?.nif || d.entrepriseNif || "";
   const nifChars = String(nifRaw).padEnd(10, " ").slice(0, 10);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text("NIF", M + 4, yy);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   for (let i = 0; i < 10; i++) {
     const bx = M + 12 + i * 8;
     doc.line(bx, yy + 1, bx + 6, yy + 1);
@@ -223,7 +223,7 @@ export async function generateAdoptionLetterPdf(
   y += h2 + SEC_GAP;
 
   // ---------- III - Identification marché / convention ----------
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(10);
   yy = y + SEC_TOP;
 
@@ -261,7 +261,7 @@ export async function generateAdoptionLetterPdf(
   y += h3 + SEC_GAP;
 
   // ---------- IV - Crédits demandés ----------
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(10);
   yy = y + SEC_TOP;
 
@@ -280,7 +280,7 @@ export async function generateAdoptionLetterPdf(
   y += h4 + SEC_GAP;
 
   // ---------- V - Décision ----------
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(10);
   const decisionText = [
     `La Commission Fiscale, réunie en session, a examiné la demande de correction référencée ${refLisible || "—"},`,
@@ -309,7 +309,7 @@ export async function generateAdoptionLetterPdf(
   const FOOTER_Y = 287;
   const BOTTOM_LIMIT = FOOTER_Y - 5;
   const drawFooter = () => {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(PDF_FONT, "normal");
     doc.setFontSize(8);
     doc.setTextColor(100);
     const now = new Date().toLocaleDateString("fr-FR");
@@ -328,7 +328,7 @@ export async function generateAdoptionLetterPdf(
   section(doc, "V – DÉCISION DE LA COMMISSION", M, y, W, h5);
   yy = y + SEC_TOP;
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   for (const lines of wrapped) {
@@ -342,7 +342,7 @@ export async function generateAdoptionLetterPdf(
 
   // Signature
   yy += 4;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(10);
   doc.text("Le Président de la Commission Fiscale", M + W - 4, yy, { align: "right" });
   yy += 3;
