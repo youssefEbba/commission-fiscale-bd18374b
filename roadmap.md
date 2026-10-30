@@ -43,3 +43,11 @@
 - [x] Marchés : conventions multiples, autorité porteuse, création de convention à la volée, modification Président/admin
 - [x] FR/AR, tests, typecheck
 - [ ] Contrôle visuel authentifié — bloqué : aucune session de test
+
+## Avenants — cycle de vie (30/10/2026)
+- [x] Page « Avenants » réactivée (menu, liste, fiche `/dashboard/modifications/:id`)
+- [x] Dépôt entreprise/AC + pièces GED `MODIFICATION_CI` tant que `DEPOSE`
+- [x] Gestes DGTCP / Président / substitution admin avec motif ; application avec récapitulatif et aperçu des soldes
+- [x] Carte « Avenants » sur la fiche crédit ; bandeau sur la demande de correction issue d'un avenant
+- [x] Types, FR/AR, tests, typecheck
+- [ ] Contrôle authentifié réel — bloqué : aucune session de test
