@@ -128,11 +128,16 @@
     "ANNULEE": "Annulé"
   },
   "statut_avenant": {
-    "EN_ATTENTE": "En attente",
-    "VALIDE": "Validé",
-    "VALIDEE": "Validé",
-    "REJETE": "Rejeté",
-    "REJETEE": "Rejeté"
+    "DEPOSE": "Déposé",
+    "EN_COURS_TRAITEMENT": "En cours de traitement",
+    "ADOPTE": "Adopté",
+    "APPLIQUE": "Appliqué",
+    "REJETE": "Rejeté"
+  },
+  "type_avenant": {
+    "JURIDIQUE": "Juridique",
+    "CONTRAT": "Contrat",
+    "FINANCIER": "Financier"
   },
   "statut_sous_traitance": {
     "DEMANDE": "Demandée",
