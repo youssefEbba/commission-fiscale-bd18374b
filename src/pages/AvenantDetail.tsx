@@ -12,7 +12,7 @@ import {
   avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto,
   demandeCorrectionApi, DemandeCorrectionDto,
 } from "@/lib/api";
-import { avenantActions, canUploadAvenantPieces } from "@/lib/avenants";
+import { avenantActions, avenantPiecesObligatoires, canUploadAvenantPieces } from "@/lib/avenants";
 import { tStatutDemande, tTypeAvenant } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import AvenantStatutBadge from "@/components/avenants/AvenantStatutBadge";
@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft, CheckCircle2, Circle, FileText, FilePen, Loader2, RefreshCw,
-  XCircle, PlayCircle, ClipboardCheck, ExternalLink,
+  XCircle, PlayCircle, ClipboardCheck, ExternalLink, AlertTriangle,
 } from "lucide-react";
 
 type Geste = "prise_en_charge" | "validation" | "rejet";
@@ -49,7 +49,7 @@ const AvenantDetail = () => {
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [applyPreparing, setApplyPreparing] = useState(false);
 
-  const ged = useGedPieces("MODIFICATION_CI");
+  const ged = useGedPieces("MODIFICATION_CI", { depot: true });
   const ref = avenant?.numero || (avenant ? `#${avenant.id}` : "");
   usePageTitle("modifications:detail.title", { ref: ref || `#${id ?? ""}` });
 
@@ -201,6 +201,12 @@ const AvenantDetail = () => {
     return Array.from(byType.values());
   })();
 
+  // État des pièces obligatoires de la GED : connu seulement si GED et documents ont été lus.
+  const piecesEtatConnu = !docsLoading && !docsError && !ged.isLoading && !ged.error;
+  const obligatoires = piecesEtatConnu ? avenantPiecesObligatoires(ged.options, docs) : [];
+  const manquantes = obligatoires.filter((p) => !p.jointe);
+  const manquantesList = manquantes.map((p) => p.label).join(", ");
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -283,6 +289,12 @@ const AvenantDetail = () => {
 
             {hasActions && (
               <div className="pt-4 border-t border-border flex flex-wrap gap-2">
+                {actions.priseEnCharge && manquantes.length > 0 && (
+                  <p className="w-full flex items-start gap-2 rounded-md border border-accent/50 bg-accent/10 p-3 text-xs text-foreground">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-accent-foreground" />
+                    {t("modifications:detail.pieces_obligatoires.warning_prise_en_charge", { list: manquantesList })}
+                  </p>
+                )}
                 {actions.priseEnCharge && (
                   <Button size="sm" onClick={() => setGeste("prise_en_charge")}>
                     <ClipboardCheck className="h-4 w-4 me-1" /> {t("modifications:actions.prise_en_charge")}
@@ -363,7 +375,51 @@ const AvenantDetail = () => {
               {canUpload ? t("modifications:detail.pieces_manage") : t("modifications:detail.pieces_view")}
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {canUpload && a.statut === "DEPOSE" && manquantes.length > 0 && (
+              <p className="flex items-start gap-2 rounded-md border border-accent/50 bg-accent/10 p-3 text-xs text-foreground">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-accent-foreground" />
+                {t("modifications:detail.pieces_obligatoires.rappel_deposant", { list: manquantesList })}
+              </p>
+            )}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t("modifications:detail.pieces_obligatoires.title")}</p>
+              {ged.isLoading ? (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("common:documents.ged_pieces.loading")}</p>
+              ) : ged.error ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs text-destructive">{t("common:documents.ged_pieces.error", { message: ged.error.message })}</p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => ged.refetch()}>{t("common:documents.ged_pieces.retry")}</Button>
+                </div>
+              ) : ged.options.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">{t("modifications:detail.pieces_obligatoires.aucune_parametree")}</p>
+              ) : !ged.options.some((o) => o.obligatoire) ? (
+                <p className="text-xs text-muted-foreground italic">{t("modifications:detail.pieces_obligatoires.aucune_obligatoire")}</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {ged.options.filter((o) => o.obligatoire).map((o) => {
+                    const etat = obligatoires.find((p) => p.code === o.code);
+                    return (
+                      <li key={o.code} className="flex items-center justify-between gap-3">
+                        <span className="truncate">{o.label}</span>
+                        {!etat ? (
+                          <Badge variant="outline" className="text-xs shrink-0">{t("modifications:detail.pieces_obligatoires.inconnu")}</Badge>
+                        ) : etat.jointe ? (
+                          <Badge className="text-xs shrink-0 bg-primary/10 text-primary hover:bg-primary/10">
+                            <CheckCircle2 className="h-3 w-3 me-1" /> {t("modifications:detail.pieces_obligatoires.jointe")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="text-xs shrink-0">
+                            <XCircle className="h-3 w-3 me-1" /> {t("modifications:detail.pieces_obligatoires.manquante")}
+                          </Badge>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div className="border-t border-border pt-3">
             {docsLoading ? (
               <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
             ) : docsError ? (
@@ -383,7 +439,8 @@ const AvenantDetail = () => {
                 ))}
               </ul>
             )}
-            {a.statut !== "DEPOSE" && <p className="mt-3 text-xs text-muted-foreground">{t("modifications:detail.pieces_locked")}</p>}
+            </div>
+            {a.statut !== "DEPOSE" && <p className="text-xs text-muted-foreground">{t("modifications:detail.pieces_locked")}</p>}
           </CardContent>
         </Card>
 
