@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import AvenantOrigineBanner from "@/components/avenants/AvenantOrigineBanner";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -523,6 +524,7 @@ const DemandeDetail = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <EquipementsBanner present={selected.equipementsPresents} demandeId={selected.id} />
+        <AvenantOrigineBanner demandeId={selected.id} />
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={smartBack} aria-label={t("demandes:detail.back")}>
             <ArrowLeft className="h-5 w-5 rtl:rotate-180" />

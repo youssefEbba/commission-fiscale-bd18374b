@@ -2664,24 +2664,75 @@ export const clotureCreditApi = {
 };
 
 // Avenants / Modifications (P8)
-export type StatutAvenant = "EN_ATTENTE" | "VALIDE" | "REJETE";
+/** Déposé → En cours de traitement → Adopté → Appliqué, ou Rejeté. */
+export type StatutAvenant = "DEPOSE" | "EN_COURS_TRAITEMENT" | "ADOPTE" | "APPLIQUE" | "REJETE";
+export type TypeAvenant = "JURIDIQUE" | "CONTRAT" | "FINANCIER";
 
 export interface AvenantDto {
   id: number;
-  certificatCreditId?: number;
-  certificatNumero?: string;
-  marcheId?: number;
-  marcheNumero?: string;
-  type?: string;
-  description?: string;
+  numero?: string | null;
+  type: TypeAvenant;
   statut: StatutAvenant;
-  dateCreation?: string;
-  dateMiseAJour?: string;
+  motif?: string | null;
+  dateSignature?: string | null;
+  certificatCreditId: number;
+  certificatNumero?: string | null;
+  certificatReference?: string | null;
+  entrepriseId?: number | null;
+  entrepriseNom?: string | null;
+  autoriteContractanteId?: number | null;
+  autoriteContractanteNom?: string | null;
+  deposeParUtilisateurId?: number | null;
+  dateDepot?: string | null;
+  creditExterieurPropose?: number | null;
+  creditInterieurPropose?: number | null;
+  /** Avenant financier : demande de correction créée en brouillon à la validation du Président. */
+  demandeCorrectionId?: number | null;
+  demandeCorrectionReference?: string | null;
+  demandeCorrectionStatut?: DemandeStatut | null;
+  dateExamen?: string | null;
+  dateValidation?: string | null;
+  dateApplication?: string | null;
+  motifRejet?: string | null;
+  // Instantané pris à l'application (APPLIQUE).
+  montantCordonAvant?: number | null;
+  montantCordonApres?: number | null;
+  montantTVAInterieureAvant?: number | null;
+  montantTVAInterieureApres?: number | null;
+  soldeCordonAvant?: number | null;
+  soldeCordonApres?: number | null;
+  soldeTVAAvant?: number | null;
+  soldeTVAApres?: number | null;
+  tvaImportationRestanteAvant?: number | null;
+  tvaImportationRestanteApres?: number | null;
+}
+
+export interface CreateAvenantRequest {
+  certificatCreditId: number;
+  type: TypeAvenant;
+  motif: string | null;
+  /** Instant ISO-8601 (`YYYY-MM-DDT00:00:00Z`). */
+  dateSignature: string | null;
+  /** Obligatoires pour un avenant FINANCIER, null sinon. */
+  creditExterieurPropose: number | null;
+  creditInterieurPropose: number | null;
+}
+
+/** Nouveau récapitulatif saisi par la DGTCP à l'application d'un avenant financier. */
+export interface ApplicationAvenantRequest {
+  valeurDouaneFournitures: number | null;
+  droitsEtTaxesDouaneHorsTva: number | null;
+  taxesConsommation: number | null;
+  tvaImportationDouaneAccordee: number | null;
+  montantCordon: number;
+  montantMarcheHt: number | null;
+  tvaCollecteeTravaux: number | null;
+  montantTVAInterieure: number;
 }
 
 export interface DocumentAvenantDto {
   id: number;
-  type: string;
+  codeDocument: string;
   nomFichier: string;
   chemin?: string;
   dateUpload?: string;
@@ -2690,29 +2741,34 @@ export interface DocumentAvenantDto {
   actif?: boolean;
 }
 
-export type TypeDocumentAvenant =
-  | "NOTE_SERVICE"
-  | "JUSTIFICATIONS_LEGALES"
-  | "LETTRES_MOTIVEES"
-  | "AVENANT_CONTRAT"
-  | "LETTRES_AUTORITE_CONTRACTANTE"
-  | "DETAIL_CORRECTIONS_NECESSAIRES"
-  | "DOCUMENTS_OFFICIELS"
-  | "DECISION_COMMISSION"
-  | "AUTRE_DOCUMENT";
-
-// Removed AVENANT_DOCUMENT_TYPES and AVENANT_STATUT_LABELS (G1 migration).
-// Use tTypeDocument / tStatutAvenant from "@/i18n/enums" instead.
-
+const avenantMotifQuery = (motif?: string | null) =>
+  motif && motif.trim() ? `?motif=${encodeURIComponent(motif.trim())}` : "";
 
 export const avenantApi = {
-  // getAll and getById removed — backend only supports document endpoints
+  /** Liste dans le périmètre de l'utilisateur (ordre serveur). */
+  getAll: () => apiFetch<AvenantDto[]>("/avenants"),
+  getById: (id: number) => apiFetch<AvenantDto>(`/avenants/${id}`),
+  getByCertificat: (certificatId: number) => apiFetch<AvenantDto[]>(`/avenants/by-certificat/${certificatId}`),
+  create: (data: CreateAvenantRequest) => apiFetch<AvenantDto>("/avenants", { method: "POST", body: data }),
+  /** DGTCP ; motif seulement quand l'administrateur se substitue. */
+  priseEnCharge: (id: number, motif?: string | null) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/prise-en-charge${avenantMotifQuery(motif)}`, { method: "POST" }),
+  /** Président ; motif seulement quand l'administrateur se substitue. */
+  validation: (id: number, motif?: string | null) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/validation${avenantMotifQuery(motif)}`, { method: "POST" }),
+  /** DGTCP à l'examen, Président à la validation ; motif obligatoire. */
+  rejet: (id: number, motif: string) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/rejet${avenantMotifQuery(motif)}`, { method: "POST" }),
+  /** DGTCP. Corps uniquement pour un avenant FINANCIER. */
+  application: (id: number, body?: ApplicationAvenantRequest) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/application`, body ? { method: "POST", body } : { method: "POST" }),
   getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`).then(normalizeDocs),
-  uploadDocument: (id: number, type: TypeDocumentAvenant, file: File) => {
+  /** Dépôt possible seulement tant que l'avenant est DEPOSE. */
+  uploadDocument: (id: number, codeDocument: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     return apiFetch<DocumentAvenantDto>(
-      `/avenants/${id}/documents?codeDocument=${encodeURIComponent(type)}`,
+      `/avenants/${id}/documents?codeDocument=${encodeURIComponent(codeDocument)}`,
       { method: "POST", rawBody: formData }
     );
   },

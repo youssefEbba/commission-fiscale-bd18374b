@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search,
-  PenLine, Building2, UserCheck,
+  PenLine, Building2, UserCheck, FilePen,
 
 } from "lucide-react";
 import logo from "@/assets/logo.svg";
@@ -63,8 +63,7 @@ const NAV_ENTRIES: NavEntry[] = [
     icon: ArrowRightLeft,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      // TODO: réactiver quand le back-end Modifications/Avenants sera disponible
-      // { labelKey: "modifications", href: "/dashboard/modifications", icon: Settings, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       // TODO: réactiver quand le back-end Sous-traitance sera disponible
       // { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },

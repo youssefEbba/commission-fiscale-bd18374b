@@ -41,8 +41,8 @@ import Reporting from "./pages/Reporting";
 import CreditFiche from "./pages/CreditFiche";
 import CertificatDetail from "./pages/CertificatDetail";
 import Cloture from "./pages/Cloture";
-// TODO: réactiver quand le back-end Modifications/Avenants sera disponible
-// import Modifications from "./pages/Modifications";
+import Modifications from "./pages/Modifications";
+import AvenantDetail from "./pages/AvenantDetail";
 import DemandeDetail from "./pages/DemandeDetail";
 import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
 import UtilisationDetail from "./pages/UtilisationDetail";
@@ -173,13 +173,16 @@ const App = () => (
                 <Cloture />
               </ProtectedRoute>
             } />
-            {/* TODO: réactiver quand le back-end Modifications/Avenants sera disponible
             <Route path="/dashboard/modifications" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Modifications />
               </ProtectedRoute>
             } />
-            */}
+            <Route path="/dashboard/modifications/:id" element={
+              <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+                <AvenantDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/ged/configuration" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <GedConfiguration />
