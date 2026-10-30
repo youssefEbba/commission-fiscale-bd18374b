@@ -733,7 +733,7 @@ const Transferts = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>{t("transferts:create.btn_cancel")}</Button>
-            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0}>
+            <Button onClick={handleCreate} disabled={creating || !form.operationsDouaneCloturees || montantAuto <= 0 || gedDepot.isLoading || !!gedDepot.error}>
               {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
               {resubmitTarget ? t("transferts:create.btn_resubmit") : t("transferts:create.btn_create")}
             </Button>
