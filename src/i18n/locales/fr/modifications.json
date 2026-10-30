@@ -111,6 +111,16 @@
         "solde_tva": "Solde TVA intérieure",
         "tva_import": "TVA d'importation restante"
       }
+    },
+    "pieces_obligatoires": {
+      "title": "Pièces obligatoires (paramétrage GED)",
+      "jointe": "Jointe",
+      "manquante": "Manquante",
+      "inconnu": "État inconnu",
+      "aucune_parametree": "Aucune pièce n'est paramétrée dans la GED pour les avenants.",
+      "aucune_obligatoire": "Aucune pièce n'est marquée obligatoire dans la GED pour les avenants.",
+      "warning_prise_en_charge": "Pièces obligatoires manquantes : {{list}}. Le serveur refusera la prise en charge tant qu'elles ne sont pas jointes.",
+      "rappel_deposant": "Joignez les pièces obligatoires manquantes : {{list}}. La DGTCP ne pourra pas prendre l'avenant en charge sans elles."
     }
   },
   "dialogs": {

@@ -2420,15 +2420,7 @@ export interface DocumentTransfertCreditDto {
   actif?: boolean;
 }
 
-export type TypeDocumentTransfert = "DEMANDE_MOTIVEE_TRANSFERT" | "DECLARATION_CLOTURE_DOUANE" | "JUSTIFICATIFS_CLOTURE_DOUANE";
-
-/**
- * Codes des types de documents Transfert de crédit.
- * Libellés résolus via `tTypeDocument(code)` côté UI.
- */
-export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
-  "DEMANDE_MOTIVEE_TRANSFERT", "DECLARATION_CLOTURE_DOUANE", "JUSTIFICATIFS_CLOTURE_DOUANE",
-] as const;
+// Pièces du transfert : paramétrées dans la GED (processus TRANSFERT_CREDIT), lues via `useGedPieces`.
 
 
 // TRANSFERT_STATUT_LABELS supprimée (orpheline, détectée en POLISH-1).
@@ -2480,7 +2472,7 @@ export const transfertCreditApi = {
    * Upload d'une pièce. `message` est obligatoire si la pièce est exigée
    * par un rejet temporaire OUVERT (traçabilité côté décisions).
    */
-  uploadDocument: (id: number, type: TypeDocumentTransfert, file: File, message?: string) => {
+  uploadDocument: (id: number, type: string, file: File, message?: string) => {
     const formData = new FormData();
     formData.append("file", file);
     if (message) formData.append("message", message);

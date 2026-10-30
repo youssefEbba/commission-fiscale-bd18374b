@@ -29,6 +29,19 @@ export const AVENANT_RECAP_TOLERANCE = 1;
 export const canDeposerAvenant = (certStatut: CertificatStatut | undefined | null, has: (p: string) => boolean) =>
   !!certStatut && CERTIFICAT_STATUTS_AVENANT.includes(certStatut) && has("modification.submit");
 
+/**
+ * Pièces obligatoires de la GED (`MODIFICATION_CI`, dépôt) avec leur état jointe / manquante.
+ * Une pièce est jointe si au moins une version active de ce code figure dans les documents de l'avenant.
+ * Indicatif : c'est le serveur qui refuse la prise en charge (400) tant qu'une pièce obligatoire manque.
+ */
+export function avenantPiecesObligatoires(
+  options: Array<{ code: string; label: string; obligatoire: boolean }>,
+  docs: Array<{ type: string; actif?: boolean }>,
+): Array<{ code: string; label: string; jointe: boolean }> {
+  const joints = new Set(docs.filter((d) => d.actif !== false).map((d) => d.type));
+  return options.filter((o) => o.obligatoire).map((o) => ({ code: o.code, label: o.label, jointe: joints.has(o.code) }));
+}
+
 export const canUploadAvenantPieces = (a: Pick<AvenantDto, "statut">, has: (p: string) => boolean) =>
   a.statut === "DEPOSE" && has("modification.document.upload");
 
