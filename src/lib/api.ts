@@ -719,6 +719,9 @@ export const conventionApi = {
 export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {
+  /** Avenant financier à l'origine de la demande (null pour une demande ordinaire). */
+  avenantId?: number | null;
+  avenantNumero?: string | null;
   /** Véhicules/équipements sous régime (plaques TT). null = non. */
   equipementsPresents?: boolean | null;
   /** Distinct de `equipementsPresents` : seule l'admission temporaire impose une réexportation. */
