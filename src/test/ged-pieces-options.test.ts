@@ -11,7 +11,7 @@ describe("pièces réclamables en rejet temporaire (GED)", () => {
     const opts = toGedPieceOptions([
       req({ id: 1, codeDocument: "DEMANDE_MOTIVEE_TRANSFERT", typeDocument: "ANCIEN", libelle: "Demande motivée signée" }),
     ]);
-    expect(opts).toEqual([{ code: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée signée" }]);
+    expect(opts).toEqual([{ code: "DEMANDE_MOTIVEE_TRANSFERT", label: "Demande motivée signée", obligatoire: true, typesAutorises: ["PDF"] }]);
   });
 
   it("ne propose qu'une fois une pièce paramétrée en double, dans l'ordre d'affichage", () => {
@@ -25,5 +25,18 @@ describe("pièces réclamables en rejet temporaire (GED)", () => {
 
   it("aucune pièce paramétrée : aucune pièce proposée (pas de liste écrite en dur)", () => {
     expect(toGedPieceOptions([])).toEqual([]);
+  });
+});
+
+describe("pièces de dépôt (GED) : obligatoire / facultative", () => {
+  it("expose l'obligation telle que paramétrée dans la GED, pièce facultative comprise", () => {
+    const opts = toGedPieceOptions([
+      req({ id: 1, codeDocument: "DEMANDE_MOTIVEE_TRANSFERT", obligatoire: true, ordreAffichage: 1 }),
+      req({ id: 2, codeDocument: "JUSTIFICATIFS_CLOTURE_DOUANE", obligatoire: false, ordreAffichage: 2 }),
+    ]);
+    expect(opts.map((o) => [o.code, o.obligatoire])).toEqual([
+      ["DEMANDE_MOTIVEE_TRANSFERT", true],
+      ["JUSTIFICATIFS_CLOTURE_DOUANE", false],
+    ]);
   });
 });

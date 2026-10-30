@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   avenantActions, avenantDepotErrors, buildApplicationRequest, buildCreateAvenantRequest,
-  canDeposerAvenant, canUploadAvenantPieces, checkAvenantRecap, previewSoldesApresAvenant,
+  avenantPiecesObligatoires, canDeposerAvenant, canUploadAvenantPieces, checkAvenantRecap, previewSoldesApresAvenant,
   type AvenantDepotForm, type AvenantRecapForm,
 } from "@/lib/avenants";
 
@@ -101,5 +101,23 @@ describe("récapitulatif d'application", () => {
     expect(cordon.consomme).toBe(80);
     expect(cordon.soldeApres).toBe(70);
     expect(previewSoldesApresAvenant(cert, recap({ montantCordon: "50" }))[0].insuffisant).toBe(true);
+  });
+});
+
+describe("pièces obligatoires d'un avenant (GED MODIFICATION_CI)", () => {
+  const options = [
+    { code: "AVENANT_SIGNE", label: "Avenant signé", obligatoire: true },
+    { code: "NOTE", label: "Note", obligatoire: false },
+    { code: "PV", label: "PV", obligatoire: true },
+  ];
+  it("ne liste que les pièces obligatoires et marque jointe celle qui a une version active", () => {
+    const res = avenantPiecesObligatoires(options, [{ type: "AVENANT_SIGNE" }, { type: "PV", actif: false }]);
+    expect(res).toEqual([
+      { code: "AVENANT_SIGNE", label: "Avenant signé", jointe: true },
+      { code: "PV", label: "PV", jointe: false },
+    ]);
+  });
+  it("une pièce facultative absente n'est jamais signalée manquante", () => {
+    expect(avenantPiecesObligatoires(options, []).map((p) => p.code)).not.toContain("NOTE");
   });
 });
