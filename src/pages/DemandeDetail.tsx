@@ -524,7 +524,7 @@ const DemandeDetail = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <EquipementsBanner present={selected.equipementsPresents} demandeId={selected.id} />
-        <AvenantOrigineBanner demandeId={selected.id} />
+        <AvenantOrigineBanner avenantId={selected.avenantId} avenantNumero={selected.avenantNumero} />
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={smartBack} aria-label={t("demandes:detail.back")}>
             <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
