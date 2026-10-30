@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
+import { useGedPieces, acceptFromFormats } from "@/hooks/useGedPieces";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
@@ -9,13 +10,13 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   transfertCreditApi, TransfertCreditDto, StatutTransfert,
   CreateTransfertCreditRequest,
-  TRANSFERT_DOCUMENT_TYPES, TypeDocumentTransfert, DocumentTransfertCreditDto,
+  DocumentTransfertCreditDto,
   certificatCreditApi, CertificatCreditDto,
   DecisionCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutTransfert, tTypeDocument, tRejetTempStatus } from "@/i18n/enums";
+import { tStatutTransfert, tRejetTempStatus } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +60,8 @@ const Transferts = () => {
   const navigate = useNavigate();
   const role = user?.role as AppRole;
   const { toast } = useToast();
+  // Pièces déposées par l'entreprise : paramétrage GED du processus TRANSFERT_CREDIT (ordre, libellé, obligatoire).
+  const gedDepot = useGedPieces("TRANSFERT_CREDIT", { depot: true });
   const [data, setData] = useState<TransfertCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -123,7 +126,8 @@ const Transferts = () => {
       const activeCertIds = new Set(
         data.filter(t => !TERMINAL_STATUTS.includes(t.statut)).map(t => t.certificatCreditId)
       );
-      setCertificats(certs.filter(c => c.statut === "OUVERT" && !activeCertIds.has(c.id)));
+      // Crédit éligible : OUVERT ou MODIFIE (avenant appliqué).
+      setCertificats(certs.filter(c => (c.statut === "OUVERT" || c.statut === "MODIFIE") && !activeCertIds.has(c.id)));
     } catch { /* ignore */ }
     setShowCreate(true);
   };
@@ -150,11 +154,12 @@ const Transferts = () => {
     if (!selectedCert || montantAuto <= 0) {
       toast({ title: t("common:error", { defaultValue: "Erreur" }), description: t("transferts:toasts.no_amount_err"), variant: "destructive" }); return;
     }
-    const missing = TRANSFERT_DOCUMENT_TYPES.filter(d => !createFiles[d]);
+    // Seules les pièces marquées obligatoires dans la GED bloquent ; une pièce facultative peut rester vide.
+    const missing = gedDepot.options.filter(o => o.obligatoire && !createFiles[o.code]);
     if (missing.length > 0) {
       toast({
         title: t("transferts:toasts.missing_pieces_title"),
-        description: t("transferts:toasts.missing_pieces", { list: missing.map(m => tTypeDocument(m)).join(", ") }),
+        description: t("transferts:toasts.missing_pieces", { list: missing.map(m => m.label).join(", ") }),
         variant: "destructive",
       });
       return;
@@ -167,13 +172,13 @@ const Transferts = () => {
         operationsDouaneCloturees: form.operationsDouaneCloturees,
       });
       const failures: string[] = [];
-      for (const d of TRANSFERT_DOCUMENT_TYPES) {
-        const file = createFiles[d];
+      for (const piece of gedDepot.options) {
+        const file = createFiles[piece.code];
         if (!file) continue;
-        try { await transfertCreditApi.uploadDocument(created.id, d, file); }
+        try { await transfertCreditApi.uploadDocument(created.id, piece.code, file); }
         catch (e: any) {
-          console.error(`[Transfert #${created.id}] Upload ${d} failed:`, e);
-          failures.push(`${tTypeDocument(d)} : ${e?.message || "—"}`);
+          console.error(`[Transfert #${created.id}] Upload ${piece.code} failed:`, e);
+          failures.push(`${piece.label} : ${e?.message || "—"}`);
         }
 
       }
@@ -263,7 +268,7 @@ const Transferts = () => {
   };
 
   const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
-    await transfertCreditApi.uploadDocument(dossierId, type as TypeDocumentTransfert, file);
+    await transfertCreditApi.uploadDocument(dossierId, type, file);
   };
 
   // File d'attente P7 : transferts dont c'est le tour de l'utilisateur (visablePourMoi côté backend).
@@ -515,14 +520,14 @@ const Transferts = () => {
                             </div>
                             {d.motifRejet && <p className="text-xs mt-2"><span className="text-muted-foreground">{t("transferts:rejet_temp.history.motif")} :</span> {d.motifRejet}</p>}
                             {d.documentsDemandes && d.documentsDemandes.length > 0 && (
-                              <p className="text-xs mt-1"><span className="text-muted-foreground">{t("transferts:rejet_temp.history.pieces_demandees")} :</span> {d.documentsDemandes.map(dt => tTypeDocument(dt)).join(", ")}</p>
+                              <p className="text-xs mt-1"><span className="text-muted-foreground">{t("transferts:rejet_temp.history.pieces_demandees")} :</span> {d.documentsDemandes.map(dt => gedDepot.labelOf(dt)).join(", ")}</p>
                             )}
                             {d.rejetTempResponses && d.rejetTempResponses.length > 0 && (
                               <div className="mt-2 space-y-1 ps-2 border-s-2 border-border">
                                 {d.rejetTempResponses.map((r) => (
                                   <div key={r.id} className="text-xs">
                                     <span className="font-medium">{r.auteurNom || r.utilisateurNom || "—"} :</span> {r.message}
-                                    {r.documentType && <span className="text-muted-foreground"> ({tTypeDocument(r.documentType)})</span>}
+                                    {r.documentType && <span className="text-muted-foreground"> ({gedDepot.labelOf(r.documentType)})</span>}
                                   </div>
                                 ))}
                               </div>
@@ -695,16 +700,31 @@ const Transferts = () => {
                 <Label className="text-sm font-semibold">{t("transferts:create.pieces_title")}</Label>
                 <p className="text-xs text-muted-foreground mt-1">{t("transferts:create.pieces_help")}</p>
               </div>
-              {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                <div key={d} className="space-y-1">
-                  <Label className="text-xs">{tTypeDocument(d)} <span className="text-destructive">*</span></Label>
+              {gedDepot.isLoading ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("common:documents.ged_pieces.loading")}
+                </p>
+              ) : gedDepot.error ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-destructive">{t("common:documents.ged_pieces.error", { message: gedDepot.error.message })}</p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => gedDepot.refetch()}>
+                    {t("common:documents.ged_pieces.retry")}
+                  </Button>
+                </div>
+              ) : gedDepot.options.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("common:documents.ged_pieces.empty")}</p>
+              ) : gedDepot.options.map((piece) => (
+                <div key={piece.code} className="space-y-1">
+                  <Label className="text-xs">
+                    {piece.label} {piece.obligatoire && <span className="text-destructive">*</span>}
+                  </Label>
                   <Input
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => setCreateFiles({ ...createFiles, [d]: e.target.files?.[0] || null })}
+                    accept={acceptFromFormats(piece.typesAutorises)}
+                    onChange={(e) => setCreateFiles({ ...createFiles, [piece.code]: e.target.files?.[0] || null })}
                   />
-                  {createFiles[d] && (
-                    <p className="text-xs text-emerald-700 truncate">{createFiles[d]!.name}</p>
+                  {createFiles[piece.code] && (
+                    <p className="text-xs text-emerald-700 truncate">{createFiles[piece.code]!.name}</p>
                   )}
                 </div>
               ))}
@@ -727,7 +747,7 @@ const Transferts = () => {
         onOpenChange={() => setDocDialog(null)}
         title={t("transferts:documents.dialog_title", { id: docDialog?.id })}
         dossierId={docDialog?.id ?? null}
-        documentTypes={TRANSFERT_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
+        documentTypes={gedDepot.options.map(o => ({ value: o.code, label: o.label }))}
         documents={docs}
         loading={docsLoading}
         canUpload={docDialog ? canUploadDocs(docDialog) : false}
