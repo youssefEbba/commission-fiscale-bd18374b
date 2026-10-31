@@ -1,4 +1,6 @@
 import { API_BASE } from "./apiConfig";
+import { parseApiErrorBody, displayErrorText } from "./apiErrorText";
+import { endSession, clearStoredSession } from "./session";
 import { buildCorrectionDecisionBody, type CorrectionMontants } from "./correctionMontants";
 
 interface RequestOptions {
@@ -118,46 +120,30 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   });
 
   if (!res.ok) {
-    // Try to parse structured error response
+    // Erreur structurée : seul le message (et la liste de champs/pièces) est conservé,
+    // jamais une page HTML ni une pile d'appels.
     const text = await res.text().catch(() => "");
-    let apiError: ApiError | null = null;
-    if (text) {
-      try {
-        const json = JSON.parse(text);
-        if (json.code && json.message) {
-          apiError = json as ApiError;
-        } else {
-          // Legacy format: build a pseudo ApiError
-          const msg = json.message || json.error || `Erreur ${res.status}`;
-          apiError = { status: res.status, code: "UNKNOWN", message: msg };
-        }
-      } catch {
-        if (text.length < 200 && !text.startsWith("<")) {
-          apiError = { status: res.status, code: "UNKNOWN", message: text };
-        }
-      }
-    }
-    if (!apiError) {
-      apiError = { status: res.status, code: "UNKNOWN", message: `Erreur ${res.status}` };
-    }
+    const apiError: ApiError = parseApiErrorBody(res.status, text);
 
-    // Auth redirect on 401 (avoid spurious full-page refreshes)
+    // 401 : fin de session (jeton/utilisateur effacés, WebSocket fermés, retour à /login)
     if (res.status === 401 && !options.skipAuthRedirect) {
       const hadToken = !!localStorage.getItem("auth_token");
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-      // Only redirect if we actually had a session and are not already on /login
-      if (hadToken && typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
-      throw new ApiRequestError(apiError);
+      if (hadToken) endSession({ redirect: true });
+      else clearStoredSession();
     }
 
     throw new ApiRequestError(apiError);
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const body = await res.text();
+  if (!body) return undefined as T;
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    // Réponse non JSON (page HTML d'un proxy…) : ne jamais l'afficher.
+    throw new ApiRequestError({ status: res.status, code: "INVALID_RESPONSE", message: "Réponse inattendue du serveur." });
+  }
 }
 
 // Auth
