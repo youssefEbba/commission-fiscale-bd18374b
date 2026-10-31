@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { notificationApi, NotificationDto, WS_BASE } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { registerSessionCloser } from "@/lib/session";
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -82,6 +83,8 @@ export function useNotifications() {
 
     client.activate();
     clientRef.current = client;
+    // Fermé immédiatement à la déconnexion ou sur une réponse 401.
+    const unregister = registerSessionCloser(() => { void client.deactivate(); });
 
     // Polling fallback: refresh every 30s in case WS is down
     const pollInterval = setInterval(() => {
@@ -91,6 +94,7 @@ export function useNotifications() {
     return () => {
       cancelled = true;
       clearInterval(pollInterval);
+      unregister();
       client.deactivate();
       clientRef.current = null;
     };
