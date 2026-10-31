@@ -51,3 +51,11 @@
 - [x] Carte « Avenants » sur la fiche crédit ; bandeau sur la demande de correction issue d'un avenant
 - [x] Types, FR/AR, tests, typecheck
 - [ ] Contrôle authentifié réel — bloqué : aucune session de test
+
+## Revue de sécurité + décision de la commission (avenants)
+- [x] Bibliothèques : `npm audit fix`, montées mineures (vite, vitest, postcss, react-router-dom, dompurify), xlsx officiel SheetJS 0.20.3
+- [x] Injection HTML : DOMPurify (Simulation), `Trans` (UtilisationDetail)
+- [x] Connexion 429, mot de passe oublié sans `exists`, messages d'erreur nettoyés
+- [x] Fin de session (déconnexion / 401) : stockage effacé, WebSocket fermés, retour /login ; sourcemap désactivé
+- [x] Avenant : décision de la commission réservée Président/admin, pièces du déposant au seul déposant
+- [ ] Failles restantes sans correctif mineur (vitest/vite/tinypool en outils de dev, zod v4, react-router v7) — en attente de décision de montée majeure
