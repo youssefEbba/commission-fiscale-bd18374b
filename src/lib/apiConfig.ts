@@ -3,10 +3,11 @@
 // ================================
 
 /** Backend principal (Spring Boot) */
-export const API_BASE = "/api/https://stateless-dryadic-marylouise.ngrok-free.dev";
+/** Backend principal (Spring Boot) */
+export const API_BASE = "https://stateless-dryadic-marylouise.ngrok-free.dev/api";
 
 /** WebSocket backend */
-export const WS_BASE = "/ws/https://stateless-dryadic-marylouise.ngrok-free.dev";
+export const WS_BASE = "wss://stateless-dryadic-marylouise.ngrok-free.dev/ws";
 
 /** Service IA (Python / FastAPI) */
 export const AI_SERVICE_BASE = "http://localhost:3000";
