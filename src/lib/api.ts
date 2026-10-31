@@ -220,8 +220,6 @@ export const ROLE_LABELS: Record<string, string> = {
 export const authApi = {
   login: (data: LoginRequest) => apiFetch<LoginResponse>("/auth/login", { method: "POST", body: data }),
   me: () => apiFetch<Record<string, unknown>>("/auth/me"),
-  passwordResetCheckEmail: (email: string) =>
-    apiFetch<{ exists: boolean }>("/auth/password-reset/check-email", { method: "POST", body: { email } }),
   passwordResetRequest: (email: string) =>
     apiFetch<{ message: string }>("/auth/password-reset/request", { method: "POST", body: { email } }),
 };
