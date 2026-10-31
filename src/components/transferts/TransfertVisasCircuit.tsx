@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { transfertCreditApi, TransfertVisaEtatDto } from "@/lib/api";
+import { transfertCreditApi, TransfertVisaEtatDto, formatApiErrorMessage } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/i18n/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +38,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
       setRows([...data].sort((a, b) => a.rang - b.rang));
     } catch (e: any) {
       setRows([]);
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setLoading(false); }
   }, [transfertId, t, toast]);
 
@@ -56,7 +56,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
       await load();
       onChanged();
     } catch (e: any) {
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActing(false); }
   };
 

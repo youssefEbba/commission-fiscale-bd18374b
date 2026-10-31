@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
+import DOMPurify from "dompurify";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
@@ -718,7 +719,7 @@ function FullExcelPreview({ data }: { data: ExcelPreviewData }) {
             ))}
           </div>
         )}
-        <div className="overflow-auto max-h-[70vh] excel-native-preview" dangerouslySetInnerHTML={{ __html: htmlString }} />
+        <div className="overflow-auto max-h-[70vh] excel-native-preview" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlString) }} />
       </CardContent>
     </Card>
   );

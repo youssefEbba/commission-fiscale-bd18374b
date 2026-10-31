@@ -28,6 +28,10 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
+  build: {
+    // Aucune carte de source publiée en production.
+    sourcemap: false,
+  },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {

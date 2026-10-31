@@ -125,7 +125,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     return () => { alive = false; };
   }, [isPresident, location.pathname]);
 
-  const handleLogout = () => { logout(); navigate("/"); };
+  const handleLogout = () => { logout(); navigate("/login"); };
 
   const handleRelease = async () => {
     setReleasing(true);

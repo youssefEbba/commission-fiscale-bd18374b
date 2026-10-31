@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
-import { API_BASE } from "@/lib/apiConfig";
+import { apiFetch } from "@/lib/api";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
@@ -186,27 +186,12 @@ const Demandes = () => {
     setEntrepriseDialogOpen(true);
     setEntrepriseLoading(true);
     try {
-      const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/entreprises/${entrepriseId}`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      });
-      if (!res.ok) throw new Error("Erreur");
-      setEntrepriseDetail(await res.json());
+      const res = await apiFetch<any>(`/entreprises/${entrepriseId}`);
+      setEntrepriseDetail(res);
     } catch {
       try {
-        const token = localStorage.getItem("auth_token");
-        const res = await fetch(`${API_BASE}/entreprises`, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        });
-        const list = await res.json();
+        const res = await apiFetch<any>(`/entreprises`);
+        const list = res;
         const found = list.find((e: any) => e.id === entrepriseId);
         setEntrepriseDetail(found || null);
       } catch {

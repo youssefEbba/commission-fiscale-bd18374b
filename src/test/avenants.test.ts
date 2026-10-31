@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   avenantActions, avenantDepotErrors, buildApplicationRequest, buildCreateAvenantRequest,
   avenantPiecesObligatoires, canDeposerAvenant, canUploadAvenantPieces, checkAvenantRecap, previewSoldesApresAvenant,
-  type AvenantDepotForm, type AvenantRecapForm,
-} from "@/lib/avenants";
+  type AvenantDepotForm, type AvenantRecapForm, canUploadAvenantDecision, avenantPiecesCommission } from "@/lib/avenants";
 
 const perms = (...p: string[]) => (x: string) => p.includes(x);
 
@@ -41,10 +40,41 @@ describe("dépôt d'un avenant", () => {
     expect(avenantDepotErrors(depot({ dateSignature: "2026-11-01" }), "2026-10-30")).toContain("date_signature_future");
   });
 
-  it("n'autorise les pièces que tant que l'avenant est DEPOSE", () => {
-    const has = perms("modification.document.upload");
+  it("n'autorise les pièces du déposant que tant que l'avenant est DEPOSE", () => {
+    const has = perms("modification.document.upload", "modification.submit");
     expect(canUploadAvenantPieces({ statut: "DEPOSE" }, has)).toBe(true);
     expect(canUploadAvenantPieces({ statut: "EN_COURS_TRAITEMENT" }, has)).toBe(false);
+  });
+
+  it("ne propose pas le dépôt des pièces du déposant à une direction", () => {
+    const direction = perms("modification.document.upload", "modification.dgtcp.analyze");
+    expect(canUploadAvenantPieces({ statut: "DEPOSE" }, direction)).toBe(false);
+  });
+});
+
+describe("décision de la commission", () => {
+  it("Président : joignable en cours de traitement ou adopté seulement", () => {
+    const president = perms("modification.president.validate");
+    expect(canUploadAvenantDecision({ statut: "EN_COURS_TRAITEMENT" }, president)).toBe(true);
+    expect(canUploadAvenantDecision({ statut: "ADOPTE" }, president)).toBe(true);
+    expect(canUploadAvenantDecision({ statut: "DEPOSE" }, president)).toBe(false);
+    expect(canUploadAvenantDecision({ statut: "APPLIQUE" }, president)).toBe(false);
+  });
+
+  it("administrateur : même règle ; déposant et DGTCP exclus", () => {
+    expect(canUploadAvenantDecision({ statut: "ADOPTE" }, perms("modification.admin_override"))).toBe(true);
+    expect(canUploadAvenantDecision({ statut: "ADOPTE" }, perms("modification.submit", "modification.document.upload"))).toBe(false);
+    expect(canUploadAvenantDecision({ statut: "ADOPTE" }, perms("modification.dgtcp.analyze"))).toBe(false);
+  });
+
+  it("pièces de la Commission = toutes les pièces actives moins celles du dépôt", () => {
+    const toutes = [
+      { code: "AVENANT_SIGNE", label: "Avenant signé", obligatoire: true },
+      { code: "DECISION_COMMISSION", label: "Décision de la commission", obligatoire: true },
+      { code: "ANCIENNE", label: "Pièce désactivée", obligatoire: true, actif: false },
+    ];
+    const depot = [{ code: "AVENANT_SIGNE" }];
+    expect(avenantPiecesCommission(toutes, depot).map((o) => o.code)).toEqual(["DECISION_COMMISSION"]);
   });
 });
 
