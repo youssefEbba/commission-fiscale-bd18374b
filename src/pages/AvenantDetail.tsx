@@ -10,8 +10,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import {
   avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto,
-  demandeCorrectionApi, DemandeCorrectionDto,
-} from "@/lib/api";
+  demandeCorrectionApi, DemandeCorrectionDto,, formatApiErrorMessage } from "@/lib/api";
 import { avenantActions, avenantPiecesObligatoires, canUploadAvenantPieces } from "@/lib/avenants";
 import { tStatutDemande, tTypeAvenant } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
@@ -97,7 +96,7 @@ const AvenantDetail = () => {
   }, [avenant, canUpload, searchParams, setSearchParams]);
 
   const okToast = (description: string) => toast({ title: t("common:success", { defaultValue: "Succès" }), description });
-  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
 
   if (loading) {
     return (

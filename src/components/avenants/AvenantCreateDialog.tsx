@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto, TypeAvenant } from "@/lib/api";
+import { avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto, TypeAvenant, formatApiErrorMessage } from "@/lib/api";
 import {
   AvenantDepotForm, avenantDepotErrors, buildCreateAvenantRequest,
   CERTIFICAT_STATUTS_AVENANT, TYPES_AVENANT,
@@ -76,7 +76,7 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, on
       onOpenChange(false);
       onCreated(created);
     } catch (e: any) {
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setBusy(false);
     }

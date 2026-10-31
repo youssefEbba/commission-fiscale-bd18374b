@@ -12,8 +12,7 @@ import {
   CreateTransfertCreditRequest,
   DocumentTransfertCreditDto,
   certificatCreditApi, CertificatCreditDto,
-  DecisionCorrectionDto,
-} from "@/lib/api";
+  DecisionCorrectionDto,, formatApiErrorMessage } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutTransfert, tRejetTempStatus } from "@/i18n/enums";
@@ -94,7 +93,7 @@ const Transferts = () => {
   const [docs, setDocs] = useState<DocumentTransfertCreditDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
-  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
   const okToast = (description: string, title?: string) => toast({ title: title ?? t("common:success", { defaultValue: "Succès" }), description });
 
   const fetchData = async () => {
@@ -298,7 +297,7 @@ const Transferts = () => {
       setAViserIds((prev) => { const n = new Set(prev); n.delete(tr.id); return n; });
       fetchData();
     } catch (e: any) {
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 

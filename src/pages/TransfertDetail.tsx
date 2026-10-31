@@ -9,8 +9,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   transfertCreditApi, TransfertCreditDto, StatutTransfert,
   DocumentTransfertCreditDto,
-  DecisionCorrectionDto,
-} from "@/lib/api";
+  DecisionCorrectionDto,, formatApiErrorMessage } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutTransfert, tRejetTempStatus } from "@/i18n/enums";
@@ -87,7 +86,7 @@ const TransfertDetail = () => {
 
   const [cancelOpen, setCancelOpen] = useState(false);
 
-  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
   const okToast = (description: string) => toast({ title: t("common:success", { defaultValue: "Succès" }), description });
 
   const loadAll = async () => {
