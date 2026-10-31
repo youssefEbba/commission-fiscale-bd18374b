@@ -2955,9 +2955,9 @@ async function downloadReportingExport(format: ReportingExportFormat, params?: R
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}/reporting/export.${format}${query}`, { headers });
   if (!res.ok) {
-    let message = `Erreur ${res.status}`;
-    try { const j = JSON.parse(await res.text()); if (j?.message) message = j.message; } catch { /* noop */ }
-    throw new ApiRequestError({ status: res.status, code: "UNKNOWN", message });
+    const text = await res.text().catch(() => "");
+    if (res.status === 401 && token) endSession({ redirect: true });
+    throw new ApiRequestError(parseApiErrorBody(res.status, text));
   }
   const cd = res.headers.get("Content-Disposition") || "";
   const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
