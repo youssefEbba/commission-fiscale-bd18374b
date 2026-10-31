@@ -9,7 +9,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   transfertCreditApi, TransfertCreditDto, StatutTransfert,
   DocumentTransfertCreditDto,
-  DecisionCorrectionDto,, formatApiErrorMessage } from "@/lib/api";
+  DecisionCorrectionDto, formatApiErrorMessage } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutTransfert, tRejetTempStatus } from "@/i18n/enums";

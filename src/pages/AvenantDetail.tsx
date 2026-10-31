@@ -10,7 +10,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import {
   avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto,
-  demandeCorrectionApi, DemandeCorrectionDto,, formatApiErrorMessage } from "@/lib/api";
+  demandeCorrectionApi, DemandeCorrectionDto, formatApiErrorMessage } from "@/lib/api";
 import { avenantActions, avenantPiecesObligatoires, canUploadAvenantPieces } from "@/lib/avenants";
 import { tStatutDemande, tTypeAvenant } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
