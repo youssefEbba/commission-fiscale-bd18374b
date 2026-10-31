@@ -73,7 +73,7 @@
       "reset": "إعادة تعيين",
       "search": "بحث",
       "entreprise": "المؤسسة",
-      "entreprise_placeholder": "الاسم التجاري أو الرقم الضريبي"
+      "entreprise_placeholder": "اسم المؤسسة أو الرقم الضريبي"
     },
     "pagination": {
       "range": "{{from}}–{{to}} من أصل {{total}} اعتماد",

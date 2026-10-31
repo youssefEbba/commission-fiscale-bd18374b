@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import type { CertificatCreditDto, EntrepriseDto, MarcheDto, ConventionDto, AutoriteContractanteDto } from "@/lib/api";
 import emblem from "@/assets/logo-official.png";
@@ -42,10 +43,10 @@ const inlineField = (
   y: number,
   endX: number,
 ): number => {
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text(label, x, y);
   const lw = doc.getTextWidth(label);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   const valueX = x + lw + 2;
   const available = Math.max(10, endX - valueX);
   const v = value ? safe(String(value)) : "";
@@ -80,7 +81,7 @@ const section = (
   // Étiquette
   doc.setFillColor(255, 255, 255);
   doc.rect(x + 3, y - 2.5, doc.getTextWidth(title) + 4, 5, "F");
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(10);
   doc.setTextColor(0, 102, 51);
   doc.text(title, x + 5, y + 1.2);
@@ -108,7 +109,7 @@ export async function generateCertificatToSignPdf(
   opts: PdfOutputOptions = {},
 ): Promise<Blob> {
   const { entreprise, marche, convention, autorite } = ctx;
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const doc = applyOfficialFont(new jsPDF({ unit: "mm", format: "a4" }));
   const pageW = doc.internal.pageSize.getWidth();
   const M = 12;
   const W = pageW - M * 2;
@@ -121,15 +122,15 @@ export async function generateCertificatToSignPdf(
   }
 
   // ---------- En-tête ----------
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setTextColor(0, 102, 51);
   doc.setFontSize(10);
   doc.text("République Islamique de Mauritanie", pageW / 2, 12, { align: "center" });
   doc.setFontSize(9);
-  doc.setFont("helvetica", "italic");
+  doc.setFont(PDF_FONT, "italic");
   doc.text("Honneur — Fraternité — Justice", pageW / 2, 17, { align: "center" });
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(12);
   doc.text("MINISTÈRE DES FINANCES", pageW / 2, 24, { align: "center" });
@@ -149,10 +150,10 @@ export async function generateCertificatToSignPdf(
   doc.setDrawColor(0, 0, 0);
 
   // ---------- N° ----------
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(11);
   doc.text("N°", pageW - M - 60, 54);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   const numero = c.numero || "";
   const refLisible = c.reference || c.numero || "";
   doc.text(refLisible, pageW - M - 50, 54);
@@ -169,9 +170,9 @@ export async function generateCertificatToSignPdf(
 
   const nifRaw = entreprise?.nifAffiche || entreprise?.nif || (c as any).entrepriseNif || "";
   const nifChars = String(nifRaw).padEnd(10, " ").slice(0, 10);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text("NIF", M + 4, yy);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   for (let i = 0; i < 10; i++) {
     const bx = M + 12 + i * 8;
     doc.line(bx, yy + 1, bx + 6, yy + 1);
@@ -182,7 +183,7 @@ export async function generateCertificatToSignPdf(
   yy += 7;
   yy += inlineField(
     doc,
-    "NOM et PRÉNOM OU RAISON SOCIALE",
+    "NOM et PRÉNOM OU NOM DE L'ENTREPRISE",
     entreprise?.raisonSociale || c.entrepriseRaisonSociale || c.entrepriseNom || "",
     M + 4,
     yy,
@@ -191,18 +192,18 @@ export async function generateCertificatToSignPdf(
   yy += 7;
   yy += inlineField(doc, "ADRESSE : SIÈGE", entreprise?.adresse || "", M + 4, yy, M + W - 4);
   yy += 7;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text("BP", M + 4, yy);
   doc.line(M + 10, yy + 0.8, M + 40, yy + 0.8);
   doc.text("TÉL", M + 44, yy);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   if (entreprise?.telephone) doc.text(String(entreprise.telephone), M + 53, yy);
   doc.line(M + 52, yy + 0.8, M + 100, yy + 0.8);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text("FAX", M + 104, yy);
   doc.line(M + 112, yy + 0.8, M + 140, yy + 0.8);
   doc.text("E-mail", M + 144, yy);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   if (entreprise?.email) doc.text(String(entreprise.email), M + 159, yy);
   doc.line(M + 158, yy + 0.8, M + W - 4, yy + 0.8);
 
@@ -248,7 +249,7 @@ export async function generateCertificatToSignPdf(
     M + W - 4,
   );
   yy += 7;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.text("ORGANISME DE FINANCEMENT (NOM, ADRESSE ET TÉLÉPHONE)", M + 4, yy);
   yy += 7;
   yy += inlineField(doc, "NOM", convention?.bailleurNom || convention?.bailleur || "", M + 4, yy, M + W - 4);
@@ -269,7 +270,7 @@ export async function generateCertificatToSignPdf(
   section(doc, "III – CERTIFICAT", M, y, W, h3);
   yy = y + 8;
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.text(
     "Dans le cadre de l'exonération du présent marché, l'entreprise désignée ci-dessus dispose :",
     M + 4,
@@ -299,14 +300,17 @@ export async function generateCertificatToSignPdf(
   doc.text("•", M + 4, yy);
   inlineField(doc, "TOTAL du crédit d'impôt", fmtMontant(totalNum), M + 8, yy, M + W - 4);
   yy += 9;
-  doc.setFont("helvetica", "normal");
-  doc.text("Ces crédits sont disponibles à compter du", M + 4, yy);
-  doc.text(fmtDate(c.dateEmission) || "", M + 62, yy);
-  doc.line(M + 62, yy + 0.8, M + W - 60, yy + 0.8);
+  doc.setFont(PDF_FONT, "normal");
+  // Valeur placée après la largeur réelle du libellé (dépend de la police).
+  const dateLine = (label: string, value: string, minOffset: number) => {
+    const vx = Math.max(M + minOffset, M + 4 + doc.getTextWidth(label) + 2);
+    doc.text(label, M + 4, yy);
+    doc.text(value, vx, yy);
+    doc.line(vx, yy + 0.8, M + W - 60, yy + 0.8);
+  };
+  dateLine("Ces crédits sont disponibles à compter du", fmtDate(c.dateEmission) || "", 62);
   yy += 7;
-  doc.text("Date de validité :", M + 4, yy);
-  doc.text(fmtDate(c.dateValidite) || "", M + 35, yy);
-  doc.line(M + 35, yy + 0.8, M + W - 60, yy + 0.8);
+  dateLine("Date de validité :", fmtDate(c.dateValidite) || "", 35);
 
   // ---------- QR code de vérification (code = numéro officiel) ----------
   {
@@ -318,7 +322,7 @@ export async function generateCertificatToSignPdf(
 
   // ---------- Signature ----------
   const today = new Date().toLocaleDateString("fr-FR");
-  doc.setFont("helvetica", "bold");
+  doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(10);
   doc.text(`À Nouakchott, le ${today}`, pageW / 2, y, { align: "center" });
   y += 6;
@@ -338,7 +342,7 @@ export async function generateCertificatToSignPdf(
   } catch {
     y += cachet ? 25 : 22;
   }
-  doc.setFont("helvetica", "normal");
+  doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(9);
   doc.text("(Signature et cachet)", pageW / 2, y, { align: "center" });
 

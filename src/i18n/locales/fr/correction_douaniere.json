@@ -152,7 +152,7 @@
     },
     "entreprise": {
       "title": "Informations de l'entreprise",
-      "raison": "Raison sociale",
+      "raison": "Nom de l'entreprise",
       "nif": "NIF",
       "adresse": "Adresse",
       "situation": "Situation fiscale",

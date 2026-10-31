@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Loader2, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
@@ -106,13 +107,14 @@ export default function EntiteReferentielPage<T extends { id?: number }>(p: Prop
             : filtered.length === 0 ? <p className="text-center text-sm text-muted-foreground py-12">{t("entites.empty")}</p>
             : (
               <Table>
-                <TableHeader><TableRow>
+                <TableHeader><TableRow><RowNumberHead />
                   {p.columns.map((c) => <TableHead key={c}>{labelOf(c)}</TableHead>)}
                   {hasActions && <TableHead className="w-[80px] text-end">{t("actions.actions")}</TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
-                  {filtered.map((it) => (
+                  {filtered.map((it, rowIdx) => (
                     <ClickableTableRow key={it.id} to={p.detailHref(it)}>
+                      <RowNumberCell n={rowIdx + 1} />
                       {p.columns.map((c, i) => (
                         <TableCell key={c} className={i === 0 ? "font-medium" : ""}>
                           {i === 0

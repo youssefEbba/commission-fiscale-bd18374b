@@ -7,6 +7,7 @@ import { PDFDocument } from "pdf-lib";
 import { toast as sonnerToast } from "sonner";
 import i18nInstance from "@/i18n";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
+import { trackDocumentTask, presentBlob } from "@/lib/openDocument";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
@@ -106,6 +107,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [groupements, setGroupements] = useState<GroupementDto[]>([]);
   // Intitulé libre du marché (Phase A — remplace la création de marché dans le wizard de correction).
   const [intituleMarche, setIntituleMarche, clearIntituleMarche] = usePersistedState<string>("demande:intituleMarche", "");
+  // Référence de l'appel d'offres : facultative, 100 caractères max.
+  const [referenceAppelOffre, setReferenceAppelOffre] = usePersistedState<string>("demande:referenceAppelOffre", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
   const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
   const [loadingData, setLoadingData] = useState(false);
@@ -339,6 +342,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setConventionId(editingDemande.conventionId ? String(editingDemande.conventionId) : "");
     setMarcheId(editingDemande.marcheId ? String(editingDemande.marcheId) : "");
     setIntituleMarche(editingDemande.intituleMarche || editingDemande.marcheIntitule || "");
+    setReferenceAppelOffre(editingDemande.referenceAppelOffre || "");
     setEquipementsPresents(!!editingDemande.equipementsPresents);
     setAdmissionTemporaire(editingDemande.admissionTemporaire ?? null);
     const mf = editingDemande.modeleFiscal;
@@ -705,6 +709,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         marcheId: marcheId && marcheId !== "pending" ? Number(marcheId) : undefined,
         // Phase A : intitulé libre + enveloppes crédit (routing dynamique des visas côté back).
         intituleMarche: intituleMarche?.trim() || selectedMarche?.intitule || undefined,
+        referenceAppelOffre: referenceAppelOffre.trim() || null,
         creditExterieur: Number(creditExterieur) || 0,
         creditInterieur: Number(creditInterieur) || 0,
         equipementsPresents: equipementsDeclares,
@@ -791,7 +796,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
         const keys = [
-          "demande:entrepriseId", "demande:groupementId", "demande:titulaireType", "demande:conventionId", "demande:marcheId", "demande:intituleMarche",
+          "demande:entrepriseId", "demande:groupementId", "demande:titulaireType", "demande:conventionId", "demande:marcheId", "demande:intituleMarche", "demande:referenceAppelOffre",
           "demande:typeProjet", "demande:refDossier",
           "demande:importations", "demande:fiscalite",
           "demande:dqeNumero", "demande:dqeProjet", "demande:dqeLot",
@@ -1314,6 +1319,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         {t("demandes:wizard.fields.intitule_marche_hint")}
                       </p>
                     </div>
+                    <div className="space-y-1 mt-2">
+                      <Label className="text-sm" htmlFor="reference-appel-offre">
+                        {t("demandes:wizard.fields.reference_appel_offre")}
+                        <span className="text-muted-foreground text-xs ms-1">{t("demandes:wizard.fields.optional")}</span>
+                      </Label>
+                      <Input
+                        id="reference-appel-offre"
+                        value={referenceAppelOffre}
+                        maxLength={100}
+                        onChange={(e) => setReferenceAppelOffre(e.target.value.slice(0, 100))}
+                        placeholder={t("demandes:wizard.fields.reference_appel_offre_placeholder")}
+                      />
+                      <p className="text-xs text-muted-foreground text-end">{referenceAppelOffre.length}/100</p>
+                    </div>
                   </div>
                 </div>
 
@@ -1828,14 +1847,13 @@ async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: strin
   const tr = (k: string, o?: Record<string, unknown>) => i18nInstance.t(`demandes:recu.${k}`, o) as string;
   const numero = demande.reference || demande.numero || `#${demande.id}`;
   try {
-    const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
-    const blob = generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
     const name = recuDepotFileName(demande);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
+    await trackDocumentTask(`recu-depot:${demande.id}:issue`, "generate", name, async () => {
+      const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
+      const blob = await generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
+      presentBlob(blob, name, "download");
+      await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
+    });
     sonnerToast.success(tr("toast_ok"));
   } catch (e) {
     console.warn("Reçu de dépôt non enregistré :", e);

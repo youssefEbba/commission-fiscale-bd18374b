@@ -1,4 +1,6 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import AvenantOrigineBanner from "@/components/avenants/AvenantOrigineBanner";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -42,8 +44,11 @@ import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
 import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
 import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
-import { openDocument, downloadDocument } from "@/lib/openDocument";
+import { openDocument, downloadDocument, trackDocumentTask, presentBlob } from "@/lib/openDocument";
+import { DocumentButton } from "@/components/documents/DocumentButton";
 
+
+const CORRECTED_OFFER_TYPES = ["OFFRE_FISCALE_CORRIGEE", "OFFRE_CORRIGEE", "CREDIT_INTERIEUR"];
 
 const STATUT_COLORS: Record<DemandeStatut, string> = {
   BROUILLON: "bg-slate-100 text-slate-700",
@@ -97,29 +102,6 @@ function getDocFileUrl(doc: DocumentDto): string {
   return "";
 }
 
-async function openDocInNewTab(url: string) {
-  const token = localStorage.getItem("auth_token");
-  const res = await fetch(url, {
-    headers: { Authorization: token ? `Bearer ${token}` : "", "ngrok-skip-browser-warning": "true" },
-  });
-  if (!res.ok) throw new Error("open failed");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  window.open(objectUrl, "_blank");
-}
-
-async function downloadDocAuthenticated(url: string, filename: string) {
-  const token = localStorage.getItem("auth_token");
-  const res = await fetch(url, {
-    headers: { Authorization: token ? `Bearer ${token}` : "", "ngrok-skip-browser-warning": "true" },
-  });
-  if (!res.ok) throw new Error("download failed");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl; a.download = filename; a.click();
-  URL.revokeObjectURL(objectUrl);
-}
 
 const DemandeDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -135,7 +117,7 @@ const DemandeDetail = () => {
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
-  const [recuBusy, setRecuBusy] = useState(false);
+  const [recuBusy, setRecuBusy] = useState<false | "open" | "download">(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
@@ -360,13 +342,16 @@ const DemandeDetail = () => {
   const handleGenerateAdoptionLetter = async () => {
     if (!selected) return;
     try {
-      const blob = await generateAdoptionLetterPdf(selected, {
-        entreprise: entrepriseDetail,
-        marche: marcheDetail,
-        convention: conventionDetail,
-      });
       const ref = selected.reference || selected.numero || String(selected.id);
-      downloadBlob(blob, `lettre-adoption-${ref}.pdf`);
+      const fileName = `lettre-adoption-${ref}.pdf`;
+      await trackDocumentTask(`generate:adoption:${selected.id}`, "generate", fileName, async () => {
+        const blob = await generateAdoptionLetterPdf(selected, {
+          entreprise: entrepriseDetail,
+          marche: marcheDetail,
+          convention: conventionDetail,
+        });
+        downloadBlob(blob, fileName);
+      });
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
     } catch (e: any) {
       toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
@@ -489,26 +474,30 @@ const DemandeDetail = () => {
   // Reçu de dépôt : toujours proposé à l'autorité contractante (y compris en relais) dès que la demande est déposée.
   const canSeeRecu = hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP"]) && selected.statut !== "BROUILLON";
   const docCode = (d: DocumentDto) => ((d as any).codeDocument ?? d.type) as string;
+  // Offre corrigée : visible des membres de la Commission dès son dépôt, avant l'adoption.
+  // L'autorité contractante et l'entreprise ne la voient qu'après l'adoption (le serveur ne la leur renvoie pas avant).
+  const isAdoptedForDocs = selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE";
+  const isCommissionViewer = hasRole(["DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"]);
+  const decisionDocSlots: string[] = isAdoptedForDocs
+    ? ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"]
+    : isCommissionViewer
+      ? CORRECTED_OFFER_TYPES.filter(tp => docs.some(d => d.type === tp || docCode(d) === tp))
+      : [];
   const recuDoc = [...docs.filter(d => docCode(d) === "RECU_DEPOT")]
     .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
   const handleRecu = async (mode: "open" | "download") => {
-    setRecuBusy(true);
+    setRecuBusy(mode);
     try {
       if (recuDoc) {
         await (mode === "open" ? openDocument(recuDoc) : downloadDocument(recuDoc));
         return;
       }
-      // Reçu enregistré absent : reconstitution à partir du dossier (statut actuel omis).
-      const blob = generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true });
-      const url = URL.createObjectURL(blob);
-      if (mode === "open" && window.open(url, "_blank", "noopener,noreferrer")) {
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-        return;
-      }
-      const a = document.createElement("a");
-      a.href = url; a.download = recuDepotFileName(selected);
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      // Reçu enregistré absent : reconstitution à partir du dossier (statut actuel omis), avec attente visible.
+      const name = recuDepotFileName(selected);
+      await trackDocumentTask(`recu-depot:${selected.id}:${mode}`, "generate", name, async () => {
+        await new Promise((r) => setTimeout(r, 0)); // laisse l'attente s'afficher avant la génération
+        presentBlob(await generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
+      });
     } catch (e: any) {
       toast({ title: t("demandes:detail.recu_card.error"), description: e?.message, variant: "destructive" });
     } finally {
@@ -535,6 +524,7 @@ const DemandeDetail = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <EquipementsBanner present={selected.equipementsPresents} demandeId={selected.id} />
+        <AvenantOrigineBanner avenantId={selected.avenantId} avenantNumero={selected.avenantNumero} />
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={smartBack} aria-label={t("demandes:detail.back")}>
             <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
@@ -605,6 +595,10 @@ const DemandeDetail = () => {
                   <p className="font-medium text-muted-foreground">—</p>
                 )}
               </div>
+              <div>
+                <span className="text-muted-foreground">{t("demandes:detail.fields.reference_appel_offre")}</span>
+                <p className="font-medium">{selected.referenceAppelOffre?.trim() || "—"}</p>
+              </div>
 
             </div>
           </CardContent>
@@ -621,11 +615,11 @@ const DemandeDetail = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled={recuBusy} onClick={() => handleRecu("open")}>
-                  <ExternalLink className="h-4 w-4 me-1" /> {t("demandes:detail.recu_card.open")}
+                <Button variant="ghost" size="sm" disabled={!!recuBusy} aria-busy={recuBusy === "open" || undefined} onClick={() => handleRecu("open")}>
+                  {recuBusy === "open" ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <ExternalLink className="h-4 w-4 me-1" />} {t("demandes:detail.recu_card.open")}
                 </Button>
-                <Button size="sm" disabled={recuBusy} onClick={() => handleRecu("download")}>
-                  {recuBusy ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
+                <Button size="sm" disabled={!!recuBusy} aria-busy={recuBusy === "download" || undefined} onClick={() => handleRecu("download")}>
+                  {recuBusy === "download" ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
                   {t("demandes:detail.recu_card.download")}
                 </Button>
               </div>
@@ -864,35 +858,38 @@ const DemandeDetail = () => {
         </Card>
 
         {/* Documents de décision */}
-        {(selected.statut === "ADOPTEE" || selected.statut === "NOTIFIEE") && (() => {
-          const SPECIAL_DOC_TYPES_LIST = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+        {decisionDocSlots.length > 0 && (() => {
           const SPECIAL_DOC_LABEL_KEYS: Record<string, string> = {
             OFFRE_FISCALE_CORRIGEE: "demandes:detail.decision_docs.offre_fiscale_corrigee",
             LETTRE_ADOPTION: "demandes:detail.decision_docs.lettre_adoption",
           };
-          const specialDocs = docs.filter(d => SPECIAL_DOC_TYPES_LIST.includes(d.type));
+          const specialDocs = docs.filter(d => decisionDocSlots.includes(d.type) || decisionDocSlots.includes(docCode(d)));
           return (
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" /> {t("demandes:detail.decision_docs.title")}
                 </h3>
+                {!isAdoptedForDocs && (
+                  <p className="text-xs text-muted-foreground mb-3">{t("demandes:detail.decision_docs.before_adoption_hint")}</p>
+                )}
                 <div className="grid grid-cols-2 gap-3">
-                  {SPECIAL_DOC_TYPES_LIST.map((docType) => {
-                    const doc = specialDocs.find(d => d.type === docType);
+                  {decisionDocSlots.map((docType) => {
+                    const doc = [...specialDocs.filter(d => d.type === docType || docCode(d) === docType)]
+                      .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
                     const fileUrl = doc ? getDocFileUrl(doc) : null;
                     return (
                       <div key={docType} className={`rounded-xl border-2 p-4 text-center transition-colors ${doc ? "border-primary/40 bg-primary/5 hover:bg-primary/10" : "border-dashed border-muted-foreground/20 bg-muted/20"}`}>
                         {doc ? <Download className="h-8 w-8 text-primary mx-auto mb-2" /> : <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />}
-                        <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{t(SPECIAL_DOC_LABEL_KEYS[docType])}</p>
+                        <p className={`text-xs font-semibold ${doc ? "text-foreground" : "text-muted-foreground"}`}>{SPECIAL_DOC_LABEL_KEYS[docType] ? t(SPECIAL_DOC_LABEL_KEYS[docType]) : tTypeDocument(docType)}</p>
                         {doc && fileUrl ? (
                           <div className="flex items-center justify-center gap-2 mt-2">
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]" onClick={() => openDocInNewTab(fileUrl)}>
-                              <ExternalLink className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.open")}
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={() => downloadDocAuthenticated(fileUrl, doc.nomFichier)}>
-                              <Download className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.download")}
-                            </Button>
+                            <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
+                              {t("demandes:detail.decision_docs.open")}
+                            </DocumentButton>
+                            <DocumentButton doc={{ id: doc.id, chemin: doc.chemin, nomFichier: doc.nomFichier }} mode="download" icon={Download} iconClassName="h-3 w-3 me-1" variant="outline" size="sm" className="h-7 px-2 text-[10px]">
+                              {t("demandes:detail.decision_docs.download")}
+                            </DocumentButton>
                           </div>
                         ) : (
                           <p className="text-[10px] text-muted-foreground mt-1">{t("demandes:detail.decision_docs.unavailable")}</p>
@@ -915,9 +912,10 @@ const DemandeDetail = () => {
             ) : (
               <div className="space-y-2">
                 {(() => {
-                  const SPECIAL_TYPES = ["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION"];
+                  // Pièces déjà présentées dans « Documents de décision » (ou masquées avant l'adoption).
+                  const SPECIAL_TYPES = Array.from(new Set(["OFFRE_FISCALE_CORRIGEE", "LETTRE_ADOPTION", ...decisionDocSlots]));
                   // Le reçu de dépôt a sa propre carte pour l'autorité contractante.
-                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
+                  const regularDocs = docs.filter(d => !SPECIAL_TYPES.includes(d.type) && !SPECIAL_TYPES.includes(docCode(d)) && !(canSeeRecu && docCode(d) === "RECU_DEPOT"));
                   const groupedByType = regularDocs.reduce<Record<string, typeof docs>>((acc, d) => {
                     const key = (d.type && d.type.trim()) ? d.type : `__doc_${d.id}`;
                     if (!acc[key]) acc[key] = [];
@@ -964,16 +962,14 @@ const DemandeDetail = () => {
                             )}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            {fileUrl && (
+                            {fileUrl && uploaded && (
                               <>
-                                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => window.open(fileUrl, "_blank")}>
-                                  <ExternalLink className="h-3.5 w-3.5 me-1" /> {t("demandes:detail.pieces.open")}
-                                </Button>
-                                <a href={fileUrl} download={uploaded?.nomFichier || label}>
-                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                                    <Download className="h-3.5 w-3.5 me-1" /> {t("demandes:detail.pieces.download")}
-                                  </Button>
-                                </a>
+                                <DocumentButton doc={{ id: uploaded.id, chemin: uploaded.chemin, nomFichier: uploaded.nomFichier || label }} icon={ExternalLink} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                  {t("demandes:detail.pieces.open")}
+                                </DocumentButton>
+                                <DocumentButton doc={{ id: uploaded.id, chemin: uploaded.chemin, nomFichier: uploaded.nomFichier || label }} mode="download" icon={Download} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                  {t("demandes:detail.pieces.download")}
+                                </DocumentButton>
                               </>
                             )}
                             {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
@@ -990,7 +986,11 @@ const DemandeDetail = () => {
                               <div key={v.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span>v{v.version || '?'} — {v.nomFichier}</span>
                                 <span>{formatDate(v.dateUpload)}</span>
-                                {v.chemin && <a href={getDocFileUrl(v)} target="_blank" rel="noopener noreferrer" className="underline">{t("demandes:detail.pieces.download")}</a>}
+                                {v.chemin && (
+                                  <DocumentButton doc={{ id: v.id, chemin: v.chemin, nomFichier: v.nomFichier }} mode="download" variant="link" iconClassName="h-3 w-3 me-1" className="h-auto p-0 text-xs text-muted-foreground underline">
+                                    {t("demandes:detail.pieces.download")}
+                                  </DocumentButton>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1028,7 +1028,8 @@ const DemandeDetail = () => {
           entity="DEMANDE"
           entityId={selected.id}
           fields={[
-            { key: "intituleMarche", label: "Intitulé du marché", type: "text", value: selected.intituleMarche ?? "" },
+            { key: "intituleMarche", label: t("demandes:detail.fields.marche"), type: "text", value: selected.intituleMarche ?? "" },
+            { key: "referenceAppelOffre", label: t("demandes:detail.fields.reference_appel_offre"), type: "text", value: selected.referenceAppelOffre ?? "", maxLength: 100 },
             { key: "creditInterieur", label: "Crédit intérieur", type: "number", value: selected.creditInterieur ?? "" },
             { key: "creditExterieur", label: "Crédit extérieur", type: "number", value: selected.creditExterieur ?? "" },
           ]}
@@ -1217,9 +1218,9 @@ const DemandeDetail = () => {
                           <FileText className="h-3.5 w-3.5" />
                           <span>{rec.pieceJointeNomFichier}</span>
                           {rec.pieceJointeChemin && (
-                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.pieceJointeChemin!)}>
-                              <ExternalLink className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.open")}
-                            </Button>
+                            <DocumentButton doc={{ url: rec.pieceJointeChemin, nomFichier: rec.pieceJointeNomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-6 px-2 text-[10px]">
+                              {t("demandes:detail.decision_docs.open")}
+                            </DocumentButton>
                           )}
                         </div>
                       )}
@@ -1231,9 +1232,9 @@ const DemandeDetail = () => {
                               <FileText className="h-3 w-3 text-red-600" />
                               <span className="font-medium">{rec.reponseRejetNomFichier}</span>
                               {rec.reponseRejetChemin && (
-                                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => openDocInNewTab(rec.reponseRejetChemin!)}>
-                                  <ExternalLink className="h-3 w-3 me-1" /> {t("demandes:detail.decision_docs.open")}
-                                </Button>
+                                <DocumentButton doc={{ url: rec.reponseRejetChemin, nomFichier: rec.reponseRejetNomFichier }} icon={ExternalLink} iconClassName="h-3 w-3 me-1" variant="ghost" size="sm" className="h-6 px-2 text-[10px]">
+                                  {t("demandes:detail.decision_docs.open")}
+                                </DocumentButton>
                               )}
                             </div>
                           )}
@@ -1396,14 +1397,7 @@ const DemandeDetail = () => {
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" /> {t("demandes:dialogs.reject.docs_label_short")} <span className="text-destructive">*</span>
                 </Label>
-                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
-                  {ALL_DOCUMENT_TYPES_VALUES.map(dt => (
-                    <label key={dt} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5">
-                      <Checkbox checked={rejectDocsDemandes.includes(dt)} onCheckedChange={(checked) => setRejectDocsDemandes(prev => checked ? [...prev, dt] : prev.filter(v => v !== dt))} />
-                      <span>{tTypeDocument(dt)}</span>
-                    </label>
-                  ))}
-                </div>
+                <GedPiecesChecklist processus="CORRECTION_OFFRE_FISCALE" value={rejectDocsDemandes} onChange={setRejectDocsDemandes} />
                 {rejectDocsDemandes.length === 0 && <p className="text-xs text-destructive mt-1">{t("demandes:dialogs.reject.select_at_least_one")}</p>}
               </div>
             )}
@@ -1494,7 +1488,7 @@ const DemandeDetail = () => {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Numéro</span><p className="font-medium">{marcheDetail.numeroMarche || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Statut</span><p className="font-medium">{marcheDetail.statut || "—"}</p></div>
-              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Intitulé</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">{t("demandes:detail.fields.marche")}</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>

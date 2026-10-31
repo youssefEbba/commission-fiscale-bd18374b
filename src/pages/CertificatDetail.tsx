@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import AvenantsCertificatCard from "@/components/avenants/AvenantsCertificatCard";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -555,6 +556,8 @@ const CertificatDetail = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <AvenantsCertificatCard certificat={c} />
 
         <DiscussionCommissionPanel contexte="CERTIFICAT" dossierId={c.id} dossierStatut={c.statut as string} />
 

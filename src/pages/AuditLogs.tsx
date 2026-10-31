@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { auditLogApi, AuditLogDto, PageAuditLogDto } from "@/lib/api";
@@ -113,7 +114,7 @@ const AuditLogs = () => {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow><RowNumberHead />
                       <TableHead>{t("audit:table.date")}</TableHead>
                       <TableHead>{t("audit:table.user")}</TableHead>
                       <TableHead>{t("audit:table.action")}</TableHead>
@@ -124,12 +125,13 @@ const AuditLogs = () => {
                   </TableHeader>
                   <TableBody>
                     {(!data || data.content.length === 0) ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("audit:list.empty")}</TableCell></TableRow>
-                    ) : data.content.map((log) => (
+                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("audit:list.empty")}</TableCell></TableRow>
+                    ) : data.content.map((log, rowIdx) => (
                       <TableRow
                         key={log.id}
                         className={log.action === "ADMIN_CORRECTION" ? "bg-amber-50/60 dark:bg-amber-950/10" : undefined}
                       >
+                        <RowNumberCell n={data.number * data.size + rowIdx + 1} />
                         <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                           {formatDateTime(log.dateAction)}
                         </TableCell>

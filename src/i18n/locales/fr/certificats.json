@@ -73,7 +73,7 @@
       "reset": "Réinitialiser",
       "search": "Rechercher",
       "entreprise": "Entreprise",
-      "entreprise_placeholder": "Raison sociale ou NIF"
+      "entreprise_placeholder": "Nom de l'entreprise ou NIF"
     },
     "pagination": {
       "range": "{{from}}–{{to}} sur {{total}} crédits",

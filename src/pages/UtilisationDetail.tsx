@@ -1,5 +1,5 @@
-import { API_BASE } from "@/lib/apiConfig";
 import { useEffect, useState } from "react";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import CreditLink from "@/components/credits/CreditLink";
@@ -39,7 +39,9 @@ import {
   TrendingDown, TrendingUp, Minus, Download, ShieldCheck, Send
 } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
-import { openDocument } from "@/lib/openDocument";
+import { trackDocumentTask, type OpenableDoc } from "@/lib/openDocument";
+import { DocumentButton } from "@/components/documents/DocumentButton";
+import { useDocumentTaskPending } from "@/hooks/useDocumentTasks";
 import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 import { certificatUtilisationVisible, isDeposantUtilisation, utilisationClotureMode } from "@/lib/utilisationCloture";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
@@ -161,6 +163,8 @@ const UtilisationDetail = () => {
   const [qDgiFile, setQDgiFile] = useState<File | null>(null);
   const [qDgiLoading, setQDgiLoading] = useState(false);
   const [tvaPdfLoading, setTvaPdfLoading] = useState(false);
+  const liqPdfKey = `generate:cu-douane:${id}`;
+  const liqPdfPending = useDocumentTaskPending(liqPdfKey);
   const [cuEtat, setCuEtat] = useState<Awaited<ReturnType<typeof utilisationCreditApi.getCertificatUtilisationEtat>> | null>(null);
   const [cuSignOpen, setCuSignOpen] = useState(false);
   const [cuAdminOpen, setCuAdminOpen] = useState(false);
@@ -468,7 +472,7 @@ const UtilisationDetail = () => {
   const handleDownloadTvaPdf = async () => {
     if (!util) return;
     setTvaPdfLoading(true);
-    try { await generateUtilisationTvaPdf(util, cert); }
+    try { await trackDocumentTask(`generate:cu-tva:${util.id}`, "generate", undefined, () => generateUtilisationTvaPdf(util, cert)); }
     catch (e: any) { toast({ title: tError(), description: e.message, variant: "destructive" }); }
     finally { setTvaPdfLoading(false); }
   };
@@ -564,23 +568,9 @@ const UtilisationDetail = () => {
   };
 
   // Toujours via GET /documents/{id}/download (applique la règle de confidentialité, 403 explicite).
-  const openFile = (doc: DocumentDto) => {
-    if (doc.id) {
-      openDocument({ id: doc.id, nomFichier: doc.nomFichier }).catch((e: any) =>
-        toast({ title: tError(), description: e?.message, variant: "destructive" }));
-      return;
-    }
-    if (!doc.chemin) return;
-    let url = doc.chemin;
-    if (!/^https?:\/\//i.test(url)) {
-      const apiOrigin = API_BASE.replace(/\/api\/?$/, "");
-      url = apiOrigin + (url.startsWith("/") ? "" : "/") + url;
-    }
-    if (url.includes("ngrok")) {
-      url += (url.includes("?") ? "&" : "?") + "ngrok-skip-browser-warning=true";
-    }
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
+  const fileDoc = (doc: { id?: number; chemin?: string; nomFichier?: string }): OpenableDoc =>
+    doc.id ? { id: doc.id, nomFichier: doc.nomFichier } : { chemin: doc.chemin, nomFichier: doc.nomFichier };
+  const onFileError = (e: any) => toast({ title: tError(), description: e?.message, variant: "destructive" });
 
   if (loading) {
     return <DashboardLayout><div className="flex justify-center items-center py-24"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></DashboardLayout>;
@@ -938,9 +928,9 @@ const UtilisationDetail = () => {
                       <TableCell className="text-xs">{q.referencePaiement || "—"}</TableCell>
                       <TableCell>
                         {((q as any).documentId || q.documentChemin) ? (
-                          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => openFile({ id: (q as any).documentId, chemin: q.documentChemin, nomFichier: q.documentNomFichier } as any)}>
-                            <FileText className="h-3.5 w-3.5 me-1" /> {q.documentNomFichier || t("utilisations:quittances.see_doc")}
-                          </Button>
+                          <DocumentButton doc={fileDoc({ id: (q as any).documentId, chemin: q.documentChemin, nomFichier: q.documentNomFichier })} onError={onFileError} icon={FileText} variant="link" size="sm" className="h-auto p-0 text-xs">
+                            {q.documentNomFichier || t("utilisations:quittances.see_doc")}
+                          </DocumentButton>
                         ) : <span className="text-xs text-muted-foreground">{piecesAdminReservees ? t("utilisations:documents.reservees_admin_short") : "—"}</span>}
                       </TableCell>
                     </TableRow>
@@ -961,8 +951,10 @@ const UtilisationDetail = () => {
           <Card className="border-s-4 border-s-blue-500">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2"><TrendingDown className="h-5 w-5 text-blue-500" /> {t("utilisations:traceability_liq.title")}</CardTitle>
-              <Button size="sm" variant="outline" onClick={() => { void generateLiquidationPdf(u, cert); }}>
-                <Download className="h-4 w-4 me-2" /> {t("utilisations:traceability_liq.download_pdf")}
+              <Button size="sm" variant="outline" disabled={liqPdfPending} aria-busy={liqPdfPending || undefined} onClick={() => {
+                trackDocumentTask(liqPdfKey, "generate", t("utilisations:traceability_liq.download_pdf"), () => generateLiquidationPdf(u, cert)).catch(onFileError);
+              }}>
+                {liqPdfPending ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Download className="h-4 w-4 me-2" />} {t("utilisations:traceability_liq.download_pdf")}
               </Button>
             </CardHeader>
             <CardContent>
@@ -988,10 +980,9 @@ const UtilisationDetail = () => {
                 <div>
                   <p className="text-muted-foreground">{t("utilisations:quittance_dgi.justificatif")}</p>
                   {(u.quittanceDgi.documentChemin || u.quittanceDgi.documentId) ? (
-                    <Button variant="link" size="sm" className="h-auto p-0" onClick={() => {
-                      openDocument({ id: u.quittanceDgi!.documentId, chemin: u.quittanceDgi!.documentId ? undefined : u.quittanceDgi!.documentChemin, nomFichier: u.quittanceDgi!.documentNomFichier })
-                        .catch((e) => toast({ title: tError(), description: e.message, variant: "destructive" }));
-                    }}><FileText className="h-3.5 w-3.5 me-1" /> {u.quittanceDgi.documentNomFichier || t("utilisations:quittance_dgi.voir")}</Button>
+                    <DocumentButton doc={fileDoc({ id: u.quittanceDgi.documentId, chemin: u.quittanceDgi.documentChemin, nomFichier: u.quittanceDgi.documentNomFichier })} onError={onFileError} icon={FileText} variant="link" size="sm" className="h-auto p-0">
+                      {u.quittanceDgi.documentNomFichier || t("utilisations:quittance_dgi.voir")}
+                    </DocumentButton>
                   ) : <p className="text-xs text-muted-foreground">{piecesAdminReservees ? t("utilisations:documents.reservees_admin_short") : "—"}</p>}
                 </div>
               </div>
@@ -1160,7 +1151,7 @@ const UtilisationDetail = () => {
                         </p>
                       </div>
                       {(d.id || d.chemin) && (
-                        <Button variant="ghost" size="sm" onClick={() => openFile(d)}>{t("utilisations:documents.open")}</Button>
+                        <DocumentButton doc={fileDoc(d)} onError={onFileError} variant="ghost" size="sm">{t("utilisations:documents.open")}</DocumentButton>
                       )}
                     </div>
                   ))}
@@ -1770,14 +1761,7 @@ const UtilisationDetail = () => {
             </div>
             <div>
               <Label>{t("utilisations:rejet_temp_dialog.docs_label")} *</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto mt-2">
-                {(isDouane ? UTILISATION_DOC_TYPES_DOUANE : tvaDocTypes).map(dt => (
-                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox checked={rejetDocs.includes(dt)} onCheckedChange={checked => setRejetDocs(prev => checked ? [...prev, dt] : prev.filter(d => d !== dt))} />
-                    <span className="text-sm">{tTypeDocument(dt)}</span>
-                  </label>
-                ))}
-              </div>
+              <GedPiecesChecklist className="mt-2" processus={isDouane ? "UTILISATION_CI_EXTERIEUR" : isTVA ? "UTILISATION_CI_INTERIEUR" : null} value={rejetDocs} onChange={setRejetDocs} />
             </div>
           </div>
           <DialogFooter>

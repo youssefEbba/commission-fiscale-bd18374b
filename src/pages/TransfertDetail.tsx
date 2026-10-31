@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
+import { useGedPieces } from "@/hooks/useGedPieces";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
@@ -6,13 +8,12 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   transfertCreditApi, TransfertCreditDto, StatutTransfert,
-  TRANSFERT_DOCUMENT_TYPES,
-  TypeDocumentTransfert, DocumentTransfertCreditDto,
+  DocumentTransfertCreditDto,
   DecisionCorrectionDto,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutTransfert, tTypeDocument, tRejetTempStatus } from "@/i18n/enums";
+import { tStatutTransfert, tRejetTempStatus } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,8 @@ const TransfertDetail = () => {
   const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
+  // Pièces du transfert : paramétrage GED (TRANSFERT_CREDIT, pièces déposées par l'entreprise).
+  const gedDepot = useGedPieces("TRANSFERT_CREDIT", { depot: true });
 
   const [transfert, setTransfert] = useState<TransfertCreditDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -200,7 +203,7 @@ const TransfertDetail = () => {
   };
 
   const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
-    await transfertCreditApi.uploadDocument(dossierId, type as TypeDocumentTransfert, file);
+    await transfertCreditApi.uploadDocument(dossierId, type, file);
   };
 
   if (loading) {
@@ -325,7 +328,7 @@ const TransfertDetail = () => {
                     return { type, current, previous };
                   });
                   return ordered.map(({ type, current, previous }) => {
-                    const typeLabel = tTypeDocument(type) || type;
+                    const typeLabel = gedDepot.labelOf(type) || type;
                     const expanded = expandedVersions.has(type);
                     return (
                       <li key={type} className="py-2">
@@ -425,7 +428,7 @@ const TransfertDetail = () => {
                             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{t("transferts:rejet_temp.history.pieces_demandees")}</div>
                             <div className="flex flex-wrap gap-1">
                               {d.documentsDemandes.map((doc) => (
-                                <Badge key={doc} variant="secondary" className="text-[10px]">{tTypeDocument(doc) || doc}</Badge>
+                                <Badge key={doc} variant="secondary" className="text-[10px]">{gedDepot.labelOf(doc) || doc}</Badge>
                               ))}
                             </div>
                           </div>
@@ -449,7 +452,7 @@ const TransfertDetail = () => {
                                         <span className="text-[10px] text-muted-foreground">{formatDateTime(r.createdAt)}</span>
                                       )}
                                       {r.documentType && (
-                                        <Badge variant="outline" className="text-[10px]">{tTypeDocument(r.documentType) || r.documentType}</Badge>
+                                        <Badge variant="outline" className="text-[10px]">{gedDepot.labelOf(r.documentType) || r.documentType}</Badge>
                                       )}
                                     </div>
                                     <p className="text-sm mt-1 break-words">{r.message}</p>
@@ -487,7 +490,7 @@ const TransfertDetail = () => {
         onOpenChange={setGedOpen}
         title={t("transferts:documents.dialog_title", { id: transfert.id })}
         dossierId={transfert.id}
-        documentTypes={TRANSFERT_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
+        documentTypes={gedDepot.options.map(o => ({ value: o.code, label: o.label }))}
         documents={docs}
         loading={docsLoading}
         canUpload={canUpload}
@@ -505,19 +508,7 @@ const TransfertDetail = () => {
             </div>
             <div>
               <Label>{t("transferts:rejet_temp.pieces_label")} <span className="text-destructive">*</span></Label>
-              <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border border-border rounded-md p-3">
-                {TRANSFERT_DOCUMENT_TYPES.map((d) => (
-                  <div key={d} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`rt-${d}`}
-                      checked={rejetDocs.includes(d)}
-                      onCheckedChange={(c) => setRejetDocs((prev) => c ? [...prev, d] : prev.filter(x => x !== d))}
-                    />
-                    <label htmlFor={`rt-${d}`} className="text-sm cursor-pointer">{tTypeDocument(d)}</label>
-                  </div>
-                ))}
-
-              </div>
+              <GedPiecesChecklist className="mt-2" processus="TRANSFERT_CREDIT" value={rejetDocs} onChange={setRejetDocs} />
             </div>
           </div>
           <DialogFooter>
@@ -542,7 +533,7 @@ const TransfertDetail = () => {
             {respondDecision?.documentsDemandes && respondDecision.documentsDemandes.length > 0 && (
               <div className="p-3 rounded-md bg-amber-50 border border-amber-200 text-xs">
                 <span className="text-muted-foreground">{t("transferts:rejet_temp.response.pieces_demanded")}</span>{" "}
-                <span className="font-medium">{respondDecision.documentsDemandes.map(dt => tTypeDocument(dt) || dt).join(", ")}</span>
+                <span className="font-medium">{respondDecision.documentsDemandes.map(dt => gedDepot.labelOf(dt) || dt).join(", ")}</span>
               </div>
             )}
             <div>
@@ -557,7 +548,7 @@ const TransfertDetail = () => {
                     <SelectTrigger><SelectValue placeholder={t("transferts:rejet_temp.response.type_placeholder")} /></SelectTrigger>
                     <SelectContent>
                       {(respondDecision.documentsDemandes || []).map((dt) => (
-                        <SelectItem key={dt} value={dt}>{tTypeDocument(dt) || dt}</SelectItem>
+                        <SelectItem key={dt} value={dt}>{gedDepot.labelOf(dt) || dt}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

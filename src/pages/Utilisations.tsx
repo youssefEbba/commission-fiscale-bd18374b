@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
+import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { useTranslation } from "react-i18next";
@@ -693,7 +695,7 @@ const Utilisations = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead>{t("utilisations:list.columns.id")}</TableHead>
                     <TableHead>{t("utilisations:list.columns.certificat")}</TableHead>
                     <TableHead>{t("utilisations:list.columns.demandeur")}</TableHead>
@@ -706,9 +708,10 @@ const Utilisations = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("utilisations:list.empty")}</TableCell></TableRow>
-                  ) : filtered.map((u) => (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("utilisations:list.empty")}</TableCell></TableRow>
+                  ) : filtered.map((u, rowIdx) => (
                     <ClickableTableRow key={u.id} to={`/dashboard/utilisations/${u.id}`}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/utilisations/${u.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{u.id}</Link>
                       </TableCell>
@@ -1228,21 +1231,7 @@ const Utilisations = () => {
             <div className="space-y-2">
               <Label>{t("utilisations:rejet_temp.docs_label")} *</Label>
               <p className="text-xs text-muted-foreground">{t("utilisations:rejet_temp.docs_hint")}</p>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {(showRejetTemp?.type === "DOUANIER" ? UTILISATION_DOC_TYPES_DOUANE : UTILISATION_DOC_TYPES_TVA).map((dt) => (
-                  <label key={dt} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      checked={rejetTempDocs.includes(dt)}
-                      onCheckedChange={(checked) => {
-                        setRejetTempDocs(prev =>
-                          checked ? [...prev, dt] : prev.filter(d => d !== dt)
-                        );
-                      }}
-                    />
-                    <span className="text-sm">{tTypeDocument(dt)}</span>
-                  </label>
-                ))}
-              </div>
+              <GedPiecesChecklist processus={showRejetTemp?.type === "DOUANIER" ? "UTILISATION_CI_EXTERIEUR" : showRejetTemp?.type === "TVA_INTERIEURE" ? "UTILISATION_CI_INTERIEUR" : null} value={rejetTempDocs} onChange={setRejetTempDocs} />
             </div>
           </div>
           <DialogFooter>

@@ -1,32 +1,192 @@
 {
+  "na": "n/a",
   "list": {
-    "title": "Modifications / Avenants (P8)",
-    "subtitle": "Gestion des avenants et notes de service avec documents GED",
-    "search_placeholder": "Rechercher par description, certificat, marché…",
+    "title": "Avenants",
+    "subtitle": "Dépôt, examen, validation et application des avenants aux crédits d'impôt",
+    "search_placeholder": "Rechercher par numéro, crédit, entreprise, autorité…",
     "filter_all": "Tous les statuts",
+    "filter_type_all": "Tous les types",
     "empty": "Aucun avenant trouvé",
+    "load_error": "Impossible de charger les avenants",
     "columns": {
-      "id": "ID",
-      "description": "Description",
-      "certificat": "Certificat",
-      "marche": "Marché",
+      "numero": "Numéro",
+      "certificat": "Crédit",
+      "entreprise": "Entreprise",
+      "type": "Type",
       "statut": "Statut",
-      "date": "Date",
-      "actions": "Actions"
+      "date_depot": "Date de dépôt"
     }
   },
   "actions": {
     "refresh": "Actualiser",
-    "documents": "Documents"
+    "deposer": "Déposer un avenant",
+    "prise_en_charge": "Prendre en charge",
+    "valider": "Valider",
+    "rejeter": "Rejeter",
+    "appliquer": "Appliquer",
+    "admin_badge": "Substitution"
   },
-  "dialogs": {
-    "documents_title": "Documents — Avenant #{{id}}"
-  },
-  "toast": {
-    "load_error_title": "Erreur",
-    "load_error_desc": "Impossible de charger les avenants"
+  "depot": {
+    "title": "Déposer un avenant",
+    "subtitle": "L'avenant porte sur un crédit ouvert ou modifié de votre entité.",
+    "certificat": "Crédit concerné",
+    "certificat_placeholder": "Choisir un crédit",
+    "certificats_loading": "Chargement des crédits…",
+    "certificats_error": "Impossible de charger les crédits",
+    "no_certificat": "Aucun crédit ouvert ou modifié disponible.",
+    "type": "Type d'avenant",
+    "type_placeholder": "Choisir un type",
+    "motif": "Motif",
+    "motif_placeholder": "Objet et justification de l'avenant",
+    "date_signature": "Date de signature",
+    "financier_hint": "Avenant financier : indiquez les crédits proposés. À sa validation, une demande de correction pré-remplie sera créée pour l'autorité contractante.",
+    "credit_exterieur": "Crédit extérieur proposé (MRU)",
+    "credit_interieur": "Crédit intérieur proposé (MRU)",
+    "pieces_next": "Après le dépôt, vous joindrez les pièces justificatives. Elles ne peuvent être ajoutées que tant que l'avenant est au statut Déposé.",
+    "submit": "Déposer",
+    "errors": {
+      "certificat_required": "Choisissez le crédit concerné.",
+      "type_required": "Choisissez le type d'avenant.",
+      "motif_required": "Le motif est obligatoire.",
+      "date_signature_future": "La date de signature ne peut pas être postérieure à aujourd'hui.",
+      "credits_required": "Les crédits extérieur et intérieur proposés sont obligatoires pour un avenant financier.",
+      "credits_negative": "Les crédits proposés ne peuvent pas être négatifs."
+    }
   },
   "detail": {
-    "title": "Modifications — Détail"
+    "title": "Avenant {{ref}}",
+    "back": "Retour",
+    "not_found": "Avenant introuvable",
+    "load_error": "Impossible de charger l'avenant",
+    "info_title": "Informations de l'avenant",
+    "fields": {
+      "certificat": "Crédit",
+      "entreprise": "Entreprise",
+      "autorite": "Autorité contractante",
+      "type": "Type",
+      "date_signature": "Date de signature",
+      "date_depot": "Date de dépôt",
+      "motif": "Motif",
+      "credit_exterieur_propose": "Crédit extérieur proposé",
+      "credit_interieur_propose": "Crédit intérieur proposé"
+    },
+    "next": {
+      "depose": "Prochaine étape : la DGTCP prend en charge l'avenant ou le rejette.",
+      "en_cours": "Prochaine étape : le Président valide ou rejette l'avenant.",
+      "en_cours_financier": "Prochaine étape : le Président valide ou rejette l'avenant. Sa validation créera une demande de correction en brouillon, que l'autorité contractante complétera et soumettra.",
+      "en_cours_correction": "La demande de correction de cet avenant suit son circuit habituel. L'avenant sera adopté à l'adoption de la correction, et rejeté si elle est rejetée ou annulée.",
+      "adopte": "Prochaine étape : la DGTCP applique l'avenant au crédit.",
+      "applique": "Avenant appliqué : le crédit est passé au statut Modifié."
+    },
+    "steps_title": "Étapes",
+    "steps": {
+      "depot": "Dépôt",
+      "examen": "Examen par la DGTCP",
+      "validation": "Validation par le Président",
+      "validation_financier_hint": "Avenant financier : adopté par l'adoption de sa demande de correction.",
+      "application": "Application au crédit",
+      "pending": "En attente",
+      "rejected": "Rejeté à cette étape"
+    },
+    "motif_rejet": "Motif du rejet",
+    "correction_title": "Demande de correction de l'avenant",
+    "correction_hint": "L'autorité contractante complète et soumet cette demande ; elle suit le circuit habituel des corrections.",
+    "pieces_title": "Pièces justificatives",
+    "pieces_manage": "Joindre des pièces",
+    "pieces_view": "Consulter les pièces",
+    "pieces_empty": "Aucune pièce jointe.",
+    "pieces_error": "Impossible de charger les pièces",
+    "pieces_locked": "Les pièces ne peuvent plus être ajoutées : l'avenant n'est plus au statut Déposé.",
+    "pieces_dialog_title": "Pièces — Avenant {{ref}}",
+    "avant_apres_title": "Montants et soldes avant / après application",
+    "avant_apres": {
+      "libelle": "Libellé",
+      "avant": "Avant",
+      "apres": "Après",
+      "ecart": "Écart",
+      "rows": {
+        "cordon": "Crédit extérieur (cordon douanier)",
+        "tva": "Crédit TVA intérieure",
+        "solde_cordon": "Solde cordon",
+        "solde_tva": "Solde TVA intérieure",
+        "tva_import": "TVA d'importation restante"
+      }
+    },
+    "pieces_obligatoires": {
+      "title": "Pièces obligatoires (paramétrage GED)",
+      "jointe": "Jointe",
+      "manquante": "Manquante",
+      "inconnu": "État inconnu",
+      "aucune_parametree": "Aucune pièce n'est paramétrée dans la GED pour les avenants.",
+      "aucune_obligatoire": "Aucune pièce n'est marquée obligatoire dans la GED pour les avenants.",
+      "warning_prise_en_charge": "Pièces obligatoires manquantes : {{list}}. Le serveur refusera la prise en charge tant qu'elles ne sont pas jointes.",
+      "rappel_deposant": "Joignez les pièces obligatoires manquantes : {{list}}. La DGTCP ne pourra pas prendre l'avenant en charge sans elles."
+    }
+  },
+  "dialogs": {
+    "motif_label": "Motif",
+    "motif_required": "Le motif est obligatoire.",
+    "cancel": "Annuler",
+    "admin_hint_dgtcp": "Vous agissez à la place de la DGTCP : le motif est obligatoire et sera tracé.",
+    "admin_hint_president": "Vous agissez à la place du Président : le motif est obligatoire et sera tracé.",
+    "prise_en_charge_title": "Prendre en charge l'avenant",
+    "prise_en_charge_desc": "L'avenant passera au statut En cours de traitement et sera transmis au Président.",
+    "validation_title": "Valider l'avenant",
+    "validation_desc": "L'avenant passera au statut Adopté ; la DGTCP pourra ensuite l'appliquer.",
+    "validation_financier_desc": "Une demande de correction pré-remplie sera créée en brouillon pour l'autorité contractante. L'avenant restera en cours de traitement jusqu'à la décision sur cette correction.",
+    "rejet_title": "Rejeter l'avenant",
+    "rejet_desc": "Le rejet est définitif. Indiquez le motif communiqué au déposant."
+  },
+  "apply": {
+    "title": "Appliquer l'avenant",
+    "desc_simple": "L'avenant sera appliqué et le crédit passera au statut Modifié. Refusé tant qu'une utilisation du crédit est en cours.",
+    "desc_financier": "Saisissez le nouveau récapitulatif. Le serveur recalcule les soldes : le consommé est conservé, le restant est remplacé.",
+    "prefill_hint": "Pré-rempli avec les crédits retenus par la correction adoptée et les lignes actuelles du crédit.",
+    "cordon": "(e) Crédit extérieur — cordon (MRU)",
+    "tva": "(h) Crédit TVA intérieure nette (MRU)",
+    "recap_title": "Récapitulatif",
+    "a": "(a) Valeur en douane des fournitures",
+    "b": "(b) Droits et taxes à l'importation hors TVA",
+    "c": "(c) Taxes de consommation (facultatif)",
+    "d": "(d) TVA d'importation accordée",
+    "f": "(f) Montant du marché HT",
+    "g": "(g) TVA collectée sur les travaux",
+    "cordon_mismatch": "Le crédit extérieur doit être égal à b + c + d = {{attendu}} (écart {{ecart}}).",
+    "tva_mismatch": "La TVA intérieure nette doit être égale à g − d = {{attendu}} (écart {{ecart}}).",
+    "bd_required": "Les lignes (b) et (d) sont obligatoires lorsque le crédit extérieur est positif.",
+    "negative": "Les montants ne peuvent pas être négatifs.",
+    "enveloppes_required": "Le crédit extérieur et le crédit TVA intérieure sont obligatoires.",
+    "preview_title": "Aperçu des soldes après application",
+    "preview_hint": "Aperçu indicatif à partir des montants actuels du crédit ; le serveur fait le calcul définitif.",
+    "preview": {
+      "libelle": "Enveloppe",
+      "consomme": "Consommé",
+      "solde_avant": "Solde actuel",
+      "solde_apres": "Solde après",
+      "rows": {
+        "cordon": "Cordon douanier",
+        "tva": "TVA intérieure",
+        "tva_import": "TVA d'importation"
+      }
+    },
+    "insuffisant": "Un nouveau montant est inférieur au consommé : le serveur refusera l'application.",
+    "submit": "Appliquer"
+  },
+  "toast": {
+    "depot_ok": "Avenant déposé. Joignez maintenant les pièces justificatives.",
+    "prise_en_charge_ok": "Avenant pris en charge.",
+    "validation_ok": "Avenant validé.",
+    "validation_financier_ok": "Avenant validé : la demande de correction a été créée en brouillon.",
+    "rejet_ok": "Avenant rejeté.",
+    "application_ok": "Avenant appliqué au crédit."
+  },
+  "certificat_card": {
+    "title": "Avenants ({{count}})",
+    "empty": "Aucun avenant sur ce crédit.",
+    "error": "Impossible de charger les avenants du crédit"
+  },
+  "banner": {
+    "text": "Demande de correction de l'avenant {{numero}}",
+    "link": "Voir l'avenant"
   }
 }

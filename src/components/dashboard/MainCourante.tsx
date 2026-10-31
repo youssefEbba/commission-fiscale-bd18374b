@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead } from "@/components/ui/row-number";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Info, Loader2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Info, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 10;
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +33,9 @@ const MainCourante = () => {
   const { t } = useTranslation("dashboard");
   const [data, setData] = useState<MainCouranteDto | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filtre, setFiltre] = useState<string | null>(null);
+  const [filtre, setFiltreState] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const setFiltre = (f: string | null) => { setFiltreState(f); setPage(0); };
 
   useEffect(() => {
     mainCouranteApi.get()
@@ -41,6 +46,10 @@ const MainCourante = () => {
   const tp = (p: string) => t(`main_courante.processus.${p}`, { defaultValue: p });
   const tabs = data ? Object.entries(data.parProcessus ?? {}).filter(([, n]) => n > 0) : [];
   const lignes = data ? (filtre ? data.lignes.filter((l) => l.processus === filtre) : data.lignes) : [];
+  const pageCount = Math.max(1, Math.ceil(lignes.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const start = safePage * PAGE_SIZE;
+  const pageLignes = lignes.slice(start, start + PAGE_SIZE);
 
   return (
     <Card>
@@ -96,6 +105,7 @@ const MainCourante = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <RowNumberHead />
                   <TableHead>{t("main_courante.col_action")}</TableHead>
                   <TableHead>{t("main_courante.col_reference")}</TableHead>
                   <TableHead>{t("main_courante.col_entreprise")}</TableHead>
@@ -104,10 +114,11 @@ const MainCourante = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lignes.map((l) => {
+                {pageLignes.map((l, i) => {
                   const href = hrefFor(l);
                   return (
                     <ClickableTableRow key={`${l.type}-${l.id}-${l.processus}`} to={href}>
+                      <TableCell className="text-muted-foreground tabular-nums">{start + i + 1}</TableCell>
                       <TableCell className="font-medium text-foreground">
                         <div>{l.action}</div>
                         <div className="text-xs text-muted-foreground">{tp(l.processus)}</div>
@@ -121,6 +132,32 @@ const MainCourante = () => {
                 })}
               </TableBody>
             </Table>
+            {pageCount > 1 && (
+              <div className="flex items-center justify-between gap-2 flex-wrap text-sm">
+                <span className="text-muted-foreground tabular-nums">
+                  {start + 1}–{Math.min(start + PAGE_SIZE, lignes.length)} / {lignes.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="outline" disabled={safePage === 0} onClick={() => setPage(safePage - 1)} aria-label="Précédent">
+                    <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                  </Button>
+                  {Array.from({ length: pageCount }, (_, p) => p)
+                    .filter((p) => p === 0 || p === pageCount - 1 || Math.abs(p - safePage) <= 1)
+                    .map((p, idx, arr) => (
+                      <span key={p} className="flex items-center gap-1">
+                        {idx > 0 && p - arr[idx - 1] > 1 && <span className="px-1 text-muted-foreground">…</span>}
+                        <Button size="sm" variant={p === safePage ? "default" : "outline"} onClick={() => setPage(p)} className="min-w-9 tabular-nums">
+                          {p + 1}
+                        </Button>
+                      </span>
+                    ))}
+                  <Button size="sm" variant="outline" disabled={safePage >= pageCount - 1} onClick={() => setPage(safePage + 1)} aria-label="Suivant">
+                    <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
           </>
         )}
       </CardContent>

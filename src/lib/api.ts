@@ -431,7 +431,7 @@ export const rattachementPublicApi = {
     Object.entries(files).forEach(([code, f]) => fd.append(code, f));
     return apiFetch<DemandeRattachementDto>("/public/rattachement", { method: "POST", rawBody: fd, noAuth: true, skipAuthRedirect: true });
   },
-  /** Suivi public d'une demande : référence (ex. RT-002-10/2026) + e-mail du dépôt, les deux obligatoires. */
+  /** Suivi public d'une demande : référence (ex. RT-0002-10-2026) + e-mail du dépôt, les deux obligatoires. */
   suivi: (reference: string, email: string) =>
     apiFetch<DemandeRattachementDto>(
       `/public/rattachement/suivi?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`,
@@ -607,7 +607,14 @@ export interface ConventionDto {
   motifRejet?: string;
   /** false = convention désactivée : plus de nouveau rattachement, invisible aux AC. */
   actif?: boolean;
+  /** Toutes les autorités contractantes reliées, la principale (`autoriteContractanteId`) en tête. */
+  autorites?: EntiteRefDto[];
+  /** Tous les bailleurs, le principal (`bailleurId`) en tête. */
+  bailleurs?: EntiteRefDto[];
 }
+
+/** Référence courte {id, nom} renvoyée dans les listes liées (autorités, bailleurs). */
+export interface EntiteRefDto { id: number; nom: string; }
 
 export interface CreateConventionRequest {
   reference?: string;
@@ -615,6 +622,8 @@ export interface CreateConventionRequest {
   intitule?: string;
   /** ID du bailleur (issu de GET /api/bailleurs). Le descriptif provient désormais du bailleur lui-même. */
   bailleurId?: number | null;
+  /** Tous les bailleurs (facultatif) ; le premier devient le principal. */
+  bailleurIds?: number[];
   dateSignature?: string;
   dateFin?: string;
   montantDevise?: number;
@@ -633,6 +642,8 @@ export interface UpdateConventionRequest {
   reference: string;
   intitule: string;
   bailleurId: number | null;
+  /** Remplace la liste des bailleurs ; le premier devient le principal (= `bailleurId`). */
+  bailleurIds?: number[];
   /** AAAA-MM-JJ */
   dateSignature: string | null;
   /** AAAA-MM-JJ */
@@ -673,11 +684,15 @@ export const conventionApi = {
   getById: (id: number) => apiFetch<ConventionDto>(`/conventions/${id}`),
   getByStatut: (statut: ConventionStatut) => apiFetch<ConventionDto[]>(`/conventions/by-statut?statut=${statut}`),
   create: (data: CreateConventionRequest) => apiFetch<ConventionDto>("/conventions", { method: "POST", body: data }),
-  /** Remplacement complet (permission `convention.update`, convention EN_ATTENTE, AC titulaire ou créatrice). */
+  /** Remplacement complet (`convention.update`) : AC titulaire/créatrice en EN_ATTENTE, Président/administrateur à tout statut sauf ANNULEE. */
   update: (id: number, data: UpdateConventionRequest) => apiFetch<ConventionDto>(`/conventions/${id}`, { method: "PUT", body: data }),
   updateStatut: (id: number, statut: ConventionStatut | "ANNULEE", motifRejet?: string) => apiFetch<ConventionDto>(`/conventions/${id}/statut?statut=${statut}${motifRejet ? `&motifRejet=${encodeURIComponent(motifRejet)}` : ""}`, { method: "PATCH" }),
   /** Annulation par l'autorité titulaire ou créatrice (permission `convention.annuler`, convention EN_ATTENTE). Motif facultatif. */
   annuler: (id: number, motif?: string) => apiFetch<ConventionDto>(`/conventions/${id}/annuler${motif ? `?motif=${encodeURIComponent(motif)}` : ""}`, { method: "POST" }),
+  /** Relie une autorité contractante (Président / administrateur, `convention.update`). */
+  lierAutorite: (id: number, autoriteId: number) => apiFetch<ConventionDto | void>(`/conventions/${id}/autorites/${autoriteId}`, { method: "POST" }),
+  /** Délie une autorité : 409 si elle a un marché ou une demande sous cette convention, 400 si c'est la dernière. */
+  delierAutorite: (id: number, autoriteId: number) => apiFetch<ConventionDto | void>(`/conventions/${id}/autorites/${autoriteId}`, { method: "DELETE" }),
   /** Active/désactive une convention (permission `convention.activate`). */
   setActivation: (id: number, actif: boolean) => apiFetch<ConventionDto>(`/conventions/${id}/activation?actif=${actif}`, { method: "PATCH" }),
   getDocuments: (id: number) => apiFetch<DocumentDto[]>(`/conventions/${id}/documents`).then(normalizeDocs),
@@ -704,16 +719,21 @@ export const conventionApi = {
 export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {
+  /** Avenant financier à l'origine de la demande (null pour une demande ordinaire). */
+  avenantId?: number | null;
+  avenantNumero?: string | null;
   /** Véhicules/équipements sous régime (plaques TT). null = non. */
   equipementsPresents?: boolean | null;
   /** Distinct de `equipementsPresents` : seule l'admission temporaire impose une réexportation. */
   admissionTemporaire?: boolean | null;
   id: number;
   numero?: string;
-  /** Référence lisible (`DC-NN/AAAA`), à privilégier à l'affichage. */
+  /** Référence lisible (`DC-NNNN-MM-AAAA`, ex. `DC-0010-10-2026`), à privilégier à l'affichage. */
   reference?: string;
-  /** Intitulé libre du marché (remplace la création de marché dans le wizard de correction). */
+  /** Intitulé libre du projet de marché (remplace la création de marché dans le wizard de correction). */
   intituleMarche?: string;
+  /** Référence de l'appel d'offres (facultative, 100 caractères max). */
+  referenceAppelOffre?: string | null;
   /** Crédit extérieur retenu (après correction le cas échéant) — celui qui compte pour la suite. */
   creditExterieur?: number;
   /** Crédit intérieur retenu (après correction le cas échéant). */
@@ -855,8 +875,10 @@ export interface CreateDemandeCorrectionRequest {
   conventionId?: number;
   /** Optionnel (rétro-compat). Le marché réel est créé lors de la mise en place. */
   marcheId?: number;
-  /** Intitulé libre du marché — requis lorsque `marcheId` n'est pas fourni. */
+  /** Intitulé libre du projet de marché — requis lorsque `marcheId` n'est pas fourni. */
   intituleMarche?: string;
+  /** Référence de l'appel d'offres (facultative, 100 caractères max ; `null` = non renseignée). */
+  referenceAppelOffre?: string | null;
   /** Défaut 0 côté back. Au moins un des deux crédits doit être > 0 à la soumission. */
   creditExterieur?: number;
   creditInterieur?: number;
@@ -865,6 +887,9 @@ export interface CreateDemandeCorrectionRequest {
   /** Si true, la demande reste au statut BROUILLON sans notifier les services. */
   brouillon?: boolean;
 }
+
+/** PUT /demandes-correction/{id} : remplacement complet, mêmes champs que la création. */
+export type UpdateDemandeCorrectionRequest = CreateDemandeCorrectionRequest;
 
 export interface DocumentDto {
   id: number;
@@ -1031,7 +1056,7 @@ export const demandeCorrectionApi = {
   getByDelegue: (userId: number) => apiFetch<DemandeCorrectionDto[]>(`/demandes-correction/by-delegue/${userId}`),
   create: (data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>("/demandes-correction", { method: "POST", body: data }),
   /** Édition d'une demande (autorisée si BROUILLON / RECUE / INCOMPLETE et aucun visa). */
-  update: (id: number, data: CreateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`, { method: "PUT", body: data }),
+  update: (id: number, data: UpdateDemandeCorrectionRequest) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}`, { method: "PUT", body: data }),
   /** Soumission d'un brouillon : passe en RECUE et notifie les services. */
   soumettre: (id: number) => apiFetch<DemandeCorrectionDto>(`/demandes-correction/${id}/soumettre`, { method: "POST" }),
   /** Suppression définitive — réservée au statut BROUILLON. */
@@ -1121,7 +1146,7 @@ export type StatutMarche = "EN_COURS" | "AVENANT" | "CLOTURE" | "ANNULE";
 
 export interface MarcheDto {
   id: number;
-  /** Référence lisible (`DM-NN/AAAA`). */
+  /** Référence lisible (`DM-NNNN-MM-AAAA`). */
   reference?: string;
   conventionId?: number;
   demandeCorrectionId?: number;
@@ -1138,6 +1163,11 @@ export interface MarcheDto {
   delegueIds?: number[];
   /** Nullable : les marchés anciens n'en portent pas — afficher « non renseigné », jamais de défaut. */
   typeMarche?: TypeMarche | null;
+  /** Toutes les conventions du marché, la principale (`conventionId`) en tête. */
+  conventionIds?: number[];
+  /** Autorité contractante qui porte le marché. */
+  autoriteContractanteId?: number;
+  autoriteContractanteNom?: string;
 }
 
 export type TypeMarche = "FOURNITURE" | "PRESTATION" | "TRAVAUX";
@@ -1147,7 +1177,13 @@ export const TYPE_MARCHE_VALUES: TypeMarche[] = ["FOURNITURE", "PRESTATION", "TR
 export const DEVISES = ["MRU", "USD", "EUR", "CNY", "AED", "SAR", "MAD", "GBP"] as const;
 
 export interface CreateMarcheRequest {
+  /** Convention principale (obligatoire à la création) = `conventionIds[0]`. */
   conventionId?: number;
+  /**
+   * Toutes les conventions, la principale en tête. Facultatif à la création ;
+   * en modification, réservé au Président et à l'administrateur (le premier devient la principale).
+   */
+  conventionIds?: number[];
   demandeCorrectionId?: number;
   numeroMarche?: string;
   intitule?: string;
@@ -1528,6 +1564,8 @@ export interface CertificatCreditFicheDto {
   marche?: MarcheDto;
   autoriteContractante?: AutoriteContractanteDto;
   intituleMarche?: string;
+  /** Référence de l'appel d'offres de la demande de correction d'origine. */
+  referenceAppelOffre?: string | null;
   documents?: DocumentDto[];
   utilisations?: UtilisationCreditDto[];
   tvaStock?: TvaDeductibleStockDto[];
@@ -1654,7 +1692,7 @@ export interface DecisionLigneRequest {
 
 export interface UtilisationCreditDto {
   id: number;
-  /** Référence lisible (`DU-NN/AAAA`). */
+  /** Référence lisible (`DU-NNNN-MM-AAAA`). */
   reference?: string;
   certificatCreditId: number;
   type?: UtilisationType;
@@ -1666,7 +1704,7 @@ export interface UtilisationCreditDto {
   description?: string;
   entrepriseNom?: string;
   entrepriseId?: number;
-  /** Référence lisible du crédit (ex. CR-001-01/2026). À afficher en priorité. */
+  /** Référence lisible du crédit (ex. CR-0001-01-2026). À afficher en priorité. */
   certificatReference?: string;
   /** Numéro technique du crédit, repli si `certificatReference` est absente. */
   certificatNumero?: string;
@@ -2007,6 +2045,8 @@ export interface AdminCorrectionDemandePayload {
   creditInterieur?: number;
   creditExterieur?: number;
   intituleMarche?: string;
+  /** Référence de l'appel d'offres (100 caractères max). */
+  referenceAppelOffre?: string | null;
 }
 
 export interface AdminCorrectionCertificatPayload {
@@ -2216,10 +2256,13 @@ export const notificationApi = {
 // Bailleurs (référentiel)
 export interface BailleurDto { id: number; nom: string; details?: string; }
 export interface CreateBailleurRequest { nom: string; details?: string; }
+export interface UpdateBailleurRequest { nom: string; details?: string | null; }
 
 export const bailleurApi = {
   getAll: () => apiFetch<BailleurDto[]>("/bailleurs"),
   create: (data: CreateBailleurRequest) => apiFetch<BailleurDto>("/bailleurs", { method: "POST", body: data }),
+  /** Président / administrateur (`bailleur.update`). */
+  update: (id: number, data: UpdateBailleurRequest) => apiFetch<BailleurDto>(`/bailleurs/${id}`, { method: "PUT", body: data }),
   /** Liste des conventions liées à un bailleur (droits convention.view ou convention.view.all). */
   getConventions: (id: number) => apiFetch<ConventionDto[]>(`/bailleurs/${id}/conventions`),
 };
@@ -2252,7 +2295,7 @@ export const forexApi = {
 };
 
 // Document Requirements (GED)
-export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI" | "UTILISATION_CI_EXTERIEUR" | "UTILISATION_CI_INTERIEUR" | "TRANSFERT_CREDIT" | "SOUS_TRAITANCE" | "CONVENTION" | "MARCHE" | "MODIFICATION_CI" | "CLOTURE_CI";
+export type ProcessusType = "CORRECTION_OFFRE_FISCALE" | "MISE_EN_PLACE_CI" | "UTILISATION_CI" | "UTILISATION_CI_EXTERIEUR" | "UTILISATION_CI_INTERIEUR" | "TRANSFERT_CREDIT" | "SOUS_TRAITANCE" | "CONVENTION" | "MARCHE" | "MODIFICATION_CI" | "CLOTURE_CI" | "RATTACHEMENT_COMPTE";
 export type FormatFichier = "PDF" | "WORD" | "EXCEL" | "IMAGE";
 
 export interface DocumentRequirementDto {
@@ -2377,15 +2420,7 @@ export interface DocumentTransfertCreditDto {
   actif?: boolean;
 }
 
-export type TypeDocumentTransfert = "DEMANDE_MOTIVEE_TRANSFERT" | "DECLARATION_CLOTURE_DOUANE" | "JUSTIFICATIFS_CLOTURE_DOUANE";
-
-/**
- * Codes des types de documents Transfert de crédit.
- * Libellés résolus via `tTypeDocument(code)` côté UI.
- */
-export const TRANSFERT_DOCUMENT_TYPES: readonly TypeDocumentTransfert[] = [
-  "DEMANDE_MOTIVEE_TRANSFERT", "DECLARATION_CLOTURE_DOUANE", "JUSTIFICATIFS_CLOTURE_DOUANE",
-] as const;
+// Pièces du transfert : paramétrées dans la GED (processus TRANSFERT_CREDIT), lues via `useGedPieces`.
 
 
 // TRANSFERT_STATUT_LABELS supprimée (orpheline, détectée en POLISH-1).
@@ -2437,7 +2472,7 @@ export const transfertCreditApi = {
    * Upload d'une pièce. `message` est obligatoire si la pièce est exigée
    * par un rejet temporaire OUVERT (traçabilité côté décisions).
    */
-  uploadDocument: (id: number, type: TypeDocumentTransfert, file: File, message?: string) => {
+  uploadDocument: (id: number, type: string, file: File, message?: string) => {
     const formData = new FormData();
     formData.append("file", file);
     if (message) formData.append("message", message);
@@ -2624,24 +2659,75 @@ export const clotureCreditApi = {
 };
 
 // Avenants / Modifications (P8)
-export type StatutAvenant = "EN_ATTENTE" | "VALIDE" | "REJETE";
+/** Déposé → En cours de traitement → Adopté → Appliqué, ou Rejeté. */
+export type StatutAvenant = "DEPOSE" | "EN_COURS_TRAITEMENT" | "ADOPTE" | "APPLIQUE" | "REJETE";
+export type TypeAvenant = "JURIDIQUE" | "CONTRAT" | "FINANCIER";
 
 export interface AvenantDto {
   id: number;
-  certificatCreditId?: number;
-  certificatNumero?: string;
-  marcheId?: number;
-  marcheNumero?: string;
-  type?: string;
-  description?: string;
+  numero?: string | null;
+  type: TypeAvenant;
   statut: StatutAvenant;
-  dateCreation?: string;
-  dateMiseAJour?: string;
+  motif?: string | null;
+  dateSignature?: string | null;
+  certificatCreditId: number;
+  certificatNumero?: string | null;
+  certificatReference?: string | null;
+  entrepriseId?: number | null;
+  entrepriseNom?: string | null;
+  autoriteContractanteId?: number | null;
+  autoriteContractanteNom?: string | null;
+  deposeParUtilisateurId?: number | null;
+  dateDepot?: string | null;
+  creditExterieurPropose?: number | null;
+  creditInterieurPropose?: number | null;
+  /** Avenant financier : demande de correction créée en brouillon à la validation du Président. */
+  demandeCorrectionId?: number | null;
+  demandeCorrectionReference?: string | null;
+  demandeCorrectionStatut?: DemandeStatut | null;
+  dateExamen?: string | null;
+  dateValidation?: string | null;
+  dateApplication?: string | null;
+  motifRejet?: string | null;
+  // Instantané pris à l'application (APPLIQUE).
+  montantCordonAvant?: number | null;
+  montantCordonApres?: number | null;
+  montantTVAInterieureAvant?: number | null;
+  montantTVAInterieureApres?: number | null;
+  soldeCordonAvant?: number | null;
+  soldeCordonApres?: number | null;
+  soldeTVAAvant?: number | null;
+  soldeTVAApres?: number | null;
+  tvaImportationRestanteAvant?: number | null;
+  tvaImportationRestanteApres?: number | null;
+}
+
+export interface CreateAvenantRequest {
+  certificatCreditId: number;
+  type: TypeAvenant;
+  motif: string | null;
+  /** Instant ISO-8601 (`YYYY-MM-DDT00:00:00Z`). */
+  dateSignature: string | null;
+  /** Obligatoires pour un avenant FINANCIER, null sinon. */
+  creditExterieurPropose: number | null;
+  creditInterieurPropose: number | null;
+}
+
+/** Nouveau récapitulatif saisi par la DGTCP à l'application d'un avenant financier. */
+export interface ApplicationAvenantRequest {
+  valeurDouaneFournitures: number | null;
+  droitsEtTaxesDouaneHorsTva: number | null;
+  taxesConsommation: number | null;
+  tvaImportationDouaneAccordee: number | null;
+  montantCordon: number;
+  montantMarcheHt: number | null;
+  tvaCollecteeTravaux: number | null;
+  montantTVAInterieure: number;
 }
 
 export interface DocumentAvenantDto {
   id: number;
-  type: string;
+  codeDocument: string;
   nomFichier: string;
   chemin?: string;
   dateUpload?: string;
@@ -2650,29 +2736,34 @@ export interface DocumentAvenantDto {
   actif?: boolean;
 }
 
-export type TypeDocumentAvenant =
-  | "NOTE_SERVICE"
-  | "JUSTIFICATIONS_LEGALES"
-  | "LETTRES_MOTIVEES"
-  | "AVENANT_CONTRAT"
-  | "LETTRES_AUTORITE_CONTRACTANTE"
-  | "DETAIL_CORRECTIONS_NECESSAIRES"
-  | "DOCUMENTS_OFFICIELS"
-  | "DECISION_COMMISSION"
-  | "AUTRE_DOCUMENT";
-
-// Removed AVENANT_DOCUMENT_TYPES and AVENANT_STATUT_LABELS (G1 migration).
-// Use tTypeDocument / tStatutAvenant from "@/i18n/enums" instead.
-
+const avenantMotifQuery = (motif?: string | null) =>
+  motif && motif.trim() ? `?motif=${encodeURIComponent(motif.trim())}` : "";
 
 export const avenantApi = {
-  // getAll and getById removed — backend only supports document endpoints
+  /** Liste dans le périmètre de l'utilisateur (ordre serveur). */
+  getAll: () => apiFetch<AvenantDto[]>("/avenants"),
+  getById: (id: number) => apiFetch<AvenantDto>(`/avenants/${id}`),
+  getByCertificat: (certificatId: number) => apiFetch<AvenantDto[]>(`/avenants/by-certificat/${certificatId}`),
+  create: (data: CreateAvenantRequest) => apiFetch<AvenantDto>("/avenants", { method: "POST", body: data }),
+  /** DGTCP ; motif seulement quand l'administrateur se substitue. */
+  priseEnCharge: (id: number, motif?: string | null) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/prise-en-charge${avenantMotifQuery(motif)}`, { method: "POST" }),
+  /** Président ; motif seulement quand l'administrateur se substitue. */
+  validation: (id: number, motif?: string | null) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/validation${avenantMotifQuery(motif)}`, { method: "POST" }),
+  /** DGTCP à l'examen, Président à la validation ; motif obligatoire. */
+  rejet: (id: number, motif: string) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/rejet${avenantMotifQuery(motif)}`, { method: "POST" }),
+  /** DGTCP. Corps uniquement pour un avenant FINANCIER. */
+  application: (id: number, body?: ApplicationAvenantRequest) =>
+    apiFetch<AvenantDto>(`/avenants/${id}/application`, body ? { method: "POST", body } : { method: "POST" }),
   getDocuments: (id: number) => apiFetch<DocumentAvenantDto[]>(`/avenants/${id}/documents`).then(normalizeDocs),
-  uploadDocument: (id: number, type: TypeDocumentAvenant, file: File) => {
+  /** Dépôt possible seulement tant que l'avenant est DEPOSE. */
+  uploadDocument: (id: number, codeDocument: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     return apiFetch<DocumentAvenantDto>(
-      `/avenants/${id}/documents?codeDocument=${encodeURIComponent(type)}`,
+      `/avenants/${id}/documents?codeDocument=${encodeURIComponent(codeDocument)}`,
       { method: "POST", rawBody: formData }
     );
   },

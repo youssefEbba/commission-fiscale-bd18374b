@@ -128,11 +128,16 @@
     "ANNULEE": "ملغاة"
   },
   "statut_avenant": {
-    "EN_ATTENTE": "قيد الانتظار",
-    "VALIDE": "مصادق عليه",
-    "VALIDEE": "مصادق عليها",
-    "REJETE": "مرفوض",
-    "REJETEE": "مرفوضة"
+    "DEPOSE": "مودَع",
+    "EN_COURS_TRAITEMENT": "قيد المعالجة",
+    "ADOPTE": "معتمد",
+    "APPLIQUE": "مطبَّق",
+    "REJETE": "مرفوض"
+  },
+  "type_avenant": {
+    "JURIDIQUE": "قانوني",
+    "CONTRAT": "تعاقدي",
+    "FINANCIER": "مالي"
   },
   "statut_sous_traitance": {
     "DEMANDE": "مطلوبة",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -161,7 +162,7 @@ const ReferentielTaxes = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow><RowNumberHead />
                     <TableHead className="w-16">Ordre</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Dénomination</TableHead>
@@ -171,8 +172,9 @@ const ReferentielTaxes = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.map(t => (
+                  {data.map((t, rowIdx) => (
                     <TableRow key={t.id}>
+                      <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="text-muted-foreground">{t.ordreAffichage ?? "—"}</TableCell>
                       <TableCell className="font-mono font-semibold uppercase">{t.codeTaxe}</TableCell>
                       <TableCell>{t.denominationTaxe}</TableCell>

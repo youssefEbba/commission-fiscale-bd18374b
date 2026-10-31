@@ -60,7 +60,7 @@
       "select_search_placeholder": "بحث (الاسم، الرقم الضريبي)…",
       "nif_prefix": "الرقم الضريبي: {{nif}}",
       "fields": {
-        "raison_sociale": "الاسم الاجتماعي *",
+        "raison_sociale": "اسم المؤسسة *",
         "nif": "الرقم الضريبي *",
         "adresse": "العنوان",
         "situation_fiscale": "الوضع الجبائي",
@@ -95,7 +95,7 @@
     "unknown_error": "خطأ غير معروف",
     "select_certificat": "يرجى اختيار شهادة",
     "select_entreprise": "يرجى اختيار مؤسسة",
-    "fill_raison_nif": "يرجى إدخال الاسم الاجتماعي والرقم الضريبي",
+    "fill_raison_nif": "يرجى إدخال اسم المؤسسة والرقم الضريبي",
     "docs_upload_error": "تم إنشاء المقاولة من الباطن لكن حدث خطأ أثناء رفع الوثائق: {{error}}",
     "success_title": "تم بنجاح",
     "created": "تم إنشاء المقاولة من الباطن وإرسال الطلب",

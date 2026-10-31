@@ -19,9 +19,11 @@
     "sections": {
       "general": "Informations générales",
       "convention": "Convention rattachée",
-      "delegues": "Représentants affectés"
+      "delegues": "Représentants affectés",
+      "conventions": "Conventions du marché"
     },
-    "delegues_empty": "Aucun représentant affecté."
+    "delegues_empty": "Aucun représentant affecté.",
+    "convention_principale": "Principale"
   },
   "columns": {
     "numero": "N° Attribution / Marché",
@@ -29,7 +31,9 @@
     "montant_ht": "Montant HT",
     "statut": "Statut",
     "type": "Type",
-    "actions": "Actions"
+    "actions": "Actions",
+    "conventions": "Conventions",
+    "autorite": "Autorité contractante"
   },
   "type": {
     "contrat": "Marché / Contrat",
@@ -44,7 +48,8 @@
     "statut": "Statut",
     "type": "Type",
     "reference": "Référence",
-    "bailleur": "Bailleur"
+    "bailleur": "Bailleur",
+    "autorite": "Autorité contractante"
   },
   "form": {
     "title_edit": "Modifier",
@@ -74,10 +79,18 @@
     "errors": {
       "numero_required": "Le numéro de marché est requis",
       "montant_required": "Le montant contrat HT est obligatoire",
-      "submit_failed": "Échec de l'opération"
+      "submit_failed": "Échec de l'opération",
+      "convention_required": "Sélectionnez au moins une convention"
     },
     "montant_ttc": "Montant contrat TTC",
-    "devise": "Devise"
+    "devise": "Devise",
+    "conventions": "Conventions",
+    "conventions_add_placeholder": "Ajouter une convention",
+    "convention_principale": "Principale",
+    "convention_make_principale": "Rendre principale",
+    "convention_remove": "Retirer",
+    "convention_create": "Créer une convention",
+    "conventions_hint": "La première convention de la liste est la convention principale du marché."
   },
   "assign": {
     "title": "Gérer les représentants",
