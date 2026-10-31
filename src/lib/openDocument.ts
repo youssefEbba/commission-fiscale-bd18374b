@@ -76,9 +76,14 @@ const WINDOWS_PATH = /^[A-Za-z]:[\\/]/;
 export function resolveDocumentUrl(doc: OpenableDoc): string | null {
   if (doc.url && /^https?:\/\//i.test(doc.url)) return doc.url;
   const raw = doc.url || doc.chemin;
-  // Un chemin disque du serveur (C:\...) n'est pas téléchargeable : passer par l'identifiant.
-  if (raw && !(WINDOWS_PATH.test(raw) && doc.id != null)) {
-    if (/^https?:\/\//i.test(raw)) return raw;
+
+  if (raw) {
+    if (/^https?:\/\//i.test(raw)) {
+      return raw.replace(
+        /^http:\/\/commission-fiscale\.gov\.mr(?=\/|$)/i,
+        "https://commission-fiscale.gov.mr"
+      );
+    }
     const origin = API_BASE.replace(/\/api\/?$/, "");
     return origin + (raw.startsWith("/") ? "" : "/") + raw.replace(/\\/g, "/");
   }
