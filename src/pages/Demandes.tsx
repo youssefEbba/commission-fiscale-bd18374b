@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
-import { API_BASE } from "@/lib/apiConfig";
+import { apiFetch } from "@/lib/api";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";

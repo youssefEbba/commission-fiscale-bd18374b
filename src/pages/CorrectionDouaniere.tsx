@@ -45,7 +45,7 @@ const STATUT_COLORS: Record<string, string> = {
   NOTIFIEE: "bg-gray-100 text-gray-800",
 };
 
-import { API_BASE } from "@/lib/apiConfig";
+import { apiFetch } from "@/lib/api";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { requiredVisasCorrection, requiredPreVisaDocCorrection, resolveCredits, firstVisaRoleCorrection } from "@/lib/visas";
 
