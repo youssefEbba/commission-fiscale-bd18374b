@@ -59,6 +59,8 @@ const Marches = () => {
   const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
@@ -134,6 +136,7 @@ const Marches = () => {
   useEffect(() => {
     // Première ouverture : immédiate ; ensuite on attend la fin de la frappe.
     const delay = firstSearch.current ? 0 : 300;
+    setPage(1);
     firstSearch.current = false;
     const tm = setTimeout(() => { fetchMarches(search.trim() || undefined); }, delay);
     return () => clearTimeout(tm);
