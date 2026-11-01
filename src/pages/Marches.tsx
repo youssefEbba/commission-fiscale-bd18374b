@@ -148,6 +148,7 @@ const Marches = () => {
     setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null });
     setConvIds([]);
     setDialogOpen(true);
+    loadDemandes();
   };
 
   const openEdit = (m: MarcheDto) => {
@@ -529,6 +530,7 @@ const Marches = () => {
                 <Label>
                   {t("marches:form.conventions")}{" "}
                   {!editing && <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span>}
+                  {conventionsLoading && <Loader2 className="inline h-3.5 w-3.5 ms-2 animate-spin text-muted-foreground" aria-hidden />}
                 </Label>
                 <OrderedMultiSelect
                   options={visibleConventions.map(c => ({
@@ -576,6 +578,7 @@ const Marches = () => {
                 <div className="space-y-2">
                   <Label>{t("marches:form.demande_correction")}</Label>
                   <SearchableSelect
+                    loading={demandesLoading}
                     value={form.demandeCorrectionId ? String(form.demandeCorrectionId) : ""}
                     onValueChange={v => setForm(f => ({ ...f, demandeCorrectionId: v ? Number(v) : undefined }))}
                     placeholder={eligibles.length === 0 ? t("marches:form.demande_correction_empty") : t("marches:form.demande_correction_placeholder")}
