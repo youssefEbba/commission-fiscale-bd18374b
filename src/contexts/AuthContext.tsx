@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { LoginResponse } from "@/lib/api";
-import { endSession, clearStoredSession, SESSION_ENDED_EVENT } from "@/lib/session";
+import { endSession, SESSION_ENDED_EVENT } from "@/lib/session";
 
 export type AppRole = "PRESIDENT" | "DGD" | "DGTCP" | "DGI" | "DGB" | "ADMIN_SI" | "AUTORITE_CONTRACTANTE" | "ENTREPRISE" | "AUTORITE_UPM" | "AUTORITE_UEP" | "SOUS_TRAITANT" | "COMMISSION_RELAIS";
 

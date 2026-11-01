@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { LogIn, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
@@ -14,6 +14,7 @@ import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
 import { API_BASE } from "@/lib/apiConfig";
 import { parseApiErrorBody } from "@/lib/apiErrorText";
+import { takeSessionNotice } from "@/lib/session";
 
 const Login = () => {
   const { t } = useTranslation(["auth", "common"]);
@@ -27,6 +28,17 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Fin de session imposée (jeton refusé, mot de passe changé) : prévenir l'utilisateur.
+  useEffect(() => {
+    const notice = takeSessionNotice();
+    if (notice === "expired") {
+      toast({ title: t("login.notice.expired_title"), description: t("login.notice.expired_description") });
+    } else if (notice === "password_changed") {
+      toast({ title: t("login.notice.password_changed_title"), description: t("login.notice.password_changed_description") });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
