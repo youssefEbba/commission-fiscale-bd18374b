@@ -867,6 +867,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <SearchableSelect
                         value={groupementId}
                         onValueChange={(v) => setGroupementId(v)}
+                        loading={groupementsLoading}
+                        loadingMessage={t("common:states.loading")}
                         placeholder={t("demandes:wizard.fields.groupement_placeholder")}
                         searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
                         emptyMessage={t("demandes:wizard.fields.groupement_empty")}
@@ -903,6 +905,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <SearchableSelect
                         value={entrepriseId}
                         onValueChange={(v) => setEntrepriseId(v)}
+                        loading={entreprisesLoading}
+                        loadingMessage={t("common:states.loading")}
                         placeholder={t("demandes:wizard.fields.entreprise_search_placeholder")}
                         searchPlaceholder={t("demandes:wizard.fields.entreprise_search_command_placeholder")}
                         emptyMessage={t("demandes:wizard.fields.entreprise_empty")}
@@ -1032,6 +1036,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           setMarcheId("");
                         }}
                         placeholder={t("demandes:wizard.fields.select_convention")}
+                        loading={conventionsLoading}
+                        loadingMessage={t("common:states.loading")}
                         searchPlaceholder={t("demandes:wizard.fields.search_convention")}
                         options={conventions.filter(c => c.actif !== false || String(c.id) === conventionId).map(c => ({
                           value: String(c.id),
@@ -1073,6 +1079,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                       value={newConvForm.bailleurId != null ? String(newConvForm.bailleurId) : ""}
                                       onValueChange={v => setNewConvForm(prev => ({ ...prev, bailleurId: v ? Number(v) : undefined }))}
                                       placeholder={t("demandes:wizard.fields.select_bailleur")}
+                                      loading={bailleursLoading}
+                                      loadingMessage={t("common:states.loading")}
                                       searchPlaceholder={t("demandes:wizard.fields.search_bailleur")}
                                       options={bailleurs.map(b => ({ value: String(b.id), label: b.nom }))}
                                     />
@@ -1381,7 +1389,12 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 )}
                 <div>
                   <h3 className="text-sm font-semibold mb-2">{t("demandes:wizard.fields.pieces_to_attach")} <span className="text-muted-foreground text-xs">{t("demandes:wizard.fields.pieces_ged_hint")}</span></h3>
-                  {gedDocTypes.length === 0 ? (
+                  {gedLoading && gedDocTypes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("common:documents.ged_pieces.loading")}
+                    </p>
+                  ) : gedDocTypes.length === 0 ? (
                     <p className="text-sm text-muted-foreground italic py-4 text-center">{t("demandes:wizard.fields.pieces_empty")}</p>
                   ) : (
                     <div className="space-y-2">
