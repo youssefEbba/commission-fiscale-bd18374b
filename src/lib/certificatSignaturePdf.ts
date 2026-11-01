@@ -109,7 +109,7 @@ export async function generateCertificatToSignPdf(
   opts: PdfOutputOptions = {},
 ): Promise<Blob> {
   const { entreprise, marche, convention, autorite } = ctx;
-  const doc = applyOfficialFont(new jsPDF({ unit: "mm", format: "a4" }));
+  const doc = await applyOfficialFont(new jsPDF({ unit: "mm", format: "a4" }));
   const pageW = doc.internal.pageSize.getWidth();
   const M = 12;
   const W = pageW - M * 2;
