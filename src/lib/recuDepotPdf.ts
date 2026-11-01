@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
-import { applyOfficialFont, loadOfficialWebFonts, CANVAS_FONT_AR, CANVAS_FONT_FR } from "@/lib/pdfFonts";
+import { PDF_FONT, applyOfficialFont, loadOfficialWebFonts, CANVAS_FONT_AR, CANVAS_FONT_FR } from "@/lib/pdfFonts";
 import i18n from "@/i18n";
 import { formatAmount, formatDateTime } from "@/i18n/format";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
@@ -8,8 +8,9 @@ import type { DemandeCorrectionDto, DocumentDto } from "@/lib/api";
 
 /**
  * Reçu de dépôt d'une demande de correction (code document RECU_DEPOT).
- * Tout le texte est rendu via canvas (pour gérer l'arabe et le sens d'écriture), dans la langue courante,
- * avec la police officielle Ouguiya (LouguiyaFR / Louguiya), chargée avant la génération.
+ * Rédigé dans la langue courante, avec la police officielle Ouguiya (LouguiyaFR / Louguiya).
+ * En français, le texte est écrit comme du vrai texte PDF (sélectionnable, police visible dans les propriétés).
+ * En arabe, il reste dessiné via canvas : jsPDF ne sait ni lier les lettres arabes ni gérer le sens d'écriture.
  */
 export interface RecuDepotInput {
   demande: DemandeCorrectionDto;
@@ -38,14 +39,25 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
   const fontOf = (size: number, bold: boolean) =>
     `${bold ? "bold " : ""}${size * scale}px ${rtl ? `"${CANVAS_FONT_AR}", "${CANVAS_FONT_FR}", "Noto Sans Arabic", Arial` : `"${CANVAS_FONT_FR}", Arial`}, sans-serif`;
 
-  const wrap = (text: string, size: number, bold: boolean, maxW: number): string[] => {
+  /** Espaces fines (séparateurs de milliers) absentes de LouguiyaFR : remplacées par une espace insécable. */
+  const pdfSafe = (text: string) => text.replace(/[\u202F\u2009\u2007]/g, "\u00A0");
+  const hex6 = (c: string) => (c.length === 4 ? `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}` : c);
+  const setPdfText = (size: number, bold: boolean, color = "#000") => {
+    doc.setFont(PDF_FONT, bold ? "bold" : "normal").setFontSize(size).setTextColor(hex6(color));
+  };
+  const widthOf = (text: string, size: number, bold: boolean) => {
+    if (!rtl) { setPdfText(size, bold); return doc.getTextWidth(pdfSafe(text)); }
     ctx.font = fontOf(size, bold);
-    const words = text.split(/\s+/);
+    return ctx.measureText(text).width / scale;
+  };
+
+  const wrap = (text: string, size: number, bold: boolean, maxW: number): string[] => {
+    const words = text.split(/[ \t\n\r]+/);
     const lines: string[] = [];
     let cur = "";
     for (const w of words) {
       const test = cur ? `${cur} ${w}` : w;
-      if (ctx.measureText(test).width / scale > maxW && cur) { lines.push(cur); cur = w; } else cur = test;
+      if (widthOf(test, size, bold) > maxW && cur) { lines.push(cur); cur = w; } else cur = test;
     }
     if (cur) lines.push(cur);
     return lines.length ? lines : [""];
@@ -54,6 +66,12 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
   /** Dessine une ligne ; align "start" respecte le sens (gauche en FR, droite en AR). */
   const draw = (text: string, x: number, size = 10, bold = false, align: "start" | "center" | "end" = "start", color = "#000") => {
     if (!text) return;
+    if (!rtl) {
+      // Français : vrai texte PDF, ligne de base à y (même position que le rendu canvas).
+      setPdfText(size, bold, color);
+      doc.text(pdfSafe(text), x, y, { align: align === "center" ? "center" : align === "end" ? "right" : "left" });
+      return;
+    }
     ctx.font = fontOf(size, bold);
     const w = Math.ceil(ctx.measureText(text).width) + 6;
     const h = Math.ceil(size * scale * 1.6);
