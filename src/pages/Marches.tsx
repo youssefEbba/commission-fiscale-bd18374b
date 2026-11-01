@@ -334,6 +334,7 @@ const Marches = () => {
       } else {
         await marcheApi.create(payload);
         toast({ title: okTitle, description: t("marches:toast.created") });
+        invalidateList(listKey("demandes"));
       }
       setDialogOpen(false);
       fetchMarches();
@@ -384,7 +385,7 @@ const Marches = () => {
                 <Plus className="h-4 w-4 me-2" /> {t("marches:list.new")}
               </Button>
             )}
-            <Button variant="outline" onClick={() => fetchMarches(search.trim() || undefined)} disabled={loading}>
+            <Button variant="outline" onClick={() => { fetchMarches(search.trim() || undefined); loadConventions(true); }} disabled={loading}>
               <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("marches:list.refresh")}
             </Button>
           </div>
@@ -662,6 +663,7 @@ const Marches = () => {
         open={convCreateOpen}
         onOpenChange={setConvCreateOpen}
         onCreated={(created) => {
+          invalidateList(listKey("conventions"));
           setConventions(prev => [created, ...prev.filter(c => c.id !== created.id)]);
           setConvIds(prev => (prev.includes(created.id) ? prev : [...prev, created.id]));
         }}
