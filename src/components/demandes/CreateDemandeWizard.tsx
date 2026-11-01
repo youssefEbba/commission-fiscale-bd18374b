@@ -1839,7 +1839,8 @@ async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: strin
   } catch (e) {
     console.warn("Reçu de dépôt non enregistré :", e);
     sonnerToast.error(tr("toast_fail_title"), {
-      description: tr("toast_fail_body", { numero }),
+      // Raison donnée par le serveur (ex. stockage des fichiers indisponible).
+      description: [tr("toast_fail_body", { numero }), formatApiErrorMessage(e, "")].filter(Boolean).join(" — "),
       duration: 30000,
       action: { label: tr("regenerate"), onClick: () => { void issueRecuDepot(demande, deposantNom, libelles); } },
     });
