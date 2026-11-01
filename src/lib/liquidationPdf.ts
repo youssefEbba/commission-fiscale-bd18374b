@@ -64,7 +64,7 @@ function labelDottedValue(doc: jsPDF, x: number, y: number, label: string, value
 }
 
 export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
-  const doc = applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
+  const doc = await applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const M = 32;
   let y = 36;

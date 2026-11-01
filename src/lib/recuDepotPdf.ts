@@ -26,7 +26,7 @@ const t = (k: string, o?: Record<string, unknown>) => i18n.t(`demandes:recu.${k}
 export async function generateRecuDepotPdf({ demande: d, documents, deposantNom, libelles = {}, regenerated = false }: RecuDepotInput): Promise<Blob> {
   await loadOfficialWebFonts();
   const rtl = i18n.language?.startsWith("ar");
-  const doc = applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
+  const doc = await applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const M = 40;
