@@ -7,7 +7,13 @@
     "search_placeholder": "بحث (الرقم أو العنوان)…",
     "empty": "لا توجد صفقة",
     "load_error": "تعذّر تحميل الصفقات",
-    "delegues_load_error": "تعذّر تحميل الممثلين"
+    "delegues_load_error": "تعذّر تحميل الممثلين",
+    "pagination": {
+      "range": "{{from}}–{{to}} من {{total}}",
+      "page": "الصفحة {{current}} / {{total}}",
+      "previous": "السابق",
+      "next": "التالي"
+    }
   },
   "detail": {
     "title": "الصفقة {{ref}}",

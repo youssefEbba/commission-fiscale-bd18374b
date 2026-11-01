@@ -42,8 +42,36 @@ export function avenantPiecesObligatoires(
   return options.filter((o) => o.obligatoire).map((o) => ({ code: o.code, label: o.label, jointe: joints.has(o.code) }));
 }
 
+/**
+ * Pièces du déposant : entreprise / autorité contractante seulement (celles qui déposent
+ * l'avenant, `modification.submit`), et seulement au statut DEPOSE. Les directions
+ * reçoivent un 403 du serveur : le bouton ne leur est pas proposé.
+ */
 export const canUploadAvenantPieces = (a: Pick<AvenantDto, "statut">, has: (p: string) => boolean) =>
-  a.statut === "DEPOSE" && has("modification.document.upload");
+  a.statut === "DEPOSE" && has("modification.document.upload") && has("modification.submit");
+
+/** Statuts où le Président (ou l'administrateur) peut joindre la décision de la commission. */
+export const STATUTS_AVENANT_DECISION: StatutAvenant[] = ["EN_COURS_TRAITEMENT", "ADOPTE"];
+
+/**
+ * Pièces produites par la Commission (ex. `DECISION_COMMISSION`) : Président ou
+ * administrateur, au statut EN_COURS_TRAITEMENT ou ADOPTE (403 / 409 sinon côté serveur).
+ */
+export const canUploadAvenantDecision = (a: Pick<AvenantDto, "statut">, has: (p: string) => boolean) =>
+  STATUTS_AVENANT_DECISION.includes(a.statut) &&
+  (has("modification.president.validate") || has("modification.admin_override"));
+
+/**
+ * Pièces de la Commission = pièces actives du processus (sans `depot`) moins celles
+ * que le déposant dépose (`depot=true`). Les pièces désactivées sont écartées.
+ */
+export function avenantPiecesCommission<T extends { code: string; actif?: boolean }>(
+  toutes: T[],
+  depot: Array<{ code: string }>,
+): T[] {
+  const deposant = new Set(depot.map((o) => o.code));
+  return toutes.filter((o) => o.actif !== false && !deposant.has(o.code));
+}
 
 /** `direct` : geste propre au rôle ; `admin` : substitution par l'administrateur (motif obligatoire). */
 export type AvenantGesteMode = "direct" | "admin" | null;

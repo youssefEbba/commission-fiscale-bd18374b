@@ -76,14 +76,12 @@ const ChatbotDGD = () => {
 
   const checkDqeCorrigeStatus = async (correctionId: string) => {
     try {
-      console.log("[ChatbotDGD] Checking corrige-status for:", correctionId);
       const res = await aiFetch(`/api/correction/corrige-status/${correctionId}?includePayload=true`);
       if (!res.ok) {
         console.warn("[ChatbotDGD] corrige-status error:", res.status);
         return;
       }
       const data: CorrigeStatus = await res.json();
-      console.log("[ChatbotDGD] corrige-status response:", data);
       setCorrigeStatus(data);
       setDqeCorrigeValid(data.dqe_corrige?.valid === true);
       if (data.dqe_corrige?.valid) {

@@ -8,6 +8,7 @@ import {
   deviseApi, DeviseDto, CreateDeviseRequest,
   forexApi,
   documentRequirementApi, DocumentRequirementDto,
+  formatApiErrorMessage,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -207,8 +208,10 @@ const ConventionCreateDialog = ({ open, onOpenChange, onCreated }: Props) => {
       for (const doc of createDocs) {
         try {
           await conventionApi.uploadDocument(created.id, doc.type, doc.file);
-        } catch {
-          toast({ title: t("common:warnings.title", "Attention"), description: t("conventions:docs.upload_failure", { name: doc.file.name }), variant: "destructive" });
+        } catch (e) {
+          // Raison donnée par le serveur (ex. stockage des fichiers indisponible).
+          const reason = formatApiErrorMessage(e, "");
+          toast({ title: t("common:warnings.title", "Attention"), description: [t("conventions:docs.upload_failure", { name: doc.file.name }), reason].filter(Boolean).join(" — "), variant: "destructive" });
         }
       }
       toast({ title: t("common:success.title", "Succès"), description: createDocs.length ? t("conventions:create.success_with_docs", { count: createDocs.length }) : t("conventions:create.success") });

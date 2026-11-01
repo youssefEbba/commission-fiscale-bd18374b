@@ -11,6 +11,26 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Aperçu : relaie /api et /ws vers le backend exposé par ngrok.
+    proxy: {
+      "/api": {
+        target: "https://stateless-dryadic-marylouise.ngrok-free.dev",
+        changeOrigin: true,
+        secure: true,
+        headers: { "ngrok-skip-browser-warning": "true" },
+      },
+      "/ws": {
+        target: "https://stateless-dryadic-marylouise.ngrok-free.dev",
+        changeOrigin: true,
+        secure: true,
+        ws: true,
+        headers: { "ngrok-skip-browser-warning": "true" },
+      },
+    },
+  },
+  build: {
+    // Aucune carte de source publiée en production.
+    sourcemap: false,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

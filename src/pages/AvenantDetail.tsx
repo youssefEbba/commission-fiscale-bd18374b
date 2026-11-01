@@ -10,9 +10,11 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import {
   avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto,
-  demandeCorrectionApi, DemandeCorrectionDto,
-} from "@/lib/api";
-import { avenantActions, avenantPiecesObligatoires, canUploadAvenantPieces } from "@/lib/avenants";
+  demandeCorrectionApi, DemandeCorrectionDto, formatApiErrorMessage } from "@/lib/api";
+import {
+  avenantActions, avenantPiecesObligatoires, avenantPiecesCommission,
+  canUploadAvenantPieces, canUploadAvenantDecision,
+} from "@/lib/avenants";
 import { tStatutDemande, tTypeAvenant } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import AvenantStatutBadge from "@/components/avenants/AvenantStatutBadge";
@@ -23,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft, CheckCircle2, Circle, FileText, FilePen, Loader2, RefreshCw,
-  XCircle, PlayCircle, ClipboardCheck, ExternalLink, AlertTriangle,
+  XCircle, PlayCircle, ClipboardCheck, ExternalLink, AlertTriangle, Gavel,
 } from "lucide-react";
 
 type Geste = "prise_en_charge" | "validation" | "rejet";
@@ -43,13 +45,20 @@ const AvenantDetail = () => {
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
   const [gedOpen, setGedOpen] = useState(false);
+  const [decisionOpen, setDecisionOpen] = useState(false);
   const [geste, setGeste] = useState<Geste | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [certificat, setCertificat] = useState<CertificatCreditDto | null>(null);
   const [correction, setCorrection] = useState<DemandeCorrectionDto | null>(null);
   const [applyPreparing, setApplyPreparing] = useState(false);
 
+  // Pièces du déposant (`depot=true`) et toutes les pièces actives du processus :
+  // la différence = pièces produites par la Commission (décision de la commission…).
   const ged = useGedPieces("MODIFICATION_CI", { depot: true });
+  const gedTout = useGedPieces("MODIFICATION_CI");
+  const piecesCommission = avenantPiecesCommission(gedTout.options, ged.options);
+  const labelOfPiece = (code: string) =>
+    ged.options.find((o) => o.code === code)?.label ?? gedTout.labelOf(code);
   const ref = avenant?.numero || (avenant ? `#${avenant.id}` : "");
   usePageTitle("modifications:detail.title", { ref: ref || `#${id ?? ""}` });
 
@@ -61,7 +70,7 @@ const AvenantDetail = () => {
       setDocs(list.map((d) => ({ ...d, type: d.codeDocument })));
     } catch (e: any) {
       setDocs([]);
-      setDocsError(e?.message || t("modifications:detail.pieces_error"));
+      setDocsError(formatApiErrorMessage(e, t("modifications:detail.pieces_error")));
     } finally {
       setDocsLoading(false);
     }
@@ -77,7 +86,7 @@ const AvenantDetail = () => {
       loadDocs(a.id);
     } catch (e: any) {
       setAvenant(null);
-      setLoadError(e?.message || t("modifications:detail.load_error"));
+      setLoadError(formatApiErrorMessage(e, t("modifications:detail.load_error")));
     } finally {
       setLoading(false);
     }
@@ -86,6 +95,7 @@ const AvenantDetail = () => {
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
 
   const canUpload = !!avenant && canUploadAvenantPieces(avenant, hasPermission);
+  const canUploadDecision = !!avenant && canUploadAvenantDecision(avenant, hasPermission);
 
   // Après un dépôt : ouvrir directement les pièces.
   useEffect(() => {
@@ -97,7 +107,7 @@ const AvenantDetail = () => {
   }, [avenant, canUpload, searchParams, setSearchParams]);
 
   const okToast = (description: string) => toast({ title: t("common:success", { defaultValue: "Succès" }), description });
-  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+  const errToast = (e: any) => toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
 
   if (loading) {
     return (
@@ -206,6 +216,12 @@ const AvenantDetail = () => {
   const obligatoires = piecesEtatConnu ? avenantPiecesObligatoires(ged.options, docs) : [];
   const manquantes = obligatoires.filter((p) => !p.jointe);
   const manquantesList = manquantes.map((p) => p.label).join(", ");
+  // Pièces obligatoires de la Commission, exigées par le serveur à la validation du Président.
+  const commissionEtatConnu = piecesEtatConnu && !gedTout.isLoading && !gedTout.error;
+  const commissionManquantes = commissionEtatConnu
+    ? avenantPiecesObligatoires(piecesCommission, docs).filter((p) => !p.jointe)
+    : [];
+  const commissionCodes = new Set(piecesCommission.map((o) => o.code));
 
   return (
     <DashboardLayout>
@@ -301,6 +317,12 @@ const AvenantDetail = () => {
                     {actions.priseEnCharge === "admin" && <Badge variant="secondary" className="ms-2 text-[10px]">{t("modifications:actions.admin_badge")}</Badge>}
                   </Button>
                 )}
+                {actions.validation && commissionManquantes.length > 0 && (
+                  <p className="w-full flex items-start gap-2 rounded-md border border-accent/50 bg-accent/10 p-3 text-xs text-foreground">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-accent-foreground" />
+                    {t("modifications:detail.decision_commission.warning_validation", { list: commissionManquantes.map((p) => p.label).join(", ") })}
+                  </p>
+                )}
                 {actions.validation && (
                   <Button size="sm" onClick={() => setGeste("validation")}>
                     <CheckCircle2 className="h-4 w-4 me-1" /> {t("modifications:actions.valider")}
@@ -371,9 +393,21 @@ const AvenantDetail = () => {
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" /> {t("modifications:detail.pieces_title")}
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setGedOpen(true)}>
-              {canUpload ? t("modifications:detail.pieces_manage") : t("modifications:detail.pieces_view")}
-            </Button>
+            <div className="flex flex-wrap gap-2 justify-end">
+              {canUploadDecision && (
+                <Button
+                  size="sm"
+                  onClick={() => setDecisionOpen(true)}
+                  disabled={gedTout.isLoading || ged.isLoading || (!gedTout.error && !ged.error && piecesCommission.length === 0)}
+                  title={!gedTout.isLoading && !ged.isLoading && piecesCommission.length === 0 ? t("modifications:detail.decision_commission.aucune_parametree") : undefined}
+                >
+                  <Gavel className="h-4 w-4 me-1" /> {t("modifications:detail.decision_commission.joindre")}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => setGedOpen(true)}>
+                {canUpload ? t("modifications:detail.pieces_manage") : t("modifications:detail.pieces_view")}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {canUpload && a.statut === "DEPOSE" && manquantes.length > 0 && (
@@ -431,7 +465,7 @@ const AvenantDetail = () => {
                 {currentDocs.map((d) => (
                   <li key={d.id} className="py-2 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium truncate">{ged.labelOf(d.type)}</p>
+                      <p className="font-medium truncate">{labelOfPiece(d.type)}</p>
                       <p className="text-xs text-muted-foreground truncate">{d.nomFichier}</p>
                     </div>
                     <Badge variant="outline" className="text-xs shrink-0">{formatDate(d.dateUpload)}</Badge>
@@ -441,6 +475,12 @@ const AvenantDetail = () => {
             )}
             </div>
             {a.statut !== "DEPOSE" && <p className="text-xs text-muted-foreground">{t("modifications:detail.pieces_locked")}</p>}
+            {canUploadDecision && (gedTout.error || ged.error) && (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs text-destructive">{t("common:documents.ged_pieces.error", { message: (gedTout.error || ged.error)?.message })}</p>
+                <Button type="button" size="sm" variant="outline" onClick={() => { ged.refetch(); gedTout.refetch(); }}>{t("common:documents.ged_pieces.retry")}</Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -486,6 +526,22 @@ const AvenantDetail = () => {
         onUpload={async (dossierId, code, file) => { await avenantApi.uploadDocument(dossierId, code, file); }}
         onRefresh={async (dossierId) => { await loadDocs(dossierId); }}
       />
+
+      {canUploadDecision && (
+        <DocumentGED
+          open={decisionOpen}
+          onOpenChange={setDecisionOpen}
+          title={t("modifications:detail.decision_commission.dialog_title", { ref })}
+          dossierId={a.id}
+          documentTypes={piecesCommission.map((o) => ({ value: o.code, label: o.label }))}
+          documents={docs.filter((d) => commissionCodes.has(d.type))}
+          loading={docsLoading}
+          loadError={docsError}
+          canUpload
+          onUpload={async (dossierId, code, file) => { await avenantApi.uploadDocument(dossierId, code, file); }}
+          onRefresh={async (dossierId) => { await loadDocs(dossierId); }}
+        />
+      )}
 
       <AvenantMotifDialog
         open={geste !== null}

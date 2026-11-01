@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { LogIn, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
 import { API_BASE } from "@/lib/apiConfig";
+import { parseApiErrorBody } from "@/lib/apiErrorText";
+import { takeSessionNotice } from "@/lib/session";
 
 const Login = () => {
   const { t } = useTranslation(["auth", "common"]);
@@ -22,13 +24,26 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Fin de session imposée (jeton refusé, mot de passe changé) : prévenir l'utilisateur.
+  useEffect(() => {
+    const notice = takeSessionNotice();
+    if (notice === "expired") {
+      toast({ title: t("login.notice.expired_title"), description: t("login.notice.expired_description") });
+    } else if (notice === "password_changed") {
+      toast({ title: t("login.notice.password_changed_title"), description: t("login.notice.password_changed_description") });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLocked(false);
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -39,13 +54,20 @@ const Login = () => {
 
       if (!res.ok) {
         const body = await res.text().catch(() => "");
+        // 429 : trop de tentatives — le serveur donne un message lisible, affiché tel quel.
+        if (res.status === 429) {
+          const parsed = parseApiErrorBody(res.status, body);
+          setLocked(true);
+          setError(parsed.message && parsed.message !== `Erreur ${res.status}` ? parsed.message : t("login.errors.too_many_attempts"));
+          return;
+        }
         let raw = "";
         try {
           const json = JSON.parse(body);
           raw = (json.error || json.message || "") as string;
         } catch { /* noop */ }
 
-        const lower = raw.toLowerCase();
+        const lower = typeof raw === "string" ? raw.toLowerCase() : "";
         if (lower.includes("valid") || lower.includes("activ") || lower.includes("approuv") || lower.includes("disabled")) {
           setError(t("login.errors.account_not_validated"));
         } else {
@@ -104,6 +126,7 @@ const Login = () => {
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
+              {locked && <AlertTitle>{t("login.errors.locked_title")}</AlertTitle>}
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}

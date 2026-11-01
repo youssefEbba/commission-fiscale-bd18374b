@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { cachedList, invalidateList } from "@/lib/listCache";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { Link, useNavigate } from "react-router-dom";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
@@ -58,6 +59,8 @@ const Marches = () => {
   const [demandes, setDemandes] = useState<DemandeCorrectionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MarcheDto | null>(null);
@@ -90,38 +93,65 @@ const Marches = () => {
   const errTitle = t("common:toast.error", { defaultValue: "Erreur" });
   const okTitle = t("common:toast.success", { defaultValue: "Succès" });
 
+  // Les listes dépendent du périmètre de l'appelant (compte + entité représentée).
+  const cacheScope = `${user?.userId ?? ""}:${user?.autoriteContractanteId ?? ""}:${user?.entrepriseId ?? ""}`;
+  const listKey = (name: string) => `marches:${name}:${cacheScope}`;
+
+  // La liste des marchés s'affiche seule : conventions et demandes se chargent à part.
   const fetchMarches = async (q?: string) => {
     setLoading(true);
     try {
-      const results = await Promise.allSettled([
-        marcheApi.getAll(q),
-        conventionApi.getAll(),
-        demandeCorrectionApi.getAll(),
-      ]);
-      setMarches(results[0].status === "fulfilled" ? results[0].value : []);
-      setConventions(results[1].status === "fulfilled" ? results[1].value : []);
-      setDemandes(results[2].status === "fulfilled" ? results[2].value : []);
-      if (results[0].status === "rejected") {
-        toast({ title: errTitle, description: t("marches:list.load_error"), variant: "destructive" });
-      }
+      setMarches(await marcheApi.getAll(q));
+    } catch {
+      setMarches([]);
+      toast({ title: errTitle, description: t("marches:list.load_error"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  /** Conventions : libellés de la colonne et formulaire. Chargées en arrière-plan, sans bloquer la liste. */
+  const [conventionsLoading, setConventionsLoading] = useState(false);
+  const loadConventions = (force = false) => {
+    if (force) invalidateList(listKey("conventions"));
+    setConventionsLoading(true);
+    cachedList(listKey("conventions"), () => conventionApi.getAll())
+      .then(setConventions)
+      .catch(() => undefined)
+      .finally(() => setConventionsLoading(false));
+  };
+
+  /** Demandes de correction : seulement utiles au formulaire de création, chargées à son ouverture. */
+  const [demandesLoading, setDemandesLoading] = useState(false);
+  const loadDemandes = (force = false) => {
+    if (force) invalidateList(listKey("demandes"));
+    setDemandesLoading(true);
+    cachedList(listKey("demandes"), () => demandeCorrectionApi.getAll())
+      .then(setDemandes)
+      .catch(() => undefined)
+      .finally(() => setDemandesLoading(false));
+  };
+
+  const firstSearch = useRef(true);
   useEffect(() => {
-    const tm = setTimeout(() => { fetchMarches(search.trim() || undefined); }, 300);
+    // Première ouverture : immédiate ; ensuite on attend la fin de la frappe.
+    const delay = firstSearch.current ? 0 : 300;
+    setPage(1);
+    firstSearch.current = false;
+    const tm = setTimeout(() => { fetchMarches(search.trim() || undefined); }, delay);
     return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  useEffect(() => { fetchMarches(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadConventions(); }, [cacheScope]);
 
   const openCreate = () => {
     setEditing(null);
     setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null });
     setConvIds([]);
     setDialogOpen(true);
+    loadDemandes();
   };
 
   const openEdit = (m: MarcheDto) => {
@@ -307,6 +337,7 @@ const Marches = () => {
       } else {
         await marcheApi.create(payload);
         toast({ title: okTitle, description: t("marches:toast.created") });
+        invalidateList(listKey("demandes"));
       }
       setDialogOpen(false);
       fetchMarches();
@@ -327,6 +358,12 @@ const Marches = () => {
       String(m.id).includes(s)
     );
   });
+
+  // Pagination côté écran (le serveur renvoie la liste entière, déjà ordonnée).
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
 
   const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
 
@@ -357,7 +394,7 @@ const Marches = () => {
                 <Plus className="h-4 w-4 me-2" /> {t("marches:list.new")}
               </Button>
             )}
-            <Button variant="outline" onClick={() => fetchMarches(search.trim() || undefined)} disabled={loading}>
+            <Button variant="outline" onClick={() => { fetchMarches(search.trim() || undefined); loadConventions(true); }} disabled={loading}>
               <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("marches:list.refresh")}
             </Button>
           </div>
@@ -393,9 +430,9 @@ const Marches = () => {
                         <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
                       </TableRow>
                     ) : (
-                      filtered.map((m, rowIdx) => (
+                      paginated.map((m, rowIdx) => (
                         <ClickableTableRow key={m.id} to={`/dashboard/marches/${m.id}`}>
-                          <RowNumberCell n={rowIdx + 1} />
+                          <RowNumberCell n={pageStart + rowIdx + 1} />
                           <TableCell className="font-medium whitespace-nowrap">
                             <Link to={`/dashboard/marches/${m.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(m)}</Link>
                           </TableCell>
@@ -478,6 +515,18 @@ const Marches = () => {
                     )}
                   </TableBody>
                 </Table>
+                {filtered.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-t text-sm">
+                    <span className="text-muted-foreground">
+                      {t("marches:list.pagination.range", { from: pageStart + 1, to: Math.min(pageStart + PAGE_SIZE, filtered.length), total: filtered.length })}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>{t("marches:list.pagination.previous")}</Button>
+                      <span className="text-muted-foreground">{t("marches:list.pagination.page", { current: currentPage, total: totalPages })}</span>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t("marches:list.pagination.next")}</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -503,6 +552,7 @@ const Marches = () => {
                 <Label>
                   {t("marches:form.conventions")}{" "}
                   {!editing && <span className="text-muted-foreground text-xs">{t("marches:form.convention_scope")}</span>}
+                  {conventionsLoading && <Loader2 className="inline h-3.5 w-3.5 ms-2 animate-spin text-muted-foreground" aria-hidden />}
                 </Label>
                 <OrderedMultiSelect
                   options={visibleConventions.map(c => ({
@@ -550,6 +600,7 @@ const Marches = () => {
                 <div className="space-y-2">
                   <Label>{t("marches:form.demande_correction")}</Label>
                   <SearchableSelect
+                    loading={demandesLoading}
                     value={form.demandeCorrectionId ? String(form.demandeCorrectionId) : ""}
                     onValueChange={v => setForm(f => ({ ...f, demandeCorrectionId: v ? Number(v) : undefined }))}
                     placeholder={eligibles.length === 0 ? t("marches:form.demande_correction_empty") : t("marches:form.demande_correction_placeholder")}
@@ -633,6 +684,7 @@ const Marches = () => {
         open={convCreateOpen}
         onOpenChange={setConvCreateOpen}
         onCreated={(created) => {
+          invalidateList(listKey("conventions"));
           setConventions(prev => [created, ...prev.filter(c => c.id !== created.id)]);
           setConvIds(prev => (prev.includes(created.id) ? prev : [...prev, created.id]));
         }}

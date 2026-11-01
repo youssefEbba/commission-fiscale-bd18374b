@@ -121,6 +121,12 @@
       "aucune_obligatoire": "Aucune pièce n'est marquée obligatoire dans la GED pour les avenants.",
       "warning_prise_en_charge": "Pièces obligatoires manquantes : {{list}}. Le serveur refusera la prise en charge tant qu'elles ne sont pas jointes.",
       "rappel_deposant": "Joignez les pièces obligatoires manquantes : {{list}}. La DGTCP ne pourra pas prendre l'avenant en charge sans elles."
+    },
+    "decision_commission": {
+      "joindre": "Joindre la décision de la commission",
+      "dialog_title": "Décision de la commission — avenant {{ref}}",
+      "warning_validation": "Pièce obligatoire de la Commission manquante : {{list}}. Le serveur refusera la validation tant qu'elle n'est pas jointe.",
+      "aucune_parametree": "Aucune pièce de la Commission n'est paramétrée dans la GED pour les avenants."
     }
   },
   "dialogs": {

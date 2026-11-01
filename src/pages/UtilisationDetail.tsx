@@ -3,7 +3,7 @@ import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import CreditLink from "@/components/credits/CreditLink";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
@@ -1330,15 +1330,16 @@ const UtilisationDetail = () => {
                 {canReject && <Button variant="destructive" onClick={() => handleStatut("REJETEE")} disabled={actionLoading}><XCircle className="h-4 w-4 me-2" /> {t("utilisations:actions.rejeter_definitivement")}</Button>}
               </div>
               {canDGTCPLiquider && (
-                <p
-                  className="text-xs text-muted-foreground mt-3"
-                  dangerouslySetInnerHTML={{
-                    __html: t("utilisations:detail.actions_hint_liquidation", {
+                <p className="text-xs text-muted-foreground mt-3">
+                  <Trans
+                    i18nKey="utilisations:detail.actions_hint_liquidation"
+                    values={{
                       hors_tva: fmtAmt((u.totalPrisEnCharge ?? 0) - (u.montantTVADouane ?? 0)),
                       tva: fmtAmt(u.montantTVADouane),
-                    }),
-                  }}
-                />
+                    }}
+                    components={{ strong: <strong /> }}
+                  />
+                </p>
               )}
               {role === "DGD" && isDouane && (u.lignes?.length || 0) === 0 && (
                 <p className="text-xs text-amber-700 mt-3">{t("utilisations:detail.actions_no_lines_hint")}</p>

@@ -13,6 +13,8 @@ import i18n from "@/i18n";
 import { toast } from "sonner";
 import { API_BASE, NGROK_HEADERS } from "./apiConfig";
 import { ApiRequestError } from "./api";
+import { parseApiErrorBody } from "./apiErrorText";
+import { endSession } from "./session";
 
 export interface OpenableDoc {
   id?: number | string;
@@ -102,16 +104,12 @@ async function fetchAsBlob(url: string): Promise<Blob> {
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(url, { headers });
   if (!res.ok) {
-    // Le serveur renvoie une erreur structurée : afficher son message lisible, pas le JSON brut.
+    // Le serveur renvoie une erreur structurée : afficher son message lisible, jamais le corps brut (JSON/HTML).
     let text = "";
     try { text = await res.text(); } catch { /* noop */ }
-    let body: { message?: string; error?: string; code?: string } | null = null;
-    try { body = text ? JSON.parse(text) : null; } catch { body = null; }
-    throw new ApiRequestError({
-      status: res.status,
-      code: body?.code || `HTTP_${res.status}`,
-      message: body?.message || body?.error || text.slice(0, 200) || `HTTP ${res.status}`,
-    });
+    if (res.status === 401 && token) endSession({ redirect: true });
+    const parsed = parseApiErrorBody(res.status, text);
+    throw new ApiRequestError({ ...parsed, code: parsed.code === "UNKNOWN" ? `HTTP_${res.status}` : parsed.code });
   }
   return res.blob();
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
-import { avenantApi, AvenantDto, CertificatCreditDto, DemandeCorrectionDto } from "@/lib/api";
+import { avenantApi, AvenantDto, CertificatCreditDto, DemandeCorrectionDto, formatApiErrorMessage } from "@/lib/api";
 import {
   AvenantRecapForm, buildApplicationRequest, checkAvenantRecap,
   initialAvenantRecap, previewSoldesApresAvenant,
@@ -53,7 +53,7 @@ export default function AvenantApplyDialog({ open, onOpenChange, avenant, certif
       onApplied(res);
     } catch (e: any) {
       // 409 (utilisation en cours) et 400 (montant inférieur au consommé) : message serveur tel quel.
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: e?.message || String(e), variant: "destructive" });
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setBusy(false);
     }
