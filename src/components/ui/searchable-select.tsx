@@ -34,6 +34,10 @@ interface SearchableSelectProps {
   /** Active un bouton "Effacer" et autorise une valeur vide */
   clearable?: boolean;
   triggerClassName?: string;
+  /** Liste encore en cours de chargement : petite attente dans le champ seulement. */
+  loading?: boolean;
+  /** Texte affiché pendant le chargement (placeholder et liste vide). */
+  loadingMessage?: string;
 }
 
 /**
