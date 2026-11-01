@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { utilisateurApi, UtilisateurDto, ROLE_LABELS } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { endSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,8 +49,11 @@ const MonProfil = () => {
     setPwdSaving(true);
     try {
       await utilisateurApi.changeMyPassword(pwdForm.current, pwdForm.next);
-      toast({ title: "Mot de passe modifié", description: "Votre mot de passe a été mis à jour." });
       setPwdForm({ current: "", next: "", confirm: "" });
+      // Le serveur a invalidé tous les jetons du compte : retour à la connexion,
+      // où un message confirme le changement et invite à se reconnecter.
+      endSession({ reason: "password_changed", redirect: true });
+      return;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Impossible de modifier le mot de passe";
       toast({ title: "Erreur", description: msg, variant: "destructive" });
