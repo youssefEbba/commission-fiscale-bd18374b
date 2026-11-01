@@ -159,11 +159,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     persist(buildUser(data, user, targetLabel));
   };
 
+  // Déconnexion volontaire : le serveur est prévenu (sans attente), la session
+  // locale est effacée ; l'appelant gère la navigation.
   const logout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
+    endSession({ reason: "logout", redirect: false });
     setUser(null);
   };
+
+  // Fin de session déclenchée ailleurs (401, mot de passe changé) : vider le contexte.
+  useEffect(() => {
+    const onEnded = () => setUser(null);
+    window.addEventListener(SESSION_ENDED_EVENT, onEnded);
+    return () => window.removeEventListener(SESSION_ENDED_EVENT, onEnded);
+  }, []);
 
   const isAdmin = !!user && ADMIN_ROLES.includes(user.nativeRole ?? user.role);
   const isCommissionRelais = !!user && (user.nativeRole ?? user.role) === "COMMISSION_RELAIS";
