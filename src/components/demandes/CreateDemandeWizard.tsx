@@ -390,6 +390,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     try {
       const created = await entrepriseApi.create(newEntreprise);
       setEntreprises(prev => [...prev, created]);
+      invalidateList(listKey("entreprises"));
       setEntrepriseId(String(created.id));
       setShowCreateEntreprise(false);
       setNewEntreprise({ raisonSociale: "", nif: "" });
@@ -493,6 +494,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         try { await conventionApi.uploadDocument(created.id, doc.type, doc.file); } catch { /* continue */ }
       }
       setConventions(prev => [...prev, created]);
+      invalidateList(listKey("conventions"));
       setConventionId(String(created.id));
       setShowCreateConvention(false);
       setNewConvForm({
@@ -819,9 +821,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         {/* ═══ STEP 0: Entreprise + Convention + Documents ═══ */}
         {step === 0 && (
           <div className="space-y-4">
-            {loadingData ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
-            ) : (
+            {(
               <>
                 {/* Titulaire : entreprise seule ou groupement */}
                 <div className="flex flex-wrap items-center gap-2">
@@ -1084,6 +1084,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                                         try {
                                           const created = await bailleurApi.create({ nom: newBailleurNom });
                                           setBailleurs(prev => [...prev, created]);
+                                          invalidateList(listKey("bailleurs"));
                                           setNewConvForm(prev => ({ ...prev, bailleurId: created.id }));
                                           setNewBailleurNom("");
                                           setShowCreateBailleur(false);
@@ -1801,6 +1802,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       onOpenChange={setShowCreateGroupement}
       onSaved={(g) => {
         setGroupements(prev => [...prev.filter(x => x.id !== g.id), g]);
+        invalidateList(listKey("groupements"));
         if (g.id) { setTitulaireType("GROUPEMENT"); setGroupementId(String(g.id)); }
       }}
     />
