@@ -110,7 +110,12 @@ const MainCourante = () => {
                   <TableHead>{t("main_courante.col_reference")}</TableHead>
                   <TableHead>{t("main_courante.col_entreprise")}</TableHead>
                   <TableHead>{t("main_courante.col_statut")}</TableHead>
-                  <TableHead className="text-end">{data.definitionAttente || t("main_courante.col_jours")}</TableHead>
+                  <TableHead className="text-end whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1" title={data.definitionAttente || undefined}>
+                      {t("main_courante.col_jours")}
+                      {data.definitionAttente && <Info className="h-3.5 w-3.5 text-muted-foreground" aria-label={data.definitionAttente} />}
+                    </span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
