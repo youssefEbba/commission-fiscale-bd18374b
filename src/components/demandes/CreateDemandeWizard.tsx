@@ -8,6 +8,7 @@ import { toast as sonnerToast } from "sonner";
 import i18nInstance from "@/i18n";
 import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
 import { trackDocumentTask, presentBlob } from "@/lib/openDocument";
+import { cachedList, invalidateList } from "@/lib/listCache";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   entrepriseApi, EntrepriseDto,
@@ -111,18 +112,9 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   const [referenceAppelOffre, setReferenceAppelOffre] = usePersistedState<string>("demande:referenceAppelOffre", "");
   // docFiles persistés dans IndexedDB pour survivre à une bascule mobile (WhatsApp, etc.)
   const [docFiles, setDocFiles, clearDocFiles] = usePersistedFiles("demande:docs");
-  const [loadingData, setLoadingData] = useState(false);
 
   // Entreprise search combobox
   const [entrepriseOpen, setEntrepriseOpen] = useState(false);
-
-  // Chargement des groupements actifs (titulaire alternatif).
-  useEffect(() => {
-    if (!open) return;
-    groupementApi.getAll(true)
-      .then(list => setGroupements(list || []))
-      .catch(() => setGroupements([]));
-  }, [open]);
 
   // Create groupement inline
   const [showCreateGroupement, setShowCreateGroupement] = useState(false);
@@ -199,92 +191,66 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
   // Load data on open
   const isDelegate = user?.role === "AUTORITE_UPM" || user?.role === "AUTORITE_UEP";
+  // Les listes dépendent du périmètre de l'appelant (compte + entité représentée).
+  const cacheScope = `${user?.userId ?? ""}:${user?.autoriteContractanteId ?? ""}:${user?.entrepriseId ?? ""}`;
+  const listKey = (name: string) => `demande-wizard:${name}:${cacheScope}`;
 
-  // Marchés déjà associés à une demande de correction "active" (non terminale)
-  // → doivent apparaître mais désactivés à la sélection.
-  const [busyMarcheIds, setBusyMarcheIds] = useState<Set<number>>(new Set());
+  // Chaque liste se charge de son côté : le formulaire s'affiche tout de suite
+  // et seul le champ concerné montre une attente.
+  const [entreprisesLoading, setEntreprisesLoading] = useState(false);
+  const [conventionsLoading, setConventionsLoading] = useState(false);
+  const [bailleursLoading, setBailleursLoading] = useState(false);
+  const [groupementsLoading, setGroupementsLoading] = useState(false);
+  const [gedLoading, setGedLoading] = useState(false);
 
-  const loadInitialData = useCallback(async () => {
-    setLoadingData(true);
-    try {
-      const [ent, conv, marc, bail, gedReqs, demandes] = await Promise.all([
-        entrepriseApi.getAll(),
-        conventionApi.getAll(),
-        marcheApi.getAll().catch(() => [] as MarcheDto[]),
-        bailleurApi.getAll().catch(() => [] as BailleurDto[]),
-        documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE", { depot: true }).catch(() => [] as DocumentRequirementDto[]),
-        // getAll peut renvoyer 403 (rôles contrôleurs uniquement). En mode ENTREPRISE
-        // / COMMISSION_RELAIS impersonnant, on retombera sur getByEntreprise dans l'effet ci-dessous.
-        demandeCorrectionApi.getAll().catch(() => [] as DemandeCorrectionDto[]),
-      ]);
-      setEntreprises(ent);
-      setConventions(conv);
-      if (isDelegate && user?.userId) {
-        setMarches(marc.filter(m => m.delegueIds?.includes(user.userId)));
-      } else {
-        setMarches(marc);
-      }
-      setBailleurs(bail);
-      // LISTE_EQUIPEMENTS est rattachée à la case « plaques TT », pas à la liste générique.
-      setGedDocTypes(gedReqs.filter(r => (r.codeDocument || r.typeDocument) !== EQUIP_DOC).sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0)));
-
-      // Statuts terminaux : la demande est close → le marché redevient sélectionnable
-      const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
-      const busy = new Set<number>();
-      // Source 1 : liste globale des demandes (rôles contrôleurs)
-      const demandeIdsTerminales = new Set<number>();
-      for (const d of demandes) {
-        if (d.id && TERMINAL.has(d.statut)) demandeIdsTerminales.add(d.id);
-        if (!d.marcheId) continue;
-        if (TERMINAL.has(d.statut)) continue;
-        if (editingId && d.id === editingId) continue;
-        busy.add(d.marcheId);
-      }
-      // Source 2 : la liste des marchés elle-même porte demandeCorrectionId.
-      // Utile en mode ENTREPRISE / COMMISSION_RELAIS (getAll demandes = 403).
-      // On ne peut pas connaître le statut de la demande liée → on la considère active
-      // par défaut, sauf si elle figure parmi les demandes terminales déjà connues
-      // ou s'il s'agit de la demande en cours d'édition.
-      for (const m of marc) {
-        if (!m.demandeCorrectionId) continue;
-        if (editingId && m.demandeCorrectionId === editingId) continue;
-        if (demandeIdsTerminales.has(m.demandeCorrectionId)) continue;
-        busy.add(m.id);
-      }
-      setBusyMarcheIds(busy);
-    } catch {
+  const loadInitialData = useCallback(() => {
+    let loadErrorShown = false;
+    const showLoadError = () => {
+      if (loadErrorShown) return;
+      loadErrorShown = true;
       toast({ title: t("demandes:toast.error"), description: t("demandes:wizard.errors.load_data"), variant: "destructive" });
-    } finally {
-      setLoadingData(false);
-    }
-  }, [toast, isDelegate, user?.userId, editingId]);
+    };
 
-  // Fallback / complément : quand une entreprise est sélectionnée (cas typique
-  // ENTREPRISE ou COMMISSION_RELAIS impersonnant), on récupère ses demandes via
-  // /by-entreprise — endpoint accessible même quand getAll est interdit (403).
-  useEffect(() => {
-    if (!open) return;
-    const entId = Number(entrepriseId);
-    if (!Number.isFinite(entId) || entId <= 0) return;
-    let cancelled = false;
-    demandeCorrectionApi.getByEntreprise(entId)
-      .then(list => {
-        if (cancelled) return;
-        const TERMINAL = new Set<string>(["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"]);
-        setBusyMarcheIds(prev => {
-          const next = new Set(prev);
-          for (const d of list) {
-            if (!d.marcheId) continue;
-            if (TERMINAL.has(d.statut)) continue;
-            if (editingId && d.id === editingId) continue;
-            next.add(d.marcheId);
-          }
-          return next;
-        });
-      })
-      .catch(() => { /* silencieux : on garde les marchés issus du getAll */ });
-    return () => { cancelled = true; };
-  }, [open, entrepriseId, editingId]);
+    setEntreprisesLoading(true);
+    cachedList(listKey("entreprises"), () => entrepriseApi.getAll())
+      .then(list => setEntreprises(list || []))
+      .catch(showLoadError)
+      .finally(() => setEntreprisesLoading(false));
+
+    setConventionsLoading(true);
+    cachedList(listKey("conventions"), () => conventionApi.getAll())
+      .then(list => setConventions(list || []))
+      .catch(showLoadError)
+      .finally(() => setConventionsLoading(false));
+
+    setBailleursLoading(true);
+    cachedList(listKey("bailleurs"), () => bailleurApi.getAll())
+      .then(list => setBailleurs(list || []))
+      .catch(() => setBailleurs([]))
+      .finally(() => setBailleursLoading(false));
+
+    setGroupementsLoading(true);
+    cachedList(listKey("groupements"), () => groupementApi.getAll(true))
+      .then(list => setGroupements(list || []))
+      .catch(() => setGroupements([]))
+      .finally(() => setGroupementsLoading(false));
+
+    setGedLoading(true);
+    cachedList(listKey("ged"), () => documentRequirementApi.getByProcessus("CORRECTION_OFFRE_FISCALE", { depot: true }))
+      // LISTE_EQUIPEMENTS est rattachée à la case « plaques TT », pas à la liste générique.
+      .then(reqs => setGedDocTypes((reqs || []).filter(r => (r.codeDocument || r.typeDocument) !== EQUIP_DOC).sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0))))
+      .catch(() => setGedDocTypes([]))
+      .finally(() => setGedLoading(false));
+
+    // Le marché n'est plus choisi dans ce formulaire : la liste ne sert qu'en
+    // modification, pour retrouver le marché déjà rattaché à la demande.
+    if (editingDemande) {
+      marcheApi.getAll()
+        .then(marc => setMarches(isDelegate && user?.userId ? marc.filter(m => m.delegueIds?.includes(user.userId)) : marc))
+        .catch(() => setMarches([]));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast, isDelegate, user?.userId, cacheScope, editingDemande?.id]);
 
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
