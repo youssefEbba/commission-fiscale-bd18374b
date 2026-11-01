@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -57,6 +57,8 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
       className,
       clearable = false,
       triggerClassName,
+      loading = false,
+      loadingMessage = "Chargement…",
     },
     ref,
   ) => {
@@ -85,7 +87,7 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
             title={selected?.label}
           >
             <span className="truncate text-left flex-1 min-w-0 block">
-              {selected ? selected.label : placeholder}
+              {selected ? selected.label : loading && options.length === 0 ? loadingMessage : placeholder}
             </span>
             <div className="flex items-center gap-1 shrink-0 ml-2">
               {clearable && selected && !disabled && (
@@ -109,7 +111,11 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
                   <X className="h-3.5 w-3.5 opacity-60" />
                 </span>
               )}
-              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin opacity-60" aria-label={loadingMessage} />
+              ) : (
+                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+              )}
             </div>
           </Button>
         </PopoverTrigger>
@@ -131,7 +137,7 @@ export const SearchableSelect = React.forwardRef<HTMLButtonElement, SearchableSe
               className="max-h-[50vh] overscroll-contain"
               style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
             >
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandEmpty>{loading && options.length === 0 ? loadingMessage : emptyMessage}</CommandEmpty>
               <CommandGroup>
                 {options.map((opt) => (
                   <CommandItem
