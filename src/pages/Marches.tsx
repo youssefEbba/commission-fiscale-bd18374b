@@ -356,6 +356,12 @@ const Marches = () => {
     );
   });
 
+  // Pagination côté écran (le serveur renvoie la liste entière, déjà ordonnée).
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
   const isDelegate = hasRole(["AUTORITE_UPM", "AUTORITE_UEP"]);
 
   const conventionLabel = (id: number) => {
@@ -421,9 +427,9 @@ const Marches = () => {
                         <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t("marches:list.empty")}</TableCell>
                       </TableRow>
                     ) : (
-                      filtered.map((m, rowIdx) => (
+                      paginated.map((m, rowIdx) => (
                         <ClickableTableRow key={m.id} to={`/dashboard/marches/${m.id}`}>
-                          <RowNumberCell n={rowIdx + 1} />
+                          <RowNumberCell n={pageStart + rowIdx + 1} />
                           <TableCell className="font-medium whitespace-nowrap">
                             <Link to={`/dashboard/marches/${m.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(m)}</Link>
                           </TableCell>
@@ -506,6 +512,18 @@ const Marches = () => {
                     )}
                   </TableBody>
                 </Table>
+                {filtered.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-t text-sm">
+                    <span className="text-muted-foreground">
+                      {t("marches:list.pagination.range", { from: pageStart + 1, to: Math.min(pageStart + PAGE_SIZE, filtered.length), total: filtered.length })}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>{t("marches:list.pagination.previous")}</Button>
+                      <span className="text-muted-foreground">{t("marches:list.pagination.page", { current: currentPage, total: totalPages })}</span>
+                      <Button variant="outline" size="sm" className="h-8" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t("marches:list.pagination.next")}</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
