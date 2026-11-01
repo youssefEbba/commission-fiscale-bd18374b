@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { sanitizeServerMessage, parseApiErrorBody, displayErrorText, formatErrorDetails } from "@/lib/apiErrorText";
-import { endSession, registerSessionCloser } from "@/lib/session";
+import { endSession, registerSessionCloser, takeSessionNotice } from "@/lib/session";
 
 describe("messages d'erreur affichables", () => {
   it("refuse une page HTML", () => {
@@ -42,5 +42,53 @@ describe("fin de session", () => {
     expect(localStorage.getItem("auth_token")).toBeNull();
     expect(localStorage.getItem("auth_user")).toBeNull();
     expect(closed).toBe(1);
+  });
+});
+
+describe("déconnexion et jetons invalidés", () => {
+  beforeEach(() => {
+    localStorage.setItem("auth_token", "jeton-courant");
+    localStorage.setItem("auth_user", "{}");
+    sessionStorage.clear();
+  });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("Déconnexion : POST /auth/logout avec le jeton courant, puis session effacée", () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    endSession({ reason: "logout", redirect: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toMatch(/\/auth\/logout$/);
+    expect(init.method).toBe("POST");
+    expect(init.headers.Authorization).toBe("Bearer jeton-courant");
+    expect(localStorage.getItem("auth_token")).toBeNull();
+    expect(takeSessionNotice()).toBeNull();
+  });
+
+  it("Déconnexion : un échec réseau n'empêche pas l'effacement local", () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+    expect(() => endSession({ reason: "logout", redirect: false })).not.toThrow();
+    expect(localStorage.getItem("auth_token")).toBeNull();
+    expect(localStorage.getItem("auth_user")).toBeNull();
+  });
+
+  it("401 : aucun appel de déconnexion, message « session expirée » pour la connexion", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    endSession({ redirect: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem("auth_token")).toBeNull();
+    expect(takeSessionNotice()).toBe("expired");
+    expect(takeSessionNotice()).toBeNull();
+  });
+
+  it("mot de passe changé : aucun appel de déconnexion, message dédié", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    endSession({ reason: "password_changed", redirect: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem("auth_token")).toBeNull();
+    expect(takeSessionNotice()).toBe("password_changed");
   });
 });
