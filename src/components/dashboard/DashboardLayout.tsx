@@ -164,6 +164,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       {NAV_ENTRIES.map((entry) => {
         if (isGroup(entry)) {
           if (entry.roles && !hasRole(entry.roles)) return null;
+          // Un groupe sans entrée visible pour ce rôle n'est pas affiché.
+          const hasVisibleChild = entry.children.some((c) => (!c.roles || hasRole(c.roles)) && (!c.permission || hasPermission(c.permission)));
+          if (!hasVisibleChild) return null;
           const groupActive = isGroupActive(entry);
           return (
             <Collapsible key={entry.labelKey} defaultOpen={groupActive}>
