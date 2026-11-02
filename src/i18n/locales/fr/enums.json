@@ -306,5 +306,17 @@
     "REJET": "Rejet",
     "ACCEPTATION": "Acceptation",
     "VALIDATION": "Validation"
+  },
+  "entreprise_categorie": {
+    "PME": "PME",
+    "GRANDE_ENTREPRISE": "Grande entreprise",
+    "NON_RENSEIGNEE": "Non renseignée"
+  },
+  "bailleur_categorie": {
+    "NATIONAL": "National",
+    "MULTILATERAL": "Multilatéral",
+    "BILATERAL": "Bilatéral",
+    "PRIVE": "Privé",
+    "NON_RENSEIGNE": "Non renseigné"
   }
 }

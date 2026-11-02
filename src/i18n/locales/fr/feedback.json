@@ -1,0 +1,151 @@
+{
+  "button": "Donner mon avis",
+  "stars": "{{count}} étoile",
+  "stars_other": "{{count}} étoiles",
+  "note_labels": {
+    "1": "Très insatisfait",
+    "2": "Insatisfait",
+    "3": "Moyen",
+    "4": "Satisfait",
+    "5": "Très satisfait"
+  },
+  "dialog": {
+    "title": "Donner mon avis",
+    "intro": "Votre avis nous aide à améliorer la plateforme. Il est transmis avec la page où vous vous trouvez.",
+    "note": "Note",
+    "categorie": "Sujet",
+    "categorie_placeholder": "Choisir un sujet",
+    "processus": "Processus concerné",
+    "processus_none": "Aucun en particulier",
+    "commentaire": "Commentaire",
+    "commentaire_placeholder": "Ce qui fonctionne bien, ce qui vous gêne…",
+    "send": "Envoyer",
+    "sent": "Merci, votre avis a été envoyé."
+  },
+  "categories": {
+    "ERGONOMIE": "Ergonomie",
+    "PERFORMANCE": "Performance",
+    "PROCEDURE": "Procédure",
+    "ASSISTANCE": "Assistance",
+    "AUTRE": "Autre"
+  },
+  "processus": {
+    "CORRECTION": "Demande de correction",
+    "MISE_EN_PLACE": "Mise en place du crédit",
+    "UTILISATION": "Utilisation du crédit",
+    "TRANSFERT": "Transfert",
+    "AVENANT": "Avenant",
+    "CLOTURE": "Clôture"
+  },
+  "profils": {
+    "ENTREPRISE": "Entreprises bénéficiaires",
+    "COMMISSION_FISCALE": "Commission fiscale",
+    "AUTORITE_CONTRACTANTE": "Autorités contractantes",
+    "DOUANES": "Douanes",
+    "TRESOR": "Trésor"
+  },
+  "statuts": {
+    "BROUILLON": "Brouillon",
+    "PUBLIEE": "Publiée",
+    "CLOTUREE": "Clôturée"
+  },
+  "question_types": {
+    "NOTE": "Note (1 à 5)",
+    "TEXTE": "Texte libre",
+    "CHOIX": "Choix unique"
+  },
+  "sources": {
+    "RETOUR": "Avis spontané",
+    "ENQUETE": "Enquête"
+  },
+  "banner": {
+    "title": "Une enquête de satisfaction vous attend.",
+    "count": "{{count}} enquêtes ouvertes",
+    "answer": "Répondre",
+    "later": "Plus tard"
+  },
+  "reponse": {
+    "page_title": "Enquête de satisfaction",
+    "periode": "Ouverte du {{debut}} au {{fin}}",
+    "required": "Réponse obligatoire",
+    "missing": "{{count}} question obligatoire sans réponse.",
+    "missing_other": "{{count}} questions obligatoires sans réponse.",
+    "send": "Envoyer mes réponses",
+    "sent": "Merci, vos réponses ont été enregistrées.",
+    "already": "Vous avez déjà répondu à cette enquête.",
+    "forbidden": "Cette enquête ne s'adresse pas à votre profil.",
+    "unavailable": "Cette enquête n'est pas ouverte pour vous : elle est close, déjà répondue ou réservée à d'autres profils."
+  },
+  "enquetes": {
+    "title": "Enquêtes de satisfaction",
+    "subtitle": "Préparer, publier, clôturer ou relancer les enquêtes adressées aux profils.",
+    "new": "Nouvelle enquête",
+    "edit": "Modifier l'enquête",
+    "titre": "Titre",
+    "description": "Description",
+    "periode": "Période",
+    "date_debut": "Début",
+    "date_fin": "Fin",
+    "profils": "Profils ciblés",
+    "statut": "Statut",
+    "reponses": "Réponses",
+    "actions": "Actions",
+    "empty": "Aucune enquête",
+    "nb_questions": "{{count}} question",
+    "nb_questions_other": "{{count}} questions",
+    "relance_de": "relance de l'enquête n° {{id}}",
+    "hors_periode": "hors période",
+    "questions": "Questions",
+    "add_question": "Ajouter une question",
+    "libelle": "Intitulé de la question",
+    "type": "Type de réponse",
+    "categorie": "Catégorie (facultative)",
+    "obligatoire": "Obligatoire",
+    "options_hint": "Options proposées, une par ligne (au moins deux)",
+    "move_up": "Monter",
+    "move_down": "Descendre",
+    "publier": "Publier",
+    "cloturer": "Clôturer",
+    "relancer": "Relancer",
+    "saved": "Enquête enregistrée",
+    "published": "Enquête publiée",
+    "closed": "Enquête clôturée",
+    "relaunched": "Enquête relancée",
+    "deleted": "Enquête supprimée",
+    "delete_title": "Supprimer « {{titre}} » ?",
+    "delete_body": "Le brouillon et ses questions seront supprimés.",
+    "errors": {
+      "titre": "Le titre est obligatoire.",
+      "dates": "Renseignez une période valide (fin après début).",
+      "profils": "Choisissez au moins un profil.",
+      "questions": "Ajoutez au moins une question.",
+      "question_libelle": "Question {{n}} : l'intitulé est obligatoire.",
+      "question_options": "Question {{n}} : un choix demande au moins deux options."
+    }
+  },
+  "dashboard": {
+    "title": "Satisfaction des usagers",
+    "subtitle": "Avis spontanés et réponses aux enquêtes ; commentaires anonymes.",
+    "from": "Du",
+    "to": "Au",
+    "apply": "Appliquer",
+    "nb_avis": "Avis reçus",
+    "note_moyenne": "Note moyenne",
+    "satisfaits": "Satisfaits",
+    "satisfaits_hint": "Part des notes 4 et 5",
+    "nb_notes": "Notes",
+    "cle": "Catégorie",
+    "distribution": "Répartition 1 → 5",
+    "evolution": "Évolution mensuelle",
+    "par_profil": "Par profil",
+    "par_categorie": "Par sujet",
+    "par_processus": "Par processus",
+    "points_forts": "Points forts",
+    "difficultes": "Difficultés",
+    "enquetes": "Enquêtes",
+    "taux_reponse": "Taux de réponse",
+    "reponses_sur": "{{n}} sur {{total}}",
+    "commentaires": "Commentaires",
+    "commentaires_hint": "Les commentaires sont affichés sans le nom de leur auteur."
+  }
+}

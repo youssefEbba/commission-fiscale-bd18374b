@@ -1,0 +1,151 @@
+{
+  "button": "أبدِ رأيك",
+  "stars": "{{count}} نجمة",
+  "stars_other": "{{count}} نجوم",
+  "note_labels": {
+    "1": "غير راضٍ إطلاقًا",
+    "2": "غير راضٍ",
+    "3": "متوسط",
+    "4": "راضٍ",
+    "5": "راضٍ جدًا"
+  },
+  "dialog": {
+    "title": "أبدِ رأيك",
+    "intro": "يساعدنا رأيك على تحسين المنصة. يُرسل مع الصفحة التي تتصفحها.",
+    "note": "التقييم",
+    "categorie": "الموضوع",
+    "categorie_placeholder": "اختر موضوعًا",
+    "processus": "المسار المعني",
+    "processus_none": "لا شيء بالتحديد",
+    "commentaire": "تعليق",
+    "commentaire_placeholder": "ما يعمل جيدًا، وما يزعجك…",
+    "send": "إرسال",
+    "sent": "شكرًا، تم إرسال رأيك."
+  },
+  "categories": {
+    "ERGONOMIE": "سهولة الاستخدام",
+    "PERFORMANCE": "الأداء",
+    "PROCEDURE": "الإجراء",
+    "ASSISTANCE": "المساعدة",
+    "AUTRE": "أخرى"
+  },
+  "processus": {
+    "CORRECTION": "طلب التصحيح",
+    "MISE_EN_PLACE": "تفعيل الاعتماد",
+    "UTILISATION": "استخدام الاعتماد",
+    "TRANSFERT": "التحويل",
+    "AVENANT": "الملحق",
+    "CLOTURE": "الإغلاق"
+  },
+  "profils": {
+    "ENTREPRISE": "المؤسسات المستفيدة",
+    "COMMISSION_FISCALE": "اللجنة الضريبية",
+    "AUTORITE_CONTRACTANTE": "السلطات المتعاقدة",
+    "DOUANES": "الجمارك",
+    "TRESOR": "الخزينة"
+  },
+  "statuts": {
+    "BROUILLON": "مسودة",
+    "PUBLIEE": "منشور",
+    "CLOTUREE": "مغلق"
+  },
+  "question_types": {
+    "NOTE": "تقييم (1 إلى 5)",
+    "TEXTE": "نص حر",
+    "CHOIX": "اختيار واحد"
+  },
+  "sources": {
+    "RETOUR": "رأي تلقائي",
+    "ENQUETE": "استبيان"
+  },
+  "banner": {
+    "title": "استبيان رضا في انتظارك.",
+    "count": "{{count}} استبيانات مفتوحة",
+    "answer": "الإجابة",
+    "later": "لاحقًا"
+  },
+  "reponse": {
+    "page_title": "استبيان الرضا",
+    "periode": "مفتوح من {{debut}} إلى {{fin}}",
+    "required": "الإجابة إلزامية",
+    "missing": "{{count}} سؤال إلزامي دون إجابة.",
+    "missing_other": "{{count}} أسئلة إلزامية دون إجابة.",
+    "send": "إرسال إجاباتي",
+    "sent": "شكرًا، تم تسجيل إجاباتك.",
+    "already": "لقد أجبت بالفعل على هذا الاستبيان.",
+    "forbidden": "هذا الاستبيان غير موجه إلى ملفك.",
+    "unavailable": "هذا الاستبيان غير مفتوح لك: مغلق أو تمت الإجابة عليه أو موجه لملفات أخرى."
+  },
+  "enquetes": {
+    "title": "استبيانات الرضا",
+    "subtitle": "إعداد الاستبيانات ونشرها وإغلاقها وإعادة إطلاقها.",
+    "new": "استبيان جديد",
+    "edit": "تعديل الاستبيان",
+    "titre": "العنوان",
+    "description": "الوصف",
+    "periode": "الفترة",
+    "date_debut": "البداية",
+    "date_fin": "النهاية",
+    "profils": "الملفات المستهدفة",
+    "statut": "الحالة",
+    "reponses": "الإجابات",
+    "actions": "الإجراءات",
+    "empty": "لا يوجد استبيان",
+    "nb_questions": "{{count}} سؤال",
+    "nb_questions_other": "{{count}} أسئلة",
+    "relance_de": "إعادة إطلاق الاستبيان رقم {{id}}",
+    "hors_periode": "خارج الفترة",
+    "questions": "الأسئلة",
+    "add_question": "إضافة سؤال",
+    "libelle": "نص السؤال",
+    "type": "نوع الإجابة",
+    "categorie": "الفئة (اختيارية)",
+    "obligatoire": "إلزامي",
+    "options_hint": "الخيارات المقترحة، خيار في كل سطر (اثنان على الأقل)",
+    "move_up": "إلى الأعلى",
+    "move_down": "إلى الأسفل",
+    "publier": "نشر",
+    "cloturer": "إغلاق",
+    "relancer": "إعادة الإطلاق",
+    "saved": "تم تسجيل الاستبيان",
+    "published": "تم نشر الاستبيان",
+    "closed": "تم إغلاق الاستبيان",
+    "relaunched": "تمت إعادة إطلاق الاستبيان",
+    "deleted": "تم حذف الاستبيان",
+    "delete_title": "حذف «{{titre}}»؟",
+    "delete_body": "سيتم حذف المسودة وأسئلتها.",
+    "errors": {
+      "titre": "العنوان إلزامي.",
+      "dates": "أدخل فترة صالحة (النهاية بعد البداية).",
+      "profils": "اختر ملفًا واحدًا على الأقل.",
+      "questions": "أضف سؤالًا واحدًا على الأقل.",
+      "question_libelle": "السؤال {{n}}: النص إلزامي.",
+      "question_options": "السؤال {{n}}: يتطلب الاختيار خيارين على الأقل."
+    }
+  },
+  "dashboard": {
+    "title": "رضا المستخدمين",
+    "subtitle": "الآراء التلقائية وإجابات الاستبيانات؛ تعليقات مجهولة الهوية.",
+    "from": "من",
+    "to": "إلى",
+    "apply": "تطبيق",
+    "nb_avis": "الآراء المستلمة",
+    "note_moyenne": "متوسط التقييم",
+    "satisfaits": "الراضون",
+    "satisfaits_hint": "نسبة التقييمات 4 و 5",
+    "nb_notes": "التقييمات",
+    "cle": "الفئة",
+    "distribution": "التوزيع 1 → 5",
+    "evolution": "التطور الشهري",
+    "par_profil": "حسب الملف",
+    "par_categorie": "حسب الموضوع",
+    "par_processus": "حسب المسار",
+    "points_forts": "نقاط القوة",
+    "difficultes": "الصعوبات",
+    "enquetes": "الاستبيانات",
+    "taux_reponse": "نسبة الإجابة",
+    "reponses_sur": "{{n}} من {{total}}",
+    "commentaires": "التعليقات",
+    "commentaires_hint": "تُعرض التعليقات دون اسم كاتبها."
+  }
+}

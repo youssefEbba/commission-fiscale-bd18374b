@@ -31,6 +31,7 @@ const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   DEMANDE_RESET_PASSWORD: () => "/dashboard/utilisateurs?tab=reset",
   RESET_PASSWORD_REQUEST: () => "/dashboard/utilisateurs?tab=reset",
   PASSWORD_RESET: () => "/dashboard/utilisateurs?tab=reset",
+  ENQUETE_SATISFACTION: (id) => (id ? `/dashboard/satisfaction/enquetes/${id}` : "/dashboard"),
 };
 
 const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {

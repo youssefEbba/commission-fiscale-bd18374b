@@ -32,5 +32,9 @@
   "entreprises": "Entreprises",
   "autorites": "Autorités contractantes",
   "demandes_rattachement": "Demandes de rattachement",
-  "parametres": "Paramètres de contact"
+  "parametres": "Paramètres de contact",
+  "referentiel_secteurs": "Secteurs d'activité",
+  "satisfaction": "Satisfaction",
+  "satisfaction_dashboard": "Tableau de bord",
+  "satisfaction_enquetes": "Enquêtes"
 }

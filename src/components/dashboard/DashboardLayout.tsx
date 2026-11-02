@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search,
-  PenLine, Building2, UserCheck, FilePen,
+  PenLine, Building2, UserCheck, FilePen, Briefcase, Smile, ClipboardList,
 
 } from "lucide-react";
 import logo from "@/assets/logo.svg";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { emitErrorDialog } from "@/components/ErrorDialog";
 import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import { tRole } from "@/i18n/enums";
+import { FeedbackButton } from "@/components/feedback/FeedbackButton";
+import { EnqueteBanner } from "@/components/feedback/EnqueteBanner";
 
 interface NavItem {
   labelKey: string;
@@ -89,6 +91,15 @@ const NAV_ENTRIES: NavEntry[] = [
     ],
   },
   {
+    labelKey: "satisfaction",
+    icon: Smile,
+    roles: ["ADMIN_SI", "PRESIDENT"],
+    children: [
+      { labelKey: "satisfaction_dashboard", href: "/dashboard/satisfaction", icon: Smile, roles: ["ADMIN_SI", "PRESIDENT"], permission: "feedback.dashboard.view" },
+      { labelKey: "satisfaction_enquetes", href: "/dashboard/satisfaction/enquetes", icon: ClipboardList, roles: ["ADMIN_SI", "PRESIDENT"], permission: "feedback.enquete.manage" },
+    ],
+  },
+  {
     labelKey: "parametrage",
     icon: Settings,
     roles: ["ADMIN_SI", "PRESIDENT"],
@@ -98,6 +109,7 @@ const NAV_ENTRIES: NavEntry[] = [
       { labelKey: "signatures", href: "/dashboard/signatures", icon: PenLine, roles: ["ADMIN_SI"] },
       { labelKey: "parametres", href: "/dashboard/parametres", icon: Settings, permission: "parametre.manage" },
       { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag, roles: ["ADMIN_SI"] },
+      { labelKey: "referentiel_secteurs", href: "/dashboard/referentiel-secteurs", icon: Briefcase, roles: ["ADMIN_SI", "PRESIDENT"], permission: "referentiel.secteur.manage" },
       { labelKey: "archive_credits", href: "/dashboard/archive/credits", icon: Archive, roles: ["ADMIN_SI"] },
       { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3, roles: ["ADMIN_SI"] },
     ],
@@ -244,6 +256,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Desktop top bar */}
         <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card shrink-0">
+          <FeedbackButton />
           <LanguageSwitcher />
           <NotificationBell />
           <DropdownMenu>
@@ -285,6 +298,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <FeedbackButton compact />
             <LanguageSwitcher />
             <NotificationBell />
             <DropdownMenu>
@@ -343,6 +357,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </Link>
           </div>
         )}
+        <EnqueteBanner />
         <div className="flex-1 overflow-auto p-6 md:p-8">{children}</div>
       </main>
     </div>

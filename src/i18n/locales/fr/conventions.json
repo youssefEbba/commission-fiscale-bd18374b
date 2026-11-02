@@ -148,7 +148,9 @@
     "details_placeholder": "Description…",
     "added": "Bailleur ajouté",
     "edit_title": "Modifier le bailleur",
-    "updated": "Bailleur modifié"
+    "updated": "Bailleur modifié",
+    "categorie": "Catégorie du bailleur",
+    "categorie_placeholder": "Choisir une catégorie"
   },
   "devise": {
     "modal_title": "Nouvelle devise",

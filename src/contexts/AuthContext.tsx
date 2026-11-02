@@ -26,9 +26,21 @@ const ROLE_PERMISSIONS_BASE: Record<AppRole, string[]> = {
   ],
 };
 
-// `reporting.view` : détenue par tous les rôles sauf COMMISSION_RELAIS (non impersonant).
+// Repli (JWT sans permissions) :
+// - `reporting.view` : tous les rôles sauf COMMISSION_RELAIS (non impersonant) ;
+// - `feedback.submit` : tous sauf ADMIN_SI et COMMISSION_RELAIS ;
+// - référentiels, valeurs de référence et satisfaction : ADMIN_SI et Président.
+const ADMIN_EXTRA = ["reporting.reference.manage", "referentiel.secteur.manage", "feedback.enquete.manage", "feedback.dashboard.view"];
 const ROLE_PERMISSIONS: Record<AppRole, string[]> = Object.fromEntries(
-  Object.entries(ROLE_PERMISSIONS_BASE).map(([r, perms]) => [r, r === "COMMISSION_RELAIS" ? perms : [...perms, "reporting.view"]]),
+  Object.entries(ROLE_PERMISSIONS_BASE).map(([r, perms]) => {
+    if (r === "COMMISSION_RELAIS") return [r, perms];
+    const extra = [
+      "reporting.view",
+      ...(r === "ADMIN_SI" ? [] : ["feedback.submit"]),
+      ...(r === "ADMIN_SI" || r === "PRESIDENT" ? ADMIN_EXTRA : []),
+    ];
+    return [r, [...perms, ...extra]];
+  }),
 ) as Record<AppRole, string[]>;
 
 interface AuthUser {

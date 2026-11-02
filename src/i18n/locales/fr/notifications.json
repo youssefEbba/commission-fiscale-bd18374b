@@ -16,6 +16,7 @@
     "DEMANDE_MISE_EN_PLACE_CHANGE": "Mise en place CI",
     "MODIFICATION_STATUT_CHANGE": "Modification",
     "GED_DOCUMENT_CHANGE": "Document GED",
-    "DEMANDE_EXPLICATION": "Demande d'explication"
+    "DEMANDE_EXPLICATION": "Demande d'explication",
+    "ENQUETE_SATISFACTION": "Enquête de satisfaction"
   }
 }

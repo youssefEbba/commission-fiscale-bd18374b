@@ -61,6 +61,10 @@ import VerifierCertificat from "./pages/VerifierCertificat";
 import VerificationPublique from "./pages/VerificationPublique";
 import SuiviRattachement from "./pages/SuiviRattachement";
 import ArchiveCredits from "./pages/ArchiveCredits";
+import ReferentielSecteurs from "./pages/ReferentielSecteurs";
+import SatisfactionDashboard from "./pages/SatisfactionDashboard";
+import SatisfactionEnquetes from "./pages/SatisfactionEnquetes";
+import SatisfactionEnqueteReponse from "./pages/SatisfactionEnqueteReponse";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { DocumentTaskIndicator } from "@/components/documents/DocumentTaskIndicator";
 import { I18nBootstrap } from "@/i18n/bootstrap";
@@ -266,6 +270,23 @@ const App = () => (
                 <ArchiveCredits />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/referentiel-secteurs" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
+                <ReferentielSecteurs />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/satisfaction" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
+                <SatisfactionDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/satisfaction/enquetes" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
+                <SatisfactionEnquetes />
+              </ProtectedRoute>
+            } />
+            {/* Réponse à une enquête : tout profil ciblé (le serveur répond 403 sinon). */}
+            <Route path="/dashboard/satisfaction/enquetes/:id" element={<ProtectedRoute><SatisfactionEnqueteReponse /></ProtectedRoute>} />
             <Route path="/dashboard/referentiel-taxes" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <ReferentielTaxes />

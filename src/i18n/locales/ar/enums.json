@@ -306,5 +306,17 @@
     "REJET": "رفض",
     "ACCEPTATION": "قبول",
     "VALIDATION": "مصادقة"
+  },
+  "entreprise_categorie": {
+    "PME": "مؤسسة صغيرة ومتوسطة",
+    "GRANDE_ENTREPRISE": "مؤسسة كبيرة",
+    "NON_RENSEIGNEE": "غير محددة"
+  },
+  "bailleur_categorie": {
+    "NATIONAL": "وطني",
+    "MULTILATERAL": "متعدد الأطراف",
+    "BILATERAL": "ثنائي",
+    "PRIVE": "خاص",
+    "NON_RENSEIGNE": "غير محدد"
   }
 }

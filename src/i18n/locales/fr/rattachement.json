@@ -115,7 +115,9 @@
     "f_ministere_nom": "Ministère de tutelle",
     "f_ministere_code": "Code ministère",
     "required": "Champ obligatoire",
-    "detail_autorite": "Fiche de l'autorité contractante"
+    "detail_autorite": "Fiche de l'autorité contractante",
+    "f_categorie": "Catégorie",
+    "f_secteur": "Secteur d'activité"
   },
   "comptes": {
     "title": "Comptes rattachés",

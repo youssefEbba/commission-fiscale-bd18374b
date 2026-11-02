@@ -148,7 +148,9 @@
     "details_placeholder": "الوصف…",
     "added": "تمت إضافة الممول",
     "edit_title": "تعديل الممول",
-    "updated": "تم تعديل الممول"
+    "updated": "تم تعديل الممول",
+    "categorie": "فئة الممول",
+    "categorie_placeholder": "اختر فئة"
   },
   "devise": {
     "modal_title": "عملة جديدة",

@@ -8,6 +8,7 @@ import { showApiError, showSuccess } from "@/lib/feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -15,7 +16,20 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-export interface EntiteField { key: string; labelKey: string; required?: boolean; type?: string; }
+export interface EntiteField {
+  key: string;
+  labelKey: string;
+  required?: boolean;
+  type?: string;
+  /** Liste de choix (libellés déjà traduits) : le champ devient une liste déroulante. */
+  options?: { value: string; label: string }[];
+  /** Liste encore en chargement (référentiel chargé à part). */
+  optionsLoading?: boolean;
+  /** Valeur envoyée en nombre (ex. identifiant de secteur). */
+  numeric?: boolean;
+  /** Valeur affichée en liste (ex. libellé lu côté serveur). */
+  display?: (item: Record<string, unknown>) => string | null | undefined;
+}
 
 interface Props<T extends { id?: number }> {
   titleKey: string;
@@ -68,7 +82,11 @@ export default function EntiteReferentielPage<T extends { id?: number }>(p: Prop
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { ...(editing ?? {}), ...Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim() === "" ? null : v.trim()])) } as unknown as T;
+      const numeric = new Set(p.fields.filter((f) => f.numeric).map((f) => f.key));
+      const payload = {
+        ...(editing ?? {}),
+        ...Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim() === "" ? null : numeric.has(k) ? Number(v) : v.trim()])),
+      } as unknown as T;
       if (editing?.id != null) await p.api.update(editing.id, payload); else await p.api.create(payload);
       showSuccess(t("entites.saved"));
       setOpen(false);
@@ -83,6 +101,12 @@ export default function EntiteReferentielPage<T extends { id?: number }>(p: Prop
   };
 
   const labelOf = (key: string) => t(p.fields.find((f) => f.key === key)?.labelKey ?? key);
+  const cellText = (it: T, key: string) => {
+    const field = p.fields.find((f) => f.key === key);
+    const raw = field?.display ? field.display(it as unknown as Record<string, unknown>) : (it as any)[key];
+    if (raw == null || raw === "") return "—";
+    return field?.options?.find((o) => o.value === String(raw))?.label ?? String(raw);
+  };
   const hasActions = p.canUpdate || p.canDelete;
 
   return (
@@ -119,7 +143,7 @@ export default function EntiteReferentielPage<T extends { id?: number }>(p: Prop
                         <TableCell key={c} className={i === 0 ? "font-medium" : ""}>
                           {i === 0
                             ? <Link to={p.detailHref(it)} className="text-primary underline-offset-2 hover:underline">{p.nameOf(it)}</Link>
-                            : String((it as any)[c] ?? "—") || "—"}
+                            : cellText(it, c)}
                         </TableCell>
                       ))}
                       {hasActions && (
@@ -148,7 +172,17 @@ export default function EntiteReferentielPage<T extends { id?: number }>(p: Prop
             {p.fields.map((f) => (
               <div key={f.key} className="space-y-1">
                 <Label>{t(f.labelKey)}{f.required && " *"}</Label>
-                <Input type={f.type || "text"} value={form[f.key] ?? ""} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} required={f.required} />
+                {f.options ? (
+                  <SearchableSelect
+                    options={f.options}
+                    value={form[f.key] ?? ""}
+                    onValueChange={(v) => setForm({ ...form, [f.key]: v })}
+                    loading={f.optionsLoading}
+                    clearable={!f.required}
+                  />
+                ) : (
+                  <Input type={f.type || "text"} value={form[f.key] ?? ""} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} required={f.required} />
+                )}
               </div>
             ))}
             <DialogFooter>
