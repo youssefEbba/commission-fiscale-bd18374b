@@ -176,7 +176,9 @@
       }
     },
     "insuffisant": "Un nouveau montant est inférieur au consommé : le serveur refusera l'application.",
-    "submit": "Appliquer"
+    "submit": "Appliquer",
+    "utilisation_en_cours_one": "Une utilisation du crédit est en cours : elle doit être terminée avant d'appliquer l'avenant.",
+    "utilisation_en_cours_other": "{{count}} utilisations du crédit sont en cours : elles doivent être terminées avant d'appliquer l'avenant."
   },
   "toast": {
     "depot_ok": "Avenant déposé. Joignez maintenant les pièces justificatives.",
