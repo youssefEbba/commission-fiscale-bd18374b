@@ -663,10 +663,11 @@ const Demandes = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
-                  {(uploadAllowedTypes.length > 0
-                    ? ALL_DOCUMENT_TYPES_VALUES.filter(tt => uploadAllowedTypes.includes(tt))
+                  {/* Réponse à une demande de pièces : exactement les pièces demandées dans la décision. */}
+                  {Array.from(new Set(uploadAllowedTypes.length > 0
+                    ? uploadAllowedTypes
                     : ALL_DOCUMENT_TYPES_VALUES
-                  ).map((tt) => (
+                  )).map((tt) => (
                     <SelectItem key={tt} value={tt}>{tTypeDocument(tt)}</SelectItem>
                   ))}
                 </SelectContent>
