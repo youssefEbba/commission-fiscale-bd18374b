@@ -59,3 +59,27 @@
 - [x] Fin de session (déconnexion / 401) : stockage effacé, WebSocket fermés, retour /login ; sourcemap désactivé
 - [x] Avenant : décision de la commission réservée Président/admin, pièces du déposant au seul déposant
 - [ ] Failles restantes sans correctif mineur (vitest/vite/tinypool en outils de dev, zod v4, react-router v7) — en attente de décision de montée majeure
+
+## Recette 02/11/2026 — anomalies front
+- [ ] A01 en-tête accueil replié jusqu'à lg
+- [ ] A02 chiffres clés sans retour à la ligne
+- [ ] A03 statuts traduits main courante + fiche mise en place, lignes AVENANT
+- [ ] A04 clés type_document manquantes FR/AR
+- [ ] A07 « Annuler » réinitialise la nouvelle demande de correction
+- [ ] A10 fiche transfert : historique au statut final, circuit DGD → DGI → DGTCP → Président
+- [ ] A15 écrans sous-traitance
+- [ ] A18 « Traiter » mise en place seulement si action attendue
+- [ ] A19 bulletin annoté facultatif
+- [ ] A21 colonne Stade seulement en cours
+- [ ] A23 compteur documents utilisation + types de décision traduits
+- [ ] A25 filtre DGTCP « Dossiers à contrôler »
+- [ ] A26 menu Clôture aligné sur la route
+- [ ] A27 Valider/Rejeter sur la fiche convention
+- [ ] A31 erreurs d'envoi de document + ajout de pièce AC au statut Reçue
+- [ ] A32 types de la réponse = documentsDemandes
+- [ ] A33 message du visa douanier selon le fichier choisi
+- [ ] A36 erreur 409 et blocage dans « Appliquer l'avenant »
+- [ ] A37 confirmations avec montant
+- [ ] A38 libellé Clôturée
+- [ ] A39 texte d'aide Quittance DGI
+- [ ] A40 stock TVA : colonne Restant, Épuisé si 0
