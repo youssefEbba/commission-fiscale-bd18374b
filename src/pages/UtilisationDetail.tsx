@@ -620,7 +620,7 @@ const UtilisationDetail = () => {
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const resolvedRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
   const visaDecisions = decisions.filter(d => d.decision === "VISA");
-  const rejetDecisions = decisions.filter(d => d.decision === "REJET");
+  const rejetDecisions = decisions.filter(d => (d.decision as string) === "REJET");
   const shownDecisionsCount = openRejets.length + resolvedRejets.length + visaDecisions.length + rejetDecisions.length;
   // Documents listés = versions actives seulement ; le compteur de la carte compte exactement cette liste.
   const visibleDocs = (() => {
