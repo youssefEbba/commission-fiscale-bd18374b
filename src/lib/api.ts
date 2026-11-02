@@ -500,6 +500,8 @@ export interface ReferentielProjetDto {
   conventionDeviseOrigine?: string;
   conventionTauxChange?: number;
   valideParUserId?: number;
+  /** Nom de la personne qui a validé (affiché à la place de l'identifiant). */
+  valideParNom?: string | null;
   dateValidation?: string;
   motifRejet?: string;
 }
@@ -1343,7 +1345,13 @@ export interface CertificatCreditDto extends CertificatRecapFiscal {
   lettreCorrectionId?: number;
   demandeCorrectionId?: number;
   demandeCorrectionNumero?: string;
+  /** Référence lisible de la demande de correction d'origine (DC-…). */
+  demandeCorrectionReference?: string | null;
   marcheId?: number;
+  /** Numéro du marché (saisi par l'autorité). */
+  marcheNumero?: string | null;
+  /** Référence lisible du marché (DM-…). */
+  marcheReference?: string | null;
   marcheIntitule?: string;
   /** (e) = b + c + d, calculé côté back si b et d présents */
   creditExterieurRecap?: number;
@@ -1368,7 +1376,7 @@ export interface CreateCertificatCreditRequest extends CertificatRecapFiscal {
   brouillon?: boolean;
 }
 
-/** Corps de POST /certificats-credit/{id}/montants. Récap fiscal optionnel. */
+/** Corps de PATCH /certificats-credit/{id}/montants. Récap fiscal optionnel. */
 export interface UpdateCertificatCreditMontantsRequest extends CertificatRecapFiscal {
   montantCordon: number;
   montantTVAInterieure: number;
@@ -1454,7 +1462,7 @@ export const certificatCreditApi = {
     recap?: CertificatRecapFiscal,
   ) =>
     apiFetch<CertificatCreditDto>(`/certificats-credit/${id}/montants`, {
-      method: "POST",
+      method: "PATCH",
       body: { montantCordon, montantTVAInterieure, ...(recap ?? {}) } satisfies UpdateCertificatCreditMontantsRequest,
     }),
   reject: (id: number, motif: string) =>
@@ -1690,9 +1698,14 @@ export interface UtilisationCreditDto {
   type?: UtilisationType;
   montant?: number;
   statut: UtilisationStatut;
+  /** Date de la demande d'utilisation (le serveur n'envoie pas de `dateCreation`). */
+  dateDemande?: string;
+  /** @deprecated absent du serveur — utiliser `dateDemande`. */
   dateCreation?: string;
   dateMiseAJour?: string;
   dateLiquidation?: string;
+  /** Vrai = utilisation reprise d'archive : certificat d'utilisation non numérisé. */
+  repriseArchive?: boolean;
   description?: string;
   entrepriseNom?: string;
   entrepriseId?: number;
@@ -1952,7 +1965,16 @@ export const utilisationCreditApi = {
   /** État d'émission du certificat d'utilisation (pilote le bouton du Président). */
   getCertificatUtilisationEtat: (id: number) =>
     apiFetch<CertificatUtilisationEtatDto>(`/utilisations-credit/${id}/certificat-utilisation/etat`),
-  /** PRÉSIDENT — émission du certificat d'utilisation (idempotent). Statut → CERTIFICAT_EMIS. */
+  /**
+   * PRÉSIDENT — réserve le numéro du certificat d'utilisation (CU-…) sans changer le statut.
+   * Le certificat est émis au dépôt du document signé (`uploadDocument` CERTIFICAT_UTILISATION).
+   */
+  reserverNumeroCertificatUtilisation: (id: number) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/certificat-utilisation/numero`, { method: "POST" }),
+  /**
+   * PRÉSIDENT — ancienne émission directe. Répond 409 tant qu'aucun certificat signé n'est déposé :
+   * ne plus l'appeler dans les chemins manuel et automatique (le dépôt du signé émet le certificat).
+   */
   emettreCertificatUtilisation: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/certificat-utilisation`, { method: "POST" }),
   /** ADMIN_SI — émission par substitution (motif obligatoire, certificat signé facultatif). */
@@ -2110,9 +2132,16 @@ export interface AuditLogDto {
   entityType: string;
   entityId?: number;
   details?: string;
-  /** Non-null uniquement pour les entrées ADMIN_CORRECTION. */
+  /** Motif saisi (substitutions administrateur notamment). */
   motif?: string | null;
-  dateAction: string;
+  /** Date et heure de l'action. */
+  timestamp?: string;
+  /** @deprecated ancien nom de la date — repli si `timestamp` est absent. */
+  dateAction?: string;
+  /** Référence lisible du dossier (DC-…, CR-…, UT-…, AV-…). */
+  entityReference?: string | null;
+  /** Instantané de l'objet au moment de l'action (objet ou texte JSON). */
+  objectSnapshot?: unknown;
 }
 
 
@@ -2387,6 +2416,8 @@ export interface TransfertCreditDto {
   id: number;
   dateDemande?: string;
   certificatCreditId: number;
+  /** Référence lisible du crédit (CR-…) — à afficher en priorité. */
+  certificatReference?: string | null;
   certificatNumero?: string;
   entrepriseSourceId?: number;
   montant: string | number; // BigDecimal → string from backend
@@ -2628,8 +2659,28 @@ export const TYPE_OPERATION_LABELS: Record<TypeOperationCloture, string> = {
   ANNULATION: "Annulation",
 };
 
+/** Élément de la file de clôture (GET /clotures-credit/queue). */
+export interface ClotureQueueItemDto {
+  certificatCreditId: number;
+  /** Référence lisible du crédit (CR-…). */
+  reference?: string | null;
+  numero?: string | null;
+  entrepriseRaisonSociale?: string | null;
+  statut?: string | null;
+  /** Crédit ouvert sans opération en cours — proposable, même avec un solde. */
+  eligiblePourCloture: boolean;
+  /** Soldes épuisés ou validité dépassée. */
+  detecteAutomatiquement: boolean;
+  soldesEpuises: boolean;
+  validiteDepassee: boolean;
+  /** Soldes restants, en texte lisible. */
+  soldesRestants?: string[];
+  dateValidite?: string | null;
+}
+
 export const clotureCreditApi = {
   getEligible: () => apiFetch<number[]>("/clotures-credit/eligible"),
+  getQueue: () => apiFetch<ClotureQueueItemDto[]>("/clotures-credit/queue"),
   proposer: (data: CreateClotureCreditRequest) =>
     apiFetch<ClotureCreditDto>("/clotures-credit", { method: "POST", body: data }),
   getPropositions: () => apiFetch<ClotureCreditDto[]>("/clotures-credit/propositions"),
@@ -3116,6 +3167,8 @@ export interface MesEmpreintesDto {
   signatureDataUrl: string | null;
   cachetDataUrl: string | null;
   cachetGeneriqueDuRole?: boolean;
+  /** Vrai = empreinte enregistrée mais image illisible (stockage des documents indisponible). */
+  contenuIndisponible?: boolean;
 }
 
 export interface SignatureDto {
