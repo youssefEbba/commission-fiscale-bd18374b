@@ -156,3 +156,8 @@ export function marcheConventionIds(m: { conventionIds?: number[]; conventionId?
 export function canManageConventionAutorites(conv: Pick<ConventionDto, "statut">, hasUpdatePermission: boolean, isAdministration: boolean): boolean {
   return hasUpdatePermission && isAdministration && conv.statut !== "ANNULEE";
 }
+
+/** Valider / rejeter une convention : DGB ou DGI, convention « En attente » (liste et fiche). */
+export function canDecideConvention(conv: Pick<ConventionDto, "statut">, isDgbOrDgi: boolean): boolean {
+  return isDgbOrDgi && conv.statut === "EN_ATTENTE";
+}
