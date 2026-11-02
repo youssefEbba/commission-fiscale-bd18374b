@@ -86,8 +86,10 @@
 - [ ] Contrôle authentifié réel des écrans corrigés — bloqué : aucune session de test
 
 ## Recette 02/11/2026 — alignement sur les nouveaux contrats serveur
-- [ ] A44 PATCH montants mise en place + erreur dans la fenêtre
-- [ ] A42/A16/A31 création → pièces → /soumettre seulement si BROUILLON ; 400 pièces manquantes ; liste des pièces manquantes « Nouvelle utilisation »
+- [x] A44 appel PATCH des montants
+- [ ] A44 erreur affichée dans la fenêtre des montants
+- [x] A42/A16/A31 utilisations : liste des pièces manquantes, « Soumettre maintenant » bloqué, /soumettre seulement si BROUILLON
+- [ ] A42/A16/A31 même flux pour demande de correction et mise en place
 - [ ] A34 certificat d'utilisation : réservation du numéro, émission au dépôt du signé
 - [ ] A35 `contenuIndisponible` des empreintes + mention Président sur Signatures
 - [ ] A41 marché HT/TTC distincts

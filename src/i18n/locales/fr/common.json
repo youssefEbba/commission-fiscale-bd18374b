@@ -183,5 +183,9 @@
       "empty": "Aucune pièce active n'est paramétrée dans la GED pour ce processus.",
       "retry": "Réessayer"
     }
+  },
+  "submission": {
+    "missing_docs_title": "Pièces obligatoires manquantes",
+    "missing_docs_desc": "La demande reste en brouillon. Pièces à joindre : {{list}}"
   }
 }
