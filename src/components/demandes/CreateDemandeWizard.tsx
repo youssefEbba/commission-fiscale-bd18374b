@@ -252,6 +252,44 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast, isDelegate, user?.userId, cacheScope, editingDemande?.id]);
 
+  // Remet toutes les valeurs saisies à zéro (ouverture d'une nouvelle demande, bouton « Annuler »)
+  // et efface la sauvegarde de session, pour que la saisie ne s'accumule pas d'une ouverture à l'autre.
+  const resetFormValues = () => {
+    setStep(0);
+    setEntrepriseId("");
+    setTitulaireType("ENTREPRISE");
+    setGroupementId("");
+    setConventionId("");
+    setMarcheId("");
+    setIntituleMarche("");
+    setReferenceAppelOffre("");
+    setEquipementsPresents(false);
+    setTypeProjet("BTP");
+    setReferenceDossier("");
+    setImportations([emptyImportation()]);
+    setFiscalite({ montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0, tvaDeductible: 0, tvaNette: 0, creditInterieur: 0 });
+    setCreditExtManuel("");
+    setCreditIntManuel("");
+    setDqeNumero("");
+    setDqeProjet("");
+    setDqeLot("");
+    setDqeTauxTVA(16);
+    setDqeLignes([emptyDqeLigne()]);
+    setExistingDocs({});
+    clearDocFiles();
+    setDocFiles({});
+    try {
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith("lvbl:form:demande:"))
+        .forEach((k) => sessionStorage.removeItem(k));
+    } catch { /* noop */ }
+  };
+
+  const handleCancel = () => {
+    resetFormValues();
+    onOpenChange(false);
+  };
+
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
   const wasOpenRef = useRef(false);
@@ -267,29 +305,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         setShowCreateConvention(false);
         setShowCreateMarche(false);
         // Nouvelle demande : réinitialiser complètement le formulaire.
-        if (!editingId && !editingDemande) {
-          setEntrepriseId("");
-          setTitulaireType("ENTREPRISE");
-          setGroupementId("");
-          setConventionId("");
-          setMarcheId("");
-          setIntituleMarche("");
-          setEquipementsPresents(false);
-          setTypeProjet("BTP");
-          setReferenceDossier("");
-          setImportations([emptyImportation()]);
-          setFiscalite({ montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0, tvaDeductible: 0, tvaNette: 0, creditInterieur: 0 });
-          setCreditExtManuel("");
-          setCreditIntManuel("");
-          setDqeNumero("");
-          setDqeProjet("");
-          setDqeLot("");
-          setDqeTauxTVA(16);
-          setDqeLignes([emptyDqeLigne()]);
-          setExistingDocs({});
-          clearDocFiles();
-          setDocFiles({});
-        }
+        if (!editingId && !editingDemande) resetFormValues();
       }
       loadInitialData();
     } else {
@@ -1749,7 +1765,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>{t("demandes:wizard.actions.cancel")}</Button>
+            <Button variant="outline" onClick={handleCancel}>{t("demandes:wizard.actions.cancel")}</Button>
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !titulaireSelected}>
                 {t("demandes:wizard.actions.next")} <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />
