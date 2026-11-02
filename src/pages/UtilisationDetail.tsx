@@ -669,7 +669,7 @@ const UtilisationDetail = () => {
             )}
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[u.statut]}`}>
-            {tUtilisationStatutContextualise(u.statut, u.type)}
+            {tUtilisationStatutContextualise(u.statut)}
           </Badge>
         </div>
 

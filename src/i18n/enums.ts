@@ -17,12 +17,12 @@ export const tStatutCertificat = (v?: string | null) => tEnum("statut_certificat
 export const tStatutTransfert = (v?: string | null) => tEnum("statut_transfert", v ?? undefined);
 export const tStatutUtilisation = (v?: string | null) => tEnum("statut_utilisation", v ?? undefined);
 /**
- * Libellé contextualisé : pour une utilisation DOUANIER clôturée,
- * renvoie « Clôturée (transfert) » / « مغلقة (تحويل) ».
- * Sinon retombe sur tStatutUtilisation.
+ * Libellé du statut d'une utilisation : CLOTUREE → « Clôturée ».
+ * La mention « (transfert) » n'apparaît que pour une clôture explicitement liée à un transfert
+ * (`parTransfert`), jamais déduite du seul type douanier.
  */
-export const tUtilisationStatutContextualise = (statut?: string | null, type?: string | null): string => {
-  if (statut === "CLOTUREE" && type === "DOUANIER") {
+export const tUtilisationStatutContextualise = (statut?: string | null, opts?: { parTransfert?: boolean | null }): string => {
+  if (statut === "CLOTUREE" && opts?.parTransfert === true) {
     const k = "utilisations:statut.cloturee_transfert";
     const r = i18n.t(k, { defaultValue: "" }) as string;
     if (r) return r;
