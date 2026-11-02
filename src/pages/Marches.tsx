@@ -454,7 +454,7 @@ const Marches = () => {
                           </TableCell>
                           <TableCell className="text-muted-foreground max-w-[200px] truncate" title={m.autoriteContractanteNom || ""}>{m.autoriteContractanteNom || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
-                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatAmount(m.montantContratHt, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>

@@ -597,6 +597,8 @@ export interface ConventionDto {
   creeParAutoriteContractanteId?: number;
   creeParAutoriteContractanteNom?: string;
   valideParUserId?: number;
+  /** Nom de la personne qui a validé (affiché à la place de l'identifiant). */
+  valideParNom?: string | null;
   dateValidation?: string;
   motifRejet?: string;
   /** false = convention désactivée : plus de nouveau rattachement, invisible aux AC. */

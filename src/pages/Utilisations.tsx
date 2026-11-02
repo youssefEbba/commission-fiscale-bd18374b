@@ -43,7 +43,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save, Download } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { certificatUtilisationVisible } from "@/lib/utilisationCloture";
-import { submitIfDraft, utilisationTvaRequiredDocs } from "@/lib/submission";
+import { submitIfDraft, draftOutcomeMessage, utilisationTvaRequiredDocs } from "@/lib/submission";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -515,12 +515,9 @@ const Utilisations = () => {
       // GED manquent. Après le dépôt des pièces, soumettre seulement dans ce cas (sinon 409).
       if (mode === "submit") {
         const outcome = await submitIfDraft(target, () => utilisationCreditApi.soumettre(target.id));
-        if (outcome.kind === "missing_documents") {
-          toast({
-            title: t("common:submission.missing_docs_title"),
-            description: t("common:submission.missing_docs_desc", { list: outcome.codes.map(c => tTypeDocument(c)).join(", ") || "—" }),
-            variant: "destructive",
-          });
+        const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+        if (draftMessage) {
+          toast({ ...draftMessage, variant: "destructive" });
           setShowCreate(false);
           setEditingId(null);
           fetchData();
@@ -557,13 +554,9 @@ const Utilisations = () => {
     }
     setSubmittingId(u.id);
     try {
-      const outcome = await submitIfDraft(u, () => utilisationCreditApi.soumettre(u.id));
-      if (outcome.kind === "missing_documents") {
-        toast({
-          title: t("common:submission.missing_docs_title"),
-          description: t("common:submission.missing_docs_desc", { list: outcome.codes.map(c => tTypeDocument(c)).join(", ") || "—" }),
-          variant: "destructive",
-        });
+      const draftMessage = draftOutcomeMessage(await submitIfDraft(u, () => utilisationCreditApi.soumettre(u.id)), t, tTypeDocument);
+      if (draftMessage) {
+        toast({ ...draftMessage, variant: "destructive" });
       } else {
         toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.submitted") });
       }

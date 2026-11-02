@@ -15,8 +15,9 @@ import type { AppositionOptions } from "@/lib/signatures";
  * (lettre d'adoption, certificat de crédit d'impôt, certificat d'utilisation).
  * - Système : incruste signature + cachet enregistrés, puis dépose (APPOSE_SYSTEME).
  * - Manuel : télécharge le modèle vierge, puis dépose le scan (MANUSCRIT_SCANNE).
- * `prepare` est appelé avant toute génération (ex. émission du certificat d'utilisation
- * pour obtenir son numéro) ; son résultat est passé à `generate`.
+ * `prepare` est appelé avant toute génération (ex. réservation du numéro du certificat
+ * d'utilisation) ; son résultat est passé à `generate`.
+ * Empreintes illisibles (`contenuIndisponible`) ou lecture en échec : seul le chemin manuel reste.
  */
 interface PresidentSignDialogProps<P> {
   open: boolean;
@@ -44,6 +45,7 @@ function PresidentSignDialog<P = unknown>({ open, onOpenChange, title, filename,
   const { t } = useTranslation("common");
   const { toast } = useToast();
   const [emp, setEmp] = useState<MesEmpreintesDto | null>(null);
+  const [empUnreadable, setEmpUnreadable] = useState(false);
   const [loadingEmp, setLoadingEmp] = useState(false);
   const [busy, setBusy] = useState<"systeme" | "modele" | "scan" | null>(null);
   const [scan, setScan] = useState<File | null>(null);
@@ -54,9 +56,10 @@ function PresidentSignDialog<P = unknown>({ open, onOpenChange, title, filename,
     setScan(null);
     setPrepared(undefined);
     setLoadingEmp(true);
+    setEmpUnreadable(false);
     signatureApi.me(true)
-      .then(setEmp)
-      .catch(() => setEmp(null))
+      .then((e) => { setEmp(e); setEmpUnreadable(!!e?.contenuIndisponible); })
+      .catch(() => { setEmp(null); setEmpUnreadable(true); })
       .finally(() => setLoadingEmp(false));
   }, [open]);
 
@@ -71,7 +74,7 @@ function PresidentSignDialog<P = unknown>({ open, onOpenChange, title, filename,
   const missing: string[] = [];
   if (!emp?.signature || !emp?.signatureDataUrl) missing.push(t("president_sign.signature"));
   if (!emp?.cachet || !emp?.cachetDataUrl) missing.push(t("president_sign.cachet"));
-  const systemeDisponible = !loadingEmp && missing.length === 0;
+  const systemeDisponible = !loadingEmp && !empUnreadable && missing.length === 0;
 
   const err = (e: unknown) =>
     toast({ title: t("states.error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e, "Erreur"), variant: "destructive" });
@@ -126,6 +129,10 @@ function PresidentSignDialog<P = unknown>({ open, onOpenChange, title, filename,
             <p className="text-xs text-muted-foreground">{t("president_sign.systeme_desc")}</p>
             {loadingEmp ? (
               <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> {t("president_sign.loading")}</p>
+            ) : empUnreadable ? (
+              <p role="status" className="text-xs text-muted-foreground flex items-start gap-1">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent-foreground" /> {t("president_sign.contenu_indisponible")}
+              </p>
             ) : missing.length > 0 ? (
               <div className="text-xs text-muted-foreground space-y-1">
                 <p className="flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5 text-accent-foreground" /> {t("president_sign.manquant", { items: missing.join(", ") })}</p>

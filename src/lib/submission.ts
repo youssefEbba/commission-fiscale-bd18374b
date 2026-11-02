@@ -59,7 +59,9 @@ export type SubmitOutcome<T> =
   /** La demande était en brouillon et `/soumettre` a réussi. */
   | { kind: "submitted"; result: T }
   /** `/soumettre` a refusé faute de pièces : la demande reste en brouillon. */
-  | { kind: "missing_documents"; result: T; codes: string[] };
+  | { kind: "missing_documents"; result: T; codes: string[] }
+  /** `/soumettre` absent du serveur (pas encore déployé) : la demande reste en brouillon. */
+  | { kind: "route_unavailable"; result: T };
 
 /**
  * À appeler après le dépôt des pièces d'une création « directe ».
@@ -77,8 +79,35 @@ export async function submitIfDraft<T extends { statut?: string | null }>(
   } catch (e) {
     const codes = missingDocumentCodes(e);
     if (codes) return { kind: "missing_documents", result: current, codes };
+    if (isRouteUnavailable(e)) return { kind: "route_unavailable", result: current };
     throw e;
   }
+}
+
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/**
+ * Message (toast) d'une soumission restée en brouillon, ou `null` si la demande est partie.
+ * `docLabel` traduit un code de pièce (tTypeDocument).
+ */
+export function draftOutcomeMessage<T>(
+  outcome: SubmitOutcome<T>,
+  t: Translate,
+  docLabel: (code: string) => string,
+): { title: string; description: string } | null {
+  if (outcome.kind === "missing_documents") {
+    return {
+      title: t("common:submission.missing_docs_title"),
+      description: t("common:submission.missing_docs_desc", { list: outcome.codes.map(docLabel).join(", ") || "—" }),
+    };
+  }
+  if (outcome.kind === "route_unavailable") {
+    return {
+      title: t("common:submission.unavailable_title"),
+      description: t("common:submission.unavailable_desc"),
+    };
+  }
+  return null;
 }
 
 /** Pièces obligatoires (codes) encore absentes parmi celles jointes, dans l'ordre demandé. */

@@ -34,7 +34,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, formatApiErrorMessage } from "@/lib/api";
+import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
@@ -566,11 +567,15 @@ const Demandes = () => {
                                         onClick={async () => {
                                           setActionLoading(d.id);
                                           try {
-                                            await demandeCorrectionApi.soumettre(d.id);
-                                            toast({ title: t("demandes:toast.draft_submitted_title"), description: t("demandes:toast.draft_submitted_desc") });
+                                            const draftMessage = draftOutcomeMessage(
+                                              await submitIfDraft(d, () => demandeCorrectionApi.soumettre(d.id)),
+                                              t, tTypeDocument,
+                                            );
+                                            if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+                                            else toast({ title: t("demandes:toast.draft_submitted_title"), description: t("demandes:toast.draft_submitted_desc") });
                                             fetchDemandes();
-                                          } catch (e: any) {
-                                            toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+                                          } catch (e) {
+                                            toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
                                           } finally { setActionLoading(null); }
                                         }}
                                       >

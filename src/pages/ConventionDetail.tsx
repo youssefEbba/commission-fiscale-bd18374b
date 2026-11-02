@@ -272,7 +272,7 @@ const ConventionDetail = () => {
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Field label={t("conventions:fields.statut")} value={tStatutConvention(conv.statut)} />
               <Field label={t("conventions:fields.date_validation")} value={formatDate(conv.dateValidation)} />
-              <Field label={t("conventions:fields.validated_by")} value={conv.valideParUserId} />
+              <Field label={t("conventions:fields.validated_by")} value={conv.valideParNom || undefined} />
               {conv.motifRejet && <Field label={t("conventions:fields.motif_rejet")} value={conv.motifRejet} />}
             </CardContent>
           </Card>

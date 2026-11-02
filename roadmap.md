@@ -87,19 +87,19 @@
 
 ## Recette 02/11/2026 — alignement sur les nouveaux contrats serveur
 - [x] A44 appel PATCH des montants
-- [ ] A44 erreur affichée dans la fenêtre des montants
+- [x] A44 erreur affichée dans la fenêtre des montants
 - [x] A42/A16/A31 utilisations : liste des pièces manquantes, « Soumettre maintenant » bloqué, /soumettre seulement si BROUILLON
-- [ ] A42/A16/A31 même flux pour demande de correction et mise en place
-- [ ] A34 certificat d'utilisation : réservation du numéro, émission au dépôt du signé
-- [ ] A35 `contenuIndisponible` des empreintes + mention Président sur Signatures
-- [ ] A41 marché HT/TTC distincts
-- [ ] A43 CERTIFICAT_CREDIT_IMPOTS retiré du dépôt AC/relais
-- [ ] A45 « Générer le certificat à signer » dans les actions du Président
-- [ ] A06 convention « Validée par {valideParNom} »
-- [ ] A12/A13 certificat : référence DC, marché, dateDemande des utilisations
-- [ ] A14 transfert : certificatReference, /verification CR-…
-- [ ] A17 main courante : références lisibles, processus AVENANT
-- [ ] A20 utilisation repriseArchive
-- [ ] A24 clôture : file d'attente enrichie
-- [ ] A29 journal d'audit : timestamp, motif, entityReference, résumé snapshot
-- [ ] 404/405 gérés sans casser l'écran ; FR/AR ; tests
+- [x] A42/A16/A31 même flux pour demande de correction et mise en place
+- [x] A34 certificat d'utilisation : réservation du numéro, émission au dépôt du signé
+- [x] A35 `contenuIndisponible` des empreintes + mention Président sur Signatures
+- [x] A41 marché HT/TTC distincts
+- [x] A43 CERTIFICAT_CREDIT_IMPOTS retiré du dépôt AC/relais
+- [x] A45 « Générer le certificat à signer » dans les actions du Président
+- [x] A06 convention « Validée par {valideParNom} »
+- [x] A12/A13 certificat : référence DC, marché, dateDemande des utilisations
+- [x] A14 transfert : certificatReference, /verification CR-…
+- [x] A17 main courante : références lisibles, processus AVENANT
+- [x] A20 utilisation repriseArchive
+- [x] A24 clôture : file d'attente enrichie
+- [x] A29 journal d'audit : timestamp, motif, entityReference, résumé snapshot
+- [x] 404/405 gérés sans casser l'écran ; FR/AR ; tests

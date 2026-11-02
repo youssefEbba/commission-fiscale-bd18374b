@@ -25,6 +25,7 @@ import {
   formatApiErrorMessage,
 } from "@/lib/api";
 import { requiredVisasCorrection } from "@/lib/visas";
+import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
@@ -719,17 +720,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         },
       };
 
-      let demande: DemandeCorrectionDto;
-      if (isEditing && editingId) {
-        // Édition : PUT, puis soumettre si demandé.
-        demande = await demandeCorrectionApi.update(editingId, payload);
-        if (!asBrouillon && demande.statut === "BROUILLON") {
-          demande = await demandeCorrectionApi.soumettre(editingId);
-        }
-      } else {
-        // Création : POST avec flag brouillon.
-        demande = await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
-      }
+      // Créer (ou modifier) → déposer les pièces → soumettre seulement si le serveur a laissé
+      // la demande en BROUILLON (pièces GED obligatoires absentes à la création).
+      let demande: DemandeCorrectionDto = isEditing && editingId
+        ? await demandeCorrectionApi.update(editingId, payload)
+        : await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
 
       const docEntries = Object.entries(docFiles).filter(([type]) => type !== EQUIP_DOC || equipementsDeclares);
       for (const [type, file] of docEntries) {
@@ -737,6 +732,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           await demandeCorrectionApi.uploadDocument(demande.id, type, file);
         } catch {
           // continue uploading others
+        }
+      }
+
+      if (!asBrouillon) {
+        const created = demande;
+        const outcome = await submitIfDraft(created, () => demandeCorrectionApi.soumettre(created.id));
+        demande = outcome.result;
+        const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+        if (draftMessage) {
+          toast({ ...draftMessage, variant: "destructive" });
+          clearDocFiles();
+          onOpenChange(false);
+          onCreated();
+          return;
         }
       }
 

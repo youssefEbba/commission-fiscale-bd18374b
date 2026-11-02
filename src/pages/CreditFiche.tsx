@@ -154,7 +154,7 @@ export default function CreditFiche() {
                           <TableCell>{u.type || "—"}</TableCell>
                           <TableCell><Badge variant="outline" className="text-xs">{tStatutUtilisation(u.statut)}</Badge></TableCell>
                           <TableCell className="text-end">{formatAmount(u.montant ?? u.montantDroits)}</TableCell>
-                          <TableCell>{u.dateCreation ? formatDate(u.dateCreation) : "—"}</TableCell>
+                          <TableCell>{(u.dateDemande || u.dateCreation) ? formatDate(u.dateDemande || u.dateCreation) : "—"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

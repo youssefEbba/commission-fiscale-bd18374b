@@ -1517,6 +1517,7 @@ const DemandeDetail = () => {
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">{t("demandes:detail.fields.marche")}</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("marches:form.montant_ttc")}</span><p className="font-medium">{marcheDetail.montantContratTtc != null ? `${formatAmount(marcheDetail.montantContratTtc)} MRU` : "—"}</p></div>
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>
             </div>
           ) : (

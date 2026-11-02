@@ -6,6 +6,7 @@ import { auditLogApi, AuditLogDto, PageAuditLogDto } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { formatDateTime } from "@/i18n/format";
+import { summarizeAuditSnapshot } from "@/lib/auditSnapshot";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -133,7 +134,7 @@ const AuditLogs = () => {
                       >
                         <RowNumberCell n={data.number * data.size + rowIdx + 1} />
                         <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatDateTime(log.dateAction)}
+                          {formatDateTime(log.timestamp ?? log.dateAction)}
                         </TableCell>
                         {/* Username brut depuis l'API — non traduisible */}
                         <TableCell className="font-medium">{log.username}</TableCell>
@@ -143,9 +144,13 @@ const AuditLogs = () => {
                             {tAuditAction(log.action)}
                           </Badge>
                         </TableCell>
-                        {/* entityType : code JPA brut côté API (DEMANDE, CERTIFICAT…) — non traduit */}
-                        <TableCell className="text-muted-foreground">{log.entityType}{log.entityId ? ` #${log.entityId}` : ""}</TableCell>
-                        {/* Motif : renseigné uniquement pour les corrections administrateur */}
+                        {/* Référence lisible du dossier ; à défaut, code JPA brut (non traduit) + identifiant */}
+                        <TableCell className="text-muted-foreground">
+                          {log.entityReference
+                            ? <span className="font-medium text-foreground" title={log.entityType}>{log.entityReference}</span>
+                            : <>{log.entityType}{log.entityId ? ` #${log.entityId}` : ""}</>}
+                        </TableCell>
+                        {/* Motif saisi (corrections et substitutions administrateur notamment) */}
                         <TableCell className="text-sm max-w-xs">
                           {log.motif ? (
                             <span className="block font-medium text-amber-900 dark:text-amber-300 whitespace-pre-wrap break-words" title={log.motif}>
@@ -155,7 +160,14 @@ const AuditLogs = () => {
                             <span className="text-muted-foreground">{t("audit:table.empty_cell")}</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{log.details || t("audit:table.empty_cell")}</TableCell>
+                        {(() => {
+                          const resume = summarizeAuditSnapshot(log.objectSnapshot) || log.details || null;
+                          return (
+                            <TableCell className="text-sm text-muted-foreground max-w-sm">
+                              {resume ? <span className="line-clamp-2 break-words" title={resume}>{resume}</span> : t("audit:table.empty_cell")}
+                            </TableCell>
+                          );
+                        })()}
                       </TableRow>
                     ))}
                   </TableBody>

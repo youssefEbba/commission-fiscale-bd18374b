@@ -186,7 +186,7 @@ const Certificats = () => {
             )}
           </TableCell>
           <TableCell className="max-w-[200px] truncate">{c.entrepriseRaisonSociale || c.entrepriseNom || "—"}</TableCell>
-          <TableCell className="max-w-[200px] truncate">{c.marcheIntitule || "—"}</TableCell>
+          <TableCell className="max-w-[200px] truncate" title={c.marcheIntitule || undefined}>{c.marcheNumero || c.marcheReference || c.marcheIntitule || "—"}</TableCell>
           <TableCell className="text-end whitespace-nowrap">{formatAmount(c.montantCordon ?? c.montantDouane)}</TableCell>
           <TableCell className="text-end whitespace-nowrap">{formatAmount(c.montantTVAInterieure ?? c.montantInterieur)}</TableCell>
           <TableCell className="text-end whitespace-nowrap font-semibold">{formatAmount(c.soldeCordon)}</TableCell>

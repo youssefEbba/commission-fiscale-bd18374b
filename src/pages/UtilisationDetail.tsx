@@ -46,6 +46,7 @@ import { DocumentButton } from "@/components/documents/DocumentButton";
 import { useDocumentTaskPending } from "@/hooks/useDocumentTasks";
 import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 import { certificatUtilisationVisible, isDeposantUtilisation, utilisationClotureMode } from "@/lib/utilisationCloture";
+import { isRouteUnavailable } from "@/lib/submission";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
@@ -1020,7 +1021,7 @@ const UtilisationDetail = () => {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.numero")}</p><p className="font-bold">{u.numeroCertificatUtilisation || t("utilisations:certificat_utilisation.non_emis")}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.numero")}</p><p className="font-bold">{u.numeroCertificatUtilisation || (u.repriseArchive ? t("utilisations:certificat_utilisation.reprise_archive") : t("utilisations:certificat_utilisation.non_emis"))}</p></div>
                 <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.date")}</p><p className="font-medium">{u.dateCertificatUtilisation ? formatDate(u.dateCertificatUtilisation) : "—"}</p></div>
               </div>
               {u.statut === "CLOTUREE" && !u.numeroCertificatUtilisation && (
@@ -1905,12 +1906,19 @@ const UtilisationDetail = () => {
         title={t("utilisations:certificat_utilisation.emettre")}
         filename={`certificat-utilisation-${u.id}.pdf`}
         prepare={async () => {
-          // Ordre contraint : émettre d'abord pour obtenir le numéro, puis composer le PDF.
-          const u2 = await utilisationCreditApi.emettreCertificatUtilisation(utilId);
+          // Réserver le numéro (statut inchangé) pour l'imprimer sur le modèle ; le certificat
+          // est émis par le serveur au dépôt du document signé. Serveur non redéployé (404/405) :
+          // repli sur l'ancienne émission directe.
+          const u2 = await utilisationCreditApi.reserverNumeroCertificatUtilisation(utilId).catch((e) => {
+            if (isRouteUnavailable(e)) return utilisationCreditApi.emettreCertificatUtilisation(utilId);
+            throw e;
+          });
           const fresh = await utilisationCreditApi.getById(utilId).catch(() => u2);
-          const merged = { ...u, ...fresh, lignes: fresh?.lignes?.length ? fresh.lignes : u.lignes } as UtilisationCreditDto;
-          toast({ title: tSuccess(), description: t("utilisations:certificat_utilisation.emis_toast", { numero: merged.numeroCertificatUtilisation || "" }) });
-          return merged;
+          return {
+            ...u, ...fresh,
+            numeroCertificatUtilisation: fresh?.numeroCertificatUtilisation || u2?.numeroCertificatUtilisation,
+            lignes: fresh?.lignes?.length ? fresh.lignes : u.lignes,
+          } as UtilisationCreditDto;
         }}
         generate={(apposition, prepared) => generateCuPdf(prepared || u, { apposition, save: false })}
         upload={async (file, mode) => { await utilisationCreditApi.uploadDocument(utilId, "CERTIFICAT_UTILISATION", file, mode); }}

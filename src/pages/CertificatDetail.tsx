@@ -2,7 +2,7 @@ import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { isStockTvaEpuise } from "@/lib/tvaStock";
 import AvenantsCertificatCard from "@/components/avenants/AvenantsCertificatCard";
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -225,6 +225,10 @@ const CertificatDetail = () => {
   }
 
   const c = certificat;
+  // Numéro saisi par l'autorité, sinon référence DM-…, sinon intitulé.
+  const marcheLabel = c.marcheNumero || c.marcheReference || c.marcheIntitule || `#${c.marcheId}`;
+  // La fiche marché n'est pas ouverte aux entreprises (routes App.tsx).
+  const canOpenMarche = user?.role !== "ENTREPRISE" && user?.role !== "SOUS_TRAITANT";
 
   return (
     <DashboardLayout>
@@ -408,13 +412,18 @@ const CertificatDetail = () => {
                 {c.demandeCorrectionId && (
                   <div>
                     <p className="text-muted-foreground">{t("certificats:detail.info.demande_correction")}</p>
-                    <p className="font-medium">#{c.demandeCorrectionId}</p>
+                    <Link to={`/dashboard/demandes/${c.demandeCorrectionId}`} className="font-medium text-primary hover:underline">{c.demandeCorrectionReference || c.demandeCorrectionNumero || `#${c.demandeCorrectionId}`}</Link>
                   </div>
                 )}
                 {c.marcheId && (
                   <div>
                     <p className="text-muted-foreground">{t("certificats:detail.info.marche")}</p>
-                    <p className="font-medium">#{c.marcheId}</p>
+                    {canOpenMarche ? (
+                      <Link to={`/dashboard/marches/${c.marcheId}`} className="font-medium text-primary hover:underline">{marcheLabel}</Link>
+                    ) : (
+                      <p className="font-medium">{marcheLabel}</p>
+                    )}
+                    {c.marcheIntitule && (c.marcheNumero || c.marcheReference) && <p className="text-xs text-muted-foreground">{c.marcheIntitule}</p>}
                   </div>
                 )}
               </div>
@@ -541,7 +550,7 @@ const CertificatDetail = () => {
                       <TableCell>{formatAmount(u.montant)}</TableCell>
                       <TableCell>{u.type === "DOUANIER" ? formatAmount(u.montantDroits) : "—"}</TableCell>
                       <TableCell>{u.type === "DOUANIER" ? formatAmount(u.montantTVADouane) : formatAmount(u.montantTVAInterieure)}</TableCell>
-                      <TableCell>{formatDate(u.dateLiquidation || u.dateCreation)}</TableCell>
+                      <TableCell>{formatDate(u.dateDemande || u.dateCreation)}</TableCell>
                       <TableCell>
                         <Badge className={`text-xs ${STATUT_COLORS_UTIL[u.statut]}`}>
                           {tStatutUtilisation(u.statut)}

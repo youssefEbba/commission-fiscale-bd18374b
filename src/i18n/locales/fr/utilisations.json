@@ -613,7 +613,8 @@
     "attente_envoi_tresor": "En attente du certificat du Président",
     "attente_quittance_dgi": "En attente du certificat du Président",
     "non_emis_envoi_error": "Le certificat d'utilisation doit être émis par le Président avant l'envoi au Trésor.",
-    "non_emis_quittance_error": "La quittance DGI suppose le certificat d'utilisation émis par le Président."
+    "non_emis_quittance_error": "La quittance DGI suppose le certificat d'utilisation émis par le Président.",
+    "reprise_archive": "Reprise d'archive — pièce non numérisée"
   },
   "transmission_president": {
     "queue_filter": "Dossiers à contrôler",

@@ -14,8 +14,10 @@ import { tStatutAny, statutGroupForLigne } from "@/i18n/enums";
 import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert, formatApiErrorMessage } from "@/lib/api";
 
 const hrefFor = (l: MainCouranteLigneDto): string => {
-  if (l.processus === "AVENANT" || l.type === "Avenant" || l.type === "AvenantCertificat") return `/dashboard/modifications/${l.id}`;
+  if (l.type === "Avenant" || l.type === "AvenantCertificat") return `/dashboard/modifications/${l.id}`;
+  // Ligne AVENANT portée par un autre objet (ex. correction issue d'un avenant financier) : la fiche de cet objet.
   if (l.type === "DemandeCorrection") return `/dashboard/demandes/${l.id}`;
+  if (l.processus === "AVENANT" && l.type !== "CertificatCredit" && l.type !== "UtilisationCredit") return `/dashboard/modifications/${l.id}`;
   if (l.type === "TransfertCredit") return `/dashboard/transferts/${l.id}`;
   if (l.type === "CertificatCredit") {
     if (l.processus === "MISE_EN_PLACE") return `/dashboard/mise-en-place/${l.id}`;

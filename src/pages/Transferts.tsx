@@ -303,7 +303,7 @@ const Transferts = () => {
 
   const filtered = data.filter((tr) => {
     if (onlyAViser && !aViserIds.has(tr.id)) return false;
-    const ms = (tr.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) || String(tr.id).includes(search);
+    const ms = [tr.certificatReference, tr.certificatNumero].some(v => (v || "").toLowerCase().includes(search.toLowerCase())) || String(tr.id).includes(search);
     const matchStatut = filterStatut === "ALL" || tr.statut === filterStatut;
     return ms && matchStatut;
   });
@@ -388,7 +388,7 @@ const Transferts = () => {
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{tr.id}</Link>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{tr.certificatNumero || `Cert #${tr.certificatCreditId}`}</TableCell>
+                      <TableCell className="text-muted-foreground">{tr.certificatReference || tr.certificatNumero || `Cert #${tr.certificatCreditId}`}</TableCell>
                       <TableCell className="font-medium">{formatAmount(tr.montant)}</TableCell>
                       <TableCell>
                         <Badge variant={tr.operationsDouaneCloturees ? "default" : "outline"} className="text-xs">
@@ -446,7 +446,7 @@ const Transferts = () => {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">{t("transferts:detail.certificat")}</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
+                <div><span className="text-muted-foreground">{t("transferts:detail.certificat")}</span><p className="font-medium">{selected.certificatReference || selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
                 <div><span className="text-muted-foreground">{t("transferts:detail.montant")}</span><p className="font-medium">{formatAmount(selected.montant)}</p></div>
                 <div><span className="text-muted-foreground">{t("transferts:detail.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutTransfert(selected.statut)}</Badge></p></div>
                 <div><span className="text-muted-foreground">{t("transferts:detail.ops_cloturees")}</span><p className="font-medium">{selected.operationsDouaneCloturees ? t("transferts:detail.yes") : t("transferts:detail.no")}</p></div>
@@ -562,7 +562,7 @@ const Transferts = () => {
           <p className="text-sm text-muted-foreground">
             {t("transferts:cancel.confirm_long", {
               id: cancelTarget?.id,
-              cert: cancelTarget?.certificatNumero || `#${cancelTarget?.certificatCreditId}`,
+              cert: cancelTarget?.certificatReference || cancelTarget?.certificatNumero || `#${cancelTarget?.certificatCreditId}`,
             })}
           </p>
           <DialogFooter>
@@ -632,7 +632,7 @@ const Transferts = () => {
             <DialogTitle>{resubmitTarget ? t("transferts:create.title_resubmit") : t("transferts:create.title_create")}</DialogTitle>
             <p className="text-sm text-muted-foreground mt-1">
               {resubmitTarget
-                ? t("transferts:create.intro_resubmit", { cert: resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}` })
+                ? t("transferts:create.intro_resubmit", { cert: resubmitTarget.certificatReference || resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}` })
                 : t("transferts:create.intro_create")}
             </p>
           </DialogHeader>
@@ -648,10 +648,10 @@ const Transferts = () => {
                   options={certificats.map((c) => ({
                     value: String(c.id),
                     label: t("transferts:create.certificat_option", {
-                      numero: c.numero || `Cert #${c.id}`,
+                      numero: c.reference || c.numero || `Cert #${c.id}`,
                       montant: formatAmount(c.tvaImportationDouane),
                     }),
-                    keywords: `${c.numero || ""}`,
+                    keywords: `${c.reference || ""} ${c.numero || ""}`,
                   }))}
                 />
               </div>

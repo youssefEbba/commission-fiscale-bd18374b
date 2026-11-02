@@ -135,6 +135,8 @@ const MiseEnPlaceDetail = () => {
   const [recapG, setRecapG] = useState("");
   const [recapTC, setRecapTC] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
+  // Refus serveur affiché dans la fenêtre des montants (le toast restait masqué derrière elle).
+  const [montantsError, setMontantsError] = useState<string | null>(null);
   const [montantsAdminMode, setMontantsAdminMode] = useState(false);
   const [montantsMotif, setMontantsMotif] = useState("");
   const [adminResolveId, setAdminResolveId] = useState<number | null>(null);
@@ -262,8 +264,8 @@ const MiseEnPlaceDetail = () => {
 
   const c = certificat;
   const entrepriseName = c.entrepriseNom || entreprise?.raisonSociale || "—";
-  const correctionRef = (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
-  const marcheRef = c.marcheIntitule || marche?.intitule || marche?.numeroMarche || "—";
+  const correctionRef = c.demandeCorrectionReference || (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
+  const marcheRef = c.marcheNumero || marche?.numeroMarche || c.marcheReference || c.marcheIntitule || marche?.intitule || "—";
   // Devise affichée pour les montants — celle du marché si dispo, sinon MRU.
   const currency = (marche as any)?.deviseOrigine || "MRU";
 
@@ -346,6 +348,7 @@ const MiseEnPlaceDetail = () => {
     if (amountRestriction) return;
     setMontantsAdminMode(admin);
     setMontantsMotif("");
+    setMontantsError(null);
     setShowMontants(true);
     setMontantCordon(c.montantCordon != null ? String(c.montantCordon) : "");
     setMontantTVAInt(c.montantTVAInterieure != null ? String(c.montantTVAInterieure) : "");
@@ -667,6 +670,15 @@ const MiseEnPlaceDetail = () => {
                       <p className="text-xs text-muted-foreground mt-1">{t("common:president_sign.intro")}</p>
                     </div>
                   )}
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => trackDocumentTask(`generate:cert-sign:${c.id}`, "generate", undefined, () => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }))}
+                    >
+                      <FileText className="h-4 w-4 me-1" /> {t("mise_en_place:detail.president.generate_to_sign")}
+                    </Button>
+                  </div>
                   {hasCertDoc && !certFile && (
                     <div className="flex items-center gap-2 text-sm text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> {t("mise_en_place:detail.president.already_uploaded")}
@@ -1165,11 +1177,16 @@ const MiseEnPlaceDetail = () => {
                   </div>
                 )}
 
+                {montantsError && (
+                  <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-sm text-destructive whitespace-pre-wrap">{montantsError}</p>
+                )}
+
                 <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-3">
                   <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:me-auto">{t("mise_en_place:dialogs.montants.cancel")}</Button>
                   <Button disabled={!canSave} onClick={async () => {
                     if (amountRestriction) return;
                     setSavingMontants(true);
+                    setMontantsError(null);
                     try {
                       const recap: Record<string, number> = {};
                       const ok = (v: number | null): v is number => v != null && Number.isFinite(v);
@@ -1192,8 +1209,8 @@ const MiseEnPlaceDetail = () => {
                       }
                       setShowMontants(false);
                       fetchData();
-                    } catch (e: any) {
-                      errToast(e.message);
+                    } catch (e) {
+                      setMontantsError(formatApiErrorMessage(e, t("mise_en_place:dialogs.montants.save_error")));
                     } finally { setSavingMontants(false); }
                   }}>
                     {savingMontants && <Loader2 className="h-4 w-4 animate-spin me-2" />}

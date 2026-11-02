@@ -41,6 +41,8 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { miseEnPlaceDepotRequirements } from "@/lib/certificatEditability";
+import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS: Record<CertificatStatut, string> = {
@@ -257,7 +259,7 @@ const DemandesMiseEnPlace = () => {
         documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
       ]);
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
-      setDocRequirements(reqs);
+      setDocRequirements(miseEnPlaceDepotRequirements(reqs));
       setShowCreate(true);
     } catch {
       toast({ title: t("common:states.error"), description: t("mise_en_place:dialogs.create.load_error"), variant: "destructive" });
@@ -358,15 +360,13 @@ const DemandesMiseEnPlace = () => {
 
       await uploadDocsFor(created.id);
 
-      if (!asBrouillon) {
-        try {
-          await certificatCreditApi.soumettre(created.id);
-        } catch {
-          // si la soumission échoue, le brouillon reste créé
-        }
-      }
+      // Soumettre seulement si le serveur a laissé la demande en BROUILLON (sinon 409).
+      const draftMessage = asBrouillon
+        ? null
+        : draftOutcomeMessage(await submitIfDraft(created, () => certificatCreditApi.soumettre(created.id)), t, tTypeDocument);
 
-      okToast(asBrouillon ? t("mise_en_place:toast.draft_saved") : t("mise_en_place:toast.submitted_to_control"));
+      if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+      else okToast(asBrouillon ? t("mise_en_place:toast.draft_saved") : t("mise_en_place:toast.submitted_to_control"));
       setShowCreate(false);
       fetchCertificats();
     } catch (e: unknown) {
@@ -392,7 +392,7 @@ const DemandesMiseEnPlace = () => {
         certificatCreditApi.getDocuments(c.id).catch(() => [] as DocumentDto[]),
       ]);
       setCorrections(corrs.filter(co => co.statut === "NOTIFIEE" || co.statut === "ADOPTEE" || co.id === c.demandeCorrectionId));
-      setDocRequirements(reqs);
+      setDocRequirements(miseEnPlaceDepotRequirements(reqs));
       setEditingExistingDocs(existingDocs);
     } catch {
       errToast(t("mise_en_place:dialogs.create.load_error"));
@@ -417,10 +417,12 @@ const DemandesMiseEnPlace = () => {
         brouillon: wasBrouillon,
       });
       await uploadDocsFor(editingBrouillon.id);
-      if (alsoSubmit && wasBrouillon) {
-        await certificatCreditApi.soumettre(editingBrouillon.id);
-      }
-      okToast(alsoSubmit && wasBrouillon ? t("mise_en_place:toast.draft_submitted_short") : t("mise_en_place:toast.updated"));
+      const target = editingBrouillon;
+      const draftMessage = alsoSubmit && wasBrouillon
+        ? draftOutcomeMessage(await submitIfDraft(target, () => certificatCreditApi.soumettre(target.id)), t, tTypeDocument)
+        : null;
+      if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+      else okToast(alsoSubmit && wasBrouillon ? t("mise_en_place:toast.draft_submitted_short") : t("mise_en_place:toast.updated"));
       setEditingBrouillon(null);
       fetchCertificats();
     } catch (e: unknown) {
@@ -444,8 +446,12 @@ const DemandesMiseEnPlace = () => {
   const handleSoumettreBrouillon = async (id: number) => {
     setSubmittingId(id);
     try {
-      await certificatCreditApi.soumettre(id);
-      okToast(t("mise_en_place:toast.submitted_envoyee_to_encontrole"));
+      const draftMessage = draftOutcomeMessage(
+        await submitIfDraft<{ statut?: string | null }>({ statut: "BROUILLON" }, () => certificatCreditApi.soumettre(id)),
+        t, tTypeDocument,
+      );
+      if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+      else okToast(t("mise_en_place:toast.submitted_envoyee_to_encontrole"));
       fetchCertificats();
     } catch (e: unknown) {
       errToast(tErr(e, t("mise_en_place:toast.submitted_envoyee_to_encontrole")));
@@ -1323,6 +1329,7 @@ const DemandesMiseEnPlace = () => {
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.marche_num")}</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{m.statut}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_signature")}</span><p>{formatDate(m.dateSignature)}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.montant_ht")}</span><p>{formatAmount(m.montantContratHt, { currency: cur })}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.montant_ttc")}</span><p>{formatAmount(m.montantContratTtc, { currency: cur })}</p></div>
                 </div>
               </div>

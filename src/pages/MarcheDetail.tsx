@@ -173,7 +173,11 @@ const MarcheDetail = () => {
             <Field label={t("marches:fields.date_signature")} value={formatDate(marche.dateSignature)} />
             <Field
               label={t("marches:fields.montant_ht")}
-              value={formatAmount(marche.montantContratHt ?? marche.montantContratTtc, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              value={formatAmount(marche.montantContratHt, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            />
+            <Field
+              label={t("marches:form.montant_ttc")}
+              value={formatAmount(marche.montantContratTtc, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             />
             <Field label={t("marches:fields.statut")} value={tStatutMarche(marche.statut)} />
             <Field label={t("marches:fields.autorite")} value={marche.autoriteContractanteNom || "—"} />

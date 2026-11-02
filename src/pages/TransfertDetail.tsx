@@ -250,7 +250,7 @@ const TransfertDetail = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">{t("transferts:detail.certificat")}</span>
-                <p className="font-medium">{transfert.certificatNumero || `#${transfert.certificatCreditId}`}</p>
+                <p className="font-medium">{transfert.certificatReference || transfert.certificatNumero || `#${transfert.certificatCreditId}`}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">{t("transferts:detail.montant")}</span>

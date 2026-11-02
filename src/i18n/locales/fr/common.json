@@ -142,13 +142,15 @@
     "loading": "Chargement des empreintes…",
     "done": "Document signé déposé au dossier.",
     "mode_systeme": "Apposé par le système",
-    "mode_manuel": "Signé à la main et scanné"
+    "mode_manuel": "Signé à la main et scanné",
+    "contenu_indisponible": "Les empreintes enregistrées ne peuvent pas être lues pour le moment (stockage des documents indisponible). Seul le chemin manuel est disponible.",
+    "source_note": "Les certificats utilisent la signature et le cachet de l'utilisateur Président connecté ; à défaut, ceux du rôle Président."
   },
   "verification": {
     "title": "Vérification d'un document officiel",
     "subtitle": "Scannez le QR code ou saisissez le code imprimé sous le carré.",
     "code_label": "Code du document",
-    "placeholder": "Ex. CU-0007-2026",
+    "placeholder": "Ex. CU-0007-2026 ou CR-0012-2026",
     "verify": "Vérifier",
     "login": "Se connecter",
     "code": "Code",
@@ -186,6 +188,8 @@
   },
   "submission": {
     "missing_docs_title": "Pièces obligatoires manquantes",
-    "missing_docs_desc": "La demande reste en brouillon. Pièces à joindre : {{list}}"
+    "missing_docs_desc": "La demande reste en brouillon. Pièces à joindre : {{list}}",
+    "unavailable_title": "Soumission indisponible",
+    "unavailable_desc": "La soumission n'est pas encore disponible sur le serveur. La demande reste en brouillon ; réessayez plus tard."
   }
 }

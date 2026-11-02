@@ -613,7 +613,8 @@
     "attente_envoi_tresor": "في انتظار شهادة الرئيس",
     "attente_quittance_dgi": "في انتظار شهادة الرئيس",
     "non_emis_envoi_error": "يجب أن يصدر الرئيس شهادة الاستخدام قبل الإرسال إلى الخزينة.",
-    "non_emis_quittance_error": "يتطلب إيصال المديرية العامة للضرائب إصدار الرئيس لشهادة الاستخدام."
+    "non_emis_quittance_error": "يتطلب إيصال المديرية العامة للضرائب إصدار الرئيس لشهادة الاستخدام.",
+    "reprise_archive": "مستعاد من الأرشيف — وثيقة غير مرقمنة"
   },
   "transmission_president": {
     "queue_filter": "ملفات للمراقبة",
