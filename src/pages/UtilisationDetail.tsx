@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isStockTvaEpuise } from "@/lib/tvaStock";
 import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
@@ -1118,13 +1119,13 @@ const UtilisationDetail = () => {
                 </TableHeader>
                 <TableBody>
                   {tvaStock.map(x => (
-                    <TableRow key={x.id} className={x.epuise ? "opacity-50" : ""}>
+                    <TableRow key={x.id} className={isStockTvaEpuise(x) ? "opacity-50" : ""}>
                       <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
                       <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
                       <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
                       <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
                       <TableCell>{formatDate(x.dateCreation)}</TableCell>
-                      <TableCell>{x.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                      <TableCell>{isStockTvaEpuise(x) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1749,7 +1750,7 @@ const UtilisationDetail = () => {
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
                 <p className="font-semibold text-blue-800 mb-1">{t("utilisations:apurement_dialog.stock_title", { total: fmtAmt(totalStockDisponible) })}</p>
                 <div className="text-xs text-blue-600 space-y-0.5">
-                  {tvaStock.filter(x => !x.epuise).map(x => (
+                  {tvaStock.filter(x => !isStockTvaEpuise(x)).map(x => (
                     <div key={x.id}>{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })} : {fmtAmt(x.montantRestant)}</div>
                   ))}
                 </div>

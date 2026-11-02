@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import { isStockTvaEpuise } from "@/lib/tvaStock";
 import AvenantsCertificatCard from "@/components/avenants/AvenantsCertificatCard";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -463,7 +464,7 @@ const CertificatDetail = () => {
                     <TableHead>{t("certificats:detail.stock.consomme")}</TableHead>
                     <TableHead>{t("certificats:detail.stock.restant")}</TableHead>
                     <TableHead>{t("certificats:detail.stock.date")}</TableHead>
-                    <TableHead>{t("certificats:detail.stock.etat")}</TableHead>
+                    <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -471,7 +472,7 @@ const CertificatDetail = () => {
                     const source = stk.source ?? (stk.utilisationDouaneId ? "UTILISATION_DOUANE" : "TRANSFERT_CREDIT");
                     const isTransfert = source === "TRANSFERT_CREDIT";
                     return (
-                      <TableRow key={stk.id} className={stk.epuise ? "opacity-50" : ""}>
+                      <TableRow key={stk.id} className={isStockTvaEpuise(stk) ? "opacity-50" : ""}>
                         <TableCell>
                           <Badge variant="outline" className={isTransfert ? "border-amber-500 text-amber-700 bg-amber-50" : "border-blue-500 text-blue-700 bg-blue-50"}>
                             {tTvaStockSource(source)}
@@ -482,7 +483,7 @@ const CertificatDetail = () => {
                         <TableCell>{formatAmount(stk.montantConsomme)}</TableCell>
                         <TableCell className="font-bold">{formatAmount(stk.montantRestant)}</TableCell>
                         <TableCell>{formatDate(stk.dateCreation)}</TableCell>
-                        <TableCell>{stk.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                        <TableCell>{isStockTvaEpuise(stk) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
                       </TableRow>
                     );
                   })}
