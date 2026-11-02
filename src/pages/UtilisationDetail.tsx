@@ -614,6 +614,24 @@ const UtilisationDetail = () => {
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const resolvedRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
   const visaDecisions = decisions.filter(d => d.decision === "VISA");
+  const rejetDecisions = decisions.filter(d => d.decision === "REJET");
+  const shownDecisionsCount = openRejets.length + resolvedRejets.length + visaDecisions.length + rejetDecisions.length;
+  // Documents listés = versions actives seulement ; le compteur de la carte compte exactement cette liste.
+  const visibleDocs = (() => {
+    const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
+    const maxVersion = new Map<string, number>();
+    for (const d of docs) {
+      if (d.actif === false || !d.type) continue;
+      maxVersion.set(d.type, Math.max(maxVersion.get(d.type) ?? 0, d.version ?? 1));
+    }
+    return docs.filter(d => {
+      if (d.actif === false) return false;
+      // Sans indicateur `actif` explicite, une version remplacée par une plus récente n'est pas active.
+      if (d.actif !== true && d.type && (d.version ?? 1) < (maxVersion.get(d.type) ?? 0)) return false;
+      if (!allowedTvaTypes) return true;
+      return allowedTvaTypes.has(d.type as TypeDocumentUtilisation);
+    });
+  })();
 
   return (
     <DashboardLayout>
@@ -1116,7 +1134,7 @@ const UtilisationDetail = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                {t("utilisations:documents.title", { count: docs.filter(d => d.actif !== false).length })}
+                {t("utilisations:documents.title", { count: visibleDocs.length })}
               </CardTitle>
               {canUploadDoc && (
                 <Button size="sm" variant="outline" onClick={() => setShowUpload(true)}>
@@ -1127,12 +1145,6 @@ const UtilisationDetail = () => {
           </CardHeader>
           <CardContent>
             {(() => {
-              const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
-              const visibleDocs = docs.filter(d => {
-                if (d.actif === false) return false;
-                if (!isTVA) return true;
-                return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
-              });
               return visibleDocs.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">{piecesAdminReservees ? t("utilisations:documents.reservees_admin") : t("utilisations:documents.empty")}</p>
               ) : (
@@ -1158,9 +1170,9 @@ const UtilisationDetail = () => {
         </Card>
 
         {/* Decisions / Rejets */}
-        {decisions.length > 0 && (
+        {shownDecisionsCount > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: decisions.length })}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: shownDecisionsCount })}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {openRejets.map(d => (
@@ -1209,7 +1221,17 @@ const UtilisationDetail = () => {
                 {visaDecisions.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-emerald-300 bg-emerald-50/50">
                     <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-[10px]">{t("utilisations:decisions_section.visa_badge")}</Badge>
+                      <Badge variant="default" className="text-[10px]">{tTypeDecision("VISA")}</Badge>
+                      <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
+                    </div>
+                    {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
+                  </div>
+                ))}
+                {rejetDecisions.map(d => (
+                  <div key={d.id} className="p-2 rounded border text-sm border-destructive/40 bg-destructive/5">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="text-[10px]">{tTypeDecision("REJET")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                     </div>
@@ -1219,7 +1241,7 @@ const UtilisationDetail = () => {
                 {resolvedRejets.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-muted bg-muted/30">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px]">{t("utilisations:decisions_section.rejet_temp_badge")}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{tTypeDecision("REJET_TEMP")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                       <Badge className="text-[10px] bg-emerald-100 text-emerald-800">{t("utilisations:decisions_section.resolved_badge")}</Badge>
