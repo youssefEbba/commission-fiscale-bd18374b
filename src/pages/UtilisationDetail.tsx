@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -195,6 +196,8 @@ const UtilisationDetail = () => {
   const [envoiLoading, setEnvoiLoading] = useState(false);
   // Clôture DGTCP (ou substitution ADMIN_SI avec motif)
   const [showCloture, setShowCloture] = useState(false);
+  // Confirmations avec montant : validation TVA (DGTCP) et liquidation douane.
+  const [confirmGeste, setConfirmGeste] = useState<null | "VALIDER_TVA" | "LIQUIDER_DOUANE">(null);
   const [clotureMotif, setClotureMotif] = useState("");
   const [clotureLoading, setClotureLoading] = useState(false);
 
@@ -279,6 +282,7 @@ const UtilisationDetail = () => {
     try {
       await utilisationCreditApi.updateStatut(utilId, statut);
       toast({ title: tSuccess(), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
+      setConfirmGeste(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
@@ -320,6 +324,7 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.liquiderDouane(utilId);
       toast({ title: t("utilisations:toast.liquidation_done_title"), description: t("utilisations:toast.liquidation_done_desc") });
       setShowLiq(false);
+      setConfirmGeste(null);
       const u2 = await utilisationCreditApi.getById(utilId);
       const cert2 = u2.certificatCreditId
         ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null)
@@ -1320,8 +1325,8 @@ const UtilisationDetail = () => {
                 )}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.passer_verification")}</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.re_verifier")}</Button>}
-                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
+                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setConfirmGeste("VALIDER_TVA")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setConfirmGeste("LIQUIDER_DOUANE")} disabled={liqLoading}>
                   {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                   <Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.liquider_certificat")}
                 </Button>}
@@ -1588,6 +1593,26 @@ const UtilisationDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmations avec montant — validation TVA et liquidation douane (DGTCP) */}
+      <ConfirmAmountDialog
+        open={confirmGeste !== null}
+        onOpenChange={(o) => { if (!o) setConfirmGeste(null); }}
+        title={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_title", { id: u.id })
+          : t("utilisations:confirm_geste.valider_title", { id: u.id })}
+        description={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_text")
+          : t("utilisations:confirm_geste.valider_text")}
+        amountLabel={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_amount")
+          : t("utilisations:confirm_geste.valider_amount")}
+        amount={fmtAmt(confirmGeste === "LIQUIDER_DOUANE" ? (u.totalPrisEnCharge ?? u.montant) : u.montant)}
+        cancelLabel={t("utilisations:cloture_dialog.cancel")}
+        confirmLabel={confirmGeste === "LIQUIDER_DOUANE" ? t("utilisations:actions.liquider_certificat") : t("utilisations:actions.valider")}
+        loading={confirmGeste === "LIQUIDER_DOUANE" ? liqLoading : actionLoading}
+        onConfirm={() => { if (confirmGeste === "LIQUIDER_DOUANE") handleLiquidationDgtcp(); else handleStatut("VALIDEE"); }}
+      />
 
       {/* Clôture de l'utilisation — DGTCP (confirmation) ou ADMIN_SI (motif obligatoire) */}
       <Dialog open={showCloture} onOpenChange={o => { if (!clotureLoading) setShowCloture(o); }}>

@@ -634,5 +634,13 @@
     "motif_label": "Motif de la substitution",
     "cancel": "Annuler",
     "confirm": "Clôturer"
+  },
+  "confirm_geste": {
+    "valider_title": "Valider l'utilisation — #{{id}}",
+    "valider_text": "La validation de la DGTCP est définitive : l'utilisation passera en Validée.",
+    "valider_amount": "Montant de TVA concerné",
+    "liquider_title": "Générer le crédit & liquider — #{{id}}",
+    "liquider_text": "La liquidation débite le crédit et ne peut pas être annulée.",
+    "liquider_amount": "Montant imputé sur le crédit"
   }
 }
