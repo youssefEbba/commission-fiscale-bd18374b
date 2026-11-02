@@ -84,3 +84,20 @@
 - [x] A39 texte d'aide Quittance DGI
 - [x] A40 stock TVA : colonne Restant, Épuisé si 0
 - [ ] Contrôle authentifié réel des écrans corrigés — bloqué : aucune session de test
+
+## Recette 02/11/2026 — alignement sur les nouveaux contrats serveur
+- [ ] A44 PATCH montants mise en place + erreur dans la fenêtre
+- [ ] A42/A16/A31 création → pièces → /soumettre seulement si BROUILLON ; 400 pièces manquantes ; liste des pièces manquantes « Nouvelle utilisation »
+- [ ] A34 certificat d'utilisation : réservation du numéro, émission au dépôt du signé
+- [ ] A35 `contenuIndisponible` des empreintes + mention Président sur Signatures
+- [ ] A41 marché HT/TTC distincts
+- [ ] A43 CERTIFICAT_CREDIT_IMPOTS retiré du dépôt AC/relais
+- [ ] A45 « Générer le certificat à signer » dans les actions du Président
+- [ ] A06 convention « Validée par {valideParNom} »
+- [ ] A12/A13 certificat : référence DC, marché, dateDemande des utilisations
+- [ ] A14 transfert : certificatReference, /verification CR-…
+- [ ] A17 main courante : références lisibles, processus AVENANT
+- [ ] A20 utilisation repriseArchive
+- [ ] A24 clôture : file d'attente enrichie
+- [ ] A29 journal d'audit : timestamp, motif, entityReference, résumé snapshot
+- [ ] 404/405 gérés sans casser l'écran ; FR/AR ; tests
