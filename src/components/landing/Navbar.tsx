@@ -30,7 +30,7 @@ const Navbar = () => {
         </a>
 
         {/* Desktop */}
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-1 lg:flex">
           {navLinks.map((l) => (
             <a
               key={l.label}
@@ -42,7 +42,7 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher variant="compact" className="text-primary-foreground hover:bg-primary/20 hover:text-primary-foreground" />
           <Button variant="ghost" className="border-2 border-gold bg-transparent font-semibold text-gold hover:bg-gold hover:text-accent-foreground" asChild>
             <Link to="/register">{t("nav.register")}</Link>
@@ -56,7 +56,7 @@ const Navbar = () => {
         <button
           onClick={() => setOpen(!open)}
           aria-label={open ? t("nav.close_menu") : t("nav.open_menu")}
-          className="text-primary-foreground md:hidden"
+          className="text-primary-foreground lg:hidden"
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -64,7 +64,7 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-gold/30 bg-primary px-6 pb-6 pt-4 md:hidden">
+        <div className="border-t border-gold/30 bg-primary px-6 pb-6 pt-4 lg:hidden">
           {navLinks.map((l) => (
             <a
               key={l.label}
