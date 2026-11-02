@@ -255,8 +255,8 @@ export function previewSoldesApresAvenant(
   ];
 }
 
-/** Statuts d'utilisation qui ne bloquent pas l'application d'un avenant (dossier terminé ou non déposé). */
-const UTILISATION_STATUTS_HORS_COURS = ["BROUILLON", "CLOTUREE", "REJETEE", "ANNULEE"];
+/** Statuts d'utilisation terminés (même règle que l'indicateur « utilisations en cours » de la fiche crédit). */
+const UTILISATION_STATUTS_HORS_COURS = ["LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE", "ANNULEE"];
 
 /**
  * Utilisations du crédit encore en cours : « Appliquer » est grisé tant qu'il en reste.

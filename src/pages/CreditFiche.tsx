@@ -165,7 +165,7 @@ export default function CreditFiche() {
 
             {!!(fiche?.tvaStock || []).length && (
               <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-base">{t("certificats:detail.tabs.stock_tva", { defaultValue: "Stock TVA déductible" })}</CardTitle></CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">{t("certificats:detail.indicators.stock_tva")}</CardTitle></CardHeader>
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader><TableRow>
