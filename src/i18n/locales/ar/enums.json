@@ -299,5 +299,12 @@
   "type_projet": {
     "BTP": "BTP",
     "EQUIPEMENT": "معدات صناعية"
+  },
+  "type_decision": {
+    "VISA": "تأشيرة",
+    "REJET_TEMP": "طلب وثائق",
+    "REJET": "رفض",
+    "ACCEPTATION": "قبول",
+    "VALIDATION": "مصادقة"
   }
 }

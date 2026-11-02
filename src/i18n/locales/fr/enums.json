@@ -299,5 +299,12 @@
   "type_projet": {
     "BTP": "BTP",
     "EQUIPEMENT": "Équipements industriels"
+  },
+  "type_decision": {
+    "VISA": "Visa",
+    "REJET_TEMP": "Demande de pièces",
+    "REJET": "Rejet",
+    "ACCEPTATION": "Acceptation",
+    "VALIDATION": "Validation"
   }
 }

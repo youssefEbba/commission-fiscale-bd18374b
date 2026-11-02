@@ -95,6 +95,8 @@ export const tDocRequirementLabel = (req?: {
 export const tTypeUtilisation = (v?: string | null) => tEnum("type_utilisation", v ?? undefined);
 export const tTypeOperation = (v?: string | null) => tEnum("type_operation", v ?? undefined);
 export const tDecisionType = (v?: string | null) => tEnum("decision_type", v ?? undefined);
+/** Type d'une décision d'historique (VISA, REJET_TEMP, REJET…) en libellé métier. */
+export const tTypeDecision = (v?: string | null) => tEnum("type_decision", v ?? undefined);
 export const tDecisionCorrectionType = (v?: string | null) => tEnum("decision_correction_type", v ?? undefined);
 export const tRejetTempStatus = (v?: string | null) => tEnum("rejet_temp_status", v ?? undefined);
 export const tTvaStockSource = (v?: string | null) => tEnum("tva_stock_source", v ?? undefined);

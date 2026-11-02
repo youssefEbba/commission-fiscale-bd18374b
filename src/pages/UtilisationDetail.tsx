@@ -15,7 +15,7 @@ import {
   LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
 import {
-  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise,
+  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise, tTypeDecision,
 } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
