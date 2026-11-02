@@ -234,7 +234,12 @@
     "DEMANDE_MOTIVEE_TRANSFERT": "طلب مُعلَّل للتحويل",
     "DECLARATION_CLOTURE_DOUANE": "إقرار الإقفال الجمركي",
     "LISTE_CREDITS_A_CLOTURER": "قائمة الأرصدة الواجب إقفالها",
-    "RECU_DEPOT": "وصل الإيداع"
+    "RECU_DEPOT": "وصل الإيداع",
+    "MANDAT_REPRESENTATION": "تفويض التمثيل",
+    "OFFRE_FISCALE": "العرض الجبائي",
+    "OFFRE": "العرض",
+    "DQE": "الكشف الكمي والتقديري (DQE)",
+    "LISTE_EQUIPEMENTS": "قائمة المعدات"
   },
   "type_utilisation": {
     "DOUANE": "الجمارك",
@@ -294,5 +299,12 @@
   "type_projet": {
     "BTP": "BTP",
     "EQUIPEMENT": "معدات صناعية"
+  },
+  "type_decision": {
+    "VISA": "تأشيرة",
+    "REJET_TEMP": "طلب وثائق",
+    "REJET": "رفض",
+    "ACCEPTATION": "قبول",
+    "VALIDATION": "مصادقة"
   }
 }

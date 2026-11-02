@@ -1,4 +1,5 @@
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -43,7 +44,7 @@ import CertificatAdminVisasCard from "@/components/admin/CertificatAdminVisasCar
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { tStatutCertificat, tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
@@ -124,6 +125,8 @@ const MiseEnPlaceDetail = () => {
 
   const [showMontants, setShowMontants] = useState(false);
   const [montantCordon, setMontantCordon] = useState("");
+  // Confirmation (avec montants) avant l'ouverture du certificat par le Président.
+  const [confirmOuverture, setConfirmOuverture] = useState(false);
   const [montantTVAInt, setMontantTVAInt] = useState("");
   const [recapA, setRecapA] = useState("");
   const [recapB, setRecapB] = useState("");
@@ -428,6 +431,7 @@ const MiseEnPlaceDetail = () => {
 
   const handleUploadAndValidate = async () => {
     if (!certFile && !hasCertDoc) return;
+    setConfirmOuverture(false);
     setUploadingCert(true);
     try {
       if (certFile) {
@@ -521,7 +525,7 @@ const MiseEnPlaceDetail = () => {
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground mb-1">{t("mise_en_place:detail.info.correction")}</p>
               <p className="font-semibold">{correctionRef}</p>
-              {correction?.statut && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.correction_statut")}: {correction.statut}</p>}
+              {correction?.statut && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.correction_statut")}: {tStatutDemande(correction.statut)}</p>}
             </CardContent>
           </Card>
           <Card>
@@ -668,7 +672,7 @@ const MiseEnPlaceDetail = () => {
                       <CheckCircle className="h-4 w-4" /> {t("mise_en_place:detail.president.already_uploaded")}
                     </div>
                   )}
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={uploadingCert || !hasCertDoc} onClick={handleUploadAndValidate}>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={uploadingCert || !hasCertDoc} onClick={() => setConfirmOuverture(true)}>
                     {uploadingCert && <Loader2 className="h-4 w-4 animate-spin me-1" />}
                     <ShieldCheck className="h-4 w-4 me-1" /> {t("mise_en_place:detail.president.validate_and_open")}
                   </Button>
@@ -1344,6 +1348,23 @@ const MiseEnPlaceDetail = () => {
           onDone={fetchData}
         />
       )}
+      <ConfirmAmountDialog
+        open={confirmOuverture}
+        onOpenChange={setConfirmOuverture}
+        title={t("mise_en_place:detail.president.confirm_title", { ref: c.reference || `#${c.id}` })}
+        description={t("mise_en_place:detail.president.confirm_text")}
+        amountLabel={t("mise_en_place:detail.president.confirm_amount")}
+        amount={fmtAmt(c.montantTotal ?? ((Number(c.montantCordon) || 0) + (Number(c.montantTVAInterieure) || 0)))}
+        cancelLabel={t("common:actions.cancel")}
+        confirmLabel={t("mise_en_place:detail.president.validate_and_open")}
+        loading={uploadingCert}
+        onConfirm={handleUploadAndValidate}
+      >
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div><p className="text-muted-foreground">{t("mise_en_place:detail.president.confirm_cordon")}</p><p className="font-medium">{fmtAmt(c.montantCordon)}</p></div>
+          <div><p className="text-muted-foreground">{t("mise_en_place:detail.president.confirm_tva")}</p><p className="font-medium">{fmtAmt(c.montantTVAInterieure)}</p></div>
+        </div>
+      </ConfirmAmountDialog>
     </DashboardLayout>
   );
 };

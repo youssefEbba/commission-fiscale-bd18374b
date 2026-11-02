@@ -18,6 +18,8 @@ import {
   DEVISES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { mainCouranteApi } from "@/lib/api";
+import { miseEnPlaceRowAction, DIRECTION_ROLES } from "@/lib/miseEnPlaceRowAction";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -221,6 +223,22 @@ const DemandesMiseEnPlace = () => {
     });
     return () => { cancelled = true; };
   }, [certificats, role]);
+
+  // Demandes qui attendent une action du compte connecté, d'après la main courante (le serveur décide).
+  const [attendues, setAttendues] = useState<Set<number> | null>(null);
+  useEffect(() => {
+    if (!role || !(DIRECTION_ROLES as readonly string[]).includes(role)) { setAttendues(null); return; }
+    let cancelled = false;
+    mainCouranteApi.get()
+      .then((mc) => {
+        if (cancelled) return;
+        // Liste tronquée : on ne peut pas conclure à l'absence d'action → repli.
+        if (mc.tronquee) { setAttendues(null); return; }
+        setAttendues(new Set(mc.lignes.filter((l) => l.type === "CertificatCredit" && l.processus !== "CLOTURE").map((l) => l.id)));
+      })
+      .catch(() => { if (!cancelled) setAttendues(null); });
+    return () => { cancelled = true; };
+  }, [role, certificats]);
 
   const [openingCreate, setOpeningCreate] = useState(false);
 
@@ -630,7 +648,7 @@ const DemandesMiseEnPlace = () => {
                               className="text-xs border-green-300 bg-green-50 text-green-700"
                               title={myVisaMap[c.id]?.dateDecision ? formatDate(myVisaMap[c.id]!.dateDecision!) : undefined}
                             >
-                              <CheckCircle className="h-3 w-3 me-1" /> Déjà visé
+                              <CheckCircle className="h-3 w-3 me-1" /> {t("mise_en_place:list.deja_vise")}
                             </Badge>
                           )}
                         </div>
@@ -638,7 +656,7 @@ const DemandesMiseEnPlace = () => {
                       <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
-                            <Eye className="h-4 w-4 me-1" /> {role === "AUTORITE_CONTRACTANTE" ? t("mise_en_place:list.row_actions.view") : t("mise_en_place:list.row_actions.process")}
+                            <Eye className="h-4 w-4 me-1" /> {miseEnPlaceRowAction({ role, statut: c.statut, attendues, id: c.id, dejaVise: !!myVisaMap[c.id] }) === "view" ? t("mise_en_place:list.row_actions.view") : t("mise_en_place:list.row_actions.process")}
                           </Button>
                           {c.statut === "ENVOYEE" && ["DGI", "DGD", "DGTCP"].includes(role as string) && (
                             <Button variant="default" size="sm" disabled={actionLoading === c.id} onClick={() => handlePrendreEnCharge(c.id)}>

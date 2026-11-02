@@ -24,3 +24,6 @@
 - Texte d'erreur affiché : construire les erreurs serveur avec `parseApiErrorBody` et afficher via `formatApiErrorMessage` / `displayErrorText` (`src/lib/apiErrorText.ts`) — message + liste de `details` seulement, jamais `String(e)`, une pile d'appels ni du HTML.
 - Pièces d'avenant : pièces du déposant via `canUploadAvenantPieces` (déposant, `DEPOSE`) ; pièces de la Commission = GED sans `depot` moins `depot=true` (`avenantPiecesCommission`), jointes via `canUploadAvenantDecision` (Président/admin, `EN_COURS_TRAITEMENT`/`ADOPTE`).
 - Listes de référence des formulaires (entreprises, conventions, bailleurs, groupements, pièces GED) : charger chaque liste séparément via `cachedList` (`src/lib/listCache.ts`, clé incluant compte + entité représentée, vidé en fin de session) avec `loading` sur le `SearchableSelect` concerné, et `invalidateList` après une création — ne jamais bloquer tout un formulaire derrière un `Promise.all`.
+- Geste financier irréversible (validation, liquidation, ouverture) : confirmer via `ConfirmAmountDialog` avec le montant concerné.
+- Envoi de fichier : `apiFetch` remplace le message 503/stockage des envois `FormData` par `errors:upload_unavailable` ; l'erreur s'affiche dans la fenêtre, fichier conservé.
+- « Traiter »/« Voir » des listes de directions : d'après la main courante (`miseEnPlaceRowAction`), statut terminal = « Voir ».

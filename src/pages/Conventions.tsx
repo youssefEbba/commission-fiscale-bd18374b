@@ -37,7 +37,8 @@ import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import ClickableTableRow from "@/components/ui/clickable-table-row";
 import { echeanceConvention } from "@/lib/conventionEcheance";
-import { canEditConvention, conventionCancelMode, conventionAutorites, conventionBailleurs } from "@/lib/conventionEditability";
+import { canEditConvention, conventionCancelMode, conventionAutorites, conventionBailleurs, canDecideConvention } from "@/lib/conventionEditability";
+import ConventionRejectDialog from "@/components/conventions/ConventionRejectDialog";
 import ConventionEditDialog from "@/components/conventions/ConventionEditDialog";
 import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 import ConventionCreateDialog from "@/components/conventions/ConventionCreateDialog";
@@ -81,8 +82,6 @@ const Conventions = () => {
   // Reject dialog
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectConvention, setRejectConvention] = useState<ConventionDto | null>(null);
-  const [rejectMotif, setRejectMotif] = useState("");
-  const [rejecting, setRejecting] = useState(false);
 
   // Cancel dialog : route autorité ou route de statut selon conventionCancelMode
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -193,23 +192,7 @@ const Conventions = () => {
   // Open reject dialog
   const openReject = (conv: ConventionDto) => {
     setRejectConvention(conv);
-    setRejectMotif("");
     setRejectOpen(true);
-  };
-
-  const handleReject = async () => {
-    if (!rejectConvention || !rejectMotif.trim()) return;
-    setRejecting(true);
-    try {
-      await conventionApi.updateStatut(rejectConvention.id, "REJETE", rejectMotif);
-      toast({ title: t("common:success.title", "Succès"), description: t("conventions:reject.success") });
-      setRejectOpen(false);
-      fetchConventions();
-    } catch (e: any) {
-      toast({ title: t("common:errors.title", "Erreur"), description: e.message, variant: "destructive" });
-    } finally {
-      setRejecting(false);
-    }
   };
 
   // Annulation : chemin choisi par conventionCancelMode (autorité titulaire/créatrice ou administration)
@@ -430,7 +413,7 @@ const Conventions = () => {
                                   <DropdownMenuItem onClick={() => openDocuments(c)}>
                                     <Paperclip className="h-4 w-4 me-2" /> {t("conventions:actions.documents")}
                                   </DropdownMenuItem>
-                                  {(isDGB || isDGI) && c.statut === "EN_ATTENTE" && (
+                                  {canDecideConvention(c, isDGB || isDGI) && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleStatutChange(c.id, "VALIDE")}>
@@ -662,36 +645,12 @@ const Conventions = () => {
       />
 
       {/* Reject Dialog */}
-      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <ShieldX className="h-5 w-5" /> {t("conventions:reject.title")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {t("conventions:reject.convention_label")} <span className="font-medium text-foreground">{rejectConvention?.reference || rejectConvention?.intitule}</span>
-            </p>
-            <div className="space-y-2">
-              <Label>{t("conventions:reject.motif_required")}</Label>
-              <Textarea
-                value={rejectMotif}
-                onChange={(e) => setRejectMotif(e.target.value)}
-                placeholder={t("conventions:reject.motif_placeholder")}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectOpen(false)}>{t("conventions:actions.dismiss")}</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={rejecting || !rejectMotif.trim()}>
-              {rejecting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <XCircle className="h-4 w-4 me-1" />}
-              {t("conventions:actions.confirm_reject")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConventionRejectDialog
+        convention={rejectConvention}
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+        onRejected={() => fetchConventions()}
+      />
 
       {/* Cancel Dialog */}
       <ConventionCancelDialog

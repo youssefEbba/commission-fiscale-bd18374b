@@ -67,7 +67,7 @@ const HeroSection = () => {
           >
             {stats.map((s) => (
               <div key={s.label} className="text-center">
-                <div className="text-3xl font-extrabold text-gold md:text-4xl">{s.value}</div>
+                <div className="whitespace-nowrap text-2xl font-extrabold text-gold sm:text-3xl md:text-4xl">{s.value}</div>
                 <div className="mt-1 text-xs font-medium uppercase tracking-wider text-primary-foreground/50">{s.label}</div>
               </div>
             ))}

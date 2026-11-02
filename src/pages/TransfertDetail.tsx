@@ -293,9 +293,12 @@ const TransfertDetail = () => {
           </CardContent>
         </Card>
 
-        {transfert.statut !== "ANNULEE" && (
-          <TransfertVisasCircuit transfertId={transfert.id} reloadKey={circuitKey} onChanged={() => { loadAll(); }} />
-        )}
+        <TransfertVisasCircuit
+          transfertId={transfert.id}
+          reloadKey={circuitKey}
+          onChanged={() => { loadAll(); }}
+          finalStatut={TERMINAL_STATUTS.includes(transfert.statut) ? transfert.statut : null}
+        />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { isStockTvaEpuise } from "@/lib/tvaStock";
+import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -15,7 +17,7 @@ import {
   LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
 import {
-  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise,
+  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise, tTypeDecision,
 } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -195,6 +197,8 @@ const UtilisationDetail = () => {
   const [envoiLoading, setEnvoiLoading] = useState(false);
   // Clôture DGTCP (ou substitution ADMIN_SI avec motif)
   const [showCloture, setShowCloture] = useState(false);
+  // Confirmations avec montant : validation TVA (DGTCP) et liquidation douane.
+  const [confirmGeste, setConfirmGeste] = useState<null | "VALIDER_TVA" | "LIQUIDER_DOUANE">(null);
   const [clotureMotif, setClotureMotif] = useState("");
   const [clotureLoading, setClotureLoading] = useState(false);
 
@@ -279,6 +283,7 @@ const UtilisationDetail = () => {
     try {
       await utilisationCreditApi.updateStatut(utilId, statut);
       toast({ title: tSuccess(), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
+      setConfirmGeste(null);
       fetchAll();
     } catch (e: any) {
       toast({ title: tError(), description: e.message, variant: "destructive" });
@@ -293,11 +298,7 @@ const UtilisationDetail = () => {
       toast({ title: t("utilisations:toast.decisions_missing_title"), description: t("utilisations:toast.decisions_missing_desc", { count: missing.length }), variant: "destructive" });
       return;
     }
-    const bulletinActifExiste = docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false);
-    if (!liqBulletinFile && !bulletinActifExiste) {
-      toast({ title: tError(), description: t("utilisations:visa_dgd.upload.required"), variant: "destructive" });
-      return;
-    }
+    // Le scan du bulletin annoté est facultatif : le visa part avec ou sans fichier.
     setLiqLoading(true);
     try {
       const dec = lignes.filter(l => liqDecisions[l.id]).map(l => {
@@ -324,6 +325,7 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.liquiderDouane(utilId);
       toast({ title: t("utilisations:toast.liquidation_done_title"), description: t("utilisations:toast.liquidation_done_desc") });
       setShowLiq(false);
+      setConfirmGeste(null);
       const u2 = await utilisationCreditApi.getById(utilId);
       const cert2 = u2.certificatCreditId
         ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null)
@@ -618,6 +620,24 @@ const UtilisationDetail = () => {
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const resolvedRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
   const visaDecisions = decisions.filter(d => d.decision === "VISA");
+  const rejetDecisions = decisions.filter(d => (d.decision as string) === "REJET");
+  const shownDecisionsCount = openRejets.length + resolvedRejets.length + visaDecisions.length + rejetDecisions.length;
+  // Documents listés = versions actives seulement ; le compteur de la carte compte exactement cette liste.
+  const visibleDocs = (() => {
+    const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
+    const maxVersion = new Map<string, number>();
+    for (const d of docs) {
+      if (d.actif === false || !d.type) continue;
+      maxVersion.set(d.type, Math.max(maxVersion.get(d.type) ?? 0, d.version ?? 1));
+    }
+    return docs.filter(d => {
+      if (d.actif === false) return false;
+      // Sans indicateur `actif` explicite, une version remplacée par une plus récente n'est pas active.
+      if (d.actif !== true && d.type && (d.version ?? 1) < (maxVersion.get(d.type) ?? 0)) return false;
+      if (!allowedTvaTypes) return true;
+      return allowedTvaTypes.has(d.type as TypeDocumentUtilisation);
+    });
+  })();
 
   return (
     <DashboardLayout>
@@ -650,7 +670,7 @@ const UtilisationDetail = () => {
             )}
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[u.statut]}`}>
-            {tUtilisationStatutContextualise(u.statut, u.type)}
+            {tUtilisationStatutContextualise(u.statut)}
           </Badge>
         </div>
 
@@ -1099,13 +1119,13 @@ const UtilisationDetail = () => {
                 </TableHeader>
                 <TableBody>
                   {tvaStock.map(x => (
-                    <TableRow key={x.id} className={x.epuise ? "opacity-50" : ""}>
+                    <TableRow key={x.id} className={isStockTvaEpuise(x) ? "opacity-50" : ""}>
                       <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
                       <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
                       <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
                       <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
                       <TableCell>{formatDate(x.dateCreation)}</TableCell>
-                      <TableCell>{x.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                      <TableCell>{isStockTvaEpuise(x) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1120,7 +1140,7 @@ const UtilisationDetail = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                {t("utilisations:documents.title", { count: docs.filter(d => d.actif !== false).length })}
+                {t("utilisations:documents.title", { count: visibleDocs.length })}
               </CardTitle>
               {canUploadDoc && (
                 <Button size="sm" variant="outline" onClick={() => setShowUpload(true)}>
@@ -1131,12 +1151,6 @@ const UtilisationDetail = () => {
           </CardHeader>
           <CardContent>
             {(() => {
-              const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
-              const visibleDocs = docs.filter(d => {
-                if (d.actif === false) return false;
-                if (!isTVA) return true;
-                return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
-              });
               return visibleDocs.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">{piecesAdminReservees ? t("utilisations:documents.reservees_admin") : t("utilisations:documents.empty")}</p>
               ) : (
@@ -1162,9 +1176,9 @@ const UtilisationDetail = () => {
         </Card>
 
         {/* Decisions / Rejets */}
-        {decisions.length > 0 && (
+        {shownDecisionsCount > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: decisions.length })}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: shownDecisionsCount })}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {openRejets.map(d => (
@@ -1213,7 +1227,17 @@ const UtilisationDetail = () => {
                 {visaDecisions.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-emerald-300 bg-emerald-50/50">
                     <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-[10px]">{t("utilisations:decisions_section.visa_badge")}</Badge>
+                      <Badge variant="default" className="text-[10px]">{tTypeDecision("VISA")}</Badge>
+                      <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
+                    </div>
+                    {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
+                  </div>
+                ))}
+                {rejetDecisions.map(d => (
+                  <div key={d.id} className="p-2 rounded border text-sm border-destructive/40 bg-destructive/5">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="text-[10px]">{tTypeDecision("REJET")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                     </div>
@@ -1223,7 +1247,7 @@ const UtilisationDetail = () => {
                 {resolvedRejets.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-muted bg-muted/30">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px]">{t("utilisations:decisions_section.rejet_temp_badge")}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{tTypeDecision("REJET_TEMP")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                       <Badge className="text-[10px] bg-emerald-100 text-emerald-800">{t("utilisations:decisions_section.resolved_badge")}</Badge>
@@ -1302,8 +1326,8 @@ const UtilisationDetail = () => {
                 )}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.passer_verification")}</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.re_verifier")}</Button>}
-                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
+                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setConfirmGeste("VALIDER_TVA")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setConfirmGeste("LIQUIDER_DOUANE")} disabled={liqLoading}>
                   {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                   <Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.liquider_certificat")}
                 </Button>}
@@ -1458,7 +1482,7 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` (${t("utilisations:visa_dgd.upload.optional_reannotation")})` : " *"}</Label>
+                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` — ${t("utilisations:visa_dgd.upload.optional_reannotation")}` : ""}</Label>
                 <Input
                   type="file"
                   accept=".pdf,.png,.jpg,.jpeg"
@@ -1570,6 +1594,26 @@ const UtilisationDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmations avec montant — validation TVA et liquidation douane (DGTCP) */}
+      <ConfirmAmountDialog
+        open={confirmGeste !== null}
+        onOpenChange={(o) => { if (!o) setConfirmGeste(null); }}
+        title={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_title", { id: u.id })
+          : t("utilisations:confirm_geste.valider_title", { id: u.id })}
+        description={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_text")
+          : t("utilisations:confirm_geste.valider_text")}
+        amountLabel={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_amount")
+          : t("utilisations:confirm_geste.valider_amount")}
+        amount={fmtAmt(confirmGeste === "LIQUIDER_DOUANE" ? (u.totalPrisEnCharge ?? u.montant) : u.montant)}
+        cancelLabel={t("utilisations:cloture_dialog.cancel")}
+        confirmLabel={confirmGeste === "LIQUIDER_DOUANE" ? t("utilisations:actions.liquider_certificat") : t("utilisations:actions.valider")}
+        loading={confirmGeste === "LIQUIDER_DOUANE" ? liqLoading : actionLoading}
+        onConfirm={() => { if (confirmGeste === "LIQUIDER_DOUANE") handleLiquidationDgtcp(); else handleStatut("VALIDEE"); }}
+      />
 
       {/* Clôture de l'utilisation — DGTCP (confirmation) ou ADMIN_SI (motif obligatoire) */}
       <Dialog open={showCloture} onOpenChange={o => { if (!clotureLoading) setShowCloture(o); }}>
@@ -1706,7 +1750,7 @@ const UtilisationDetail = () => {
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
                 <p className="font-semibold text-blue-800 mb-1">{t("utilisations:apurement_dialog.stock_title", { total: fmtAmt(totalStockDisponible) })}</p>
                 <div className="text-xs text-blue-600 space-y-0.5">
-                  {tvaStock.filter(x => !x.epuise).map(x => (
+                  {tvaStock.filter(x => !isStockTvaEpuise(x)).map(x => (
                     <div key={x.id}>{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })} : {fmtAmt(x.montantRestant)}</div>
                   ))}
                 </div>

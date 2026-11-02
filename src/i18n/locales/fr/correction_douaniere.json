@@ -249,6 +249,7 @@
     "state_error": "Impossible de vérifier ce que ce visa exige : {{message}}. Vous pouvez réessayer ; le serveur contrôlera le visa à l'envoi.",
     "retry": "Réessayer",
     "confirm": "Confirmer le visa",
-    "success_title": "Succès"
+    "success_title": "Succès",
+    "file_ready": "{{name}} — Prêt à être envoyé avec le visa"
   }
 }

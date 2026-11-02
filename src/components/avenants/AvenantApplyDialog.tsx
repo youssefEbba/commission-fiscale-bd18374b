@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2 } from "lucide-react";
-import { avenantApi, AvenantDto, CertificatCreditDto, DemandeCorrectionDto, formatApiErrorMessage } from "@/lib/api";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { avenantApi, AvenantDto, CertificatCreditDto, DemandeCorrectionDto, UtilisationCreditDto, utilisationCreditApi, formatApiErrorMessage } from "@/lib/api";
 import {
   AvenantRecapForm, buildApplicationRequest, checkAvenantRecap,
-  initialAvenantRecap, previewSoldesApresAvenant,
+  initialAvenantRecap, previewSoldesApresAvenant, utilisationsEnCours,
 } from "@/lib/avenants";
+import { tStatutUtilisation } from "@/i18n/enums";
 import { formatAmount, formatNumber } from "@/i18n/format";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -32,28 +33,47 @@ export default function AvenantApplyDialog({ open, onOpenChange, avenant, certif
   const financier = avenant.type === "FINANCIER";
   const [form, setForm] = useState<AvenantRecapForm>(() => initialAvenantRecap(certificat, {}, avenant));
   const [busy, setBusy] = useState(false);
+  // Refus du serveur (409 utilisation en cours, 400 montant…) affiché dans la fenêtre.
+  const [serverError, setServerError] = useState<string | null>(null);
+  // Utilisations en cours du crédit : `null` = inconnu (échec de lecture) → le serveur tranche.
+  const [enCours, setEnCours] = useState<UtilisationCreditDto[] | null>(null);
+  const certificatId = certificat?.id ?? avenant.certificatCreditId;
 
   useEffect(() => {
     if (!open) return;
+    setServerError(null);
     setForm(initialAvenantRecap(certificat, { exterieur: correction?.creditExterieur, interieur: correction?.creditInterieur }, avenant));
   }, [open, certificat, correction, avenant]);
+
+  useEffect(() => {
+    if (!open || !certificatId) { setEnCours(null); return; }
+    let cancelled = false;
+    utilisationCreditApi.getByCertificat(certificatId)
+      .then((list) => { if (!cancelled) setEnCours(utilisationsEnCours(list)); })
+      .catch(() => { if (!cancelled) setEnCours(null); });
+    return () => { cancelled = true; };
+  }, [open, certificatId]);
 
   const check = useMemo(() => checkAvenantRecap(form), [form]);
   const preview = useMemo(() => previewSoldesApresAvenant(certificat, form), [certificat, form]);
   const set = (k: keyof AvenantRecapForm, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const canSubmit = !busy && (!financier || check.errors.length === 0);
+  const blockedByUtilisation = !!enCours && enCours.length > 0;
+  const canSubmit = !busy && !blockedByUtilisation && (!financier || check.errors.length === 0);
 
   const submit = async () => {
     if (!canSubmit) return;
     setBusy(true);
+    setServerError(null);
     try {
       const res = await avenantApi.application(avenant.id, financier ? buildApplicationRequest(form) : undefined);
       toast({ title: t("common:success", { defaultValue: "Succès" }), description: t("modifications:toast.application_ok") });
       onOpenChange(false);
       onApplied(res);
-    } catch (e: any) {
-      // 409 (utilisation en cours) et 400 (montant inférieur au consommé) : message serveur tel quel.
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
+    } catch (e) {
+      // 409 (utilisation en cours) et 400 (montant inférieur au consommé) : message serveur tel quel, dans la fenêtre.
+      const msg = formatApiErrorMessage(e);
+      setServerError(msg);
+      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: msg, variant: "destructive" });
     } finally {
       setBusy(false);
     }
@@ -137,6 +157,24 @@ export default function AvenantApplyDialog({ open, onOpenChange, avenant, certif
               {preview.some((l) => l.insuffisant) && <p className="text-xs text-destructive">{t("modifications:apply.insuffisant")}</p>}
             </div>
           </div>
+        )}
+
+        {blockedByUtilisation && (
+          <div className="rounded-md border border-accent bg-accent/15 p-3 text-xs space-y-1">
+            <p className="flex items-start gap-1.5 font-medium">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {t("modifications:apply.utilisation_en_cours", { count: enCours!.length })}
+            </p>
+            <ul className="ps-5 list-disc text-muted-foreground">
+              {enCours!.slice(0, 5).map((u) => (
+                <li key={u.id}>#{u.id} — {tStatutUtilisation(u.statut)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {serverError && (
+          <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive whitespace-pre-wrap break-words">
+            {serverError}
+          </p>
         )}
 
         <DialogFooter>

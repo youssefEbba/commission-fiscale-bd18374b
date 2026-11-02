@@ -186,6 +186,9 @@
     "confirm_check": "أؤكد اطلاعي على الآثار المالية وأوافق على هذا التحويل.",
     "btn_confirmer": "الموافقة والتنفيذ",
     "queue_filter": "للتأشير ({{count}})",
-    "a_viser": "للتأشير"
+    "a_viser": "للتأشير",
+    "history_title": "سجل القرارات",
+    "history_subtitle": "ملف مغلق — {{statut}}. التأشيرات الموضوعة: من ومتى.",
+    "non_intervenu": "لم يتدخل"
   }
 }

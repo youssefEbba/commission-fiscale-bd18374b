@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { isStockTvaEpuise } from "@/lib/tvaStock";
 import { useSmartBack } from "@/hooks/useSmartBack";
-import { ArrowLeft, Loader2, FileText, Building2, Landmark, Award } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Building2, Landmark, Award, XCircle } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ export default function CreditFiche() {
   const navigate = useNavigate();
   const smartBack = useSmartBack("/dashboard/certificats");
   const { toast } = useToast();
+  const { t } = useTranslation(["certificats", "utilisations"]);
   usePageTitle("nav:credits_consultation");
 
   const [fiche, setFiche] = useState<CertificatCreditFicheDto | null>(null);
@@ -162,17 +165,26 @@ export default function CreditFiche() {
 
             {!!(fiche?.tvaStock || []).length && (
               <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-base">Stock TVA déductible</CardTitle></CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">{t("certificats:detail.indicators.stock_tva")}</CardTitle></CardHeader>
                 <CardContent className="p-0">
                   <Table>
-                    <TableHeader><TableRow><TableHead>Source</TableHead><TableHead className="text-end">Montant</TableHead><TableHead className="text-end">Solde</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow>
+                      <TableHead>{t("certificats:detail.stock.declaration")}</TableHead>
+                      <TableHead className="text-end">{t("certificats:detail.stock.montant_initial")}</TableHead>
+                      <TableHead className="text-end">{t("certificats:detail.stock.consomme")}</TableHead>
+                      <TableHead className="text-end">{t("certificats:detail.stock.restant")}</TableHead>
+                      <TableHead>{t("certificats:detail.stock.date")}</TableHead>
+                      <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
+                    </TableRow></TableHeader>
                     <TableBody>
                       {fiche!.tvaStock!.map((s, i) => (
-                        <TableRow key={s.id ?? i}>
+                        <TableRow key={s.id ?? i} className={isStockTvaEpuise(s) ? "opacity-50" : ""}>
                           <TableCell>{s.numeroDeclaration || s.source || "—"}</TableCell>
                           <TableCell className="text-end">{formatAmount(s.montantInitial)}</TableCell>
-                          <TableCell className="text-end">{formatAmount(s.montantRestant)}</TableCell>
+                          <TableCell className="text-end">{formatAmount(s.montantConsomme)}</TableCell>
+                          <TableCell className="text-end font-bold">{formatAmount(s.montantRestant)}</TableCell>
                           <TableCell>{s.dateCreation ? formatDate(s.dateCreation) : "—"}</TableCell>
+                          <TableCell>{isStockTvaEpuise(s) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

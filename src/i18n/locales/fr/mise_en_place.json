@@ -25,7 +25,8 @@
       "edit": "Modifier",
       "cancel": "Annuler",
       "cancel_tooltip": "Annuler la demande"
-    }
+    },
+    "deja_vise": "Déjà visé"
   },
   "detail": {
     "title": "Mise en place {{ref}}",
@@ -122,7 +123,12 @@
       "upload_label": "Uploader le certificat signé",
       "upload_warning": "Vous devez uploader le certificat avant de pouvoir ouvrir",
       "already_uploaded": "Certificat déjà uploadé",
-      "validate_and_open": "Valider et ouvrir le certificat"
+      "validate_and_open": "Valider et ouvrir le certificat",
+      "confirm_title": "Valider et ouvrir le certificat — {{ref}}",
+      "confirm_text": "L'ouverture rend le crédit utilisable par son titulaire. Cette décision est définitive.",
+      "confirm_amount": "Montant total du crédit ouvert",
+      "confirm_cordon": "Crédit extérieur (cordon douanier)",
+      "confirm_tva": "Crédit intérieur (TVA)"
     },
     "admin_visas": {
       "title": "Administration des visas",

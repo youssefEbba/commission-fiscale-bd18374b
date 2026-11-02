@@ -65,9 +65,8 @@ const NAV_ENTRIES: NavEntry[] = [
     children: [
       { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      // TODO: réactiver quand le back-end Sous-traitance sera disponible
-      // { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
   {
@@ -165,6 +164,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       {NAV_ENTRIES.map((entry) => {
         if (isGroup(entry)) {
           if (entry.roles && !hasRole(entry.roles)) return null;
+          // Un groupe sans entrée visible pour ce rôle n'est pas affiché.
+          const hasVisibleChild = entry.children.some((c) => (!c.roles || hasRole(c.roles)) && (!c.permission || hasPermission(c.permission)));
+          if (!hasVisibleChild) return null;
           const groupActive = isGroupActive(entry);
           return (
             <Collapsible key={entry.labelKey} defaultOpen={groupActive}>

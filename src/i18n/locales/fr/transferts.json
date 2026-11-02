@@ -186,6 +186,9 @@
     "confirm_check": "Je confirme avoir pris connaissance des effets financiers et j'approuve ce transfert.",
     "btn_confirmer": "Approuver et exécuter",
     "queue_filter": "À viser ({{count}})",
-    "a_viser": "À viser"
+    "a_viser": "À viser",
+    "history_title": "Historique des décisions",
+    "history_subtitle": "Dossier clos — {{statut}}. Visas posés : qui et quand.",
+    "non_intervenu": "N'est pas intervenu"
   }
 }

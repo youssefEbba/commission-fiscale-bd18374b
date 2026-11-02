@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { transfertCreditApi, TransfertVisaEtatDto, formatApiErrorMessage } from "@/lib/api";
+import { transfertCreditApi, TransfertVisaEtatDto, StatutTransfert, formatApiErrorMessage } from "@/lib/api";
+import { tStatutTransfert } from "@/i18n/enums";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/i18n/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { CheckCircle2, Circle, Loader2, ShieldCheck, Stamp, AlertTriangle, ArrowRight } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, ShieldCheck, Stamp, AlertTriangle, ArrowRight, History, MinusCircle } from "lucide-react";
 
 interface Props {
   transfertId: number;
@@ -16,13 +17,23 @@ interface Props {
   onChanged: () => void;
   /** Incrémenter pour forcer un rechargement (ex. après résolution d'un rejet). */
   reloadKey?: number;
+  /** Statut final du transfert (Transféré, Rejeté, Annulé) : affiche l'historique sans action. */
+  finalStatut?: StatutTransfert | null;
 }
+
+/** Ordre d'affichage du circuit P7, quel que soit le rang renvoyé. */
+const CIRCUIT_ORDER = ["DGD", "DGI", "DGTCP", "PRESIDENT"];
+const orderOf = (r: TransfertVisaEtatDto) => {
+  const i = CIRCUIT_ORDER.indexOf(r.role);
+  return i === -1 ? CIRCUIT_ORDER.length + r.rang : i;
+};
 
 /**
  * Circuit P7 : DGD → DGI → DGTCP → Président.
  * Le tour est calculé par le backend (`visablePourMoi`) — aucune règle recalculée ici.
  */
-const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => {
+const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey, finalStatut }: Props) => {
+  const isFinal = !!finalStatut;
   const { t } = useTranslation(["transferts", "roles", "common"]);
   const { toast } = useToast();
   const [rows, setRows] = useState<TransfertVisaEtatDto[]>([]);
@@ -35,17 +46,18 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
     setLoading(true);
     try {
       const data = await transfertCreditApi.getVisas(transfertId);
-      setRows([...data].sort((a, b) => a.rang - b.rang));
+      setRows([...data].sort((a, b) => orderOf(a) - orderOf(b)));
     } catch (e: any) {
       setRows([]);
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
+      // Dossier clos : l'historique indisponible n'est pas une erreur bloquante.
+      if (!isFinal) toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setLoading(false); }
-  }, [transfertId, t, toast]);
+  }, [transfertId, t, toast, isFinal]);
 
   useEffect(() => { load(); }, [load, reloadKey]);
 
   // La ligne « au tour » = première ligne non posée (affichage seulement ; l'action dépend de visablePourMoi).
-  const currentRang = rows.find((r) => !r.pose)?.rang;
+  const currentRole = isFinal ? undefined : rows.find((r) => !r.pose)?.role;
 
   const run = async (fn: () => Promise<unknown>, okMsg: string) => {
     setActing(true);
@@ -64,9 +76,12 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-primary" /> {t("transferts:circuit.title")}
+          {isFinal ? <History className="h-4 w-4 text-primary" /> : <ShieldCheck className="h-4 w-4 text-primary" />}
+          {isFinal ? t("transferts:circuit.history_title") : t("transferts:circuit.title")}
         </CardTitle>
-        <p className="text-xs text-muted-foreground">{t("transferts:circuit.subtitle")}</p>
+        <p className="text-xs text-muted-foreground">
+          {isFinal ? t("transferts:circuit.history_subtitle", { statut: tStatutTransfert(finalStatut) }) : t("transferts:circuit.subtitle")}
+        </p>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -76,7 +91,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
         ) : (
           <ol className="space-y-3">
             {rows.map((r) => {
-              const isTurn = !r.pose && r.rang === currentRang;
+              const isTurn = !r.pose && r.role === currentRole;
               const isPresident = r.role === "PRESIDENT";
               return (
                 <li
@@ -106,6 +121,8 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
                             </Badge>
                           ) : isTurn ? (
                             <Badge className="text-[10px] bg-accent text-accent-foreground hover:bg-accent">{t("transferts:circuit.au_tour")}</Badge>
+                          ) : isFinal ? (
+                            <Badge variant="secondary" className="text-[10px]"><MinusCircle className="h-2.5 w-2.5 me-1" />{t("transferts:circuit.non_intervenu")}</Badge>
                           ) : (
                             <Badge variant="secondary" className="text-[10px]"><Circle className="h-2.5 w-2.5 me-1" />{t("transferts:circuit.en_attente")}</Badge>
                           )}
@@ -114,7 +131,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
                           <p className="text-xs text-muted-foreground mt-1">
                             {t("transferts:circuit.par", { nom: r.utilisateurNom || "—", date: formatDateTime(r.datePose) })}
                           </p>
-                        ) : (
+                        ) : isFinal ? null : (
                           <>
                             {!r.visablePourMoi && (r.motifBlocage || r.codeBlocage) && (
                               <p className="text-xs text-muted-foreground mt-1">{r.motifBlocage || r.codeBlocage}</p>
@@ -129,7 +146,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey }: Props) => 
                         )}
                       </div>
                     </div>
-                    {r.visablePourMoi && !r.pose && (
+                    {!isFinal && r.visablePourMoi && !r.pose && (
                       isPresident ? (
                         <Button size="sm" variant="destructive" disabled={acting} onClick={() => { setConfirmChecked(false); setConfirmOpen(true); }}>
                           <Stamp className="h-4 w-4 me-1" /> {t("transferts:circuit.btn_approuver")}

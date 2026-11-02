@@ -53,6 +53,9 @@ const STATUT_COLORS: Record<DemandeStatut, string> = {
   ANNULEE: "bg-red-200 text-red-900",
 };
 
+/** Statuts en cours pour lesquels la colonne « Stade » est calculée (Reçue, Recevable, En évaluation, Incomplète). */
+const STADE_STATUTS: string[] = ["RECUE", "RECEVABLE", "EN_EVALUATION", "INCOMPLETE"];
+
 const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
 const TERMINAL_STATUTS: DemandeStatut[] = ["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"];
 const isTerminalStatut = (s?: DemandeStatut) => !!s && TERMINAL_STATUTS.includes(s);
@@ -499,6 +502,8 @@ const Demandes = () => {
                         </TableCell>
                         <TableCell>
                           {(() => {
+                            // Le stade n'a de sens que pour une demande encore en cours de traitement.
+                            if (!STADE_STATUTS.includes(d.statut)) return <span className="text-muted-foreground text-xs">—</span>;
                             const decs = d.decisions || [];
                             const firstRole = firstVisaRoleCorrection(resolveCredits(d));
                             const firstVisaDone = !firstRole || decs.some(dec => dec.role === firstRole && dec.decision === "VISA");
@@ -658,10 +663,11 @@ const Demandes = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
-                  {(uploadAllowedTypes.length > 0
-                    ? ALL_DOCUMENT_TYPES_VALUES.filter(tt => uploadAllowedTypes.includes(tt))
+                  {/* Réponse à une demande de pièces : exactement les pièces demandées dans la décision. */}
+                  {Array.from(new Set(uploadAllowedTypes.length > 0
+                    ? uploadAllowedTypes
                     : ALL_DOCUMENT_TYPES_VALUES
-                  ).map((tt) => (
+                  )).map((tt) => (
                     <SelectItem key={tt} value={tt}>{tTypeDocument(tt)}</SelectItem>
                   ))}
                 </SelectContent>

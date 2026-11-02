@@ -254,3 +254,14 @@ export function previewSoldesApresAvenant(
     line("tva_import", cert?.tvaImportationDouaneAccordee, cert?.tvaImportationDouane, toNumber(r.d)),
   ];
 }
+
+/** Statuts d'utilisation terminés (même règle que l'indicateur « utilisations en cours » de la fiche crédit). */
+const UTILISATION_STATUTS_HORS_COURS = ["LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE", "ANNULEE"];
+
+/**
+ * Utilisations du crédit encore en cours : « Appliquer » est grisé tant qu'il en reste.
+ * Indicatif — le serveur reste juge (409 affiché tel quel).
+ */
+export function utilisationsEnCours<T extends { statut?: string | null }>(utilisations: T[]): T[] {
+  return utilisations.filter((u) => !!u.statut && !UTILISATION_STATUTS_HORS_COURS.includes(u.statut));
+}

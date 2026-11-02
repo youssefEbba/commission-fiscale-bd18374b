@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { API_BASE } from "./apiConfig";
 import { parseApiErrorBody, displayErrorText } from "./apiErrorText";
 import { endSession, clearStoredSession } from "./session";
@@ -125,6 +126,12 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
     // jamais une page HTML ni une pile d'appels.
     const text = await res.text().catch(() => "");
     const apiError: ApiError = parseApiErrorBody(res.status, text);
+    // Envoi de fichier refusé faute de stockage : message clair, identique sur tous les écrans de dépôt.
+    if (options.rawBody && (res.status === 503 || apiError.code === "OBJECT_STORAGE_UNAVAILABLE" || apiError.code === "STORAGE_UPLOAD_FAILED")) {
+      apiError.message = i18next.t("errors:upload_unavailable", {
+        defaultValue: "Le dépôt des documents est momentanément indisponible, réessayez plus tard.",
+      });
+    }
 
     // 401 : fin de session (jeton/utilisateur effacés, WebSocket fermés, retour à /login)
     if (res.status === 401 && !options.skipAuthRedirect) {

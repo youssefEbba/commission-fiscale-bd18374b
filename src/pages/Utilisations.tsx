@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isUtilisationAControler } from "@/lib/utilisationQueues";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { Link, useNavigate } from "react-router-dom";
@@ -20,7 +21,7 @@ import {
   isStorageUnavailableError, formatApiErrorMessage,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { tStatutUtilisation, tTypeDocument, tDocRequirementLabel } from "@/i18n/enums";
+import { tStatutUtilisation, tTypeDocument, tDocRequirementLabel, tUtilisationStatutContextualise } from "@/i18n/enums";
 import { formatAmount, formatDate, formatNumber } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
@@ -89,11 +90,8 @@ const Utilisations = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation(["utilisations", "common", "errors"]);
-  // Libellé contextualisé (CLOTUREE+DOUANIER = "Clôturée (transfert)"). Localisé via i18n.
-  const tStatutContextuel = (statut: UtilisationStatut, type?: UtilisationType): string => {
-    if (statut === "CLOTUREE" && type === "DOUANIER") return t("utilisations:statut.cloturee_transfert");
-    return tStatutUtilisation(statut);
-  };
+  // CLOTUREE → « Clôturée » ; « (transfert) » seulement pour une clôture liée à un transfert (cf. tUtilisationStatutContextualise).
+  const tStatutContextuel = (statut: UtilisationStatut, _type?: UtilisationType): string => tUtilisationStatutContextualise(statut);
   const titleKey = `utilisations:list.title_by_role.${role}`;
   const pageTitleLabel = role ? (t(titleKey, { defaultValue: "" }) || t("utilisations:list.title")) : t("utilisations:list.title");
   usePageTitle("utilisations:list.title");
@@ -591,7 +589,7 @@ const Utilisations = () => {
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
       (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE"))) ||
-      (filterStatut === "A_CONTROLER" && u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI");
+      (filterStatut === "A_CONTROLER" && isUtilisationAControler(u));
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -666,7 +664,7 @@ const Utilisations = () => {
           )}
           {(role === "DGTCP" || role === "ADMIN_SI") && (
             <Button variant={filterStatut === "A_CONTROLER" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_CONTROLER" ? "ALL" : "A_CONTROLER")}>
-              {t("utilisations:transmission_president.queue_filter")} ({data.filter((u) => u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI").length})
+              {t("utilisations:transmission_president.queue_filter")} ({data.filter(isUtilisationAControler).length})
             </Button>
           )}
           <Select value={filterStatut} onValueChange={setFilterStatut}>

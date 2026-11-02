@@ -134,9 +134,16 @@ const CorrectionVisaDialog = ({ demande, role, onClose, onDone }: Props) => {
                   {docLabel} <span className="text-destructive">*</span>
                 </Label>
                 <Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={submitting} />
-                <p className="text-[11px] text-muted-foreground">
-                  {t("correction_douaniere:dialog.pre_visa.description", { label: docLabel })}
-                </p>
+                {file ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-green-700 break-all">
+                    <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                    {t("correction_douaniere:visa_dialog.file_ready", { name: file.name })}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("correction_douaniere:dialog.pre_visa.description", { label: docLabel })}
+                  </p>
+                )}
               </div>
             )
           )}
