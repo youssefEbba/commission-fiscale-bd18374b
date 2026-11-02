@@ -34,8 +34,7 @@ import GedDossiers from "./pages/GedDossiers";
 import NotFound from "./pages/NotFound";
 import Transferts from "./pages/Transferts";
 import TransfertDetail from "./pages/TransfertDetail";
-// TODO: réactiver quand le back-end Sous-traitance sera disponible
-// import SousTraitance from "./pages/SousTraitance";
+import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
 import CreditFiche from "./pages/CreditFiche";
@@ -161,13 +160,11 @@ const App = () => (
                 <TransfertDetail />
               </ProtectedRoute>
             } />
-            {/* TODO: réactiver quand le back-end Sous-traitance sera disponible
             <Route path="/dashboard/sous-traitance" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <SousTraitance />
               </ProtectedRoute>
             } />
-            */}
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Cloture />
