@@ -293,11 +293,7 @@ const UtilisationDetail = () => {
       toast({ title: t("utilisations:toast.decisions_missing_title"), description: t("utilisations:toast.decisions_missing_desc", { count: missing.length }), variant: "destructive" });
       return;
     }
-    const bulletinActifExiste = docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false);
-    if (!liqBulletinFile && !bulletinActifExiste) {
-      toast({ title: tError(), description: t("utilisations:visa_dgd.upload.required"), variant: "destructive" });
-      return;
-    }
+    // Le scan du bulletin annoté est facultatif : le visa part avec ou sans fichier.
     setLiqLoading(true);
     try {
       const dec = lignes.filter(l => liqDecisions[l.id]).map(l => {
@@ -1458,7 +1454,7 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` (${t("utilisations:visa_dgd.upload.optional_reannotation")})` : " *"}</Label>
+                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` — ${t("utilisations:visa_dgd.upload.optional_reannotation")}` : ""}</Label>
                 <Input
                   type="file"
                   accept=".pdf,.png,.jpg,.jpeg"
