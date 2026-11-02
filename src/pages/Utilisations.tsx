@@ -43,6 +43,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, AlertCircle, CheckCircle2, Info, AlertTriangle, MoreHorizontal, Pencil, Send, Trash2, Save, Download } from "lucide-react";
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { certificatUtilisationVisible } from "@/lib/utilisationCloture";
+import { submitIfDraft, utilisationTvaRequiredDocs } from "@/lib/submission";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -360,9 +361,36 @@ const Utilisations = () => {
       .sort((a, b) => (a.ordreAffichage || 0) - (b.ordreAffichage || 0));
   };
 
-  const getMissingObligatoryDocs = (): DocumentRequirementDto[] => {
-    return getFilteredRequirements().filter((r) => r.obligatoire && r.sens !== "SORTIE" && !createDocFiles[String(r.id)]);
+  /** Code serveur d'une exigence GED (`codeDocument`, repli `typeDocument`). */
+  const reqCode = (r: DocumentRequirementDto) => (r.codeDocument ?? r.typeDocument) as string;
+
+  /**
+   * Lignes de dépôt du formulaire : pièces GED du type d'utilisation, plus — en TVA intérieure —
+   * les pièces exigées par le type d'achat (achat local : facture + déclaration TVA ; décompte : décompte)
+   * quand la GED ne les liste pas. Clé = id GED, ou `code:XXX` pour une pièce exigée hors liste.
+   */
+  type DepotRow = { key: string; code: string; req?: DocumentRequirementDto; obligatoire: boolean; label: string };
+  const getDepotRows = (): DepotRow[] => {
+    const tvaRequired = createType === "TVA_INTERIEURE" ? utilisationTvaRequiredDocs(form.typeAchat) : [];
+    const rows: DepotRow[] = getFilteredRequirements()
+      .filter((r) => r.sens !== "SORTIE")
+      .map((r) => ({
+        key: String(r.id),
+        code: reqCode(r),
+        req: r,
+        obligatoire: !!r.obligatoire || tvaRequired.includes(reqCode(r)),
+        label: tDocRequirementLabel(r),
+      }));
+    for (const code of tvaRequired) {
+      if (rows.some((r) => r.code === code)) continue;
+      rows.push({ key: `code:${code}`, code, obligatoire: true, label: tTypeDocument(code) });
+    }
+    return rows;
   };
+
+  /** Pièces obligatoires encore manquantes (libellés), dans l'ordre d'affichage. */
+  const getMissingObligatoryDocs = (): DepotRow[] =>
+    getDepotRows().filter((r) => r.obligatoire && !createDocFiles[r.key]);
 
   const errorTitle = () => t("common:errors.title", { defaultValue: "Erreur" });
 
@@ -435,7 +463,7 @@ const Utilisations = () => {
       if (missing.length > 0) {
         toast({
           title: t("utilisations:toast.missing_docs_title"),
-          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => tDocRequirementLabel(m)).join(", ") }),
+          description: t("utilisations:toast.missing_docs_desc", { list: missing.map(m => m.label).join(", ") }),
           variant: "destructive",
         });
         return;
@@ -474,16 +502,30 @@ const Utilisations = () => {
       }
 
       const uploadEntries = Object.entries(createDocFiles);
+      const codeByKey = new Map(getDepotRows().map(r => [r.key, r.code]));
       const reqById = new Map(gedRequirements.map(r => [String(r.id), r]));
       for (const [key, file] of uploadEntries) {
         const req = reqById.get(key);
-        const code = (req?.codeDocument ?? req?.typeDocument) as TypeDocumentUtilisation | undefined;
+        const code = (codeByKey.get(key) ?? req?.codeDocument ?? req?.typeDocument) as TypeDocumentUtilisation | undefined;
         if (!code) continue;
         await utilisationCreditApi.uploadDocument(target.id, code, file);
       }
 
-      if (mode === "submit" && editingId != null && target.statut === "BROUILLON") {
-        await utilisationCreditApi.soumettre(target.id);
+      // Création directe : le serveur peut laisser la demande en BROUILLON tant que les pièces
+      // GED manquent. Après le dépôt des pièces, soumettre seulement dans ce cas (sinon 409).
+      if (mode === "submit") {
+        const outcome = await submitIfDraft(target, () => utilisationCreditApi.soumettre(target.id));
+        if (outcome.kind === "missing_documents") {
+          toast({
+            title: t("common:submission.missing_docs_title"),
+            description: t("common:submission.missing_docs_desc", { list: outcome.codes.map(c => tTypeDocument(c)).join(", ") || "—" }),
+            variant: "destructive",
+          });
+          setShowCreate(false);
+          setEditingId(null);
+          fetchData();
+          return;
+        }
       }
 
       let description: string;
@@ -515,8 +557,16 @@ const Utilisations = () => {
     }
     setSubmittingId(u.id);
     try {
-      await utilisationCreditApi.soumettre(u.id);
-      toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.submitted") });
+      const outcome = await submitIfDraft(u, () => utilisationCreditApi.soumettre(u.id));
+      if (outcome.kind === "missing_documents") {
+        toast({
+          title: t("common:submission.missing_docs_title"),
+          description: t("common:submission.missing_docs_desc", { list: outcome.codes.map(c => tTypeDocument(c)).join(", ") || "—" }),
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: t("common:states.success", { defaultValue: "Succès" }), description: t("utilisations:toast.submitted") });
+      }
       fetchData();
     } catch (e: any) {
       toast({ title: errorTitle(), description: e.message, variant: "destructive" });
@@ -1083,31 +1133,38 @@ const Utilisations = () => {
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <Upload className="h-4 w-4" />
                 {t("utilisations:create.docs.title")}
-                {getFilteredRequirements().length > 0 && (
+                {getDepotRows().length > 0 && getMissingObligatoryDocs().length === 0 && (
                   <span className="text-xs text-muted-foreground font-normal">
-                    ({getMissingObligatoryDocs().length > 0
-                      ? t("utilisations:create.docs.missing_count", { count: getMissingObligatoryDocs().length })
-                      : t("utilisations:create.docs.all_attached")})
+                    ({t("utilisations:create.docs.all_attached")})
                   </span>
                 )}
               </h4>
-              {getFilteredRequirements().length === 0 ? (
+              {getMissingObligatoryDocs().length > 0 && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs space-y-1" role="status">
+                  <p className="font-medium text-destructive">{t("utilisations:create.docs.missing_count", { count: getMissingObligatoryDocs().length })}</p>
+                  <ul className="list-disc ps-5 text-foreground">
+                    {getMissingObligatoryDocs().map((m) => <li key={m.key}>{m.label}</li>)}
+                  </ul>
+                </div>
+              )}
+              {getDepotRows().length === 0 ? (
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> {t("utilisations:create.docs.loading")}
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {getFilteredRequirements().map((req) => {
-                    const fileKey = String(req.id);
-                    const inputId = `doc-${fileKey}`;
+                  {getDepotRows().map((row) => {
+                    const req = row.req;
+                    const fileKey = row.key;
+                    const inputId = `doc-${fileKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
                     const currentFile = createDocFiles[fileKey];
-                    const accept = req.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : f === "IMAGE" ? ".jpg,.jpeg,.png" : "").join(",");
+                    const accept = req?.typesAutorises?.map(f => f === "PDF" ? ".pdf" : f === "WORD" ? ".doc,.docx" : f === "EXCEL" ? ".xls,.xlsx" : f === "IMAGE" ? ".jpg,.jpeg,.png" : "").join(",");
                     return (
                       <UploadRow
                         key={fileKey}
                         id={inputId}
-                        label={tDocRequirementLabel(req)}
-                        required={req.obligatoire}
+                        label={row.label}
+                        required={row.obligatoire}
                         accept={accept}
                         file={currentFile || null}
                         onFileChange={(f) => {
@@ -1118,10 +1175,10 @@ const Utilisations = () => {
                             return next;
                           });
                         }}
-                        helperText={req.description}
+                        helperText={req?.description}
                         browseLabel={t("utilisations:create.docs.btn_choose") as string}
                         replaceLabel={t("utilisations:create.docs.btn_replace") as string}
-                        rightSlot={req.obligatoire ? <Badge variant="destructive" className="text-[10px] px-1 py-0">{t("utilisations:create.docs.obligatoire_badge")}</Badge> : undefined}
+                        rightSlot={row.obligatoire ? <Badge variant="destructive" className="text-[10px] px-1 py-0">{t("utilisations:create.docs.obligatoire_badge")}</Badge> : undefined}
                       />
                     );
                   })}
@@ -1138,8 +1195,8 @@ const Utilisations = () => {
               </Button>
               <Button
                 onClick={() => handleSave("submit")}
-                disabled={creating || eligibiliteLoading || !canSubmit}
-                title={!canSubmit ? preSubmitErrors.join(" • ") : undefined}
+                disabled={creating || eligibiliteLoading || !canSubmit || getMissingObligatoryDocs().length > 0}
+                title={!canSubmit ? preSubmitErrors.join(" • ") : getMissingObligatoryDocs().length > 0 ? getMissingObligatoryDocs().map(m => m.label).join(", ") : undefined}
               >
                 {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                 <Send className="h-4 w-4 me-2" />
