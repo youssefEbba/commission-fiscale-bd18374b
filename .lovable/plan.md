@@ -1,25 +1,33 @@
-# Lancer le site sur votre ordinateur
+# Guide de captures pour la présentation d'avancement
 
-Le site n'a pas besoin d'être modifié. L'erreur « Missing script: dev » apparaît parce que les commandes sont lancées dans le dossier `Downloads`. Ce dossier contient un autre projet (Capacitor), pas le site.
+## Objectif
+Produire un document Word (nouveau fichier, sans modifier l'application) qui donne à la personne chargée des captures un parcours clair : pour chaque partie de la présentation, le titre de la diapositive, le compte avec lequel se connecter, l'écran à ouvrir, les actions à faire avant la capture, le nombre de captures et ce que chaque capture doit montrer.
 
-## Étapes à suivre (dans l'invite de commandes Windows)
+## Structure du document
+1. **Page de garde et mode d'emploi** : comment nommer les captures (ex. `02-3_suivi_demande.png`), le format conseillé (plein écran, sans données personnelles réelles) et comment changer d'acteur ou de langue.
+2. **Tableau des comptes à préparer** : Visiteur (non connecté), Entreprise, Autorité contractante, DGD, DGI, DGTCP, DGB, Président, Administrateur SI, Commission relais.
+3. **Parties de la présentation**, chacune avec une fiche « Se connecter en tant que / Aller à / Faire / Capturer / Ce qu'on doit voir » :
+   1. Page d'accueil et adaptation à l'écran — Visiteur — 3 captures minimum : ordinateur, tablette, téléphone, puis accueil en français et en arabe (sens de lecture droite-gauche).
+   2. Authentification et demande de rattachement — Visiteur puis Président : formulaire de connexion, formulaire d'inscription / rattachement, confirmation d'envoi, suivi de la demande, validation par le Président, mot de passe oublié.
+   3. Tableau de bord par acteur — un écran par rôle pour montrer que chacun voit ses propres éléments.
+   4. Référentiels — Président / Administrateur : entreprises, autorités contractantes, bailleurs, fiche détaillée d'une entité.
+   5. Conventions — Autorité contractante puis DGB : création (autorités et bailleurs multiples), liste, fiche, validation.
+   6. Marchés — Autorité contractante : liste paginée, création, liaison à plusieurs conventions, fiche.
+   7. Mise en place du crédit d'impôt — AC, puis DGI / DGD / DGTCP (visas), puis Président (certificat signé) : création, visas, validation, crédit ouvert.
+   8. Demande de correction — Entreprise, puis DGD / DGI / DGTCP / DGB, puis Président : formulaire, reçu PDF, circuit de visas, rejet temporaire, adoption avec lettre.
+   9. Utilisation, transferts et avenants — Entreprise / DGTCP / Président : suivi des soldes, transfert, avenant et pièce de la commission.
+   10. Gestion documentaire (GED) — Administrateur SI : paramétrage des pièces, dossier d'un processus.
+   11. Documents générés — reçu, certificat, lettre d'adoption, en police officielle Ouguiya.
+   12. Notifications, main courante et rapports — Président / acteurs : indicateurs, notifications en temps réel.
+   13. Commission relais et sécurité — Commission relais : bandeau de prise de relais, fin de relais, déconnexion, session expirée.
+4. **Liste de contrôle finale** : toutes les captures cochées, avec une colonne pour les remarques.
 
-```text
-cd %USERPROFILE%
-git clone https://github.com/youssefEbba/commission-fiscale-bd18374b.git
-cd commission-fiscale-bd18374b
-git checkout lovable
-npm install
-npm run dev
-```
+## Points signalés dans le document
+- Les droits réels des comptes dépendent du serveur : si un écran est refusé, noter le message et passer à la suite.
+- Les données de démonstration doivent être fictives.
+- Ordre conseillé : faire d'abord les parties 5 à 8, qui créent les données réutilisées par les captures suivantes.
 
-Si le dossier existe déjà, faites seulement `cd` vers ce dossier, puis `git pull`, `npm install` et `npm run dev`.
-
-Ouvrez ensuite l'adresse affichée (http://localhost:8080).
-
-## À propos des 3 alertes « uuid »
-- Elles sont modérées et concernent l'autre projet de Downloads (Capacitor), pas le site.
-- Ne lancez pas `npm audit fix --force` : cette commande peut casser les dépendances.
-
-## Si une autre erreur apparaît
-Copiez le texte complet affiché après `npm run dev` et envoyez-le ici.
+## Détails techniques
+- Généré avec la bibliothèque docx en JavaScript, format A4, police Arial, aux couleurs vert et or du projet, sans emoji.
+- Chemins d'écran repris des routes réelles de l'application (`/dashboard/...`).
+- Enregistré dans Files sous `guide_captures_presentation.docx` ; chaque page sera convertie en image et vérifiée avant livraison.
