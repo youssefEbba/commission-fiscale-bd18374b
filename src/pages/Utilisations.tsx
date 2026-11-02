@@ -90,11 +90,8 @@ const Utilisations = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation(["utilisations", "common", "errors"]);
-  // Libellé contextualisé (CLOTUREE+DOUANIER = "Clôturée (transfert)"). Localisé via i18n.
-  const tStatutContextuel = (statut: UtilisationStatut, type?: UtilisationType): string => {
-    if (statut === "CLOTUREE" && type === "DOUANIER") return t("utilisations:statut.cloturee_transfert");
-    return tStatutUtilisation(statut);
-  };
+  // CLOTUREE → « Clôturée » ; « (transfert) » seulement pour une clôture liée à un transfert (cf. tUtilisationStatutContextualise).
+  const tStatutContextuel = (statut: UtilisationStatut, _type?: UtilisationType): string => tUtilisationStatutContextualise(statut);
   const titleKey = `utilisations:list.title_by_role.${role}`;
   const pageTitleLabel = role ? (t(titleKey, { defaultValue: "" }) || t("utilisations:list.title")) : t("utilisations:list.title");
   usePageTitle("utilisations:list.title");
