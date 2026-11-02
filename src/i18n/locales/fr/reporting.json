@@ -14,7 +14,10 @@
     "engagement": "Engagement",
     "blocages": "Blocages",
     "a_fermer": "À fermer",
-    "production": "Production"
+    "production": "Production",
+    "impact": "Impact",
+    "avant_apres": "Avant / après",
+    "beneficiaires": "Bénéficiaires"
   },
   "roles": {
     "PRESIDENT": "Présidence — vue nationale",
@@ -211,7 +214,89 @@
       "ENGAGEMENT": "Engagement",
       "BLOCAGES": "Blocages",
       "A_FERMER": "À fermer",
-      "PRODUCTION": "Production"
+      "PRODUCTION": "Production",
+      "IMPACT": "Indicateurs d'impact",
+      "BENEFICIAIRES": "Bénéficiaires",
+      "SATISFACTION": "Satisfaction"
     }
+  },
+  "impact": {
+    "nd": "n/d",
+    "jours": "{{n}} j",
+    "definitions": "Définitions",
+    "processus": {
+      "deposes": "Déposés",
+      "traites": "Traités",
+      "valides": "Validés",
+      "rejetes": "Rejetés",
+      "avec_complements": "Avec compléments",
+      "taux_validation": "Taux de validation",
+      "taux_rejet": "Taux de rejet",
+      "taux_complements": "Taux de compléments",
+      "delai_complements": "Délai de réponse aux compléments"
+    },
+    "phases": {
+      "title": "Délais par phase",
+      "processus": "Processus",
+      "phase": "Phase",
+      "nb": "Dossiers",
+      "moyenne": "Moyenne",
+      "mediane": "Médiane"
+    },
+    "montants": {
+      "title": "Montants",
+      "demandes": "Demandés",
+      "retenus": "Retenus",
+      "valides": "Validés",
+      "consommes": "Consommés",
+      "ajustes": "Ajustés",
+      "annules": "Annulés",
+      "clotures": "Clôturés"
+    },
+    "taux": {
+      "title": "Taux d'utilisation des crédits",
+      "tva": "TVA intérieure",
+      "douane": "Douanes",
+      "global": "Global",
+      "detail": "{{consomme}} consommés sur {{accorde}} accordés"
+    },
+    "avant_apres": {
+      "indicateur": "Indicateur",
+      "avant": "Avant digitalisation",
+      "apres": "Après digitalisation",
+      "variation": "Variation",
+      "source": "Source (avant)",
+      "bascule": "Date de bascule : {{date}} (réglage « digitalisation.date_bascule » de la page Paramètres).",
+      "bascule_absente": "Date de bascule non renseignée : à saisir dans la page Paramètres (« digitalisation.date_bascule », AAAA-MM-JJ)."
+    },
+    "references": {
+      "title": "Valeurs de référence (avant digitalisation)",
+      "hint": "Valeurs mesurées avant la mise en service, utilisées pour la colonne « Avant ».",
+      "valeur": "Valeur",
+      "periode": "Période source",
+      "periode_placeholder": "Ex. 2024 (registres papier)",
+      "commentaire": "Commentaire",
+      "date_saisie": "Saisie le",
+      "actions": "Actions",
+      "edit": "Saisir la valeur",
+      "delete": "Effacer la valeur",
+      "saved": "Valeur de référence enregistrée",
+      "deleted": "Valeur de référence effacée"
+    }
+  },
+  "beneficiaires": {
+    "total_beneficiaires": "Bénéficiaires",
+    "total_credits": "Crédits accordés",
+    "accorde": "Montant accordé",
+    "consomme": "Montant consommé",
+    "par_annee": "Évolution par année fiscale",
+    "par_nature": "Par nature",
+    "par_categorie": "Par catégorie d'entreprise",
+    "par_secteur": "Par secteur d'activité",
+    "par_financement": "Par source de financement",
+    "cle": "Catégorie",
+    "nb_beneficiaires": "Bénéficiaires",
+    "nouveaux": "Nouveaux bénéficiaires",
+    "nb_credits": "Crédits"
   }
 }

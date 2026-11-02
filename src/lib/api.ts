@@ -314,7 +314,35 @@ export interface EntrepriseDto {
   registreCommerceEtranger?: string;
   /** Lecture seule : NIF affichable. */
   nifAffiche?: string;
+  /** Catégorie d'entreprise (indicateurs bénéficiaires). */
+  categorie?: EntrepriseCategorie | null;
+  secteurId?: number | null;
+  /** Lecture seule : libellé du secteur d'activité. */
+  secteurLibelle?: string | null;
 }
+
+export type EntrepriseCategorie = "PME" | "GRANDE_ENTREPRISE" | "NON_RENSEIGNEE";
+export const ENTREPRISE_CATEGORIES: EntrepriseCategorie[] = ["PME", "GRANDE_ENTREPRISE", "NON_RENSEIGNEE"];
+
+// Secteurs d'activité (référentiel) — lecture : tout compte connecté ; écriture : referentiel.secteur.manage.
+export interface SecteurActiviteDto {
+  id: number;
+  code: string;
+  libelle: string;
+  libelleAr?: string | null;
+  actif: boolean;
+}
+export interface SecteurActiviteRequest {
+  code: string;
+  libelle: string;
+  libelleAr?: string | null;
+  actif: boolean;
+}
+export const secteurActiviteApi = {
+  getAll: (actifsSeulement = false) => apiFetch<SecteurActiviteDto[]>(`/secteurs-activite?actifsSeulement=${actifsSeulement}`),
+  create: (data: SecteurActiviteRequest) => apiFetch<SecteurActiviteDto>("/secteurs-activite", { method: "POST", body: data }),
+  update: (id: number, data: SecteurActiviteRequest) => apiFetch<SecteurActiviteDto>(`/secteurs-activite/${id}`, { method: "PUT", body: data }),
+};
 
 export const entrepriseApi = {
   getAll: () => apiFetch<EntrepriseDto[]>("/entreprises"),
@@ -2277,9 +2305,11 @@ export const notificationApi = {
 };
 
 // Bailleurs (référentiel)
-export interface BailleurDto { id: number; nom: string; details?: string; }
-export interface CreateBailleurRequest { nom: string; details?: string; }
-export interface UpdateBailleurRequest { nom: string; details?: string | null; }
+export type BailleurCategorie = "NATIONAL" | "MULTILATERAL" | "BILATERAL" | "PRIVE" | "NON_RENSEIGNE";
+export const BAILLEUR_CATEGORIES: BailleurCategorie[] = ["NATIONAL", "MULTILATERAL", "BILATERAL", "PRIVE", "NON_RENSEIGNE"];
+export interface BailleurDto { id: number; nom: string; details?: string; categorie?: BailleurCategorie | null; }
+export interface CreateBailleurRequest { nom: string; details?: string; categorie?: BailleurCategorie | null; }
+export interface UpdateBailleurRequest { nom: string; details?: string | null; categorie?: BailleurCategorie | null; }
 
 export const bailleurApi = {
   getAll: () => apiFetch<BailleurDto[]>("/bailleurs"),
@@ -3002,7 +3032,8 @@ export interface ProductionReportDto {
   filtersApplied?: boolean;
 }
 export type ReportingExportFormat = "xlsx" | "csv" | "pdf";
-export type ReportingBloc = "ENGAGEMENT" | "BLOCAGES" | "A_FERMER" | "PRODUCTION";
+/** IMPACT / BENEFICIAIRES / SATISFACTION : exports par onglet seulement (SATISFACTION : feedback.dashboard.view). */
+export type ReportingBloc = "ENGAGEMENT" | "BLOCAGES" | "A_FERMER" | "PRODUCTION" | "IMPACT" | "BENEFICIAIRES" | "SATISFACTION";
 export const REPORTING_BLOCS: ReportingBloc[] = ["ENGAGEMENT", "BLOCAGES", "A_FERMER", "PRODUCTION"];
 
 /** Télécharge un export serveur tel quel (fichier, jamais lu comme JSON). */
@@ -3028,6 +3059,135 @@ async function downloadReportingExport(format: ReportingExportFormat, params?: R
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// ===================== FEEDBACK & SATISFACTION =====================
+export type FeedbackCategorie = "ERGONOMIE" | "PERFORMANCE" | "PROCEDURE" | "ASSISTANCE" | "AUTRE";
+export const FEEDBACK_CATEGORIES: FeedbackCategorie[] = ["ERGONOMIE", "PERFORMANCE", "PROCEDURE", "ASSISTANCE", "AUTRE"];
+export type ProfilCible = "ENTREPRISE" | "COMMISSION_FISCALE" | "AUTORITE_CONTRACTANTE" | "DOUANES" | "TRESOR";
+export const PROFILS_CIBLES: ProfilCible[] = ["ENTREPRISE", "COMMISSION_FISCALE", "AUTORITE_CONTRACTANTE", "DOUANES", "TRESOR"];
+export type QuestionEnqueteType = "NOTE" | "TEXTE" | "CHOIX";
+export type EnqueteStatut = "BROUILLON" | "PUBLIEE" | "CLOTUREE";
+
+/** POST /feedback/retours — permission feedback.submit. */
+export interface RetourFeedbackRequest {
+  note: number;
+  categorie: FeedbackCategorie;
+  processus?: string | null;
+  page?: string | null;
+  commentaire?: string | null;
+}
+export interface EnqueteQuestionDto {
+  id: number;
+  ordre: number;
+  libelle: string;
+  type: QuestionEnqueteType;
+  categorie?: string | null;
+  options?: string[] | null;
+  obligatoire?: boolean | null;
+}
+export interface EnqueteDto {
+  id: number;
+  titre: string;
+  description?: string | null;
+  dateDebut: string;
+  dateFin: string;
+  profilsCibles: ProfilCible[];
+  statut: EnqueteStatut;
+  ouverte?: boolean;
+  datePublication?: string | null;
+  enqueteOrigineId?: number | null;
+  questions: EnqueteQuestionDto[];
+  nbReponses?: number | null;
+}
+export interface EnqueteQuestionRequest {
+  libelle: string;
+  type: QuestionEnqueteType;
+  categorie?: string | null;
+  /** Au moins deux options pour CHOIX. */
+  options?: string[] | null;
+  obligatoire?: boolean;
+}
+export interface EnqueteRequest {
+  titre: string;
+  description?: string | null;
+  dateDebut: string;
+  dateFin: string;
+  profilsCibles: ProfilCible[];
+  questions: EnqueteQuestionRequest[];
+}
+export interface ReponseEnqueteRequest {
+  reponses: { questionId: number; note?: number | null; texte?: string | null }[];
+}
+export interface SatisfactionLigneDto {
+  cle: string;
+  libelle: string;
+  nbNotes: number | null;
+  noteMoyenne: number | null;
+  /** Nombre de notes 1 à 5. */
+  distribution: number[] | null;
+  satisfaitsPct: number | null;
+}
+export interface SatisfactionEnqueteDto {
+  enqueteId: number;
+  titre: string;
+  dateDebut: string;
+  dateFin: string;
+  statut: EnqueteStatut;
+  nbReponses: number | null;
+  nbCibles: number | null;
+  tauxReponsePct: number | null;
+  noteMoyenne: number | null;
+  parQuestion?: SatisfactionLigneDto[] | null;
+  parProfil?: SatisfactionLigneDto[] | null;
+}
+export interface SatisfactionCommentaireDto {
+  profil: string | null;
+  categorie: string | null;
+  note: number | null;
+  texte: string;
+  source: string | null;
+  date: string | null;
+}
+export interface FeedbackTableauDeBordDto {
+  nbAvis: number | null;
+  noteMoyenne: number | null;
+  satisfaitsPct: number | null;
+  parProfil: SatisfactionLigneDto[];
+  parCategorie: SatisfactionLigneDto[];
+  parProcessus: SatisfactionLigneDto[];
+  pointsForts: SatisfactionLigneDto[];
+  difficultes: SatisfactionLigneDto[];
+  evolution: { periode: string; nbNotes: number | null; noteMoyenne: number | null }[];
+  enquetes: SatisfactionEnqueteDto[];
+  /** Sans nom d'auteur. */
+  commentaires: SatisfactionCommentaireDto[];
+}
+
+const dateRangeQuery = (from?: string, to?: string) => {
+  const parts = [from ? `from=${encodeURIComponent(from)}` : "", to ? `to=${encodeURIComponent(to)}` : ""].filter(Boolean);
+  return parts.length ? `?${parts.join("&")}` : "";
+};
+
+export const feedbackApi = {
+  envoyerRetour: (body: RetourFeedbackRequest) => apiFetch<unknown>("/feedback/retours", { method: "POST", body }),
+  /** Enquêtes ouvertes à mon profil, non encore répondues (feedback.submit). */
+  enquetesEnCours: () => apiFetch<EnqueteDto[]>("/feedback/enquetes/en-cours", { skipAuthRedirect: true }),
+  /** 409 = déjà répondu ; 403 = profil non ciblé. */
+  repondre: (id: number, body: ReponseEnqueteRequest) => apiFetch<unknown>(`/feedback/enquetes/${id}/reponses`, { method: "POST", body }),
+  // Gestion (feedback.enquete.manage)
+  list: () => apiFetch<EnqueteDto[]>("/feedback/enquetes"),
+  get: (id: number) => apiFetch<EnqueteDto>(`/feedback/enquetes/${id}`),
+  create: (body: EnqueteRequest) => apiFetch<EnqueteDto>("/feedback/enquetes", { method: "POST", body }),
+  /** Seulement en BROUILLON. */
+  update: (id: number, body: EnqueteRequest) => apiFetch<EnqueteDto>(`/feedback/enquetes/${id}`, { method: "PUT", body }),
+  /** Seulement en BROUILLON. */
+  delete: (id: number) => apiFetch<void>(`/feedback/enquetes/${id}`, { method: "DELETE" }),
+  publier: (id: number) => apiFetch<EnqueteDto>(`/feedback/enquetes/${id}/publier`, { method: "POST" }),
+  cloturer: (id: number) => apiFetch<EnqueteDto>(`/feedback/enquetes/${id}/cloturer`, { method: "POST" }),
+  relancer: (id: number, body: { dateDebut: string; dateFin: string }) => apiFetch<EnqueteDto>(`/feedback/enquetes/${id}/relancer`, { method: "POST", body }),
+  /** feedback.dashboard.view */
+  tableauDeBord: (from?: string, to?: string) => apiFetch<FeedbackTableauDeBordDto>(`/feedback/tableau-de-bord${dateRangeQuery(from, to)}`, { skipAuthRedirect: true }),
+};
 
 // ===================== MAIN COURANTE =====================
 export type MainCouranteProcessus = "CORRECTION" | "MISE_EN_PLACE" | "TRANSFERT" | "CLOTURE" | "REJET_TEMPORAIRE" | string;
@@ -3057,7 +3217,125 @@ export const mainCouranteApi = {
   get: () => apiFetch<MainCouranteDto>("/main-courante"),
 };
 
+// ── Indicateurs d'impact (GET /reporting/impact) — valeurs nulles = « n/d », jamais 0 ──
+export type ImpactProcessusCode = "CORRECTION" | "MISE_EN_PLACE" | "UTILISATION_TVA" | "UTILISATION_DOUANE" | "TRANSFERT" | "AVENANT";
+export interface ImpactProcessusDto {
+  code: ImpactProcessusCode | string;
+  libelle: string;
+  deposes: number | null;
+  traites: number | null;
+  valides: number | null;
+  rejetes: number | null;
+  avecComplements: number | null;
+  tauxValidationPct: number | null;
+  tauxRejetPct: number | null;
+  tauxComplementsPct: number | null;
+  delaiReponseComplementsJours: number | null;
+}
+export interface ImpactPhaseDto {
+  processus: string;
+  phase: string;
+  nbDossiers: number | null;
+  moyenneJours: number | null;
+  medianeJours: number | null;
+}
+export interface ImpactMontantsDto {
+  demandes: number | null;
+  retenus: number | null;
+  valides: number | null;
+  consommes: number | null;
+  ajustes: number | null;
+  annules: number | null;
+  clotures: number | null;
+}
+export interface ImpactTauxUtilisationDto {
+  accordeTvaInterieure: number | null;
+  consommeTvaInterieure: number | null;
+  tvaInterieurePct: number | null;
+  accordeDouane: number | null;
+  consommeDouane: number | null;
+  douanePct: number | null;
+  globalPct: number | null;
+}
+export interface ImpactAvantApresDto {
+  code: string;
+  libelle: string;
+  unite: string | null;
+  avant: number | null;
+  apres: number | null;
+  variationPct: number | null;
+  sourceAvant: string | null;
+  periodeAvant: string | null;
+}
+export interface ImpactReportDto {
+  from: string | null;
+  to: string | null;
+  /** Réglage `digitalisation.date_bascule` (AAAA-MM-JJ) ; null si non renseigné. */
+  dateBascule: string | null;
+  definitions: string[];
+  processus: ImpactProcessusDto[];
+  phases: ImpactPhaseDto[];
+  montants: ImpactMontantsDto | null;
+  tauxUtilisation: ImpactTauxUtilisationDto | null;
+  avantApres: ImpactAvantApresDto[];
+}
+/** Valeur de référence « avant digitalisation » (tous les indicateurs, saisis ou non). */
+export interface ReportingReferenceDto {
+  id: number | null;
+  code: string;
+  libelle: string;
+  unite: string | null;
+  valeur: number | null;
+  periodeSource: string | null;
+  commentaire: string | null;
+  dateSaisie: string | null;
+}
+export interface SaveReportingReferenceRequest {
+  code: string;
+  valeur: number;
+  periodeSource?: string | null;
+  commentaire?: string | null;
+}
+
+// ── Bénéficiaires (GET /reporting/beneficiaires) ──
+export interface BeneficiairesLigneDto {
+  cle: string;
+  libelle: string;
+  nbBeneficiaires: number | null;
+  nbCredits: number | null;
+  montantAccorde: number | null;
+  montantConsomme: number | null;
+}
+export interface BeneficiairesAnneeDto {
+  annee: number;
+  nouveauxBeneficiaires: number | null;
+  beneficiaires: number | null;
+  nbCredits: number | null;
+  montantAccorde: number | null;
+  montantConsomme: number | null;
+}
+export interface BeneficiairesReportDto {
+  from: string | null;
+  to: string | null;
+  totalBeneficiaires: number | null;
+  totalCredits: number | null;
+  montantAccorde: number | null;
+  montantConsomme: number | null;
+  definitions: string[];
+  parNature: BeneficiairesLigneDto[];
+  parCategorie: BeneficiairesLigneDto[];
+  parSecteur: BeneficiairesLigneDto[];
+  parFinancement: BeneficiairesLigneDto[];
+  parAnnee: BeneficiairesAnneeDto[];
+}
+
 export const reportingApi = {
+  getImpact: (params?: ReportingParams) => apiFetch<ImpactReportDto>(`/reporting/impact${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
+  getBeneficiaires: (params?: ReportingParams) => apiFetch<BeneficiairesReportDto>(`/reporting/beneficiaires${buildReportingQuery(params)}`, { skipAuthRedirect: true }),
+  getReferences: () => apiFetch<ReportingReferenceDto[]>("/reporting/references"),
+  /** reporting.reference.manage — crée ou remplace la valeur du code. */
+  saveReference: (body: SaveReportingReferenceRequest) => apiFetch<ReportingReferenceDto>("/reporting/references", { method: "PUT", body }),
+  deleteReference: (code: string) => apiFetch<void>(`/reporting/references/${encodeURIComponent(code)}`, { method: "DELETE" }),
   getProduction: (params?: ReportingParams, granularite?: ProductionGranularite) => apiFetch<ProductionReportDto>(`/reporting/production${withExtra(params, { granularite })}`, { skipAuthRedirect: true }),
   downloadExport: downloadReportingExport,
   getEngagement: (params?: ReportingParams, axe?: EngagementAxe) => apiFetch<EngagementReportDto>(`/reporting/engagement${withExtra(params, { axe })}`, { skipAuthRedirect: true }),
