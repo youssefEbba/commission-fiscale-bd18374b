@@ -12,7 +12,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DocumentDto, ALL_DOCUMENT_TYPES_VALUES, RejetTempResponseDto,
   ReclamationDemandeCorrectionDto,
-  conventionApi, ConventionDto, marcheApi, MarcheDto,
+  conventionApi, ConventionDto, marcheApi, MarcheDto, formatApiErrorMessage,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
 import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits, firstVisaRoleCorrection, requiredPreVisaDocCorrection } from "@/lib/visas";
