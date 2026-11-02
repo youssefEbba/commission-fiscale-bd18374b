@@ -566,7 +566,7 @@
     "deposer": "Déposer la quittance DGI",
     "modifier": "Modifier la quittance DGI",
     "dialog_title": "Quittance DGI — #{{id}}",
-    "intro": "Après validation, la DGI dépose la quittance correspondant à cette utilisation intérieure. La DGTCP pourra ensuite procéder à l'apurement et générer le certificat d'utilisation.",
+    "intro": "La DGTCP pourra ensuite procéder à l'apurement.",
     "numero": "N° de quittance",
     "date": "Date de la quittance",
     "montant": "Montant (MRU)",
