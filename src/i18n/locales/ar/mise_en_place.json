@@ -25,7 +25,8 @@
       "edit": "تعديل",
       "cancel": "إلغاء",
       "cancel_tooltip": "إلغاء الطلب"
-    }
+    },
+    "deja_vise": "تمت التأشيرة"
   },
   "detail": {
     "title": "تأسيس {{ref}}",

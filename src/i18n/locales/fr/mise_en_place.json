@@ -25,7 +25,8 @@
       "edit": "Modifier",
       "cancel": "Annuler",
       "cancel_tooltip": "Annuler la demande"
-    }
+    },
+    "deja_vise": "Déjà visé"
   },
   "detail": {
     "title": "Mise en place {{ref}}",
