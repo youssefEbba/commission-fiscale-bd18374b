@@ -43,7 +43,7 @@ import CertificatAdminVisasCard from "@/components/admin/CertificatAdminVisasCar
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { tStatutCertificat, tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
@@ -521,7 +521,7 @@ const MiseEnPlaceDetail = () => {
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground mb-1">{t("mise_en_place:detail.info.correction")}</p>
               <p className="font-semibold">{correctionRef}</p>
-              {correction?.statut && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.correction_statut")}: {correction.statut}</p>}
+              {correction?.statut && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.correction_statut")}: {tStatutDemande(correction.statut)}</p>}
             </CardContent>
           </Card>
           <Card>

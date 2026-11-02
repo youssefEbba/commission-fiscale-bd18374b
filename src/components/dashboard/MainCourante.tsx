@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
+import { tStatutAny, statutGroupForLigne } from "@/i18n/enums";
 import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert, formatApiErrorMessage } from "@/lib/api";
 
 const hrefFor = (l: MainCouranteLigneDto): string => {
+  if (l.processus === "AVENANT" || l.type === "Avenant" || l.type === "AvenantCertificat") return `/dashboard/modifications/${l.id}`;
   if (l.type === "DemandeCorrection") return `/dashboard/demandes/${l.id}`;
   if (l.type === "TransfertCredit") return `/dashboard/transferts/${l.id}`;
   if (l.type === "CertificatCredit") {
@@ -130,7 +132,7 @@ const MainCourante = () => {
                       </TableCell>
                       <TableCell><Link to={href} className="text-primary hover:underline">{l.reference || `#${l.id}`}</Link></TableCell>
                       <TableCell className="text-sm">{l.entrepriseRaisonSociale || "—"}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-xs">{l.statut || "—"}</Badge></TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs">{tStatutAny(l.statut, statutGroupForLigne(l.type, l.processus))}</Badge></TableCell>
                       <TableCell className="text-end tabular-nums">{l.joursDAttente ?? "—"}</TableCell>
                     </ClickableTableRow>
                   );
