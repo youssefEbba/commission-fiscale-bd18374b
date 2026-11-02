@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isUtilisationAControler } from "@/lib/utilisationQueues";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { Link, useNavigate } from "react-router-dom";
@@ -591,7 +592,7 @@ const Utilisations = () => {
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
       (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE"))) ||
-      (filterStatut === "A_CONTROLER" && u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI");
+      (filterStatut === "A_CONTROLER" && isUtilisationAControler(u));
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
       (tab === "TVA_INTERIEURE" && u.type === "TVA_INTERIEURE") ||
@@ -666,7 +667,7 @@ const Utilisations = () => {
           )}
           {(role === "DGTCP" || role === "ADMIN_SI") && (
             <Button variant={filterStatut === "A_CONTROLER" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_CONTROLER" ? "ALL" : "A_CONTROLER")}>
-              {t("utilisations:transmission_president.queue_filter")} ({data.filter((u) => u.type === "DOUANIER" && u.statut === "CHEQUE_SAISI").length})
+              {t("utilisations:transmission_president.queue_filter")} ({data.filter(isUtilisationAControler).length})
             </Button>
           )}
           <Select value={filterStatut} onValueChange={setFilterStatut}>
