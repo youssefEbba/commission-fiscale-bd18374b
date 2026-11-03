@@ -90,12 +90,8 @@ const CertificatDetail = () => {
       try {
         return await utilisationCreditApi.getByCertificat(certId);
       } catch {
-        try {
-          const all = await utilisationCreditApi.getAll();
-          return all.filter((u) => u.certificatCreditId === certId);
-        } catch (error) {
-          throw error;
-        }
+        const all = await utilisationCreditApi.getAll();
+        return all.filter((u) => u.certificatCreditId === certId);
       }
     };
 
