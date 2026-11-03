@@ -17,6 +17,7 @@ import { emitErrorDialog } from "@/components/ErrorDialog";
 import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import { tRole } from "@/i18n/enums";
 import { FeedbackButton } from "@/components/feedback/FeedbackButton";
+import { activeNavHref } from "@/lib/navActive";
 import { EnqueteBanner } from "@/components/feedback/EnqueteBanner";
 
 interface NavItem {
@@ -44,7 +45,16 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 const NAV_ENTRIES: NavEntry[] = [
   { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   { labelKey: "conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  { labelKey: "marches", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+  {
+    // Attributions / Marchés : les marchés et leurs avenants (une entreprise ne voit que les avenants).
+    labelKey: "marches",
+    icon: Gavel,
+    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"],
+    children: [
+      { labelKey: "marches_liste", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+    ],
+  },
   { labelKey: "groupements", href: "/dashboard/groupements", icon: Users, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   {
     labelKey: "demandes",
@@ -65,7 +75,6 @@ const NAV_ENTRIES: NavEntry[] = [
     icon: ArrowRightLeft,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT", "ADMIN_SI"] },
@@ -116,6 +125,8 @@ const NAV_ENTRIES: NavEntry[] = [
   },
 ];
 
+const NAV_HREFS: string[] = NAV_ENTRIES.flatMap((e) => (isGroup(e) ? e.children.map((c) => c.href) : [e.href]));
+
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout, hasRole, hasPermission, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
   const navigate = useNavigate();
@@ -162,14 +173,16 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const activeHref = activeNavHref(location.pathname, NAV_HREFS);
+
   const linkClass = (href: string) => {
-    const active = location.pathname === href;
+    const active = href === activeHref;
     return `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
       active ? "bg-sidebar-foreground text-sidebar font-semibold shadow-sm" : "font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     }`;
   };
 
-  const isGroupActive = (group: NavGroup) => group.children.some((c) => location.pathname === c.href);
+  const isGroupActive = (group: NavGroup) => group.children.some((c) => c.href === activeHref);
 
   const renderNav = (closeMobile?: () => void) => (
     <nav className="flex-1 p-3 space-y-1">

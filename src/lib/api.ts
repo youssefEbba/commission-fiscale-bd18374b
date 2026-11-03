@@ -2756,6 +2756,10 @@ export interface AvenantDto {
   entrepriseNom?: string | null;
   autoriteContractanteId?: number | null;
   autoriteContractanteNom?: string | null;
+  /** Marché du crédit (via la demande de correction) ; null pour un crédit sans marché rattaché. */
+  marcheId?: number | null;
+  marcheNumero?: string | null;
+  marcheIntitule?: string | null;
   deposeParUtilisateurId?: number | null;
   dateDepot?: string | null;
   creditExterieurPropose?: number | null;
@@ -2783,6 +2787,8 @@ export interface AvenantDto {
 
 export interface CreateAvenantRequest {
   certificatCreditId: number;
+  /** Marché choisi au dépôt ; 400 si le crédit n'appartient pas à ce marché. Absent = aucun contrôle. */
+  marcheId?: number;
   type: TypeAvenant;
   motif: string | null;
   /** Instant ISO-8601 (`YYYY-MM-DDT00:00:00Z`). */

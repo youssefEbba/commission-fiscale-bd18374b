@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
+import AvenantsMarcheCard from "@/components/avenants/AvenantsMarcheCard";
 import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
@@ -229,6 +230,8 @@ const MarcheDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        <AvenantsMarcheCard marcheId={marche.id} />
       </div>
 
       <DocumentGED

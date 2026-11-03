@@ -115,7 +115,50 @@ const toNumber = (v: string): number | null => {
 /** Date du jour (YYYY-MM-DD) → Instant ISO-8601 attendu par le serveur. */
 export const toInstant = (date: string | null | undefined) => (date && date.trim() ? `${date.trim()}T00:00:00Z` : null);
 
+/** Choix « crédits sans marché rattaché » (ex. reprises d'archive) au dépôt d'un avenant. */
+export const AVENANT_SANS_MARCHE = "sans";
+
+/** Valeur du champ Marché pour un crédit : son identifiant, ou « sans marché ». */
+export const avenantMarcheKey = (c: { marcheId?: number | null }) => (c.marcheId != null ? String(c.marcheId) : AVENANT_SANS_MARCHE);
+
+export interface AvenantMarcheOption {
+  key: string;
+  marcheId: number | null;
+  numero: string | null;
+  intitule: string | null;
+  nbCredits: number;
+}
+
+type CreditMarche = { marcheId?: number | null; marcheNumero?: string | null; marcheReference?: string | null; marcheIntitule?: string | null };
+
+/** Marchés tirés des crédits déjà chargés (pas d'appel aux marchés : une entreprise n'y a pas accès) ; « sans marché » en dernier. */
+export function avenantMarcheOptions(credits: CreditMarche[]): AvenantMarcheOption[] {
+  const byKey = new Map<string, AvenantMarcheOption>();
+  for (const c of credits) {
+    const key = avenantMarcheKey(c);
+    const cur = byKey.get(key);
+    if (cur) { cur.nbCredits += 1; continue; }
+    byKey.set(key, {
+      key,
+      marcheId: c.marcheId ?? null,
+      numero: c.marcheId != null ? (c.marcheNumero || c.marcheReference || null) : null,
+      intitule: c.marcheId != null ? (c.marcheIntitule || null) : null,
+      nbCredits: 1,
+    });
+  }
+  const list = [...byKey.values()];
+  const avec = list.filter((o) => o.marcheId != null)
+    .sort((a, b) => (a.numero || "").localeCompare(b.numero || "", "fr") || (a.marcheId! - b.marcheId!));
+  return [...avec, ...list.filter((o) => o.marcheId == null)];
+}
+
+/** Crédits du marché choisi (vide tant qu'aucun marché n'est choisi). */
+export const creditsDuMarche = <T extends CreditMarche>(credits: T[], marche: string): T[] =>
+  marche ? credits.filter((c) => avenantMarcheKey(c) === marche) : [];
+
 export interface AvenantDepotForm {
+  /** Identifiant du marché, `AVENANT_SANS_MARCHE`, ou "" tant que rien n'est choisi. */
+  marche: string;
   certificatCreditId: string;
   type: TypeAvenant | "";
   motif: string;
@@ -125,11 +168,12 @@ export interface AvenantDepotForm {
 }
 
 export type AvenantDepotError =
-  | "certificat_required" | "type_required" | "motif_required"
+  | "marche_required" | "certificat_required" | "type_required" | "motif_required"
   | "date_signature_future" | "credits_required" | "credits_negative";
 
 export function avenantDepotErrors(f: AvenantDepotForm, today: string): AvenantDepotError[] {
   const errors: AvenantDepotError[] = [];
+  if (!f.marche) errors.push("marche_required");
   if (!f.certificatCreditId) errors.push("certificat_required");
   if (!f.type) errors.push("type_required");
   if (!f.motif.trim()) errors.push("motif_required");
@@ -147,6 +191,8 @@ export function buildCreateAvenantRequest(f: AvenantDepotForm): CreateAvenantReq
   const financier = f.type === "FINANCIER";
   return {
     certificatCreditId: Number(f.certificatCreditId),
+    // Le serveur vérifie que le crédit appartient au marché ; rien n'est envoyé pour « sans marché ».
+    ...(f.marche && f.marche !== AVENANT_SANS_MARCHE ? { marcheId: Number(f.marche) } : {}),
     type: f.type as TypeAvenant,
     motif: f.motif.trim() || null,
     dateSignature: toInstant(f.dateSignature),

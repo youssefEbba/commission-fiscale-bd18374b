@@ -14,7 +14,8 @@
       "entreprise": "Entreprise",
       "type": "Type",
       "statut": "Statut",
-      "date_depot": "Date de dépôt"
+      "date_depot": "Date de dépôt",
+      "marche": "Marché"
     }
   },
   "actions": {
@@ -50,8 +51,15 @@
       "motif_required": "Le motif est obligatoire.",
       "date_signature_future": "La date de signature ne peut pas être postérieure à aujourd'hui.",
       "credits_required": "Les crédits extérieur et intérieur proposés sont obligatoires pour un avenant financier.",
-      "credits_negative": "Les crédits proposés ne peuvent pas être négatifs."
-    }
+      "credits_negative": "Les crédits proposés ne peuvent pas être négatifs.",
+      "marche_required": "Choisissez le marché du crédit"
+    },
+    "marche": "Marché",
+    "marche_placeholder": "Choisir le marché",
+    "sans_marche": "Crédits sans marché rattaché",
+    "nb_credits_one": "{{count}} crédit",
+    "nb_credits_other": "{{count}} crédits",
+    "certificat_requires_marche": "Choisissez d'abord le marché"
   },
   "detail": {
     "title": "Avenant {{ref}}",
@@ -68,7 +76,8 @@
       "date_depot": "Date de dépôt",
       "motif": "Motif",
       "credit_exterieur_propose": "Crédit extérieur proposé",
-      "credit_interieur_propose": "Crédit intérieur proposé"
+      "credit_interieur_propose": "Crédit intérieur proposé",
+      "marche": "Marché"
     },
     "next": {
       "depose": "Prochaine étape : la DGTCP prend en charge l'avenant ou le rejette.",
@@ -200,5 +209,10 @@
   "banner": {
     "text": "Demande de correction de l'avenant {{numero}}",
     "link": "Voir l'avenant"
+  },
+  "marche_card": {
+    "title": "Avenants ({{count}})",
+    "empty": "Aucun avenant sur les crédits de ce marché.",
+    "error": "Impossible de charger les avenants du marché"
   }
 }

@@ -6,7 +6,9 @@ import { avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto, TypeA
 import {
   AvenantDepotForm, avenantDepotErrors, buildCreateAvenantRequest,
   CERTIFICAT_STATUTS_AVENANT, TYPES_AVENANT,
+  AVENANT_SANS_MARCHE, avenantMarcheKey, avenantMarcheOptions, creditsDuMarche,
 } from "@/lib/avenants";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { displayRef } from "@/lib/displayRef";
 import { tTypeAvenant } from "@/i18n/enums";
 import { useToast } from "@/hooks/use-toast";
@@ -21,19 +23,21 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Crédit imposé (dépôt depuis la fiche crédit). */
-  certificat?: Pick<CertificatCreditDto, "id" | "reference" | "numero" | "entrepriseRaisonSociale" | "entrepriseNom"> | null;
+  certificat?: Pick<CertificatCreditDto, "id" | "reference" | "numero" | "entrepriseRaisonSociale" | "entrepriseNom" | "marcheId" | "marcheNumero" | "marcheReference" | "marcheIntitule"> | null;
+  /** Marché présélectionné (dépôt depuis la fiche marché). */
+  marcheId?: number | null;
   onCreated: (avenant: AvenantDto) => void;
 }
 
 const EMPTY: AvenantDepotForm = {
-  certificatCreditId: "", type: "", motif: "", dateSignature: "",
+  marche: "", certificatCreditId: "", type: "", motif: "", dateSignature: "",
   creditExterieurPropose: "", creditInterieurPropose: "",
 };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 /** Dépôt d'un avenant par l'entreprise ou l'autorité contractante, sur un crédit ouvert ou modifié. */
-export default function AvenantCreateDialog({ open, onOpenChange, certificat, onCreated }: Props) {
+export default function AvenantCreateDialog({ open, onOpenChange, certificat, marcheId, onCreated }: Props) {
   const { t } = useTranslation(["modifications", "common"]);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -46,7 +50,11 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, on
 
   useEffect(() => {
     if (!open) return;
-    setForm({ ...EMPTY, certificatCreditId: certificat ? String(certificat.id) : "" });
+    setForm({
+      ...EMPTY,
+      marche: certificat ? avenantMarcheKey(certificat) : marcheId != null ? String(marcheId) : "",
+      certificatCreditId: certificat ? String(certificat.id) : "",
+    });
     setSubmitted(false);
     if (certificat) return;
     setCertsLoading(true);
@@ -58,7 +66,22 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, on
       .then((list) => setCerts(list.filter((c) => CERTIFICAT_STATUTS_AVENANT.includes(c.statut))))
       .catch((e: any) => { setCerts([]); setCertsError(e?.message || t("modifications:depot.certificats_error")); })
       .finally(() => setCertsLoading(false));
-  }, [open, certificat, user?.role, user?.entrepriseId, t]);
+  }, [open, certificat, marcheId, user?.role, user?.entrepriseId, t]);
+
+  const marcheOptions = useMemo(() => avenantMarcheOptions(certs).map((o) => ({
+    value: o.key,
+    label: o.marcheId == null
+      ? t("modifications:depot.sans_marche")
+      : `${o.numero || `#${o.marcheId}`}${o.intitule ? ` — ${o.intitule}` : ""}`,
+    description: t("modifications:depot.nb_credits", { count: o.nbCredits }),
+  })), [certs, t]);
+  const creditsMarche = useMemo(() => creditsDuMarche(certs, form.marche), [certs, form.marche]);
+
+  // Un seul crédit sur le marché choisi : sélectionné d'office.
+  useEffect(() => {
+    if (certificat || !form.marche || form.certificatCreditId) return;
+    if (creditsMarche.length === 1) setForm((f) => ({ ...f, certificatCreditId: String(creditsMarche[0].id) }));
+  }, [certificat, form.marche, form.certificatCreditId, creditsMarche]);
 
   const today = todayStr();
   const errors = useMemo(() => avenantDepotErrors(form, today), [form, today]);
@@ -94,6 +117,26 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, on
 
         <div className="space-y-4">
           <div className="space-y-1.5">
+            <Label>{t("modifications:depot.marche")} *</Label>
+            {certificat ? (
+              <p className="text-sm font-medium rounded-md border border-border bg-muted/30 px-3 py-2">
+                {certificat.marcheId != null
+                  ? `${certificat.marcheNumero || certificat.marcheReference || `#${certificat.marcheId}`}${certificat.marcheIntitule ? ` — ${certificat.marcheIntitule}` : ""}`
+                  : t("modifications:depot.sans_marche")}
+              </p>
+            ) : (
+              <SearchableSelect
+                options={marcheOptions}
+                value={form.marche}
+                onValueChange={(v) => setForm((f) => ({ ...f, marche: v, certificatCreditId: "" }))}
+                placeholder={t("modifications:depot.marche_placeholder")}
+                loading={certsLoading}
+              />
+            )}
+            {show("marche_required") && errText("marche_required")}
+          </div>
+
+          <div className="space-y-1.5">
             <Label>{t("modifications:depot.certificat")} *</Label>
             {certificat ? (
               <p className="text-sm font-medium rounded-md border border-border bg-muted/30 px-3 py-2">
@@ -101,12 +144,12 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, on
               </p>
             ) : (
               <>
-                <Select value={form.certificatCreditId} onValueChange={(v) => set("certificatCreditId", v)} disabled={certsLoading}>
+                <Select value={form.certificatCreditId} onValueChange={(v) => set("certificatCreditId", v)} disabled={certsLoading || !form.marche}>
                   <SelectTrigger>
-                    <SelectValue placeholder={certsLoading ? t("modifications:depot.certificats_loading") : t("modifications:depot.certificat_placeholder")} />
+                    <SelectValue placeholder={certsLoading ? t("modifications:depot.certificats_loading") : !form.marche ? t("modifications:depot.certificat_requires_marche") : t("modifications:depot.certificat_placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {certs.map((c) => (
+                    {creditsMarche.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
                         {displayRef(c)}{(c.entrepriseRaisonSociale || c.entrepriseNom) ? ` — ${c.entrepriseRaisonSociale || c.entrepriseNom}` : ""}
                       </SelectItem>

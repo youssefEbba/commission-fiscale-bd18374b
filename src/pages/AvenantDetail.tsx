@@ -18,6 +18,7 @@ import {
 import { tStatutDemande, tTypeAvenant } from "@/i18n/enums";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import AvenantStatutBadge from "@/components/avenants/AvenantStatutBadge";
+import AvenantMarcheLink from "@/components/avenants/AvenantMarcheLink";
 import AvenantMotifDialog from "@/components/avenants/AvenantMotifDialog";
 import AvenantApplyDialog from "@/components/avenants/AvenantApplyDialog";
 import { Button } from "@/components/ui/button";
@@ -251,6 +252,10 @@ const AvenantDetail = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">{t("modifications:detail.fields.marche")}</span>
+                <p className="font-medium"><AvenantMarcheLink avenant={a} withIntitule /></p>
+              </div>
               <div>
                 <span className="text-muted-foreground">{t("modifications:detail.fields.certificat")}</span>
                 <p className="font-medium">
