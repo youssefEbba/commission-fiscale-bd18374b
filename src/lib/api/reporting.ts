@@ -422,6 +422,14 @@ export interface ArchiveCreditPreviewDto {
   transfertCredit: number;
   soldeDouanierDeclare: number;
   soldeInterieurDeclare: number;
+  /** Règle de l'ancienne application (crédit + transfert − utilisations), comparée au solde du fichier. */
+  soldeInterieurRegleFichier?: number | null;
+  /** Stock de TVA déductible reconstitué par le rejeu (règles de l'application). */
+  stockTvaEntrees?: number | null;
+  stockTvaDeduit?: number | null;
+  stockTvaRestant?: number | null;
+  paiementEntrepriseTotal?: number | null;
+  reportsTotal?: number | null;
   soldeDouanierCalcule: number;
   soldeInterieurCalcule: number;
   totalUtilisationsDouane: number;
@@ -526,6 +534,12 @@ export interface ArchiveLotCreditDto {
   soldeInterieurCalcule: number | null;
   soldeDouanierDeclare: number | null;
   soldeInterieurDeclare: number | null;
+  soldeInterieurRegleFichier?: number | null;
+  stockTvaEntrees?: number | null;
+  stockTvaDeduit?: number | null;
+  stockTvaRestant?: number | null;
+  paiementEntrepriseTotal?: number | null;
+  reportsTotal?: number | null;
   nbUtilisations: number;
   anomalies: string[];
   entrepriseId: number | null;
@@ -605,6 +619,9 @@ export const archiveLotApi = {
     apiFetch<ArchiveLotDto>(`/archive/lots/${lotId}/credits`, { method: "PATCH", body }),
   rapprocher: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}/rapprocher`, { method: "POST" }),
   interrogerDgi: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}/dgi`, { method: "POST" }),
+  /** Réapplique aux crédits déjà importés les montants recalculés (ventilation du crédit douanier, soldes). */
+  recalculer: (id: number) =>
+    apiFetch<ArchiveLotImportResultatDto>(`/archive/lots/${id}/recalculer`, { method: "POST" }),
   importer: (id: number, creditIds: number[]) =>
     apiFetch<ArchiveLotImportResultatDto>(`/archive/lots/${id}/importer`, { method: "POST", body: { creditIds } }),
   delete: (id: number) => apiFetch<void>(`/archive/lots/${id}`, { method: "DELETE" }),
