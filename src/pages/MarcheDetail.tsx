@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
+import AvenantsMarcheCard from "@/components/avenants/AvenantsMarcheCard";
 import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
@@ -167,6 +168,7 @@ const MarcheDetail = () => {
             <Field label={t("marches:fields.intitule")} value={marche.intitule} />
             <Field label={t("marches:type_marche.type_marche")} value={marche.typeMarche ? t(`marches:type_marche.${marche.typeMarche}`) : t("marches:type_marche.non_renseigne")} />
             <Field label={t("marches:fields.date_signature")} value={formatDate(marche.dateSignature)} />
+            <Field label={t("marches:fields.duree_execution")} value={marche.dureeExecution || "—"} />
             <Field
               label={t("marches:fields.montant_ht")}
               value={formatAmount(marche.montantContratHt, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -224,6 +226,8 @@ const MarcheDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        <AvenantsMarcheCard marcheId={marche.id} />
       </div>
 
       <DocumentGED

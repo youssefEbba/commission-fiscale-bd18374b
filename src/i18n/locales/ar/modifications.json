@@ -14,7 +14,8 @@
       "entreprise": "المؤسسة",
       "type": "النوع",
       "statut": "الحالة",
-      "date_depot": "تاريخ الإيداع"
+      "date_depot": "تاريخ الإيداع",
+      "marche": "الصفقة"
     }
   },
   "actions": {
@@ -50,8 +51,15 @@
       "motif_required": "السبب إلزامي.",
       "date_signature_future": "لا يمكن أن يكون تاريخ التوقيع بعد اليوم.",
       "credits_required": "الرصيدان الخارجي والداخلي المقترحان إلزاميان للملحق المالي.",
-      "credits_negative": "لا يمكن أن تكون الأرصدة المقترحة سالبة."
-    }
+      "credits_negative": "لا يمكن أن تكون الأرصدة المقترحة سالبة.",
+      "marche_required": "اختاروا صفقة الرصيد"
+    },
+    "marche": "الصفقة",
+    "marche_placeholder": "اختيار الصفقة",
+    "sans_marche": "أرصدة دون صفقة مرتبطة",
+    "nb_credits_one": "{{count}} رصيد",
+    "nb_credits_other": "{{count}} أرصدة",
+    "certificat_requires_marche": "اختاروا الصفقة أولًا"
   },
   "detail": {
     "title": "الملحق {{ref}}",
@@ -68,7 +76,8 @@
       "date_depot": "تاريخ الإيداع",
       "motif": "السبب",
       "credit_exterieur_propose": "الرصيد الخارجي المقترح",
-      "credit_interieur_propose": "الرصيد الداخلي المقترح"
+      "credit_interieur_propose": "الرصيد الداخلي المقترح",
+      "marche": "الصفقة"
     },
     "next": {
       "depose": "الخطوة التالية: تتكفل المديرية العامة للخزينة والمحاسبة العمومية بالملحق أو ترفضه.",
@@ -200,5 +209,10 @@
   "banner": {
     "text": "طلب تصحيح الملحق {{numero}}",
     "link": "عرض الملحق"
+  },
+  "marche_card": {
+    "title": "الملاحق ({{count}})",
+    "empty": "لا يوجد ملحق على أرصدة هذه الصفقة.",
+    "error": "تعذّر تحميل ملاحق الصفقة"
   }
 }

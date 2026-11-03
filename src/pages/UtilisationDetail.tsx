@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1595,7 +1596,7 @@ const UtilisationDetail = () => {
                 <div className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_numero")} *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
                   <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_date")} *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
-                  <div className="col-span-2"><Label className="text-xs">{t("utilisations:quittances_dialog.col_montant")} *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                  <div className="col-span-2"><Label className="text-xs">{t("utilisations:quittances_dialog.col_montant")} *</Label><DecimalInput value={q.montant} onValueChange={n => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: n ?? 0 } : x))} /></div>
                   <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_reference")}</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
                   <div className="col-span-1">
                     <Button variant="ghost" size="sm" onClick={() => {

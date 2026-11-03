@@ -1,48 +1,39 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UploadRow } from "@/components/ui/upload-row";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArchiveCreateDialog, type ArchiveCreateInitial, type ArchiveCreateKind } from "@/components/archive/ArchiveCreateDialog";
+import { ArchiveSoldesTable, ArchiveUtilisationsTable } from "@/components/archive/ArchiveReleveTables";
+import { ArchiveLotsTab } from "@/components/archive/ArchiveLotsTab";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Archive, CheckCircle2, ChevronDown, ChevronRight, Loader2, Plus, RotateCcw, Info as Info_ } from "lucide-react";
+import { useArchiveRefs } from "@/hooks/useArchiveRefs";
+import { soldesDetail } from "@/lib/archiveLots";
+import { AlertTriangle, Archive, CheckCircle2, Loader2, Plus, RotateCcw, Info as Info_ } from "lucide-react";
 import { formatAmount, formatDate } from "@/i18n/format";
-import { tStatutMarche } from "@/i18n/enums";
 import {
   archiveCreditApi,
-  entrepriseApi,
-  autoriteContractanteApi,
-  conventionApi,
-  bailleurApi,
-  marcheApi,
   formatApiErrorMessage,
-  MARCHE_STATUT_VALUES,
   type ArchiveCreditPreviewDto,
   type ArchiveCreditImportResultDto,
-  type EntrepriseDto,
-  type AutoriteContractanteDto,
-  type ConventionDto,
-  type BailleurDto,
-  type MarcheDto,
-  type StatutMarche,
 } from "@/lib/api";
 
 
 const money = (v: number | null | undefined) => formatAmount(v ?? 0);
 
-const ArchiveCredits = () => {
+/** Onglet « Un crédit » : un relevé par fichier (écran historique). */
+const ArchiveCreditUnique = () => {
   const { t } = useTranslation(["archive", "common"]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ArchiveCreditPreviewDto | null>(null);
@@ -50,13 +41,8 @@ const ArchiveCredits = () => {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ArchiveCreditImportResultDto | null>(null);
   const [confirmAnomalies, setConfirmAnomalies] = useState(false);
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
-  const [entreprises, setEntreprises] = useState<EntrepriseDto[]>([]);
-  const [autorites, setAutorites] = useState<AutoriteContractanteDto[]>([]);
-  const [conventions, setConventions] = useState<ConventionDto[]>([]);
-  const [bailleurs, setBailleurs] = useState<BailleurDto[]>([]);
-  const [marches, setMarches] = useState<MarcheDto[]>([]);
+  const { entreprises, autorites, conventions, marches, loading: refsLoading, reload } = useArchiveRefs(user);
 
   const [entrepriseId, setEntrepriseId] = useState<string>("");
   const [autoriteId, setAutoriteId] = useState<string>("");
@@ -64,38 +50,8 @@ const ArchiveCredits = () => {
   const [marcheId, setMarcheId] = useState<string>("");
 
   // Création d'entités manquantes
-  type CreateKind = "entreprise" | "autorite" | "bailleur" | "convention" | "marche";
-  const [createOpen, setCreateOpen] = useState<CreateKind | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<Record<string, string>>({});
-  const setField = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
-
-  const loadEntreprises = async () => {
-    const v = await entrepriseApi.getAll();
-    setEntreprises(Array.isArray(v) ? v : []);
-  };
-  const loadAutorites = async () => {
-    const v = await autoriteContractanteApi.getAll();
-    setAutorites(Array.isArray(v) ? v : []);
-  };
-  const loadConventions = async () => {
-    const v = await conventionApi.getAll();
-    setConventions(Array.isArray(v) ? v : []);
-  };
-  const loadBailleurs = async () => {
-    const v = await bailleurApi.getAll();
-    setBailleurs(Array.isArray(v) ? v : []);
-  };
-  const loadMarches = async () => {
-    const v = await marcheApi.getAll();
-    setMarches(Array.isArray(v) ? v : []);
-  };
-
-  useEffect(() => {
-    void (async () => {
-      await Promise.allSettled([loadEntreprises(), loadAutorites(), loadConventions(), loadBailleurs(), loadMarches()]);
-    })();
-  }, []);
+  const [createKind, setCreateKind] = useState<ArchiveCreateKind | null>(null);
+  const [createInitial, setCreateInitial] = useState<ArchiveCreateInitial>({});
 
   const entrepriseOptions = useMemo(
     () =>
@@ -119,13 +75,6 @@ const ArchiveCredits = () => {
         .map((c) => ({ value: String(c.id), label: c.actif === false ? `${c.reference || `#${c.id}`} — ${t("conventions:activation.disabled_badge")}` : (c.reference || `#${c.id}`), description: c.intitule || undefined })),
     [conventions, autoriteId, t],
   );
-  const bailleurOptions = useMemo(
-    () =>
-      [...bailleurs]
-        .sort((x, y) => (x.nom || "").localeCompare(y.nom || "", "fr"))
-        .map((b) => ({ value: String(b.id), label: b.nom || `#${b.id}` })),
-    [bailleurs],
-  );
   const marcheOptions = useMemo(
     () =>
       [...marches]
@@ -148,7 +97,6 @@ const ArchiveCredits = () => {
     setAutoriteId("");
     setConventionId("");
     setMarcheId("");
-    setExpanded({});
   };
 
   const handleFile = async (f: File | null) => {
@@ -174,81 +122,26 @@ const ArchiveCredits = () => {
     }
   };
 
-  const openCreate = (kind: CreateKind) => {
-    if (kind === "entreprise") setForm({ raisonSociale: "", nif: preview?.nif ?? "" });
-    else if (kind === "autorite") setForm({ nom: "", sigle: "" });
-    else if (kind === "bailleur") setForm({ nom: "", details: "" });
-    else if (kind === "convention") setForm({ reference: "", intitule: "", bailleurId: "" });
-    else
-      setForm({
+  const openCreate = (kind: ArchiveCreateKind) => {
+    if (kind === "entreprise") setCreateInitial({ nif: preview?.nif ?? "" });
+    else if (kind === "marche")
+      setCreateInitial({
         numeroMarche: preview?.referenceMarche ?? "",
-        intitule: "",
         montantContratHt: preview?.montantMarche != null ? String(preview.montantMarche) : "",
-        statut: "CLOTURE",
       });
-    setCreateOpen(kind);
+    else setCreateInitial({});
+    setCreateKind(kind);
   };
 
-  const handleCreate = async () => {
-    if (!createOpen) return;
-    setCreating(true);
-    try {
-      if (createOpen === "entreprise") {
-        const created = await entrepriseApi.create({ raisonSociale: form.raisonSociale, nif: form.nif } as EntrepriseDto);
-        await loadEntreprises();
-        if (created?.id != null) setEntrepriseId(String(created.id));
-      } else if (createOpen === "autorite") {
-        const created = await autoriteContractanteApi.create({ nom: form.nom, sigle: form.sigle || undefined });
-        await loadAutorites();
-        if (created?.id != null) setAutoriteId(String(created.id));
-      } else if (createOpen === "bailleur") {
-        const created = await bailleurApi.create({ nom: form.nom, details: form.details || undefined });
-        await loadBailleurs();
-        if (created?.id != null) setField("bailleurId", String(created.id));
-      } else if (createOpen === "convention") {
-        const created = await conventionApi.create({
-          reference: form.reference,
-          intitule: form.intitule,
-          autoriteContractanteId: Number(autoriteId),
-          bailleurId: form.bailleurId ? Number(form.bailleurId) : undefined,
-        });
-        await loadConventions();
-        if (created?.id != null) setConventionId(String(created.id));
-      } else {
-        const created = await marcheApi.create({
-          conventionId: Number(conventionId),
-          numeroMarche: form.numeroMarche,
-          intitule: form.intitule || undefined,
-          montantContratHt: form.montantContratHt ? Number(form.montantContratHt) : undefined,
-          statut: (form.statut || "CLOTURE") as StatutMarche,
-        });
-        await loadMarches();
-        if (created?.id != null) setMarcheId(String(created.id));
-      }
-      toast({ title: t("archive:created_ok") });
-      setCreateOpen(null);
-    } catch (err) {
-      toast({ title: t("common:error", { defaultValue: "Erreur" }), description: formatApiErrorMessage(err, t("archive:error_create")), variant: "destructive" });
-    } finally {
-      setCreating(false);
-    }
+  const handleCreated = async (kind: ArchiveCreateKind, id: number) => {
+    await reload(kind);
+    const v = String(id);
+    if (kind === "entreprise") setEntrepriseId(v);
+    else if (kind === "autorite") setAutoriteId(v);
+    else if (kind === "convention") setConventionId(v);
+    else setMarcheId(v);
+    toast({ title: t("archive:created_ok") });
   };
-
-  const createValid = (() => {
-    switch (createOpen) {
-      case "entreprise":
-        return !!form.raisonSociale?.trim() && !!form.nif?.trim();
-      case "autorite":
-      case "bailleur":
-        return !!form.nom?.trim();
-      case "convention":
-        return !!form.reference?.trim() && !!form.intitule?.trim() && !!autoriteId;
-      case "marche":
-        return !!form.numeroMarche?.trim() && !!conventionId && !!form.montantContratHt;
-      default:
-        return false;
-    }
-  })();
 
   const anomalies = preview?.anomalies ?? [];
   // Un crédit déjà repris n'est plus bloquant : l'import complète le dossier existant.
@@ -278,25 +171,6 @@ const ArchiveCredits = () => {
   };
 
 
-  const SoldeRow = ({ label, declare, calcule }: { label: string; declare: number; calcule: number }) => {
-    const ecart = (declare ?? 0) - (calcule ?? 0);
-    const hasEcart = Math.abs(ecart) > 0.005;
-    return (
-      <TableRow>
-        <TableCell className="font-medium">{label}</TableCell>
-        <TableCell className="text-end">{money(declare)}</TableCell>
-        <TableCell className="text-end">{money(calcule)}</TableCell>
-        <TableCell className="text-end">
-          {hasEcart ? (
-            <Badge variant="destructive">{money(ecart)}</Badge>
-          ) : (
-            <span className="text-xs text-muted-foreground">{t("archive:no_ecart")}</span>
-          )}
-        </TableCell>
-      </TableRow>
-    );
-  };
-
   const Info = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <div className="space-y-0.5">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -305,23 +179,15 @@ const ArchiveCredits = () => {
   );
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Archive className="h-6 w-6 text-primary" />
-              {t("archive:title")}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">{t("archive:subtitle")}</p>
-          </div>
-          {(preview || result) && (
+        {(preview || result) && (
+          <div className="flex justify-end">
             <Button variant="outline" onClick={reset}>
               <RotateCcw className="h-4 w-4 me-2" />
               {t("archive:reset")}
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Étape 1 */}
         <Card>
@@ -414,20 +280,7 @@ const ArchiveCredits = () => {
 
                 <div>
                   <h3 className="text-sm font-semibold mb-3">{t("archive:soldes_compare")}</h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("archive:solde")}</TableHead>
-                        <TableHead className="text-end">{t("archive:declare")}</TableHead>
-                        <TableHead className="text-end">{t("archive:calcule")}</TableHead>
-                        <TableHead className="text-end">{t("archive:ecart")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <SoldeRow label={t("archive:solde_douanier")} declare={preview.soldeDouanierDeclare} calcule={preview.soldeDouanierCalcule} />
-                      <SoldeRow label={t("archive:solde_interieur")} declare={preview.soldeInterieurDeclare} calcule={preview.soldeInterieurCalcule} />
-                    </TableBody>
-                  </Table>
+                  <ArchiveSoldesTable detail={soldesDetail({ ...preview, sortieTransfert: preview.totalTransfertSortant ?? preview.transfertCredit })} />
                 </div>
 
                 <Alert variant={anomalies.length ? "destructive" : "default"}>
@@ -455,6 +308,7 @@ const ArchiveCredits = () => {
                         <div className="flex-1 min-w-0">
                           <SearchableSelect
                             options={entrepriseOptions}
+                            loading={refsLoading.entreprise}
                             value={entrepriseId}
                             onValueChange={setEntrepriseId}
                             placeholder={t("archive:select_entreprise")}
@@ -478,6 +332,7 @@ const ArchiveCredits = () => {
                         <div className="flex-1 min-w-0">
                           <SearchableSelect
                             options={autoriteOptions}
+                            loading={refsLoading.autorite}
                             value={autoriteId}
                             onValueChange={(v) => {
                               setAutoriteId(v);
@@ -505,6 +360,7 @@ const ArchiveCredits = () => {
                         <div className="flex-1 min-w-0">
                           <SearchableSelect
                             options={conventionOptions}
+                            loading={refsLoading.convention}
                             value={conventionId}
                             onValueChange={(v) => {
                               setConventionId(v);
@@ -536,6 +392,7 @@ const ArchiveCredits = () => {
                         <div className="flex-1 min-w-0">
                           <SearchableSelect
                             options={marcheOptions}
+                            loading={refsLoading.marche}
                             value={marcheId}
                             onValueChange={setMarcheId}
                             placeholder={t("archive:select_marche")}
@@ -568,93 +425,7 @@ const ArchiveCredits = () => {
 
                 <div>
                   <h3 className="text-sm font-semibold mb-3">{t("archive:utilisations")}</h3>
-                  {preview.utilisations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t("archive:no_utilisations")}</p>
-                  ) : (
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-8" />
-                            <TableHead>{t("archive:date")}</TableHead>
-                            <TableHead>{t("archive:libelle")}</TableHead>
-                            <TableHead>{t("archive:quittance")}</TableHead>
-                            <TableHead>{t("archive:type")}</TableHead>
-                            <TableHead className="text-end">{t("archive:montant")}</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {preview.utilisations.map((u, idx) => {
-                            const open = !!expanded[idx];
-                            const hasLignes = (u.lignesTaxe?.length ?? 0) > 0;
-                            return (
-                              <>
-                                <TableRow key={`u-${idx}`}>
-                                  <TableCell>
-                                    {hasLignes && (
-                                      <button
-                                        type="button"
-                                        aria-label={t("archive:detail_taxes")}
-                                        onClick={() => setExpanded((p) => ({ ...p, [idx]: !p[idx] }))}
-                                        className="rounded p-1 hover:bg-muted"
-                                      >
-                                        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                      </button>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>{u.date ? formatDate(u.date) : "—"}</TableCell>
-                                  <TableCell className="font-medium">{u.libelle}</TableCell>
-                                  <TableCell>{u.numeroQuittance || "—"}</TableCell>
-                                  <TableCell>
-                                    <Badge variant={u.douaniere ? "default" : "secondary"}>
-                                      {u.douaniere ? t("archive:douane") : t("archive:tva_interieure")}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-end">{money(u.montant)}</TableCell>
-                                </TableRow>
-                                {open && hasLignes && (
-                                  <TableRow key={`d-${idx}`}>
-                                    <TableCell colSpan={6} className="bg-muted/40">
-                                      <div className="p-2 space-y-2">
-                                        <div className="flex gap-6 text-xs text-muted-foreground">
-                                          <span>{t("archive:total_pris_en_charge")} : <strong>{money(u.totalPrisEnCharge)}</strong></span>
-                                          <span>{t("archive:total_a_payer")} : <strong>{money(u.totalAPayer)}</strong></span>
-                                        </div>
-                                        <Table>
-                                          <TableHeader>
-                                            <TableRow>
-                                              <TableHead>{t("archive:code_taxe")}</TableHead>
-                                              <TableHead>{t("archive:denomination")}</TableHead>
-                                              <TableHead className="text-end">{t("archive:valeur")}</TableHead>
-                                              <TableHead>{t("archive:affectation")}</TableHead>
-                                            </TableRow>
-                                          </TableHeader>
-                                          <TableBody>
-                                            {u.lignesTaxe.map((l, li) => (
-                                              <TableRow key={li}>
-                                                <TableCell className="font-mono text-xs">{l.codeTaxe}</TableCell>
-                                                <TableCell>{l.denominationTaxe || "—"}</TableCell>
-                                                <TableCell className="text-end">{money(l.valeur)}</TableCell>
-                                                <TableCell>
-                                                  <Badge variant={l.affectation === "AU_CI" ? "default" : "outline"}>
-                                                    {l.affectation === "AU_CI" ? t("archive:au_ci") : t("archive:a_payer")}
-                                                  </Badge>
-                                                </TableCell>
-                                              </TableRow>
-                                            ))}
-                                          </TableBody>
-                                        </Table>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                              </>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
+                  <ArchiveUtilisationsTable utilisations={preview.utilisations} />
                 </div>
               </CardContent>
             </Card>
@@ -761,125 +532,45 @@ const ArchiveCredits = () => {
           );
         })()}
 
-        {/* Création d'entité manquante */}
-        <Dialog open={createOpen !== null} onOpenChange={(o) => !o && setCreateOpen(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{createOpen ? t(`archive:create_${createOpen}`) : ""}</DialogTitle>
-              <DialogDescription>{t("archive:create_desc")}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              {createOpen === "entreprise" && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_raison_sociale")} *</Label>
-                    <Input value={form.raisonSociale ?? ""} onChange={(e) => setField("raisonSociale", e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:nif")} *</Label>
-                    <Input value={form.nif ?? ""} onChange={(e) => setField("nif", e.target.value)} />
-                  </div>
-                </>
-              )}
-              {(createOpen === "autorite" || createOpen === "bailleur") && (
-                <div className="space-y-1.5">
-                  <Label>{t("archive:f_nom")} *</Label>
-                  <Input value={form.nom ?? ""} onChange={(e) => setField("nom", e.target.value)} />
-                </div>
-              )}
-              {createOpen === "autorite" && (
-                <div className="space-y-1.5">
-                  <Label>{t("archive:f_sigle")}</Label>
-                  <Input value={form.sigle ?? ""} onChange={(e) => setField("sigle", e.target.value)} />
-                </div>
-              )}
-              {createOpen === "convention" && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_reference")} *</Label>
-                    <Input value={form.reference ?? ""} onChange={(e) => setField("reference", e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_intitule")} *</Label>
-                    <Input value={form.intitule ?? ""} onChange={(e) => setField("intitule", e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_bailleur")}</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1 min-w-0">
-                        <SearchableSelect
-                          options={bailleurOptions}
-                          value={form.bailleurId ?? ""}
-                          onValueChange={(v) => setField("bailleurId", v)}
-                          placeholder={t("archive:select_bailleur")}
-                          clearable
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const keep = { ...form };
-                          setForm({ nom: "", details: "" });
-                          setCreateOpen("bailleur");
-                          // conserve les valeurs convention pour un retour manuel
-                          void keep;
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-              {createOpen === "marche" && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_numero_marche")} *</Label>
-                    <Input value={form.numeroMarche ?? ""} onChange={(e) => setField("numeroMarche", e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_intitule")}</Label>
-                    <Input value={form.intitule ?? ""} onChange={(e) => setField("intitule", e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_montant_ht")} *</Label>
-                    <Input
-                      type="number" step="0.01"
-                      value={form.montantContratHt ?? ""}
-                      onChange={(e) => setField("montantContratHt", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("archive:f_statut")}</Label>
-                    <Select value={form.statut ?? "CLOTURE"} onValueChange={(v) => setField("statut", v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MARCHE_STATUT_VALUES.map((s) => (
-                          <SelectItem key={s} value={s}>{tStatutMarche(s)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateOpen(null)} disabled={creating}>
-                {t("common:cancel", { defaultValue: "Annuler" })}
-              </Button>
-              <Button onClick={() => void handleCreate()} disabled={!createValid || creating}>
-                {creating && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-                {t("archive:create")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ArchiveCreateDialog
+          kind={createKind}
+          initial={createInitial}
+          autoriteId={autoriteId ? Number(autoriteId) : null}
+          conventionId={conventionId ? Number(conventionId) : null}
+          onClose={() => setCreateKind(null)}
+          onCreated={handleCreated}
+        />
       </div>
+  );
+};
 
+type Onglet = "unique" | "periode";
+
+/** Reprise d'archive : relevé unitaire ou fichier de période (lots), côte à côte. */
+const ArchiveCredits = () => {
+  const { t } = useTranslation(["archive", "common"]);
+  const [params, setParams] = useSearchParams();
+  const onglet: Onglet = params.get("onglet") === "periode" ? "periode" : "unique";
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Archive className="h-6 w-6 text-primary" />
+            {t("archive:title")}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{onglet === "periode" ? t("archive:lots.subtitle") : t("archive:subtitle")}</p>
+        </div>
+        <Tabs value={onglet} onValueChange={(v) => setParams(v === "periode" ? { onglet: "periode" } : {}, { replace: true })}>
+          <TabsList>
+            <TabsTrigger value="unique">{t("archive:tabs.unique")}</TabsTrigger>
+            <TabsTrigger value="periode">{t("archive:tabs.periode")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="unique" className="mt-6"><ArchiveCreditUnique /></TabsContent>
+          <TabsContent value="periode" className="mt-6"><ArchiveLotsTab /></TabsContent>
+        </Tabs>
+      </div>
     </DashboardLayout>
   );
 };

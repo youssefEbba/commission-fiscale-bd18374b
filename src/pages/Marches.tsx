@@ -144,7 +144,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null });
+    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null, dureeExecution: "" });
     setConvIds([]);
     setDialogOpen(true);
     loadDemandes();
@@ -163,6 +163,7 @@ const Marches = () => {
       deviseOrigine: m.deviseOrigine || "MRU",
       statut: m.statut,
       typeMarche: m.typeMarche ?? null,
+      dureeExecution: m.dureeExecution ?? "",
     });
     setConvIds(marcheConventionIds(m));
     setDialogOpen(true);
@@ -314,6 +315,11 @@ const Marches = () => {
     }
     if (payload.montantContratHt == null) delete payload.montantContratHt;
     if (payload.montantContratTtc == null) delete payload.montantContratTtc;
+    // Texte libre : vide = effacé en modification, omis à la création.
+    const duree = payload.dureeExecution?.trim();
+    if (duree) payload.dureeExecution = duree;
+    else if (editing) payload.dureeExecution = null;
+    else delete payload.dureeExecution;
     if (!payload.deviseOrigine) payload.deviseOrigine = "MRU";
     if (!payload.conventionId) {
       delete payload.conventionId;
@@ -643,6 +649,10 @@ const Marches = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("marches:fields.duree_execution")}</Label>
+              <Input maxLength={100} value={form.dureeExecution ?? ""} onChange={e => setForm(f => ({ ...f, dureeExecution: e.target.value }))} placeholder={t("marches:form.duree_execution_placeholder")} />
             </div>
             <div className="space-y-2">
               <Label>{t("marches:type_marche.type_marche")}</Label>

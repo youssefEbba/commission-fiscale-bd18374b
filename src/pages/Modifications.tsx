@@ -15,6 +15,7 @@ import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { FilePen, Search, RefreshCw, Loader2, Filter, Plus } from "lucide-react";
 import AvenantStatutBadge from "@/components/avenants/AvenantStatutBadge";
 import AvenantCreateDialog from "@/components/avenants/AvenantCreateDialog";
+import AvenantMarcheLink from "@/components/avenants/AvenantMarcheLink";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutAvenant, tTypeAvenant } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
@@ -54,7 +55,7 @@ const Modifications = () => {
   // Ordre serveur conservé : filtres seulement, aucun tri.
   const q = search.trim().toLowerCase();
   const filtered = data.filter((a) => {
-    const matchSearch = !q || [a.numero, a.certificatReference, a.certificatNumero, a.entrepriseNom, a.autoriteContractanteNom, a.motif]
+    const matchSearch = !q || [a.numero, a.marcheNumero, a.marcheIntitule, a.certificatReference, a.certificatNumero, a.entrepriseNom, a.autoriteContractanteNom, a.motif]
       .some((v) => (v || "").toLowerCase().includes(q));
     return matchSearch
       && (filterStatut === "ALL" || a.statut === filterStatut)
@@ -123,6 +124,7 @@ const Modifications = () => {
                   <TableRow>
                     <RowNumberHead />
                     <TableHead>{t("modifications:list.columns.numero")}</TableHead>
+                    <TableHead>{t("modifications:list.columns.marche")}</TableHead>
                     <TableHead>{t("modifications:list.columns.certificat")}</TableHead>
                     <TableHead>{t("modifications:list.columns.entreprise")}</TableHead>
                     <TableHead>{t("modifications:list.columns.type")}</TableHead>
@@ -133,11 +135,11 @@ const Modifications = () => {
                 <TableBody>
                   {loadError ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-destructive">{loadError}</TableCell>
+                      <TableCell colSpan={8} className="text-center py-8 text-destructive">{loadError}</TableCell>
                     </TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("modifications:list.empty")}</TableCell>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t("modifications:list.empty")}</TableCell>
                     </TableRow>
                   ) : filtered.map((a, idx) => (
                     <ClickableTableRow key={a.id} to={`/dashboard/modifications/${a.id}`}>
@@ -145,6 +147,7 @@ const Modifications = () => {
                       <TableCell className="font-medium">
                         <Link to={`/dashboard/modifications/${a.id}`} className="text-primary hover:underline">{avenantRef(a)}</Link>
                       </TableCell>
+                      <TableCell className="text-sm"><AvenantMarcheLink avenant={a} /></TableCell>
                       <TableCell className="text-xs">{a.certificatReference || a.certificatNumero || `#${a.certificatCreditId}`}</TableCell>
                       <TableCell className="text-sm">{a.entrepriseNom || "—"}</TableCell>
                       <TableCell className="text-sm">{tTypeAvenant(a.type)}</TableCell>
