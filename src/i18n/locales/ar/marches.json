@@ -55,7 +55,8 @@
     "type": "النوع",
     "reference": "المرجع",
     "bailleur": "الممول",
-    "autorite": "السلطة المتعاقدة"
+    "autorite": "السلطة المتعاقدة",
+    "duree_execution": "مدة التنفيذ"
   },
   "form": {
     "title_edit": "تعديل",
@@ -96,7 +97,8 @@
     "convention_make_principale": "جعلها رئيسية",
     "convention_remove": "إزالة",
     "convention_create": "إنشاء اتفاقية",
-    "conventions_hint": "الاتفاقية الأولى في القائمة هي الاتفاقية الرئيسية للصفقة."
+    "conventions_hint": "الاتفاقية الأولى في القائمة هي الاتفاقية الرئيسية للصفقة.",
+    "duree_execution_placeholder": "مثال: 07 أشهر"
   },
   "assign": {
     "title": "إدارة الممثلين",

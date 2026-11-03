@@ -171,6 +171,7 @@ const MarcheDetail = () => {
             <Field label={t("marches:fields.intitule")} value={marche.intitule} />
             <Field label={t("marches:type_marche.type_marche")} value={marche.typeMarche ? t(`marches:type_marche.${marche.typeMarche}`) : t("marches:type_marche.non_renseigne")} />
             <Field label={t("marches:fields.date_signature")} value={formatDate(marche.dateSignature)} />
+            <Field label={t("marches:fields.duree_execution")} value={marche.dureeExecution || "—"} />
             <Field
               label={t("marches:fields.montant_ht")}
               value={formatAmount(marche.montantContratHt, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}

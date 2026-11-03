@@ -61,6 +61,7 @@ import VerifierCertificat from "./pages/VerifierCertificat";
 import VerificationPublique from "./pages/VerificationPublique";
 import SuiviRattachement from "./pages/SuiviRattachement";
 import ArchiveCredits from "./pages/ArchiveCredits";
+import ArchiveLotDetail from "./pages/ArchiveLotDetail";
 import ReferentielSecteurs from "./pages/ReferentielSecteurs";
 import SatisfactionDashboard from "./pages/SatisfactionDashboard";
 import SatisfactionEnquetes from "./pages/SatisfactionEnquetes";
@@ -268,6 +269,11 @@ const App = () => (
             <Route path="/dashboard/archive/credits" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <ArchiveCredits />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/archive/lots/:id" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <ArchiveLotDetail />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/referentiel-secteurs" element={

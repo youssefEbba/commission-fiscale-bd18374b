@@ -1192,6 +1192,8 @@ export interface MarcheDto {
   /** Autorité contractante qui porte le marché. */
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
+  /** Durée d'exécution en texte libre (« 07 MOIS »). */
+  dureeExecution?: string | null;
 }
 
 export type TypeMarche = "FOURNITURE" | "PRESTATION" | "TRAVAUX";
@@ -1221,6 +1223,8 @@ export interface CreateMarcheRequest {
   statut?: StatutMarche;
   /** Facultatif : absent = le serveur conserve la valeur existante. */
   typeMarche?: TypeMarche | null;
+  /** Durée d'exécution en texte libre (« 07 MOIS »). */
+  dureeExecution?: string | null;
 }
 
 /**
@@ -3642,6 +3646,136 @@ export const archiveCreditApi = {
   },
   codesTaxe: () => apiFetch<string[]>("/archive/credits/codes-taxe"),
 };
+
+// Reprise d'un fichier de période (plusieurs crédits) : le serveur garde le fichier comme « lot ».
+export type ArchiveLotCreditStatut = "A_COMPLETER" | "PRET" | "IMPORTE" | "ERREUR" | "IGNORE";
+export const ARCHIVE_LOT_STATUTS: ArchiveLotCreditStatut[] = ["A_COMPLETER", "PRET", "IMPORTE", "ERREUR", "IGNORE"];
+export type ArchiveLotManquant = "ENTREPRISE" | "AUTORITE" | "CONVENTION" | "MARCHE" | "ANOMALIES";
+/** Origine d'un rattachement ; tout sauf MANUEL est une proposition du serveur. */
+export type ArchiveLotSource = "NIF" | "REFERENCE" | "MARCHE" | "CODE_AC" | "CONVENTION_UNIQUE" | "CREDIT_EXISTANT" | "MANUEL" | "CREE";
+
+export interface ArchiveLotCreditDto {
+  id: number;
+  ordre: number;
+  /** Lignes Excel du crédit dans le fichier. */
+  ligneDebut: number;
+  ligneFin: number;
+  numeroCredit: string | null;
+  nif: string | null;
+  referenceMarche: string | null;
+  numeroMarche: string | null;
+  dateMarche: string | null;
+  dureeMarche: string | null;
+  dateCredit: string | null;
+  montantMarche: number | null;
+  montantCreditImpot: number | null;
+  creditDouanier: number | null;
+  creditInterieur: number | null;
+  transfertCredit: number | null;
+  soldeDouanierCalcule: number | null;
+  soldeInterieurCalcule: number | null;
+  soldeDouanierDeclare: number | null;
+  soldeInterieurDeclare: number | null;
+  nbUtilisations: number;
+  anomalies: string[];
+  entrepriseId: number | null;
+  entrepriseRaisonSociale: string | null;
+  sourceEntreprise: ArchiveLotSource | null;
+  autoriteContractanteId: number | null;
+  autoriteContractanteNom: string | null;
+  sourceAutorite: ArchiveLotSource | null;
+  conventionId: number | null;
+  conventionIntitule: string | null;
+  sourceConvention: ArchiveLotSource | null;
+  marcheId: number | null;
+  marcheNumero: string | null;
+  sourceMarche: ArchiveLotSource | null;
+  creerMarche: boolean;
+  confirmerMalgreAnomalies: boolean;
+  raisonSocialeDgi: string | null;
+  nomCommercialDgi: string | null;
+  etatDgi: string | null;
+  inconnuDgi: boolean;
+  /** Un certificat ARCHIVE- existe : l'import le complète. */
+  dejaRepris: boolean;
+  statut: ArchiveLotCreditStatut;
+  manquants: ArchiveLotManquant[];
+  certificatId: number | null;
+  certificatReference: string | null;
+  messageErreur: string | null;
+  dateImport: string | null;
+}
+
+export interface ArchiveLotDto {
+  id: number;
+  nomFichier: string;
+  dateAnalyse: string;
+  analyseParNom: string | null;
+  nbCredits: number;
+  parStatut: Partial<Record<ArchiveLotCreditStatut, number>>;
+  nifsSansEntreprise: number;
+  nifsAInterrogerDgi: number;
+  /** Fichier déjà analysé : le lot existant est renvoyé. */
+  dejaAnalyse: boolean;
+  /** `null` dans la liste des lots. */
+  credits: ArchiveLotCreditDto[] | null;
+}
+
+/** Cible : `creditIds` ou `nif` (tous les crédits non importés du NIF). Champ absent = inchangé. */
+export interface ArchiveLotAffectationRequest {
+  creditIds?: number[];
+  nif?: string;
+  entrepriseId?: number;
+  autoriteContractanteId?: number;
+  conventionId?: number;
+  marcheId?: number;
+  /** true retire le marché choisi : il sera créé depuis le relevé. */
+  creerMarche?: boolean;
+  confirmerMalgreAnomalies?: boolean;
+  /** true = écarter, false = réintégrer. */
+  ignorer?: boolean;
+}
+
+export interface ArchiveLotImportResultatDto {
+  importes: number;
+  erreurs: number;
+  nonPrets: number;
+  credits: ArchiveLotCreditDto[];
+}
+
+export interface VerificationNifDto {
+  nif: string;
+  trouve: boolean;
+  raisonSociale: string | null;
+  nomCommercial: string | null;
+  etat: string | null;
+  dateMiseAJour: string | null;
+}
+
+export const archiveLotApi = {
+  analyser: (fichier: File) => {
+    const fd = new FormData();
+    fd.append("fichier", fichier);
+    return apiFetch<ArchiveLotDto>("/archive/lots", { method: "POST", rawBody: fd });
+  },
+  getAll: () => apiFetch<ArchiveLotDto[]>("/archive/lots"),
+  getById: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}`),
+  getCredit: (id: number, creditId: number) =>
+    apiFetch<{ credit: ArchiveLotCreditDto; releve: ArchiveCreditPreviewDto }>(`/archive/lots/${id}/credits/${creditId}`),
+  affecter: (id: number, body: ArchiveLotAffectationRequest) =>
+    apiFetch<ArchiveLotDto>(`/archive/lots/${id}/credits`, { method: "PATCH", body }),
+  rapprocher: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}/rapprocher`, { method: "POST" }),
+  /** 20 NIF par appel : relancer tant que `nifsAInterrogerDgi > 0`. */
+  interrogerDgi: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}/dgi`, { method: "POST" }),
+  /** `creditIds` absent = tous les crédits PRET. */
+  importer: (id: number, creditIds?: number[]) =>
+    apiFetch<ArchiveLotImportResultatDto>(`/archive/lots/${id}/importer`, { method: "POST", body: creditIds ? { creditIds } : {} }),
+  delete: (id: number) => apiFetch<void>(`/archive/lots/${id}`, { method: "DELETE" }),
+};
+
+/** Fiche DGI d'un NIF (archive.import ou entreprise.create) ; 503 DGI_SERVICE_UNAVAILABLE / FEATURE_DISABLED si indisponible. */
+export const verifierNifDgi = (nif: string) =>
+  apiFetch<VerificationNifDto>(`/entreprises/verification-dgi?nif=${encodeURIComponent(nif)}`);
 
 
 // ============= Paramètres applicatifs =============
