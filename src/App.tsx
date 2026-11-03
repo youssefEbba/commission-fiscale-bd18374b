@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,72 +6,76 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import Dashboard from "./pages/Dashboard";
-// ReferentielProjets supprimé: convention = projet
-import Conventions from "./pages/Conventions";
-import Demandes from "./pages/Demandes";
-import Certificats from "./pages/Certificats";
-import DemandesMiseEnPlace from "./pages/DemandesMiseEnPlace";
-import Utilisations from "./pages/Utilisations";
-import Utilisateurs from "./pages/Utilisateurs";
-import MonProfil from "./pages/MonProfil";
-import Signatures from "./pages/Signatures";
-import Parametres from "./pages/Parametres";
-import Roles from "./pages/Roles";
-import AuditLogs from "./pages/AuditLogs";
-import Simulation from "./pages/Simulation";
-import Register from "./pages/Register";
-import CorrectionDouaniere from "./pages/CorrectionDouaniere";
-  // import AssistanceIA from "./pages/AssistanceIA";
-  // import ChatbotDGD from "./pages/ChatbotDGD";
-import ExtractionDGD from "./pages/ExtractionDGD";
-import Marches from "./pages/Marches";
-import Delegues from "./pages/Delegues";
-import GedConfiguration from "./pages/GedConfiguration";
-import GedDossiers from "./pages/GedDossiers";
-import NotFound from "./pages/NotFound";
-import Transferts from "./pages/Transferts";
-import TransfertDetail from "./pages/TransfertDetail";
-import SousTraitance from "./pages/SousTraitance";
-import Presentation from "./pages/Presentation";
-import Reporting from "./pages/Reporting";
-import CreditFiche from "./pages/CreditFiche";
-import CertificatDetail from "./pages/CertificatDetail";
-import Cloture from "./pages/Cloture";
-import Modifications from "./pages/Modifications";
-import AvenantDetail from "./pages/AvenantDetail";
-import DemandeDetail from "./pages/DemandeDetail";
-import MiseEnPlaceDetail from "./pages/MiseEnPlaceDetail";
-import UtilisationDetail from "./pages/UtilisationDetail";
-import CommissionRelais from "./pages/CommissionRelais";
-import ReferentielTaxes from "./pages/ReferentielTaxes";
-import Groupements from "./pages/Groupements";
-import GroupementDetail from "./pages/GroupementDetail";
-import EntrepriseDetail from "./pages/EntrepriseDetail";
-import Entreprises from "./pages/Entreprises";
-import AutoritesContractantes from "./pages/AutoritesContractantes";
-import AutoriteDetail from "./pages/AutoriteDetail";
-import DemandesRattachement from "./pages/DemandesRattachement";
-import DemandeRattachementDetail from "./pages/DemandeRattachementDetail";
-import ConventionDetail from "./pages/ConventionDetail";
-import MarcheDetail from "./pages/MarcheDetail";
-import VerifierCertificat from "./pages/VerifierCertificat";
-import VerificationPublique from "./pages/VerificationPublique";
-import SuiviRattachement from "./pages/SuiviRattachement";
-import ArchiveCredits from "./pages/ArchiveCredits";
-import ArchiveLotDetail from "./pages/ArchiveLotDetail";
-import ReferentielSecteurs from "./pages/ReferentielSecteurs";
-import SatisfactionDashboard from "./pages/SatisfactionDashboard";
-import SatisfactionEnquetes from "./pages/SatisfactionEnquetes";
-import SatisfactionEnqueteReponse from "./pages/SatisfactionEnqueteReponse";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { DocumentTaskIndicator } from "@/components/documents/DocumentTaskIndicator";
 import { I18nBootstrap } from "@/i18n/bootstrap";
 
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Conventions = lazy(() => import("./pages/Conventions"));
+const Demandes = lazy(() => import("./pages/Demandes"));
+const Certificats = lazy(() => import("./pages/Certificats"));
+const DemandesMiseEnPlace = lazy(() => import("./pages/DemandesMiseEnPlace"));
+const Utilisations = lazy(() => import("./pages/Utilisations"));
+const Utilisateurs = lazy(() => import("./pages/Utilisateurs"));
+const MonProfil = lazy(() => import("./pages/MonProfil"));
+const Signatures = lazy(() => import("./pages/Signatures"));
+const Parametres = lazy(() => import("./pages/Parametres"));
+const Roles = lazy(() => import("./pages/Roles"));
+const AuditLogs = lazy(() => import("./pages/AuditLogs"));
+const Simulation = lazy(() => import("./pages/Simulation"));
+const Register = lazy(() => import("./pages/Register"));
+const CorrectionDouaniere = lazy(() => import("./pages/CorrectionDouaniere"));
+const ExtractionDGD = lazy(() => import("./pages/ExtractionDGD"));
+const Marches = lazy(() => import("./pages/Marches"));
+const Delegues = lazy(() => import("./pages/Delegues"));
+const GedConfiguration = lazy(() => import("./pages/GedConfiguration"));
+const GedDossiers = lazy(() => import("./pages/GedDossiers"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Transferts = lazy(() => import("./pages/Transferts"));
+const TransfertDetail = lazy(() => import("./pages/TransfertDetail"));
+const SousTraitance = lazy(() => import("./pages/SousTraitance"));
+const Presentation = lazy(() => import("./pages/Presentation"));
+const Reporting = lazy(() => import("./pages/Reporting"));
+const CreditFiche = lazy(() => import("./pages/CreditFiche"));
+const CertificatDetail = lazy(() => import("./pages/CertificatDetail"));
+const Cloture = lazy(() => import("./pages/Cloture"));
+const Modifications = lazy(() => import("./pages/Modifications"));
+const AvenantDetail = lazy(() => import("./pages/AvenantDetail"));
+const DemandeDetail = lazy(() => import("./pages/DemandeDetail"));
+const MiseEnPlaceDetail = lazy(() => import("./pages/MiseEnPlaceDetail"));
+const UtilisationDetail = lazy(() => import("./pages/UtilisationDetail"));
+const CommissionRelais = lazy(() => import("./pages/CommissionRelais"));
+const ReferentielTaxes = lazy(() => import("./pages/ReferentielTaxes"));
+const Groupements = lazy(() => import("./pages/Groupements"));
+const GroupementDetail = lazy(() => import("./pages/GroupementDetail"));
+const EntrepriseDetail = lazy(() => import("./pages/EntrepriseDetail"));
+const Entreprises = lazy(() => import("./pages/Entreprises"));
+const AutoritesContractantes = lazy(() => import("./pages/AutoritesContractantes"));
+const AutoriteDetail = lazy(() => import("./pages/AutoriteDetail"));
+const DemandesRattachement = lazy(() => import("./pages/DemandesRattachement"));
+const DemandeRattachementDetail = lazy(() => import("./pages/DemandeRattachementDetail"));
+const ConventionDetail = lazy(() => import("./pages/ConventionDetail"));
+const MarcheDetail = lazy(() => import("./pages/MarcheDetail"));
+const VerifierCertificat = lazy(() => import("./pages/VerifierCertificat"));
+const VerificationPublique = lazy(() => import("./pages/VerificationPublique"));
+const SuiviRattachement = lazy(() => import("./pages/SuiviRattachement"));
+const ArchiveCredits = lazy(() => import("./pages/ArchiveCredits"));
+const ArchiveLotDetail = lazy(() => import("./pages/ArchiveLotDetail"));
+const ReferentielSecteurs = lazy(() => import("./pages/ReferentielSecteurs"));
+const SatisfactionDashboard = lazy(() => import("./pages/SatisfactionDashboard"));
+const SatisfactionEnquetes = lazy(() => import("./pages/SatisfactionEnquetes"));
+const SatisfactionEnqueteReponse = lazy(() => import("./pages/SatisfactionEnqueteReponse"));
+
 const queryClient = new QueryClient();
+
+const PageFallback = () => (
+  <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+    Chargement…
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -82,6 +87,7 @@ const App = () => (
         <ErrorDialog />
         <DocumentTaskIndicator />
         <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -103,7 +109,6 @@ const App = () => (
                 <ConventionDetail />
               </ProtectedRoute>
             } />
-            {/* Référentiel Projet supprimé: convention = projet */}
             <Route path="/dashboard/demandes" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Demandes />
@@ -222,25 +227,11 @@ const App = () => (
                 <CorrectionDouaniere />
               </ProtectedRoute>
             } />
-            {/* Route assistance-ia désactivée — sera activée dans une version ultérieure
-            <Route path="/dashboard/assistance-ia/:id" element={
-              <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
-                <AssistanceIA />
-              </ProtectedRoute>
-            } />
-            */}
             <Route path="/dashboard/extraction-dgd/:id" element={
               <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
                 <ExtractionDGD />
               </ProtectedRoute>
             } />
-            {/* Route chatbot-dgd désactivée — sera activée dans une version ultérieure
-            <Route path="/dashboard/chatbot-dgd/:id" element={
-              <ProtectedRoute allowedRoles={["DGD", "ADMIN_SI"]}>
-                <ChatbotDGD />
-              </ProtectedRoute>
-            } />
-            */}
             <Route path="/dashboard/relais" element={
               <ProtectedRoute allowedRoles={["COMMISSION_RELAIS"]}>
                 <CommissionRelais />
@@ -291,7 +282,6 @@ const App = () => (
                 <SatisfactionEnquetes />
               </ProtectedRoute>
             } />
-            {/* Réponse à une enquête : tout profil ciblé (le serveur répond 403 sinon). */}
             <Route path="/dashboard/satisfaction/enquetes/:id" element={<ProtectedRoute><SatisfactionEnqueteReponse /></ProtectedRoute>} />
             <Route path="/dashboard/referentiel-taxes" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
@@ -300,6 +290,7 @@ const App = () => (
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
       </I18nBootstrap>

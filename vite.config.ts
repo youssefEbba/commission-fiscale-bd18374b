@@ -5,24 +5,19 @@ import path from "path";
 export default defineConfig(() => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 5173,
     hmr: {
       overlay: false,
     },
-    // Aperçu : relaie /api et /ws vers le backend exposé par ngrok.
     proxy: {
       "/api": {
-        target: "https://stateless-dryadic-marylouise.ngrok-free.dev",
+        target: "http://127.0.0.1:8081",
         changeOrigin: true,
-        secure: true,
-        headers: { "ngrok-skip-browser-warning": "true" },
       },
       "/ws": {
-        target: "https://stateless-dryadic-marylouise.ngrok-free.dev",
+        target: "http://127.0.0.1:8081",
         changeOrigin: true,
-        secure: true,
         ws: true,
-        headers: { "ngrok-skip-browser-warning": "true" },
       },
     },
   },
@@ -31,6 +26,15 @@ export default defineConfig(() => ({
     sourcemap: false,
   },
   plugins: [react()],
+  optimizeDeps: {
+    include: [
+      "i18next",
+      "i18next-browser-languagedetector",
+      "react-i18next",
+      "react-router-dom",
+      "@tanstack/react-query",
+    ],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

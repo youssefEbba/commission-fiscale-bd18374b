@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -22,12 +24,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - name: SonarQube (optionnel)
+      - name: SonarQube
         if: ${{ vars.ENABLE_SONAR == 'true' }}
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: npx --yes sonarqube-scanner
+        with:
+          args: ${{ vars.SONAR_ORGANIZATION != '' && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
       - name: Snyk (optionnel)
         if: ${{ vars.ENABLE_SNYK == 'true' }}
         uses: snyk/actions/node@master
