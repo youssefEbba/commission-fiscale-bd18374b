@@ -492,6 +492,120 @@ export const archiveCreditApi = {
   codesTaxe: () => apiFetch<string[]>("/archive/credits/codes-taxe"),
 };
 
+export type ArchiveLotCreditStatut = "A_COMPLETER" | "PRET" | "IMPORTE" | "ERREUR" | "IGNORE";
+export const ARCHIVE_LOT_STATUTS: readonly ArchiveLotCreditStatut[] = [
+  "A_COMPLETER", "PRET", "IMPORTE", "ERREUR", "IGNORE",
+];
+export type ArchiveLotSource = "NIF" | "CREE" | "MANUEL" | string;
+
+export interface ArchiveLotCreditDto {
+  id: number;
+  ordre: number;
+  ligneDebut: number | null;
+  ligneFin: number | null;
+  numeroCredit: string | null;
+  nif: string | null;
+  referenceMarche: string | null;
+  numeroMarche: string | null;
+  dateMarche: string | null;
+  dureeMarche: string | null;
+  dateCredit: string | null;
+  montantMarche: number | null;
+  montantCreditImpot: number | null;
+  creditDouanier: number | null;
+  creditInterieur: number | null;
+  transfertCredit: number | null;
+  totalUtilisationsDouane?: number | null;
+  totalUtilisationsInterieur?: number | null;
+  sortieTransfert?: number | null;
+  soldeDouanierCalcule: number | null;
+  soldeInterieurCalcule: number | null;
+  soldeDouanierDeclare: number | null;
+  soldeInterieurDeclare: number | null;
+  nbUtilisations: number;
+  anomalies: string[];
+  entrepriseId: number | null;
+  entrepriseRaisonSociale: string | null;
+  sourceEntreprise: ArchiveLotSource | null;
+  autoriteContractanteId: number | null;
+  autoriteContractanteNom: string | null;
+  sourceAutorite: ArchiveLotSource | null;
+  conventionId: number | null;
+  conventionIntitule: string | null;
+  sourceConvention: ArchiveLotSource | null;
+  marcheId: number | null;
+  marcheNumero: string | null;
+  sourceMarche: ArchiveLotSource | null;
+  creerMarche: boolean;
+  confirmerMalgreAnomalies: boolean;
+  raisonSocialeDgi: string | null;
+  nomCommercialDgi: string | null;
+  etatDgi: string | null;
+  inconnuDgi: boolean;
+  dejaRepris: boolean;
+  statut: ArchiveLotCreditStatut;
+  manquants: string[];
+  certificatId: number | null;
+  certificatReference: string | null;
+  messageErreur: string | null;
+  dateImport: string | null;
+}
+
+export interface ArchiveLotDto {
+  id: number;
+  nomFichier: string;
+  dateAnalyse?: string;
+  analyseParNom?: string | null;
+  nbCredits: number;
+  parStatut?: Partial<Record<ArchiveLotCreditStatut, number>>;
+  nifsSansEntreprise: number;
+  nifsAInterrogerDgi: number;
+  dejaAnalyse?: boolean;
+  credits?: ArchiveLotCreditDto[];
+}
+
+export interface ArchiveLotAffectationRequest {
+  creditIds?: number[];
+  nif?: string;
+  entrepriseId?: number | null;
+  autoriteContractanteId?: number | null;
+  conventionId?: number | null;
+  marcheId?: number | null;
+  creerMarche?: boolean;
+  confirmerMalgreAnomalies?: boolean;
+  ignorer?: boolean;
+  numeroCredit?: string;
+  dateCredit?: string;
+}
+
+export interface ArchiveLotImportResultatDto {
+  importes: number;
+  erreurs: number;
+  nonPrets: number;
+  credits?: ArchiveLotCreditDto[];
+}
+
+export const archiveLotApi = {
+  analyser: (fichier: File) => {
+    const fd = new FormData();
+    fd.append("fichier", fichier);
+    return apiFetch<ArchiveLotDto>("/archive/lots", { method: "POST", rawBody: fd });
+  },
+  getAll: () => apiFetch<ArchiveLotDto[]>("/archive/lots"),
+  getById: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}`),
+  getCredit: (lotId: number, creditId: number) =>
+    apiFetch<{ credit: ArchiveLotCreditDto; releve: ArchiveCreditPreviewDto }>(
+      `/archive/lots/${lotId}/credits/${creditId}`,
+    ),
+  affecter: (lotId: number, body: ArchiveLotAffectationRequest) =>
+    apiFetch<ArchiveLotDto>(`/archive/lots/${lotId}/credits`, { method: "PATCH", body }),
+  rapprocher: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}/rapprocher`, { method: "POST" }),
+  interrogerDgi: (id: number) => apiFetch<ArchiveLotDto>(`/archive/lots/${id}/dgi`, { method: "POST" }),
+  importer: (id: number, creditIds: number[]) =>
+    apiFetch<ArchiveLotImportResultatDto>(`/archive/lots/${id}/importer`, { method: "POST", body: { creditIds } }),
+  delete: (id: number) => apiFetch<void>(`/archive/lots/${id}`, { method: "DELETE" }),
+};
+
 
 // ============= Paramètres applicatifs =============
 /** Réponse plate de `GET /api/public/parametres` : uniquement les clés de la liste blanche serveur. */

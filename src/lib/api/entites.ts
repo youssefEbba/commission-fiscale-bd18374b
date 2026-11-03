@@ -54,6 +54,20 @@ export const entrepriseApi = {
   delete: (id: number) => apiFetch<void>(`/entreprises/${id}`, { method: "DELETE" }),
 };
 
+/** Réponse DGI pour un NIF (création d'entreprise en reprise d'archive). */
+export interface VerificationNifDto {
+  nif?: string;
+  trouve: boolean;
+  raisonSociale?: string;
+  nomCommercial?: string;
+  etat?: string;
+  dateMiseAJour?: string;
+}
+
+export function verifierNifDgi(nif: string) {
+  return apiFetch<VerificationNifDto>(`/entreprises/verification-dgi?nif=${encodeURIComponent(nif)}`);
+}
+
 // Groupements d'entreprises
 export interface GroupementDto {
   id?: number;
