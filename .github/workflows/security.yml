@@ -16,7 +16,7 @@ jobs:
   osv:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: OSV Scanner
         id: osv
         continue-on-error: true
@@ -34,6 +34,6 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Semgrep
         run: semgrep scan --config p/javascript --config p/typescript --config p/react --severity ERROR --error
