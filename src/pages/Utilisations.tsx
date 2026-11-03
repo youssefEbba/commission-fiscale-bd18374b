@@ -27,6 +27,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -1018,19 +1019,16 @@ const Utilisations = () => {
                                 {/* `denominationTaxe` provient du référentiel API — non traduit (donnée métier) */}
                                 <Input className="col-span-2 h-8 text-xs uppercase bg-muted/40" value={ligne.codeTaxe} readOnly />
                                 <Input className="col-span-4 h-8 text-xs bg-muted/40" value={ligne.denominationTaxe} readOnly />
-                                <Input
+                                <DecimalInput
                                   className={`col-span-3 h-8 text-xs ${isEmpty ? "border-destructive focus-visible:ring-destructive bg-destructive/5" : ""}`}
-                                  type="text"
-                                  inputMode="decimal"
+                                  allowNegative
                                   placeholder={t("utilisations:create.douane.value_required")}
-                                  value={ligne.valeurTaxe ?? ""}
-                                  onChange={e => {
-                                    const raw = e.target.value.replace(/\s/g, "").replace(",", ".");
-                                    if (raw !== "" && !/^-?\d*\.?\d*$/.test(raw)) return;
+                                  value={ligne.valeurTaxe}
+                                  onValueChange={n => {
                                     const next = [...(form.lignes || [])];
-                                    const newVal = raw === "" ? (undefined as any) : (raw.endsWith(".") || raw === "-" ? (raw as any) : Number(raw));
-                                    const newAff = (Number(newVal) || 0) === 0 ? null : next[idx].affectation;
-                                    next[idx] = { ...next[idx], valeurTaxe: newVal, affectation: newAff };
+                                    // Vide = valeur requise (bordure rouge) ; 0 = pas d'affectation.
+                                    const newAff = (n ?? 0) === 0 ? null : next[idx].affectation;
+                                    next[idx] = { ...next[idx], valeurTaxe: n ?? (undefined as unknown as number), affectation: newAff };
                                     setForm({ ...form, lignes: next });
                                   }}
                                 />
