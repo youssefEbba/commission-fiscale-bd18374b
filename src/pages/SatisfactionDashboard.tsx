@@ -54,7 +54,11 @@ const SatisfactionDashboard = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
-  const lignesTable = (title: string, lignes: SatisfactionLigneDto[] | null | undefined) => (
+  /** Libellé traduit d'un code (processus, catégorie) ; un code inconnu reste affiché tel quel (A49). */
+  const libelleLigne = (l: SatisfactionLigneDto, espace?: "categories" | "processus") =>
+    espace ? t(`feedback:${espace}.${l.cle}`, { defaultValue: l.libelle || l.cle }) : l.libelle;
+
+  const lignesTable = (title: string, lignes: SatisfactionLigneDto[] | null | undefined, espace?: "categories" | "processus") => (
     <Card>
       <CardHeader className="pb-2"><CardTitle className="text-base">{title}</CardTitle></CardHeader>
       <CardContent className="p-0 overflow-x-auto">
@@ -75,7 +79,7 @@ const SatisfactionDashboard = () => {
               const total = (l.distribution || []).reduce((s, n) => s + (n || 0), 0);
               return (
                 <TableRow key={l.cle}>
-                  <TableCell className="font-medium">{l.libelle}</TableCell>
+                  <TableCell className="font-medium">{libelleLigne(l, espace)}</TableCell>
                   <TableCell className="text-end tabular-nums">{num(l.nbNotes)}</TableCell>
                   <TableCell className="text-end tabular-nums">{note(l.noteMoyenne)}</TableCell>
                   <TableCell className="text-end tabular-nums">{pct(l.satisfaitsPct)}</TableCell>
@@ -163,11 +167,11 @@ const SatisfactionDashboard = () => {
 
             <div className="grid gap-4 xl:grid-cols-2">
               {lignesTable(t("feedback:dashboard.par_profil"), data.parProfil)}
-              {lignesTable(t("feedback:dashboard.par_categorie"), data.parCategorie)}
-              {lignesTable(t("feedback:dashboard.par_processus"), data.parProcessus)}
+              {lignesTable(t("feedback:dashboard.par_categorie"), data.parCategorie, "categories")}
+              {lignesTable(t("feedback:dashboard.par_processus"), data.parProcessus, "processus")}
               <div className="space-y-4">
-                {lignesTable(t("feedback:dashboard.points_forts"), data.pointsForts)}
-                {lignesTable(t("feedback:dashboard.difficultes"), data.difficultes)}
+                {lignesTable(t("feedback:dashboard.points_forts"), data.pointsForts, "categories")}
+                {lignesTable(t("feedback:dashboard.difficultes"), data.difficultes, "categories")}
               </div>
             </div>
 

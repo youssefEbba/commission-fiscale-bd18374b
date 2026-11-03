@@ -19,13 +19,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { showApiError, showSuccess } from "@/lib/feedback";
 import {
-  feedbackApi, formatApiErrorMessage, PROFILS_CIBLES,
+  feedbackApi, formatApiErrorMessage, PROFILS_CIBLES, FEEDBACK_CATEGORIES,
   type EnqueteDto, type EnqueteRequest, type EnqueteQuestionRequest, type EnqueteStatut, type ProfilCible, type QuestionEnqueteType,
 } from "@/lib/api";
 import { buildEnqueteRequest, enqueteFormError } from "@/lib/enquetes";
 import { formatDate } from "@/i18n/format";
 
 const QUESTION_TYPES: QuestionEnqueteType[] = ["NOTE", "TEXTE", "CHOIX"];
+/** Valeur du choix « aucune catégorie » (un Select n'accepte pas la chaîne vide). */
+const AUCUNE_CATEGORIE = "__aucune__";
 const STATUT_VARIANT: Record<EnqueteStatut, "secondary" | "default" | "outline"> = { BROUILLON: "outline", PUBLIEE: "default", CLOTUREE: "secondary" };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -258,7 +260,14 @@ const SatisfactionEnquetes = () => {
                       <SelectTrigger aria-label={t("feedback:enquetes.type")}><SelectValue /></SelectTrigger>
                       <SelectContent>{QUESTION_TYPES.map((ty) => <SelectItem key={ty} value={ty}>{t(`feedback:question_types.${ty}`)}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Input aria-label={t("feedback:enquetes.categorie")} placeholder={t("feedback:enquetes.categorie")} value={q.categorie ?? ""} onChange={(e) => setQuestion(i, { categorie: e.target.value })} />
+                    {/* A46 : la catégorie se choisit dans la liste des sujets, le serveur n'accepte que ces codes. */}
+                    <Select value={q.categorie || AUCUNE_CATEGORIE} onValueChange={(v) => setQuestion(i, { categorie: v === AUCUNE_CATEGORIE ? "" : v })}>
+                      <SelectTrigger aria-label={t("feedback:enquetes.categorie")}><SelectValue placeholder={t("feedback:enquetes.categorie")} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={AUCUNE_CATEGORIE}>{t("feedback:enquetes.categorie_aucune")}</SelectItem>
+                        {FEEDBACK_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{t(`feedback:categories.${c}`)}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                     <label className="flex items-center gap-2 text-sm">
                       <Switch checked={!!q.obligatoire} onCheckedChange={(v) => setQuestion(i, { obligatoire: v })} />
                       {t("feedback:enquetes.obligatoire")}

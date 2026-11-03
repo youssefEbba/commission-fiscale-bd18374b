@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -444,8 +445,8 @@ const ArchiveLotDetail = () => {
           </Card>
         )}
 
-        {/* Crédits */}
-        <Card>
+        {/* Crédits — min-w-0 : le tableau défile dans la carte au lieu de sortir de l'écran (A51). */}
+        <Card className="min-w-0">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
             <CardTitle className="text-base">{t("archive:lots.credits_titre")}</CardTitle>
             <Select value={filtre} onValueChange={(v) => setFiltre(v as ArchiveLotCreditStatut | "ALL")}>
@@ -602,6 +603,19 @@ const ArchiveLotDetail = () => {
   );
 };
 
+/**
+ * Libellé long sur une seule ligne, coupé avec « … » et lisible en entier au survol (A51) : les noms
+ * d'autorité ou de convention étiraient les lignes du tableau sur une dizaine de lignes.
+ */
+function Tronque({ texte, attenue, children }: { texte?: string | null; attenue?: boolean; children?: ReactNode }) {
+  return (
+    <div className="flex items-center gap-1 max-w-[14rem]">
+      <span className={cn("truncate", attenue && "text-muted-foreground")} title={texte ?? undefined}>{texte || "—"}</span>
+      {children}
+    </div>
+  );
+}
+
 function SoldeLine({ label, axe: a }: { label: string; axe: SoldeAxe }) {
   const alerte = a.ecart != null || a.negatif;
   return (
@@ -653,19 +667,19 @@ function CreditRow({ n, credit: c, checked, disabled, onCheck, onOpen }: {
         <p className="text-[11px] text-muted-foreground">{t("lots.lignes", { debut: c.ligneDebut, fin: c.ligneFin })}</p>
       </TableCell>
       <TableCell className="font-mono text-xs">{c.nif || "—"}</TableCell>
-      <TableCell className="min-w-[10rem]">
-        {c.entrepriseId != null ? <>{c.entrepriseRaisonSociale}<SourceBadge source={c.sourceEntreprise} /></> : <span className="text-muted-foreground">{c.raisonSocialeDgi ? t("lots.dgi_suggere", { nom: c.raisonSocialeDgi }) : "—"}</span>}
+      <TableCell>
+        {c.entrepriseId != null ? <Tronque texte={c.entrepriseRaisonSociale}><SourceBadge source={c.sourceEntreprise} /></Tronque> : <Tronque texte={c.raisonSocialeDgi ? t("lots.dgi_suggere", { nom: c.raisonSocialeDgi }) : "—"} attenue />}
       </TableCell>
-      <TableCell className="min-w-[8rem]">{c.autoriteContractanteId != null ? <>{c.autoriteContractanteNom}<SourceBadge source={c.sourceAutorite} /></> : "—"}</TableCell>
-      <TableCell className="min-w-[8rem]">{c.conventionId != null ? <>{c.conventionIntitule}<SourceBadge source={c.sourceConvention} /></> : "—"}</TableCell>
-      <TableCell className="min-w-[8rem]">
-        {c.marcheId != null ? <>{c.marcheNumero}<SourceBadge source={c.sourceMarche} /></>
+      <TableCell>{c.autoriteContractanteId != null ? <Tronque texte={c.autoriteContractanteNom}><SourceBadge source={c.sourceAutorite} /></Tronque> : "—"}</TableCell>
+      <TableCell>{c.conventionId != null ? <Tronque texte={c.conventionIntitule}><SourceBadge source={c.sourceConvention} /></Tronque> : "—"}</TableCell>
+      <TableCell>
+        {c.marcheId != null ? <Tronque texte={c.marcheNumero}><SourceBadge source={c.sourceMarche} /></Tronque>
           : c.creerMarche ? <span className="text-muted-foreground italic">{t("lots.marche_cree_releve")}</span>
           : c.dejaRepris ? <span className="text-muted-foreground">{t("lots.deja_repris")}</span>
           : "—"}
       </TableCell>
       <TableCell className="text-end tabular-nums whitespace-nowrap">{money(c.montantCreditImpot)}</TableCell>
-      <TableCell className="text-xs">
+      <TableCell className="text-xs whitespace-nowrap">
         <SoldesCell credit={c} />
       </TableCell>
       <TableCell className="text-end">
