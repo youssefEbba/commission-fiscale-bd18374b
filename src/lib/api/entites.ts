@@ -1,5 +1,6 @@
 import { apiFetch, normalizeDocs } from "./client";
 import type { DocumentDto } from "./demandes";
+import type { DocumentRequirementDto } from "./referentiels";
 export interface EntrepriseDto {
   id?: number;
   raisonSociale: string;

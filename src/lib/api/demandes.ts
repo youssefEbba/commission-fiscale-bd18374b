@@ -1,5 +1,7 @@
 import { apiFetch, normalizeDocs } from "./client";
 import { buildCorrectionDecisionBody, type CorrectionMontants } from "../correctionMontants";
+import type { MarcheDto } from "./marches";
+import type { ModeApposition } from "./reporting";
 export type DemandeStatut = "BROUILLON" | "RECUE" | "INCOMPLETE" | "RECEVABLE" | "EN_EVALUATION" | "EN_VALIDATION" | "ADOPTEE" | "REJETEE" | "NOTIFIEE" | "ANNULEE";
 
 export interface DemandeCorrectionDto {

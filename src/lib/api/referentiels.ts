@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
 import type { ConventionDto } from "./entites";
+import type { BailleurDto, CreateBailleurRequest, UpdateBailleurRequest } from "./notifications";
 export const bailleurApi = {
   getAll: () => apiFetch<BailleurDto[]>("/bailleurs"),
   create: (data: CreateBailleurRequest) => apiFetch<BailleurDto>("/bailleurs", { method: "POST", body: data }),

@@ -7,6 +7,9 @@ import {
   type UtilisationCreditDto,
   type UtilisationStatut,
 } from "./certificats";
+import type { CertificatUtilisationEtatDto, QuittanceTresorDto, TypeDocumentUtilisation } from "./certificats";
+import type { DecisionCorrectionDto, DecisionType, RejetTempResponseDto } from "./demandes";
+import type { ModeApposition } from "./reporting";
 export const utilisationCreditApi = {
   getAll: async (params?: { demandeurSousTraitantOnly?: boolean }) => {
     const qs = params?.demandeurSousTraitantOnly ? "?demandeurSousTraitantOnly=true" : "";
@@ -212,11 +215,4 @@ export interface AdminCorrectionUtilisationPayload {
   dateDeclaration?: string;
 }
 
-const adminCorrectionDoc = <T>(basePath: string, id: number, codeDocument: string, motif: string, file: File) => {
-  const formData = new FormData();
-  formData.append("codeDocument", codeDocument);
-  formData.append("motif", motif);
-  formData.append("file", file);
-  return apiFetch<T>(`${basePath}/${id}/documents/admin-correction`, { method: "POST", rawBody: formData });
-};
 

@@ -17,6 +17,8 @@ import {
   type ReportingSummaryDto,
   type TimeSeriesPointDto,
 } from "./mouvements";
+import { API_BASE } from "../apiConfig";
+import type { EnqueteDto, EnqueteRequest, ReponseEnqueteRequest, RetourFeedbackRequest } from "./mouvements";
 export const feedbackApi = {
   envoyerRetour: (body: RetourFeedbackRequest) => apiFetch<unknown>("/feedback/retours", { method: "POST", body }),
   /** Enquêtes ouvertes à mon profil, non encore répondues (feedback.submit). */
@@ -493,6 +495,8 @@ export const archiveCreditApi = {
 };
 
 export type ArchiveLotCreditStatut = "A_COMPLETER" | "PRET" | "IMPORTE" | "ERREUR" | "IGNORE";
+/** Ce qui manque à un crédit de lot pour être prêt (le N° et la date quand le fichier ne les donne pas). */
+export type ArchiveLotManquant = "ENTREPRISE" | "AUTORITE" | "CONVENTION" | "MARCHE" | "ANOMALIES" | "NUMERO" | "DATE";
 export const ARCHIVE_LOT_STATUTS: readonly ArchiveLotCreditStatut[] = [
   "A_COMPLETER", "PRET", "IMPORTE", "ERREUR", "IGNORE",
 ];
@@ -544,7 +548,7 @@ export interface ArchiveLotCreditDto {
   inconnuDgi: boolean;
   dejaRepris: boolean;
   statut: ArchiveLotCreditStatut;
-  manquants: string[];
+  manquants: ArchiveLotManquant[];
   certificatId: number | null;
   certificatReference: string | null;
   messageErreur: string | null;

@@ -9,6 +9,10 @@ import type {
   CertificatRecapFiscal,
   UpdateCertificatCreditMontantsRequest,
 } from "./marches";
+import type { DecisionType, RejetTempResponseDto } from "./demandes";
+import type { AutoriteContractanteDto, ConventionDto, EntrepriseDto, GroupementDto } from "./entites";
+import type { CertificatUtilisationEligibilityDto, CertificatVisaAdminResponseDto, CertificatVisaEtatDto, MarcheDto } from "./marches";
+import type { ModeApposition } from "./reporting";
 export const certificatCreditApi = {
   getAll: () => apiFetch<CertificatCreditDto[]>("/certificats-credit"),
   getById: (id: number) => apiFetch<CertificatCreditDto>(`/certificats-credit/${id}`),
