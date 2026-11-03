@@ -86,6 +86,11 @@ export function resolveDocumentUrl(doc: OpenableDoc): string | null {
         "https://commission-fiscale.gov.mr"
       );
     }
+    // Chemin disque Windows : le navigateur ne peut pas l'ouvrir ; on passe par l'API.
+    if (WINDOWS_PATH.test(raw)) {
+      if (doc.id != null) return `${API_BASE}/documents/${doc.id}/download`;
+      return null;
+    }
     const origin = API_BASE.replace(/\/api\/?$/, "");
     return origin + (raw.startsWith("/") ? "" : "/") + raw.replace(/\\/g, "/");
   }
