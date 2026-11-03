@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ApiRequestError, type ArchiveLotCreditDto, type ArchiveLotDto } from "@/lib/api";
-import { chunk, commonValue, isDgiUnavailable, isProposed, mergeCredits, nifsInconnus, pretIds, soldeEcart } from "@/lib/archiveLots";
+import { chunk, commonValue, soldesDetail, isDgiUnavailable, isProposed, mergeCredits, nifsInconnus, pretIds, soldeEcart } from "@/lib/archiveLots";
 
 const credit = (over: Partial<ArchiveLotCreditDto>): ArchiveLotCreditDto => ({
   id: 1, ordre: 1, ligneDebut: 1, ligneFin: 10, numeroCredit: "C1", nif: "111",
@@ -70,5 +70,18 @@ describe("Lots d'archive — règles d'écran", () => {
     expect(isDgiUnavailable(new ApiRequestError({ status: 503, message: "x", code: "DGI_SERVICE_UNAVAILABLE" }))).toBe(true);
     expect(isDgiUnavailable(new ApiRequestError({ status: 503, message: "x", code: "FEATURE_DISABLED" }))).toBe(true);
     expect(isDgiUnavailable(new ApiRequestError({ status: 500, message: "x", code: "INTERNAL" }))).toBe(false);
+  });
+
+  it("soldes : douanier = crédit − utilisations − sortie, intérieur = crédit + transfert − utilisations", () => {
+    const d = soldesDetail(credit({
+      creditDouanier: 2716362.45, totalUtilisationsDouane: 717030.36, sortieTransfert: 0, soldeDouanierDeclare: 1999332.09,
+      creditInterieur: 1129918.12, transfertCredit: 0, totalUtilisationsInterieur: 0, soldeInterieurDeclare: 1129918.12,
+    }));
+    expect(d.douanier.calcule).toBe(1999332.09);
+    expect(d.douanier.ecart).toBeNull();
+    expect(d.interieur.calcule).toBe(1129918.12);
+    const e = soldesDetail(credit({ creditDouanier: 100, totalUtilisationsDouane: 30, sortieTransfert: 80, soldeDouanierDeclare: 0, creditInterieur: 50, transfertCredit: 20, totalUtilisationsInterieur: 10, soldeInterieurDeclare: 55 }));
+    expect(e.douanier).toMatchObject({ calcule: -10, negatif: true, ecart: 10 });
+    expect(e.interieur).toMatchObject({ calcule: 60, ecart: -5, negatif: false });
   });
 });

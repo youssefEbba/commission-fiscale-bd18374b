@@ -123,3 +123,51 @@ export const loadArchiveMarches = (user?: CacheUser | null) =>
   cachedList(archiveRefKey("marches", user), () => marcheApi.getAll().then((v) => asArray<MarcheDto>(v)));
 
 export const invalidateArchiveRef = (list: ArchiveRefList, user?: CacheUser | null) => invalidateList(archiveRefKey(list, user));
+
+// ---- Explication des soldes : calculé (importé) / fichier (contrôle) ----
+
+export interface SoldeAxe {
+  /** Crédit initial de l'axe. */
+  credit: number;
+  utilisations: number;
+  /** Douanier : sortie par transfert (retranchée) ; intérieur : transfert reçu (ajouté). */
+  transfert: number;
+  /** Solde calculé (brut) ; c'est lui qui est importé, ramené à 0 s'il est négatif. */
+  calcule: number;
+  /** Solde imprimé dans le fichier (« Solde après utilisation »), gardé pour contrôle. */
+  fichier: number | null;
+  /** fichier − calculé, `null` sans solde fichier ou sous la tolérance. */
+  ecart: number | null;
+  negatif: boolean;
+}
+
+export interface SoldesSource {
+  creditDouanier: number | null;
+  creditInterieur: number | null;
+  transfertCredit: number | null;
+  totalUtilisationsDouane?: number | null;
+  totalUtilisationsInterieur?: number | null;
+  sortieTransfert?: number | null;
+  soldeDouanierCalcule: number | null;
+  soldeInterieurCalcule: number | null;
+  soldeDouanierDeclare: number | null;
+  soldeInterieurDeclare: number | null;
+}
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
+function axe(credit: number, utilisations: number | null | undefined, transfert: number, signe: 1 | -1, serveur: number | null, fichier: number | null): SoldeAxe {
+  // Règle serveur : douanier = crédit − utilisations − sortie ; intérieur = crédit + transfert reçu − utilisations.
+  // Les composantes connues donnent le solde brut (négatif visible) ; sinon la valeur serveur.
+  const calcule = utilisations != null ? round2(credit + signe * transfert - utilisations) : (serveur ?? round2(credit + signe * transfert));
+  const ecart = fichier != null && Math.abs(fichier - calcule) > SOLDE_TOLERANCE ? round2(fichier - calcule) : null;
+  return { credit, utilisations: utilisations ?? 0, transfert, calcule, fichier, ecart, negatif: calcule < 0 };
+}
+
+/** Détail du calcul des deux soldes d'un crédit (lot ou relevé unitaire). */
+export function soldesDetail(s: SoldesSource): { douanier: SoldeAxe; interieur: SoldeAxe } {
+  return {
+    douanier: axe(s.creditDouanier ?? 0, s.totalUtilisationsDouane, s.sortieTransfert ?? 0, -1, s.soldeDouanierCalcule, s.soldeDouanierDeclare),
+    interieur: axe(s.creditInterieur ?? 0, s.totalUtilisationsInterieur, s.transfertCredit ?? 0, 1, s.soldeInterieurCalcule, s.soldeInterieurDeclare),
+  };
+}

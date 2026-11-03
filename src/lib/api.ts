@@ -3676,6 +3676,12 @@ export interface ArchiveLotCreditDto {
   soldeInterieurCalcule: number | null;
   soldeDouanierDeclare: number | null;
   soldeInterieurDeclare: number | null;
+  /** Somme des utilisations douanières. */
+  totalUtilisationsDouane?: number | null;
+  /** Somme des utilisations TVA intérieure. */
+  totalUtilisationsInterieur?: number | null;
+  /** Ce que le transfert retire du crédit douanier (part TVA transférée + droits soldés, sinon « Transfert de crédit »). */
+  sortieTransfert?: number | null;
   nbUtilisations: number;
   anomalies: string[];
   entrepriseId: number | null;

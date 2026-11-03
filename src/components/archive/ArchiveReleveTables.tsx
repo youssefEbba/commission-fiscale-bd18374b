@@ -4,44 +4,83 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatAmount, formatDate } from "@/i18n/format";
-import { SOLDE_TOLERANCE } from "@/lib/archiveLots";
+import type { SoldeAxe } from "@/lib/archiveLots";
+import { cn } from "@/lib/utils";
 import type { ArchiveUtilisationDto } from "@/lib/api";
 
 const money = (v: number | null | undefined) => formatAmount(v ?? 0);
 
-/** Soldes déclaré / recalculé d'un relevé, écart mis en évidence (reprise unitaire et fichier de période). */
-export function ArchiveSoldesTable({ rows }: { rows: { label: string; declare: number | null | undefined; calcule: number | null | undefined }[] }) {
+/** Ligne de calcul d'un axe : « Douanier : crédit − utilisations − sortie = solde · fichier : … ✓ ». */
+export function SoldeFormule({ axe: a, type }: { axe: SoldeAxe; type: "douanier" | "interieur" }) {
   const { t } = useTranslation("archive");
+  const douanier = type === "douanier";
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t("solde")}</TableHead>
-          <TableHead className="text-end">{t("declare")}</TableHead>
-          <TableHead className="text-end">{t("calcule")}</TableHead>
-          <TableHead className="text-end">{t("ecart")}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map(({ label, declare, calcule }) => {
-          const ecart = (declare ?? 0) - (calcule ?? 0);
-          return (
-            <TableRow key={label}>
-              <TableCell className="font-medium">{label}</TableCell>
-              <TableCell className="text-end">{money(declare)}</TableCell>
-              <TableCell className="text-end">{money(calcule)}</TableCell>
-              <TableCell className="text-end">
-                {Math.abs(ecart) > SOLDE_TOLERANCE ? (
-                  <Badge variant="destructive">{money(ecart)}</Badge>
-                ) : (
-                  <span className="text-xs text-muted-foreground">{t("no_ecart")}</span>
-                )}
-              </TableCell>
+    <div className="space-y-0.5 text-xs leading-relaxed">
+      <p>
+        <span className="font-semibold">{t(douanier ? "soldes.douanier" : "soldes.interieur")} : </span>
+        <span className="tabular-nums">{money(a.credit)}</span> ({t("soldes.credit")})
+        {douanier ? (
+          <> − <span className="tabular-nums">{money(a.utilisations)}</span> ({t("soldes.utilisations_douane")}) − <span className="tabular-nums">{money(a.transfert)}</span> ({t("soldes.sortie_transfert")})</>
+        ) : (
+          <> + <span className="tabular-nums">{money(a.transfert)}</span> ({t("soldes.transfert_recu")}) − <span className="tabular-nums">{money(a.utilisations)}</span> ({t("soldes.utilisations_interieur")})</>
+        )}
+        {" = "}<strong className="tabular-nums">{money(a.calcule)}</strong>
+        {" · "}{t("soldes.fichier")} : {a.fichier == null ? "—" : <span className="tabular-nums">{money(a.fichier)}</span>}
+        {a.fichier != null && a.ecart == null && <span className="text-emerald-600 dark:text-emerald-400"> ✓</span>}
+      </p>
+      {a.ecart != null && (
+        <p className="text-amber-700 dark:text-amber-300">{t("soldes.ecart_ligne", { ecart: money(a.ecart) })}</p>
+      )}
+      {a.negatif && <p className="text-amber-700 dark:text-amber-300">{t("soldes.negatif")}</p>}
+    </div>
+  );
+}
+
+/** Calcul complet des deux soldes (ligne / douanier / intérieur) et explication de l'écart avec le fichier. */
+export function ArchiveSoldesTable({ detail }: { detail: { douanier: SoldeAxe; interieur: SoldeAxe } }) {
+  const { t } = useTranslation("archive");
+  const { douanier: d, interieur: i } = detail;
+  const cell = (v: number | null) => <TableCell className="text-end tabular-nums">{v == null ? "—" : money(v)}</TableCell>;
+  const ecartCell = (a: SoldeAxe) => (
+    <TableCell className="text-end">
+      {a.ecart != null ? <Badge variant="destructive">{money(a.ecart)}</Badge>
+        : a.fichier == null ? "—" : <span className="text-xs text-muted-foreground">{t("no_ecart")}</span>}
+    </TableCell>
+  );
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("soldes.ligne")}</TableHead>
+              <TableHead className="text-end">{t("soldes.douanier")}</TableHead>
+              <TableHead className="text-end">{t("soldes.interieur")}</TableHead>
             </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+          </TableHeader>
+          <TableBody>
+            <TableRow><TableCell>{t("soldes.credit_initial")}</TableCell>{cell(d.credit)}{cell(i.credit)}</TableRow>
+            <TableRow><TableCell>− {t("soldes.utilisations")}</TableCell>{cell(d.utilisations)}{cell(i.utilisations)}</TableRow>
+            <TableRow>
+              <TableCell>{t("soldes.transfert_ligne")}</TableCell>
+              <TableCell className="text-end tabular-nums">− {money(d.transfert)}</TableCell>
+              <TableCell className="text-end tabular-nums">+ {money(i.transfert)}</TableCell>
+            </TableRow>
+            <TableRow className="font-semibold">
+              <TableCell>= {t("soldes.calcule_importe")}</TableCell>
+              {[d, i].map((a, k) => (
+                <TableCell key={k} className={cn("text-end tabular-nums", a.negatif && "text-amber-700 dark:text-amber-300")}>
+                  {money(a.calcule)}{a.negatif && <span className="block text-[11px] font-normal">{t("soldes.negatif")}</span>}
+                </TableCell>
+              ))}
+            </TableRow>
+            <TableRow><TableCell>{t("soldes.fichier_controle")}</TableCell>{cell(d.fichier)}{cell(i.fichier)}</TableRow>
+            <TableRow><TableCell>{t("ecart")}</TableCell>{ecartCell(d)}{ecartCell(i)}</TableRow>
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">{t("soldes.regle")} {t("soldes.pourquoi")}</p>
+    </div>
   );
 }
 

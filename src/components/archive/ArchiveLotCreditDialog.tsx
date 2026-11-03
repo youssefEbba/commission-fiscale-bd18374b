@@ -11,6 +11,7 @@ import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import { archiveLotApi, formatApiErrorMessage, type ArchiveCreditPreviewDto, type ArchiveLotCreditDto } from "@/lib/api";
 import { ArchiveSoldesTable, ArchiveUtilisationsTable } from "./ArchiveReleveTables";
 import { ArchiveLotStatutBadge, SourceBadge } from "./ArchiveLotStatut";
+import { soldesDetail } from "@/lib/archiveLots";
 
 const money = (v: number | null | undefined) => (v == null ? "—" : formatAmount(v));
 
@@ -190,10 +191,12 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose, onSaved }: {
             <section>
               <h3 className="text-sm font-semibold mb-3">{t("archive:soldes_compare")}</h3>
               <ArchiveSoldesTable
-                rows={[
-                  { label: t("archive:solde_douanier"), declare: c.soldeDouanierDeclare, calcule: c.soldeDouanierCalcule },
-                  { label: t("archive:solde_interieur"), declare: c.soldeInterieurDeclare, calcule: c.soldeInterieurCalcule },
-                ]}
+                detail={soldesDetail({
+                  ...c,
+                  totalUtilisationsDouane: c.totalUtilisationsDouane ?? r.totalUtilisationsDouane,
+                  totalUtilisationsInterieur: c.totalUtilisationsInterieur ?? r.totalUtilisationsInterieur,
+                  sortieTransfert: c.sortieTransfert ?? r.totalTransfertSortant ?? c.transfertCredit,
+                })}
               />
             </section>
 

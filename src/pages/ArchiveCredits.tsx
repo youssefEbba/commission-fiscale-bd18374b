@@ -16,6 +16,7 @@ import { ArchiveLotsTab } from "@/components/archive/ArchiveLotsTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useArchiveRefs } from "@/hooks/useArchiveRefs";
+import { soldesDetail } from "@/lib/archiveLots";
 import { AlertTriangle, Archive, CheckCircle2, Loader2, Plus, RotateCcw, Info as Info_ } from "lucide-react";
 import { formatAmount, formatDate } from "@/i18n/format";
 import {
@@ -279,12 +280,7 @@ const ArchiveCreditUnique = () => {
 
                 <div>
                   <h3 className="text-sm font-semibold mb-3">{t("archive:soldes_compare")}</h3>
-                  <ArchiveSoldesTable
-                    rows={[
-                      { label: t("archive:solde_douanier"), declare: preview.soldeDouanierDeclare, calcule: preview.soldeDouanierCalcule },
-                      { label: t("archive:solde_interieur"), declare: preview.soldeInterieurDeclare, calcule: preview.soldeInterieurCalcule },
-                    ]}
-                  />
+                  <ArchiveSoldesTable detail={soldesDetail({ ...preview, sortieTransfert: preview.totalTransfertSortant ?? preview.transfertCredit })} />
                 </div>
 
                 <Alert variant={anomalies.length ? "destructive" : "default"}>

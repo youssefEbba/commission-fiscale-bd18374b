@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  AlertTriangle, ArrowLeft, Ban, CheckCheck, Download, FileSpreadsheet, Hammer, Loader2, Plus, RefreshCw, SearchCheck, Undo2, X,
+  AlertTriangle, ArrowLeft, Ban, CheckCheck, Download, FileSpreadsheet, Hammer, Info, Loader2, Plus, RefreshCw, SearchCheck, Undo2, X,
 } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,9 @@ import {
 import { ArchiveCreateDialog, type ArchiveCreateInitial, type ArchiveCreateKind } from "@/components/archive/ArchiveCreateDialog";
 import { ArchiveLotCounters, ArchiveLotStatutBadge, SourceBadge } from "@/components/archive/ArchiveLotStatut";
 import { ArchiveLotCreditDialog } from "@/components/archive/ArchiveLotCreditDialog";
+import { SoldeFormule } from "@/components/archive/ArchiveReleveTables";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { useArchiveRefs } from "@/hooks/useArchiveRefs";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -45,7 +48,8 @@ import {
   mergeCredits,
   nifsInconnus,
   pretIds,
-  soldeEcart,
+  soldesDetail,
+  type SoldeAxe,
 } from "@/lib/archiveLots";
 import { isRouteUnavailable } from "@/lib/submission";
 import { cn } from "@/lib/utils";
@@ -534,7 +538,17 @@ const ArchiveLotDetail = () => {
                     <TableHead>{t("archive:convention")}</TableHead>
                     <TableHead>{t("archive:marche")}</TableHead>
                     <TableHead className="text-end">{t("archive:montant_credit_impot")}</TableHead>
-                    <TableHead>{t("archive:lots.col_soldes")}</TableHead>
+                    <TableHead>
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                        {t("archive:lots.col_soldes")}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t("archive:soldes.regle")}><Info className="h-3.5 w-3.5" /></button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs text-xs font-normal">{t("archive:soldes.regle")}</TooltipContent>
+                        </Tooltip>
+                      </span>
+                    </TableHead>
                     <TableHead className="text-end">{t("archive:lots.col_anomalies")}</TableHead>
                     <TableHead>{t("archive:lots.col_statut")}</TableHead>
                     <TableHead>{t("archive:lots.col_manquants")}</TableHead>
@@ -588,13 +602,34 @@ const ArchiveLotDetail = () => {
   );
 };
 
-function SoldeLine({ label, calcule, declare }: { label: string; calcule: number | null; declare: number | null }) {
-  const { t } = useTranslation("archive");
-  const ecart = soldeEcart(calcule, declare);
+function SoldeLine({ label, axe: a }: { label: string; axe: SoldeAxe }) {
+  const alerte = a.ecart != null || a.negatif;
   return (
-    <p className={cn("whitespace-nowrap tabular-nums", ecart && "text-destructive font-medium")} title={ecart ? t("lots.ecart_solde") : undefined}>
-      <span className="text-muted-foreground">{label}</span> {money(calcule)} / {money(declare)}
+    <p className={cn("whitespace-nowrap tabular-nums", alerte && "text-amber-700 dark:text-amber-300 font-medium")}>
+      <span className="text-muted-foreground">{label}</span> {money(a.calcule)} / {money(a.fichier)}
     </p>
+  );
+}
+
+/** Soldes d'un crédit : calculé / fichier, et le calcul détaillé au survol ou au clic. */
+function SoldesCell({ credit }: { credit: ArchiveLotCreditDto }) {
+  const { t } = useTranslation("archive");
+  const d = soldesDetail(credit);
+  const ecart = d.douanier.ecart != null || d.interieur.ecart != null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className="text-start rounded px-1 -mx-1 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("soldes.voir_calcul")}>
+          <SoldeLine label={t("lots.solde_d")} axe={d.douanier} />
+          <SoldeLine label={t("lots.solde_i")} axe={d.interieur} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[min(36rem,calc(100vw-2rem))] space-y-2" align="start">
+        <SoldeFormule type="douanier" axe={d.douanier} />
+        <SoldeFormule type="interieur" axe={d.interieur} />
+        {ecart && <p className="text-xs text-amber-700 dark:text-amber-300">{t("soldes.ecart_note")}</p>}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -631,8 +666,7 @@ function CreditRow({ n, credit: c, checked, disabled, onCheck, onOpen }: {
       </TableCell>
       <TableCell className="text-end tabular-nums whitespace-nowrap">{money(c.montantCreditImpot)}</TableCell>
       <TableCell className="text-xs">
-        <SoldeLine label={t("lots.solde_d")} calcule={c.soldeDouanierCalcule} declare={c.soldeDouanierDeclare} />
-        <SoldeLine label={t("lots.solde_i")} calcule={c.soldeInterieurCalcule} declare={c.soldeInterieurDeclare} />
+        <SoldesCell credit={c} />
       </TableCell>
       <TableCell className="text-end">
         {c.anomalies?.length ? (
