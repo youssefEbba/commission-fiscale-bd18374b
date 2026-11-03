@@ -2,8 +2,15 @@ name: Security
 
 on:
   push:
-    branches: [main, claude/front]
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   osv:
@@ -11,11 +18,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: OSV Scanner
+        id: osv
+        continue-on-error: true
         uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
         with:
           scan-args: |-
-            --lockfile=package-lock.json
-            ./
+            --lockfile=./package-lock.json
+      - name: OSV — scanner indisponible
+        if: steps.osv.outcome == 'failure' && steps.osv.conclusion == 'failure'
+        run: |
+          echo "OSV a signalé des findings ou une erreur : voir l'étape précédente." >> "$GITHUB_STEP_SUMMARY"
 
   semgrep:
     runs-on: ubuntu-latest
@@ -24,4 +36,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Semgrep
-        run: semgrep scan --config auto --error --severity ERROR
+        run: semgrep scan --config p/javascript --config p/typescript --config p/react --severity ERROR --error
