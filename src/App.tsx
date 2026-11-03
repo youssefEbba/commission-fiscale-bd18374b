@@ -34,8 +34,7 @@ import GedDossiers from "./pages/GedDossiers";
 import NotFound from "./pages/NotFound";
 import Transferts from "./pages/Transferts";
 import TransfertDetail from "./pages/TransfertDetail";
-// TODO: réactiver quand le back-end Sous-traitance sera disponible
-// import SousTraitance from "./pages/SousTraitance";
+import SousTraitance from "./pages/SousTraitance";
 import Presentation from "./pages/Presentation";
 import Reporting from "./pages/Reporting";
 import CreditFiche from "./pages/CreditFiche";
@@ -62,6 +61,11 @@ import VerifierCertificat from "./pages/VerifierCertificat";
 import VerificationPublique from "./pages/VerificationPublique";
 import SuiviRattachement from "./pages/SuiviRattachement";
 import ArchiveCredits from "./pages/ArchiveCredits";
+import ArchiveLotDetail from "./pages/ArchiveLotDetail";
+import ReferentielSecteurs from "./pages/ReferentielSecteurs";
+import SatisfactionDashboard from "./pages/SatisfactionDashboard";
+import SatisfactionEnquetes from "./pages/SatisfactionEnquetes";
+import SatisfactionEnqueteReponse from "./pages/SatisfactionEnqueteReponse";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { DocumentTaskIndicator } from "@/components/documents/DocumentTaskIndicator";
 import { I18nBootstrap } from "@/i18n/bootstrap";
@@ -161,13 +165,11 @@ const App = () => (
                 <TransfertDetail />
               </ProtectedRoute>
             } />
-            {/* TODO: réactiver quand le back-end Sous-traitance sera disponible
             <Route path="/dashboard/sous-traitance" element={
               <ProtectedRoute allowedRoles={["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <SousTraitance />
               </ProtectedRoute>
             } />
-            */}
             <Route path="/dashboard/cloture" element={
               <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Cloture />
@@ -269,6 +271,28 @@ const App = () => (
                 <ArchiveCredits />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/archive/lots/:id" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
+                <ArchiveLotDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/referentiel-secteurs" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
+                <ReferentielSecteurs />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/satisfaction" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
+                <SatisfactionDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/satisfaction/enquetes" element={
+              <ProtectedRoute allowedRoles={["ADMIN_SI", "PRESIDENT"]}>
+                <SatisfactionEnquetes />
+              </ProtectedRoute>
+            } />
+            {/* Réponse à une enquête : tout profil ciblé (le serveur répond 403 sinon). */}
+            <Route path="/dashboard/satisfaction/enquetes/:id" element={<ProtectedRoute><SatisfactionEnqueteReponse /></ProtectedRoute>} />
             <Route path="/dashboard/referentiel-taxes" element={
               <ProtectedRoute allowedRoles={["ADMIN_SI"]}>
                 <ReferentielTaxes />

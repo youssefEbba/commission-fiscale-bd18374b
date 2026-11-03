@@ -1,3 +1,4 @@
+import { MARCHE_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
+import AvenantsMarcheCard from "@/components/avenants/AvenantsMarcheCard";
 import { ArrowLeft, Gavel, Loader2, Paperclip } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutMarche, tTypeDocument } from "@/i18n/enums";
@@ -24,12 +26,7 @@ import { canEditMarche } from "@/lib/marcheEditability";
 import { formatApiErrorMessage } from "@/lib/api";
 import { conventionBailleurs, marcheConventionIds } from "@/lib/conventionEditability";
 
-const STATUT_COLORS: Record<string, string> = {
-  EN_COURS: "bg-blue-100 text-blue-800",
-  AVENANT: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = MARCHE_STATUT_COLORS;
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1">
@@ -171,9 +168,14 @@ const MarcheDetail = () => {
             <Field label={t("marches:fields.intitule")} value={marche.intitule} />
             <Field label={t("marches:type_marche.type_marche")} value={marche.typeMarche ? t(`marches:type_marche.${marche.typeMarche}`) : t("marches:type_marche.non_renseigne")} />
             <Field label={t("marches:fields.date_signature")} value={formatDate(marche.dateSignature)} />
+            <Field label={t("marches:fields.duree_execution")} value={marche.dureeExecution || "—"} />
             <Field
               label={t("marches:fields.montant_ht")}
-              value={formatAmount(marche.montantContratHt ?? marche.montantContratTtc, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              value={formatAmount(marche.montantContratHt, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            />
+            <Field
+              label={t("marches:form.montant_ttc")}
+              value={formatAmount(marche.montantContratTtc, { currency: devise, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             />
             <Field label={t("marches:fields.statut")} value={tStatutMarche(marche.statut)} />
             <Field label={t("marches:fields.autorite")} value={marche.autoriteContractanteNom || "—"} />
@@ -224,6 +226,8 @@ const MarcheDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        <AvenantsMarcheCard marcheId={marche.id} />
       </div>
 
       <DocumentGED

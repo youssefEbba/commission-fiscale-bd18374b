@@ -1,3 +1,4 @@
+import { MARCHE_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useRef, useState } from "react";
 import { cachedList, invalidateList } from "@/lib/listCache";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
@@ -38,12 +39,7 @@ import { marcheConventionIds } from "@/lib/conventionEditability";
 import { OrderedMultiSelect } from "@/components/ui/ordered-multi-select";
 import ConventionCreateDialog from "@/components/conventions/ConventionCreateDialog";
 
-const STATUT_COLORS: Record<StatutMarche, string> = {
-  EN_COURS: "bg-blue-100 text-blue-800",
-  AVENANT: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = MARCHE_STATUT_COLORS;
 
 const Marches = () => {
   const { t } = useTranslation();
@@ -148,7 +144,7 @@ const Marches = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null });
+    setForm({ conventionId: 0, demandeCorrectionId: undefined, numeroMarche: "", intitule: "", dateSignature: "", montantContratHt: undefined, montantContratTtc: undefined, deviseOrigine: "MRU", statut: "EN_COURS", typeMarche: null, dureeExecution: "" });
     setConvIds([]);
     setDialogOpen(true);
     loadDemandes();
@@ -167,6 +163,7 @@ const Marches = () => {
       deviseOrigine: m.deviseOrigine || "MRU",
       statut: m.statut,
       typeMarche: m.typeMarche ?? null,
+      dureeExecution: m.dureeExecution ?? "",
     });
     setConvIds(marcheConventionIds(m));
     setDialogOpen(true);
@@ -318,6 +315,11 @@ const Marches = () => {
     }
     if (payload.montantContratHt == null) delete payload.montantContratHt;
     if (payload.montantContratTtc == null) delete payload.montantContratTtc;
+    // Texte libre : vide = effacé en modification, omis à la création.
+    const duree = payload.dureeExecution?.trim();
+    if (duree) payload.dureeExecution = duree;
+    else if (editing) payload.dureeExecution = null;
+    else delete payload.dureeExecution;
     if (!payload.deviseOrigine) payload.deviseOrigine = "MRU";
     if (!payload.conventionId) {
       delete payload.conventionId;
@@ -454,7 +456,7 @@ const Marches = () => {
                           </TableCell>
                           <TableCell className="text-muted-foreground max-w-[200px] truncate" title={m.autoriteContractanteNom || ""}>{m.autoriteContractanteNom || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
-                            {formatAmount(m.montantContratHt ?? m.montantContratTtc, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatAmount(m.montantContratHt, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
@@ -647,6 +649,10 @@ const Marches = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("marches:fields.duree_execution")}</Label>
+              <Input maxLength={100} value={form.dureeExecution ?? ""} onChange={e => setForm(f => ({ ...f, dureeExecution: e.target.value }))} placeholder={t("marches:form.duree_execution_placeholder")} />
             </div>
             <div className="space-y-2">
               <Label>{t("marches:type_marche.type_marche")}</Label>

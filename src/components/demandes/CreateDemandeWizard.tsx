@@ -25,11 +25,13 @@ import {
   formatApiErrorMessage,
 } from "@/lib/api";
 import { requiredVisasCorrection } from "@/lib/visas";
+import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { usePersistedFiles } from "@/hooks/usePersistedFiles";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { UploadRow } from "@/components/ui/upload-row";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -252,6 +254,44 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast, isDelegate, user?.userId, cacheScope, editingDemande?.id]);
 
+  // Remet toutes les valeurs saisies à zéro (ouverture d'une nouvelle demande, bouton « Annuler »)
+  // et efface la sauvegarde de session, pour que la saisie ne s'accumule pas d'une ouverture à l'autre.
+  const resetFormValues = () => {
+    setStep(0);
+    setEntrepriseId("");
+    setTitulaireType("ENTREPRISE");
+    setGroupementId("");
+    setConventionId("");
+    setMarcheId("");
+    setIntituleMarche("");
+    setReferenceAppelOffre("");
+    setEquipementsPresents(false);
+    setTypeProjet("BTP");
+    setReferenceDossier("");
+    setImportations([emptyImportation()]);
+    setFiscalite({ montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0, tvaDeductible: 0, tvaNette: 0, creditInterieur: 0 });
+    setCreditExtManuel("");
+    setCreditIntManuel("");
+    setDqeNumero("");
+    setDqeProjet("");
+    setDqeLot("");
+    setDqeTauxTVA(16);
+    setDqeLignes([emptyDqeLigne()]);
+    setExistingDocs({});
+    clearDocFiles();
+    setDocFiles({});
+    try {
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith("sgci:form:demande:") || k.startsWith("lvbl:form:demande:"))
+        .forEach((k) => sessionStorage.removeItem(k));
+    } catch { /* noop */ }
+  };
+
+  const handleCancel = () => {
+    resetFormValues();
+    onOpenChange(false);
+  };
+
   // Suit l'état d'ouverture précédent pour distinguer une vraie ouverture d'un remontage
   // (le navigateur mobile peut décharger l'onglet quand l'utilisateur bascule vers WhatsApp).
   const wasOpenRef = useRef(false);
@@ -267,29 +307,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         setShowCreateConvention(false);
         setShowCreateMarche(false);
         // Nouvelle demande : réinitialiser complètement le formulaire.
-        if (!editingId && !editingDemande) {
-          setEntrepriseId("");
-          setTitulaireType("ENTREPRISE");
-          setGroupementId("");
-          setConventionId("");
-          setMarcheId("");
-          setIntituleMarche("");
-          setEquipementsPresents(false);
-          setTypeProjet("BTP");
-          setReferenceDossier("");
-          setImportations([emptyImportation()]);
-          setFiscalite({ montantHT: 0, tauxTVA: 16, autresTaxes: 0, tvaCollectee: 0, tvaDeductible: 0, tvaNette: 0, creditInterieur: 0 });
-          setCreditExtManuel("");
-          setCreditIntManuel("");
-          setDqeNumero("");
-          setDqeProjet("");
-          setDqeLot("");
-          setDqeTauxTVA(16);
-          setDqeLignes([emptyDqeLigne()]);
-          setExistingDocs({});
-          clearDocFiles();
-          setDocFiles({});
-        }
+        if (!editingId && !editingDemande) resetFormValues();
       }
       loadInitialData();
     } else {
@@ -703,17 +721,11 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         },
       };
 
-      let demande: DemandeCorrectionDto;
-      if (isEditing && editingId) {
-        // Édition : PUT, puis soumettre si demandé.
-        demande = await demandeCorrectionApi.update(editingId, payload);
-        if (!asBrouillon && demande.statut === "BROUILLON") {
-          demande = await demandeCorrectionApi.soumettre(editingId);
-        }
-      } else {
-        // Création : POST avec flag brouillon.
-        demande = await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
-      }
+      // Créer (ou modifier) → déposer les pièces → soumettre seulement si le serveur a laissé
+      // la demande en BROUILLON (pièces GED obligatoires absentes à la création).
+      let demande: DemandeCorrectionDto = isEditing && editingId
+        ? await demandeCorrectionApi.update(editingId, payload)
+        : await demandeCorrectionApi.create({ ...payload, brouillon: asBrouillon });
 
       const docEntries = Object.entries(docFiles).filter(([type]) => type !== EQUIP_DOC || equipementsDeclares);
       for (const [type, file] of docEntries) {
@@ -721,6 +733,20 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           await demandeCorrectionApi.uploadDocument(demande.id, type, file);
         } catch {
           // continue uploading others
+        }
+      }
+
+      if (!asBrouillon) {
+        const created = demande;
+        const outcome = await submitIfDraft(created, () => demandeCorrectionApi.soumettre(created.id));
+        demande = outcome.result;
+        const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+        if (draftMessage) {
+          toast({ ...draftMessage, variant: "destructive" });
+          clearDocFiles();
+          onOpenChange(false);
+          onCreated();
+          return;
         }
       }
 
@@ -771,7 +797,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           "demande:dqeTauxTVA", "demande:dqeLignes",
           "demande:creditExtManuel", "demande:creditIntManuel",
         ];
-        keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
+        keys.forEach(k => {
+          sessionStorage.removeItem(`sgci:form:${k}`);
+          sessionStorage.removeItem(`lvbl:form:${k}`);
+        });
       } catch { /* noop */ }
       clearDocFiles();
       onOpenChange(false);
@@ -1557,13 +1586,13 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         <TableRow key={i}>
                           <TableCell><Input className="h-7 text-xs" value={l.designation} onChange={e => updateImportation(i, "designation", e.target.value)} /></TableCell>
                           <TableCell><Input className="h-7 text-xs" value={l.unite} onChange={e => updateImportation(i, "unite", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.quantite || ""} onChange={e => updateImportation(i, "quantite", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.prixUnitaire || ""} onChange={e => updateImportation(i, "prixUnitaire", e.target.value)} /></TableCell>
+                          <TableCell><DecimalInput className="h-7 text-xs" zeroAsEmpty value={l.quantite} onValueChange={n => updateImportation(i, "quantite", n ?? 0)} /></TableCell>
+                          <TableCell><DecimalInput className="h-7 text-xs" zeroAsEmpty value={l.prixUnitaire} onValueChange={n => updateImportation(i, "prixUnitaire", n ?? 0)} /></TableCell>
                           {showNomenclature && <TableCell><Input className="h-7 text-xs" value={l.nomenclature || ""} onChange={e => updateImportation(i, "nomenclature", e.target.value)} /></TableCell>}
-                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxDD} onChange={e => updateImportation(i, "tauxDD", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxRS} onChange={e => updateImportation(i, "tauxRS", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxPSC} onChange={e => updateImportation(i, "tauxPSC", e.target.value)} /></TableCell>
-                          <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.tauxTVA} onChange={e => updateImportation(i, "tauxTVA", e.target.value)} /></TableCell>
+                          <TableCell><DecimalInput className="h-7 text-xs" value={l.tauxDD} onValueChange={n => updateImportation(i, "tauxDD", n ?? 0)} /></TableCell>
+                          <TableCell><DecimalInput className="h-7 text-xs" value={l.tauxRS} onValueChange={n => updateImportation(i, "tauxRS", n ?? 0)} /></TableCell>
+                          <TableCell><DecimalInput className="h-7 text-xs" value={l.tauxPSC} onValueChange={n => updateImportation(i, "tauxPSC", n ?? 0)} /></TableCell>
+                          <TableCell><DecimalInput className="h-7 text-xs" value={l.tauxTVA} onValueChange={n => updateImportation(i, "tauxTVA", n ?? 0)} /></TableCell>
                           <TableCell className="text-end text-xs">{fmt(l.valeurDouane)}</TableCell>
                           <TableCell className="text-end text-xs">{fmt(l.dd)}</TableCell>
                           <TableCell className="text-end text-xs">{fmt(l.tvaDouane)}</TableCell>
@@ -1597,15 +1626,15 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.montant_ht")}</Label>
-                    <Input type="number" step="0.01" value={fiscalite.montantHT || ""} onChange={e => updateFiscalite("montantHT", parseFloat(e.target.value) || 0)} />
+                    <DecimalInput zeroAsEmpty value={fiscalite.montantHT} onValueChange={n => updateFiscalite("montantHT", n ?? 0)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.taux_tva")}</Label>
-                    <Input type="number" step="0.01" value={fiscalite.tauxTVA} onChange={e => updateFiscalite("tauxTVA", parseFloat(e.target.value) || 0)} />
+                    <DecimalInput value={fiscalite.tauxTVA} onValueChange={n => updateFiscalite("tauxTVA", n ?? 0)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.autres_taxes")}</Label>
-                    <Input type="number" step="0.01" value={fiscalite.autresTaxes || ""} onChange={e => updateFiscalite("autresTaxes", parseFloat(e.target.value) || 0)} />
+                    <DecimalInput zeroAsEmpty value={fiscalite.autresTaxes} onValueChange={n => updateFiscalite("autresTaxes", n ?? 0)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{t("demandes:wizard.modele_fiscal.fisc.tva_collectee")}</Label>
@@ -1688,7 +1717,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Taux TVA %</Label>
-                    <Input type="number" step="0.01" value={dqeTauxTVA} onChange={e => setDqeTauxTVA(parseFloat(e.target.value) || 0)} />
+                    <DecimalInput value={dqeTauxTVA} onValueChange={n => setDqeTauxTVA(n ?? 0)} />
                   </div>
                 </div>
 
@@ -1714,8 +1743,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                       <TableRow key={i}>
                         <TableCell><Input className="h-7 text-xs" value={l.designation} onChange={e => updateDqeLigne(i, "designation", e.target.value)} /></TableCell>
                         <TableCell><Input className="h-7 text-xs" value={l.unite} onChange={e => updateDqeLigne(i, "unite", e.target.value)} /></TableCell>
-                        <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.quantite || ""} onChange={e => updateDqeLigne(i, "quantite", e.target.value)} /></TableCell>
-                        <TableCell><Input className="h-7 text-xs" type="number" step="0.01" value={l.prixUnitaireHT || ""} onChange={e => updateDqeLigne(i, "prixUnitaireHT", e.target.value)} /></TableCell>
+                        <TableCell><DecimalInput className="h-7 text-xs" zeroAsEmpty value={l.quantite} onValueChange={n => updateDqeLigne(i, "quantite", n ?? 0)} /></TableCell>
+                        <TableCell><DecimalInput className="h-7 text-xs" zeroAsEmpty value={l.prixUnitaireHT} onValueChange={n => updateDqeLigne(i, "prixUnitaireHT", n ?? 0)} /></TableCell>
                         <TableCell className="text-end text-xs font-semibold">{fmt(l.montantHT)}</TableCell>
                         <TableCell>
                           {dqeLignes.length > 1 && (
@@ -1749,7 +1778,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>{t("demandes:wizard.actions.cancel")}</Button>
+            <Button variant="outline" onClick={handleCancel}>{t("demandes:wizard.actions.cancel")}</Button>
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(s => s + 1)} disabled={step === 0 && !titulaireSelected}>
                 {t("demandes:wizard.actions.next")} <ArrowRight className="h-4 w-4 ms-1 rtl:rotate-180" />

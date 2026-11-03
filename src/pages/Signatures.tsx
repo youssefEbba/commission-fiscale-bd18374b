@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { PenLine, RefreshCw } from "lucide-react";
+import { PenLine, RefreshCw, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   signatureApi,
   utilisateurApi,
@@ -29,6 +30,7 @@ const fmtDate = (v?: string | null) => {
 
 const Signatures = () => {
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [signatures, setSignatures] = useState<SignatureDto[]>([]);
   const [users, setUsers] = useState<UtilisateurDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +98,10 @@ const Signatures = () => {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Gérez les images de signature (PNG à fond transparent) apposées sur les documents générés.
+          </p>
+          <p className="text-muted-foreground text-sm mt-2 flex items-start gap-2">
+            <Info className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            {t("president_sign.source_note")}
           </p>
         </div>
 

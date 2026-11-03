@@ -14,7 +14,10 @@
     "engagement": "الالتزام",
     "blocages": "العوائق",
     "a_fermer": "للإغلاق",
-    "production": "الإنتاج"
+    "production": "الإنتاج",
+    "impact": "الأثر",
+    "avant_apres": "قبل / بعد",
+    "beneficiaires": "المستفيدون"
   },
   "roles": {
     "PRESIDENT": "الرئاسة — رؤية وطنية",
@@ -211,7 +214,89 @@
       "ENGAGEMENT": "الالتزام",
       "BLOCAGES": "العوائق",
       "A_FERMER": "للإغلاق",
-      "PRODUCTION": "الإنتاج"
+      "PRODUCTION": "الإنتاج",
+      "IMPACT": "مؤشرات الأثر",
+      "BENEFICIAIRES": "المستفيدون",
+      "SATISFACTION": "الرضا"
     }
+  },
+  "impact": {
+    "nd": "غ/م",
+    "jours": "{{n}} يوم",
+    "definitions": "التعاريف",
+    "processus": {
+      "deposes": "المودعة",
+      "traites": "المعالجة",
+      "valides": "المصادق عليها",
+      "rejetes": "المرفوضة",
+      "avec_complements": "مع استكمالات",
+      "taux_validation": "نسبة المصادقة",
+      "taux_rejet": "نسبة الرفض",
+      "taux_complements": "نسبة الاستكمالات",
+      "delai_complements": "أجل الرد على الاستكمالات"
+    },
+    "phases": {
+      "title": "الآجال حسب المرحلة",
+      "processus": "المسار",
+      "phase": "المرحلة",
+      "nb": "الملفات",
+      "moyenne": "المتوسط",
+      "mediane": "الوسيط"
+    },
+    "montants": {
+      "title": "المبالغ",
+      "demandes": "المطلوبة",
+      "retenus": "المعتمدة",
+      "valides": "المصادق عليها",
+      "consommes": "المستهلكة",
+      "ajustes": "المعدّلة",
+      "annules": "الملغاة",
+      "clotures": "المغلقة"
+    },
+    "taux": {
+      "title": "نسبة استخدام الاعتمادات",
+      "tva": "الضريبة على القيمة المضافة الداخلية",
+      "douane": "الجمارك",
+      "global": "الإجمالي",
+      "detail": "{{consomme}} مستهلكة من أصل {{accorde}} ممنوحة"
+    },
+    "avant_apres": {
+      "indicateur": "المؤشر",
+      "avant": "قبل الرقمنة",
+      "apres": "بعد الرقمنة",
+      "variation": "التغير",
+      "source": "المصدر (قبل)",
+      "bascule": "تاريخ التحول: {{date}} (إعداد «digitalisation.date_bascule» في صفحة الإعدادات).",
+      "bascule_absente": "تاريخ التحول غير محدد: يُدخل في صفحة الإعدادات («digitalisation.date_bascule»، YYYY-MM-DD)."
+    },
+    "references": {
+      "title": "القيم المرجعية (قبل الرقمنة)",
+      "hint": "قيم مقيسة قبل التشغيل، تُستخدم في عمود «قبل».",
+      "valeur": "القيمة",
+      "periode": "فترة المصدر",
+      "periode_placeholder": "مثال: 2024 (السجلات الورقية)",
+      "commentaire": "تعليق",
+      "date_saisie": "تاريخ الإدخال",
+      "actions": "الإجراءات",
+      "edit": "إدخال القيمة",
+      "delete": "حذف القيمة",
+      "saved": "تم تسجيل القيمة المرجعية",
+      "deleted": "تم حذف القيمة المرجعية"
+    }
+  },
+  "beneficiaires": {
+    "total_beneficiaires": "المستفيدون",
+    "total_credits": "الاعتمادات الممنوحة",
+    "accorde": "المبلغ الممنوح",
+    "consomme": "المبلغ المستهلك",
+    "par_annee": "التطور حسب السنة المالية",
+    "par_nature": "حسب الطبيعة",
+    "par_categorie": "حسب فئة المؤسسة",
+    "par_secteur": "حسب قطاع النشاط",
+    "par_financement": "حسب مصدر التمويل",
+    "cle": "الفئة",
+    "nb_beneficiaires": "المستفيدون",
+    "nouveaux": "مستفيدون جدد",
+    "nb_credits": "الاعتمادات"
   }
 }

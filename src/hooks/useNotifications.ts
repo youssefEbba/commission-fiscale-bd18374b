@@ -36,8 +36,7 @@ export function useNotifications() {
 
     const client = new Client({
       webSocketFactory: () => {
-        const wsUrl = WS_BASE.replace(/^https/, "wss").replace(/^http/, "ws")
-          + "?token=" + encodeURIComponent(user.token);
+        const wsUrl = WS_BASE.replace(/^https/, "wss").replace(/^http/, "ws");
         return new WebSocket(wsUrl);
       },
       connectHeaders: {

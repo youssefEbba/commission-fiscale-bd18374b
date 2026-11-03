@@ -10,13 +10,14 @@ import { useEffect, useRef, useState } from "react";
  * - Utilise sessionStorage : reset à la fermeture de l'onglet.
  */
 export function usePersistedState<T>(key: string, initial: T, enabled = true): [T, React.Dispatch<React.SetStateAction<T>>, () => void] {
-  const storageKey = `lvbl:form:${key}`;
+  const storageKey = `sgci:form:${key}`;
+  const legacyKey = `lvbl:form:${key}`;
   const isFirstRender = useRef(true);
 
   const [value, setValue] = useState<T>(() => {
     if (!enabled || typeof window === "undefined") return initial;
     try {
-      const raw = sessionStorage.getItem(storageKey);
+      const raw = sessionStorage.getItem(storageKey) ?? sessionStorage.getItem(legacyKey);
       if (raw == null) return initial;
       const parsed = JSON.parse(raw);
       return parsed as T;

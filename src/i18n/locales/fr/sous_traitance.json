@@ -100,6 +100,8 @@
     "success_title": "Succès",
     "created": "Sous-traitance créée et demande soumise",
     "authorized": "Sous-traitance autorisée",
-    "refused": "Sous-traitance refusée"
+    "refused": "Sous-traitance refusée",
+    "missing_pieces": "Pièces obligatoires manquantes : {{list}}",
+    "docs_load_error": "Impossible de charger les documents de la sous-traitance"
   }
 }

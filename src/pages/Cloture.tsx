@@ -7,8 +7,9 @@ import {
   clotureCreditApi, ClotureCreditDto, CreateClotureCreditRequest,
   MotifCloture, TypeOperationCloture,
   MOTIF_CLOTURE_LABELS, TYPE_OPERATION_LABELS,
-  certificatCreditApi, CertificatCreditDto,
+  certificatCreditApi, CertificatCreditDto, type ClotureQueueItemDto, formatApiErrorMessage,
 } from "@/lib/api";
+import { isRouteUnavailable } from "@/lib/submission";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +48,8 @@ const Cloture = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  const [eligibleIds, setEligibleIds] = useState<number[]>([]);
+  // File de clôture (GET /clotures-credit/queue) : éléments proposables, détectés en tête.
+  const [queue, setQueue] = useState<ClotureQueueItemDto[]>([]);
   const [certificats, setCertificats] = useState<CertificatCreditDto[]>([]);
   const [eligibleLoading, setEligibleLoading] = useState(false);
   const [showPropose, setShowPropose] = useState(false);
@@ -73,16 +75,35 @@ const Cloture = () => {
 
   const fetchEligible = async () => {
     setEligibleLoading(true);
+    // Les certificats servent au bandeau équipements ; leur échec ne bloque pas la file.
+    const certsLoad = certificatCreditApi.getAll().catch(() => [] as CertificatCreditDto[]);
     try {
-      const [ids, certs] = await Promise.all([
-        clotureCreditApi.getEligible(),
-        certificatCreditApi.getAll(),
-      ]);
-      setEligibleIds(ids);
-      setCertificats(certs);
-    } catch (e: any) {
-      toast({ title: t("cloture:toast.error"), description: e.message, variant: "destructive" });
+      let items: ClotureQueueItemDto[];
+      try {
+        items = await clotureCreditApi.getQueue();
+      } catch (e) {
+        if (!isRouteUnavailable(e)) throw e;
+        // Serveur non redéployé : ancienne liste d'identifiants, indicateurs recalculés depuis les certificats.
+        const [ids, certs] = await Promise.all([clotureCreditApi.getEligible(), certsLoad]);
+        const today = new Date().toISOString().slice(0, 10);
+        items = certs.filter((c) => ids.includes(c.id)).map((c) => {
+          const soldesEpuises = (c.soldeCordon ?? 0) <= 0 && (c.soldeTVA ?? 0) <= 0;
+          const validiteDepassee = !!c.dateValidite && c.dateValidite.slice(0, 10) < today;
+          return {
+            certificatCreditId: c.id, reference: c.reference, numero: c.numero, statut: c.statut,
+            eligiblePourCloture: true, detecteAutomatiquement: soldesEpuises || validiteDepassee,
+            soldesEpuises, validiteDepassee, dateValidite: c.dateValidite,
+            soldesRestants: soldesEpuises ? [] : [formatAmount(c.soldeCordon), formatAmount(c.soldeTVA)],
+          };
+        });
+      }
+      setQueue(items
+        .filter((i) => i.eligiblePourCloture)
+        .sort((a, b) => Number(b.detecteAutomatiquement) - Number(a.detecteAutomatiquement)));
+    } catch (e) {
+      toast({ title: t("cloture:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
+      setCertificats(await certsLoad);
       setEligibleLoading(false);
     }
   };
@@ -92,7 +113,11 @@ const Cloture = () => {
     if (isDGTCP) fetchEligible();
   }, []);
 
-  const eligibleCerts = certificats.filter((c) => eligibleIds.includes(c.id));
+  const queueLabel = (q: ClotureQueueItemDto) => q.reference || q.numero || t("cloture:step1.certificat_item", { id: q.certificatCreditId });
+  /** Motif proposable : solde à zéro seulement si soldes épuisés, expiration seulement si validité dépassée. */
+  const motifAllowed = (k: MotifCloture, q?: ClotureQueueItemDto) =>
+    !q || (k === "SOLDE_ZERO" ? q.soldesEpuises : k === "EXPIRATION_VALIDITE" ? q.validiteDepassee : true);
+  const selectedQueueItem = queue.find((q) => q.certificatCreditId === form.certificatCreditId);
 
   const handlePropose = async () => {
     if (!form.certificatCreditId || !form.motif || !form.typeOperation) {
@@ -170,30 +195,37 @@ const Cloture = () => {
             <CardContent>
               {eligibleLoading ? (
                 <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-              ) : eligibleCerts.length === 0 ? (
+              ) : queue.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-4">{t("cloture:list.eligible.empty")}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow><RowNumberHead />
                       <TableHead>{t("cloture:list.eligible.columns.numero")}</TableHead>
-                      <TableHead>{t("cloture:list.eligible.columns.solde_cordon")}</TableHead>
-                      <TableHead>{t("cloture:list.eligible.columns.solde_tva")}</TableHead>
+                      <TableHead>{t("cloture:list.eligible.columns.soldes")}</TableHead>
                       <TableHead>{t("cloture:list.eligible.columns.date_validite")}</TableHead>
                       <TableHead className="text-end">{t("cloture:list.eligible.columns.action")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {eligibleCerts.map((c, rowIdx) => (
-                      <TableRow key={c.id}>
+                    {queue.map((q, rowIdx) => (
+                      <TableRow key={q.certificatCreditId} className={q.detecteAutomatiquement ? "bg-accent/5" : undefined}>
                         <RowNumberCell n={rowIdx + 1} />
-                        <TableCell className="font-medium">{c.numero || `#${c.id}`}{equipBadge(c.equipementsPresents)}</TableCell>
-                        <TableCell>{formatAmount(c.soldeCordon)}</TableCell>
-                        <TableCell>{formatAmount(c.soldeTVA)}</TableCell>
-                        <TableCell>{formatDate(c.dateValidite)}</TableCell>
+                        <TableCell className="font-medium">
+                          {queueLabel(q)}
+                          {equipBadge(certificats.find((c) => c.id === q.certificatCreditId)?.equipementsPresents)}
+                          {q.detecteAutomatiquement && <Badge variant="secondary" className="ms-2 text-[10px]">{t("cloture:list.eligible.auto_badge")}</Badge>}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {q.soldesEpuises ? t("cloture:list.eligible.soldes_epuises") : (q.soldesRestants?.length ? q.soldesRestants.join(" · ") : "—")}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(q.dateValidite)}
+                          {q.validiteDepassee && <Badge variant="outline" className="ms-2 text-[10px]">{t("cloture:list.eligible.validite_depassee")}</Badge>}
+                        </TableCell>
                         <TableCell className="text-end">
                           <Button size="sm" variant="outline" onClick={() => {
-                            setForm({ certificatCreditId: c.id });
+                            setForm({ certificatCreditId: q.certificatCreditId });
                             setShowPropose(true);
                           }}>
                             <Plus className="h-3 w-3 me-1" /> {t("cloture:list.eligible.propose_btn")}
@@ -294,12 +326,16 @@ const Cloture = () => {
                 <Label>{t("cloture:step1.certificat_label")}</Label>
                 <SearchableSelect
                   value={form.certificatCreditId?.toString() || ""}
-                  onValueChange={(v) => setForm({ ...form, certificatCreditId: Number(v) })}
+                  onValueChange={(v) => {
+                    const q = queue.find((i) => i.certificatCreditId === Number(v));
+                    setForm({ ...form, certificatCreditId: Number(v), motif: form.motif && motifAllowed(form.motif, q) ? form.motif : undefined });
+                  }}
                   placeholder={t("cloture:step1.certificat_placeholder")}
                   searchPlaceholder={t("cloture:step1.certificat_search")}
-                  options={eligibleCerts.map((c) => ({
-                    value: c.id.toString(),
-                    label: c.numero || t("cloture:step1.certificat_item", { id: c.id }),
+                  options={queue.map((q) => ({
+                    value: q.certificatCreditId.toString(),
+                    label: q.detecteAutomatiquement ? `${queueLabel(q)} — ${t("cloture:list.eligible.auto_badge")}` : queueLabel(q),
+                    keywords: `${q.reference || ""} ${q.numero || ""}`,
                   }))}
                 />
               </div>
@@ -319,14 +355,19 @@ const Cloture = () => {
                 <Select value={form.motif || ""} onValueChange={(v) => setForm({ ...form, motif: v as MotifCloture })}>
                   <SelectTrigger><SelectValue placeholder={t("cloture:step1.motif_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    {(Object.keys(MOTIF_CLOTURE_LABELS) as MotifCloture[]).map((k) => (
+                    {(Object.keys(MOTIF_CLOTURE_LABELS) as MotifCloture[]).filter((k) => motifAllowed(k, selectedQueueItem)).map((k) => (
                       <SelectItem key={k} value={k}>{tMotifCloture(k)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedQueueItem && !selectedQueueItem.soldesEpuises && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("cloture:step1.soldes_restants", { list: selectedQueueItem.soldesRestants?.join(" · ") || "—" })}
+                  </p>
+                )}
               </div>
               {(() => {
-                const cert = eligibleCerts.find((c) => c.id === form.certificatCreditId);
+                const cert = certificats.find((c) => c.id === form.certificatCreditId);
                 return cert ? <EquipementsBanner variant="cloture" present={cert.equipementsPresents} demandeId={cert.demandeCorrectionId} certificatId={cert.id} /> : null;
               })()}
             </div>

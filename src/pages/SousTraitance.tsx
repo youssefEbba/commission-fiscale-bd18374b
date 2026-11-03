@@ -1,3 +1,4 @@
+import { SOUS_TRAITANCE_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
@@ -8,8 +9,9 @@ import {
   SousTraitanceOnboardingRequest,
   TypeDocumentSousTraitance, DocumentSousTraitanceDto,
   certificatCreditApi, CertificatCreditDto,
-  EntrepriseDto, utilisateurApi,
+  EntrepriseDto, utilisateurApi, formatApiErrorMessage,
 } from "@/lib/api";
+import { useGedPieces, acceptFromFormats } from "@/hooks/useGedPieces";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,22 +26,17 @@ import { Switch } from "@/components/ui/switch";
 import { Handshake, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileText, CheckCircle2, XCircle, UserPlus, Building2 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutSousTraitance, tTypeDocument } from "@/i18n/enums";
+import { tStatutSousTraitance } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 
-const STATUT_COLORS: Record<StatutSousTraitance, string> = {
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_COURS: "bg-yellow-100 text-yellow-800",
-  AUTORISEE: "bg-green-100 text-green-800",
-  REFUSEE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = SOUS_TRAITANCE_STATUT_COLORS;
 
 const STATUT_VALUES: StatutSousTraitance[] = ["DEMANDE", "EN_COURS", "AUTORISEE", "REFUSEE"];
 
-const SOUS_TRAITANCE_DOC_TYPES: TypeDocumentSousTraitance[] = [
-  "CONTRAT_SOUS_TRAITANCE_ENREGISTRE",
-  "LETTRE_SOUS_TRAITANCE",
-];
+/** Statuts encore en attente de la décision de la DGTCP (le serveur tranche). */
+const STATUTS_A_DECIDER: StatutSousTraitance[] = ["DEMANDE", "EN_COURS"];
+/** Statuts finaux : plus de dépôt de pièce. */
+const STATUTS_FINAUX: StatutSousTraitance[] = ["AUTORISEE", "REFUSEE"];
 
 const SousTraitance = () => {
   const { t } = useTranslation();
@@ -47,6 +44,8 @@ const SousTraitance = () => {
   const { user } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
+  // Pièces déposées par l'entreprise titulaire (contrat enregistré, lettre des volumes…) : paramétrées dans la GED.
+  const gedDepot = useGedPieces("SOUS_TRAITANCE", { depot: true });
   const [data, setData] = useState<SousTraitanceDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -63,8 +62,7 @@ const SousTraitance = () => {
   const [creating, setCreating] = useState(false);
 
   // Document uploads in creation
-  const [createDocContrat, setCreateDocContrat] = useState<File | null>(null);
-  const [createDocLettre, setCreateDocLettre] = useState<File | null>(null);
+  const [createFiles, setCreateFiles] = useState<Record<string, File | null>>({});
 
   // Detail dialog
   const [selected, setSelected] = useState<SousTraitanceDto | null>(null);
@@ -73,14 +71,15 @@ const SousTraitance = () => {
   const [docDialog, setDocDialog] = useState<number | null>(null);
   const [docs, setDocs] = useState<DocumentSousTraitanceDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
     try { setData(await sousTraitanceApi.getAll()); }
-    catch {
+    catch (e) {
       toast({
         title: t("sous_traitance:toast.load_error_title"),
-        description: t("sous_traitance:toast.load_error_desc"),
+        description: formatApiErrorMessage(e, t("sous_traitance:toast.load_error_desc")),
         variant: "destructive",
       });
     }
@@ -93,8 +92,7 @@ const SousTraitance = () => {
     setForm({ contratEnregistre: true });
     setCreateNewEntreprise(false);
     setSelectedEntrepriseId(null);
-    setCreateDocContrat(null);
-    setCreateDocLettre(null);
+    setCreateFiles({});
 
     const certsPromise = role === "ENTREPRISE" && user?.entrepriseId
       ? certificatCreditApi.getByEntreprise(user.entrepriseId)
@@ -109,9 +107,7 @@ const SousTraitance = () => {
       setCertificats(certsResult.value.filter((c) => c.statut === "OUVERT"));
     } else {
       setCertificats([]);
-      const certsError = certsResult.reason instanceof Error
-        ? certsResult.reason.message
-        : t("sous_traitance:toast.unknown_error");
+      const certsError = formatApiErrorMessage(certsResult.reason, t("sous_traitance:toast.unknown_error"));
       toast({
         title: t("sous_traitance:toast.error_title"),
         description: t("sous_traitance:toast.certs_load_error", { error: certsError }),
@@ -129,9 +125,7 @@ const SousTraitance = () => {
       setEntreprises([]);
       setCreateNewEntreprise(true);
 
-      const entsError = entsResult.reason instanceof Error
-        ? entsResult.reason.message
-        : t("sous_traitance:toast.unknown_error");
+      const entsError = formatApiErrorMessage(entsResult.reason, t("sous_traitance:toast.unknown_error"));
       const isAccessDenied = entsError.toLowerCase().includes("accès refusé") || entsError.toLowerCase().includes("access denied");
 
       toast({
@@ -159,6 +153,16 @@ const SousTraitance = () => {
       toast({ title: t("sous_traitance:toast.error_title"), description: t("sous_traitance:toast.select_certificat"), variant: "destructive" });
       return;
     }
+    // Seules les pièces marquées obligatoires dans la GED bloquent.
+    const missing = gedDepot.options.filter((o) => o.obligatoire && !createFiles[o.code]);
+    if (missing.length > 0) {
+      toast({
+        title: t("sous_traitance:toast.error_title"),
+        description: t("sous_traitance:toast.missing_pieces", { list: missing.map((m) => m.label).join(", ") }),
+        variant: "destructive",
+      });
+      return;
+    }
 
     let createdSousTraitance: SousTraitanceDto | null = null;
 
@@ -177,7 +181,7 @@ const SousTraitance = () => {
           quantites: f2.quantites,
         });
       } catch (e: any) {
-        toast({ title: t("sous_traitance:toast.error_title"), description: e.message, variant: "destructive" });
+        toast({ title: t("sous_traitance:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
         setCreating(false);
         return;
       }
@@ -192,30 +196,35 @@ const SousTraitance = () => {
         const result = await sousTraitanceApi.onboard(f2 as SousTraitanceOnboardingRequest);
         createdSousTraitance = result.sousTraitance;
       } catch (e: any) {
-        toast({ title: t("sous_traitance:toast.error_title"), description: e.message, variant: "destructive" });
+        toast({ title: t("sous_traitance:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
         setCreating(false);
         return;
       }
     }
 
+    const failures: string[] = [];
     if (createdSousTraitance) {
-      try {
-        if (createDocContrat) {
-          await sousTraitanceApi.uploadDocument(createdSousTraitance.id, "CONTRAT_SOUS_TRAITANCE_ENREGISTRE", createDocContrat);
+      for (const piece of gedDepot.options) {
+        const file = createFiles[piece.code];
+        if (!file) continue;
+        try {
+          await sousTraitanceApi.uploadDocument(createdSousTraitance.id, piece.code as TypeDocumentSousTraitance, file);
+        } catch (e) {
+          failures.push(`${piece.label} : ${formatApiErrorMessage(e)}`);
         }
-        if (createDocLettre) {
-          await sousTraitanceApi.uploadDocument(createdSousTraitance.id, "LETTRE_SOUS_TRAITANCE", createDocLettre);
-        }
-      } catch (e: any) {
-        toast({
-          title: t("sous_traitance:toast.warn_title"),
-          description: t("sous_traitance:toast.docs_upload_error", { error: e.message }),
-          variant: "destructive",
-        });
       }
     }
 
-    toast({ title: t("sous_traitance:toast.success_title"), description: t("sous_traitance:toast.created") });
+    if (failures.length > 0) {
+      // La demande est créée mais des pièces manquent : on le dit clairement (à compléter via « Documents »).
+      toast({
+        title: t("sous_traitance:toast.warn_title"),
+        description: t("sous_traitance:toast.docs_upload_error", { error: failures.join(" • ") }),
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: t("sous_traitance:toast.success_title"), description: t("sous_traitance:toast.created") });
+    }
     setShowCreate(false);
     setCreating(false);
     fetchData();
@@ -228,7 +237,7 @@ const SousTraitance = () => {
       toast({ title: t("sous_traitance:toast.success_title"), description: t("sous_traitance:toast.authorized") });
       fetchData();
     } catch (e: any) {
-      toast({ title: t("sous_traitance:toast.error_title"), description: e.message, variant: "destructive" });
+      toast({ title: t("sous_traitance:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -239,19 +248,22 @@ const SousTraitance = () => {
       toast({ title: t("sous_traitance:toast.success_title"), description: t("sous_traitance:toast.refused") });
       fetchData();
     } catch (e: any) {
-      toast({ title: t("sous_traitance:toast.error_title"), description: e.message, variant: "destructive" });
+      toast({ title: t("sous_traitance:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
   const openDocs = async (id: number) => {
     setDocDialog(id);
     setDocsLoading(true);
-    try { setDocs(await sousTraitanceApi.getDocuments(id)); } catch { setDocs([]); }
+    setDocsError(null);
+    try { setDocs(await sousTraitanceApi.getDocuments(id)); }
+    catch (e) { setDocs([]); setDocsError(formatApiErrorMessage(e, t("sous_traitance:toast.docs_load_error"))); }
     finally { setDocsLoading(false); }
   };
 
   const refreshDocs = async (id: number) => {
-    try { setDocs(await sousTraitanceApi.getDocuments(id)); } catch { /* ignore */ }
+    try { setDocs(await sousTraitanceApi.getDocuments(id)); setDocsError(null); }
+    catch (e) { setDocs([]); setDocsError(formatApiErrorMessage(e, t("sous_traitance:toast.docs_load_error"))); }
   };
 
   const handleGEDUpload = async (dossierId: number, type: string, file: File) => {
@@ -272,7 +284,9 @@ const SousTraitance = () => {
   // No currency field on SousTraitanceDto — volumes/quantites are unitless numbers,
   // certificat solde uses MRU (default backend currency) until DTO exposes it.
 
-  const gedDocTypes = SOUS_TRAITANCE_DOC_TYPES.map((v) => ({ value: v, label: tTypeDocument(v) }));
+  const gedDocTypes = gedDepot.options.map((o) => ({ value: o.code, label: o.label }));
+  const docDossier = docDialog !== null ? data.find((r) => r.id === docDialog) : undefined;
+  const canUploadDocs = role === "ENTREPRISE" && !!docDossier && !STATUTS_FINAUX.includes(docDossier.statut);
 
   return (
     <DashboardLayout>
@@ -357,7 +371,7 @@ const SousTraitance = () => {
                         <div className="flex gap-1 justify-end flex-wrap">
                           <Button variant="ghost" size="sm" onClick={() => setSelected(row)} aria-label={t("sous_traitance:actions.view")}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="sm" onClick={() => openDocs(row.id)} aria-label={t("sous_traitance:actions.documents")}><FileText className="h-4 w-4" /></Button>
-                          {canValidate && row.statut === "DEMANDE" && (
+                          {canValidate && STATUTS_A_DECIDER.includes(row.statut) && (
                             <>
                               <Button size="sm" disabled={actionLoading === row.id} onClick={() => handleAutoriser(row.id)}>
                                 {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 me-1" />}
@@ -538,31 +552,43 @@ const SousTraitance = () => {
               <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
                 <Upload className="h-4 w-4" /> {t("sous_traitance:dialogs.create.documents_section")}
               </h4>
-              <div className="space-y-3">
-                <div>
-                  <Label>{t("sous_traitance:dialogs.create.doc_contrat_label")}</Label>
-                  <Input type="file" onChange={(e) => setCreateDocContrat(e.target.files?.[0] || null)} />
-                  {createDocContrat && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" /> {createDocContrat.name}
-                    </p>
-                  )}
+              {gedDepot.isLoading ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("common:documents.ged_pieces.loading")}
+                </p>
+              ) : gedDepot.error ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-destructive">{t("common:documents.ged_pieces.error", { message: gedDepot.error.message })}</p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => gedDepot.refetch()}>
+                    {t("common:documents.ged_pieces.retry")}
+                  </Button>
                 </div>
-                <div>
-                  <Label>{t("sous_traitance:dialogs.create.doc_lettre_label")}</Label>
-                  <Input type="file" onChange={(e) => setCreateDocLettre(e.target.files?.[0] || null)} />
-                  {createDocLettre && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" /> {createDocLettre.name}
-                    </p>
-                  )}
+              ) : gedDepot.options.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("common:documents.ged_pieces.empty")}</p>
+              ) : (
+                <div className="space-y-3">
+                  {gedDepot.options.map((piece) => (
+                    <div key={piece.code}>
+                      <Label>{piece.label} {piece.obligatoire && <span className="text-destructive">*</span>}</Label>
+                      <Input
+                        type="file"
+                        accept={acceptFromFormats(piece.typesAutorises)}
+                        onChange={(e) => setCreateFiles({ ...createFiles, [piece.code]: e.target.files?.[0] || null })}
+                      />
+                      {createFiles[piece.code] && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <FileText className="h-3 w-3" /> {createFiles[piece.code]!.name}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>{t("sous_traitance:actions.cancel")}</Button>
-            <Button onClick={handleCreate} disabled={creating}>
+            <Button onClick={handleCreate} disabled={creating || gedDepot.isLoading || !!gedDepot.error}>
               {creating && <Loader2 className="h-4 w-4 animate-spin me-2" />}
               {t("sous_traitance:actions.create_submit")}
             </Button>
@@ -579,7 +605,8 @@ const SousTraitance = () => {
         documentTypes={gedDocTypes}
         documents={docs}
         loading={docsLoading}
-        canUpload={role === "ENTREPRISE"}
+        loadError={docsError}
+        canUpload={canUploadDocs}
         onUpload={handleGEDUpload}
         onRefresh={refreshDocs}
       />

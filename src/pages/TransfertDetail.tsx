@@ -1,3 +1,4 @@
+import { TRANSFERT_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useGedPieces } from "@/hooks/useGedPieces";
@@ -35,16 +36,7 @@ const REJET_TEMP_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert
 const RESOLVE_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate"];
 
 
-const STATUT_COLORS: Record<StatutTransfert, string> = {
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_COURS: "bg-yellow-100 text-yellow-800",
-  VALIDE: "bg-emerald-100 text-emerald-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  TRANSFERE: "bg-green-100 text-green-800",
-  REJETE: "bg-red-100 text-red-800",
-  ANNULEE: "bg-slate-200 text-slate-700",
-};
+const STATUT_COLORS = TRANSFERT_STATUT_COLORS;
 
 const TERMINAL_STATUTS: StatutTransfert[] = ["TRANSFERE", "REJETE", "ANNULEE"];
 const UPLOAD_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "INCOMPLETE", "A_RECONTROLER"];
@@ -250,7 +242,7 @@ const TransfertDetail = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">{t("transferts:detail.certificat")}</span>
-                <p className="font-medium">{transfert.certificatNumero || `#${transfert.certificatCreditId}`}</p>
+                <p className="font-medium">{transfert.certificatReference || transfert.certificatNumero || `#${transfert.certificatCreditId}`}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">{t("transferts:detail.montant")}</span>
@@ -293,9 +285,12 @@ const TransfertDetail = () => {
           </CardContent>
         </Card>
 
-        {transfert.statut !== "ANNULEE" && (
-          <TransfertVisasCircuit transfertId={transfert.id} reloadKey={circuitKey} onChanged={() => { loadAll(); }} />
-        )}
+        <TransfertVisasCircuit
+          transfertId={transfert.id}
+          reloadKey={circuitKey}
+          onChanged={() => { loadAll(); }}
+          finalStatut={TERMINAL_STATUTS.includes(transfert.statut) ? transfert.statut : null}
+        />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -351,7 +346,8 @@ const TransfertDetail = () => {
                                 onClick={() => {
                                   setExpandedVersions(prev => {
                                     const next = new Set(prev);
-                                    next.has(type) ? next.delete(type) : next.add(type);
+                                    if (next.has(type)) next.delete(type);
+                                    else next.add(type);
                                     return next;
                                   });
                                 }}

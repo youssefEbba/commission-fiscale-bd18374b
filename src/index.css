@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
     /* Mauritania official palette: Green #00A95C, Gold #FFD700, Red #D01C1F */
@@ -85,11 +83,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: system-ui, 'Segoe UI', sans-serif;
   }
 
   html[lang="ar"] body {
-    font-family: 'Noto Sans Arabic', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Noto Sans Arabic', system-ui, 'Segoe UI', sans-serif;
   }
 }
 

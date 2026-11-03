@@ -25,7 +25,8 @@
       "edit": "Modifier",
       "cancel": "Annuler",
       "cancel_tooltip": "Annuler la demande"
-    }
+    },
+    "deja_vise": "Déjà visé"
   },
   "detail": {
     "title": "Mise en place {{ref}}",
@@ -122,7 +123,13 @@
       "upload_label": "Uploader le certificat signé",
       "upload_warning": "Vous devez uploader le certificat avant de pouvoir ouvrir",
       "already_uploaded": "Certificat déjà uploadé",
-      "validate_and_open": "Valider et ouvrir le certificat"
+      "validate_and_open": "Valider et ouvrir le certificat",
+      "confirm_title": "Valider et ouvrir le certificat — {{ref}}",
+      "confirm_text": "L'ouverture rend le crédit utilisable par son titulaire. Cette décision est définitive.",
+      "confirm_amount": "Montant total du crédit ouvert",
+      "confirm_cordon": "Crédit extérieur (cordon douanier)",
+      "confirm_tva": "Crédit intérieur (TVA)",
+      "generate_to_sign": "Générer le certificat à signer"
     },
     "admin_visas": {
       "title": "Administration des visas",
@@ -288,7 +295,8 @@
       "bloc_interieur_off": "Montant TVA intérieure à zéro : volet non applicable, aucun contrôle.",
       "control_cordon": "b + c + d = {{sum}} — crédit extérieur saisi : {{saisi}} — écart : {{ecart}}",
       "control_tva": "g − d = {{sum}} — TVA intérieure saisie : {{saisi}} — écart : {{ecart}}",
-      "bd_required_hint": "Les lignes (b) et (d) sont obligatoires dès que le crédit extérieur est positif. Saisissez 0 si la ligne est sans objet."
+      "bd_required_hint": "Les lignes (b) et (d) sont obligatoires dès que le crédit extérieur est positif. Saisissez 0 si la ligne est sans objet.",
+      "save_error": "Les montants n'ont pas pu être enregistrés."
     },
     "reject": {
       "title": "Rejeter la demande",
@@ -348,7 +356,8 @@
       "motif_rejet": "Motif de rejet",
       "marche_num": "N° Marché",
       "date_signature": "Date signature",
-      "montant_ttc": "Montant TTC"
+      "montant_ttc": "Montant TTC",
+      "montant_ht": "Montant HT"
     },
     "detail_dialog": {
       "title": "Demande {{ref}}"

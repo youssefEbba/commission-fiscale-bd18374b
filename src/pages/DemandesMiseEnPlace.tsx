@@ -1,3 +1,4 @@
+import { CERTIFICAT_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
@@ -18,6 +19,8 @@ import {
   DEVISES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { mainCouranteApi } from "@/lib/api";
+import { miseEnPlaceRowAction, DIRECTION_ROLES } from "@/lib/miseEnPlaceRowAction";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -39,24 +42,11 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
+import { miseEnPlaceDepotRequirements } from "@/lib/certificatEditability";
+import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
-const STATUT_COLORS: Record<CertificatStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  ENVOYEE: "bg-sky-100 text-sky-800",
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_CONTROLE: "bg-teal-100 text-teal-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
-  EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
-  VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
-  EN_OUVERTURE_DGTCP: "bg-yellow-100 text-yellow-800",
-  OUVERT: "bg-emerald-100 text-emerald-800",
-  MODIFIE: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = CERTIFICAT_STATUT_COLORS;
 
 // Pièces demandables en rejet temporaire : celles de la GED (MISE_EN_PLACE_CI), cf. GedPiecesChecklist.
 
@@ -222,6 +212,22 @@ const DemandesMiseEnPlace = () => {
     return () => { cancelled = true; };
   }, [certificats, role]);
 
+  // Demandes qui attendent une action du compte connecté, d'après la main courante (le serveur décide).
+  const [attendues, setAttendues] = useState<Set<number> | null>(null);
+  useEffect(() => {
+    if (!role || !(DIRECTION_ROLES as readonly string[]).includes(role)) { setAttendues(null); return; }
+    let cancelled = false;
+    mainCouranteApi.get()
+      .then((mc) => {
+        if (cancelled) return;
+        // Liste tronquée : on ne peut pas conclure à l'absence d'action → repli.
+        if (mc.tronquee) { setAttendues(null); return; }
+        setAttendues(new Set(mc.lignes.filter((l) => l.type === "CertificatCredit" && l.processus !== "CLOTURE").map((l) => l.id)));
+      })
+      .catch(() => { if (!cancelled) setAttendues(null); });
+    return () => { cancelled = true; };
+  }, [role, certificats]);
+
   const [openingCreate, setOpeningCreate] = useState(false);
 
   const openCreateDialog = async () => {
@@ -239,7 +245,7 @@ const DemandesMiseEnPlace = () => {
         documentRequirementApi.getByProcessus("MISE_EN_PLACE_CI"),
       ]);
       setCorrections(corrs.filter(c => c.statut === "NOTIFIEE" || c.statut === "ADOPTEE"));
-      setDocRequirements(reqs);
+      setDocRequirements(miseEnPlaceDepotRequirements(reqs));
       setShowCreate(true);
     } catch {
       toast({ title: t("common:states.error"), description: t("mise_en_place:dialogs.create.load_error"), variant: "destructive" });
@@ -340,15 +346,13 @@ const DemandesMiseEnPlace = () => {
 
       await uploadDocsFor(created.id);
 
-      if (!asBrouillon) {
-        try {
-          await certificatCreditApi.soumettre(created.id);
-        } catch {
-          // si la soumission échoue, le brouillon reste créé
-        }
-      }
+      // Soumettre seulement si le serveur a laissé la demande en BROUILLON (sinon 409).
+      const draftMessage = asBrouillon
+        ? null
+        : draftOutcomeMessage(await submitIfDraft(created, () => certificatCreditApi.soumettre(created.id)), t, tTypeDocument);
 
-      okToast(asBrouillon ? t("mise_en_place:toast.draft_saved") : t("mise_en_place:toast.submitted_to_control"));
+      if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+      else okToast(asBrouillon ? t("mise_en_place:toast.draft_saved") : t("mise_en_place:toast.submitted_to_control"));
       setShowCreate(false);
       fetchCertificats();
     } catch (e: unknown) {
@@ -374,7 +378,7 @@ const DemandesMiseEnPlace = () => {
         certificatCreditApi.getDocuments(c.id).catch(() => [] as DocumentDto[]),
       ]);
       setCorrections(corrs.filter(co => co.statut === "NOTIFIEE" || co.statut === "ADOPTEE" || co.id === c.demandeCorrectionId));
-      setDocRequirements(reqs);
+      setDocRequirements(miseEnPlaceDepotRequirements(reqs));
       setEditingExistingDocs(existingDocs);
     } catch {
       errToast(t("mise_en_place:dialogs.create.load_error"));
@@ -399,10 +403,12 @@ const DemandesMiseEnPlace = () => {
         brouillon: wasBrouillon,
       });
       await uploadDocsFor(editingBrouillon.id);
-      if (alsoSubmit && wasBrouillon) {
-        await certificatCreditApi.soumettre(editingBrouillon.id);
-      }
-      okToast(alsoSubmit && wasBrouillon ? t("mise_en_place:toast.draft_submitted_short") : t("mise_en_place:toast.updated"));
+      const target = editingBrouillon;
+      const draftMessage = alsoSubmit && wasBrouillon
+        ? draftOutcomeMessage(await submitIfDraft(target, () => certificatCreditApi.soumettre(target.id)), t, tTypeDocument)
+        : null;
+      if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+      else okToast(alsoSubmit && wasBrouillon ? t("mise_en_place:toast.draft_submitted_short") : t("mise_en_place:toast.updated"));
       setEditingBrouillon(null);
       fetchCertificats();
     } catch (e: unknown) {
@@ -426,8 +432,12 @@ const DemandesMiseEnPlace = () => {
   const handleSoumettreBrouillon = async (id: number) => {
     setSubmittingId(id);
     try {
-      await certificatCreditApi.soumettre(id);
-      okToast(t("mise_en_place:toast.submitted_envoyee_to_encontrole"));
+      const draftMessage = draftOutcomeMessage(
+        await submitIfDraft<{ statut?: string | null }>({ statut: "BROUILLON" }, () => certificatCreditApi.soumettre(id)),
+        t, tTypeDocument,
+      );
+      if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
+      else okToast(t("mise_en_place:toast.submitted_envoyee_to_encontrole"));
       fetchCertificats();
     } catch (e: unknown) {
       errToast(tErr(e, t("mise_en_place:toast.submitted_envoyee_to_encontrole")));
@@ -630,7 +640,7 @@ const DemandesMiseEnPlace = () => {
                               className="text-xs border-green-300 bg-green-50 text-green-700"
                               title={myVisaMap[c.id]?.dateDecision ? formatDate(myVisaMap[c.id]!.dateDecision!) : undefined}
                             >
-                              <CheckCircle className="h-3 w-3 me-1" /> Déjà visé
+                              <CheckCircle className="h-3 w-3 me-1" /> {t("mise_en_place:list.deja_vise")}
                             </Badge>
                           )}
                         </div>
@@ -638,7 +648,7 @@ const DemandesMiseEnPlace = () => {
                       <TableCell className="text-end">
                         <div className="flex gap-1 justify-end flex-wrap items-center">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/mise-en-place/${c.id}`)}>
-                            <Eye className="h-4 w-4 me-1" /> {role === "AUTORITE_CONTRACTANTE" ? t("mise_en_place:list.row_actions.view") : t("mise_en_place:list.row_actions.process")}
+                            <Eye className="h-4 w-4 me-1" /> {miseEnPlaceRowAction({ role, statut: c.statut, attendues, id: c.id, dejaVise: !!myVisaMap[c.id] }) === "view" ? t("mise_en_place:list.row_actions.view") : t("mise_en_place:list.row_actions.process")}
                           </Button>
                           {c.statut === "ENVOYEE" && ["DGI", "DGD", "DGTCP"].includes(role as string) && (
                             <Button variant="default" size="sm" disabled={actionLoading === c.id} onClick={() => handlePrendreEnCharge(c.id)}>
@@ -1305,6 +1315,7 @@ const DemandesMiseEnPlace = () => {
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.marche_num")}</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{m.statut}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_signature")}</span><p>{formatDate(m.dateSignature)}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.montant_ht")}</span><p>{formatAmount(m.montantContratHt, { currency: cur })}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.montant_ttc")}</span><p>{formatAmount(m.montantContratTtc, { currency: cur })}</p></div>
                 </div>
               </div>

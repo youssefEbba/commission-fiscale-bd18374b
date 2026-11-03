@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { formatApiErrorMessage } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { Button } from "@/components/ui/button";
@@ -69,9 +70,19 @@ const DocumentGED = ({
   const [uploadType, setUploadType] = useState(documentTypes[0]?.value || "");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Échec d'envoi affiché dans la fenêtre (le fichier reste sélectionné pour réessayer).
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [replaceDocId, setReplaceDocId] = useState<number | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replacing, setReplacing] = useState(false);
+
+  // Les types peuvent arriver après l'ouverture (paramétrage GED chargé à part).
+  useEffect(() => {
+    if (documentTypes.length > 0 && !documentTypes.some((dt) => dt.value === uploadType)) {
+      setUploadType(documentTypes[0].value);
+    }
+  }, [documentTypes, uploadType]);
+  useEffect(() => { if (!open) setUploadError(null); }, [open]);
 
   const activeDocs = documents.filter(d => d.actif !== false);
   const historyDocs = documents.filter(d => d.actif === false);
@@ -80,13 +91,22 @@ const DocumentGED = ({
   const handleUpload = async () => {
     if (!dossierId || !uploadFile || !uploadType) return;
     setUploading(true);
+    setUploadError(null);
     try {
       await onUpload(dossierId, uploadType, uploadFile);
+    } catch (e) {
+      const msg = formatApiErrorMessage(e, t("ged:toast.upload_error_fallback"));
+      setUploadError(msg);
+      toast({ title: t("ged:toast.error_title"), description: msg, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    try {
       toast({ title: t("ged:toast.success_title"), description: t("ged:toast.upload_success_desc") });
       setUploadFile(null);
       await onRefresh(dossierId);
-    } catch (e: any) {
-      toast({ title: t("ged:toast.error_title"), description: e.message || t("ged:toast.upload_error_fallback"), variant: "destructive" });
+    } catch (e) {
+      toast({ title: t("ged:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -99,7 +119,7 @@ const DocumentGED = ({
       toast({ title: t("ged:toast.success_title"), description: t("ged:toast.delete_success_desc") });
       await onRefresh(dossierId);
     } catch (e: any) {
-      toast({ title: t("ged:toast.error_title"), description: e.message, variant: "destructive" });
+      toast({ title: t("ged:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
     }
   };
 
@@ -120,8 +140,8 @@ const DocumentGED = ({
       setReplaceDocId(null);
       setReplaceFile(null);
       await onRefresh(dossierId);
-    } catch (e: any) {
-      toast({ title: t("ged:toast.error_title"), description: e.message, variant: "destructive" });
+    } catch (e) {
+      toast({ title: t("ged:toast.error_title"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setReplacing(false);
     }
@@ -353,12 +373,17 @@ const DocumentGED = ({
                         id="ged-upload-file"
                         type="file"
                         className="sr-only"
-                        onChange={(e) => { setUploadFile(e.target.files?.[0] || null); e.target.value = ""; }}
+                        onChange={(e) => { setUploadFile(e.target.files?.[0] || null); setUploadError(null); e.target.value = ""; }}
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                       />
                     </label>
                   </div>
                 </div>
+                {uploadError && (
+                  <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive whitespace-pre-wrap break-words">
+                    {uploadError}
+                  </p>
+                )}
                 <Button
                   onClick={handleUpload}
                   disabled={uploading || !uploadFile}

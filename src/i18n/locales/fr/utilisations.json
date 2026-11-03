@@ -414,13 +414,13 @@
     "title_two": "Décisions & Rejets ({{count}})",
     "title_few": "Décisions & Rejets ({{count}})",
     "title_many": "Décisions & Rejets ({{count}})",
-    "rejet_ouvert": "REJET OUVERT",
+    "rejet_ouvert": "Demande de pièces en cours",
     "documents_demandes": "Documents demandés :",
     "respond": "Répondre",
     "upload_doc": "Téléverser un document",
     "mark_resolved": "Marquer résolu",
-    "visa_badge": "VISA",
-    "rejet_temp_badge": "REJET_TEMP",
+    "visa_badge": "Visa",
+    "rejet_temp_badge": "Demande de pièces",
     "resolved_badge": "Résolu",
     "doc_badge": "Doc",
     "default_response_author": "Réponse"
@@ -566,7 +566,7 @@
     "deposer": "Déposer la quittance DGI",
     "modifier": "Modifier la quittance DGI",
     "dialog_title": "Quittance DGI — #{{id}}",
-    "intro": "Après validation, la DGI dépose la quittance correspondant à cette utilisation intérieure. La DGTCP pourra ensuite procéder à l'apurement et générer le certificat d'utilisation.",
+    "intro": "La DGTCP pourra ensuite procéder à l'apurement.",
     "numero": "N° de quittance",
     "date": "Date de la quittance",
     "montant": "Montant (MRU)",
@@ -613,7 +613,8 @@
     "attente_envoi_tresor": "En attente du certificat du Président",
     "attente_quittance_dgi": "En attente du certificat du Président",
     "non_emis_envoi_error": "Le certificat d'utilisation doit être émis par le Président avant l'envoi au Trésor.",
-    "non_emis_quittance_error": "La quittance DGI suppose le certificat d'utilisation émis par le Président."
+    "non_emis_quittance_error": "La quittance DGI suppose le certificat d'utilisation émis par le Président.",
+    "reprise_archive": "Reprise d'archive — pièce non numérisée"
   },
   "transmission_president": {
     "queue_filter": "Dossiers à contrôler",
@@ -634,5 +635,13 @@
     "motif_label": "Motif de la substitution",
     "cancel": "Annuler",
     "confirm": "Clôturer"
+  },
+  "confirm_geste": {
+    "valider_title": "Valider l'utilisation — #{{id}}",
+    "valider_text": "La validation de la DGTCP est définitive : l'utilisation passera en Validée.",
+    "valider_amount": "Montant de TVA concerné",
+    "liquider_title": "Générer le crédit & liquider — #{{id}}",
+    "liquider_text": "La liquidation débite le crédit et ne peut pas être annulée.",
+    "liquider_amount": "Montant imputé sur le crédit"
   }
 }

@@ -59,3 +59,47 @@
 - [x] Fin de session (déconnexion / 401) : stockage effacé, WebSocket fermés, retour /login ; sourcemap désactivé
 - [x] Avenant : décision de la commission réservée Président/admin, pièces du déposant au seul déposant
 - [ ] Failles restantes sans correctif mineur (vitest/vite/tinypool en outils de dev, zod v4, react-router v7) — en attente de décision de montée majeure
+
+## Recette 02/11/2026 — anomalies front
+- [x] A01 en-tête accueil replié jusqu'à lg
+- [x] A02 chiffres clés sans retour à la ligne
+- [x] A03 statuts traduits main courante + fiche mise en place, lignes AVENANT
+- [x] A04 clés type_document manquantes FR/AR
+- [x] A07 « Annuler » réinitialise la nouvelle demande de correction
+- [x] A10 fiche transfert : historique au statut final, circuit DGD → DGI → DGTCP → Président
+- [x] A15 écrans sous-traitance
+- [x] A18 « Traiter » mise en place seulement si action attendue
+- [x] A19 bulletin annoté facultatif
+- [x] A21 colonne Stade seulement en cours
+- [x] A23 compteur documents utilisation + types de décision traduits
+- [x] A25 filtre DGTCP « Dossiers à contrôler »
+- [x] A26 menu Clôture aligné sur la route
+- [x] A27 Valider/Rejeter sur la fiche convention
+- [x] A31 erreurs d'envoi de document + ajout de pièce AC au statut Reçue
+- [x] A32 types de la réponse = documentsDemandes
+- [x] A33 message du visa douanier selon le fichier choisi
+- [x] A36 erreur 409 et blocage dans « Appliquer l'avenant »
+- [x] A37 confirmations avec montant
+- [x] A38 libellé Clôturée
+- [x] A39 texte d'aide Quittance DGI
+- [x] A40 stock TVA : colonne Restant, Épuisé si 0
+- [ ] Contrôle authentifié réel des écrans corrigés — bloqué : aucune session de test
+
+## Recette 02/11/2026 — alignement sur les nouveaux contrats serveur
+- [x] A44 appel PATCH des montants
+- [x] A44 erreur affichée dans la fenêtre des montants
+- [x] A42/A16/A31 utilisations : liste des pièces manquantes, « Soumettre maintenant » bloqué, /soumettre seulement si BROUILLON
+- [x] A42/A16/A31 même flux pour demande de correction et mise en place
+- [x] A34 certificat d'utilisation : réservation du numéro, émission au dépôt du signé
+- [x] A35 `contenuIndisponible` des empreintes + mention Président sur Signatures
+- [x] A41 marché HT/TTC distincts
+- [x] A43 CERTIFICAT_CREDIT_IMPOTS retiré du dépôt AC/relais
+- [x] A45 « Générer le certificat à signer » dans les actions du Président
+- [x] A06 convention « Validée par {valideParNom} »
+- [x] A12/A13 certificat : référence DC, marché, dateDemande des utilisations
+- [x] A14 transfert : certificatReference, /verification CR-…
+- [x] A17 main courante : références lisibles, processus AVENANT
+- [x] A20 utilisation repriseArchive
+- [x] A24 clôture : file d'attente enrichie
+- [x] A29 journal d'audit : timestamp, motif, entityReference, résumé snapshot
+- [x] 404/405 gérés sans casser l'écran ; FR/AR ; tests

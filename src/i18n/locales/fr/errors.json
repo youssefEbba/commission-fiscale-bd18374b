@@ -18,5 +18,6 @@
     "number_invalid": "Nombre invalide",
     "date_invalid": "Date invalide",
     "positive": "Doit être positif"
-  }
+  },
+  "upload_unavailable": "Le dépôt des documents est momentanément indisponible, réessayez plus tard."
 }

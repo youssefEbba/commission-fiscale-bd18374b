@@ -1,3 +1,4 @@
+import { pdfSafe, pdfFmtNombre, numberToFrenchWords } from "@/lib/pdfText";
 import jsPDF from "jspdf";
 import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawVerificationQr } from "@/lib/verificationQr";
@@ -11,15 +12,9 @@ const CURRENCY = "MRU";
 // Sanitize a string for jsPDF's built-in (Helvetica) fonts, which don't ship
 // some Unicode whitespace/dashes. In particular the narrow no-break space
 // (U+202F / U+00A0) produced by fr-FR locale formatting renders as "/".
-const safe = (s: string) =>
-  s
-    .replace(/[\u00A0\u202F\u2007]/g, " ") // narrow/no-break spaces -> normal space
-    .replace(/[\u2013\u2014]/g, "-");       // en/em dash -> hyphen
+const safe = pdfSafe;
 
-const fmt = (v: any) =>
-  v != null && !isNaN(Number(v))
-    ? safe(Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-    : "";
+const fmt = (v: unknown) => pdfFmtNombre(v, 0);
 
 const fmtMontant = (v: any) => {
   const s = fmt(v);

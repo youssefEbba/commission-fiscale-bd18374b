@@ -55,7 +55,8 @@
     "type": "Type",
     "reference": "Référence",
     "bailleur": "Bailleur",
-    "autorite": "Autorité contractante"
+    "autorite": "Autorité contractante",
+    "duree_execution": "Durée d'exécution"
   },
   "form": {
     "title_edit": "Modifier",
@@ -96,7 +97,8 @@
     "convention_make_principale": "Rendre principale",
     "convention_remove": "Retirer",
     "convention_create": "Créer une convention",
-    "conventions_hint": "La première convention de la liste est la convention principale du marché."
+    "conventions_hint": "La première convention de la liste est la convention principale du marché.",
+    "duree_execution_placeholder": "ex. 07 MOIS"
   },
   "assign": {
     "title": "Gérer les représentants",

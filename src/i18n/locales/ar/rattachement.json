@@ -115,7 +115,9 @@
     "f_ministere_nom": "الوزارة الوصية",
     "f_ministere_code": "رمز الوزارة",
     "required": "حقل إلزامي",
-    "detail_autorite": "بطاقة السلطة المتعاقدة"
+    "detail_autorite": "بطاقة السلطة المتعاقدة",
+    "f_categorie": "الفئة",
+    "f_secteur": "قطاع النشاط"
   },
   "comptes": {
     "title": "الحسابات الملحقة",

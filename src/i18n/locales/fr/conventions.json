@@ -81,7 +81,7 @@
     "montant_mru": "Montant MRU",
     "mru": "MRU",
     "autorite_contractante": "Autorité contractante",
-    "validated_by": "Validée par (user ID)",
+    "validated_by": "Validée par",
     "motif_rejet": "Motif de rejet",
     "statut": "Statut",
     "bailleurs_required": "Bailleurs de fonds *",
@@ -148,7 +148,9 @@
     "details_placeholder": "Description…",
     "added": "Bailleur ajouté",
     "edit_title": "Modifier le bailleur",
-    "updated": "Bailleur modifié"
+    "updated": "Bailleur modifié",
+    "categorie": "Catégorie du bailleur",
+    "categorie_placeholder": "Choisir une catégorie"
   },
   "devise": {
     "modal_title": "Nouvelle devise",

@@ -1,10 +1,11 @@
+import { CONVENTION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  conventionApi, ConventionDto,
+  conventionApi, ConventionDto, formatApiErrorMessage,
   DocumentDto, CONVENTION_DOCUMENT_TYPES, TypeDocumentConvention,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentGED from "@/components/ged/DocumentGED";
-import { ArrowLeft, Ban, CalendarClock, FileText, Loader2, Paperclip, Pencil, Power } from "lucide-react";
+import { ArrowLeft, Ban, CalendarClock, FileText, Loader2, Paperclip, Pencil, Power, ShieldCheck, ShieldX } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutConvention, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
@@ -21,17 +22,13 @@ import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { echeanceConvention } from "@/lib/conventionEcheance";
-import { canSetConventionActivation, canEditConvention, conventionCancelMode } from "@/lib/conventionEditability";
+import { canSetConventionActivation, canEditConvention, conventionCancelMode, canDecideConvention } from "@/lib/conventionEditability";
+import ConventionRejectDialog from "@/components/conventions/ConventionRejectDialog";
 import ConventionEditDialog from "@/components/conventions/ConventionEditDialog";
 import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 import ConventionLiensCard from "@/components/conventions/ConventionLiensCard";
 
-const STATUT_COLORS: Record<string, string> = {
-  EN_ATTENTE: "bg-orange-100 text-orange-800",
-  VALIDE: "bg-green-100 text-green-800",
-  REJETE: "bg-red-100 text-red-800",
-  ANNULEE: "bg-gray-100 text-gray-800",
-};
+const STATUT_COLORS = CONVENTION_STATUT_COLORS;
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1">
@@ -62,6 +59,8 @@ const ConventionDetail = () => {
   const [activationLoading, setActivationLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [validating, setValidating] = useState(false);
 
   usePageTitle("conventions:detail.title", { ref: conv?.reference || `#${id}` });
 
@@ -118,7 +117,21 @@ const ConventionDetail = () => {
   const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
   const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const cancelMode = conventionCancelMode(conv, user?.autoriteContractanteId, hasPermission("convention.annuler"), hasRole(["ADMIN_SI", "PRESIDENT"]));
+  const canDecide = canDecideConvention(conv, hasRole(["DGB", "DGI"]));
   const devise = conv.deviseOrigine || "MRU";
+
+  const handleValider = async () => {
+    setValidating(true);
+    try {
+      await conventionApi.updateStatut(conv.id, "VALIDE");
+      toast({ title: t("common:success.title", "Succès"), description: t("conventions:statut_change.success", { label: tStatutConvention("VALIDE") }) });
+      load();
+    } catch (e) {
+      toast({ title: t("common:errors.title", "Erreur"), description: formatApiErrorMessage(e), variant: "destructive" });
+    } finally {
+      setValidating(false);
+    }
+  };
   const echeance = echeanceConvention(conv.dateFin);
 
   const handleActivation = async (actif: boolean) => {
@@ -192,6 +205,17 @@ const ConventionDetail = () => {
                 )}
               </div>
             )}
+            {canDecide && (
+              <>
+                <Button onClick={handleValider} disabled={validating}>
+                  {validating ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <ShieldCheck className="h-4 w-4 me-2" />}
+                  {t("conventions:actions.validate")}
+                </Button>
+                <Button variant="outline" className="text-destructive" onClick={() => setRejectOpen(true)} disabled={validating}>
+                  <ShieldX className="h-4 w-4 me-2" /> {t("conventions:actions.reject")}
+                </Button>
+              </>
+            )}
             {canEdit && (
               <Button variant="outline" onClick={() => setEditOpen(true)}>
                 <Pencil className="h-4 w-4 me-2" /> {t("conventions:actions.edit")}
@@ -244,7 +268,7 @@ const ConventionDetail = () => {
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Field label={t("conventions:fields.statut")} value={tStatutConvention(conv.statut)} />
               <Field label={t("conventions:fields.date_validation")} value={formatDate(conv.dateValidation)} />
-              <Field label={t("conventions:fields.validated_by")} value={conv.valideParUserId} />
+              <Field label={t("conventions:fields.validated_by")} value={conv.valideParNom || undefined} />
               {conv.motifRejet && <Field label={t("conventions:fields.motif_rejet")} value={conv.motifRejet} />}
             </CardContent>
           </Card>
@@ -271,6 +295,13 @@ const ConventionDetail = () => {
         open={editOpen}
         onOpenChange={setEditOpen}
         onSaved={(updated) => { setConv(updated); load(); }}
+      />
+
+      <ConventionRejectDialog
+        convention={conv}
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+        onRejected={load}
       />
 
       <ConventionCancelDialog

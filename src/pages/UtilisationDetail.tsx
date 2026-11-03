@@ -1,4 +1,9 @@
+import { montantOuguiyaEnLettres } from "@/lib/pdfText";
+import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { UTILISATION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
+import { isStockTvaEpuise } from "@/lib/tvaStock";
+import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -15,7 +20,7 @@ import {
   LigneBulletinDto, AffectationTaxe, QuittanceTresorDto,
 } from "@/lib/api";
 import {
-  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise,
+  tTypeDocument, tStatutUtilisation, tUtilisationStatutContextualise, tTypeDecision,
 } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -28,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,30 +50,12 @@ import { DocumentButton } from "@/components/documents/DocumentButton";
 import { useDocumentTaskPending } from "@/hooks/useDocumentTasks";
 import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 import { certificatUtilisationVisible, isDeposantUtilisation, utilisationClotureMode } from "@/lib/utilisationCloture";
+import { isRouteUnavailable } from "@/lib/submission";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
 const CU_CARD_STATUTS: string[] = ["TRANSMISE_AU_PRESIDENT", "VALIDEE", ...CU_POST_EMISSION, "CLOTUREE"];
-const STATUT_COLORS: Record<UtilisationStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  DEMANDEE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION: "bg-yellow-100 text-yellow-800",
-  VISE: "bg-purple-100 text-purple-800",
-  VALIDEE: "bg-emerald-100 text-emerald-800",
-  LIQUIDEE: "bg-green-100 text-green-800",
-  APUREE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  CERTIFICAT_EMIS: "bg-primary/15 text-primary",
-  CLOTUREE: "bg-slate-200 text-slate-800",
-  EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
-  CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
-  TRANSMISE_AU_PRESIDENT: "bg-violet-100 text-violet-800",
-  ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
-  QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
-  QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
-};
+const STATUT_COLORS = UTILISATION_STATUT_COLORS;
 
 const fmtAmt = (v: any) => formatAmount(v, { currency: "MRU", maximumFractionDigits: 2 });
 const fmtNum = (v: any) => {
@@ -82,53 +70,7 @@ const fmtNum = (v: any) => {
 // Conversion d'un nombre en lettres (français) — usage bulletin de liquidation.
 // REVIEW: conservé en FR uniquement ; la traduction des montants en lettres en AR
 // n'est pas spécifiée dans ce lot.
-const _u = ["zéro","un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix","onze","douze","treize","quatorze","quinze","seize","dix-sept","dix-huit","dix-neuf"];
-const _t = ["","","vingt","trente","quarante","cinquante","soixante","soixante","quatre-vingt","quatre-vingt"];
-function _below1000(n: number): string {
-  if (n === 0) return "";
-  let s = "";
-  const c = Math.floor(n / 100), r = n % 100;
-  if (c > 0) s += (c > 1 ? _u[c] + " " : "") + "cent" + (c > 1 && r === 0 ? "s" : "");
-  if (r > 0) {
-    if (s) s += " ";
-    if (r < 20) s += _u[r];
-    else {
-      const d = Math.floor(r / 10), un = r % 10;
-      if (d === 7 || d === 9) {
-        s += _t[d] + (d === 7 && un === 1 ? " et " : "-") + _u[10 + un];
-      } else {
-        s += _t[d];
-        if (un === 1 && d !== 8) s += " et un";
-        else if (un > 0) s += "-" + _u[un];
-        else if (d === 8) s += "s";
-      }
-    }
-  }
-  return s;
-}
-// i18n-intentional: montant en lettres pour document officiel PDF (français uniquement, exigence légale).
-function numberToFrenchWords(n: number): string {
-  if (!isFinite(n)) return "";
-  const entier = Math.floor(Math.abs(n));
-  const cents = Math.round((Math.abs(n) - entier) * 100);
-  if (entier === 0 && cents === 0) return "zéro Ouguiya";
-  let s = "";
-  const millions = Math.floor(entier / 1000000);
-  const milliers = Math.floor((entier % 1000000) / 1000);
-  const reste = entier % 1000;
-  if (millions > 0) s += (millions === 1 ? "un million" : _below1000(millions) + " millions");
-  if (milliers > 0) {
-    if (s) s += " ";
-    s += (milliers === 1 ? "mille" : _below1000(milliers) + " mille");
-  }
-  if (reste > 0) {
-    if (s) s += " ";
-    s += _below1000(reste);
-  }
-  if (cents > 0) s += " virgule " + _below1000(cents);
-  s += " Ouguiya";
-  return s;
-}
+const numberToFrenchWords = montantOuguiyaEnLettres;
 
 const UtilisationDetail = () => {
   const { t } = useTranslation(["utilisations", "common", "errors"]);
@@ -195,6 +137,8 @@ const UtilisationDetail = () => {
   const [envoiLoading, setEnvoiLoading] = useState(false);
   // Clôture DGTCP (ou substitution ADMIN_SI avec motif)
   const [showCloture, setShowCloture] = useState(false);
+  // Confirmations avec montant : validation TVA (DGTCP) et liquidation douane.
+  const [confirmGeste, setConfirmGeste] = useState<null | "VALIDER_TVA" | "LIQUIDER_DOUANE">(null);
   const [clotureMotif, setClotureMotif] = useState("");
   const [clotureLoading, setClotureLoading] = useState(false);
 
@@ -279,9 +223,10 @@ const UtilisationDetail = () => {
     try {
       await utilisationCreditApi.updateStatut(utilId, statut);
       toast({ title: tSuccess(), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
+      setConfirmGeste(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(false); }
   };
 
@@ -293,11 +238,7 @@ const UtilisationDetail = () => {
       toast({ title: t("utilisations:toast.decisions_missing_title"), description: t("utilisations:toast.decisions_missing_desc", { count: missing.length }), variant: "destructive" });
       return;
     }
-    const bulletinActifExiste = docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false);
-    if (!liqBulletinFile && !bulletinActifExiste) {
-      toast({ title: tError(), description: t("utilisations:visa_dgd.upload.required"), variant: "destructive" });
-      return;
-    }
+    // Le scan du bulletin annoté est facultatif : le visa part avec ou sans fichier.
     setLiqLoading(true);
     try {
       const dec = lignes.filter(l => liqDecisions[l.id]).map(l => {
@@ -313,8 +254,8 @@ const UtilisationDetail = () => {
       setLiqValeurs({});
       setLiqBulletinFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setLiqLoading(false); }
   };
 
@@ -324,6 +265,7 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.liquiderDouane(utilId);
       toast({ title: t("utilisations:toast.liquidation_done_title"), description: t("utilisations:toast.liquidation_done_desc") });
       setShowLiq(false);
+      setConfirmGeste(null);
       const u2 = await utilisationCreditApi.getById(utilId);
       const cert2 = u2.certificatCreditId
         ? await certificatCreditApi.getById(u2.certificatCreditId).catch(() => null)
@@ -331,8 +273,8 @@ const UtilisationDetail = () => {
       setUtil(u2);
       if (cert2) setCert(cert2);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setLiqLoading(false); }
   };
 
@@ -356,8 +298,8 @@ const UtilisationDetail = () => {
       setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
       setChequeFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setChequeLoading(false); }
   };
 
@@ -368,8 +310,8 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.transmettrePresident(utilId);
       toast({ title: tSuccess(), description: t("utilisations:transmission_president.done") });
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setTransmissionLoading(false); }
   };
 
@@ -379,8 +321,8 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.envoyerAuTresor(utilId);
       toast({ title: t("utilisations:toast.envoi_tresor_title"), description: t("utilisations:toast.envoi_tresor_desc") });
       fetchAll();
-    } catch (e: any) {
-      const description = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_envoi_error")) : e.message;
+    } catch (e: unknown) {
+      const description = (isApiError(e) ? e.code : undefined) === "CERTIFICAT_UTILISATION_NON_EMIS" ? (formatApiErrorMessage(e) || t("utilisations:certificat_utilisation.non_emis_envoi_error")) : formatApiErrorMessage(e);
       toast({ title: tError(), description, variant: "destructive" });
     } finally { setEnvoiLoading(false); }
   };
@@ -411,8 +353,8 @@ const UtilisationDetail = () => {
       setShowQuittances(false);
       setQuittancesFiles({});
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setQuittancesLoading(false); }
   };
 
@@ -426,8 +368,8 @@ const UtilisationDetail = () => {
       setShowCloture(false);
       setClotureMotif("");
       fetchAll();
-    } catch (e: any) {
-      const msg = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_error")) : e.message;
+    } catch (e: unknown) {
+      const msg = (isApiError(e) ? e.code : undefined) === "CERTIFICAT_UTILISATION_NON_EMIS" ? (formatApiErrorMessage(e) || t("utilisations:certificat_utilisation.non_emis_error")) : formatApiErrorMessage(e);
       toast({ title: tError(), description: msg, variant: "destructive" });
     } finally { setClotureLoading(false); }
   };
@@ -443,8 +385,8 @@ const UtilisationDetail = () => {
       setUtil(u2);
       if (cert2) setCert(cert2);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setApurLoading(false); }
   };
 
@@ -463,8 +405,8 @@ const UtilisationDetail = () => {
       setShowQDgi(false);
       setQDgiFile(null);
       fetchAll();
-    } catch (e: any) {
-      const description = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_quittance_error")) : e.message;
+    } catch (e: unknown) {
+      const description = (isApiError(e) ? e.code : undefined) === "CERTIFICAT_UTILISATION_NON_EMIS" ? (formatApiErrorMessage(e) || t("utilisations:certificat_utilisation.non_emis_quittance_error")) : formatApiErrorMessage(e);
       toast({ title: tError(), description, variant: "destructive" });
     } finally { setQDgiLoading(false); }
   };
@@ -473,7 +415,7 @@ const UtilisationDetail = () => {
     if (!util) return;
     setTvaPdfLoading(true);
     try { await trackDocumentTask(`generate:cu-tva:${util.id}`, "generate", undefined, () => generateUtilisationTvaPdf(util, cert)); }
-    catch (e: any) { toast({ title: tError(), description: e.message, variant: "destructive" }); }
+    catch (e: unknown) { toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" }); }
     finally { setTvaPdfLoading(false); }
   };
 
@@ -485,8 +427,8 @@ const UtilisationDetail = () => {
       toast({ title: tSuccess(), description: t("utilisations:certificat_utilisation.emis_toast", { numero: u2?.numeroCertificatUtilisation || "" }) });
       setCuAdminOpen(false); setCuAdminMotif(""); setCuAdminFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setCuAdminLoading(false); }
   };
 
@@ -503,8 +445,8 @@ const UtilisationDetail = () => {
       setRejetMotif("");
       setRejetDocs([]);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setRejetLoading(false); }
   };
 
@@ -517,8 +459,8 @@ const UtilisationDetail = () => {
       setDocFile(null);
       setShowUpload(false);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setUploading(false); }
   };
 
@@ -552,8 +494,8 @@ const UtilisationDetail = () => {
       setResponseMsg("");
       setResponseFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setResponding(false); }
   };
 
@@ -562,15 +504,15 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.resolveRejetTemp(decisionId);
       toast({ title: tSuccess(), description: t("utilisations:toast.rejet_resolved") });
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     }
   };
 
   // Toujours via GET /documents/{id}/download (applique la règle de confidentialité, 403 explicite).
   const fileDoc = (doc: { id?: number; chemin?: string; nomFichier?: string }): OpenableDoc =>
     doc.id ? { id: doc.id, nomFichier: doc.nomFichier } : { chemin: doc.chemin, nomFichier: doc.nomFichier };
-  const onFileError = (e: any) => toast({ title: tError(), description: e?.message, variant: "destructive" });
+  const onFileError = (e: any) => toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
 
   if (loading) {
     return <DashboardLayout><div className="flex justify-center items-center py-24"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></DashboardLayout>;
@@ -618,6 +560,24 @@ const UtilisationDetail = () => {
   const openRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT");
   const resolvedRejets = decisions.filter(d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "RESOLU");
   const visaDecisions = decisions.filter(d => d.decision === "VISA");
+  const rejetDecisions = decisions.filter(d => (d.decision as string) === "REJET");
+  const shownDecisionsCount = openRejets.length + resolvedRejets.length + visaDecisions.length + rejetDecisions.length;
+  // Documents listés = versions actives seulement ; le compteur de la carte compte exactement cette liste.
+  const visibleDocs = (() => {
+    const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
+    const maxVersion = new Map<string, number>();
+    for (const d of docs) {
+      if (d.actif === false || !d.type) continue;
+      maxVersion.set(d.type, Math.max(maxVersion.get(d.type) ?? 0, d.version ?? 1));
+    }
+    return docs.filter(d => {
+      if (d.actif === false) return false;
+      // Sans indicateur `actif` explicite, une version remplacée par une plus récente n'est pas active.
+      if (d.actif !== true && d.type && (d.version ?? 1) < (maxVersion.get(d.type) ?? 0)) return false;
+      if (!allowedTvaTypes) return true;
+      return allowedTvaTypes.has(d.type as TypeDocumentUtilisation);
+    });
+  })();
 
   return (
     <DashboardLayout>
@@ -650,7 +610,7 @@ const UtilisationDetail = () => {
             )}
           </div>
           <Badge className={`text-sm px-3 py-1 ${STATUT_COLORS[u.statut]}`}>
-            {tUtilisationStatutContextualise(u.statut, u.type)}
+            {tUtilisationStatutContextualise(u.statut)}
           </Badge>
         </div>
 
@@ -1000,7 +960,7 @@ const UtilisationDetail = () => {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.numero")}</p><p className="font-bold">{u.numeroCertificatUtilisation || t("utilisations:certificat_utilisation.non_emis")}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.numero")}</p><p className="font-bold">{u.numeroCertificatUtilisation || (u.repriseArchive ? t("utilisations:certificat_utilisation.reprise_archive") : t("utilisations:certificat_utilisation.non_emis"))}</p></div>
                 <div><p className="text-muted-foreground">{t("utilisations:certificat_utilisation.date")}</p><p className="font-medium">{u.dateCertificatUtilisation ? formatDate(u.dateCertificatUtilisation) : "—"}</p></div>
               </div>
               {u.statut === "CLOTUREE" && !u.numeroCertificatUtilisation && (
@@ -1099,13 +1059,13 @@ const UtilisationDetail = () => {
                 </TableHeader>
                 <TableBody>
                   {tvaStock.map(x => (
-                    <TableRow key={x.id} className={x.epuise ? "opacity-50" : ""}>
+                    <TableRow key={x.id} className={isStockTvaEpuise(x) ? "opacity-50" : ""}>
                       <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
                       <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
                       <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
                       <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
                       <TableCell>{formatDate(x.dateCreation)}</TableCell>
-                      <TableCell>{x.epuise ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</TableCell>
+                      <TableCell>{isStockTvaEpuise(x) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1120,7 +1080,7 @@ const UtilisationDetail = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                {t("utilisations:documents.title", { count: docs.filter(d => d.actif !== false).length })}
+                {t("utilisations:documents.title", { count: visibleDocs.length })}
               </CardTitle>
               {canUploadDoc && (
                 <Button size="sm" variant="outline" onClick={() => setShowUpload(true)}>
@@ -1131,12 +1091,6 @@ const UtilisationDetail = () => {
           </CardHeader>
           <CardContent>
             {(() => {
-              const allowedTvaTypes = isTVA ? new Set<string>(tvaDocTypes) : null;
-              const visibleDocs = docs.filter(d => {
-                if (d.actif === false) return false;
-                if (!isTVA) return true;
-                return allowedTvaTypes!.has(d.type as TypeDocumentUtilisation);
-              });
               return visibleDocs.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">{piecesAdminReservees ? t("utilisations:documents.reservees_admin") : t("utilisations:documents.empty")}</p>
               ) : (
@@ -1162,9 +1116,9 @@ const UtilisationDetail = () => {
         </Card>
 
         {/* Decisions / Rejets */}
-        {decisions.length > 0 && (
+        {shownDecisionsCount > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: decisions.length })}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> {t("utilisations:decisions_section.title", { count: shownDecisionsCount })}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {openRejets.map(d => (
@@ -1213,7 +1167,17 @@ const UtilisationDetail = () => {
                 {visaDecisions.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-emerald-300 bg-emerald-50/50">
                     <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-[10px]">{t("utilisations:decisions_section.visa_badge")}</Badge>
+                      <Badge variant="default" className="text-[10px]">{tTypeDecision("VISA")}</Badge>
+                      <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
+                      {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
+                    </div>
+                    {d.motifRejet && <p className="text-muted-foreground mt-1">{d.motifRejet}</p>}
+                  </div>
+                ))}
+                {rejetDecisions.map(d => (
+                  <div key={d.id} className="p-2 rounded border text-sm border-destructive/40 bg-destructive/5">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="text-[10px]">{tTypeDecision("REJET")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                     </div>
@@ -1223,7 +1187,7 @@ const UtilisationDetail = () => {
                 {resolvedRejets.map(d => (
                   <div key={d.id} className="p-2 rounded border text-sm border-muted bg-muted/30">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px]">{t("utilisations:decisions_section.rejet_temp_badge")}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{tTypeDecision("REJET_TEMP")}</Badge>
                       <span className="text-muted-foreground">{d.utilisateurNom || d.role}</span>
                       {d.dateDecision && <span className="text-xs text-muted-foreground">{formatDate(d.dateDecision)}</span>}
                       <Badge className="text-[10px] bg-emerald-100 text-emerald-800">{t("utilisations:decisions_section.resolved_badge")}</Badge>
@@ -1302,8 +1266,8 @@ const UtilisationDetail = () => {
                 )}
                 {canDGTCPVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.passer_verification")}</Button>}
                 {canDGTCPReVerifyTVA && <Button onClick={() => handleStatut("EN_VERIFICATION")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.re_verifier")}</Button>}
-                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleStatut("VALIDEE")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
-                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleLiquidationDgtcp} disabled={liqLoading}>
+                {canDGTCPValideTVA && <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setConfirmGeste("VALIDER_TVA")} disabled={actionLoading}>{actionLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:actions.valider")}</Button>}
+                {canDGTCPLiquider && <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setConfirmGeste("LIQUIDER_DOUANE")} disabled={liqLoading}>
                   {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />}
                   <Landmark className="h-4 w-4 me-2" /> {t("utilisations:actions.liquider_certificat")}
                 </Button>}
@@ -1458,7 +1422,7 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` (${t("utilisations:visa_dgd.upload.optional_reannotation")})` : " *"}</Label>
+                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` — ${t("utilisations:visa_dgd.upload.optional_reannotation")}` : ""}</Label>
                 <Input
                   type="file"
                   accept=".pdf,.png,.jpg,.jpeg"
@@ -1571,6 +1535,26 @@ const UtilisationDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Confirmations avec montant — validation TVA et liquidation douane (DGTCP) */}
+      <ConfirmAmountDialog
+        open={confirmGeste !== null}
+        onOpenChange={(o) => { if (!o) setConfirmGeste(null); }}
+        title={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_title", { id: u.id })
+          : t("utilisations:confirm_geste.valider_title", { id: u.id })}
+        description={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_text")
+          : t("utilisations:confirm_geste.valider_text")}
+        amountLabel={confirmGeste === "LIQUIDER_DOUANE"
+          ? t("utilisations:confirm_geste.liquider_amount")
+          : t("utilisations:confirm_geste.valider_amount")}
+        amount={fmtAmt(confirmGeste === "LIQUIDER_DOUANE" ? (u.totalPrisEnCharge ?? u.montant) : u.montant)}
+        cancelLabel={t("utilisations:cloture_dialog.cancel")}
+        confirmLabel={confirmGeste === "LIQUIDER_DOUANE" ? t("utilisations:actions.liquider_certificat") : t("utilisations:actions.valider")}
+        loading={confirmGeste === "LIQUIDER_DOUANE" ? liqLoading : actionLoading}
+        onConfirm={() => { if (confirmGeste === "LIQUIDER_DOUANE") handleLiquidationDgtcp(); else handleStatut("VALIDEE"); }}
+      />
+
       {/* Clôture de l'utilisation — DGTCP (confirmation) ou ADMIN_SI (motif obligatoire) */}
       <Dialog open={showCloture} onOpenChange={o => { if (!clotureLoading) setShowCloture(o); }}>
         <DialogContent className="sm:max-w-md">
@@ -1612,7 +1596,7 @@ const UtilisationDetail = () => {
                 <div className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_numero")} *</Label><Input value={q.numeroQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, numeroQuittance: e.target.value } : x))} /></div>
                   <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_date")} *</Label><Input type="date" value={q.dateQuittance} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, dateQuittance: e.target.value } : x))} /></div>
-                  <div className="col-span-2"><Label className="text-xs">{t("utilisations:quittances_dialog.col_montant")} *</Label><Input type="number" min="0" step="0.01" value={q.montant} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: Number(e.target.value) } : x))} /></div>
+                  <div className="col-span-2"><Label className="text-xs">{t("utilisations:quittances_dialog.col_montant")} *</Label><DecimalInput value={q.montant} onValueChange={n => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, montant: n ?? 0 } : x))} /></div>
                   <div className="col-span-3"><Label className="text-xs">{t("utilisations:quittances_dialog.col_reference")}</Label><Input value={q.referencePaiement || ""} onChange={e => setQuittancesForm(arr => arr.map((x, i) => i === idx ? { ...x, referencePaiement: e.target.value } : x))} /></div>
                   <div className="col-span-1">
                     <Button variant="ghost" size="sm" onClick={() => {
@@ -1706,7 +1690,7 @@ const UtilisationDetail = () => {
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
                 <p className="font-semibold text-blue-800 mb-1">{t("utilisations:apurement_dialog.stock_title", { total: fmtAmt(totalStockDisponible) })}</p>
                 <div className="text-xs text-blue-600 space-y-0.5">
-                  {tvaStock.filter(x => !x.epuise).map(x => (
+                  {tvaStock.filter(x => !isStockTvaEpuise(x)).map(x => (
                     <div key={x.id}>{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })} : {fmtAmt(x.montantRestant)}</div>
                   ))}
                 </div>
@@ -1861,12 +1845,19 @@ const UtilisationDetail = () => {
         title={t("utilisations:certificat_utilisation.emettre")}
         filename={`certificat-utilisation-${u.id}.pdf`}
         prepare={async () => {
-          // Ordre contraint : émettre d'abord pour obtenir le numéro, puis composer le PDF.
-          const u2 = await utilisationCreditApi.emettreCertificatUtilisation(utilId);
+          // Réserver le numéro (statut inchangé) pour l'imprimer sur le modèle ; le certificat
+          // est émis par le serveur au dépôt du document signé. Serveur non redéployé (404/405) :
+          // repli sur l'ancienne émission directe.
+          const u2 = await utilisationCreditApi.reserverNumeroCertificatUtilisation(utilId).catch((e) => {
+            if (isRouteUnavailable(e)) return utilisationCreditApi.emettreCertificatUtilisation(utilId);
+            throw e;
+          });
           const fresh = await utilisationCreditApi.getById(utilId).catch(() => u2);
-          const merged = { ...u, ...fresh, lignes: fresh?.lignes?.length ? fresh.lignes : u.lignes } as UtilisationCreditDto;
-          toast({ title: tSuccess(), description: t("utilisations:certificat_utilisation.emis_toast", { numero: merged.numeroCertificatUtilisation || "" }) });
-          return merged;
+          return {
+            ...u, ...fresh,
+            numeroCertificatUtilisation: fresh?.numeroCertificatUtilisation || u2?.numeroCertificatUtilisation,
+            lignes: fresh?.lignes?.length ? fresh.lignes : u.lignes,
+          } as UtilisationCreditDto;
         }}
         generate={(apposition, prepared) => generateCuPdf(prepared || u, { apposition, save: false })}
         upload={async (file, mode) => { await utilisationCreditApi.uploadDocument(utilId, "CERTIFICAT_UTILISATION", file, mode); }}

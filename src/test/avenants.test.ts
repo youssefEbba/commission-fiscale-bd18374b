@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   avenantActions, avenantDepotErrors, buildApplicationRequest, buildCreateAvenantRequest,
   avenantPiecesObligatoires, canDeposerAvenant, canUploadAvenantPieces, checkAvenantRecap, previewSoldesApresAvenant,
-  type AvenantDepotForm, type AvenantRecapForm, canUploadAvenantDecision, avenantPiecesCommission } from "@/lib/avenants";
+  type AvenantDepotForm, type AvenantRecapForm, canUploadAvenantDecision, avenantPiecesCommission,
+  AVENANT_SANS_MARCHE, avenantMarcheOptions, creditsDuMarche } from "@/lib/avenants";
+import { activeNavHref } from "@/lib/navActive";
 
 const perms = (...p: string[]) => (x: string) => p.includes(x);
 
 const depot = (o: Partial<AvenantDepotForm> = {}): AvenantDepotForm => ({
-  certificatCreditId: "7", type: "JURIDIQUE", motif: "Prolongation", dateSignature: "2026-10-01",
+  marche: "3", certificatCreditId: "7", type: "JURIDIQUE", motif: "Prolongation", dateSignature: "2026-10-01",
   creditExterieurPropose: "", creditInterieurPropose: "", ...o,
 });
 
@@ -149,5 +151,42 @@ describe("pièces obligatoires d'un avenant (GED MODIFICATION_CI)", () => {
   });
   it("une pièce facultative absente n'est jamais signalée manquante", () => {
     expect(avenantPiecesObligatoires(options, []).map((p) => p.code)).not.toContain("NOTE");
+  });
+});
+
+describe("dépôt d'un avenant : marché puis crédit", () => {
+  const credits = [
+    { id: 1, marcheId: 5, marcheNumero: "M-B", marcheIntitule: "Route" },
+    { id: 2, marcheId: 4, marcheNumero: "M-A", marcheIntitule: "École" },
+    { id: 3, marcheId: 5, marcheNumero: "M-B", marcheIntitule: "Route" },
+    { id: 4, marcheId: null },
+  ];
+
+  it("regroupe les crédits par marché, « sans marché » en dernier", () => {
+    expect(avenantMarcheOptions(credits).map((o) => [o.key, o.nbCredits])).toEqual([["4", 1], ["5", 2], [AVENANT_SANS_MARCHE, 1]]);
+  });
+
+  it("filtre les crédits sur le marché choisi", () => {
+    expect(creditsDuMarche(credits, "5").map((c) => c.id)).toEqual([1, 3]);
+    expect(creditsDuMarche(credits, AVENANT_SANS_MARCHE).map((c) => c.id)).toEqual([4]);
+    expect(creditsDuMarche(credits, "")).toEqual([]);
+  });
+
+  it("exige un marché et n'envoie marcheId que pour un vrai marché", () => {
+    expect(avenantDepotErrors(depot({ marche: "" }), "2026-10-30")).toContain("marche_required");
+    expect(buildCreateAvenantRequest(depot({ marche: "3" })).marcheId).toBe(3);
+    expect("marcheId" in buildCreateAvenantRequest(depot({ marche: AVENANT_SANS_MARCHE }))).toBe(false);
+  });
+});
+
+describe("menu : entrée active par préfixe", () => {
+  const hrefs = ["/dashboard", "/dashboard/marches", "/dashboard/modifications", "/dashboard/satisfaction", "/dashboard/satisfaction/enquetes"];
+  it("garde l'entrée sur les fiches et choisit la plus précise", () => {
+    expect(activeNavHref("/dashboard/marches/12", hrefs)).toBe("/dashboard/marches");
+    expect(activeNavHref("/dashboard/modifications/5", hrefs)).toBe("/dashboard/modifications");
+    expect(activeNavHref("/dashboard/satisfaction/enquetes/3", hrefs)).toBe("/dashboard/satisfaction/enquetes");
+    expect(activeNavHref("/dashboard", hrefs)).toBe("/dashboard");
+    expect(activeNavHref("/dashboard/relais", hrefs)).toBeNull();
+    expect(activeNavHref("/dashboard/marchesx", hrefs)).toBeNull();
   });
 });

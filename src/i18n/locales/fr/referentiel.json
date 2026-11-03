@@ -20,5 +20,19 @@
     "error_save": "Impossible d'enregistrer le paramètre",
     "empty": "Aucun paramètre.",
     "too_long": "{{max}} caractères maximum"
+  },
+  "secteurs": {
+    "title": "Secteurs d'activité",
+    "subtitle": "Référentiel utilisé pour classer les entreprises bénéficiaires.",
+    "new": "Nouveau secteur",
+    "edit": "Modifier le secteur",
+    "code": "Code",
+    "libelle": "Libellé",
+    "libelle_ar": "Libellé arabe",
+    "statut": "Statut",
+    "actif": "Actif",
+    "inactif": "Inactif",
+    "empty": "Aucun secteur",
+    "saved": "Secteur enregistré"
   }
 }

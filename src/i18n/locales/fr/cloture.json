@@ -5,7 +5,7 @@
     "refresh": "Actualiser",
     "propose": "Proposer clôture/annulation",
     "eligible": {
-      "title": "Certificats éligibles à la clôture",
+      "title": "Crédits proposables à la clôture",
       "empty": "Aucun certificat éligible détecté",
       "propose_btn": "Proposer",
       "columns": {
@@ -13,8 +13,12 @@
         "solde_cordon": "Solde Cordon (droits)",
         "solde_tva": "Solde TVA",
         "date_validite": "Date validité",
-        "action": "Action"
-      }
+        "action": "Action",
+        "soldes": "Soldes restants"
+      },
+      "auto_badge": "Détecté automatiquement",
+      "soldes_epuises": "Soldes épuisés",
+      "validite_depassee": "Validité dépassée"
     },
     "propositions": {
       "title_president": "Propositions en attente d'approbation",
@@ -49,7 +53,8 @@
     "motif_label": "Motif",
     "motif_placeholder": "Choisir un motif",
     "cancel": "Annuler",
-    "submit": "Soumettre"
+    "submit": "Soumettre",
+    "soldes_restants": "Soldes restants : {{list}} — le motif « Solde à zéro » n'est pas proposé."
   },
   "step2": {
     "description": "Étape 2 — PRESIDENT : valider ou rejeter la proposition.",

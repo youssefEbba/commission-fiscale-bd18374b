@@ -234,7 +234,12 @@
     "DEMANDE_MOTIVEE_TRANSFERT": "Demande motivée de transfert",
     "DECLARATION_CLOTURE_DOUANE": "Déclaration de clôture douane",
     "LISTE_CREDITS_A_CLOTURER": "Liste des crédits à clôturer",
-    "RECU_DEPOT": "Reçu de dépôt"
+    "RECU_DEPOT": "Reçu de dépôt",
+    "MANDAT_REPRESENTATION": "Mandat de représentation",
+    "OFFRE_FISCALE": "Offre fiscale",
+    "OFFRE": "Offre",
+    "DQE": "DQE (détail quantitatif et estimatif)",
+    "LISTE_EQUIPEMENTS": "Liste des équipements"
   },
   "type_utilisation": {
     "DOUANE": "Douane",
@@ -294,5 +299,24 @@
   "type_projet": {
     "BTP": "BTP",
     "EQUIPEMENT": "Équipements industriels"
+  },
+  "type_decision": {
+    "VISA": "Visa",
+    "REJET_TEMP": "Demande de pièces",
+    "REJET": "Rejet",
+    "ACCEPTATION": "Acceptation",
+    "VALIDATION": "Validation"
+  },
+  "entreprise_categorie": {
+    "PME": "PME",
+    "GRANDE_ENTREPRISE": "Grande entreprise",
+    "NON_RENSEIGNEE": "Non renseignée"
+  },
+  "bailleur_categorie": {
+    "NATIONAL": "National",
+    "MULTILATERAL": "Multilatéral",
+    "BILATERAL": "Bilatéral",
+    "PRIVE": "Privé",
+    "NON_RENSEIGNE": "Non renseigné"
   }
 }

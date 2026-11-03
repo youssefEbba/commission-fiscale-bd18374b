@@ -17,12 +17,12 @@ export const tStatutCertificat = (v?: string | null) => tEnum("statut_certificat
 export const tStatutTransfert = (v?: string | null) => tEnum("statut_transfert", v ?? undefined);
 export const tStatutUtilisation = (v?: string | null) => tEnum("statut_utilisation", v ?? undefined);
 /**
- * Libellé contextualisé : pour une utilisation DOUANIER clôturée,
- * renvoie « Clôturée (transfert) » / « مغلقة (تحويل) ».
- * Sinon retombe sur tStatutUtilisation.
+ * Libellé du statut d'une utilisation : CLOTUREE → « Clôturée ».
+ * La mention « (transfert) » n'apparaît que pour une clôture explicitement liée à un transfert
+ * (`parTransfert`), jamais déduite du seul type douanier.
  */
-export const tUtilisationStatutContextualise = (statut?: string | null, type?: string | null): string => {
-  if (statut === "CLOTUREE" && type === "DOUANIER") {
+export const tUtilisationStatutContextualise = (statut?: string | null, opts?: { parTransfert?: boolean | null }): string => {
+  if (statut === "CLOTUREE" && opts?.parTransfert === true) {
     const k = "utilisations:statut.cloturee_transfert";
     const r = i18n.t(k, { defaultValue: "" }) as string;
     if (r) return r;
@@ -37,6 +37,37 @@ export const tStatutAvenant = (v?: string | null) => tEnum("statut_avenant", v ?
 export const tTypeAvenant = (v?: string | null) => tEnum("type_avenant", v ?? undefined);
 export const tStatutSousTraitance = (v?: string | null) => tEnum("statut_sous_traitance", v ?? undefined);
 export const tStatutModification = (v?: string | null) => tEnum("statut_modification", v ?? undefined);
+/** Groupes de statuts parcourus pour un statut dont l'objet n'est pas connu. */
+const STATUT_GROUPS = [
+  "statut_demande", "statut_certificat", "statut_utilisation", "statut_transfert",
+  "statut_avenant", "statut_convention", "statut_marche", "statut_sous_traitance",
+  "statut_modification", "statut_referentiel", "reclamation_statut",
+] as const;
+/**
+ * Libellé d'un statut quel que soit l'objet : groupe préféré d'abord,
+ * puis les autres groupes de statuts ; repli sur le code brut.
+ */
+export const tStatutAny = (v?: string | null, preferred?: string | null): string => {
+  if (!v) return "—";
+  const groups = preferred ? [preferred, ...STATUT_GROUPS.filter((g) => g !== preferred)] : [...STATUT_GROUPS];
+  for (const g of groups) {
+    const r = i18n.t(`enums:${g}.${v}`, { defaultValue: "" }) as string;
+    if (r) return r;
+  }
+  return v;
+};
+/** Groupe de statuts d'une ligne de main courante (type d'objet, puis processus). */
+export const statutGroupForLigne = (type?: string | null, processus?: string | null): string | undefined => {
+  if (processus === "AVENANT" || type === "Avenant" || type === "AvenantCertificat") return "statut_avenant";
+  switch (type) {
+    case "DemandeCorrection": return "statut_demande";
+    case "CertificatCredit": return "statut_certificat";
+    case "UtilisationCredit": return "statut_utilisation";
+    case "TransfertCredit": return "statut_transfert";
+    case "SousTraitance": return "statut_sous_traitance";
+    default: return undefined;
+  }
+};
 export const tRole = (v?: string | null) => tEnum("role", v ?? undefined);
 export const tTypeDocument = (v?: string | null) => tEnum("type_document", v ?? undefined);
 /**
@@ -64,6 +95,8 @@ export const tDocRequirementLabel = (req?: {
 export const tTypeUtilisation = (v?: string | null) => tEnum("type_utilisation", v ?? undefined);
 export const tTypeOperation = (v?: string | null) => tEnum("type_operation", v ?? undefined);
 export const tDecisionType = (v?: string | null) => tEnum("decision_type", v ?? undefined);
+/** Type d'une décision d'historique (VISA, REJET_TEMP, REJET…) en libellé métier. */
+export const tTypeDecision = (v?: string | null) => tEnum("type_decision", v ?? undefined);
 export const tDecisionCorrectionType = (v?: string | null) => tEnum("decision_correction_type", v ?? undefined);
 export const tRejetTempStatus = (v?: string | null) => tEnum("rejet_temp_status", v ?? undefined);
 export const tTvaStockSource = (v?: string | null) => tEnum("tva_stock_source", v ?? undefined);

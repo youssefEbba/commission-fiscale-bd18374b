@@ -1,3 +1,4 @@
+import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
@@ -34,16 +35,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const STATUT_COLORS: Record<string, string> = {
-  RECUE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-yellow-100 text-yellow-800",
-  RECEVABLE: "bg-emerald-100 text-emerald-800",
-  EN_EVALUATION: "bg-orange-100 text-orange-800",
-  EN_VALIDATION: "bg-purple-100 text-purple-800",
-  ADOPTEE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  NOTIFIEE: "bg-gray-100 text-gray-800",
-};
+const STATUT_COLORS = DEMANDE_STATUT_COLORS;
 
 import { apiFetch } from "@/lib/api";
 import { DocumentButton } from "@/components/documents/DocumentButton";

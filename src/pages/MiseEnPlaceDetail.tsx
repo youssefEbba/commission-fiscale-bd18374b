@@ -1,4 +1,6 @@
+import { CERTIFICAT_STATUT_COLORS } from "@/lib/statutColors";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
+import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -43,29 +45,14 @@ import CertificatAdminVisasCard from "@/components/admin/CertificatAdminVisasCar
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { tStatutCertificat, tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
 import { certificatAmountRestriction, canCorrectCertificatField, canManuallySetCertificatStatus, type UtilisationPresence } from "@/lib/certificatEditability";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
-const STATUT_COLORS: Record<CertificatStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  ENVOYEE: "bg-sky-100 text-sky-800",
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_CONTROLE: "bg-teal-100 text-teal-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
-  EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
-  VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
-  EN_OUVERTURE_DGTCP: "bg-yellow-100 text-yellow-800",
-  OUVERT: "bg-emerald-100 text-emerald-800",
-  MODIFIE: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = CERTIFICAT_STATUT_COLORS;
 
 // Fallback si l'API de paramétrage GED est indisponible — codes connus pour MISE_EN_PLACE_CI.
 const DOC_TYPES_FALLBACK = [
@@ -124,6 +111,8 @@ const MiseEnPlaceDetail = () => {
 
   const [showMontants, setShowMontants] = useState(false);
   const [montantCordon, setMontantCordon] = useState("");
+  // Confirmation (avec montants) avant l'ouverture du certificat par le Président.
+  const [confirmOuverture, setConfirmOuverture] = useState(false);
   const [montantTVAInt, setMontantTVAInt] = useState("");
   const [recapA, setRecapA] = useState("");
   const [recapB, setRecapB] = useState("");
@@ -132,6 +121,8 @@ const MiseEnPlaceDetail = () => {
   const [recapG, setRecapG] = useState("");
   const [recapTC, setRecapTC] = useState("");
   const [savingMontants, setSavingMontants] = useState(false);
+  // Refus serveur affiché dans la fenêtre des montants (le toast restait masqué derrière elle).
+  const [montantsError, setMontantsError] = useState<string | null>(null);
   const [montantsAdminMode, setMontantsAdminMode] = useState(false);
   const [montantsMotif, setMontantsMotif] = useState("");
   const [adminResolveId, setAdminResolveId] = useState<number | null>(null);
@@ -259,8 +250,8 @@ const MiseEnPlaceDetail = () => {
 
   const c = certificat;
   const entrepriseName = c.entrepriseNom || entreprise?.raisonSociale || "—";
-  const correctionRef = (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
-  const marcheRef = c.marcheIntitule || marche?.intitule || marche?.numeroMarche || "—";
+  const correctionRef = c.demandeCorrectionReference || (correction ? displayRef(correction) : c.demandeCorrectionNumero || "—");
+  const marcheRef = c.marcheNumero || marche?.numeroMarche || c.marcheReference || c.marcheIntitule || marche?.intitule || "—";
   // Devise affichée pour les montants — celle du marché si dispo, sinon MRU.
   const currency = (marche as any)?.deviseOrigine || "MRU";
 
@@ -343,6 +334,7 @@ const MiseEnPlaceDetail = () => {
     if (amountRestriction) return;
     setMontantsAdminMode(admin);
     setMontantsMotif("");
+    setMontantsError(null);
     setShowMontants(true);
     setMontantCordon(c.montantCordon != null ? String(c.montantCordon) : "");
     setMontantTVAInt(c.montantTVAInterieure != null ? String(c.montantTVAInterieure) : "");
@@ -428,6 +420,7 @@ const MiseEnPlaceDetail = () => {
 
   const handleUploadAndValidate = async () => {
     if (!certFile && !hasCertDoc) return;
+    setConfirmOuverture(false);
     setUploadingCert(true);
     try {
       if (certFile) {
@@ -521,7 +514,7 @@ const MiseEnPlaceDetail = () => {
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground mb-1">{t("mise_en_place:detail.info.correction")}</p>
               <p className="font-semibold">{correctionRef}</p>
-              {correction?.statut && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.correction_statut")}: {correction.statut}</p>}
+              {correction?.statut && <p className="text-xs text-muted-foreground">{t("mise_en_place:detail.info.correction_statut")}: {tStatutDemande(correction.statut)}</p>}
             </CardContent>
           </Card>
           <Card>
@@ -663,12 +656,21 @@ const MiseEnPlaceDetail = () => {
                       <p className="text-xs text-muted-foreground mt-1">{t("common:president_sign.intro")}</p>
                     </div>
                   )}
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => trackDocumentTask(`generate:cert-sign:${c.id}`, "generate", undefined, () => generateCertificatToSignPdf(c, { entreprise, marche, convention, autorite }))}
+                    >
+                      <FileText className="h-4 w-4 me-1" /> {t("mise_en_place:detail.president.generate_to_sign")}
+                    </Button>
+                  </div>
                   {hasCertDoc && !certFile && (
                     <div className="flex items-center gap-2 text-sm text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> {t("mise_en_place:detail.president.already_uploaded")}
                     </div>
                   )}
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={uploadingCert || !hasCertDoc} onClick={handleUploadAndValidate}>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={uploadingCert || !hasCertDoc} onClick={() => setConfirmOuverture(true)}>
                     {uploadingCert && <Loader2 className="h-4 w-4 animate-spin me-1" />}
                     <ShieldCheck className="h-4 w-4 me-1" /> {t("mise_en_place:detail.president.validate_and_open")}
                   </Button>
@@ -1161,11 +1163,16 @@ const MiseEnPlaceDetail = () => {
                   </div>
                 )}
 
+                {montantsError && (
+                  <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-sm text-destructive whitespace-pre-wrap">{montantsError}</p>
+                )}
+
                 <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-3 pt-3">
                   <Button variant="outline" onClick={() => setShowMontants(false)} className="sm:me-auto">{t("mise_en_place:dialogs.montants.cancel")}</Button>
                   <Button disabled={!canSave} onClick={async () => {
                     if (amountRestriction) return;
                     setSavingMontants(true);
+                    setMontantsError(null);
                     try {
                       const recap: Record<string, number> = {};
                       const ok = (v: number | null): v is number => v != null && Number.isFinite(v);
@@ -1188,8 +1195,8 @@ const MiseEnPlaceDetail = () => {
                       }
                       setShowMontants(false);
                       fetchData();
-                    } catch (e: any) {
-                      errToast(e.message);
+                    } catch (e) {
+                      setMontantsError(formatApiErrorMessage(e, t("mise_en_place:dialogs.montants.save_error")));
                     } finally { setSavingMontants(false); }
                   }}>
                     {savingMontants && <Loader2 className="h-4 w-4 animate-spin me-2" />}
@@ -1344,6 +1351,23 @@ const MiseEnPlaceDetail = () => {
           onDone={fetchData}
         />
       )}
+      <ConfirmAmountDialog
+        open={confirmOuverture}
+        onOpenChange={setConfirmOuverture}
+        title={t("mise_en_place:detail.president.confirm_title", { ref: c.reference || `#${c.id}` })}
+        description={t("mise_en_place:detail.president.confirm_text")}
+        amountLabel={t("mise_en_place:detail.president.confirm_amount")}
+        amount={fmtAmt(c.montantTotal ?? ((Number(c.montantCordon) || 0) + (Number(c.montantTVAInterieure) || 0)))}
+        cancelLabel={t("common:actions.cancel")}
+        confirmLabel={t("mise_en_place:detail.president.validate_and_open")}
+        loading={uploadingCert}
+        onConfirm={handleUploadAndValidate}
+      >
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div><p className="text-muted-foreground">{t("mise_en_place:detail.president.confirm_cordon")}</p><p className="font-medium">{fmtAmt(c.montantCordon)}</p></div>
+          <div><p className="text-muted-foreground">{t("mise_en_place:detail.president.confirm_tva")}</p><p className="font-medium">{fmtAmt(c.montantTVAInterieure)}</p></div>
+        </div>
+      </ConfirmAmountDialog>
     </DashboardLayout>
   );
 };

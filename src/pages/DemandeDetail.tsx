@@ -1,9 +1,13 @@
+import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
+import { DEMANDE_ROLE_TRANSITIONS } from "@/lib/demandeTransitions";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import AvenantOrigineBanner from "@/components/avenants/AvenantOrigineBanner";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
+import { useGedPieces } from "@/hooks/useGedPieces";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
@@ -11,7 +15,7 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto, DemandeStatut,
   DocumentDto, ALL_DOCUMENT_TYPES_VALUES, RejetTempResponseDto,
   ReclamationDemandeCorrectionDto,
-  conventionApi, ConventionDto, marcheApi, MarcheDto,
+  conventionApi, ConventionDto, marcheApi, MarcheDto, formatApiErrorMessage,
 } from "@/lib/api";
 import { formatAmount } from "@/i18n/format";
 import { hasCreditInterieur, hasCreditExterieur, requiredVisasCorrection, resolveCredits, firstVisaRoleCorrection, requiredPreVisaDocCorrection } from "@/lib/visas";
@@ -50,46 +54,9 @@ import { DocumentButton } from "@/components/documents/DocumentButton";
 
 const CORRECTED_OFFER_TYPES = ["OFFRE_FISCALE_CORRIGEE", "OFFRE_CORRIGEE", "CREDIT_INTERIEUR"];
 
-const STATUT_COLORS: Record<DemandeStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  RECUE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-yellow-100 text-yellow-800",
-  RECEVABLE: "bg-emerald-100 text-emerald-800",
-  EN_EVALUATION: "bg-orange-100 text-orange-800",
-  EN_VALIDATION: "bg-purple-100 text-purple-800",
-  ADOPTEE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  NOTIFIEE: "bg-gray-100 text-gray-800",
-  ANNULEE: "bg-red-200 text-red-900",
-};
+const STATUT_COLORS = DEMANDE_STATUT_COLORS;
 
-const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
-
-type Transition = { from: DemandeStatut[]; to: DemandeStatut; labelKey: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean };
-
-const ROLE_TRANSITIONS: Record<string, Transition[]> = {
-  DGD: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGD.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGTCP: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGTCP.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGI: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGI.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGB: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGB.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  PRESIDENT: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.PRESIDENT.adopt", icon: CheckCircle, isDecisionFinale: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.PRESIDENT.reject", icon: XCircle, isDecisionFinale: true },
-  ],
-};
-
+const ROLE_TRANSITIONS = DEMANDE_ROLE_TRANSITIONS;
 // Note: les libellés des transitions vivent dans `demandes.json` sous `transitions.*`
 // et sont résolus via `t(\`demandes:${labelKey}\`)`.
 
@@ -130,6 +97,12 @@ const DemandeDetail = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadAllowedTypes, setUploadAllowedTypes] = useState<string[]>([]);
   const [uploadMessage, setUploadMessage] = useState("");
+  // Échec d'envoi affiché dans la fenêtre : elle reste ouverte avec le fichier choisi.
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  // Pièces que l'autorité contractante dépose (paramétrage GED) et libellés des pièces réclamables.
+  const gedDepot = useGedPieces("CORRECTION_OFFRE_FISCALE", { depot: true });
+  const gedRejet = useGedPieces("CORRECTION_OFFRE_FISCALE");
+  const docLabel = (code: string) => gedDepot.options.find((o) => o.code === code)?.label ?? gedRejet.labelOf(code);
 
   const [responseOpen, setResponseOpen] = useState(false);
   const [responseDecisionId, setResponseDecisionId] = useState<number | null>(null);
@@ -257,8 +230,8 @@ const DemandeDetail = () => {
       await demandeCorrectionApi.postDecision(demandeId, "REJET_TEMP", motif, documentsDemandes);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.rejet_temp_saved") });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -274,8 +247,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:detail.reactivate.success") });
       setReactivateOpen(false);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setReactivating(false); }
   };
 
@@ -290,8 +263,8 @@ const DemandeDetail = () => {
           : statut === "REJETEE" ? t("demandes:toast.rejet_saved") : t("demandes:toast.visa_applied"),
       });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -301,8 +274,8 @@ const DemandeDetail = () => {
       await demandeCorrectionApi.updateStatut(demandeId, "ADOPTEE", undefined, true);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -327,8 +300,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
       setAdoptionOpen(false); setAdoptionFile(null);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setAdoptionUploading(false); }
   };
 
@@ -346,8 +319,8 @@ const DemandeDetail = () => {
         downloadBlob(blob, fileName);
       });
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e) || t("demandes:toast.letter_generate_error"), variant: "destructive" });
     }
   };
 
@@ -359,8 +332,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.reclamation_created") });
       setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setReclamationSubmitting(false); }
   };
 
@@ -380,8 +353,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: traiterAcceptee ? t("demandes:toast.reclamation_accepted") : t("demandes:toast.reclamation_rejected") });
       setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setTraiterSubmitting(false); }
   };
 
@@ -391,8 +364,8 @@ const DemandeDetail = () => {
       await demandeCorrectionApi.annulerReclamation(selected.id, reclamationId);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.reclamation_cancelled") });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     }
   };
 
@@ -419,13 +392,16 @@ const DemandeDetail = () => {
       return;
     }
     setUploading(true);
+    setUploadError(null);
     try {
       await demandeCorrectionApi.uploadDocument(selected.id, uploadType, uploadFile, uploadMessage.trim() || undefined);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.doc_uploaded") });
       setUploadOpen(false); setUploadFile(null); setUploadType(""); setUploadMessage("");
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e) {
+      const msg = formatApiErrorMessage(e, t("demandes:toast.error"));
+      setUploadError(msg);
+      toast({ title: t("demandes:toast.error"), description: msg, variant: "destructive" });
     } finally { setUploading(false); }
   };
 
@@ -437,8 +413,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.response_sent") });
       setResponseOpen(false); setResponseDecisionId(null); setResponseMessage("");
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setResponseSending(false); }
   };
 
@@ -491,8 +467,8 @@ const DemandeDetail = () => {
         await new Promise((r) => setTimeout(r, 0)); // laisse l'attente s'afficher avant la génération
         presentBlob(await generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
       });
-    } catch (e: any) {
-      toast({ title: t("demandes:detail.recu_card.error"), description: e?.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:detail.recu_card.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setRecuBusy(false);
     }
@@ -772,7 +748,7 @@ const DemandeDetail = () => {
                           <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setResponseDecisionId(rej.id); setResponseMessage(""); setResponseOpen(true); }}>
                             {t("demandes:detail.org_status.reply")}
                           </Button>
-                          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => { const d = rej.documentsDemandes || []; setUploadAllowedTypes(d); if (d.length) setUploadType(d[0]); else setUploadType(""); setUploadMessage(""); setUploadFile(null); setUploadOpen(true); }}>
+                          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => { const d = rej.documentsDemandes || []; setUploadAllowedTypes(d); if (d.length) setUploadType(d[0]); else setUploadType(""); setUploadMessage(""); setUploadFile(null); setUploadError(null); setUploadOpen(true); }}>
                             <Upload className="h-3 w-3 me-1" /> {t("demandes:detail.org_status.upload_doc")}
                           </Button>
                         </div>
@@ -785,8 +761,8 @@ const DemandeDetail = () => {
                               await demandeCorrectionApi.resolveRejetTemp(rej.id);
                               toast({ title: t("demandes:toast.success"), description: t("demandes:toast.rejet_resolved") });
                               fetchDetail();
-                            } catch (e: any) {
-                              toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+                            } catch (e: unknown) {
+                              toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
                             } finally { setActionLoading(null); }
                           }}>
                             <CheckCircle className="h-3 w-3 me-0.5" /> {t("demandes:detail.org_status.mark_resolved")}
@@ -899,7 +875,20 @@ const DemandeDetail = () => {
         {/* Pièces du dossier */}
         <Card>
           <CardContent className="p-6">
-            <h3 className="text-sm font-semibold mb-3">{t("demandes:detail.pieces.title")}</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h3 className="text-sm font-semibold">{t("demandes:detail.pieces.title")}</h3>
+              {/* Statut Reçue : l'autorité contractante peut compléter le dossier sans demande de pièces ouverte. */}
+              {selected.statut === "RECUE" && hasRole(["AUTORITE_CONTRACTANTE"]) && (
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => {
+                  const codes = gedDepot.options.map((o) => o.code);
+                  setUploadAllowedTypes(codes);
+                  setUploadType(codes[0] ?? "");
+                  setUploadMessage(""); setUploadFile(null); setUploadError(null); setUploadOpen(true);
+                }}>
+                  <Upload className="h-3.5 w-3.5 me-1" /> {t("demandes:dialogs.upload.title")}
+                </Button>
+              )}
+            </div>
             {docsLoading ? (
               <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
             ) : (
@@ -966,7 +955,7 @@ const DemandeDetail = () => {
                               </>
                             )}
                             {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
-                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadAllowedTypes([]); setUploadType(type); setUploadOpen(true); }}>
+                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadAllowedTypes([]); setUploadType(type); setUploadFile(null); setUploadError(null); setUploadOpen(true); }}>
                                 <Upload className="h-3.5 w-3.5 me-1" /> {t("demandes:detail.pieces.new_version")}
                               </Button>
                             )}
@@ -1296,7 +1285,7 @@ const DemandeDetail = () => {
 
 
       {/* Upload Dialog */}
-      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) setUploadMessage(""); }}>
+      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) { setUploadMessage(""); setUploadError(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>{t("demandes:dialogs.upload.title")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -1305,16 +1294,26 @@ const DemandeDetail = () => {
               <Select value={uploadType} onValueChange={setUploadType}>
                 <SelectTrigger><SelectValue placeholder={t("demandes:dialogs.upload.type_placeholder")} /></SelectTrigger>
                 <SelectContent>
-                  {(uploadAllowedTypes.length > 0 ? ALL_DOCUMENT_TYPES_VALUES.filter(tt => uploadAllowedTypes.includes(tt)) : ALL_DOCUMENT_TYPES_VALUES).map((tt) => (
-                    <SelectItem key={tt} value={tt}>{tTypeDocument(tt)}</SelectItem>
+                  {/* Réponse à une demande de pièces : exactement les pièces demandées dans la décision. */}
+                  {Array.from(new Set(
+                    uploadAllowedTypes.length > 0
+                      ? uploadAllowedTypes
+                      : [...(uploadType ? [uploadType] : []), ...ALL_DOCUMENT_TYPES_VALUES]
+                  )).map((tt) => (
+                    <SelectItem key={tt} value={tt}>{docLabel(tt)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>{t("demandes:dialogs.upload.file_label")}</Label>
-              <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} />
+              <Input type="file" onChange={(e) => { setUploadFile(e.target.files?.[0] || null); setUploadError(null); }} />
             </div>
+            {uploadError && (
+              <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive whitespace-pre-wrap break-words">
+                {uploadError}
+              </p>
+            )}
             {(() => {
               const isRejetResponse = selected && uploadType && (selected.decisions || []).some(
                 d => d.decision === "REJET_TEMP" && d.rejetTempStatus === "OUVERT" && d.documentsDemandes?.includes(uploadType)
@@ -1484,6 +1483,7 @@ const DemandeDetail = () => {
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">{t("demandes:detail.fields.marche")}</span><p className="font-medium">{marcheDetail.intitule || "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("marches:form.montant_ttc")}</span><p className="font-medium">{marcheDetail.montantContratTtc != null ? `${formatAmount(marcheDetail.montantContratTtc)} MRU` : "—"}</p></div>
               <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>
             </div>
           ) : (

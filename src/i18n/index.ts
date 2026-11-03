@@ -33,6 +33,7 @@ import frSimulation from "./locales/fr/simulation.json";
 import frExplication from "./locales/fr/explication.json";
 import frArchive from "./locales/fr/archive.json";
 import frRattachement from "./locales/fr/rattachement.json";
+import frFeedback from "./locales/fr/feedback.json";
 
 // AR namespaces
 import arCommon from "./locales/ar/common.json";
@@ -65,6 +66,7 @@ import arSimulation from "./locales/ar/simulation.json";
 import arExplication from "./locales/ar/explication.json";
 import arArchive from "./locales/ar/archive.json";
 import arRattachement from "./locales/ar/rattachement.json";
+import arFeedback from "./locales/ar/feedback.json";
 
 export const SUPPORTED_LANGS = ["fr", "ar"] as const;
 export type AppLang = (typeof SUPPORTED_LANGS)[number];
@@ -100,6 +102,7 @@ export const NAMESPACES = [
   "explication",
   "archive",
   "rattachement",
+  "feedback",
 ] as const;
 
 const resources = {
@@ -134,6 +137,7 @@ const resources = {
     explication: frExplication,
     archive: frArchive,
     rattachement: frRattachement,
+    feedback: frFeedback,
   },
   ar: {
     common: arCommon,
@@ -166,6 +170,7 @@ const resources = {
     explication: arExplication,
     archive: arArchive,
     rattachement: arRattachement,
+    feedback: arFeedback,
   },
 } as const;
 

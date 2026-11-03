@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search,
-  PenLine, Building2, UserCheck, FilePen,
+  PenLine, Building2, UserCheck, FilePen, Briefcase, Smile, ClipboardList,
 
 } from "lucide-react";
 import logo from "@/assets/logo.svg";
@@ -16,6 +16,9 @@ import { toast } from "sonner";
 import { emitErrorDialog } from "@/components/ErrorDialog";
 import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import { tRole } from "@/i18n/enums";
+import { FeedbackButton } from "@/components/feedback/FeedbackButton";
+import { activeNavHref } from "@/lib/navActive";
+import { EnqueteBanner } from "@/components/feedback/EnqueteBanner";
 
 interface NavItem {
   labelKey: string;
@@ -42,7 +45,16 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 const NAV_ENTRIES: NavEntry[] = [
   { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   { labelKey: "conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  { labelKey: "marches", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+  {
+    // Attributions / Marchés : les marchés et leurs avenants (une entreprise ne voit que les avenants).
+    labelKey: "marches",
+    icon: Gavel,
+    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"],
+    children: [
+      { labelKey: "marches_liste", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+    ],
+  },
   { labelKey: "groupements", href: "/dashboard/groupements", icon: Users, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
   {
     labelKey: "demandes",
@@ -63,11 +75,9 @@ const NAV_ENTRIES: NavEntry[] = [
     icon: ArrowRightLeft,
     roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
     children: [
-      { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
       { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      // TODO: réactiver quand le back-end Sous-traitance sera disponible
-      // { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
+      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT", "ADMIN_SI"] },
     ],
   },
   {
@@ -90,6 +100,15 @@ const NAV_ENTRIES: NavEntry[] = [
     ],
   },
   {
+    labelKey: "satisfaction",
+    icon: Smile,
+    roles: ["ADMIN_SI", "PRESIDENT"],
+    children: [
+      { labelKey: "satisfaction_dashboard", href: "/dashboard/satisfaction", icon: Smile, roles: ["ADMIN_SI", "PRESIDENT"], permission: "feedback.dashboard.view" },
+      { labelKey: "satisfaction_enquetes", href: "/dashboard/satisfaction/enquetes", icon: ClipboardList, roles: ["ADMIN_SI", "PRESIDENT"], permission: "feedback.enquete.manage" },
+    ],
+  },
+  {
     labelKey: "parametrage",
     icon: Settings,
     roles: ["ADMIN_SI", "PRESIDENT"],
@@ -99,11 +118,14 @@ const NAV_ENTRIES: NavEntry[] = [
       { labelKey: "signatures", href: "/dashboard/signatures", icon: PenLine, roles: ["ADMIN_SI"] },
       { labelKey: "parametres", href: "/dashboard/parametres", icon: Settings, permission: "parametre.manage" },
       { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag, roles: ["ADMIN_SI"] },
+      { labelKey: "referentiel_secteurs", href: "/dashboard/referentiel-secteurs", icon: Briefcase, roles: ["ADMIN_SI", "PRESIDENT"], permission: "referentiel.secteur.manage" },
       { labelKey: "archive_credits", href: "/dashboard/archive/credits", icon: Archive, roles: ["ADMIN_SI"] },
       { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3, roles: ["ADMIN_SI"] },
     ],
   },
 ];
+
+const NAV_HREFS: string[] = NAV_ENTRIES.flatMap((e) => (isGroup(e) ? e.children.map((c) => c.href) : [e.href]));
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout, hasRole, hasPermission, isImpersonating, isCommissionRelais, applyImpersonation } = useAuth();
@@ -151,20 +173,25 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const activeHref = activeNavHref(location.pathname, NAV_HREFS);
+
   const linkClass = (href: string) => {
-    const active = location.pathname === href;
+    const active = href === activeHref;
     return `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
       active ? "bg-sidebar-foreground text-sidebar font-semibold shadow-sm" : "font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     }`;
   };
 
-  const isGroupActive = (group: NavGroup) => group.children.some((c) => location.pathname === c.href);
+  const isGroupActive = (group: NavGroup) => group.children.some((c) => c.href === activeHref);
 
   const renderNav = (closeMobile?: () => void) => (
     <nav className="flex-1 p-3 space-y-1">
       {NAV_ENTRIES.map((entry) => {
         if (isGroup(entry)) {
           if (entry.roles && !hasRole(entry.roles)) return null;
+          // Un groupe sans entrée visible pour ce rôle n'est pas affiché.
+          const hasVisibleChild = entry.children.some((c) => (!c.roles || hasRole(c.roles)) && (!c.permission || hasPermission(c.permission)));
+          if (!hasVisibleChild) return null;
           const groupActive = isGroupActive(entry);
           return (
             <Collapsible key={entry.labelKey} defaultOpen={groupActive}>
@@ -242,6 +269,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Desktop top bar */}
         <header className="hidden md:flex items-center justify-end gap-2 px-6 py-3 border-b border-border bg-card shrink-0">
+          <FeedbackButton />
           <LanguageSwitcher />
           <NotificationBell />
           <DropdownMenu>
@@ -283,6 +311,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <FeedbackButton compact />
             <LanguageSwitcher />
             <NotificationBell />
             <DropdownMenu>
@@ -341,6 +370,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </Link>
           </div>
         )}
+        <EnqueteBanner />
         <div className="flex-1 overflow-auto p-6 md:p-8">{children}</div>
       </main>
     </div>
