@@ -84,4 +84,16 @@ describe("Lots d'archive — règles d'écran", () => {
     expect(e.douanier).toMatchObject({ calcule: -10, negatif: true, ecart: 10 });
     expect(e.interieur).toMatchObject({ calcule: 60, ecart: -5, negatif: false });
   });
+
+  it("soldes rejoués : intérieur = crédit − utilisations + déduit + payé, le fichier se compare à l'ancienne règle", () => {
+    // Crédit 10/2023 : transfert 1 024 880 versé au stock puis déduit, deux utilisations intérieures.
+    const d = soldesDetail(credit({
+      creditInterieur: 1452810.08, transfertCredit: 1024880, totalUtilisationsInterieur: 47310.35, soldeInterieurDeclare: 2430379.73,
+      soldeInterieurRegleFichier: 2430379.73, stockTvaEntrees: 1024880, stockTvaDeduit: 1024880, stockTvaRestant: 0, paiementEntrepriseTotal: 0,
+    }));
+    expect(d.interieur).toMatchObject({ calcule: 2430379.73, deduit: 1024880, paye: 0, transfert: 0, ecart: null });
+    expect(d.stock).toEqual({ entrees: 1024880, deduit: 1024880, restant: 0 });
+    // Sans rejeu (lot lu avant le 03/11) : ancienne explication, pas de stock.
+    expect(soldesDetail(credit({ creditInterieur: 50, transfertCredit: 20, totalUtilisationsInterieur: 10 })).stock).toBeNull();
+  });
 });

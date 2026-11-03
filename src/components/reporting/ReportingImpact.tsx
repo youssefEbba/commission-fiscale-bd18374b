@@ -432,7 +432,8 @@ function RepartitionCard({ title, lignes, kind }: { title: string; lignes: Benef
   const rows = arrangeLines(lignes);
   const chartData = rows.filter((l) => (l.nbBeneficiaires ?? 0) > 0).map((l) => ({ name: l.libelle, value: l.nbBeneficiaires as number }));
   return (
-    <Card>
+    // min-w-0 : dans une grille, la carte peut rétrécir et le tableau défile au lieu d'être coupé (A51).
+    <Card className="min-w-0">
       <CardHeader className="pb-2"><CardTitle className="text-base">{title}</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         {chartData.length > 0 && (
@@ -457,14 +458,14 @@ function RepartitionCard({ title, lignes, kind }: { title: string; lignes: Benef
           </ResponsiveContainer>
         )}
         <div className="overflow-x-auto">
-          <Table className="min-w-[520px]">
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("reporting:beneficiaires.cle")}</TableHead>
-                <TableHead className="text-end">{t("reporting:beneficiaires.nb_beneficiaires")}</TableHead>
-                <TableHead className="text-end">{t("reporting:beneficiaires.nb_credits")}</TableHead>
-                <TableHead className="text-end">{t("reporting:beneficiaires.accorde")}</TableHead>
-                <TableHead className="text-end">{t("reporting:beneficiaires.consomme")}</TableHead>
+                <TableHead className="text-end whitespace-nowrap">{t("reporting:beneficiaires.nb_beneficiaires")}</TableHead>
+                <TableHead className="text-end whitespace-nowrap">{t("reporting:beneficiaires.nb_credits")}</TableHead>
+                <TableHead className="text-end whitespace-nowrap">{t("reporting:beneficiaires.accorde")}</TableHead>
+                <TableHead className="text-end whitespace-nowrap">{t("reporting:beneficiaires.consomme")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -472,11 +473,11 @@ function RepartitionCard({ title, lignes, kind }: { title: string; lignes: Benef
                 <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{t("reporting:charts.empty")}</TableCell></TableRow>
               ) : rows.map((l) => (
                 <TableRow key={l.cle}>
-                  <TableCell>{l.libelle}</TableCell>
-                  <TableCell className="text-end tabular-nums">{f.num(l.nbBeneficiaires)}</TableCell>
-                  <TableCell className="text-end tabular-nums">{f.num(l.nbCredits)}</TableCell>
-                  <TableCell className="text-end tabular-nums">{f.money(l.montantAccorde)}</TableCell>
-                  <TableCell className="text-end tabular-nums">{f.money(l.montantConsomme)}</TableCell>
+                  <TableCell className="max-w-[220px] truncate" title={l.libelle}>{l.libelle}</TableCell>
+                  <TableCell className="text-end tabular-nums whitespace-nowrap">{f.num(l.nbBeneficiaires)}</TableCell>
+                  <TableCell className="text-end tabular-nums whitespace-nowrap">{f.num(l.nbCredits)}</TableCell>
+                  <TableCell className="text-end tabular-nums whitespace-nowrap">{f.money(l.montantAccorde)}</TableCell>
+                  <TableCell className="text-end tabular-nums whitespace-nowrap">{f.money(l.montantConsomme)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

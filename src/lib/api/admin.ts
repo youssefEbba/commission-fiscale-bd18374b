@@ -5,8 +5,17 @@ import type {
   AdminCorrectionCertificatPayload,
   AdminCorrectionDemandePayload,
   AdminCorrectionUtilisationPayload,
-  UtilisationCreditDto,
 } from "./utilisations";
+import type { UtilisationCreditDto } from "./certificats";
+
+/** Remplacement d'une pièce par l'administrateur, avec motif (demande, crédit ou utilisation). */
+const adminCorrectionDoc = <T>(basePath: string, id: number, codeDocument: string, motif: string, file: File) => {
+  const formData = new FormData();
+  formData.append("codeDocument", codeDocument);
+  formData.append("motif", motif);
+  formData.append("file", file);
+  return apiFetch<T>(`${basePath}/${id}/documents/admin-correction`, { method: "POST", rawBody: formData });
+};
 export const adminCorrectionApi = {
   /** Patch partiel d'une demande de correction — tout statut. */
   patchDemande: (id: number, motif: string, data: AdminCorrectionDemandePayload) =>

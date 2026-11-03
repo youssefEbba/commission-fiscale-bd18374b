@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,7 +23,7 @@ import {
 import { ArchiveCreateDialog, type ArchiveCreateInitial, type ArchiveCreateKind } from "@/components/archive/ArchiveCreateDialog";
 import { ArchiveLotCounters, ArchiveLotStatutBadge, SourceBadge } from "@/components/archive/ArchiveLotStatut";
 import { ArchiveLotCreditDialog } from "@/components/archive/ArchiveLotCreditDialog";
-import { SoldeFormule } from "@/components/archive/ArchiveReleveTables";
+import { SoldeFormule, StockFormule } from "@/components/archive/ArchiveReleveTables";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,7 +57,7 @@ import { cn } from "@/lib/utils";
 
 const money = (v: number | null | undefined) => (v == null ? "—" : formatAmount(v));
 
-type Busy = "load" | "dgi" | "rapprocher" | "import" | "affect" | null;
+type Busy = "load" | "dgi" | "rapprocher" | "recalculer" | "import" | "affect" | null;
 type CreateTarget = { nif: string } | { creditIds: number[] };
 
 /** Écran d'un lot (fichier de période) : rattachements à compléter puis import des crédits prêts. */
@@ -207,6 +208,25 @@ const ArchiveLotDetail = () => {
     }
   };
 
+  /**
+   * Crédits importés avant la ventilation du crédit douanier (03/11/2026) : leurs composantes
+   * (b, c, d, TVA restante) se recalculent à partir du relevé, une fois le fichier redéposé.
+   */
+  const runRecalculer = async () => {
+    if (!lot) return;
+    setBusy("recalculer");
+    setActionError(null);
+    try {
+      const r = await archiveLotApi.recalculer(lot.id);
+      await reload();
+      toast({ title: t("archive:lots.recalcul_ok", { count: r.importes }), description: r.erreurs > 0 ? t("archive:lots.recalcul_erreurs", { count: r.erreurs }) : undefined });
+    } catch (e) {
+      setActionError(formatApiErrorMessage(e, t("archive:lots.error_recalculer")));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const runRapprocher = async () => {
     if (!lot) return;
     setBusy("rapprocher");
@@ -348,6 +368,12 @@ const ArchiveLotDetail = () => {
             {busy === "rapprocher" ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <RefreshCw className="h-4 w-4 me-2" />}
             {t("archive:lots.rapprocher")}
           </Button>
+          {(lot.parStatut?.IMPORTE ?? 0) > 0 && (
+            <Button variant="outline" onClick={() => void runRecalculer()} disabled={working} title={t("archive:lots.recalculer_aide")}>
+              {busy === "recalculer" ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <RefreshCw className="h-4 w-4 me-2" />}
+              {t("archive:lots.recalculer", { count: lot.parStatut?.IMPORTE ?? 0 })}
+            </Button>
+          )}
           <Button onClick={() => setConfirmImport(prets)} disabled={working || prets.length === 0}>
             {busy === "import" ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Download className="h-4 w-4 me-2" />}
             {t("archive:lots.importer_prets", { count: prets.length })}
@@ -444,8 +470,8 @@ const ArchiveLotDetail = () => {
           </Card>
         )}
 
-        {/* Crédits */}
-        <Card>
+        {/* Crédits — min-w-0 : le tableau défile dans la carte au lieu de sortir de l'écran (A51). */}
+        <Card className="min-w-0">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
             <CardTitle className="text-base">{t("archive:lots.credits_titre")}</CardTitle>
             <Select value={filtre} onValueChange={(v) => setFiltre(v as ArchiveLotCreditStatut | "ALL")}>
@@ -602,6 +628,19 @@ const ArchiveLotDetail = () => {
   );
 };
 
+/**
+ * Libellé long sur une seule ligne, coupé avec « … » et lisible en entier au survol (A51) : les noms
+ * d'autorité ou de convention étiraient les lignes du tableau sur une dizaine de lignes.
+ */
+function Tronque({ texte, attenue, children }: { texte?: string | null; attenue?: boolean; children?: ReactNode }) {
+  return (
+    <div className="flex items-center gap-1 max-w-[14rem]">
+      <span className={cn("truncate", attenue && "text-muted-foreground")} title={texte ?? undefined}>{texte || "—"}</span>
+      {children}
+    </div>
+  );
+}
+
 function SoldeLine({ label, axe: a }: { label: string; axe: SoldeAxe }) {
   const alerte = a.ecart != null || a.negatif;
   return (
@@ -627,6 +666,7 @@ function SoldesCell({ credit }: { credit: ArchiveLotCreditDto }) {
       <PopoverContent className="w-[min(36rem,calc(100vw-2rem))] space-y-2" align="start">
         <SoldeFormule type="douanier" axe={d.douanier} />
         <SoldeFormule type="interieur" axe={d.interieur} />
+        <StockFormule stock={d.stock} />
         {ecart && <p className="text-xs text-amber-700 dark:text-amber-300">{t("soldes.ecart_note")}</p>}
       </PopoverContent>
     </Popover>
@@ -653,19 +693,19 @@ function CreditRow({ n, credit: c, checked, disabled, onCheck, onOpen }: {
         <p className="text-[11px] text-muted-foreground">{t("lots.lignes", { debut: c.ligneDebut, fin: c.ligneFin })}</p>
       </TableCell>
       <TableCell className="font-mono text-xs">{c.nif || "—"}</TableCell>
-      <TableCell className="min-w-[10rem]">
-        {c.entrepriseId != null ? <>{c.entrepriseRaisonSociale}<SourceBadge source={c.sourceEntreprise} /></> : <span className="text-muted-foreground">{c.raisonSocialeDgi ? t("lots.dgi_suggere", { nom: c.raisonSocialeDgi }) : "—"}</span>}
+      <TableCell>
+        {c.entrepriseId != null ? <Tronque texte={c.entrepriseRaisonSociale}><SourceBadge source={c.sourceEntreprise} /></Tronque> : <Tronque texte={c.raisonSocialeDgi ? t("lots.dgi_suggere", { nom: c.raisonSocialeDgi }) : "—"} attenue />}
       </TableCell>
-      <TableCell className="min-w-[8rem]">{c.autoriteContractanteId != null ? <>{c.autoriteContractanteNom}<SourceBadge source={c.sourceAutorite} /></> : "—"}</TableCell>
-      <TableCell className="min-w-[8rem]">{c.conventionId != null ? <>{c.conventionIntitule}<SourceBadge source={c.sourceConvention} /></> : "—"}</TableCell>
-      <TableCell className="min-w-[8rem]">
-        {c.marcheId != null ? <>{c.marcheNumero}<SourceBadge source={c.sourceMarche} /></>
+      <TableCell>{c.autoriteContractanteId != null ? <Tronque texte={c.autoriteContractanteNom}><SourceBadge source={c.sourceAutorite} /></Tronque> : "—"}</TableCell>
+      <TableCell>{c.conventionId != null ? <Tronque texte={c.conventionIntitule}><SourceBadge source={c.sourceConvention} /></Tronque> : "—"}</TableCell>
+      <TableCell>
+        {c.marcheId != null ? <Tronque texte={c.marcheNumero}><SourceBadge source={c.sourceMarche} /></Tronque>
           : c.creerMarche ? <span className="text-muted-foreground italic">{t("lots.marche_cree_releve")}</span>
           : c.dejaRepris ? <span className="text-muted-foreground">{t("lots.deja_repris")}</span>
           : "—"}
       </TableCell>
       <TableCell className="text-end tabular-nums whitespace-nowrap">{money(c.montantCreditImpot)}</TableCell>
-      <TableCell className="text-xs">
+      <TableCell className="text-xs whitespace-nowrap">
         <SoldesCell credit={c} />
       </TableCell>
       <TableCell className="text-end">

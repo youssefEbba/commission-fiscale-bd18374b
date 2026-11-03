@@ -34,7 +34,8 @@ export function FeedbackButton({ compact }: { compact?: boolean }) {
   const reset = () => { setNote(null); setCategorie(""); setProcessus(NONE); setCommentaire(""); setError(null); };
 
   const send = async () => {
-    if (note == null || !categorie) return;
+    // Un double clic ne doit envoyer qu'une fois (A50).
+    if (note == null || !categorie || sending) return;
     setSending(true);
     setError(null);
     try {
@@ -49,7 +50,9 @@ export function FeedbackButton({ compact }: { compact?: boolean }) {
       setOpen(false);
       reset();
     } catch (e) {
-      setError(formatApiErrorMessage(e));
+      // Connexion coupée (« Failed to fetch ») : l'avis a pu arriver au serveur, qui écarte un
+      // renvoi identique dans la minute (A50).
+      setError(e instanceof TypeError ? t("feedback:dialog.reseau_interrompu") : formatApiErrorMessage(e));
     } finally {
       setSending(false);
     }

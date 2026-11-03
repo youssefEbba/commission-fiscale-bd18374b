@@ -26,6 +26,8 @@ export interface MarcheDto {
   /** Autorité contractante qui porte le marché. */
   autoriteContractanteId?: number;
   autoriteContractanteNom?: string;
+  /** Durée d'exécution en texte libre (« 07 MOIS »). */
+  dureeExecution?: string | null;
 }
 
 export type TypeMarche = "FOURNITURE" | "PRESTATION" | "TRAVAUX";
@@ -55,6 +57,8 @@ export interface CreateMarcheRequest {
   statut?: StatutMarche;
   /** Facultatif : absent = le serveur conserve la valeur existante. */
   typeMarche?: TypeMarche | null;
+  /** Durée d'exécution en texte libre (« 07 MOIS »). */
+  dureeExecution?: string | null;
 }
 
 /**

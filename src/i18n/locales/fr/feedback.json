@@ -20,7 +20,8 @@
     "commentaire": "Commentaire",
     "commentaire_placeholder": "Ce qui fonctionne bien, ce qui vous gêne…",
     "send": "Envoyer",
-    "sent": "Merci, votre avis a été envoyé."
+    "sent": "Merci, votre avis a été envoyé.",
+    "reseau_interrompu": "La connexion a été interrompue : votre avis a peut-être été enregistré. Vous pouvez réessayer sans créer de doublon."
   },
   "categories": {
     "ERGONOMIE": "Ergonomie",
@@ -100,6 +101,7 @@
     "libelle": "Intitulé de la question",
     "type": "Type de réponse",
     "categorie": "Catégorie (facultative)",
+    "categorie_aucune": "— Aucune catégorie",
     "obligatoire": "Obligatoire",
     "options_hint": "Options proposées, une par ligne (au moins deux)",
     "move_up": "Monter",

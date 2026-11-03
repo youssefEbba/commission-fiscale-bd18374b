@@ -139,6 +139,21 @@ export interface SoldeAxe {
   /** fichier − calculé, `null` sans solde fichier ou sous la tolérance. */
   ecart: number | null;
   negatif: boolean;
+  /**
+   * Intérieur rejoué selon les règles de l'application (stock de TVA déductible) : TVA déduite du
+   * stock et part payée par l'entreprise. Le transfert y passe par le stock, il n'est pas ajouté ici.
+   */
+  deduit?: number;
+  paye?: number;
+  /** Intérieur : règle de l'ancienne application (crédit + transfert − utilisations), comparée au fichier. */
+  regleFichier?: number;
+}
+
+/** Stock de TVA déductible reconstitué : entrées (importations + transfert) − déduit = restant. */
+export interface StockTvaDetail {
+  entrees: number;
+  deduit: number;
+  restant: number;
 }
 
 export interface SoldesSource {
@@ -152,6 +167,11 @@ export interface SoldesSource {
   soldeInterieurCalcule: number | null;
   soldeDouanierDeclare: number | null;
   soldeInterieurDeclare: number | null;
+  soldeInterieurRegleFichier?: number | null;
+  stockTvaEntrees?: number | null;
+  stockTvaDeduit?: number | null;
+  stockTvaRestant?: number | null;
+  paiementEntrepriseTotal?: number | null;
 }
 
 const round2 = (v: number) => Math.round(v * 100) / 100;
@@ -164,10 +184,32 @@ function axe(credit: number, utilisations: number | null | undefined, transfert:
   return { credit, utilisations: utilisations ?? 0, transfert, calcule, fichier, ecart, negatif: calcule < 0 };
 }
 
-/** Détail du calcul des deux soldes d'un crédit (lot ou relevé unitaire). */
-export function soldesDetail(s: SoldesSource): { douanier: SoldeAxe; interieur: SoldeAxe } {
+/**
+ * Intérieur rejoué (serveur, 03/11/2026) : solde = crédit − utilisations + TVA déductible déduite +
+ * part payée par l'entreprise. Le fichier se compare à la règle de l'ancienne application.
+ */
+function axeInterieurRejoue(s: SoldesSource): SoldeAxe {
+  const credit = s.creditInterieur ?? 0;
+  const utilisations = s.totalUtilisationsInterieur ?? 0;
+  const deduit = s.stockTvaDeduit ?? 0;
+  const paye = s.paiementEntrepriseTotal ?? 0;
+  const calcule = round2(credit - utilisations + deduit + paye);
+  const regleFichier = s.soldeInterieurRegleFichier ?? round2(credit + (s.transfertCredit ?? 0) - utilisations);
+  const fichier = s.soldeInterieurDeclare;
+  const ecart = fichier != null && Math.abs(fichier - regleFichier) > SOLDE_TOLERANCE ? round2(fichier - regleFichier) : null;
+  return { credit, utilisations, transfert: 0, calcule, fichier, ecart, negatif: false, deduit, paye, regleFichier };
+}
+
+/** Détail du calcul des deux soldes d'un crédit (lot ou relevé unitaire), et du stock de TVA déductible. */
+export function soldesDetail(s: SoldesSource): { douanier: SoldeAxe; interieur: SoldeAxe; stock: StockTvaDetail | null } {
+  const rejoue = s.stockTvaDeduit != null;
   return {
     douanier: axe(s.creditDouanier ?? 0, s.totalUtilisationsDouane, s.sortieTransfert ?? 0, -1, s.soldeDouanierCalcule, s.soldeDouanierDeclare),
-    interieur: axe(s.creditInterieur ?? 0, s.totalUtilisationsInterieur, s.transfertCredit ?? 0, 1, s.soldeInterieurCalcule, s.soldeInterieurDeclare),
+    interieur: rejoue
+      ? axeInterieurRejoue(s)
+      : axe(s.creditInterieur ?? 0, s.totalUtilisationsInterieur, s.transfertCredit ?? 0, 1, s.soldeInterieurCalcule, s.soldeInterieurDeclare),
+    stock: rejoue
+      ? { entrees: s.stockTvaEntrees ?? 0, deduit: s.stockTvaDeduit ?? 0, restant: s.stockTvaRestant ?? round2((s.stockTvaEntrees ?? 0) - (s.stockTvaDeduit ?? 0)) }
+      : null,
   };
 }

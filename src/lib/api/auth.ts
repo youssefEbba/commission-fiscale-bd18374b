@@ -1,4 +1,5 @@
 import { apiFetch } from "./client";
+import type { EntrepriseDto } from "./entites";
 // Auth
 export interface LoginRequest { username: string; password: string; }
 export interface LoginResponse { token: string; type: string; userId: number; username: string; role: string; nomComplet: string; autoriteContractanteId?: number; entrepriseId?: number; permissions?: string[]; impersonating?: boolean; actingEntrepriseId?: number; actingAutoriteContractanteId?: number; }

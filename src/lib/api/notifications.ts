@@ -1,5 +1,7 @@
 import { apiFetch } from "./client";
 import type { PageAuditLogDto } from "./admin";
+import type { UtilisationStatut } from "./certificats";
+import type { CertificatStatut } from "./marches";
 export const auditLogApi = {
   getAll: (params?: {
     username?: string;

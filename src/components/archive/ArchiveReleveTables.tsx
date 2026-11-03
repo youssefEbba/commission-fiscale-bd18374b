@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatAmount, formatDate } from "@/i18n/format";
-import type { SoldeAxe } from "@/lib/archiveLots";
+import type { SoldeAxe, StockTvaDetail } from "@/lib/archiveLots";
 import { cn } from "@/lib/utils";
 import type { ArchiveUtilisationDto } from "@/lib/api";
 
@@ -21,11 +21,14 @@ export function SoldeFormule({ axe: a, type }: { axe: SoldeAxe; type: "douanier"
         <span className="tabular-nums">{money(a.credit)}</span> ({t("soldes.credit")})
         {douanier ? (
           <> − <span className="tabular-nums">{money(a.utilisations)}</span> ({t("soldes.utilisations_douane")}) − <span className="tabular-nums">{money(a.transfert)}</span> ({t("soldes.sortie_transfert")})</>
+        ) : a.deduit != null ? (
+          <> − <span className="tabular-nums">{money(a.utilisations)}</span> ({t("soldes.utilisations_interieur")}) + <span className="tabular-nums">{money(a.deduit)}</span> ({t("soldes.deduit")}) + <span className="tabular-nums">{money(a.paye ?? 0)}</span> ({t("soldes.paye")})</>
         ) : (
           <> + <span className="tabular-nums">{money(a.transfert)}</span> ({t("soldes.transfert_recu")}) − <span className="tabular-nums">{money(a.utilisations)}</span> ({t("soldes.utilisations_interieur")})</>
         )}
         {" = "}<strong className="tabular-nums">{money(a.calcule)}</strong>
         {" · "}{t("soldes.fichier")} : {a.fichier == null ? "—" : <span className="tabular-nums">{money(a.fichier)}</span>}
+        {a.regleFichier != null && <> ({t("soldes.regle_fichier")} : <span className="tabular-nums">{money(a.regleFichier)}</span>)</>}
         {a.fichier != null && a.ecart == null && <span className="text-emerald-600 dark:text-emerald-400"> ✓</span>}
       </p>
       {a.ecart != null && (
@@ -36,10 +39,24 @@ export function SoldeFormule({ axe: a, type }: { axe: SoldeAxe; type: "douanier"
   );
 }
 
+/** Ligne du stock de TVA déductible reconstitué : entrées − déduit = restant. */
+export function StockFormule({ stock }: { stock: StockTvaDetail | null }) {
+  const { t } = useTranslation("archive");
+  if (!stock) return null;
+  return (
+    <p className="text-xs leading-relaxed">
+      <span className="font-semibold">{t("soldes.stock")} : </span>
+      <span className="tabular-nums">{money(stock.entrees)}</span> ({t("soldes.stock_entrees")}) − <span className="tabular-nums">{money(stock.deduit)}</span> ({t("soldes.stock_deduit")})
+      {" = "}<strong className="tabular-nums">{money(stock.restant)}</strong> ({t("soldes.stock_restant")})
+    </p>
+  );
+}
+
 /** Calcul complet des deux soldes (ligne / douanier / intérieur) et explication de l'écart avec le fichier. */
-export function ArchiveSoldesTable({ detail }: { detail: { douanier: SoldeAxe; interieur: SoldeAxe } }) {
+export function ArchiveSoldesTable({ detail }: { detail: { douanier: SoldeAxe; interieur: SoldeAxe; stock?: StockTvaDetail | null } }) {
   const { t } = useTranslation("archive");
   const { douanier: d, interieur: i } = detail;
+  const rejoue = i.deduit != null;
   const cell = (v: number | null) => <TableCell className="text-end tabular-nums">{v == null ? "—" : money(v)}</TableCell>;
   const ecartCell = (a: SoldeAxe) => (
     <TableCell className="text-end">
@@ -64,8 +81,14 @@ export function ArchiveSoldesTable({ detail }: { detail: { douanier: SoldeAxe; i
             <TableRow>
               <TableCell>{t("soldes.transfert_ligne")}</TableCell>
               <TableCell className="text-end tabular-nums">− {money(d.transfert)}</TableCell>
-              <TableCell className="text-end tabular-nums">+ {money(i.transfert)}</TableCell>
+              <TableCell className="text-end tabular-nums">{rejoue ? <span className="text-xs text-muted-foreground">{t("soldes.vers_stock")}</span> : <>+ {money(i.transfert)}</>}</TableCell>
             </TableRow>
+            {rejoue && (
+              <>
+                <TableRow><TableCell>+ {t("soldes.deduit_ligne")}</TableCell><TableCell className="text-end">—</TableCell>{cell(i.deduit ?? 0)}</TableRow>
+                <TableRow><TableCell>+ {t("soldes.paye_ligne")}</TableCell><TableCell className="text-end">—</TableCell>{cell(i.paye ?? 0)}</TableRow>
+              </>
+            )}
             <TableRow className="font-semibold">
               <TableCell>= {t("soldes.calcule_importe")}</TableCell>
               {[d, i].map((a, k) => (
@@ -75,11 +98,13 @@ export function ArchiveSoldesTable({ detail }: { detail: { douanier: SoldeAxe; i
               ))}
             </TableRow>
             <TableRow><TableCell>{t("soldes.fichier_controle")}</TableCell>{cell(d.fichier)}{cell(i.fichier)}</TableRow>
+            {rejoue && <TableRow><TableCell>{t("soldes.regle_fichier_ligne")}</TableCell><TableCell className="text-end">—</TableCell>{cell(i.regleFichier ?? null)}</TableRow>}
             <TableRow><TableCell>{t("ecart")}</TableCell>{ecartCell(d)}{ecartCell(i)}</TableRow>
           </TableBody>
         </Table>
       </div>
-      <p className="text-xs text-muted-foreground leading-relaxed">{t("soldes.regle")} {t("soldes.pourquoi")}</p>
+      <StockFormule stock={detail.stock ?? null} />
+      <p className="text-xs text-muted-foreground leading-relaxed">{t("soldes.regle")} {t("soldes.pourquoi")}{rejoue ? ` ${t("soldes.regle_stock")}` : ""}</p>
     </div>
   );
 }
