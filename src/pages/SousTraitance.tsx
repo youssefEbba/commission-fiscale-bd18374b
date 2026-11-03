@@ -1,3 +1,4 @@
+import { SOUS_TRAITANCE_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useTranslation } from "react-i18next";
@@ -28,12 +29,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutSousTraitance } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 
-const STATUT_COLORS: Record<StatutSousTraitance, string> = {
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_COURS: "bg-yellow-100 text-yellow-800",
-  AUTORISEE: "bg-green-100 text-green-800",
-  REFUSEE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = SOUS_TRAITANCE_STATUT_COLORS;
 
 const STATUT_VALUES: StatutSousTraitance[] = ["DEMANDE", "EN_COURS", "AUTORISEE", "REFUSEE"];
 

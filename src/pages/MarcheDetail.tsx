@@ -1,3 +1,4 @@
+import { MARCHE_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
@@ -24,12 +25,7 @@ import { canEditMarche } from "@/lib/marcheEditability";
 import { formatApiErrorMessage } from "@/lib/api";
 import { conventionBailleurs, marcheConventionIds } from "@/lib/conventionEditability";
 
-const STATUT_COLORS: Record<string, string> = {
-  EN_COURS: "bg-blue-100 text-blue-800",
-  AVENANT: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = MARCHE_STATUT_COLORS;
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1">

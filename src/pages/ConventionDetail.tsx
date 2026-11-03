@@ -1,3 +1,4 @@
+import { CONVENTION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -27,12 +28,7 @@ import ConventionEditDialog from "@/components/conventions/ConventionEditDialog"
 import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 import ConventionLiensCard from "@/components/conventions/ConventionLiensCard";
 
-const STATUT_COLORS: Record<string, string> = {
-  EN_ATTENTE: "bg-orange-100 text-orange-800",
-  VALIDE: "bg-green-100 text-green-800",
-  REJETE: "bg-red-100 text-red-800",
-  ANNULEE: "bg-gray-100 text-gray-800",
-};
+const STATUT_COLORS = CONVENTION_STATUT_COLORS;
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="space-y-1">

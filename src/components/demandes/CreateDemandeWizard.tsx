@@ -281,7 +281,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     setDocFiles({});
     try {
       Object.keys(sessionStorage)
-        .filter((k) => k.startsWith("lvbl:form:demande:"))
+        .filter((k) => k.startsWith("sgci:form:demande:") || k.startsWith("lvbl:form:demande:"))
         .forEach((k) => sessionStorage.removeItem(k));
     } catch { /* noop */ }
   };
@@ -796,7 +796,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
           "demande:dqeTauxTVA", "demande:dqeLignes",
           "demande:creditExtManuel", "demande:creditIntManuel",
         ];
-        keys.forEach(k => sessionStorage.removeItem(`lvbl:form:${k}`));
+        keys.forEach(k => {
+          sessionStorage.removeItem(`sgci:form:${k}`);
+          sessionStorage.removeItem(`lvbl:form:${k}`);
+        });
       } catch { /* noop */ }
       clearDocFiles();
       onOpenChange(false);

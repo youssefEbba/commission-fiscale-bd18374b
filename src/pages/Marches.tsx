@@ -1,3 +1,4 @@
+import { MARCHE_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useRef, useState } from "react";
 import { cachedList, invalidateList } from "@/lib/listCache";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
@@ -38,12 +39,7 @@ import { marcheConventionIds } from "@/lib/conventionEditability";
 import { OrderedMultiSelect } from "@/components/ui/ordered-multi-select";
 import ConventionCreateDialog from "@/components/conventions/ConventionCreateDialog";
 
-const STATUT_COLORS: Record<StatutMarche, string> = {
-  EN_COURS: "bg-blue-100 text-blue-800",
-  AVENANT: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = MARCHE_STATUT_COLORS;
 
 const Marches = () => {
   const { t } = useTranslation();

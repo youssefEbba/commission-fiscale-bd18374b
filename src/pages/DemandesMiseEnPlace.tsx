@@ -1,3 +1,4 @@
+import { CERTIFICAT_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
@@ -45,22 +46,7 @@ import { miseEnPlaceDepotRequirements } from "@/lib/certificatEditability";
 import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
-const STATUT_COLORS: Record<CertificatStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  ENVOYEE: "bg-sky-100 text-sky-800",
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_CONTROLE: "bg-teal-100 text-teal-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
-  EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
-  VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
-  EN_OUVERTURE_DGTCP: "bg-yellow-100 text-yellow-800",
-  OUVERT: "bg-emerald-100 text-emerald-800",
-  MODIFIE: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = CERTIFICAT_STATUT_COLORS;
 
 // Pièces demandables en rejet temporaire : celles de la GED (MISE_EN_PLACE_CI), cf. GedPiecesChecklist.
 

@@ -1,3 +1,6 @@
+import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
+import { DEMANDE_ROLE_TRANSITIONS } from "@/lib/demandeTransitions";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
@@ -34,58 +37,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
-import { apiFetch, formatApiErrorMessage } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
 import { trackDocumentTask } from "@/lib/openDocument";
 
-const STATUT_COLORS: Record<DemandeStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  RECUE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-yellow-100 text-yellow-800",
-  RECEVABLE: "bg-emerald-100 text-emerald-800",
-  EN_EVALUATION: "bg-orange-100 text-orange-800",
-  EN_VALIDATION: "bg-purple-100 text-purple-800",
-  ADOPTEE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  NOTIFIEE: "bg-gray-100 text-gray-800",
-  ANNULEE: "bg-red-200 text-red-900",
-};
+const STATUT_COLORS = DEMANDE_STATUT_COLORS;
 
 /** Statuts en cours pour lesquels la colonne « Stade » est calculée (Reçue, Recevable, En évaluation, Incomplète). */
 const STADE_STATUTS: string[] = ["RECUE", "RECEVABLE", "EN_EVALUATION", "INCOMPLETE"];
 
-const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
 const TERMINAL_STATUTS: DemandeStatut[] = ["ADOPTEE", "REJETEE", "NOTIFIEE", "ANNULEE"];
 const isTerminalStatut = (s?: DemandeStatut) => !!s && TERMINAL_STATUTS.includes(s);
 
-type Transition = { from: DemandeStatut[]; to: DemandeStatut; labelKey: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean };
-
-const ROLE_TRANSITIONS: Record<string, Transition[]> = {
-  DGD: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGD.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGTCP: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGTCP.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGI: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGI.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGB: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGB.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  PRESIDENT: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.PRESIDENT.adopt", icon: CheckCircle, isDecisionFinale: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.PRESIDENT.reject", icon: XCircle, isDecisionFinale: true },
-  ],
-};
-
+const ROLE_TRANSITIONS = DEMANDE_ROLE_TRANSITIONS;
 // Note: les libellés des transitions vivent dans `demandes.json` sous `transitions.*`
 // et sont résolus via `t(\`demandes:${labelKey}\`)`.
 
@@ -143,10 +110,10 @@ const Demandes = () => {
     try {
       const full = await demandeCorrectionApi.getById(d.id);
       setEditingDemande(full);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({
         title: t("demandes:toast.error"),
-        description: e?.message || t("demandes:toast.load_demande_complete_error"),
+        description: formatApiErrorMessage(e) || t("demandes:toast.load_demande_complete_error"),
         variant: "destructive",
       });
       setEditingDemande(d);
@@ -163,8 +130,8 @@ const Demandes = () => {
         downloadBlob(await generateAdoptionLetterPdf(d), fileName);
       });
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e) || t("demandes:toast.letter_generate_error"), variant: "destructive" });
     }
   };
 
@@ -221,8 +188,8 @@ const Demandes = () => {
         data = await demandeCorrectionApi.getAll();
       }
       setDemandes(data);
-    } catch (e: any) {
-      const message = String(e?.message || "");
+    } catch (e: unknown) {
+      const message = String(formatApiErrorMessage(e) || "");
       const accessDenied = message.includes("Accès refusé") || message.includes("Access Denied");
       toast({
         title: t("demandes:toast.error"),
@@ -255,8 +222,8 @@ const Demandes = () => {
       });
       fetchDemandes();
       if (selected?.id === id) setSelected(updated);
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -272,8 +239,8 @@ const Demandes = () => {
         const full = await demandeCorrectionApi.getById(id);
         setSelected(full);
       }
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -312,8 +279,8 @@ const Demandes = () => {
       setCancelTargetId(null);
       fetchDemandes();
       if (selected?.id === cancelTargetId) setSelected(null);
-    } catch (e: any) {
-      const msg = e?.message || t("demandes:toast.cancel_error");
+    } catch (e: unknown) {
+      const msg = formatApiErrorMessage(e) || t("demandes:toast.cancel_error");
       toast({ title: t("demandes:toast.error"), description: msg, variant: "destructive" });
     } finally {
       setCancelLoading(false);
@@ -336,8 +303,8 @@ const Demandes = () => {
         setDocs(documents);
       }
       setAdoptionTargetId(null);
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setAdoptionUploading(false);
     }
@@ -364,8 +331,8 @@ const Demandes = () => {
       setDocs(documents);
       const full = await demandeCorrectionApi.getById(selected.id);
       setSelected(full);
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -385,8 +352,8 @@ const Demandes = () => {
         setSelected(full);
       }
       fetchDemandes();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setResponseSending(false);
     }
@@ -765,8 +732,8 @@ const Demandes = () => {
                   toast({ title: t("demandes:toast.draft_deleted") });
                   setDeleteTargetId(null);
                   fetchDemandes();
-                } catch (e: any) {
-                  toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+                } catch (e: unknown) {
+                  toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
                 } finally {
                   setDeleteLoading(false);
                 }

@@ -1,3 +1,6 @@
+import { montantOuguiyaEnLettres } from "@/lib/pdfText";
+import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { UTILISATION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { isStockTvaEpuise } from "@/lib/tvaStock";
 import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
@@ -51,26 +54,7 @@ import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
 
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
 const CU_CARD_STATUTS: string[] = ["TRANSMISE_AU_PRESIDENT", "VALIDEE", ...CU_POST_EMISSION, "CLOTUREE"];
-const STATUT_COLORS: Record<UtilisationStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  DEMANDEE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION: "bg-yellow-100 text-yellow-800",
-  VISE: "bg-purple-100 text-purple-800",
-  VALIDEE: "bg-emerald-100 text-emerald-800",
-  LIQUIDEE: "bg-green-100 text-green-800",
-  APUREE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  CERTIFICAT_EMIS: "bg-primary/15 text-primary",
-  CLOTUREE: "bg-slate-200 text-slate-800",
-  EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
-  CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
-  TRANSMISE_AU_PRESIDENT: "bg-violet-100 text-violet-800",
-  ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
-  QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
-  QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
-};
+const STATUT_COLORS = UTILISATION_STATUT_COLORS;
 
 const fmtAmt = (v: any) => formatAmount(v, { currency: "MRU", maximumFractionDigits: 2 });
 const fmtNum = (v: any) => {
@@ -85,53 +69,7 @@ const fmtNum = (v: any) => {
 // Conversion d'un nombre en lettres (français) — usage bulletin de liquidation.
 // REVIEW: conservé en FR uniquement ; la traduction des montants en lettres en AR
 // n'est pas spécifiée dans ce lot.
-const _u = ["zéro","un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix","onze","douze","treize","quatorze","quinze","seize","dix-sept","dix-huit","dix-neuf"];
-const _t = ["","","vingt","trente","quarante","cinquante","soixante","soixante","quatre-vingt","quatre-vingt"];
-function _below1000(n: number): string {
-  if (n === 0) return "";
-  let s = "";
-  const c = Math.floor(n / 100), r = n % 100;
-  if (c > 0) s += (c > 1 ? _u[c] + " " : "") + "cent" + (c > 1 && r === 0 ? "s" : "");
-  if (r > 0) {
-    if (s) s += " ";
-    if (r < 20) s += _u[r];
-    else {
-      const d = Math.floor(r / 10), un = r % 10;
-      if (d === 7 || d === 9) {
-        s += _t[d] + (d === 7 && un === 1 ? " et " : "-") + _u[10 + un];
-      } else {
-        s += _t[d];
-        if (un === 1 && d !== 8) s += " et un";
-        else if (un > 0) s += "-" + _u[un];
-        else if (d === 8) s += "s";
-      }
-    }
-  }
-  return s;
-}
-// i18n-intentional: montant en lettres pour document officiel PDF (français uniquement, exigence légale).
-function numberToFrenchWords(n: number): string {
-  if (!isFinite(n)) return "";
-  const entier = Math.floor(Math.abs(n));
-  const cents = Math.round((Math.abs(n) - entier) * 100);
-  if (entier === 0 && cents === 0) return "zéro Ouguiya";
-  let s = "";
-  const millions = Math.floor(entier / 1000000);
-  const milliers = Math.floor((entier % 1000000) / 1000);
-  const reste = entier % 1000;
-  if (millions > 0) s += (millions === 1 ? "un million" : _below1000(millions) + " millions");
-  if (milliers > 0) {
-    if (s) s += " ";
-    s += (milliers === 1 ? "mille" : _below1000(milliers) + " mille");
-  }
-  if (reste > 0) {
-    if (s) s += " ";
-    s += _below1000(reste);
-  }
-  if (cents > 0) s += " virgule " + _below1000(cents);
-  s += " Ouguiya";
-  return s;
-}
+const numberToFrenchWords = montantOuguiyaEnLettres;
 
 const UtilisationDetail = () => {
   const { t } = useTranslation(["utilisations", "common", "errors"]);
@@ -286,8 +224,8 @@ const UtilisationDetail = () => {
       toast({ title: tSuccess(), description: t("utilisations:toast.statut_updated", { label: tStatutUtilisation(statut) }) });
       setConfirmGeste(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(false); }
   };
 
@@ -315,8 +253,8 @@ const UtilisationDetail = () => {
       setLiqValeurs({});
       setLiqBulletinFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setLiqLoading(false); }
   };
 
@@ -334,8 +272,8 @@ const UtilisationDetail = () => {
       setUtil(u2);
       if (cert2) setCert(cert2);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setLiqLoading(false); }
   };
 
@@ -359,8 +297,8 @@ const UtilisationDetail = () => {
       setChequeForm({ banqueNom: "", numeroCheque: "", montantCheque: "", dateCheque: "" });
       setChequeFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setChequeLoading(false); }
   };
 
@@ -371,8 +309,8 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.transmettrePresident(utilId);
       toast({ title: tSuccess(), description: t("utilisations:transmission_president.done") });
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setTransmissionLoading(false); }
   };
 
@@ -382,8 +320,8 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.envoyerAuTresor(utilId);
       toast({ title: t("utilisations:toast.envoi_tresor_title"), description: t("utilisations:toast.envoi_tresor_desc") });
       fetchAll();
-    } catch (e: any) {
-      const description = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_envoi_error")) : e.message;
+    } catch (e: unknown) {
+      const description = (isApiError(e) ? e.code : undefined) === "CERTIFICAT_UTILISATION_NON_EMIS" ? (formatApiErrorMessage(e) || t("utilisations:certificat_utilisation.non_emis_envoi_error")) : formatApiErrorMessage(e);
       toast({ title: tError(), description, variant: "destructive" });
     } finally { setEnvoiLoading(false); }
   };
@@ -414,8 +352,8 @@ const UtilisationDetail = () => {
       setShowQuittances(false);
       setQuittancesFiles({});
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setQuittancesLoading(false); }
   };
 
@@ -429,8 +367,8 @@ const UtilisationDetail = () => {
       setShowCloture(false);
       setClotureMotif("");
       fetchAll();
-    } catch (e: any) {
-      const msg = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_error")) : e.message;
+    } catch (e: unknown) {
+      const msg = (isApiError(e) ? e.code : undefined) === "CERTIFICAT_UTILISATION_NON_EMIS" ? (formatApiErrorMessage(e) || t("utilisations:certificat_utilisation.non_emis_error")) : formatApiErrorMessage(e);
       toast({ title: tError(), description: msg, variant: "destructive" });
     } finally { setClotureLoading(false); }
   };
@@ -446,8 +384,8 @@ const UtilisationDetail = () => {
       setUtil(u2);
       if (cert2) setCert(cert2);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setApurLoading(false); }
   };
 
@@ -466,8 +404,8 @@ const UtilisationDetail = () => {
       setShowQDgi(false);
       setQDgiFile(null);
       fetchAll();
-    } catch (e: any) {
-      const description = e?.code === "CERTIFICAT_UTILISATION_NON_EMIS" ? (e.message || t("utilisations:certificat_utilisation.non_emis_quittance_error")) : e.message;
+    } catch (e: unknown) {
+      const description = (isApiError(e) ? e.code : undefined) === "CERTIFICAT_UTILISATION_NON_EMIS" ? (formatApiErrorMessage(e) || t("utilisations:certificat_utilisation.non_emis_quittance_error")) : formatApiErrorMessage(e);
       toast({ title: tError(), description, variant: "destructive" });
     } finally { setQDgiLoading(false); }
   };
@@ -476,7 +414,7 @@ const UtilisationDetail = () => {
     if (!util) return;
     setTvaPdfLoading(true);
     try { await trackDocumentTask(`generate:cu-tva:${util.id}`, "generate", undefined, () => generateUtilisationTvaPdf(util, cert)); }
-    catch (e: any) { toast({ title: tError(), description: e.message, variant: "destructive" }); }
+    catch (e: unknown) { toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" }); }
     finally { setTvaPdfLoading(false); }
   };
 
@@ -488,8 +426,8 @@ const UtilisationDetail = () => {
       toast({ title: tSuccess(), description: t("utilisations:certificat_utilisation.emis_toast", { numero: u2?.numeroCertificatUtilisation || "" }) });
       setCuAdminOpen(false); setCuAdminMotif(""); setCuAdminFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setCuAdminLoading(false); }
   };
 
@@ -506,8 +444,8 @@ const UtilisationDetail = () => {
       setRejetMotif("");
       setRejetDocs([]);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setRejetLoading(false); }
   };
 
@@ -520,8 +458,8 @@ const UtilisationDetail = () => {
       setDocFile(null);
       setShowUpload(false);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setUploading(false); }
   };
 
@@ -555,8 +493,8 @@ const UtilisationDetail = () => {
       setResponseMsg("");
       setResponseFile(null);
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setResponding(false); }
   };
 
@@ -565,15 +503,15 @@ const UtilisationDetail = () => {
       await utilisationCreditApi.resolveRejetTemp(decisionId);
       toast({ title: tSuccess(), description: t("utilisations:toast.rejet_resolved") });
       fetchAll();
-    } catch (e: any) {
-      toast({ title: tError(), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
     }
   };
 
   // Toujours via GET /documents/{id}/download (applique la règle de confidentialité, 403 explicite).
   const fileDoc = (doc: { id?: number; chemin?: string; nomFichier?: string }): OpenableDoc =>
     doc.id ? { id: doc.id, nomFichier: doc.nomFichier } : { chemin: doc.chemin, nomFichier: doc.nomFichier };
-  const onFileError = (e: any) => toast({ title: tError(), description: e?.message, variant: "destructive" });
+  const onFileError = (e: any) => toast({ title: tError(), description: formatApiErrorMessage(e), variant: "destructive" });
 
   if (loading) {
     return <DashboardLayout><div className="flex justify-center items-center py-24"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></DashboardLayout>;

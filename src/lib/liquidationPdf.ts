@@ -1,3 +1,4 @@
+import { pdfSafe, pdfFmtNombre, numberToFrenchWords } from "@/lib/pdfText";
 import jsPDF from "jspdf";
 import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
@@ -7,42 +8,8 @@ import autoTable from "jspdf-autotable";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 import { montantCiADeduire } from "@/lib/utilisationCloture";
 
-const fmt = (v: any) =>
-  v != null && !isNaN(Number(v))
-    ? Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u202f|\u00a0/g, " ")
-    : "—";
+const fmt = (v: unknown) => pdfFmtNombre(v, 2) || "—";
 const dt = (v?: string) => (v ? new Date(v).toLocaleDateString("fr-FR") : "—");
-
-// ---------- Nombre en lettres (FR) ----------
-const UNITES = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix",
-  "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
-const DIZAINES = ["", "", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante", "quatre-vingt", "quatre-vingt"];
-function below100(n: number): string {
-  if (n < 20) return UNITES[n];
-  const d = Math.floor(n / 10); const u = n % 10;
-  if (d === 7 || d === 9) return DIZAINES[d] + (d === 7 ? "-" : "-") + UNITES[10 + u];
-  if (d === 8 && u === 0) return "quatre-vingts";
-  return DIZAINES[d] + (u === 1 && d !== 8 ? " et un" : u ? "-" + UNITES[u] : "");
-}
-function below1000(n: number): string {
-  if (n < 100) return below100(n);
-  const c = Math.floor(n / 100); const r = n % 100;
-  const cs = c === 1 ? "cent" : UNITES[c] + " cent" + (r === 0 ? "s" : "");
-  return r === 0 ? cs : cs + " " + below100(r);
-}
-function numberToFrenchWords(n: number): string {
-  if (!isFinite(n)) return "";
-  const entier = Math.floor(Math.abs(n));
-  if (entier === 0) return "zéro";
-  const millions = Math.floor(entier / 1000000);
-  const milliers = Math.floor((entier % 1000000) / 1000);
-  const reste = entier % 1000;
-  let s = "";
-  if (millions > 0) s += (millions === 1 ? "un million" : below1000(millions) + " millions");
-  if (milliers > 0) { if (s) s += " "; s += (milliers === 1 ? "mille" : below1000(milliers) + " mille"); }
-  if (reste > 0) { if (s) s += " "; s += below1000(reste); }
-  return s;
-}
 
 
 // ---------- Helpers de dessin ----------

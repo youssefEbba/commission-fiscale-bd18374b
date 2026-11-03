@@ -1,3 +1,4 @@
+import { CONVENTION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { DocumentButton } from "@/components/documents/DocumentButton";
@@ -43,12 +44,7 @@ import ConventionEditDialog from "@/components/conventions/ConventionEditDialog"
 import ConventionCancelDialog from "@/components/conventions/ConventionCancelDialog";
 import ConventionCreateDialog from "@/components/conventions/ConventionCreateDialog";
 
-const STATUT_COLORS: Record<ConventionStatut | "ANNULEE", string> = {
-  EN_ATTENTE: "bg-orange-100 text-orange-800",
-  VALIDE: "bg-green-100 text-green-800",
-  REJETE: "bg-red-100 text-red-800",
-  ANNULEE: "bg-gray-100 text-gray-800",
-};
+const STATUT_COLORS = CONVENTION_STATUT_COLORS;
 
 /** Noms séparés par une virgule (principal en tête), « — » si aucun. */
 const joinNoms = (list: { nom: string }[]) => (list.length ? list.map((x) => x.nom).join(", ") : "—");

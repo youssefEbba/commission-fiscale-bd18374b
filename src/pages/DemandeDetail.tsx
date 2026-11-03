@@ -1,3 +1,6 @@
+import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
+import { DEMANDE_ROLE_TRANSITIONS } from "@/lib/demandeTransitions";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import AvenantOrigineBanner from "@/components/avenants/AvenantOrigineBanner";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
@@ -51,46 +54,9 @@ import { DocumentButton } from "@/components/documents/DocumentButton";
 
 const CORRECTED_OFFER_TYPES = ["OFFRE_FISCALE_CORRIGEE", "OFFRE_CORRIGEE", "CREDIT_INTERIEUR"];
 
-const STATUT_COLORS: Record<DemandeStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  RECUE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-yellow-100 text-yellow-800",
-  RECEVABLE: "bg-emerald-100 text-emerald-800",
-  EN_EVALUATION: "bg-orange-100 text-orange-800",
-  EN_VALIDATION: "bg-purple-100 text-purple-800",
-  ADOPTEE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  NOTIFIEE: "bg-gray-100 text-gray-800",
-  ANNULEE: "bg-red-200 text-red-900",
-};
+const STATUT_COLORS = DEMANDE_STATUT_COLORS;
 
-const ALL_STATUTS: DemandeStatut[] = ["RECUE", "INCOMPLETE", "RECEVABLE", "EN_EVALUATION", "EN_VALIDATION"];
-
-type Transition = { from: DemandeStatut[]; to: DemandeStatut; labelKey: string; icon: React.ElementType; isVisa?: boolean; isDecisionFinale?: boolean };
-
-const ROLE_TRANSITIONS: Record<string, Transition[]> = {
-  DGD: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGD.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGTCP: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGTCP.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGI: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGI.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  DGB: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.DGB.visa", icon: CheckCircle, isVisa: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.reject", icon: XCircle },
-  ],
-  PRESIDENT: [
-    { from: ALL_STATUTS, to: "ADOPTEE", labelKey: "transitions.PRESIDENT.adopt", icon: CheckCircle, isDecisionFinale: true },
-    { from: ALL_STATUTS, to: "REJETEE", labelKey: "transitions.PRESIDENT.reject", icon: XCircle, isDecisionFinale: true },
-  ],
-};
-
+const ROLE_TRANSITIONS = DEMANDE_ROLE_TRANSITIONS;
 // Note: les libellés des transitions vivent dans `demandes.json` sous `transitions.*`
 // et sont résolus via `t(\`demandes:${labelKey}\`)`.
 
@@ -264,8 +230,8 @@ const DemandeDetail = () => {
       await demandeCorrectionApi.postDecision(demandeId, "REJET_TEMP", motif, documentsDemandes);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.rejet_temp_saved") });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -281,8 +247,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:detail.reactivate.success") });
       setReactivateOpen(false);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setReactivating(false); }
   };
 
@@ -297,8 +263,8 @@ const DemandeDetail = () => {
           : statut === "REJETEE" ? t("demandes:toast.rejet_saved") : t("demandes:toast.visa_applied"),
       });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -308,8 +274,8 @@ const DemandeDetail = () => {
       await demandeCorrectionApi.updateStatut(demandeId, "ADOPTEE", undefined, true);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setActionLoading(null); }
   };
 
@@ -334,8 +300,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.demande_adopted") });
       setAdoptionOpen(false); setAdoptionFile(null);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setAdoptionUploading(false); }
   };
 
@@ -353,8 +319,8 @@ const DemandeDetail = () => {
         downloadBlob(blob, fileName);
       });
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.letter_generated") });
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message || t("demandes:toast.letter_generate_error"), variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e) || t("demandes:toast.letter_generate_error"), variant: "destructive" });
     }
   };
 
@@ -366,8 +332,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.reclamation_created") });
       setReclamationOpen(false); setReclamationTexte(""); setReclamationFile(null);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setReclamationSubmitting(false); }
   };
 
@@ -387,8 +353,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: traiterAcceptee ? t("demandes:toast.reclamation_accepted") : t("demandes:toast.reclamation_rejected") });
       setTraiterOpen(false); setTraiterReclamationId(null); setTraiterMotif(""); setTraiterFile(null);
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setTraiterSubmitting(false); }
   };
 
@@ -398,8 +364,8 @@ const DemandeDetail = () => {
       await demandeCorrectionApi.annulerReclamation(selected.id, reclamationId);
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.reclamation_cancelled") });
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     }
   };
 
@@ -447,8 +413,8 @@ const DemandeDetail = () => {
       toast({ title: t("demandes:toast.success"), description: t("demandes:toast.response_sent") });
       setResponseOpen(false); setResponseDecisionId(null); setResponseMessage("");
       fetchDetail();
-    } catch (e: any) {
-      toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally { setResponseSending(false); }
   };
 
@@ -501,8 +467,8 @@ const DemandeDetail = () => {
         await new Promise((r) => setTimeout(r, 0)); // laisse l'attente s'afficher avant la génération
         presentBlob(await generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
       });
-    } catch (e: any) {
-      toast({ title: t("demandes:detail.recu_card.error"), description: e?.message, variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: t("demandes:detail.recu_card.error"), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setRecuBusy(false);
     }
@@ -795,8 +761,8 @@ const DemandeDetail = () => {
                               await demandeCorrectionApi.resolveRejetTemp(rej.id);
                               toast({ title: t("demandes:toast.success"), description: t("demandes:toast.rejet_resolved") });
                               fetchDetail();
-                            } catch (e: any) {
-                              toast({ title: t("demandes:toast.error"), description: e.message, variant: "destructive" });
+                            } catch (e: unknown) {
+                              toast({ title: t("demandes:toast.error"), description: formatApiErrorMessage(e), variant: "destructive" });
                             } finally { setActionLoading(null); }
                           }}>
                             <CheckCircle className="h-3 w-3 me-0.5" /> {t("demandes:detail.org_status.mark_resolved")}

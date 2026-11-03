@@ -12,17 +12,18 @@ import { useEffect, useRef, useState } from "react";
  * - L'utilisateur appelle `clear()` après un submit réussi.
  */
 
-const DB_NAME = "lvbl-form-files";
+const DB_NAME = "sgci-form-files";
+const LEGACY_DB_NAME = "lvbl-form-files";
 const STORE = "files";
 const DB_VERSION = 1;
 
-function openDb(): Promise<IDBDatabase> {
+function openNamedDb(name: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === "undefined") {
       reject(new Error("IndexedDB indisponible"));
       return;
     }
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(name, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
@@ -30,6 +31,10 @@ function openDb(): Promise<IDBDatabase> {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+function openDb(): Promise<IDBDatabase> {
+  return openNamedDb(DB_NAME);
 }
 
 interface StoredFile {
@@ -49,14 +54,24 @@ async function idbSet(key: string, value: Record<string, StoredFile>): Promise<v
   });
 }
 
-async function idbGet(key: string): Promise<Record<string, StoredFile> | null> {
-  const db = await openDb();
+async function idbGetFrom(name: string, key: string): Promise<Record<string, StoredFile> | null> {
+  const db = await openNamedDb(name);
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
     const req = tx.objectStore(STORE).get(key);
     req.onsuccess = () => { db.close(); resolve(req.result || null); };
     req.onerror = () => { db.close(); reject(req.error); };
   });
+}
+
+async function idbGet(key: string, legacyKey: string): Promise<Record<string, StoredFile> | null> {
+  const current = await idbGetFrom(DB_NAME, key);
+  if (current) return current;
+  try {
+    return await idbGetFrom(LEGACY_DB_NAME, legacyKey);
+  } catch {
+    return null;
+  }
 }
 
 async function idbDelete(key: string): Promise<void> {
@@ -73,7 +88,8 @@ export function usePersistedFiles(
   key: string,
   enabled = true
 ): [Record<string, File>, React.Dispatch<React.SetStateAction<Record<string, File>>>, () => void, boolean] {
-  const storageKey = `lvbl:files:${key}`;
+  const storageKey = `sgci:files:${key}`;
+  const legacyKey = `lvbl:files:${key}`;
   const [files, setFiles] = useState<Record<string, File>>({});
   const [restored, setRestored] = useState(false);
   const isFirstRender = useRef(true);
@@ -82,7 +98,7 @@ export function usePersistedFiles(
   useEffect(() => {
     if (!enabled) { setRestored(true); return; }
     let cancelled = false;
-    idbGet(storageKey)
+    idbGet(storageKey, legacyKey)
       .then((stored) => {
         if (cancelled || !stored) return;
         const reconstructed: Record<string, File> = {};

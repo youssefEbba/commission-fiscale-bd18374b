@@ -1,3 +1,4 @@
+import { CERTIFICAT_STATUT_COLORS } from "@/lib/statutColors";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import ConfirmAmountDialog from "@/components/common/ConfirmAmountDialog";
 import { DocumentButton } from "@/components/documents/DocumentButton";
@@ -51,22 +52,7 @@ import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
 import { certificatAmountRestriction, canCorrectCertificatField, canManuallySetCertificatStatus, type UtilisationPresence } from "@/lib/certificatEditability";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
-const STATUT_COLORS: Record<CertificatStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  ENVOYEE: "bg-sky-100 text-sky-800",
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_CONTROLE: "bg-teal-100 text-teal-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION_DGI: "bg-indigo-100 text-indigo-800",
-  EN_VALIDATION_PRESIDENT: "bg-purple-100 text-purple-800",
-  VALIDE_PRESIDENT: "bg-violet-100 text-violet-800",
-  EN_OUVERTURE_DGTCP: "bg-yellow-100 text-yellow-800",
-  OUVERT: "bg-emerald-100 text-emerald-800",
-  MODIFIE: "bg-orange-100 text-orange-800",
-  CLOTURE: "bg-gray-100 text-gray-800",
-  ANNULE: "bg-red-100 text-red-800",
-};
+const STATUT_COLORS = CERTIFICAT_STATUT_COLORS;
 
 // Fallback si l'API de paramétrage GED est indisponible — codes connus pour MISE_EN_PLACE_CI.
 const DOC_TYPES_FALLBACK = [

@@ -1,3 +1,4 @@
+import { TRANSFERT_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useGedPieces } from "@/hooks/useGedPieces";
@@ -35,16 +36,7 @@ const REJET_TEMP_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert
 const RESOLVE_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate"];
 
 
-const STATUT_COLORS: Record<StatutTransfert, string> = {
-  DEMANDE: "bg-blue-100 text-blue-800",
-  EN_COURS: "bg-yellow-100 text-yellow-800",
-  VALIDE: "bg-emerald-100 text-emerald-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  TRANSFERE: "bg-green-100 text-green-800",
-  REJETE: "bg-red-100 text-red-800",
-  ANNULEE: "bg-slate-200 text-slate-700",
-};
+const STATUT_COLORS = TRANSFERT_STATUT_COLORS;
 
 const TERMINAL_STATUTS: StatutTransfert[] = ["TRANSFERE", "REJETE", "ANNULEE"];
 const UPLOAD_STATUTS: StatutTransfert[] = ["DEMANDE", "EN_COURS", "VALIDE", "INCOMPLETE", "A_RECONTROLER"];

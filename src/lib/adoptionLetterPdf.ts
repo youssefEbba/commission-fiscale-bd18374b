@@ -1,3 +1,4 @@
+import { pdfSafe, pdfFmtNombre, numberToFrenchWords } from "@/lib/pdfText";
 import jsPDF from "jspdf";
 import { PDF_FONT, applyOfficialFont } from "@/lib/pdfFonts";
 import type {
@@ -14,15 +15,9 @@ import { hasCreditInterieur, hasCreditExterieur } from "@/lib/visas";
 
 const CURRENCY = "MRU";
 
-const safe = (s: string) =>
-  s
-    .replace(/[\u00A0\u202F\u2007]/g, " ")
-    .replace(/[\u2013\u2014]/g, "-");
+const safe = pdfSafe;
 
-const fmt = (v: any) =>
-  v != null && !isNaN(Number(v))
-    ? safe(Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-    : "";
+const fmt = (v: unknown) => pdfFmtNombre(v, 0);
 
 const fmtMontant = (v: any) => {
   const s = fmt(v);

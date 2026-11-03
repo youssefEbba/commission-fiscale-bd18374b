@@ -1,3 +1,4 @@
+import { UTILISATION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useRef, useState } from "react";
 import { isUtilisationAControler } from "@/lib/utilisationQueues";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
@@ -47,26 +48,7 @@ import { submitIfDraft, draftOutcomeMessage, utilisationTvaRequiredDocs } from "
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
-const STATUT_COLORS: Record<UtilisationStatut, string> = {
-  BROUILLON: "bg-slate-100 text-slate-700",
-  DEMANDEE: "bg-blue-100 text-blue-800",
-  INCOMPLETE: "bg-amber-100 text-amber-800",
-  A_RECONTROLER: "bg-cyan-100 text-cyan-800",
-  EN_VERIFICATION: "bg-yellow-100 text-yellow-800",
-  VISE: "bg-purple-100 text-purple-800",
-  VALIDEE: "bg-emerald-100 text-emerald-800",
-  LIQUIDEE: "bg-green-100 text-green-800",
-  APUREE: "bg-green-100 text-green-800",
-  REJETEE: "bg-red-100 text-red-800",
-  CERTIFICAT_EMIS: "bg-primary/15 text-primary",
-  CLOTUREE: "bg-slate-200 text-slate-800",
-  EN_CONTROLE_DGD: "bg-purple-100 text-purple-800",
-  CHEQUE_SAISI: "bg-indigo-100 text-indigo-800",
-  TRANSMISE_AU_PRESIDENT: "bg-violet-100 text-violet-800",
-  ENVOYEE_AU_TRESOR: "bg-sky-100 text-sky-800",
-  QUITTANCES_ENREGISTREES: "bg-teal-100 text-teal-800",
-  QUITTANCE_DGI_ENREGISTREE: "bg-teal-100 text-teal-800",
-};
+const STATUT_COLORS = UTILISATION_STATUT_COLORS;
 
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
   type: "DOUANIER", montant: undefined, numeroDeclaration: "", numeroBulletin: "",

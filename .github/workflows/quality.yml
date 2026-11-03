@@ -1,0 +1,33 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, claude/front]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: SonarQube (optionnel)
+        if: ${{ vars.ENABLE_SONAR == 'true' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: npx --yes sonarqube-scanner
+      - name: Snyk (optionnel)
+        if: ${{ vars.ENABLE_SNYK == 'true' }}
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
