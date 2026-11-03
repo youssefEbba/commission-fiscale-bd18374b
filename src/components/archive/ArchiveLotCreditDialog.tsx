@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Info, Loader2 } from "lucide-react";
+import { AlertTriangle, Info, Loader2, Save } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import { archiveLotApi, formatApiErrorMessage, type ArchiveCreditPreviewDto, type ArchiveLotCreditDto } from "@/lib/api";
 import { ArchiveSoldesTable, ArchiveUtilisationsTable } from "./ArchiveReleveTables";
@@ -22,16 +24,29 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /** Détail d'un crédit du lot : données du fichier, soldes, anomalies et utilisations du relevé. */
-export function ArchiveLotCreditDialog({ lotId, creditId, onClose }: { lotId: number; creditId: number | null; onClose: () => void }) {
+export function ArchiveLotCreditDialog({ lotId, creditId, onClose, onSaved }: {
+  lotId: number;
+  creditId: number | null;
+  onClose: () => void;
+  /** Après saisie du N° ou de la date : le lot est relu par l'appelant. */
+  onSaved?: () => void;
+}) {
   const { t } = useTranslation(["archive", "common"]);
   const [data, setData] = useState<{ credit: ArchiveLotCreditDto; releve: ArchiveCreditPreviewDto } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [numero, setNumero] = useState("");
+  const [date, setDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (creditId == null) return;
     let alive = true;
     setData(null);
     setError(null);
+    setNumero("");
+    setDate("");
+    setSaveError(null);
     archiveLotApi.getCredit(lotId, creditId)
       .then((d) => { if (alive) setData(d); })
       .catch((e) => { if (alive) setError(formatApiErrorMessage(e, t("archive:lots.error_credit"))); });
@@ -40,13 +55,40 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose }: { lotId: nu
 
   const c = data?.credit;
   const r = data?.releve;
+  const manqueNumero = !!c && c.statut !== "IMPORTE" && c.manquants?.includes("NUMERO");
+  const manqueDate = !!c && c.statut !== "IMPORTE" && c.manquants?.includes("DATE");
+
+  // N° et date se saisissent crédit par crédit (seuls les champs remplis sont envoyés).
+  const saveIdentite = async () => {
+    if (!c) return;
+    const body = {
+      creditIds: [c.id],
+      ...(manqueNumero && numero.trim() ? { numeroCredit: numero.trim() } : {}),
+      ...(manqueDate && date ? { dateCredit: date } : {}),
+    };
+    if (!("numeroCredit" in body) && !("dateCredit" in body)) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await archiveLotApi.affecter(lotId, body);
+      const d = await archiveLotApi.getCredit(lotId, c.id);
+      setData(d);
+      setNumero("");
+      setDate("");
+      onSaved?.();
+    } catch (e) {
+      setSaveError(formatApiErrorMessage(e, t("archive:lots.error_affect")));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={creditId !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 flex-wrap">
-            {t("archive:numero_credit")} {c?.numeroCredit ?? ""}
+            {t("archive:numero_credit")} {c ? (c.numeroCredit || t("archive:lots.numero_a_saisir")) : ""}
             {c && <ArchiveLotStatutBadge statut={c.statut} />}
           </DialogTitle>
           <DialogDescription>{c ? t("archive:lots.lignes", { debut: c.ligneDebut, fin: c.ligneFin }) : t("archive:lots.chargement")}</DialogDescription>
@@ -80,6 +122,32 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose }: { lotId: nu
                 <Info className="h-4 w-4" />
                 <AlertDescription>{t("archive:lots.deja_repris_desc")}</AlertDescription>
               </Alert>
+            )}
+
+            {(manqueNumero || manqueDate) && (
+              <section className="rounded-md border border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 p-3 space-y-3">
+                <h3 className="text-sm font-semibold">{t("archive:lots.identite_titre")}</h3>
+                <p className="text-xs text-muted-foreground">{t("archive:lots.identite_desc")}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {manqueNumero && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lot-numero">{t("archive:lots.manquant.NUMERO")}</Label>
+                      <Input id="lot-numero" maxLength={50} value={numero} onChange={(e) => setNumero(e.target.value)} />
+                    </div>
+                  )}
+                  {manqueDate && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lot-date">{t("archive:lots.manquant.DATE")}</Label>
+                      <Input id="lot-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
+                  )}
+                </div>
+                {saveError && <p role="alert" className="text-sm text-destructive whitespace-pre-wrap">{saveError}</p>}
+                <Button size="sm" onClick={() => void saveIdentite()} disabled={saving || !((manqueNumero && numero.trim()) || (manqueDate && date))}>
+                  {saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}
+                  {t("common:actions.save")}
+                </Button>
+              </section>
             )}
 
             <section>

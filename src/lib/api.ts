@@ -3650,7 +3650,7 @@ export const archiveCreditApi = {
 // Reprise d'un fichier de période (plusieurs crédits) : le serveur garde le fichier comme « lot ».
 export type ArchiveLotCreditStatut = "A_COMPLETER" | "PRET" | "IMPORTE" | "ERREUR" | "IGNORE";
 export const ARCHIVE_LOT_STATUTS: ArchiveLotCreditStatut[] = ["A_COMPLETER", "PRET", "IMPORTE", "ERREUR", "IGNORE"];
-export type ArchiveLotManquant = "ENTREPRISE" | "AUTORITE" | "CONVENTION" | "MARCHE" | "ANOMALIES";
+export type ArchiveLotManquant = "ENTREPRISE" | "AUTORITE" | "CONVENTION" | "MARCHE" | "ANOMALIES" | "NUMERO" | "DATE";
 /** Origine d'un rattachement ; tout sauf MANUEL est une proposition du serveur. */
 export type ArchiveLotSource = "NIF" | "REFERENCE" | "MARCHE" | "CODE_AC" | "CONVENTION_UNIQUE" | "CREDIT_EXISTANT" | "MANUEL" | "CREE";
 
@@ -3734,6 +3734,10 @@ export interface ArchiveLotAffectationRequest {
   confirmerMalgreAnomalies?: boolean;
   /** true = écarter, false = réintégrer. */
   ignorer?: boolean;
+  /** N° et date du crédit : un seul crédit ciblé (`creditIds` de longueur 1), sinon 400. */
+  numeroCredit?: string;
+  /** LocalDate AAAA-MM-JJ. */
+  dateCredit?: string;
 }
 
 export interface ArchiveLotImportResultatDto {

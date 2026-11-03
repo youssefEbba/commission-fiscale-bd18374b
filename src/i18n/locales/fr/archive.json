@@ -230,7 +230,9 @@
       "AUTORITE": "Autorité",
       "CONVENTION": "Convention",
       "MARCHE": "Marché",
-      "ANOMALIES": "Anomalies à confirmer"
+      "ANOMALIES": "Anomalies à confirmer",
+      "NUMERO": "N° du crédit",
+      "DATE": "Date du crédit"
     },
     "source": {
       "NIF": "Proposé d'après le NIF",
@@ -241,6 +243,9 @@
       "CREDIT_EXISTANT": "Repris du crédit déjà importé",
       "MANUEL": "Choix manuel",
       "CREE": "Créé pendant la reprise"
-    }
+    },
+    "numero_a_saisir": "— (à saisir)",
+    "identite_titre": "N° ou date absent du fichier",
+    "identite_desc": "Saisissez la valeur manquante pour ce crédit ; un N° déjà repris rattache le crédit au certificat existant."
   }
 }

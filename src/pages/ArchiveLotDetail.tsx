@@ -561,7 +561,7 @@ const ArchiveLotDetail = () => {
         </Card>
       </div>
 
-      <ArchiveLotCreditDialog lotId={lot.id} creditId={detailId} onClose={() => setDetailId(null)} />
+      <ArchiveLotCreditDialog lotId={lot.id} creditId={detailId} onClose={() => setDetailId(null)} onSaved={() => reload().catch(() => undefined)} />
 
       <ArchiveCreateDialog
         kind={createKind}
@@ -614,7 +614,7 @@ function CreditRow({ n, credit: c, checked, disabled, onCheck, onOpen }: {
         <Checkbox checked={checked} onCheckedChange={(v) => onCheck(v === true)} disabled={disabled} aria-label={t("lots.selectionner", { numero: c.numeroCredit ?? c.ordre })} />
       </TableCell>
       <TableCell>
-        <button type="button" onClick={onOpen} className="font-medium text-primary hover:underline text-start">{c.numeroCredit || `#${c.ordre}`}</button>
+        <button type="button" onClick={onOpen} className="font-medium text-primary hover:underline text-start">{c.numeroCredit || t("lots.numero_a_saisir")}</button>
         <p className="text-[11px] text-muted-foreground">{t("lots.lignes", { debut: c.ligneDebut, fin: c.ligneFin })}</p>
       </TableCell>
       <TableCell className="font-mono text-xs">{c.nif || "—"}</TableCell>
