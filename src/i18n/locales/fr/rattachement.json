@@ -121,7 +121,7 @@
   },
   "comptes": {
     "title": "Comptes rattachés",
-    "subtitle": "Personnes pouvant agir pour cette entité. Désactivez un compte dès qu'un agent quitte l'entité.",
+    "subtitle": "Personnes pouvant agir pour cette entité. Désactivez un compte dès qu'un représentant quitte l'entité.",
     "add": "Ajouter un compte",
     "empty": "Aucun compte rattaché",
     "col_nom": "Nom",

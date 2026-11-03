@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useNavigate } from "react-router-dom";
-import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { commissionRelaisApi, formatApiErrorMessage, RelaisAutoriteDto, RelaisEntrepriseDto, PageResponse } from "@/lib/api";
 import { toast } from "sonner";
 import { emitErrorDialog } from "@/components/ErrorDialog";
+import { ArchiveCreateDialog, type ArchiveCreateInitial, type ArchiveCreateKind } from "@/components/archive/ArchiveCreateDialog";
 
 type Mode = "ENTREPRISE" | "AUTORITE_CONTRACTANTE";
 
@@ -27,7 +28,7 @@ function unwrap<T>(payload: PageResponse<T> | T[]): { items: T[]; totalPages: nu
 }
 
 const CommissionRelais = () => {
-  const { applyImpersonation, isCommissionRelais, isImpersonating, user } = useAuth();
+  const { applyImpersonation, isCommissionRelais, isImpersonating, user, hasPermission } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode | null>(null);
   const [query, setQuery] = useState("");
@@ -36,6 +37,11 @@ const CommissionRelais = () => {
   const [autorites, setAutorites] = useState<RelaisAutoriteDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
+
+  // L'entité à représenter peut ne pas encore exister : la commission relais la crée sur place.
+  const [createKind, setCreateKind] = useState<ArchiveCreateKind | null>(null);
+  const [createInitial, setCreateInitial] = useState<ArchiveCreateInitial>({});
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -68,7 +74,30 @@ const CommissionRelais = () => {
       .catch((err) => emitErrorDialog({ title: "Échec du chargement", description: formatApiErrorMessage(err, "Échec du chargement") }))
       .finally(() => { if (!cancel) setLoading(false); });
     return () => { cancel = true; };
-  }, [mode, debounced, page]);
+  }, [mode, debounced, page, reloadKey]);
+
+  const canCreate = mode === "ENTREPRISE" ? hasPermission("entreprise.create")
+    : mode === "AUTORITE_CONTRACTANTE" ? hasPermission("autorite.create") : false;
+
+  /** La recherche en cours pré-remplit la création : des chiffres comme NIF, sinon comme nom. */
+  const openCreate = () => {
+    const q = query.trim();
+    if (mode === "ENTREPRISE") {
+      setCreateInitial(/^\d+$/.test(q) ? { nif: q } : q ? { raisonSociale: q } : {});
+      setCreateKind("entreprise");
+    } else {
+      setCreateInitial(q ? { nom: q } : {});
+      setCreateKind("autorite");
+    }
+  };
+
+  const handleCreated = async () => {
+    setCreateKind(null);
+    setReloadKey((k) => k + 1);
+    toast.success(mode === "ENTREPRISE"
+      ? "Entreprise créée : vous pouvez maintenant prendre le relais."
+      : "Autorité contractante créée : vous pouvez maintenant prendre le relais.");
+  };
 
   const handleImpersonate = async (target: { id: number; label: string }) => {
     setSubmittingId(target.id);
@@ -151,9 +180,17 @@ const CommissionRelais = () => {
                   <CardTitle>{mode === "ENTREPRISE" ? "Choisir une entreprise" : "Choisir une autorité contractante"}</CardTitle>
                   <CardDescription>La session de relais expire au bout de 4 h.</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => { setMode(null); setQuery(""); }}>
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Changer de mode
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {canCreate && (
+                    <Button variant="outline" size="sm" onClick={openCreate}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      {mode === "ENTREPRISE" ? "Créer une entreprise" : "Créer une autorité contractante"}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => { setMode(null); setQuery(""); }}>
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Changer de mode
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -188,7 +225,13 @@ const CommissionRelais = () => {
                     ) : rows.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-10 text-muted-foreground text-sm">
-                          Aucun résultat.
+                          <p>{mode === "ENTREPRISE" ? "Aucune entreprise trouvée." : "Aucune autorité contractante trouvée."}</p>
+                          {canCreate && (
+                            <Button variant="link" size="sm" className="mt-1" onClick={openCreate}>
+                              <Plus className="h-4 w-4 mr-1" />
+                              {query.trim() ? `Créer « ${query.trim()} »` : mode === "ENTREPRISE" ? "Créer une entreprise" : "Créer une autorité contractante"}
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -249,6 +292,13 @@ const CommissionRelais = () => {
           </Card>
         )}
       </div>
+
+      <ArchiveCreateDialog
+        kind={createKind}
+        initial={createInitial}
+        onClose={() => setCreateKind(null)}
+        onCreated={handleCreated}
+      />
     </DashboardLayout>
   );
 };
