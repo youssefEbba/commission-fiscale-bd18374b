@@ -195,6 +195,12 @@
       "dialog_title": "Lever le rejet temporaire (administrateur)",
       "dialog_warning": "Le rejet sera résolu à la place du rôle qui l'a posé, ce qui débloque son visa. Action tracée et journalisée.",
       "toast": "Rejet temporaire levé par l'administrateur."
+    },
+    "complements": {
+      "hint": "Pour chaque pièce demandée, joindre le fichier et un message explicatif (obligatoire).",
+      "message_placeholder": "Message explicatif (obligatoire)",
+      "submit": "Envoyer",
+      "title": "Déposer les compléments demandés"
     }
   },
   "actions": {
@@ -385,7 +391,8 @@
     "cert_uploaded_opened": "Certificat uploadé et ouvert",
     "statut_changed": "Statut: {{statut}}",
     "duplicate_active": "Un certificat de crédit actif existe déjà pour cette demande de correction.",
-    "upload_failures": "Échec upload: {{list}}"
+    "upload_failures": "Échec upload: {{list}}",
+    "complement_uploaded": "Complément déposé"
   },
   "equipements": {
     "banner_title": "Véhicules et équipements sous régime (plaques TT)",

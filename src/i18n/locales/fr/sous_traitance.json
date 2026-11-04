@@ -48,7 +48,7 @@
   "dialogs": {
     "create": {
       "title": "Nouvelle sous-traitance",
-      "certificat_label": "Certificat source (OUVERT) *",
+      "certificat_label": "Certificat source (ouvert ou modifié) *",
       "certificat_placeholder": "Sélectionner un certificat",
       "certificat_search_placeholder": "Rechercher un certificat…",
       "certificat_option_label": "{{ref}} — Solde : {{solde}}",
@@ -103,5 +103,13 @@
     "refused": "Sous-traitance refusée",
     "missing_pieces": "Pièces obligatoires manquantes : {{list}}",
     "docs_load_error": "Impossible de charger les documents de la sous-traitance"
+  },
+  "authorize_dialog": {
+    "title": "Autoriser la sous-traitance ?",
+    "desc": "{{sousTraitant}} pourra utiliser le crédit {{credit}} dans les limites déclarées."
+  },
+  "refuse_dialog": {
+    "title": "Refuser la sous-traitance ?",
+    "desc": "La demande de {{sousTraitant}} sur le crédit {{credit}} sera refusée ; l'entreprise devra déposer une nouvelle demande."
   }
 }

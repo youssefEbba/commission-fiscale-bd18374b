@@ -367,7 +367,9 @@
     "solde_avant": "Solde Cordon avant",
     "montant_impute": "Montant imputé",
     "solde_apres": "Solde Cordon après",
-    "tva_to_stock": "TVA → Stock déductible"
+    "tva_to_stock": "TVA → Stock déductible",
+    "montant_impute_cordon": "Imputé sur le cordon (droits)",
+    "total_ci": "Total pris en charge par le crédit (droits + TVA d'importation) : {{montant}}"
   },
   "traceability_apur": {
     "title": "Traçabilité apurement TVA",
@@ -463,7 +465,7 @@
     "option_au_ci": "AU CI (crédit extérieur)",
     "option_a_payer": "À PAYER (entreprise)",
     "upload": {
-      "label": "Scan du bulletin annoté (optionnel)",
+      "label": "Scan du bulletin annoté",
       "file_prefix": "Fichier : {{name}}",
       "required": "Le bulletin annoté est obligatoire pour le premier visa.",
       "optional_reannotation": "facultatif : bulletin déjà déposé"
@@ -530,7 +532,8 @@
     "cas2_with_cash": "Cas 2 : TVA nette positive — solde TVA sera débité, paiement cash de {{montant}} requis",
     "cas3_short": "Cas 3 : Report à nouveau de {{montant}} → solde TVA augmente",
     "cancel": "Annuler",
-    "confirm": "Confirmer l'apurement"
+    "confirm": "Confirmer l'apurement",
+    "depasse_stock": "Montant supérieur au stock de TVA déductible disponible ({{disponible}})."
   },
   "rejet_temp_dialog": {
     "title": "Rejet temporaire",
@@ -643,5 +646,17 @@
     "liquider_title": "Générer le crédit & liquider — #{{id}}",
     "liquider_text": "La liquidation débite le crédit et ne peut pas être annulée.",
     "liquider_amount": "Montant imputé sur le crédit"
+  },
+  "validation": {
+    "cert_not_eligible": "Certificat non éligible pour une nouvelle utilisation",
+    "lignes_required": "Au moins une ligne de bulletin est requise",
+    "montant_tva_required": "Le montant de TVA intérieure doit être supérieur à 0",
+    "quota_tva_insuffisant": "Quota TVA import insuffisant : disponible {{disponible}}, requis {{requis}}",
+    "quota_tva_label": "Quota TVA import",
+    "solde_cordon_insuffisant": "Solde cordon insuffisant : disponible {{disponible}}, requis {{requis}}",
+    "solde_cordon_label": "Solde cordon",
+    "solde_tva_label": "Solde TVA",
+    "title": "Validation impossible",
+    "transfert_executed": "Transfert exécuté : utilisations douanières interdites"
   }
 }

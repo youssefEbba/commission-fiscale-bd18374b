@@ -161,3 +161,12 @@ export function canManageConventionAutorites(conv: Pick<ConventionDto, "statut">
 export function canDecideConvention(conv: Pick<ConventionDto, "statut">, isDgbOrDgi: boolean): boolean {
   return isDgbOrDgi && conv.statut === "EN_ATTENTE";
 }
+
+/**
+ * Convention proposable dans un sélecteur de rattachement (marché, demande de correction) :
+ * ni désactivée, ni rejetée, ni annulée — le serveur refuse ces trois cas.
+ */
+export function conventionRattachable(conv: Pick<ConventionDto, "statut"> & { actif?: boolean | null }): boolean {
+  const statut = conv.statut as string | undefined;
+  return conv.actif !== false && statut !== "REJETE" && statut !== "ANNULEE";
+}

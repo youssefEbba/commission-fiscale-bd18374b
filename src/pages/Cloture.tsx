@@ -47,6 +47,8 @@ const Cloture = () => {
   const [propositions, setPropositions] = useState<ClotureCreditDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  // Approuver, rejeter et finaliser une clôture sont des décisions définitives : confirmation (A37).
+  const [aConfirmer, setAConfirmer] = useState<{ p: ClotureCreditDto; action: "valider" | "rejeter" | "finaliser" } | null>(null);
 
   // File de clôture (GET /clotures-credit/queue) : éléments proposables, détectés en tête.
   const [queue, setQueue] = useState<ClotureQueueItemDto[]>([]);
@@ -271,7 +273,7 @@ const Cloture = () => {
                     <TableRow key={p.id}>
                       <RowNumberCell n={rowIdx + 1} />
                       <TableCell>{p.id}</TableCell>
-                      <TableCell className="font-medium">{p.certificatNumero || `#${p.certificatCreditId}`}{equipBadge(p.equipementsPresents)}</TableCell>
+                      <TableCell className="font-medium">{p.certificatReference || p.certificatNumero || `#${p.certificatCreditId}`}{equipBadge(p.equipementsPresents)}</TableCell>
                       <TableCell>
                         <Badge variant={p.typeOperation === "ANNULATION" ? "destructive" : "secondary"}>
                           {tTypeOperationCloture(p.typeOperation)}
@@ -289,18 +291,18 @@ const Cloture = () => {
                           {isPresident && p.approuvee === null && (
                             <>
                               <Button size="sm" variant="default" disabled={actionLoading === p.id}
-                                onClick={() => p.equipementsPresents ? setSelected(p) : handleAction(p.id, "valider")} title={t("cloture:step2.approve")}>
+                                onClick={() => p.equipementsPresents ? setSelected(p) : setAConfirmer({ p, action: "valider" })} title={t("cloture:step2.approve")}>
                                 {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                               </Button>
                               <Button size="sm" variant="destructive" disabled={actionLoading === p.id}
-                                onClick={() => handleAction(p.id, "rejeter")} title={t("cloture:step2.reject")}>
+                                onClick={() => setAConfirmer({ p, action: "rejeter" })} title={t("cloture:step2.reject")}>
                                 <XCircle className="h-4 w-4" />
                               </Button>
                             </>
                           )}
                           {isDGTCP && p.approuvee === true && !p.dateCloture && (
                             <Button size="sm" variant="default" disabled={actionLoading === p.id}
-                              onClick={() => p.equipementsPresents ? setSelected(p) : handleAction(p.id, "finaliser")}>
+                              onClick={() => p.equipementsPresents ? setSelected(p) : setAConfirmer({ p, action: "finaliser" })}>
                               {actionLoading === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Lock className="h-4 w-4 me-1" /> {t("cloture:step3.finalize")}</>}
                             </Button>
                           )}
@@ -390,7 +392,7 @@ const Cloture = () => {
             {selected && (
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">{t("cloture:detail.certificat")}</span> <span className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</span></div>
+                  <div><span className="text-muted-foreground">{t("cloture:detail.certificat")}</span> <span className="font-medium">{selected.certificatReference || selected.certificatNumero || `#${selected.certificatCreditId}`}</span></div>
                   <div><span className="text-muted-foreground">{t("cloture:detail.type")}</span> <Badge variant={selected.typeOperation === "ANNULATION" ? "destructive" : "secondary"}>{tTypeOperationCloture(selected.typeOperation)}</Badge></div>
                   <div><span className="text-muted-foreground">{t("cloture:detail.motif")}</span> <span className="font-medium">{tMotifCloture(selected.motif)}</span></div>
                   <div><span className="text-muted-foreground">{t("cloture:detail.solde_restant")}</span> <span className="font-medium">{formatAmount(selected.soldeRestant)}</span></div>
@@ -424,6 +426,26 @@ const Cloture = () => {
           </DialogContent>
         </Dialog>
       </div>
+      <Dialog open={!!aConfirmer} onOpenChange={(o) => { if (!o) setAConfirmer(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{aConfirmer ? t(`cloture:confirm_dialog.${aConfirmer.action}.title`) : ""}</DialogTitle>
+            <DialogDescription>
+              {aConfirmer ? t(`cloture:confirm_dialog.${aConfirmer.action}.desc`, {
+                credit: aConfirmer.p.certificatReference || aConfirmer.p.certificatNumero || `#${aConfirmer.p.certificatCreditId}`,
+                solde: formatAmount(aConfirmer.p.soldeRestant),
+              }) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAConfirmer(null)}>{t("common:actions.cancel")}</Button>
+            <Button variant={aConfirmer?.action === "rejeter" ? "destructive" : "default"} disabled={!aConfirmer || actionLoading === aConfirmer.p.id}
+              onClick={async () => { const c = aConfirmer; setAConfirmer(null); if (c) await handleAction(c.p.id, c.action); }}>
+              {aConfirmer ? t(`cloture:confirm_dialog.${aConfirmer.action}.btn`) : ""}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

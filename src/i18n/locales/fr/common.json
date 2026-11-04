@@ -122,7 +122,8 @@
     "unauthorized": "Accès refusé",
     "forbidden": "Action non autorisée",
     "not_found": "Ressource introuvable",
-    "server": "Erreur serveur"
+    "server": "Erreur serveur",
+    "title": "Erreur"
   },
   "president_sign": {
     "title": "Signature du document",
@@ -143,7 +144,7 @@
     "done": "Document signé déposé au dossier.",
     "mode_systeme": "Apposé par le système",
     "mode_manuel": "Signé à la main et scanné",
-    "contenu_indisponible": "Les empreintes enregistrées ne peuvent pas être lues pour le moment (stockage des documents indisponible). Seul le chemin manuel est disponible.",
+    "contenu_indisponible": "Les empreintes enregistrées ne peuvent pas être lues : fichier absent du stockage des documents, ou stockage momentanément injoignable. Déposez à nouveau la signature et le cachet dans votre profil, ou utilisez le chemin manuel ci-dessous.",
     "source_note": "Les certificats utilisent la signature et le cachet de l'utilisateur Président connecté ; à défaut, ceux du rôle Président."
   },
   "verification": {
@@ -191,5 +192,17 @@
     "missing_docs_desc": "La demande reste en brouillon. Pièces à joindre : {{list}}",
     "unavailable_title": "Soumission indisponible",
     "unavailable_desc": "La soumission n'est pas encore disponible sur le serveur. La demande reste en brouillon ; réessayez plus tard."
+  },
+  "error": "Erreur",
+  "toast": {
+    "success": "Succès",
+    "error": "Erreur"
+  },
+  "success": {
+    "title": "Succès",
+    "generic_title": "Succès"
+  },
+  "warnings": {
+    "title": "Attention"
   }
 }

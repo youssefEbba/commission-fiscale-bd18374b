@@ -13,7 +13,7 @@ import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { tStatutAny, statutGroupForLigne } from "@/i18n/enums";
 import { mainCouranteApi, MainCouranteDto, MainCouranteLigneDto, MainCouranteNonCouvert, formatApiErrorMessage } from "@/lib/api";
 
-const hrefFor = (l: MainCouranteLigneDto): string => {
+export const hrefFor = (l: MainCouranteLigneDto): string => {
   if (l.type === "Avenant" || l.type === "AvenantCertificat") return `/dashboard/modifications/${l.id}`;
   // Ligne AVENANT portée par un autre objet (ex. correction issue d'un avenant financier) : la fiche de cet objet.
   if (l.type === "DemandeCorrection") return `/dashboard/demandes/${l.id}`;
@@ -25,6 +25,9 @@ const hrefFor = (l: MainCouranteLigneDto): string => {
     return `/dashboard/certificats/${l.id}`;
   }
   if (l.type === "UtilisationCredit") return `/dashboard/utilisations/${l.id}`;
+  if (l.type === "Convention") return `/dashboard/conventions/${l.id}`;
+  if (l.type === "SousTraitance") return "/dashboard/sous-traitance";
+  if (l.type === "ClotureCredit") return "/dashboard/cloture";
   if (l.type === "DemandeRattachement") return `/dashboard/demandes-rattachement/${l.id}`;
   if (l.type === "DemandeResetPassword") return `/dashboard/utilisateurs`;
   return "/dashboard";

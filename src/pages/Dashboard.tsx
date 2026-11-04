@@ -18,9 +18,10 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold text-foreground">
             {t("greeting", { name: user?.nomComplet || user?.username })}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          {/* div et non p : le Badge est un div, interdit dans un paragraphe. */}
+          <div className="text-muted-foreground text-sm mt-1">
             {t("welcome")} – <Badge variant="secondary" className="text-xs">{tRole(user?.role)}</Badge>
-          </p>
+          </div>
         </div>
 
         <MainCourante />

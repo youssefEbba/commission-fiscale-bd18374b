@@ -5,10 +5,12 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
   allowedRoles?: AppRole[];
+  /** Droit exigé, le même que celui qui affiche l'entrée du menu (sinon la page s'ouvre et l'API répond 403). */
+  permission?: string;
 }
 
-const ProtectedRoute = ({ children, adminOnly = false, allowedRoles }: ProtectedRouteProps) => {
-  const { isAuthenticated, isAdmin, hasRole, user, isCommissionRelais, isImpersonating } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false, allowedRoles, permission }: ProtectedRouteProps) => {
+  const { isAuthenticated, isAdmin, hasRole, hasPermission, user, isCommissionRelais, isImpersonating } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -26,6 +28,7 @@ const ProtectedRoute = ({ children, adminOnly = false, allowedRoles }: Protected
 
   if (adminOnly && !isAdmin) return <Navigate to="/dashboard" replace />;
   if (allowedRoles && !passesRoleCheck) return <Navigate to="/dashboard" replace />;
+  if (permission && !hasPermission(permission)) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 

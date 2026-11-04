@@ -17,6 +17,18 @@
     "MODIFICATION_STATUT_CHANGE": "Modification",
     "GED_DOCUMENT_CHANGE": "Document GED",
     "DEMANDE_EXPLICATION": "Demande d'explication",
-    "ENQUETE_SATISFACTION": "Enquête de satisfaction"
-  }
+    "ENQUETE_SATISFACTION": "Enquête de satisfaction",
+    "TRANSFERT_CREDIT": "Transfert de crédit",
+    "SOUS_TRAITANCE": "Sous-traitance",
+    "CLOTURE_CERTIFICAT": "Clôture du crédit",
+    "REJET_TEMP_DECISION": "Rejet temporaire",
+    "REJET_TEMP_RESOLU": "Rejet temporaire levé",
+    "REJET_TEMP_REPONSE": "Réponse à un rejet temporaire",
+    "PASSWORD_RESET_REQUEST": "Réinitialisation du mot de passe",
+    "PASSWORD_RESET_TRAITEE": "Mot de passe réinitialisé",
+    "RATTACHEMENT_DEMANDE": "Demande de compte",
+    "RATTACHEMENT_TRAITEE": "Décision sur la demande de compte"
+  },
+  "tab_all": "Toutes",
+  "tab_unread": "Non lues"
 }

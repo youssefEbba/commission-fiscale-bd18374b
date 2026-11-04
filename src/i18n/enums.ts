@@ -5,11 +5,19 @@ import i18n from "./index";
  * Les clés vivent dans `enums.json`, sous `enums.<groupe>.<VALEUR>`.
  * Fallback : valeur brute si la clé est manquante.
  */
+/**
+ * Traduction d'une clé, ou "" si elle n'existe pas. `defaultValue: ""` ne suffit pas : i18next
+ * renvoie alors la clé elle-même (« types.RATTACHEMENT_DEMANDE »), affichée telle quelle.
+ */
+function traduire(key: string): string {
+  if (!i18n.exists(key)) return "";
+  return (i18n.t(key) as string) || "";
+}
+
 function tEnum(group: string, value: string | null | undefined, fallback?: string): string {
   if (!value) return fallback ?? "—";
-  const key = `enums:${group}.${value}`;
-  const translated = i18n.t(key, { defaultValue: "" });
-  if (translated) return translated as string;
+  const translated = traduire(`enums:${group}.${value}`);
+  if (translated) return translated;
   return fallback ?? value;
 }
 
@@ -24,7 +32,7 @@ export const tStatutUtilisation = (v?: string | null) => tEnum("statut_utilisati
 export const tUtilisationStatutContextualise = (statut?: string | null, opts?: { parTransfert?: boolean | null }): string => {
   if (statut === "CLOTUREE" && opts?.parTransfert === true) {
     const k = "utilisations:statut.cloturee_transfert";
-    const r = i18n.t(k, { defaultValue: "" }) as string;
+    const r = traduire(k);
     if (r) return r;
   }
   return tStatutUtilisation(statut);
@@ -51,7 +59,7 @@ export const tStatutAny = (v?: string | null, preferred?: string | null): string
   if (!v) return "—";
   const groups = preferred ? [preferred, ...STATUT_GROUPS.filter((g) => g !== preferred)] : [...STATUT_GROUPS];
   for (const g of groups) {
-    const r = i18n.t(`enums:${g}.${v}`, { defaultValue: "" }) as string;
+    const r = traduire(`enums:${g}.${v}`);
     if (r) return r;
   }
   return v;
@@ -65,6 +73,8 @@ export const statutGroupForLigne = (type?: string | null, processus?: string | n
     case "UtilisationCredit": return "statut_utilisation";
     case "TransfertCredit": return "statut_transfert";
     case "SousTraitance": return "statut_sous_traitance";
+    case "Convention": return "statut_convention";
+    case "ClotureCredit": return "statut_certificat";
     default: return undefined;
   }
 };
@@ -110,7 +120,5 @@ export const tTypeProjet = (v?: string | null) => tEnum("type_projet", v ?? unde
 /** Libellé traduit d'une notification (namespace `notifications.types.<TYPE>`). */
 export const tNotificationType = (v?: string | null) => {
   if (!v) return "";
-  const k = `notifications:types.${v}`;
-  const r = i18n.t(k, { defaultValue: "" });
-  return (r as string) || v;
+  return traduire(`notifications:types.${v}`) || v;
 };

@@ -39,7 +39,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { tStatutCertificat, tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { miseEnPlaceDepotRequirements } from "@/lib/certificatEditability";
@@ -914,7 +914,7 @@ const DemandesMiseEnPlace = () => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {tStatutDemande(selectedCorrection.statut)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>
@@ -1106,7 +1106,7 @@ const DemandesMiseEnPlace = () => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {tStatutDemande(selectedCorrection.statut)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>

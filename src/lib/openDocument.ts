@@ -142,8 +142,9 @@ async function fetchAsBlob(url: string): Promise<Blob> {
 }
 
 /** Types que le navigateur sait afficher dans un onglet (sinon : téléchargement). */
-function isViewable(blob: Blob): boolean {
-  const type = (blob.type || "").toLowerCase();
+export function isViewable(blob: Blob): boolean {
+  // « application/pdf;charset=UTF-8 » : seul le type compte, pas ses paramètres.
+  const type = (blob.type || "").toLowerCase().split(";")[0].trim();
   return type === "application/pdf" || type.startsWith("image/") || type.startsWith("text/");
 }
 

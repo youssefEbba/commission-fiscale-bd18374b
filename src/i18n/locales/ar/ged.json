@@ -36,6 +36,9 @@
       "empty_etape": "لا توجد وثائق لهذه المرحلة",
       "open": "فتح",
       "download": "تنزيل"
+    },
+    "inject": {
+      "badge": "أودعه الرئيس"
     }
   },
   "document": {
@@ -59,7 +62,8 @@
     "confirm": "تأكيد",
     "cancel": "إلغاء",
     "loading": "جارٍ التحميل…",
-    "replacement_suffix": " (استبدال)"
+    "replacement_suffix": " (استبدال)",
+    "browse": "تصفح"
   },
   "upload": {
     "section_title": "إضافة / استبدال وثيقة",
@@ -81,7 +85,8 @@
     "upload_success_desc": "تم رفع الوثيقة بنجاح",
     "upload_error_fallback": "فشل الرفع",
     "delete_success_desc": "تم حذف الوثيقة",
-    "replace_success_desc": "تم استبدال الوثيقة"
+    "replace_success_desc": "تم استبدال الوثيقة",
+    "open_error": "تعذر فتح الوثيقة. أعد المحاولة بعد قليل."
   },
   "config": {
     "title": "إدارة الوثائق – الإعدادات",

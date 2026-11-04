@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { conventionRattachable } from "@/lib/conventionEditability";
 import { useTranslation } from "react-i18next";
 import { formatAmount, formatNumber } from "@/i18n/format";
 import { tTypeDocument, tTypeProjet, tDocRequirementLabel } from "@/i18n/enums";
@@ -1068,7 +1069,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         loading={conventionsLoading}
                         loadingMessage={t("common:states.loading")}
                         searchPlaceholder={t("demandes:wizard.fields.search_convention")}
-                        options={conventions.filter(c => c.actif !== false || String(c.id) === conventionId).map(c => ({
+                        options={conventions.filter(c => conventionRattachable(c) || String(c.id) === conventionId).map(c => ({
                           value: String(c.id),
                           label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
                           keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
@@ -1342,7 +1343,8 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
 
                 {/* Enveloppes crédit — au moins une doit être > 0 */}
                 <div className="rounded-lg border border-primary/30 p-3 space-y-3">
-                  <h3 className="text-sm font-semibold">{t("demandes:wizard.modele_fiscal.section_recap")}</h3>
+                  {/* Titre propre : « 3 — Récapitulatif » est celui du modèle fiscal (sections 1, 2, 3). */}
+                  <h3 className="text-sm font-semibold">{t("demandes:wizard.section_credits")}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">

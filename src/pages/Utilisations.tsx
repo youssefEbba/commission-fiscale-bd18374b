@@ -69,7 +69,7 @@ const DEFAULT_BULLETIN_LIGNES: LigneBulletinRequest[] = [
 ];
 
 const Utilisations = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -218,7 +218,12 @@ const Utilisations = () => {
     finally { setLoading(false); }
   };
 
+  // Mêmes droits que GET /api/transferts-credit : sans eux, l'appel est refusé (403) et inutile.
+  const peutVoirTransferts = ["transfert.solde.view", "transfert.dgtcp.queue.view", "transfert.dgd.visa", "transfert.dgi.visa",
+    "transfert.president.validate", "transfert.president.reject", "archivage.view"].some((p) => hasPermission(p));
+
   const fetchTransfertsExecutes = async () => {
+    if (!peutVoirTransferts) return;
     try {
       const all = await transfertCreditApi.getAll();
       const ids = new Set(
@@ -622,8 +627,10 @@ const Utilisations = () => {
       (tab === "SOUS_TRAITANT" && u.demandeurEstSousTraitant === true);
     return ms && matchStatut && matchTab;
   }).sort((a, b) => {
-    const ta = a.dateCreation ? new Date(a.dateCreation).getTime() : 0;
-    const tb = b.dateCreation ? new Date(b.dateCreation).getTime() : 0;
+    // dateDemande : le serveur n'envoie pas dateCreation (le tri retombait toujours sur l'id).
+    const da = a.dateDemande ?? a.dateCreation, db = b.dateDemande ?? b.dateCreation;
+    const ta = da ? new Date(da).getTime() : 0;
+    const tb = db ? new Date(db).getTime() : 0;
     if (tb !== ta) return tb - ta;
     return (b.id ?? 0) - (a.id ?? 0);
   });

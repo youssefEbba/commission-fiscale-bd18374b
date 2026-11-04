@@ -72,6 +72,12 @@ function getDocFileUrl(doc: DocumentDto): string {
   return `${API_BASE}/documents/download/${doc.id}`;
 }
 
+const PERMISSIONS_UTILISATIONS = [
+  "utilisation.douane.dgd.queue.view", "utilisation.douane.dgtcp.queue.view", "utilisation.interieur.dgtcp.queue.view",
+  "utilisation.douane.solde.view", "utilisation.interieur.solde.view", "utilisation.douane.history.view",
+  "utilisation.interieur.history.view", "archivage.view",
+];
+
 const MiseEnPlaceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -169,9 +175,13 @@ const MiseEnPlaceDetail = () => {
           setMarcheDocsError(formatApiErrorMessage(error, t("common:editability.market_documents_error")));
           return [] as DocumentDto[];
         }) : Promise.resolve([] as DocumentDto[]),
-        utilisationCreditApi.getByCertificat(cert.id)
-          .then((items) => setUtilisationPresence(items.length ? "present" : "none"))
-          .catch(() => setUtilisationPresence("unknown")),
+        // Mêmes droits que GET /utilisations-credit/by-certificat : sans eux (autorité contractante…),
+        // l'appel serait refusé (403) ; la présence d'utilisations reste alors « inconnue ».
+        PERMISSIONS_UTILISATIONS.some((p) => hasPermission(p))
+          ? utilisationCreditApi.getByCertificat(cert.id)
+              .then((items) => setUtilisationPresence(items.length ? "present" : "none"))
+              .catch(() => setUtilisationPresence("unknown"))
+          : Promise.resolve(setUtilisationPresence("unknown")),
       ]);
       const tagged: DocumentDto[] = [
         ...certDocsRes.map((d) => ({ ...d, _source: "certificat" } as any)),
@@ -935,7 +945,8 @@ const MiseEnPlaceDetail = () => {
                 {docs.map((doc) => {
                   const src = (doc as any)._source as string | undefined;
                   return (
-                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    // La liste mêle trois tables (certificat, correction, marché) : leurs id se recouvrent.
+                    <div key={`${src ?? "certificat"}-${doc.id}`} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <div>

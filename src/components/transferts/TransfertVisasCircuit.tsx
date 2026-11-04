@@ -41,6 +41,8 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey, finalStatut 
   const [acting, setActing] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmChecked, setConfirmChecked] = useState(false);
+  // Visa d'une direction : irréversible, confirmé comme les visas des corrections et des mises en place.
+  const [confirmVisaOpen, setConfirmVisaOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,8 +154,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey, finalStatut 
                           <Stamp className="h-4 w-4 me-1" /> {t("transferts:circuit.btn_approuver")}
                         </Button>
                       ) : (
-                        <Button size="sm" disabled={acting}
-                          onClick={() => run(() => transfertCreditApi.viser(transfertId), t("transferts:circuit.toast_vise"))}>
+                        <Button size="sm" disabled={acting} onClick={() => setConfirmVisaOpen(true)}>
                           {acting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle2 className="h-4 w-4 me-1" />}
                           {t("transferts:circuit.btn_viser")}
                         </Button>
@@ -166,6 +167,23 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey, finalStatut 
           </ol>
         )}
       </CardContent>
+
+      <Dialog open={confirmVisaOpen} onOpenChange={(o) => { if (!acting) setConfirmVisaOpen(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("transferts:circuit.visa_confirm_title")}</DialogTitle>
+            <DialogDescription>{t("transferts:circuit.visa_confirm_desc", { id: transfertId })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={acting} onClick={() => setConfirmVisaOpen(false)}>{t("transferts:cancel.btn_back")}</Button>
+            <Button disabled={acting}
+              onClick={() => run(async () => { await transfertCreditApi.viser(transfertId); setConfirmVisaOpen(false); }, t("transferts:circuit.toast_vise"))}>
+              {acting ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <CheckCircle2 className="h-4 w-4 me-1" />}
+              {t("transferts:circuit.btn_viser")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmOpen} onOpenChange={(o) => { if (!acting) setConfirmOpen(o); }}>
         <DialogContent className="sm:max-w-lg">

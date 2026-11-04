@@ -51,6 +51,9 @@ const SousTraitance = () => {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState("ALL");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  // Autoriser engage la DGTCP : confirmation, comme les autres décisions (A37).
+  const [aAutoriser, setAAutoriser] = useState<SousTraitanceDto | null>(null);
+  const [aRefuser, setARefuser] = useState<SousTraitanceDto | null>(null);
 
   // Onboarding dialog
   const [showCreate, setShowCreate] = useState(false);
@@ -104,7 +107,8 @@ const SousTraitance = () => {
     ]);
 
     if (certsResult.status === "fulfilled") {
-      setCertificats(certsResult.value.filter((c) => c.statut === "OUVERT"));
+      // Mêmes statuts que le serveur (SousTraitanceService) : un crédit modifié par avenant reste sous-traitable.
+      setCertificats(certsResult.value.filter((c) => c.statut === "OUVERT" || c.statut === "MODIFIE"));
     } else {
       setCertificats([]);
       const certsError = formatApiErrorMessage(certsResult.reason, t("sous_traitance:toast.unknown_error"));
@@ -271,7 +275,7 @@ const SousTraitance = () => {
   };
 
   const filtered = data.filter((row) => {
-    const ms = (row.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
+    const ms = (row.certificatReference || row.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
       (row.sousTraitantEntrepriseRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       String(row.id).includes(search);
     const matchStatut = filterStatut === "ALL" || row.statut === filterStatut;
@@ -356,7 +360,7 @@ const SousTraitance = () => {
                     <TableRow key={row.id}>
                       <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">#{row.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{row.certificatNumero || t("sous_traitance:list.cert_fallback", { id: row.certificatCreditId })}</TableCell>
+                      <TableCell className="text-muted-foreground">{row.certificatReference || row.certificatNumero || t("sous_traitance:list.cert_fallback", { id: row.certificatCreditId })}</TableCell>
                       <TableCell>{row.sousTraitantEntrepriseRaisonSociale || t("sous_traitance:list.ent_fallback", { id: row.sousTraitantEntrepriseId })}</TableCell>
                       <TableCell>{fmtNum(row.volumes)}</TableCell>
                       <TableCell>{fmtNum(row.quantites)}</TableCell>
@@ -373,11 +377,11 @@ const SousTraitance = () => {
                           <Button variant="ghost" size="sm" onClick={() => openDocs(row.id)} aria-label={t("sous_traitance:actions.documents")}><FileText className="h-4 w-4" /></Button>
                           {canValidate && STATUTS_A_DECIDER.includes(row.statut) && (
                             <>
-                              <Button size="sm" disabled={actionLoading === row.id} onClick={() => handleAutoriser(row.id)}>
+                              <Button size="sm" disabled={actionLoading === row.id} onClick={() => setAAutoriser(row)}>
                                 {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 me-1" />}
                                 {t("sous_traitance:actions.authorize")}
                               </Button>
-                              <Button variant="destructive" size="sm" disabled={actionLoading === row.id} onClick={() => handleRefuser(row.id)}>
+                              <Button variant="destructive" size="sm" disabled={actionLoading === row.id} onClick={() => setARefuser(row)}>
                                 {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 me-1" />}
                                 {t("sous_traitance:actions.refuse")}
                               </Button>
@@ -401,7 +405,7 @@ const SousTraitance = () => {
           {selected && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.certificat")}</span><p className="font-medium">{selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
+                <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.certificat")}</span><p className="font-medium">{selected.certificatReference || selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
                 <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.sous_traitant")}</span><p className="font-medium">{selected.sousTraitantEntrepriseRaisonSociale || `#${selected.sousTraitantEntrepriseId}`}</p></div>
                 <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.volumes")}</span><p className="font-medium">{fmtNum(selected.volumes)}</p></div>
                 <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.quantites")}</span><p className="font-medium">{fmtNum(selected.quantites)}</p></div>
@@ -610,6 +614,42 @@ const SousTraitance = () => {
         onUpload={handleGEDUpload}
         onRefresh={refreshDocs}
       />
+      <Dialog open={!!aRefuser} onOpenChange={(o) => { if (!o) setARefuser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{t("sous_traitance:refuse_dialog.title")}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t("sous_traitance:refuse_dialog.desc", {
+              sousTraitant: aRefuser?.sousTraitantEntrepriseRaisonSociale || "—",
+              credit: aRefuser?.certificatReference || aRefuser?.certificatNumero || "—",
+            })}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setARefuser(null)}>{t("common:actions.cancel")}</Button>
+            <Button variant="destructive" disabled={!aRefuser || actionLoading === aRefuser.id}
+              onClick={async () => { const r = aRefuser; setARefuser(null); if (r) await handleRefuser(r.id); }}>
+              {t("sous_traitance:actions.refuse")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!aAutoriser} onOpenChange={(o) => { if (!o) setAAutoriser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{t("sous_traitance:authorize_dialog.title")}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t("sous_traitance:authorize_dialog.desc", {
+              sousTraitant: aAutoriser?.sousTraitantEntrepriseRaisonSociale || "—",
+              credit: aAutoriser?.certificatReference || aAutoriser?.certificatNumero || "—",
+            })}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAAutoriser(null)}>{t("common:actions.cancel")}</Button>
+            <Button disabled={!aAutoriser || actionLoading === aAutoriser.id}
+              onClick={async () => { const r = aAutoriser; setAAutoriser(null); if (r) await handleAutoriser(r.id); }}>
+              {t("sous_traitance:actions.authorize")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

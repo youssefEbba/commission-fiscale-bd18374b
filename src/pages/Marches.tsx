@@ -1,4 +1,5 @@
 import { MARCHE_STATUT_COLORS } from "@/lib/statutColors";
+import { conventionRattachable } from "@/lib/conventionEditability";
 import { useEffect, useRef, useState } from "react";
 import { cachedList, invalidateList } from "@/lib/listCache";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
@@ -14,7 +15,6 @@ import {
   demandeCorrectionApi, DemandeCorrectionDto,
   DocumentDto, MARCHE_DOCUMENT_TYPES, TypeDocumentMarche,
   formatApiErrorMessage,
-  DEVISES,
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -374,11 +374,6 @@ const Marches = () => {
     return c ? (c.reference || `#${c.id}`) : `#${id}`;
   };
 
-  const conventionDevise = (conventionId?: number) => {
-    const c = conventions.find(x => x.id === conventionId);
-    return c?.deviseOrigine || "MRU";
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -456,7 +451,7 @@ const Marches = () => {
                           </TableCell>
                           <TableCell className="text-muted-foreground max-w-[200px] truncate" title={m.autoriteContractanteNom || ""}>{m.autoriteContractanteNom || "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-end">
-                            {formatAmount(m.montantContratHt, { currency: (m as any).deviseOrigine || conventionDevise(m.conventionId), minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatAmount(m.montantContratHt, { currency: "MRU", minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-xs ${STATUT_COLORS[m.statut]}`}>
@@ -548,7 +543,7 @@ const Marches = () => {
           <div className="space-y-4">
             {(!editing || isAdministration) && (() => {
               // Périmètre AC (y compris en impersonation) filtré par le serveur ; ici seulement les conventions désactivées.
-              const visibleConventions = conventions.filter(c => c.actif !== false);
+              const visibleConventions = conventions.filter(conventionRattachable);
               return (
               <div className="space-y-2">
                 <Label>
@@ -640,15 +635,7 @@ const Marches = () => {
                 <Label>{t("marches:form.montant_ttc")}</Label>
                 <Input type="number" step="0.01" value={form.montantContratTtc ?? ""} onChange={e => setForm(f => ({ ...f, montantContratTtc: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder={t("marches:form.montant_placeholder")} />
               </div>
-              <div className="space-y-2">
-                <Label>{t("marches:form.devise")}</Label>
-                <Select value={form.deviseOrigine || "MRU"} onValueChange={v => setForm(f => ({ ...f, deviseOrigine: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {DEVISES.map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Pas de choix de devise : le serveur n'enregistre pas de devise de marché, les montants sont en MRU. */}
             </div>
             <div className="space-y-2">
               <Label>{t("marches:fields.duree_execution")}</Label>

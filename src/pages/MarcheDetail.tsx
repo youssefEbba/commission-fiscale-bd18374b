@@ -128,7 +128,9 @@ const MarcheDetail = () => {
     .map(dId => delegues.find(d => d.id === dId))
     .filter(Boolean) as DelegueDto[];
 
-  const devise = conventions[0]?.conv?.deviseOrigine || "MRU";
+  // Montants du marché saisis et enregistrés en MRU (le serveur ne stocke pas de devise de marché) :
+  // la devise de la convention (EUR, USD…) ne s'applique pas à eux.
+  const devise = "MRU";
 
   return (
     <DashboardLayout>

@@ -161,7 +161,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/transferts" element={
-              <ProtectedRoute allowedRoles={["ENTREPRISE", "AUTORITE_CONTRACTANTE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <Transferts />
               </ProtectedRoute>
             } />
@@ -250,8 +250,8 @@ const App = () => (
             <Route path="/dashboard/entreprises" element={<ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}><Entreprises /></ProtectedRoute>} />
             <Route path="/dashboard/autorites" element={<ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}><AutoritesContractantes /></ProtectedRoute>} />
             <Route path="/dashboard/autorites/:id" element={<ProtectedRoute allowedRoles={["PRESIDENT", "ADMIN_SI"]}><AutoriteDetail /></ProtectedRoute>} />
-            <Route path="/dashboard/demandes-rattachement" element={<ProtectedRoute><DemandesRattachement /></ProtectedRoute>} />
-            <Route path="/dashboard/demandes-rattachement/:id" element={<ProtectedRoute><DemandeRattachementDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/demandes-rattachement" element={<ProtectedRoute permission="rattachement.validate"><DemandesRattachement /></ProtectedRoute>} />
+            <Route path="/dashboard/demandes-rattachement/:id" element={<ProtectedRoute permission="rattachement.validate"><DemandeRattachementDetail /></ProtectedRoute>} />
             <Route path="/dashboard/entreprises/:id" element={
               <ProtectedRoute allowedRoles={["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"]}>
                 <EntrepriseDetail />

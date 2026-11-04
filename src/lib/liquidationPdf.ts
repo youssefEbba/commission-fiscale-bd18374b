@@ -5,7 +5,7 @@ import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { drawVerificationQr } from "@/lib/verificationQr";
 import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import autoTable from "jspdf-autotable";
-import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
+import { entrepriseApi, marcheApi, type UtilisationCreditDto, type CertificatCreditDto, type EntrepriseDto, type MarcheDto } from "@/lib/api";
 import { montantCiADeduire } from "@/lib/utilisationCloture";
 
 const fmt = (v: unknown) => pdfFmtNombre(v, 2) || "—";
@@ -30,7 +30,22 @@ function labelDottedValue(doc: jsPDF, x: number, y: number, label: string, value
   doc.text(value || "", vx + 2, y - 1);
 }
 
+/**
+ * Entreprise et marché du crédit, pour remplir le NIF, l'adresse, le marché et son délai.
+ * Sans eux, ces champs restaient vides. Un échec de lecture ne bloque jamais le PDF.
+ */
+export async function chargerContexte(cert: CertificatCreditDto | null): Promise<{ ent: EntrepriseDto | null; marche: MarcheDto | null }> {
+  const [ent, marche] = await Promise.all([
+    cert?.entrepriseId ? entrepriseApi.getById(cert.entrepriseId).catch(() => null) : Promise.resolve(null),
+    cert?.marcheId ? marcheApi.getById(cert.marcheId).catch(() => null) : Promise.resolve(null),
+  ]);
+  return { ent, marche };
+}
+
 export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: CertificatCreditDto | null, opts: PdfOutputOptions = {}): Promise<Blob> {
+  const { ent, marche } = await chargerContexte(cert);
+  const numeroMarche = marche?.numeroMarche || cert?.marcheNumero || "";
+  const dateCredit = cert?.dateMiseEnPlace || cert?.dateEmission;
   const doc = await applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
   const W = doc.internal.pageSize.getWidth();
   const M = 32;
@@ -69,13 +84,13 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.text("I. IDENTIFICATION DE L'ENTREPRISE", M, y);
   y += 14;
   doc.setFontSize(9);
-  labelDottedValue(doc, M, y, "NIF :", "", 200); y += 14;
+  labelDottedValue(doc, M, y, "NIF :", ent?.nifAffiche || ent?.nif || "", 200); y += 14;
   labelDottedValue(doc, M, y, "NOM ET PRÉNOM OU NOM DE L'ENTREPRISE :", u.entrepriseNom || "", 260); y += 14;
   labelDottedValue(doc, M, y, "AUTRES DÉNOMINATION/ ENSEIGNE COMMERCIALE :", "", 200); y += 14;
-  labelDottedValue(doc, M, y, "ADRESSE/SIÈGE :", "", 320); y += 14;
+  labelDottedValue(doc, M, y, "ADRESSE/SIÈGE :", ent?.adresse || "", 320); y += 14;
   labelDottedValue(doc, M, y, "BP :", "", 80);
-  labelDottedValue(doc, M + 120, y, "Tél.", "", 110);
-  labelDottedValue(doc, M + 290, y, "EMAIL :", "", 180);
+  labelDottedValue(doc, M + 120, y, "Tél.", ent?.telephone || "", 110);
+  labelDottedValue(doc, M + 290, y, "EMAIL :", ent?.email || "", 180);
   y += 18;
 
   // ====== II. UTILISATION DU CRÉDIT D'IMPOT ======
@@ -88,8 +103,8 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   labelDottedValue(doc, M, y, "C", `${u.numeroDeclaration || ""}${u.dateDeclaration ? "  DU " + dt(u.dateDeclaration) : ""}`, 320); y += 13;
   labelDottedValue(doc, M, y, "Crédit :", u.certificatReference || "", 280); y += 13;
   labelDottedValue(doc, M, y, "DAON° :", "", 280); y += 13;
-  labelDottedValue(doc, M, y, "Marché N° :", "", 320); y += 13;
-  labelDottedValue(doc, M, y, "Délai d'exécution :", "", 280); y += 13;
+  labelDottedValue(doc, M, y, "Marché N° :", numeroMarche, 320); y += 13;
+  labelDottedValue(doc, M, y, "Délai d'exécution :", marche?.dureeExecution || "", 280); y += 13;
   const montantTotal = (u.lignes || []).reduce((s, l) => s + (Number(l.valeur) || 0), 0) || Number(u.montant) || 0;
   labelDottedValue(doc, M, y, "Montant :", `${fmt(montantTotal)} MRU`, 280);
   y += 20;
@@ -104,16 +119,19 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   cx += 88;
   doc.text("du", cx, phraseY); cx += doc.getTextWidth("du") + 4;
   drawDottedLine(doc, cx, phraseY + 1, cx + 80);
-  doc.text(dt(u.dateCreation), cx + 2, phraseY - 1);
+  // Date du crédit (sa mise en place), et non celle de la demande d'utilisation.
+  doc.text(dt(dateCredit), cx + 2, phraseY - 1);
   cx += 88;
   doc.text("ouvert à mon profit dans le cadre", cx, phraseY);
   y += 13;
   doc.text("du Marché Public N° :", M, y);
   cx = M + doc.getTextWidth("du Marché Public N° :") + 4;
   drawDottedLine(doc, cx, y + 1, cx + 200);
+  doc.text(numeroMarche, cx + 2, y - 1);
   cx += 208;
   doc.text("DU", cx, y); cx += doc.getTextWidth("DU") + 4;
   drawDottedLine(doc, cx, y + 1, cx + 70);
+  if (marche?.dateSignature) doc.text(dt(marche.dateSignature), cx + 2, y - 1);
   cx += 78;
   doc.text("relatif au", cx, y);
   y += 16;
@@ -138,7 +156,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   labelDottedValue(doc, M, y, "référence :", "", 280); y += 13;
   labelDottedValue(doc, M, y, "Au profit de la perception du Trésor de :", "DGTCP", 200); y += 13;
   labelDottedValue(doc, M, y, "A", "", 180);
-  labelDottedValue(doc, M + 220, y, "Le", dt(u.dateLiquidation || u.dateCreation), 140);
+  labelDottedValue(doc, M + 220, y, "Le", dt(u.dateLiquidation || u.dateDemande || u.dateCreation), 140);
   y += 18;
 
   doc.setFont(PDF_FONT, "italic").setFontSize(9);
@@ -152,7 +170,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
 
   doc.setFont(PDF_FONT, "normal").setFontSize(9);
   const para =
-    `Le président de la Commission Fiscale auprès du Ministre des Finances Certifie que l'entreprise dispose du crédit d'impot N° ${u.certificatReference || "—"} du ${dt(u.dateCreation)} dont le solde permet l'imputation du montant sollicité.`;
+    `Le président de la Commission Fiscale auprès du Ministre des Finances Certifie que l'entreprise dispose du crédit d'impot N° ${u.certificatReference || "—"} du ${dt(dateCredit)} dont le solde permet l'imputation du montant sollicité.`;
   const paraLines = doc.splitTextToSize(para, W - 2 * M);
   doc.text(paraLines, M, y);
   y += 11 * paraLines.length + 8;
@@ -170,7 +188,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   // ====== Signatures ======
   doc.setFont(PDF_FONT, "bold").setFontSize(10);
   doc.text("VISA du trésor public", M, y);
-  doc.text(`Date : ${dt(u.dateLiquidation || u.dateCreation)}`, W / 2, y, { align: "center" });
+  doc.text(`Date : ${dt(u.dateLiquidation || u.dateDemande || u.dateCreation)}`, W / 2, y, { align: "center" });
   doc.text("Le Président de la Commission", W - M, y, { align: "right" });
   y += 12;
   doc.text("Fiscale", W - M, y, { align: "right" });

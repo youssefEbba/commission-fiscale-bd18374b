@@ -45,3 +45,12 @@ describe("attente à l'ouverture des documents", () => {
       .toBe("https://commission-fiscale.gov.mr/api/local-files/a.pdf");
   });
 });
+
+describe("type affichable d'un document", () => {
+  it("ouvre un PDF même quand le serveur ajoute un charset", async () => {
+    const { isViewable } = await import("@/lib/openDocument");
+    expect(isViewable(new Blob(["%PDF"], { type: "application/pdf;charset=UTF-8" }))).toBe(true);
+    expect(isViewable(new Blob(["x"], { type: "image/png" }))).toBe(true);
+    expect(isViewable(new Blob(["x"], { type: "application/octet-stream" }))).toBe(false);
+  });
+});

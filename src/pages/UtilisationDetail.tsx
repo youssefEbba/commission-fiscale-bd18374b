@@ -87,6 +87,8 @@ const UtilisationDetail = () => {
   const [cert, setCert] = useState<CertificatCreditDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
+  // Un bulletin annoté déjà déposé rend le fichier facultatif (ré-annotation), comme côté serveur.
+  const bulletinAnnoteDepose = docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false);
   const [decisions, setDecisions] = useState<DecisionCorrectionDto[]>([]);
   const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
@@ -238,7 +240,8 @@ const UtilisationDetail = () => {
       toast({ title: t("utilisations:toast.decisions_missing_title"), description: t("utilisations:toast.decisions_missing_desc", { count: missing.length }), variant: "destructive" });
       return;
     }
-    // Le scan du bulletin annoté est facultatif : le visa part avec ou sans fichier.
+    // Le serveur exige le bulletin annoté au premier visa ; il n'est facultatif qu'en ré-annotation
+    // (bulletin déjà déposé). Le bouton reste grisé tant qu'il manque (cf. bulletinAnnoteDepose).
     setLiqLoading(true);
     try {
       const dec = lignes.filter(l => liqDecisions[l.id]).map(l => {
@@ -528,6 +531,7 @@ const UtilisationDetail = () => {
   const tvaDocTypes = isTVA ? getUtilisationDocTypesTVA(u.typeAchat) : [];
   const canUploadDoc = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS" || role === "ADMIN_SI";
   const totalStockDisponible = tvaStock.reduce((s, x) => s + x.montantRestant, 0);
+  const apurDepasseStock = apurMontant !== "" && Number(apurMontant) > totalStockDisponible;
 
   const canDGDVerify = role === "DGD" && isDouane && u.statut === "DEMANDEE";
   const canDGDAnnoterEtViser = role === "DGD" && isDouane && ["DEMANDEE", "EN_VERIFICATION", "A_RECONTROLER"].includes(u.statut) && (u.lignes?.length || 0) > 0;
@@ -716,7 +720,7 @@ const UtilisationDetail = () => {
                 </>
               )}
               <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_credit")}</p><p><CreditLink id={u.certificatCreditId} reference={u.certificatReference || cert?.reference} numero={u.certificatNumero || cert?.numero} /></p></div>
-              <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_creation")}</p><p className="font-medium">{formatDate(u.dateCreation)}</p></div>
+              <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_creation")}</p><p className="font-medium">{formatDate(u.dateDemande ?? u.dateCreation)}</p></div>
               {u.dateLiquidation && <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_liquidation")}</p><p className="font-medium">{formatDate(u.dateLiquidation)}</p></div>}
             </div>
           </CardContent>
@@ -797,7 +801,7 @@ const UtilisationDetail = () => {
                 const totalAPayer = lignesAPayer.reduce((s,l)=>s+(Number(l.valeur)||0),0);
                 const codesAPayer = lignesAPayer.map(l=>l.code).join(" + ");
                 const codesAuCi = lignesAuCi.map(l=>l.code).join(" + ");
-                const dateVisa = u.dateMiseAJour || u.dateCreation;
+                const dateVisa = u.dateMiseAJour || u.dateDemande || u.dateCreation;
                 const dateStr = formatDate(dateVisa || new Date());
                 return (
                   <div className="border-t bg-muted/20 p-4">
@@ -918,12 +922,18 @@ const UtilisationDetail = () => {
               </Button>
             </CardHeader>
             <CardContent>
+              {/* Le cordon ne porte que les droits : la TVA d'importation part au stock déductible. Afficher
+                  le total imputé entre « avant » et « après » donnait 700 000 − 800 000 = 400 000.
+                  Avant liquidation, les soldes ne sont pas encore connus : « — » plutôt que « 0 ». */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.solde_avant")}</p><p className="font-bold">{fmtAmt(u.soldeCordonAvant)}</p></div>
-                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.montant_impute")}</p><p className="font-bold text-destructive">- {fmtAmt(u.montant)}</p></div>
-                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.solde_apres")}</p><p className="font-bold text-emerald-600">{fmtAmt(u.soldeCordonApres)}</p></div>
-                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.tva_to_stock")}</p><p className="font-bold text-blue-600">+ {fmtAmt(u.montantTVADouane)}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.solde_avant")}</p><p className="font-bold">{u.soldeCordonAvant != null ? fmtAmt(u.soldeCordonAvant) : "—"}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.montant_impute_cordon")}</p><p className="font-bold text-destructive">{u.soldeCordonAvant != null && u.soldeCordonApres != null ? `- ${fmtAmt(Number(u.soldeCordonAvant) - Number(u.soldeCordonApres))}` : "—"}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.solde_apres")}</p><p className="font-bold text-emerald-600">{u.soldeCordonApres != null ? fmtAmt(u.soldeCordonApres) : "—"}</p></div>
+                <div><p className="text-muted-foreground">{t("utilisations:traceability_liq.tva_to_stock")}</p><p className="font-bold text-blue-600">{u.montantTVADouane != null ? `+ ${fmtAmt(u.montantTVADouane)}` : "—"}</p></div>
               </div>
+              {u.soldeCordonApres != null && (
+                <p className="text-xs text-muted-foreground mt-3">{t("utilisations:traceability_liq.total_ci", { montant: fmtAmt(u.montant) })}</p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -1422,13 +1432,14 @@ const UtilisationDetail = () => {
             )}
             {u.lignes && u.lignes.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{docs.some(d => d.type === "BULLETIN_ANNOTE" && d.actif !== false) ? ` — ${t("utilisations:visa_dgd.upload.optional_reannotation")}` : ""}</Label>
+                <Label className="text-sm">{t("utilisations:visa_dgd.upload.label")}{bulletinAnnoteDepose ? ` — ${t("utilisations:visa_dgd.upload.optional_reannotation")}` : " *"}</Label>
                 <Input
                   type="file"
                   accept=".pdf,.png,.jpg,.jpeg"
                   onChange={(e) => setLiqBulletinFile(e.target.files?.[0] || null)}
                 />
                 {liqBulletinFile && <p className="text-xs text-muted-foreground">{t("utilisations:visa_dgd.upload.file_prefix", { name: liqBulletinFile.name })}</p>}
+                {!bulletinAnnoteDepose && !liqBulletinFile && <p className="text-xs text-destructive">{t("utilisations:visa_dgd.upload.required")}</p>}
               </div>
             )}
             {u.lignes && u.lignes.length > 0 && (() => {
@@ -1494,7 +1505,7 @@ const UtilisationDetail = () => {
                 </p>
                 <div className="flex gap-2 justify-end w-full">
                   <Button variant="outline" onClick={() => setShowLiq(false)}>{t("utilisations:visa_dgd.cancel")}</Button>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id])} onClick={handleVisaDgd}>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={liqLoading || !u.lignes || u.lignes.length === 0 || u.lignes.some(l => (Number(l.valeur) || 0) > 0 && !liqDecisions[l.id]) || (!bulletinAnnoteDepose && !liqBulletinFile)} onClick={handleVisaDgd}>
                     {liqLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:visa_dgd.confirm")}
                   </Button>
                 </div>
@@ -1701,7 +1712,11 @@ const UtilisationDetail = () => {
             </div>
             <div>
               <Label>{t("utilisations:apurement_dialog.tva_ded_label")} *</Label>
-              <Input type="number" step="0.01" min="0" value={apurMontant} onChange={e => setApurMontant(e.target.value)} />
+              <Input type="number" step="0.01" min="0" max={totalStockDisponible} value={apurMontant} onChange={e => setApurMontant(e.target.value)} />
+              {/* Le serveur refuse au-delà du stock : le dire avant l'envoi. */}
+              {apurDepasseStock && (
+                <p className="text-xs text-destructive mt-1">{t("utilisations:apurement_dialog.depasse_stock", { disponible: fmtAmt(totalStockDisponible) })}</p>
+              )}
             </div>
             {apurMontant && u.montantTVAInterieure != null && (() => {
               const tvaNette = u.montantTVAInterieure - Number(apurMontant);
@@ -1727,7 +1742,7 @@ const UtilisationDetail = () => {
             })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowApur(false)}>{t("utilisations:apurement_dialog.cancel")}</Button>
-              <Button disabled={apurLoading || !apurMontant || Number(apurMontant) < 0} onClick={handleApurement}>
+              <Button disabled={apurLoading || !apurMontant || Number(apurMontant) < 0 || apurDepasseStock} onClick={handleApurement}>
                 {apurLoading && <Loader2 className="h-4 w-4 animate-spin me-2" />} {t("utilisations:apurement_dialog.confirm")}
               </Button>
             </DialogFooter>

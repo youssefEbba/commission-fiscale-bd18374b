@@ -50,3 +50,13 @@ describe("Restrictions des écritures annoncées par le serveur", () => {
     expect(formatApiErrorMessage(new ApiRequestError({ status: 400, code: "BUSINESS_RULE_VIOLATION", message }))).toBe(message);
   });
 });
+describe("convention proposable au rattachement", () => {
+  it("écarte les conventions désactivées, rejetées et annulées", async () => {
+    const { conventionRattachable } = await import("@/lib/conventionEditability");
+    expect(conventionRattachable({ statut: "VALIDE" } as never)).toBe(true);
+    expect(conventionRattachable({ statut: "EN_ATTENTE" } as never)).toBe(true);
+    expect(conventionRattachable({ statut: "REJETE" } as never)).toBe(false);
+    expect(conventionRattachable({ statut: "ANNULEE" } as never)).toBe(false);
+    expect(conventionRattachable({ statut: "VALIDE", actif: false } as never)).toBe(false);
+  });
+});

@@ -94,7 +94,9 @@
       "UTILISATION": "الاستخدام",
       "BROUILLON": "مسودة",
       "ADMINISTRATION": "الحسابات",
-      "AVENANT": "ملحق"
+      "AVENANT": "ملحق",
+      "CONVENTION": "اتفاقية",
+      "SOUS_TRAITANCE": "المقاولة من الباطن"
     }
   }
 }

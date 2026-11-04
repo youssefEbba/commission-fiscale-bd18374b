@@ -12,29 +12,34 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { tNotificationType } from "@/i18n/enums";
 
-const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
+export const NOTIF_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   CORRECTION_STATUT_CHANGE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   CORRECTION_DECISION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   CORRECTION_REJET_TEMPORAIRE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   CORRECTION_REJET_TEMP: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   REJET_TEMPORAIRE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
-  REFERENTIEL_STATUT_CHANGE: () => "/dashboard/referentiels",
+  // Référentiel projet : rangé avec les conventions (menu « Conventions / Projets »).
+  REFERENTIEL_STATUT_CHANGE: () => "/dashboard/conventions",
   CONVENTION_STATUT_CHANGE: (id) => (id ? `/dashboard/conventions/${id}` : "/dashboard/conventions"),
   CERTIFICAT_STATUT_CHANGE: (id) => (id ? `/dashboard/certificats/${id}` : "/dashboard/certificats"),
   UTILISATION_STATUT_CHANGE: (id) => (id ? `/dashboard/utilisations/${id}` : "/dashboard/utilisations"),
   TRANSFERT_STATUT_CHANGE: (id) => (id ? `/dashboard/transferts/${id}` : "/dashboard/transferts"),
-  MODIFICATION_STATUT_CHANGE: () => "/dashboard/modifications",
-  DEMANDE_MISE_EN_PLACE_CHANGE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
-  GED_DOCUMENT_CHANGE: () => "/dashboard/ged-dossiers",
+  MODIFICATION_STATUT_CHANGE: (id) => (id ? `/dashboard/modifications/${id}` : "/dashboard/modifications"),
+  DEMANDE_MISE_EN_PLACE_CHANGE: (id) => (id ? `/dashboard/mise-en-place/${id}` : "/dashboard/mise-en-place"),
+  GED_DOCUMENT_CHANGE: () => "/dashboard/ged/dossiers",
   DEMANDE_EXPLICATION: () => "/dashboard/demandes",
   PASSWORD_RESET_REQUEST: () => "/dashboard/utilisateurs?tab=reset",
   DEMANDE_RESET_PASSWORD: () => "/dashboard/utilisateurs?tab=reset",
   RESET_PASSWORD_REQUEST: () => "/dashboard/utilisateurs?tab=reset",
   PASSWORD_RESET: () => "/dashboard/utilisateurs?tab=reset",
   ENQUETE_SATISFACTION: (id) => (id ? `/dashboard/satisfaction/enquetes/${id}` : "/dashboard"),
+  RATTACHEMENT_DEMANDE: (id) => (id ? `/dashboard/demandes-rattachement/${id}` : "/dashboard/demandes-rattachement"),
+  RATTACHEMENT_TRAITEE: () => "/dashboard",
+  TRANSFERT_CREDIT: (id) => (id ? `/dashboard/transferts/${id}` : "/dashboard/transferts"),
+  SOUS_TRAITANCE: () => "/dashboard/sous-traitance",
 };
 
-const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
+export const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   CORRECTION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   DEMANDE_CORRECTION: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
   DEMANDE: (id) => (id ? `/dashboard/demandes/${id}` : "/dashboard/demandes"),
@@ -43,8 +48,8 @@ const ENTITY_TYPE_ROUTES: Record<string, (id?: number) => string> = {
   CERTIFICAT_CREDIT: (id) => (id ? `/dashboard/certificats/${id}` : "/dashboard/certificats"),
   UTILISATION: (id) => (id ? `/dashboard/utilisations/${id}` : "/dashboard/utilisations"),
   TRANSFERT: (id) => (id ? `/dashboard/transferts/${id}` : "/dashboard/transferts"),
-  MISE_EN_PLACE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
-  DEMANDE_MISE_EN_PLACE: (id) => (id ? `/dashboard/demandes-mise-en-place/${id}` : "/dashboard/demandes-mise-en-place"),
+  MISE_EN_PLACE: (id) => (id ? `/dashboard/mise-en-place/${id}` : "/dashboard/mise-en-place"),
+  DEMANDE_MISE_EN_PLACE: (id) => (id ? `/dashboard/mise-en-place/${id}` : "/dashboard/mise-en-place"),
 };
 
 function parsePayload(raw: unknown): Record<string, any> | null {
