@@ -1,4 +1,5 @@
 import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
+import { DROITS } from "@/lib/droitsActions";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
 import { useEffect, useState } from "react";
@@ -56,7 +57,7 @@ const SPECIAL_DOC_TYPES = ["CREDIT_EXTERIEUR", "CREDIT_INTERIEUR", "LETTRE_ADOPT
 const CorrectionDouaniere = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   usePageTitle("correction_douaniere:page.title");
@@ -290,7 +291,8 @@ const CorrectionDouaniere = () => {
   const effectiveActiveOrg = visibleDecisionRoles.includes(activeOrg) ? activeOrg : (visibleDecisionRoles[0] || activeOrg);
   const isDirection = !!userRole && DECISION_ROLES.includes(userRole) && isRoleConcerned;
   const canFinalDecision = userRole === "PRESIDENT";
-  const isAC = userRole === "AUTORITE_CONTRACTANTE" || userRole === "ADMIN_SI";
+  // Répondre à un rejet temporaire ou déposer une nouvelle version : droit de compléter la demande.
+  const isAC = DROITS.completerCorrection(hasPermission);
   const isFinal = demande?.statut === "ADOPTEE" || demande?.statut === "REJETEE" || demande?.statut === "ANNULEE";
 
   const myRoleDecs = decisions.filter(d => d.role === userRole);

@@ -293,7 +293,7 @@ const Conventions = () => {
             <Button variant="outline" onClick={() => fetchConventions(search.trim() || undefined)} disabled={loading}>
               <RefreshCw className={`h-4 w-4 me-2 ${loading ? "animate-spin" : ""}`} /> {t("conventions:list.refresh")}
             </Button>
-            {(isAC || isAdmin) && (
+            {hasPermission("convention.create") && (
               <Button onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 me-2" /> {t("conventions:list.new")}
               </Button>
@@ -476,7 +476,7 @@ const Conventions = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[65vh] overflow-y-auto">
-            {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
+            {hasPermission("convention.document.upload") && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Label className="text-sm font-semibold">{t("conventions:docs.add_doc")}</Label>
@@ -555,7 +555,7 @@ const Conventions = () => {
                               {t("conventions:actions.open")}
                             </DocumentButton>
                           )}
-                          {(isAC || isAdmin) && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
+                          {hasPermission("convention.document.upload") && docsConvention?.statut !== "VALIDE" && docsConvention?.statut !== ("ANNULEE" as any) && (
                             <>
                               <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => { setReplaceDocId(doc.id); setReplaceFile(null); }}>
                                 {t("conventions:actions.replace")}

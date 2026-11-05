@@ -19,7 +19,7 @@ import { ExportBlocButton, ExportGlobalButton } from "@/components/reporting/Rep
 import ReportingFilters from "@/components/reporting/ReportingFilters";
 import ReportingKPIs from "@/components/reporting/ReportingKPIs";
 import ReportingCharts from "@/components/reporting/ReportingCharts";
-import { formatAmount } from "@/i18n/format";
+import { formatAmount, formatPercent } from "@/i18n/format";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const Reporting = () => {
@@ -233,7 +233,7 @@ const Reporting = () => {
                     <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.taux_adoption")}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold">{summary.demandes.tauxAdoptionPct != null ? `${summary.demandes.tauxAdoptionPct.toFixed(1)}%` : "—"}</p>
+                    <p className="text-2xl font-bold">{summary.demandes.tauxAdoptionPct != null ? formatPercent(summary.demandes.tauxAdoptionPct) : "—"}</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -241,7 +241,7 @@ const Reporting = () => {
                     <CardTitle className="text-sm text-muted-foreground">{t("reporting:kpis.taux_rejet")}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold">{summary.demandes.tauxRejetPct != null ? `${summary.demandes.tauxRejetPct.toFixed(1)}%` : "—"}</p>
+                    <p className="text-2xl font-bold">{summary.demandes.tauxRejetPct != null ? formatPercent(summary.demandes.tauxRejetPct) : "—"}</p>
                   </CardContent>
                 </Card>
                 <Card>

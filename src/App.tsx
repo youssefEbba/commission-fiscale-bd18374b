@@ -176,7 +176,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard/cloture" element={
-              <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]}>
+              <ProtectedRoute allowedRoles={["DGTCP", "PRESIDENT", "ADMIN_SI"]} permission="cloture.queue.view">
                 <Cloture />
               </ProtectedRoute>
             } />

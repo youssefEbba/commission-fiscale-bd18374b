@@ -116,7 +116,8 @@ const ConventionDetail = () => {
     );
   }
 
-  const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
+  // Pièces de la convention : droit « convention.document.upload » (autorité contractante et ses délégués).
+  const canManage = hasPermission("convention.document.upload") && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
   const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const cancelMode = conventionCancelMode(conv, user?.autoriteContractanteId, hasPermission("convention.annuler"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const canDecide = canDecideConvention(conv, hasRole(["DGB", "DGI"]));

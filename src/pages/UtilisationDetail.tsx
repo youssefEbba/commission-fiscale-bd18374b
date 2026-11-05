@@ -1,4 +1,5 @@
 import { montantOuguiyaEnLettres } from "@/lib/pdfText";
+import { DROITS } from "@/lib/droitsActions";
 import { formatApiErrorMessage, isApiError } from "@/lib/api";
 import { UTILISATION_STATUT_COLORS } from "@/lib/statutColors";
 import { useEffect, useState } from "react";
@@ -32,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ListeRepliable } from "@/components/ui/liste-repliable";
 import { Input } from "@/components/ui/input";
 import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
@@ -529,7 +531,7 @@ const UtilisationDetail = () => {
   const isDouane = u.type === "DOUANIER";
   const isTVA = u.type === "TVA_INTERIEURE";
   const tvaDocTypes = isTVA ? getUtilisationDocTypesTVA(u.typeAchat) : [];
-  const canUploadDoc = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "COMMISSION_RELAIS" || role === "ADMIN_SI";
+  const canUploadDoc = DROITS.deposerPieceUtilisation(hasPermission);
   const totalStockDisponible = tvaStock.reduce((s, x) => s + x.montantRestant, 0);
   const apurDepasseStock = apurMontant !== "" && Number(apurMontant) > totalStockDisponible;
 
@@ -1053,35 +1055,30 @@ const UtilisationDetail = () => {
 
         {/* Stock TVA */}
         {isTVA && (role === "DGTCP" || role === "ADMIN_SI") && tvaStock.length > 0 && u.statut !== "APUREE" && (
-          <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> {t("utilisations:stock_tva.title", { total: fmtAmt(totalStockDisponible) })}</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("utilisations:stock_tva.col_declaration")}</TableHead>
-                    <TableHead>{t("utilisations:stock_tva.col_initial")}</TableHead>
-                    <TableHead>{t("utilisations:stock_tva.col_consomme")}</TableHead>
-                    <TableHead>{t("utilisations:stock_tva.col_restant")}</TableHead>
-                    <TableHead>{t("utilisations:stock_tva.col_date")}</TableHead>
-                    <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tvaStock.map(x => (
-                    <TableRow key={x.id} className={isStockTvaEpuise(x) ? "opacity-50" : ""}>
-                      <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
-                      <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
-                      <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
-                      <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
-                      <TableCell>{formatDate(x.dateCreation)}</TableCell>
-                      <TableCell>{isStockTvaEpuise(x) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <ListeRepliable
+            title={<><Info className="h-5 w-5 text-primary" /> {t("utilisations:stock_tva.title", { total: fmtAmt(totalStockDisponible) })}</>}
+            items={tvaStock}
+            head={
+              <TableRow>
+                <TableHead>{t("utilisations:stock_tva.col_declaration")}</TableHead>
+                <TableHead>{t("utilisations:stock_tva.col_initial")}</TableHead>
+                <TableHead>{t("utilisations:stock_tva.col_consomme")}</TableHead>
+                <TableHead>{t("utilisations:stock_tva.col_restant")}</TableHead>
+                <TableHead>{t("utilisations:stock_tva.col_date")}</TableHead>
+                <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
+              </TableRow>
+            }
+            row={(x) => (
+              <TableRow key={x.id} className={isStockTvaEpuise(x) ? "opacity-50" : ""}>
+                <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
+                <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
+                <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
+                <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
+                <TableCell>{formatDate(x.dateCreation)}</TableCell>
+                <TableCell>{isStockTvaEpuise(x) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
+              </TableRow>
+            )}
+          />
         )}
 
         {/* Documents */}
@@ -1156,7 +1153,7 @@ const UtilisationDetail = () => {
                       </div>
                     )}
                     <div className="flex gap-2 mt-2">
-                      {(role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
+                      {DROITS.repondreRejetUtilisation(hasPermission) && (
                         <>
                           <Button size="sm" variant="outline" onClick={() => { setRespondDecision(d); setRespondWithUpload(false); setResponseMsg(""); setResponseFile(null); setResponseFiles({}); }}>
                             {t("utilisations:decisions_section.respond")}

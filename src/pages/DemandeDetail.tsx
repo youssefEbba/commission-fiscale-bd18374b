@@ -1,4 +1,5 @@
 import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { DROITS } from "@/lib/droitsActions";
 import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
 import { DEMANDE_ROLE_TRANSITIONS } from "@/lib/demandeTransitions";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
@@ -74,7 +75,8 @@ const DemandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const smartBack = useSmartBack("/dashboard/demandes");
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
+  const peutCompleter = DROITS.completerCorrection(hasPermission);
   const role = user?.role as AppRole;
   const { toast } = useToast();
   const { t } = useTranslation(["demandes", "common"]);
@@ -743,7 +745,7 @@ const DemandeDetail = () => {
                           ))}
                         </div>
                       )}
-                      {rej.rejetTempStatus === "OUVERT" && hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && (
+                      {rej.rejetTempStatus === "OUVERT" && peutCompleter && (
                         <div className="flex gap-1.5 mt-1.5">
                           <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setResponseDecisionId(rej.id); setResponseMessage(""); setResponseOpen(true); }}>
                             {t("demandes:detail.org_status.reply")}
@@ -954,7 +956,7 @@ const DemandeDetail = () => {
                                 </DocumentButton>
                               </>
                             )}
-                            {hasRole(["AUTORITE_CONTRACTANTE", "ADMIN_SI"]) && !isLocked && (
+                            {peutCompleter && !isLocked && (
                               <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => { setUploadAllowedTypes([]); setUploadType(type); setUploadFile(null); setUploadError(null); setUploadOpen(true); }}>
                                 <Upload className="h-3.5 w-3.5 me-1" /> {t("demandes:detail.pieces.new_version")}
                               </Button>

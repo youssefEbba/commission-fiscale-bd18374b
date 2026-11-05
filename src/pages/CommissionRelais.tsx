@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { useNavigate } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { Building2, Briefcase, ArrowLeft, Search, Loader2, ShieldCheck, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ function unwrap<T>(payload: PageResponse<T> | T[]): { items: T[]; totalPages: nu
 }
 
 const CommissionRelais = () => {
+  const { t } = useTranslation("common");
   const { applyImpersonation, isCommissionRelais, isImpersonating, user, hasPermission } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode | null>(null);
@@ -71,7 +73,7 @@ const CommissionRelais = () => {
         setTotalPages(Math.max(1, u.totalPages));
         setTotalElements(u.totalElements);
       })
-      .catch((err) => emitErrorDialog({ title: "Échec du chargement", description: formatApiErrorMessage(err, "Échec du chargement") }))
+      .catch((err) => emitErrorDialog({ title: t("relais.load_error"), description: formatApiErrorMessage(err, t("relais.load_error")) }))
       .finally(() => { if (!cancel) setLoading(false); });
     return () => { cancel = true; };
   }, [mode, debounced, page, reloadKey]);
@@ -91,12 +93,13 @@ const CommissionRelais = () => {
     }
   };
 
-  const handleCreated = async () => {
+  // La fenêtre annonce que l'entité créée sera sélectionnée : la liste est filtrée sur elle,
+  // pour qu'elle apparaisse aussitôt avec son bouton « Prendre le relais » (A98).
+  const handleCreated = async (_kind: ArchiveCreateKind, _id: number, recherche?: string) => {
     setCreateKind(null);
+    if (recherche) setQuery(recherche);
     setReloadKey((k) => k + 1);
-    toast.success(mode === "ENTREPRISE"
-      ? "Entreprise créée : vous pouvez maintenant prendre le relais."
-      : "Autorité contractante créée : vous pouvez maintenant prendre le relais.");
+    toast.success(mode === "ENTREPRISE" ? t("relais.created_entreprise") : t("relais.created_ac"));
   };
 
   const handleImpersonate = async (target: { id: number; label: string }) => {
@@ -106,10 +109,10 @@ const CommissionRelais = () => {
         ? await commissionRelaisApi.impersonateEntreprise(target.id)
         : await commissionRelaisApi.impersonateAutorite(target.id);
       applyImpersonation(res, target.label);
-      toast.success(`Vous agissez désormais en tant que ${target.label}`);
+      toast.success(t("relais.acting_as", { label: target.label }));
       navigate("/dashboard");
     } catch (err) {
-      emitErrorDialog({ title: "Échec de la prise de relais", description: formatApiErrorMessage(err, "Échec de la prise de relais") });
+      emitErrorDialog({ title: t("relais.take_over_failed"), description: formatApiErrorMessage(err, t("relais.take_over_failed")) });
     } finally {
       setSubmittingId(null);
     }
@@ -129,7 +132,7 @@ const CommissionRelais = () => {
     // Defensive: should not happen because route is protected
     return (
       <DashboardLayout>
-        <p className="text-muted-foreground">Accès réservé au rôle Commission relais.</p>
+        <p className="text-muted-foreground">{t("relais.reserved")}</p>
       </DashboardLayout>
     );
   }
@@ -140,10 +143,10 @@ const CommissionRelais = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-primary" />
-            Commission relais
+            {t("relais.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Connecté en tant que <span className="font-medium">{user?.username}</span>. Sélectionnez le mode puis l'entité à prendre en charge.
+            <Trans t={t} i18nKey="relais.connected_as" values={{ username: user?.username }} components={{ strong: <span className="font-medium" /> }} />
           </p>
         </div>
 
@@ -154,9 +157,9 @@ const CommissionRelais = () => {
               className="text-left rounded-xl border border-border bg-card p-6 hover:border-primary hover:shadow-md transition-all"
             >
               <Briefcase className="h-8 w-8 text-primary mb-3" />
-              <h2 className="font-semibold">Mode Entreprise</h2>
+              <h2 className="font-semibold">{t("relais.mode_entreprise")}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Agir à la place d'une entreprise (demandes, utilisations, transferts, sous-traitance).
+                {t("relais.mode_entreprise_desc")}
               </p>
             </button>
             <button
@@ -164,9 +167,9 @@ const CommissionRelais = () => {
               className="text-left rounded-xl border border-border bg-card p-6 hover:border-primary hover:shadow-md transition-all"
             >
               <Building2 className="h-8 w-8 text-primary mb-3" />
-              <h2 className="font-semibold">Mode Autorité Contractante</h2>
+              <h2 className="font-semibold">{t("relais.mode_ac")}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Agir à la place d'une AC (conventions, marchés, demandes de correction, mise en place).
+                {t("relais.mode_ac_desc")}
               </p>
             </button>
           </div>
@@ -177,18 +180,18 @@ const CommissionRelais = () => {
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <CardTitle>{mode === "ENTREPRISE" ? "Choisir une entreprise" : "Choisir une autorité contractante"}</CardTitle>
-                  <CardDescription>La session de relais expire au bout de 4 h.</CardDescription>
+                  <CardTitle>{mode === "ENTREPRISE" ? t("relais.choose_entreprise") : t("relais.choose_ac")}</CardTitle>
+                  <CardDescription>{t("relais.expires")}</CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {canCreate && (
                     <Button variant="outline" size="sm" onClick={openCreate}>
                       <Plus className="h-4 w-4 mr-1" />
-                      {mode === "ENTREPRISE" ? "Créer une entreprise" : "Créer une autorité contractante"}
+                      {mode === "ENTREPRISE" ? t("relais.create_entreprise") : t("relais.create_ac")}
                     </Button>
                   )}
                   <Button variant="ghost" size="sm" onClick={() => { setMode(null); setQuery(""); }}>
-                    <ArrowLeft className="h-4 w-4 mr-1" /> Changer de mode
+                    <ArrowLeft className="h-4 w-4 mr-1" /> {t("relais.change_mode")}
                   </Button>
                 </div>
               </div>
@@ -197,7 +200,7 @@ const CommissionRelais = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher par nom, NIF, sigle…"
+                  placeholder={t("relais.search")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="pl-9"
@@ -208,10 +211,10 @@ const CommissionRelais = () => {
                 <Table>
                   <TableHeader>
                     <TableRow><RowNumberHead />
-                      <TableHead>{mode === "ENTREPRISE" ? "Nom de l'entreprise" : "Nom"}</TableHead>
-                      <TableHead>{mode === "ENTREPRISE" ? "NIF" : "Sigle"}</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
+                      <TableHead>{mode === "ENTREPRISE" ? t("relais.col_entreprise") : t("relais.col_nom")}</TableHead>
+                      <TableHead>{mode === "ENTREPRISE" ? t("relais.col_nif") : t("relais.col_sigle")}</TableHead>
+                      <TableHead>{t("relais.col_statut")}</TableHead>
+                      <TableHead className="text-right">{t("relais.col_action")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -219,17 +222,17 @@ const CommissionRelais = () => {
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-10">
                           <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
-                          Chargement…
+                          {t("relais.loading")}
                         </TableCell>
                       </TableRow>
                     ) : rows.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-10 text-muted-foreground text-sm">
-                          <p>{mode === "ENTREPRISE" ? "Aucune entreprise trouvée." : "Aucune autorité contractante trouvée."}</p>
+                          <p>{mode === "ENTREPRISE" ? t("relais.empty_entreprise") : t("relais.empty_ac")}</p>
                           {canCreate && (
                             <Button variant="link" size="sm" className="mt-1" onClick={openCreate}>
                               <Plus className="h-4 w-4 mr-1" />
-                              {query.trim() ? `Créer « ${query.trim()} »` : mode === "ENTREPRISE" ? "Créer une entreprise" : "Créer une autorité contractante"}
+                              {query.trim() ? t("relais.create_named", { name: query.trim() }) : mode === "ENTREPRISE" ? t("relais.create_entreprise") : t("relais.create_ac")}
                             </Button>
                           )}
                         </TableCell>
@@ -242,9 +245,9 @@ const CommissionRelais = () => {
                           <TableCell className="text-muted-foreground">{r.secondary}</TableCell>
                           <TableCell>
                             {r.actif === false ? (
-                              <Badge variant="secondary">Inactif</Badge>
+                              <Badge variant="secondary">{t("relais.inactif")}</Badge>
                             ) : (
-                              <Badge variant="outline" className="border-primary/40 text-primary">Actif</Badge>
+                              <Badge variant="outline" className="border-primary/40 text-primary">{t("relais.actif")}</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -253,7 +256,7 @@ const CommissionRelais = () => {
                               disabled={submittingId !== null || r.actif === false}
                               onClick={() => handleImpersonate({ id: r.id, label: r.primary })}
                             >
-                              {submittingId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Prendre le relais"}
+                              {submittingId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : t("relais.take_over")}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -266,7 +269,7 @@ const CommissionRelais = () => {
               {totalElements > 0 && (
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div>
-                    {totalElements} résultat{totalElements > 1 ? "s" : ""} — Page {page + 1} / {totalPages}
+                    {t("relais.results", { count: totalElements, page: page + 1, pages: totalPages })}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -275,7 +278,7 @@ const CommissionRelais = () => {
                       disabled={page === 0 || loading}
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                     >
-                      <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
+                      <ChevronLeft className="h-4 w-4 mr-1" /> {t("relais.previous")}
                     </Button>
                     <Button
                       variant="outline"
@@ -283,7 +286,7 @@ const CommissionRelais = () => {
                       disabled={page >= totalPages - 1 || loading}
                       onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                     >
-                      Suivant <ChevronRight className="h-4 w-4 ml-1" />
+                      {t("relais.next")} <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
                 </div>

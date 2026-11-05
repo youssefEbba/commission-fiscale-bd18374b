@@ -1,4 +1,5 @@
 import { UTILISATION_STATUT_COLORS } from "@/lib/statutColors";
+import { peutSoumettreUtilisation } from "@/lib/droitsUtilisation";
 import { useEffect, useRef, useState } from "react";
 import { isUtilisationAControler } from "@/lib/utilisationQueues";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
@@ -635,7 +636,8 @@ const Utilisations = () => {
     return (b.id ?? 0) - (a.id ?? 0);
   });
 
-  const canCreate = role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI";
+  // Selon le droit du serveur, pas le rôle : l'administrateur ne peut ni créer ni soumettre une utilisation.
+  const canCreate = peutSoumettreUtilisation(hasPermission);
 
   // Currency: MRU par défaut (devise du certificat parent non disponible à ce niveau de liste).
   const fmtAmt = (v: any) => formatAmount(v);
@@ -810,7 +812,7 @@ const Utilisations = () => {
                               <Pencil className="h-4 w-4 me-1" /> {t("utilisations:correction_rejet.button")}
                             </Button>
                           )}
-                          {u.statut === "BROUILLON" && (role === "ENTREPRISE" || role === "SOUS_TRAITANT" || role === "ADMIN_SI") && (() => {
+                          {u.statut === "BROUILLON" && canCreate && (() => {
                             const blockedByTransfert = u.type === "DOUANIER" && transferredCertIds.has(u.certificatCreditId);
                             return (
                               <DropdownMenu>
