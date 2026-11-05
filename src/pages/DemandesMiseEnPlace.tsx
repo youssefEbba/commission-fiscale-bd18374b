@@ -1,4 +1,5 @@
 import { CERTIFICAT_STATUT_COLORS } from "@/lib/statutColors";
+import { DROITS } from "@/lib/droitsActions";
 import { useEffect, useState } from "react";
 import { RowNumberHead, RowNumberCell } from "@/components/ui/row-number";
 import { GedPiecesChecklist } from "@/components/documents/GedPiecesChecklist";
@@ -39,7 +40,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 import { API_BASE } from "@/lib/apiConfig";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { tStatutCertificat, tTypeDocument } from "@/i18n/enums";
+import { tStatutCertificat, tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate, formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { miseEnPlaceDepotRequirements } from "@/lib/certificatEditability";
@@ -656,7 +657,7 @@ const DemandesMiseEnPlace = () => {
                               {t("mise_en_place:list.row_actions.take_charge")}
                             </Button>
                           )}
-                          {c.statut === "BROUILLON" && (role === "DGTCP" || role === "ADMIN_SI" || role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE") && (
+                          {c.statut === "BROUILLON" && DROITS.deposerMiseEnPlace(hasPermission) && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" title={t("mise_en_place:list.row_actions.draft_menu_title")}>
@@ -678,7 +679,7 @@ const DemandesMiseEnPlace = () => {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
-                          {c.statut === "ENVOYEE" && (role === "ENTREPRISE" || role === "AUTORITE_CONTRACTANTE" || role === "ADMIN_SI") && (
+                          {c.statut === "ENVOYEE" && DROITS.deposerMiseEnPlace(hasPermission) && (
                             <Button variant="ghost" size="sm" title={t("mise_en_place:list.row_actions.edit")} onClick={() => openEditBrouillon(c)}>
                               <FileText className="h-4 w-4 me-1" /> {t("mise_en_place:list.row_actions.edit")}
                             </Button>
@@ -914,7 +915,7 @@ const DemandesMiseEnPlace = () => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {tStatutDemande(selectedCorrection.statut)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>
@@ -1106,7 +1107,7 @@ const DemandesMiseEnPlace = () => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_num")}</span> {displayRef(selectedCorrection)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_entreprise")}</span> {selectedCorrection.entrepriseRaisonSociale}</div>
-                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {selectedCorrection.statut}</div>
+                    <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_statut")}</span> {tStatutDemande(selectedCorrection.statut)}</div>
                     <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.create.selected_ac")}</span> {selectedCorrection.autoriteContractanteNom}{selectedCorrection.autoriteContractanteMinistereTutelleNom ? ` — ${selectedCorrection.autoriteContractanteMinistereTutelleNom}` : ""}</div>
                   </div>
                 </CardContent>

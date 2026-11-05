@@ -344,7 +344,11 @@ const ConventionCreateDialog = ({ open, onOpenChange, onCreated }: Props) => {
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">{t("conventions:docs.no_requirements")}</p>
+                // Sans exigence GED, la convention / le contrat reste obligatoire (règle de missingDocs) : le dire,
+                // sinon le bouton « Créer » reste grisé sans explication.
+                <p className={`text-xs ${missingDocs ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                  {t("conventions:docs.default_required")}
+                </p>
               )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={createDocType} onValueChange={(v) => setCreateDocType(v as TypeDocumentConvention)}>

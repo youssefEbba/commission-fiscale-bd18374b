@@ -41,7 +41,8 @@ interface Props {
   /** Convention du marché créé (requise pour « marche »). */
   conventionId?: number | null;
   onClose: () => void;
-  onCreated: (kind: ArchiveCreateKind, id: number) => void | Promise<void>;
+  /** `recherche` : de quoi retrouver l'entité créée dans une liste (NIF d'une entreprise, nom d'une autorité). */
+  onCreated: (kind: ArchiveCreateKind, id: number, recherche?: string) => void | Promise<void>;
 }
 
 const EMPTY: Record<ArchiveCreateKind, Record<string, string>> = {
@@ -164,7 +165,8 @@ export function ArchiveCreateDialog({ kind, initial, autoriteId, conventionId, o
         id = created?.id;
         invalidateArchiveRef("marches", user);
       }
-      if (id != null) await onCreated(kind, id);
+      const recherche = kind === "entreprise" ? form.nif.trim() : kind === "autorite" ? form.nom.trim() : undefined;
+      if (id != null) await onCreated(kind, id, recherche);
       onClose();
     } catch (e) {
       setError(formatApiErrorMessage(e, t("archive:error_create")));

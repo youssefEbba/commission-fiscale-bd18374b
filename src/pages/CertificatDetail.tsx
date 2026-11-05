@@ -1,4 +1,5 @@
 import { CERTIFICAT_STATUT_COLORS, UTILISATION_STATUT_COLORS } from "@/lib/statutColors";
+import { DROITS } from "@/lib/droitsActions";
 import EquipementsBanner from "@/components/equipements/EquipementsBanner";
 import { isStockTvaEpuise } from "@/lib/tvaStock";
 import AvenantsCertificatCard from "@/components/avenants/AvenantsCertificatCard";
@@ -22,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ListeRepliable } from "@/components/ui/liste-repliable";
+import { peutSoumettreUtilisation } from "@/lib/droitsUtilisation";
 import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, CheckCircle2, XCircle, Info } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource, tDocRequirementLabel } from "@/i18n/enums";
@@ -35,7 +38,7 @@ const STATUT_COLORS_UTIL = UTILISATION_STATUT_COLORS;
 
 const CertificatDetail = () => {
   const { t } = useTranslation(["certificats", "common"]);
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const smartBack = useSmartBack("/dashboard/certificats");
@@ -53,7 +56,7 @@ const CertificatDetail = () => {
   const [gedDocTypes, setGedDocTypes] = useState<GEDDocumentType[]>([]);
 
   const role = (user as any)?.role;
-  const canUpload = role === "ENTREPRISE" || role === "ADMIN_SI" || role === "DGTCP";
+  const canUpload = DROITS.deposerPieceCredit(hasPermission);
 
   const certRef = certificat ? displayRef(certificat) : "";
   usePageTitle("certificats:detail.title", { ref: certRef });
@@ -396,7 +399,7 @@ const CertificatDetail = () => {
 
         {/* Indicateurs */}
         {c.statut === "OUVERT" && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-3">
             {(() => {
               const liquidees = utilisations.filter(u => u.type === "DOUANIER" && u.statut === "LIQUIDEE");
               const apurees = utilisations.filter(u => u.type === "TVA_INTERIEURE" && u.statut === "APUREE");
@@ -407,9 +410,9 @@ const CertificatDetail = () => {
                 <>
                   <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.importations_liquidees")}</p><p className="text-2xl font-bold">{liquidees.length}</p></CardContent></Card>
                   <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.apurements")}</p><p className="text-2xl font-bold">{apurees.length}</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.stock_tva")}</p><p className="text-2xl font-bold text-blue-600">{formatAmount(totalStock)}</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.paiement_cash")}</p><p className="text-2xl font-bold text-amber-600">{formatAmount(totalCash)}</p></CardContent></Card>
-                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.reports")}</p><p className="text-2xl font-bold text-emerald-600">{formatAmount(totalReport)}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.stock_tva")}</p><p className="text-xl lg:text-2xl font-bold tabular-nums [overflow-wrap:anywhere] text-blue-600">{formatAmount(totalStock)}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.paiement_cash")}</p><p className="text-xl lg:text-2xl font-bold tabular-nums [overflow-wrap:anywhere] text-amber-600">{formatAmount(totalCash)}</p></CardContent></Card>
+                  <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.reports")}</p><p className="text-xl lg:text-2xl font-bold tabular-nums [overflow-wrap:anywhere] text-emerald-600">{formatAmount(totalReport)}</p></CardContent></Card>
                   <Card className="text-center"><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground">{t("certificats:detail.indicators.utilisations_cours")}</p><p className="text-2xl font-bold">{utilisations.filter(u => !["LIQUIDEE", "APUREE", "REJETEE", "CLOTUREE"].includes(u.statut)).length}</p></CardContent></Card>
                 </>
               );
@@ -417,52 +420,42 @@ const CertificatDetail = () => {
           </div>
         )}
 
-        {/* Stock TVA déductible */}
+        {/* Stock TVA déductible : liste repliable et paginée */}
         {tvaStock.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                {t("certificats:detail.stock.title", { total: formatAmount(tvaStock.reduce((s, t) => s + t.montantRestant, 0)) })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("certificats:detail.stock.source")}</TableHead>
-                    <TableHead>{t("certificats:detail.stock.declaration")}</TableHead>
-                    <TableHead>{t("certificats:detail.stock.montant_initial")}</TableHead>
-                    <TableHead>{t("certificats:detail.stock.consomme")}</TableHead>
-                    <TableHead>{t("certificats:detail.stock.restant")}</TableHead>
-                    <TableHead>{t("certificats:detail.stock.date")}</TableHead>
-                    <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tvaStock.map(stk => {
-                    const source = stk.source ?? (stk.utilisationDouaneId ? "UTILISATION_DOUANE" : "TRANSFERT_CREDIT");
-                    const isTransfert = source === "TRANSFERT_CREDIT";
-                    return (
-                      <TableRow key={stk.id} className={isStockTvaEpuise(stk) ? "opacity-50" : ""}>
-                        <TableCell>
-                          <Badge variant="outline" className={isTransfert ? "border-amber-500 text-amber-700 bg-amber-50" : "border-blue-500 text-blue-700 bg-blue-50"}>
-                            {tTvaStockSource(source)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{stk.numeroDeclaration || (stk.utilisationDouaneId ? t("certificats:detail.stock.util_short", { id: stk.utilisationDouaneId }) : "—")}</TableCell>
-                        <TableCell>{formatAmount(stk.montantInitial)}</TableCell>
-                        <TableCell>{formatAmount(stk.montantConsomme)}</TableCell>
-                        <TableCell className="font-bold">{formatAmount(stk.montantRestant)}</TableCell>
-                        <TableCell>{formatDate(stk.dateCreation)}</TableCell>
-                        <TableCell>{isStockTvaEpuise(stk) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <ListeRepliable
+            title={<><Info className="h-5 w-5 text-primary" />{t("certificats:detail.stock.title", { total: formatAmount(tvaStock.reduce((s, t) => s + t.montantRestant, 0)) })}</>}
+            items={tvaStock}
+            head={
+              <TableRow>
+                <TableHead>{t("certificats:detail.stock.source")}</TableHead>
+                <TableHead>{t("certificats:detail.stock.declaration")}</TableHead>
+                <TableHead>{t("certificats:detail.stock.montant_initial")}</TableHead>
+                <TableHead>{t("certificats:detail.stock.consomme")}</TableHead>
+                <TableHead>{t("certificats:detail.stock.restant")}</TableHead>
+                <TableHead>{t("certificats:detail.stock.date")}</TableHead>
+                <TableHead>{t("utilisations:stock_tva.col_epuise")}</TableHead>
+              </TableRow>
+            }
+            row={(stk) => {
+              const source = stk.source ?? (stk.utilisationDouaneId ? "UTILISATION_DOUANE" : "TRANSFERT_CREDIT");
+              const isTransfert = source === "TRANSFERT_CREDIT";
+              return (
+                <TableRow key={stk.id} className={isStockTvaEpuise(stk) ? "opacity-50" : ""}>
+                  <TableCell>
+                    <Badge variant="outline" className={isTransfert ? "border-amber-500 text-amber-700 bg-amber-50" : "border-blue-500 text-blue-700 bg-blue-50"}>
+                      {tTvaStockSource(source)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium">{stk.numeroDeclaration || (stk.utilisationDouaneId ? t("certificats:detail.stock.util_short", { id: stk.utilisationDouaneId }) : "—")}</TableCell>
+                  <TableCell>{formatAmount(stk.montantInitial)}</TableCell>
+                  <TableCell>{formatAmount(stk.montantConsomme)}</TableCell>
+                  <TableCell className="font-bold">{formatAmount(stk.montantRestant)}</TableCell>
+                  <TableCell>{formatDate(stk.dateCreation)}</TableCell>
+                  <TableCell>{isStockTvaEpuise(stk) ? <XCircle className="h-4 w-4 text-destructive" aria-label={t("utilisations:stock_tva.col_epuise")} /> : null}</TableCell>
+                </TableRow>
+              );
+            }}
+          />
         )}
 
         {/* Utilisations */}
@@ -473,7 +466,7 @@ const CertificatDetail = () => {
                 <Landmark className="h-5 w-5 text-primary" />
                 {t("certificats:detail.utilisations.title", { count: utilisations.length })}
               </CardTitle>
-              {c.statut === "OUVERT" && (role === "ENTREPRISE" || role === "ADMIN_SI") && (
+              {c.statut === "OUVERT" && peutSoumettreUtilisation(hasPermission) && (
                 <Button size="sm" onClick={() => navigate("/dashboard/utilisations")}>
                   <Plus className="h-4 w-4 me-2" /> {t("certificats:detail.utilisations.new")}
                 </Button>

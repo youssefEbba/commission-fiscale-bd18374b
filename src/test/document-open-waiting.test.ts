@@ -36,4 +36,21 @@ describe("attente à l'ouverture des documents", () => {
   it("un chemin disque du serveur passe par l'identifiant du document", () => {
     expect(resolveDocumentUrl({ id: 9, chemin: "C:\\uploads\\a.pdf" })).toMatch(/\/documents\/9\/download$/);
   });
+
+  it("un fichier MinIO (adresse interne du stockage) se lit par l'API", () => {
+    expect(resolveDocumentUrl({ id: 3, chemin: "http://commission-minio:9000/commission-files/14f1_recu-depot-DC-0041-11-2026.pdf" }))
+      .toMatch(/\/api\/fichiers\/14f1_recu-depot-DC-0041-11-2026\.pdf$/);
+    // Une URL de l'application elle-même reste telle quelle.
+    expect(resolveDocumentUrl({ chemin: "https://commission-fiscale.gov.mr/api/local-files/a.pdf" }))
+      .toBe("https://commission-fiscale.gov.mr/api/local-files/a.pdf");
+  });
+});
+
+describe("type affichable d'un document", () => {
+  it("ouvre un PDF même quand le serveur ajoute un charset", async () => {
+    const { isViewable } = await import("@/lib/openDocument");
+    expect(isViewable(new Blob(["%PDF"], { type: "application/pdf;charset=UTF-8" }))).toBe(true);
+    expect(isViewable(new Blob(["x"], { type: "image/png" }))).toBe(true);
+    expect(isViewable(new Blob(["x"], { type: "application/octet-stream" }))).toBe(false);
+  });
 });

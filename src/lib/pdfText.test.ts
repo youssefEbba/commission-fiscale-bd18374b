@@ -15,3 +15,22 @@ describe("pdfText", () => {
     expect(montantOuguiyaEnLettres(0)).toBe("zéro Ouguiya");
   });
 });
+
+describe("montants en lettres : accords et grands nombres", () => {
+  it("laisse « cent » et « vingt » invariables devant « mille »", () => {
+    expect(numberToFrenchWords(800_000)).toBe("huit cent mille");
+    expect(numberToFrenchWords(80_000)).toBe("quatre-vingt mille");
+    expect(numberToFrenchWords(200_000)).toBe("deux cent mille");
+  });
+  it("les accorde devant « millions » et en fin de nombre", () => {
+    expect(numberToFrenchWords(800_000_000)).toBe("huit cents millions");
+    expect(numberToFrenchWords(800)).toBe("huit cents");
+    expect(numberToFrenchWords(80)).toBe("quatre-vingts");
+  });
+  it("écrit les milliards", () => {
+    expect(numberToFrenchWords(1_524_276_366)).toBe(
+      "un milliard cinq cent vingt-quatre millions deux cent soixante-seize mille trois cent soixante-six");
+    expect(numberToFrenchWords(2_000_000_000)).toBe("deux milliards");
+    expect(montantOuguiyaEnLettres(800_000)).toBe("huit cent mille Ouguiya");
+  });
+});

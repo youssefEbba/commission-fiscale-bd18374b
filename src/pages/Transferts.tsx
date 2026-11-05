@@ -99,11 +99,11 @@ const Transferts = () => {
 
   const [resubmitCert, setResubmitCert] = useState<CertificatCreditDto | null>(null);
 
-  const getMontantRenonciation = (c: CertificatCreditDto | null | undefined): number => {
-    if (!c) return 0;
-    const reste = c.tvaImportationDouane ?? 0;
-    return Math.min(reste, c.soldeCordon ?? reste);
-  };
+  // Montant de la renonciation : tout le reste du quota de TVA à l'importation (d′), exactement ce
+  // que le serveur transfère à l'exécution. Le plafonner au solde des droits affichait 400 000 pour
+  // un transfert réel de 1 200 000.
+  const getMontantRenonciation = (c: CertificatCreditDto | null | undefined): number =>
+    c ? Math.max(0, c.tvaImportationDouane ?? 0) : 0;
 
   const openCreate = async () => {
     setResubmitTarget(null);

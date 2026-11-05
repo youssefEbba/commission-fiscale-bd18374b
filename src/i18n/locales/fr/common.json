@@ -122,7 +122,8 @@
     "unauthorized": "Accès refusé",
     "forbidden": "Action non autorisée",
     "not_found": "Ressource introuvable",
-    "server": "Erreur serveur"
+    "server": "Erreur serveur",
+    "title": "Erreur"
   },
   "president_sign": {
     "title": "Signature du document",
@@ -143,7 +144,7 @@
     "done": "Document signé déposé au dossier.",
     "mode_systeme": "Apposé par le système",
     "mode_manuel": "Signé à la main et scanné",
-    "contenu_indisponible": "Les empreintes enregistrées ne peuvent pas être lues pour le moment (stockage des documents indisponible). Seul le chemin manuel est disponible.",
+    "contenu_indisponible": "Les empreintes enregistrées ne peuvent pas être lues : fichier absent du stockage des documents, ou stockage momentanément injoignable. Déposez à nouveau la signature et le cachet dans votre profil, ou utilisez le chemin manuel ci-dessous.",
     "source_note": "Les certificats utilisent la signature et le cachet de l'utilisateur Président connecté ; à défaut, ceux du rôle Président."
   },
   "verification": {
@@ -191,5 +192,68 @@
     "missing_docs_desc": "La demande reste en brouillon. Pièces à joindre : {{list}}",
     "unavailable_title": "Soumission indisponible",
     "unavailable_desc": "La soumission n'est pas encore disponible sur le serveur. La demande reste en brouillon ; réessayez plus tard."
+  },
+  "error": "Erreur",
+  "toast": {
+    "success": "Succès",
+    "error": "Erreur"
+  },
+  "success": {
+    "title": "Succès",
+    "generic_title": "Succès"
+  },
+  "warnings": {
+    "title": "Attention"
+  },
+  "relais": {
+    "title": "Commission relais",
+    "connected_as": "Connecté en tant que <strong>{{username}}</strong>. Sélectionnez le mode puis l'entité à prendre en charge.",
+    "mode_entreprise": "Mode Entreprise",
+    "mode_entreprise_desc": "Agir à la place d'une entreprise (demandes, utilisations, transferts, sous-traitance).",
+    "mode_ac": "Mode Autorité Contractante",
+    "mode_ac_desc": "Agir à la place d'une AC (conventions, marchés, demandes de correction, mise en place).",
+    "choose_entreprise": "Choisir une entreprise",
+    "choose_ac": "Choisir une autorité contractante",
+    "expires": "La session de relais expire au bout de 4 h.",
+    "create_entreprise": "Créer une entreprise",
+    "create_ac": "Créer une autorité contractante",
+    "create_named": "Créer « {{name}} »",
+    "change_mode": "Changer de mode",
+    "search": "Rechercher par nom, NIF, sigle…",
+    "col_entreprise": "Nom de l'entreprise",
+    "col_nom": "Nom",
+    "col_nif": "NIF",
+    "col_sigle": "Sigle",
+    "col_statut": "Statut",
+    "col_action": "Action",
+    "loading": "Chargement…",
+    "empty_entreprise": "Aucune entreprise trouvée.",
+    "empty_ac": "Aucune autorité contractante trouvée.",
+    "actif": "Actif",
+    "inactif": "Inactif",
+    "take_over": "Prendre le relais",
+    "results_zero": "{{count}} résultat — Page {{page}} / {{pages}}",
+    "results_one": "{{count}} résultat — Page {{page}} / {{pages}}",
+    "results_two": "{{count}} résultats — Page {{page}} / {{pages}}",
+    "results_few": "{{count}} résultats — Page {{page}} / {{pages}}",
+    "results_many": "{{count}} résultats — Page {{page}} / {{pages}}",
+    "results_other": "{{count}} résultats — Page {{page}} / {{pages}}",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "load_error": "Échec du chargement",
+    "created_entreprise": "Entreprise créée : vous pouvez maintenant prendre le relais.",
+    "created_ac": "Autorité contractante créée : vous pouvez maintenant prendre le relais.",
+    "acting_as": "Vous agissez désormais en tant que {{label}}",
+    "take_over_failed": "Échec de la prise de relais",
+    "reserved": "Accès réservé au rôle Commission relais."
+  },
+  "liste": {
+    "replier": "Replier",
+    "deplier_zero": "Afficher ({{count}} ligne)",
+    "deplier_one": "Afficher ({{count}} ligne)",
+    "deplier_two": "Afficher ({{count}} lignes)",
+    "deplier_few": "Afficher ({{count}} lignes)",
+    "deplier_many": "Afficher ({{count}} lignes)",
+    "deplier_other": "Afficher ({{count}} lignes)"
   }
 }

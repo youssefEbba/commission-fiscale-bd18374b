@@ -129,7 +129,8 @@
       "missing_visas": "⚠️ Tous les membres doivent apposer leur visa avant la décision finale.",
       "missing_roles": "Manquant : {{roles}}",
       "blocked_first_title": "⏳ En attente du visa {{role}}",
-      "blocked_first_description": "Le {{role}} doit viser cette demande en premier."
+      "blocked_first_description": "Le {{role}} doit viser cette demande en premier.",
+      "adopt_requires_en_validation": "Disponible quand le dossier est en validation."
     },
     "reclamations": {
       "title": "Réclamations",
@@ -382,7 +383,8 @@
       "submit_full": "Soumettre la demande",
       "browse": "Parcourir",
       "replace": "Remplacer",
-      "drop_hint": "Glissez un fichier ici ou"
+      "drop_hint": "Glissez un fichier ici ou",
+      "remove": "Retirer"
     },
     "fields": {
       "entreprise_required": "Entreprise",
@@ -585,7 +587,8 @@
       "regime_at": "Admission temporaire (plaques TT, réexportation obligatoire)",
       "regime_def": "Importation définitive ou matériel déjà sur le territoire",
       "regime_hint": "Seule l'admission temporaire crée une obligation de réexportation à la clôture."
-    }
+    },
+    "section_credits": "Crédits demandés"
   },
   "recu": {
     "republique": "République Islamique de Mauritanie",

@@ -41,5 +41,11 @@
     "created": "Fil ouvert.",
     "replied": "Réponse envoyée.",
     "closed": "Fil fermé."
+  },
+  "closed": {
+    "count_one": "{{count}} fil fermé",
+    "count_other": "{{count}} fils fermés",
+    "hide": "Masquer les fils fermés",
+    "show": "Afficher les fils fermés"
   }
 }

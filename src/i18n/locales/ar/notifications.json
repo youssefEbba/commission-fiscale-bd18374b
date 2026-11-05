@@ -17,6 +17,18 @@
     "MODIFICATION_STATUT_CHANGE": "تعديل",
     "GED_DOCUMENT_CHANGE": "وثيقة GED",
     "DEMANDE_EXPLICATION": "طلب توضيح",
-    "ENQUETE_SATISFACTION": "استبيان الرضا"
-  }
+    "ENQUETE_SATISFACTION": "استبيان الرضا",
+    "TRANSFERT_CREDIT": "تحويل اعتماد",
+    "SOUS_TRAITANCE": "مقاولة من الباطن",
+    "CLOTURE_CERTIFICAT": "إغلاق الاعتماد",
+    "REJET_TEMP_DECISION": "رفض مؤقت",
+    "REJET_TEMP_RESOLU": "رفع الرفض المؤقت",
+    "REJET_TEMP_REPONSE": "رد على رفض مؤقت",
+    "PASSWORD_RESET_REQUEST": "إعادة تعيين كلمة المرور",
+    "PASSWORD_RESET_TRAITEE": "تمت إعادة تعيين كلمة المرور",
+    "RATTACHEMENT_DEMANDE": "طلب حساب",
+    "RATTACHEMENT_TRAITEE": "قرار بشأن طلب الحساب"
+  },
+  "tab_all": "الكل",
+  "tab_unread": "غير المقروءة"
 }

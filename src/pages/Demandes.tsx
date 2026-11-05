@@ -1,4 +1,5 @@
 import { formatApiErrorMessage, isApiError } from "@/lib/api";
+import { DROITS } from "@/lib/droitsActions";
 import { DEMANDE_STATUT_COLORS } from "@/lib/statutColors";
 import { DEMANDE_ROLE_TRANSITIONS } from "@/lib/demandeTransitions";
 import { useEffect, useState } from "react";
@@ -68,7 +69,8 @@ function getDocFileUrl(doc: DocumentDto): string {
 }
 
 const Demandes = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
+  const peutDeposer = DROITS.deposerCorrection(hasPermission);
   const role = user?.role as AppRole;
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -392,7 +394,7 @@ const Demandes = () => {
             <p className="text-muted-foreground text-sm mt-1">{t("demandes:list.subtitle")}</p>
           </div>
           <div className="flex gap-2">
-            {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ADMIN_SI"]) && (
+            {peutDeposer && (
               <Button onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 me-2" /> {t("demandes:list.new")}
               </Button>
@@ -523,7 +525,7 @@ const Demandes = () => {
                                       <Download className="h-4 w-4 me-2" /> {t("demandes:actions.generate_adoption_letter")}
                                     </DropdownMenuItem>
                                   )}
-                                  {d.statut === "BROUILLON" && hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && (
+                                  {d.statut === "BROUILLON" && peutDeposer && (
                                     <>
                                       <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>
                                         {loadingEditId === d.id ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <FileText className="h-4 w-4 me-2" />}
@@ -554,7 +556,7 @@ const Demandes = () => {
                                       <DropdownMenuSeparator />
                                     </>
                                   )}
-                                  {hasRole(["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "ADMIN_SI"]) && d.statut === "RECUE" && (
+                                  {peutDeposer && d.statut === "RECUE" && (
                                     <DropdownMenuItem disabled={loadingEditId === d.id} onClick={() => openEditWizard(d)}>
                                       {loadingEditId === d.id ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <FileText className="h-4 w-4 me-2" />}
                                       {t("demandes:actions.edit")}

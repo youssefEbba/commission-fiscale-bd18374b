@@ -56,6 +56,8 @@ const ConventionDetail = () => {
   const isAdmin = hasRole(["ADMIN_SI"]);
   const canActivate = hasPermission("convention.activate");
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  // Valider engage la convention : confirmation avec référence et montant, comme les autres décisions (A37).
+  const [confirmValider, setConfirmValider] = useState(false);
   const [activationLoading, setActivationLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -114,7 +116,8 @@ const ConventionDetail = () => {
     );
   }
 
-  const canManage = (isAC || isAdmin) && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
+  // Pièces de la convention : droit « convention.document.upload » (autorité contractante et ses délégués).
+  const canManage = hasPermission("convention.document.upload") && conv.statut !== "VALIDE" && conv.statut !== ("ANNULEE" as any);
   const canEdit = canEditConvention(conv, user?.autoriteContractanteId, hasPermission("convention.update"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const cancelMode = conventionCancelMode(conv, user?.autoriteContractanteId, hasPermission("convention.annuler"), hasRole(["ADMIN_SI", "PRESIDENT"]));
   const canDecide = canDecideConvention(conv, hasRole(["DGB", "DGI"]));
@@ -207,7 +210,7 @@ const ConventionDetail = () => {
             )}
             {canDecide && (
               <>
-                <Button onClick={handleValider} disabled={validating}>
+                <Button onClick={() => setConfirmValider(true)} disabled={validating}>
                   {validating ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <ShieldCheck className="h-4 w-4 me-2" />}
                   {t("conventions:actions.validate")}
                 </Button>
@@ -275,6 +278,25 @@ const ConventionDetail = () => {
         )}
       </div>
 
+      <AlertDialog open={confirmValider} onOpenChange={setConfirmValider}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("conventions:validate_dialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("conventions:validate_dialog.desc", {
+                reference: conv.reference,
+                montant: conv.montantMru != null ? formatAmount(conv.montantMru, { currency: "MRU", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common:actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmValider(false); handleValider(); }} disabled={validating}>
+              {t("conventions:actions.validate")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={confirmDeactivate} onOpenChange={setConfirmDeactivate}>
         <AlertDialogContent>
           <AlertDialogHeader>

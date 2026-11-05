@@ -189,6 +189,8 @@
     "a_viser": "À viser",
     "history_title": "Historique des décisions",
     "history_subtitle": "Dossier clos — {{statut}}. Visas posés : qui et quand.",
-    "non_intervenu": "N'est pas intervenu"
+    "non_intervenu": "N'est pas intervenu",
+    "visa_confirm_title": "Apposer votre visa ?",
+    "visa_confirm_desc": "Votre visa sur le transfert n° {{id}} est irréversible ; le dossier passera à la direction suivante."
   }
 }

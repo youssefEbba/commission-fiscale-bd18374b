@@ -130,9 +130,12 @@ function PresidentSignDialog<P = unknown>({ open, onOpenChange, title, filename,
             {loadingEmp ? (
               <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> {t("president_sign.loading")}</p>
             ) : empUnreadable ? (
-              <p role="status" className="text-xs text-muted-foreground flex items-start gap-1">
-                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent-foreground" /> {t("president_sign.contenu_indisponible")}
-              </p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p role="status" className="flex items-start gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent-foreground" /> {t("president_sign.contenu_indisponible")}
+                </p>
+                <Link to="/dashboard/profil" className="text-primary underline">{t("president_sign.profil_link")}</Link>
+              </div>
             ) : missing.length > 0 ? (
               <div className="text-xs text-muted-foreground space-y-1">
                 <p className="flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5 text-accent-foreground" /> {t("president_sign.manquant", { items: missing.join(", ") })}</p>

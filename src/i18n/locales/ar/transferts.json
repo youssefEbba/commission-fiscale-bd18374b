@@ -189,6 +189,8 @@
     "a_viser": "للتأشير",
     "history_title": "سجل القرارات",
     "history_subtitle": "ملف مغلق — {{statut}}. التأشيرات الموضوعة: من ومتى.",
-    "non_intervenu": "لم يتدخل"
+    "non_intervenu": "لم يتدخل",
+    "visa_confirm_title": "وضع تأشيرتكم؟",
+    "visa_confirm_desc": "تأشيرتكم على التحويل رقم {{id}} نهائية؛ وسينتقل الملف إلى المديرية الموالية."
   }
 }

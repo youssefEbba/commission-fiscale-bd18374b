@@ -129,7 +129,8 @@
       "missing_visas": "⚠️ يجب أن تضع جميع الجهات تأشيراتها قبل القرار النهائي.",
       "missing_roles": "ناقص: {{roles}}",
       "blocked_first_title": "⏳ في انتظار تأشيرة {{role}}",
-      "blocked_first_description": "يجب على {{role}} التأشير على هذا الطلب أولاً."
+      "blocked_first_description": "يجب على {{role}} التأشير على هذا الطلب أولاً.",
+      "adopt_requires_en_validation": "متاح عندما يكون الملف قيد المصادقة."
     },
     "reclamations": {
       "title": "الشكاوى",
@@ -382,7 +383,8 @@
       "submit_full": "إرسال الطلب",
       "browse": "استعراض",
       "replace": "استبدال",
-      "drop_hint": "اسحب ملفاً هنا أو"
+      "drop_hint": "اسحب ملفاً هنا أو",
+      "remove": "إزالة"
     },
     "fields": {
       "entreprise_required": "المؤسسة",
@@ -585,7 +587,8 @@
       "regime_at": "القبول المؤقت (لوحات TT، إعادة التصدير إلزامية)",
       "regime_def": "استيراد نهائي أو معدات موجودة أصلاً داخل الإقليم",
       "regime_hint": "القبول المؤقت وحده ينشئ التزاماً بإعادة التصدير عند الإقفال."
-    }
+    },
+    "section_credits": "الاعتمادات المطلوبة"
   },
   "recu": {
     "republique": "الجمهورية الإسلامية الموريتانية",

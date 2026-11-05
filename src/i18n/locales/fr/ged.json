@@ -36,6 +36,9 @@
       "empty_etape": "Aucun document pour cette étape",
       "open": "Ouvrir",
       "download": "Télécharger"
+    },
+    "inject": {
+      "badge": "Déposé par le Président"
     }
   },
   "document": {
@@ -59,7 +62,8 @@
     "confirm": "Confirmer",
     "cancel": "Annuler",
     "loading": "Chargement…",
-    "replacement_suffix": " (remplacement)"
+    "replacement_suffix": " (remplacement)",
+    "browse": "Parcourir"
   },
   "upload": {
     "section_title": "Ajouter / remplacer un document",
@@ -81,7 +85,8 @@
     "upload_success_desc": "Document uploadé avec succès",
     "upload_error_fallback": "Échec de l'upload",
     "delete_success_desc": "Document supprimé",
-    "replace_success_desc": "Document remplacé"
+    "replace_success_desc": "Document remplacé",
+    "open_error": "Impossible d'ouvrir le document. Réessayez dans un instant."
   },
   "config": {
     "title": "GED – Configuration",

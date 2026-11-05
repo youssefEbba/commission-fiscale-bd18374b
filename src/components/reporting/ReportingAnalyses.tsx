@@ -14,6 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2, AlertTriangle } from "lucide-react";
 import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
 import { orNA, arrangeLines, formatCivilDate } from "@/lib/reportingValues";
+// Statuts traduits (« Validée », « En attente ») et non les codes du serveur.
+import { tStatutAny, statutGroupForLigne } from "@/i18n/enums";
 
 const NS = "reporting:analyses";
 type N = number | null | undefined;
@@ -278,7 +280,7 @@ export function BlocagesSection({ params }: { params: ReportingParams }) {
                   <TableRow key={`${b.type}-${b.id ?? i}`}>
                     <TableCell>{b.reference || (b.id != null ? `#${b.id}` : f.na)}</TableCell>
                     <TableCell>{b.type || f.na}</TableCell>
-                    <TableCell>{b.statut || f.na}</TableCell>
+                    <TableCell>{b.statut ? tStatutAny(b.statut, statutGroupForLigne(b.type)) : f.na}</TableCell>
                     <TableCell>{b.entrepriseRaisonSociale || f.na}</TableCell>
                     <TableCell className={b.dateDeRepli ? "italic" : undefined}>
                       {f.instantTime(b.dateReference)}{b.dateDeRepli ? " *" : ""}
@@ -401,7 +403,7 @@ function LigneList({ title, rows, total, truncated, defect, defectText, cols }: 
               <TableRow key={`${r.type}-${r.id ?? i}`}>
                 <TableCell>{r.reference || (r.id != null ? `#${r.id}` : f.na)}</TableCell>
                 <TableCell>{r.entrepriseRaisonSociale || f.na}</TableCell>
-                <TableCell>{r.statut || f.na}</TableCell>
+                <TableCell>{r.statut ? tStatutAny(r.statut, statutGroupForLigne(r.type)) : f.na}</TableCell>
                 {cols.map((c) => <TableCell key={c.head} className={c.end ? "text-end tabular-nums" : undefined}>{c.cell(r)}</TableCell>)}
               </TableRow>
             ))}

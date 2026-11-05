@@ -222,7 +222,8 @@ const SatisfactionDashboard = () => {
                       {c.profil && <Badge variant="secondary">{t(`feedback:profils.${c.profil}`, { defaultValue: c.profil })}</Badge>}
                       {c.categorie && <Badge variant="outline">{t(`feedback:categories.${c.categorie}`, { defaultValue: c.categorie })}</Badge>}
                       {c.note != null && <span dir="ltr">{"★".repeat(c.note)}{"☆".repeat(Math.max(0, 5 - c.note))}</span>}
-                      {c.source && <span>{t(`feedback:sources.${c.source}`, { defaultValue: c.source })}</span>}
+                      {/* Le serveur envoie « Avis spontané » ou le titre de l'enquête (texte saisi, non traduit). */}
+                      {c.source && <span>{c.source === "Avis spontané" ? t("feedback:sources.RETOUR") : c.source}</span>}
                       {c.date && <span>{formatDate(c.date)}</span>}
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{c.texte}</p>

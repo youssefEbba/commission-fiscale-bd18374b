@@ -14,7 +14,9 @@
       "DGI": "Crédits – Contrôle fiscal",
       "PRESIDENT": "Crédits en attente de signature",
       "ADMIN_SI": "Tous les crédits (Audit)",
-      "DEFAULT": "Crédits d'impôt"
+      "DEFAULT": "Crédits d'impôt",
+      "DGD": "Crédits — Contrôle douanier",
+      "DGB": "Crédits — Suivi budgétaire"
     },
     "columns": {
       "ref": "Réf.",

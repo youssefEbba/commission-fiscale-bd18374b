@@ -33,10 +33,15 @@ export interface FormatAmountOptions {
 
 export function formatAmount(
   n: number | string | null | undefined,
-  { currency = "MRU", numberingSystem = "latn", maximumFractionDigits = 2, minimumFractionDigits = 0 }: FormatAmountOptions = {},
+  { currency = "MRU", numberingSystem = "latn", maximumFractionDigits = 2, minimumFractionDigits }: FormatAmountOptions = {},
 ): string {
   const v = typeof n === "string" ? Number(n) : n;
   if (v == null || Number.isNaN(v as number)) return `0 ${currency}`;
+  // Par défaut : pas de décimales pour un montant rond, sinon toutes (427,20 et non 427,2).
+  if (minimumFractionDigits == null) {
+    const arrondi = Math.round((v as number) * 10 ** maximumFractionDigits);
+    minimumFractionDigits = arrondi % 10 ** maximumFractionDigits === 0 ? 0 : maximumFractionDigits;
+  }
   try {
     return new Intl.NumberFormat(locale(), {
       style: "currency",
@@ -69,6 +74,11 @@ export function formatNumber(
     ...(minimumFractionDigits != null ? { minimumFractionDigits } : {}),
     ...(maximumFractionDigits != null ? { maximumFractionDigits } : {}),
   }).format(v as number);
+}
+
+/** Pourcentage à une décimale au plus, avec le séparateur de la langue (« 12,5 % »). */
+export function formatPercent(n: number | string | null | undefined): string {
+  return `${formatNumber(n, { maximumFractionDigits: 1 })} %`;
 }
 
 /**

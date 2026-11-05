@@ -546,11 +546,14 @@ const ArchiveCreditUnique = () => {
 
 type Onglet = "unique" | "periode";
 
+/** Reprise d'un crédit seul : désactivée pour le moment, seule la reprise par fichier de période est ouverte. */
+export const REPRISE_UN_CREDIT_ACTIVE = false;
+
 /** Reprise d'archive : relevé unitaire ou fichier de période (lots), côte à côte. */
 const ArchiveCredits = () => {
   const { t } = useTranslation(["archive", "common"]);
   const [params, setParams] = useSearchParams();
-  const onglet: Onglet = params.get("onglet") === "periode" ? "periode" : "unique";
+  const onglet: Onglet = !REPRISE_UN_CREDIT_ACTIVE || params.get("onglet") === "periode" ? "periode" : "unique";
 
   return (
     <DashboardLayout>
@@ -564,10 +567,13 @@ const ArchiveCredits = () => {
         </div>
         <Tabs value={onglet} onValueChange={(v) => setParams(v === "periode" ? { onglet: "periode" } : {}, { replace: true })}>
           <TabsList>
-            <TabsTrigger value="unique">{t("archive:tabs.unique")}</TabsTrigger>
+            <TabsTrigger value="unique" disabled={!REPRISE_UN_CREDIT_ACTIVE} title={REPRISE_UN_CREDIT_ACTIVE ? undefined : t("archive:tabs.unique_desactive")}>
+              {t("archive:tabs.unique")}
+              {!REPRISE_UN_CREDIT_ACTIVE && <span className="ms-1 text-xs text-muted-foreground">({t("archive:tabs.unique_desactive")})</span>}
+            </TabsTrigger>
             <TabsTrigger value="periode">{t("archive:tabs.periode")}</TabsTrigger>
           </TabsList>
-          <TabsContent value="unique" className="mt-6"><ArchiveCreditUnique /></TabsContent>
+          {REPRISE_UN_CREDIT_ACTIVE && <TabsContent value="unique" className="mt-6"><ArchiveCreditUnique /></TabsContent>}
           <TabsContent value="periode" className="mt-6"><ArchiveLotsTab /></TabsContent>
         </Tabs>
       </div>

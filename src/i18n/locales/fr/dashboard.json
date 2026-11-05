@@ -94,7 +94,9 @@
       "UTILISATION": "Utilisation",
       "BROUILLON": "Brouillon",
       "ADMINISTRATION": "Comptes",
-      "AVENANT": "Avenant"
+      "AVENANT": "Avenant",
+      "CONVENTION": "Convention",
+      "SOUS_TRAITANCE": "Sous-traitance"
     }
   }
 }

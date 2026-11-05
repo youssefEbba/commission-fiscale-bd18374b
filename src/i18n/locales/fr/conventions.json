@@ -138,7 +138,8 @@
     "replaced": "Document remplacé",
     "load_error": "Impossible de charger les documents",
     "empty": "Aucun document associé",
-    "details_title": "Détails de la convention"
+    "details_title": "Détails de la convention",
+    "default_required": "Pièce obligatoire : Convention / Contrat (aucune autre exigence configurée dans la GED)."
   },
   "bailleur": {
     "modal_title": "Nouveau bailleur",
@@ -226,5 +227,9 @@
     "autorites_load_error": "Impossible de charger les autorités contractantes",
     "bailleurs_title": "Bailleurs de fonds",
     "bailleurs_empty": "Aucun bailleur."
+  },
+  "validate_dialog": {
+    "title": "Valider la convention ?",
+    "desc": "La convention {{reference}} ({{montant}}) sera validée : l'autorité contractante pourra y rattacher ses marchés. Cette décision n'est pas annulable ici."
   }
 }

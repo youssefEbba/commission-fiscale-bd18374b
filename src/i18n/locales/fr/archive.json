@@ -65,8 +65,8 @@
   "total_pris_en_charge": "Total pris en charge",
   "total_a_payer": "Total à payer",
   "no_utilisations": "Aucune utilisation dans ce relevé",
-  "deja_importe": "Ce crédit existe déjà : le dossier sera complété",
-  "deja_importe_desc": "Certificat existant : {{reference}}. Seules les utilisations nouvelles seront ajoutées ; les montants et soldes seront réalignés sur ce relevé.",
+  "deja_importe": "Ce crédit existe déjà : l'import sera refusé",
+  "deja_importe_desc": "Crédit existant : {{reference}}. L'import de ce relevé sera refusé.",
   "confirm_anomalies": "Je confirme vouloir importer ce relevé malgré les anomalies détectées",
   "import": "Importer le relevé",
   "importing": "Import en cours…",
@@ -117,7 +117,8 @@
   "result_utilisations_ignorees": "Utilisations ignorées (déjà présentes)",
   "tabs": {
     "unique": "Un crédit",
-    "periode": "Fichier de période"
+    "periode": "Fichier de période",
+    "unique_desactive": "désactivé pour le moment"
   },
   "f_nom_commercial": "Nom commercial",
   "f_date_signature": "Date du marché",
@@ -216,8 +217,8 @@
     "lignes": "Lignes {{debut}} à {{fin}} du fichier",
     "dgi_suggere": "DGI : {{nom}}",
     "marche_cree_releve": "Créé depuis le relevé",
-    "deja_repris": "Crédit déjà repris",
-    "deja_repris_desc": "Un certificat d'archive existe déjà pour ce crédit : l'import le complétera avec les utilisations manquantes.",
+    "deja_repris": "Crédit déjà repris (import refusé)",
+    "deja_repris_desc": "Un crédit de référence ARCHIVE-<N° Credit> existe déjà : l'import de ce crédit sera refusé.",
     "anomalies_confirmees": "anomalies confirmées",
     "propose": "proposé",
     "chargement": "Chargement…",

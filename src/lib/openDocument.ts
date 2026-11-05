@@ -74,14 +74,36 @@ export function trackDocumentTask<T>(key: string, mode: DocumentTaskMode, label:
 // ---------- Résolution d'URL ----------
 const WINDOWS_PATH = /^[A-Za-z]:[\\/]/;
 
+/** Hôte de l'API (et de l'application) : une URL absolue vers un autre hôte est un stockage interne. */
+const HOTES_APPLICATION = (() => {
+  const hotes = new Set<string>(["commission-fiscale.gov.mr"]);
+  try { hotes.add(new URL(API_BASE).host); } catch { /* API_BASE relative */ }
+  if (typeof window !== "undefined") hotes.add(window.location.host);
+  return hotes;
+})();
+
+/**
+ * Fichier stocké dans MinIO : son chemin est l'adresse interne du serveur MinIO
+ * (`http://commission-minio:9000/{bucket}/{nom}`), que le navigateur ne peut pas joindre et que la
+ * politique de sécurité du site bloque. On passe par l'API, qui lit l'objet côté serveur.
+ */
+function viaApiSiStockageInterne(url: string): string | null {
+  let u: URL;
+  try { u = new URL(url); } catch { return null; }
+  if (HOTES_APPLICATION.has(u.host)) return null;
+  const segments = u.pathname.split("/").filter(Boolean);
+  const nom = segments.length >= 2 ? decodeURIComponent(segments[segments.length - 1]) : null;
+  return nom && /^[A-Za-z0-9._-]+$/.test(nom) ? `${API_BASE}/fichiers/${nom}` : null;
+}
+
 /** Construit l'URL absolue de téléchargement d'un document. */
 export function resolveDocumentUrl(doc: OpenableDoc): string | null {
-  if (doc.url && /^https?:\/\//i.test(doc.url)) return doc.url;
+  if (doc.url && /^https?:\/\//i.test(doc.url)) return viaApiSiStockageInterne(doc.url) ?? doc.url;
   const raw = doc.url || doc.chemin;
 
   if (raw) {
     if (/^https?:\/\//i.test(raw)) {
-      return raw.replace(
+      return viaApiSiStockageInterne(raw) ?? raw.replace(
         /^http:\/\/commission-fiscale\.gov\.mr(?=\/|$)/i,
         "https://commission-fiscale.gov.mr"
       );
@@ -120,8 +142,9 @@ async function fetchAsBlob(url: string): Promise<Blob> {
 }
 
 /** Types que le navigateur sait afficher dans un onglet (sinon : téléchargement). */
-function isViewable(blob: Blob): boolean {
-  const type = (blob.type || "").toLowerCase();
+export function isViewable(blob: Blob): boolean {
+  // « application/pdf;charset=UTF-8 » : seul le type compte, pas ses paramètres.
+  const type = (blob.type || "").toLowerCase().split(";")[0].trim();
   return type === "application/pdf" || type.startsWith("image/") || type.startsWith("text/");
 }
 

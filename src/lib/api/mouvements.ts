@@ -84,6 +84,8 @@ export interface SousTraitanceDto {
   id: number;
   certificatCreditId: number;
   certificatNumero?: string;
+  /** Référence lisible du crédit (CR-…). */
+  certificatReference?: string;
   entrepriseSourceId?: number;
   sousTraitantEntrepriseId?: number;
   sousTraitantEntrepriseRaisonSociale?: string;
@@ -177,6 +179,8 @@ export interface ClotureCreditDto {
   approuvee?: boolean | null;
   certificatCreditId: number;
   certificatNumero?: string;
+  /** Référence lisible du crédit (CR-…). */
+  certificatReference?: string;
 }
 
 export interface CreateClotureCreditRequest {
