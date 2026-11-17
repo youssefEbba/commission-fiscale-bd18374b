@@ -93,6 +93,8 @@ export interface SousTraitanceDto {
   contratEnregistre?: boolean;
   volumes?: number;
   quantites?: number;
+  /** Date de la demande (date de dépôt du reçu). */
+  dateDemande?: string | null;
   dateAutorisation?: string;
   statut: StatutSousTraitance;
 }
@@ -135,7 +137,7 @@ export interface DocumentSousTraitanceDto {
   actif?: boolean;
 }
 
-export type TypeDocumentSousTraitance = "CONTRAT_SOUS_TRAITANCE_ENREGISTRE" | "LETTRE_SOUS_TRAITANCE";
+export type TypeDocumentSousTraitance = "CONTRAT_SOUS_TRAITANCE_ENREGISTRE" | "LETTRE_SOUS_TRAITANCE" | "RECU_DEPOT";
 
 // Removed SOUS_TRAITANCE_DOCUMENT_TYPES and SOUS_TRAITANCE_STATUT_LABELS (G2 migration).
 // Use tTypeDocument / tStatutSousTraitance from "@/i18n/enums" instead.
@@ -364,9 +366,18 @@ export const avenantApi = {
 
 export interface KeyCount { key: string; count: number; }
 
+/** Processus comptés dans `demandes.parProcessus`, dans l'ordre du serveur. */
+export const REPORTING_PROCESSUS = [
+  "CORRECTION", "MISE_EN_PLACE", "UTILISATION_DOUANE", "UTILISATION_TVA_INTERIEURE", "TRANSFERT", "AVENANT", "SOUS_TRAITANCE",
+] as const;
+
 export interface ReportingDemandeStatsDto {
+  /** Corrections seulement (hors brouillons et reprise d'archive). */
   byStatut: KeyCount[];
+  /** Toutes les demandes déposées dans la période, tous processus (somme de `parProcessus`). */
   total: number;
+  /** Détail de `total` par processus (absent d'un serveur plus ancien). */
+  parProcessus?: KeyCount[];
   tauxAdoptionPct: number | null;
   tauxRejetPct: number | null;
 }

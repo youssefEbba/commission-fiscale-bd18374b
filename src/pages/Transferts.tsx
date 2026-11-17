@@ -32,6 +32,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { ArrowRightLeft, Search, RefreshCw, Loader2, Plus, Eye, Filter, CheckCircle2, XCircle, RotateCcw, Ban, AlertTriangle, MessageSquare, Stamp } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
+import { emettreRecuDepot, recuCibles } from "@/lib/recuDepot";
+import { displayRef } from "@/lib/displayRef";
 
 // Permissions acceptées par le serveur pour POST /{id}/decisions (rejet temporaire) et PUT /decisions/{id}/resolve.
 const REJET_TEMP_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate", "transfert.president.reject"];
@@ -173,6 +175,8 @@ const Transferts = () => {
         }
 
       }
+      // Reçu de dépôt (création ou nouvelle demande après rejet), une fois les pièces déposées.
+      void emettreRecuDepot(recuCibles.transfert(created, { deposantNom: user?.nomComplet }));
       if (failures.length > 0) {
         toast({ title: t("transferts:toasts.create_partial_title"), description: failures.join(" • "), variant: "destructive" });
       } else {
@@ -295,7 +299,7 @@ const Transferts = () => {
 
   const filtered = data.filter((tr) => {
     if (onlyAViser && !aViserIds.has(tr.id)) return false;
-    const ms = [tr.certificatReference, tr.certificatNumero].some(v => (v || "").toLowerCase().includes(search.toLowerCase())) || String(tr.id).includes(search);
+    const ms = [tr.reference, tr.certificatReference, tr.certificatNumero].some(v => (v || "").toLowerCase().includes(search.toLowerCase())) || String(tr.id).includes(search);
     const matchStatut = filterStatut === "ALL" || tr.statut === filterStatut;
     return ms && matchStatut;
   });
@@ -378,7 +382,7 @@ const Transferts = () => {
                     <ClickableTableRow key={tr.id} to={`/dashboard/transferts/${tr.id}`}>
                       <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
-                        <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{tr.id}</Link>
+                        <Link to={`/dashboard/transferts/${tr.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{displayRef(tr)}</Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{tr.certificatReference || tr.certificatNumero || `Cert #${tr.certificatCreditId}`}</TableCell>
                       <TableCell className="font-medium">{formatAmount(tr.montant)}</TableCell>
@@ -553,7 +557,7 @@ const Transferts = () => {
           <DialogHeader><DialogTitle>{t("transferts:cancel.dialog_title")}</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
             {t("transferts:cancel.confirm_long", {
-              id: cancelTarget?.id,
+              id: cancelTarget ? displayRef(cancelTarget) : "",
               cert: cancelTarget?.certificatReference || cancelTarget?.certificatNumero || `#${cancelTarget?.certificatCreditId}`,
             })}
           </p>
@@ -570,7 +574,7 @@ const Transferts = () => {
       {/* Rejet temporaire dialog */}
       <Dialog open={!!rejetTarget} onOpenChange={(o) => { if (!o) setRejetTarget(null); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: rejetTarget?.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: rejetTarget ? displayRef(rejetTarget) : "" })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>{t("transferts:rejet_temp.motif_label_long")} <span className="text-destructive">*</span></Label>
@@ -736,7 +740,7 @@ const Transferts = () => {
       <DocumentGED
         open={docDialog !== null}
         onOpenChange={() => setDocDialog(null)}
-        title={t("transferts:documents.dialog_title", { id: docDialog?.id })}
+        title={t("transferts:documents.dialog_title", { id: docDialog ? displayRef(docDialog) : "" })}
         dossierId={docDialog?.id ?? null}
         documentTypes={gedDepot.options.map(o => ({ value: o.code, label: o.label }))}
         documents={docs}

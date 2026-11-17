@@ -47,18 +47,21 @@ import { Landmark, Search, RefreshCw, Loader2, Plus, Eye, Filter, Upload, FileTe
 import { generateLiquidationPdf } from "@/lib/liquidationPdf";
 import { certificatUtilisationVisible } from "@/lib/utilisationCloture";
 import { submitIfDraft, draftOutcomeMessage, utilisationTvaRequiredDocs } from "@/lib/submission";
+import { emettreRecuDepot, recuCibles, soumisDepuis } from "@/lib/recuDepot";
+import { joinNumeros, numerosDeclaration, numerosFacture, withNumerosListes } from "@/lib/utilisationNumeros";
+import { NumerosRepetables } from "@/components/common/NumerosRepetables";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 const STATUT_COLORS = UTILISATION_STATUT_COLORS;
 
 const emptyDouane: Partial<CreateUtilisationCreditRequest> = {
-  type: "DOUANIER", montant: undefined, numeroDeclaration: "", numeroBulletin: "",
+  type: "DOUANIER", montant: undefined, numerosDeclaration: [""], numeroBulletin: "",
   dateDeclaration: "", lignes: [], enregistreeSYDONIA: false,
 };
 
 const emptyTVA: Partial<CreateUtilisationCreditRequest> = {
-  type: "TVA_INTERIEURE", montant: undefined, typeAchat: "", numeroFacture: "",
+  type: "TVA_INTERIEURE", montant: undefined, typeAchat: "", numerosFacture: [""],
   dateFacture: "", montantTVAInterieure: undefined, numeroDecompte: "",
 };
 
@@ -315,7 +318,7 @@ const Utilisations = () => {
       certificatCreditId: u.certificatCreditId,
       entrepriseId: u.entrepriseId,
       montant: u.montant,
-      numeroDeclaration: u.numeroDeclaration,
+      numerosDeclaration: numerosDeclaration(u),
       numeroBulletin: u.numeroBulletin,
       dateDeclaration: u.dateDeclaration ? u.dateDeclaration.substring(0, 10) : "",
       lignes: (u.lignes && u.lignes.length > 0)
@@ -323,7 +326,7 @@ const Utilisations = () => {
         : [],
       enregistreeSYDONIA: u.enregistreeSYDONIA ?? false,
       typeAchat: u.typeAchat,
-      numeroFacture: u.numeroFacture,
+      numerosFacture: numerosFacture(u),
       dateFacture: u.dateFacture ? u.dateFacture.substring(0, 10) : "",
       montantTVAInterieure: u.montantTVAInterieure,
       numeroDecompte: u.numeroDecompte,
@@ -479,12 +482,14 @@ const Utilisations = () => {
         else sanitized[k] = v;
       }
 
+      // Listes de numéros nettoyées ; l'ancien champ unique n'est plus envoyé seul.
+      const body = withNumerosListes(sanitized, form.type ?? createType) as CreateUtilisationCreditRequest;
       let target: UtilisationCreditDto;
       if (editingId != null) {
-        target = await utilisationCreditApi.update(editingId, sanitized as CreateUtilisationCreditRequest);
+        target = await utilisationCreditApi.update(editingId, body);
       } else {
         const payload: CreateUtilisationCreditRequest = {
-          ...(sanitized as CreateUtilisationCreditRequest),
+          ...body,
           ...(mode === "brouillon" ? { brouillon: true } : {}),
         };
         target = await utilisationCreditApi.create(payload);
@@ -505,6 +510,9 @@ const Utilisations = () => {
       if (mode === "submit") {
         const outcome = await submitIfDraft(target, () => utilisationCreditApi.soumettre(target.id));
         const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+        // Reçu de dépôt : nouvelle demande ou brouillon soumis (pas une correction après rejet).
+        const soumise = editingId == null || outcome.kind === "submitted" ? soumisDepuis(outcome) : null;
+        if (soumise) void emettreRecuDepot(recuCibles.utilisation(soumise, { deposantNom: user?.nomComplet }));
         if (draftMessage) {
           toast({ ...draftMessage, variant: "destructive" });
           setShowCreate(false);
@@ -526,7 +534,8 @@ const Utilisations = () => {
       setEditingId(null);
       fetchData();
     } catch (e: any) {
-      toast({ title: errorTitle(), description: e.message, variant: "destructive" });
+      // Message serveur affiché tel quel (ex. 409 JUSTIFICATIF_DEJA_UTILISE : numéro déjà utilisé sur ce crédit).
+      toast({ title: errorTitle(), description: formatApiErrorMessage(e), variant: "destructive" });
     } finally {
       setCreating(false);
     }
@@ -543,7 +552,10 @@ const Utilisations = () => {
     }
     setSubmittingId(u.id);
     try {
-      const draftMessage = draftOutcomeMessage(await submitIfDraft(u, () => utilisationCreditApi.soumettre(u.id)), t, tTypeDocument);
+      const outcome = await submitIfDraft(u, () => utilisationCreditApi.soumettre(u.id));
+      const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+      const soumise = soumisDepuis(outcome);
+      if (soumise) void emettreRecuDepot(recuCibles.utilisation(soumise, { deposantNom: user?.nomComplet }));
       if (draftMessage) {
         toast({ ...draftMessage, variant: "destructive" });
       } else {
@@ -616,8 +628,7 @@ const Utilisations = () => {
       (u.certificatNumero || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.certificatTitulaireRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.numeroDeclaration || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.numeroFacture || "").toLowerCase().includes(search.toLowerCase()) ||
+      [...numerosDeclaration(u), ...numerosFacture(u)].some((n) => n.toLowerCase().includes(search.toLowerCase())) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
       (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE"))) ||
@@ -770,7 +781,7 @@ const Utilisations = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {u.type === "DOUANIER" ? (u.numeroDeclaration || u.numeroBulletin || "—") : (u.numeroFacture || u.numeroDecompte || "—")}
+                        {u.type === "DOUANIER" ? (joinNumeros(numerosDeclaration(u)) || u.numeroBulletin || "—") : (joinNumeros(numerosFacture(u)) || u.numeroDecompte || "—")}
                       </TableCell>
                       <TableCell>{fmtAmt(u.montant)}</TableCell>
                       <TableCell><Badge className={`text-xs ${STATUT_COLORS[u.statut]}`}>{tStatutContextuel(u.statut, u.type)}</Badge></TableCell>
@@ -964,7 +975,14 @@ const Utilisations = () => {
               {createType === "DOUANIER" && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{t("utilisations:create.douane.numero_declaration")} *</Label><Input placeholder={t("utilisations:create.douane.numero_declaration_placeholder")} value={form.numeroDeclaration || ""} onChange={e => setForm({ ...form, numeroDeclaration: e.target.value })} /></div>
+                    <NumerosRepetables
+                      id="util-numeros-declaration"
+                      label={t("utilisations:create.douane.numero_declaration")}
+                      placeholder={t("utilisations:create.douane.numero_declaration_placeholder")}
+                      values={form.numerosDeclaration}
+                      onChange={(numerosDeclaration) => setForm({ ...form, numerosDeclaration })}
+                      required
+                    />
                     <div><Label>{t("utilisations:create.douane.numero_bulletin")} *</Label><Input placeholder={t("utilisations:create.douane.numero_bulletin_placeholder")} value={form.numeroBulletin || ""} onChange={e => setForm({ ...form, numeroBulletin: e.target.value })} /></div>
                   </div>
                   <div><Label>{t("utilisations:create.douane.date_declaration")}</Label><Input type="date" value={form.dateDeclaration || ""} onChange={e => setForm({ ...form, dateDeclaration: e.target.value })} /></div>
@@ -1098,7 +1116,14 @@ const Utilisations = () => {
                   </div>
                   {form.typeAchat === "ACHAT_LOCAL" && (
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{t("utilisations:create.tva.numero_facture")} *</Label><Input placeholder={t("utilisations:create.tva.numero_facture_placeholder")} value={form.numeroFacture || ""} onChange={e => setForm({ ...form, numeroFacture: e.target.value })} /></div>
+                      <NumerosRepetables
+                        id="util-numeros-facture"
+                        label={t("utilisations:create.tva.numero_facture")}
+                        placeholder={t("utilisations:create.tva.numero_facture_placeholder")}
+                        values={form.numerosFacture}
+                        onChange={(numerosFacture) => setForm({ ...form, numerosFacture })}
+                        required
+                      />
                       <div><Label>{t("utilisations:create.tva.date_facture")}</Label><Input type="date" value={form.dateFacture || ""} onChange={e => setForm({ ...form, dateFacture: e.target.value })} /></div>
                     </div>
                   )}

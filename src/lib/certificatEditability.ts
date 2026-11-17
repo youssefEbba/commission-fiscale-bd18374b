@@ -22,9 +22,12 @@ export function canManuallySetCertificatStatus(statut: CertificatStatut) {
 /** Certificat signé : déposé par le Président (ou l'administrateur) seulement — 403 pour l'AC et la commission relais. */
 export const CERTIFICAT_SIGNE_CODE = "CERTIFICAT_CREDIT_IMPOTS";
 
-/** Pièces proposées au dépôt de la mise en place (AC / relais) : sans le certificat signé. */
+/** Pièces proposées au dépôt de la mise en place (AC / relais) : sans le certificat signé ni le reçu de dépôt (émis après la soumission). */
 export function miseEnPlaceDepotRequirements<T extends { codeDocument?: string | null; typeDocument?: string | null }>(reqs: T[]): T[] {
-  return reqs.filter((r) => (r.codeDocument || r.typeDocument) !== CERTIFICAT_SIGNE_CODE);
+  return reqs.filter((r) => {
+    const code = r.codeDocument || r.typeDocument;
+    return code !== CERTIFICAT_SIGNE_CODE && code !== "RECU_DEPOT";
+  });
 }
 
 /** Admin correction is NOT the initial amount-entry endpoint, even on closed credits. */

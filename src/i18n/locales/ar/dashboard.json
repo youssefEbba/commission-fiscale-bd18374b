@@ -97,6 +97,10 @@
       "AVENANT": "ملحق",
       "CONVENTION": "اتفاقية",
       "SOUS_TRAITANCE": "المقاولة من الباطن"
-    }
+    },
+    "search_placeholder": "رقم الملف أو الاعتماد أو الصفقة",
+    "search_empty": "لا توجد مهمة تطابق « {{q}} »",
+    "col_credit": "رقم الاعتماد",
+    "marche": "الصفقة {{numero}}"
   }
 }

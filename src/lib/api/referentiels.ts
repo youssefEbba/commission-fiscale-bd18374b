@@ -136,6 +136,8 @@ export type StatutTransfert = "DEMANDE" | "EN_COURS" | "VALIDE" | "INCOMPLETE" |
 
 export interface TransfertCreditDto {
   id: number;
+  /** TR-NNNN-MM-AAAA, attribuée à la création (conservée après rejet) ; ARCHIVE-TR-… pour une reprise. */
+  reference?: string | null;
   dateDemande?: string;
   certificatCreditId: number;
   /** Référence lisible du crédit (CR-…) — à afficher en priorité. */

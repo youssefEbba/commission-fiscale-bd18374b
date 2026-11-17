@@ -6,6 +6,7 @@ import { resolveApposition, type PdfOutputOptions } from "@/lib/signatures";
 import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 import { numberToFrenchWords } from "@/lib/pdfText";
 import { chargerContexte } from "@/lib/liquidationPdf";
+import { joinNumeros, numerosFacture } from "@/lib/utilisationNumeros";
 
 /**
  * Certificat d'utilisation du crédit d'impôt — Crédit intérieur (TVA déductible).
@@ -85,7 +86,7 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   doc.setFont(PDF_FONT, "bold").setFontSize(9.5);
   doc.text("II - UTILISATION DU CREDIT D'IMPOTS (Crédit intérieur) - TVA DEDUCTIBLE", M + 6, y);
   y += 16;
-  field(doc, M + 6, y, "Facture N° :", u.numeroFacture || "", M + 300);
+  field(doc, M + 6, y, "Facture N° :", joinNumeros(numerosFacture(u)), M + 300);
   field(doc, M + 310, y, "du", dt(u.dateFacture), R - 6); y += 16;
   field(doc, M + 6, y, "Financement du Crédit N° :", u.certificatReference || cert?.reference || u.certificatNumero || "", R - 6); y += 16;
   const montant = Number(u.creditInterieurUtilise ?? u.montantTVAInterieure ?? u.montant ?? 0);

@@ -21,23 +21,25 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ListeRepliable } from "@/components/ui/liste-repliable";
 import { peutSoumettreUtilisation } from "@/lib/droitsUtilisation";
-import { ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, CheckCircle2, XCircle, Info } from "lucide-react";
+import { Archive, ArrowLeft, Award, Loader2, Landmark, CalendarDays, Building2, CreditCard, FileText, Plus, Eye, CheckCircle2, XCircle, Info } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutCertificat, tStatutUtilisation, tTypeDocument, tTvaStockSource, tDocRequirementLabel } from "@/i18n/enums";
 import { formatAmount, formatDate } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { canCorrectCertificatField, type UtilisationPresence } from "@/lib/certificatEditability";
+import { canManageArchiveCredit } from "@/lib/archiveCreditGestion";
+import { ArchiveCreditActions } from "@/components/archive/ArchiveCreditActions";
 
 const STATUT_COLORS_CERT = CERTIFICAT_STATUT_COLORS;
 
 const STATUT_COLORS_UTIL = UTILISATION_STATUT_COLORS;
 
 const CertificatDetail = () => {
-  const { t } = useTranslation(["certificats", "common"]);
+  const { t } = useTranslation(["certificats", "common", "archive", "utilisations"]);
   const { user, hasPermission } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -48,6 +50,8 @@ const CertificatDetail = () => {
   const [utilisationPresence, setUtilisationPresence] = useState<UtilisationPresence>("unknown");
   const [loading, setLoading] = useState(true);
   const [tvaStock, setTvaStock] = useState<TvaDeductibleStockDto[]>([]);
+  // Relit la fiche après une correction du rattachement (crédit repris de l'archive).
+  const [reloadKey, setReloadKey] = useState(0);
 
   // GED documents state
   const [showGed, setShowGed] = useState(false);
@@ -135,7 +139,7 @@ const CertificatDetail = () => {
           { value: "AUTRE", label: tTypeDocument("AUTRE") },
         ]);
       });
-  }, [id, role, toast, user?.entrepriseId, t]);
+  }, [id, role, toast, user?.entrepriseId, t, reloadKey]);
 
   const loadGedDocs = async (certId: number) => {
     setGedLoading(true);
@@ -191,6 +195,8 @@ const CertificatDetail = () => {
   }
 
   const c = certificat;
+  // Colonne « Libellé importé » : seulement si une utilisation reprise de l'archive en porte un.
+  const avecLibelleImporte = utilisations.some((u) => !!u.origineArchiveLibelle);
   // Numéro saisi par l'autorité, sinon référence DM-…, sinon intitulé.
   const marcheLabel = c.marcheNumero || c.marcheReference || c.marcheIntitule || `#${c.marcheId}`;
   // La fiche marché n'est pas ouverte aux entreprises (routes App.tsx).
@@ -484,13 +490,14 @@ const CertificatDetail = () => {
                   <TableHead>{t("certificats:detail.utilisations.tva")}</TableHead>
                   <TableHead>{t("certificats:detail.utilisations.date")}</TableHead>
                   <TableHead>{t("certificats:detail.utilisations.statut")}</TableHead>
+                  {avecLibelleImporte && <TableHead>{t("utilisations:detail.info.libelle_importe")}</TableHead>}
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {utilisations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={avecLibelleImporte ? 9 : 8} className="text-center py-8 text-muted-foreground">
                       {t("certificats:detail.utilisations.empty")}
                     </TableCell>
                   </TableRow>
@@ -512,6 +519,7 @@ const CertificatDetail = () => {
                           {tStatutUtilisation(u.statut)}
                         </Badge>
                       </TableCell>
+                      {avecLibelleImporte && <TableCell className="max-w-[260px] text-xs">{u.origineArchiveLibelle || "—"}</TableCell>}
                       <TableCell>
                         <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
                       </TableCell>
@@ -526,6 +534,30 @@ const CertificatDetail = () => {
         <AvenantsCertificatCard certificat={c} />
 
         <DiscussionCommissionPanel contexte="CERTIFICAT" dossierId={c.id} dossierStatut={c.statut as string} />
+
+        {canManageArchiveCredit(hasPermission, c.reference) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Archive className="h-4 w-4 text-primary" /> {t("archive:gestion.carte_titre")}
+              </CardTitle>
+              <CardDescription>{t("archive:gestion.carte_desc")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ArchiveCreditActions
+                certificatId={c.id}
+                onCorrected={() => {
+                  toast({ title: t("archive:gestion.corrige_ok") });
+                  setReloadKey((k) => k + 1);
+                }}
+                onDeleted={() => {
+                  toast({ title: t("archive:gestion.supprime_ok", { reference: c.reference }), description: t("archive:gestion.supprime_ok_desc") });
+                  navigate("/dashboard/certificats", { replace: true });
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Correction administrateur (ADMIN_SI) — disponible quel que soit le statut */}
         <AdminCorrectionCard

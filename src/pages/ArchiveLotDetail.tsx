@@ -52,6 +52,12 @@ import {
   soldesDetail,
   type SoldeAxe,
 } from "@/lib/archiveLots";
+import {
+  autoriteOptions as buildAutoriteOptions,
+  conventionOptions as buildConventionOptions,
+  entrepriseOptions as buildEntrepriseOptions,
+  marcheOptions as buildMarcheOptions,
+} from "@/lib/archiveCreditGestion";
 import { isRouteUnavailable } from "@/lib/submission";
 import { cn } from "@/lib/utils";
 
@@ -135,29 +141,10 @@ const ArchiveLotDetail = () => {
   const effAutorite = barAutorite || (commonValue(selection, "autoriteContractanteId") != null ? String(commonValue(selection, "autoriteContractanteId")) : "");
   const effConvention = barConvention || (commonValue(selection, "conventionId") != null ? String(commonValue(selection, "conventionId")) : "");
 
-  const entrepriseOptions = useMemo(() => [...refs.entreprises]
-    .sort((x, y) => (x.raisonSociale || "").localeCompare(y.raisonSociale || "", "fr"))
-    .map((e) => ({ value: String(e.id), label: e.raisonSociale || `#${e.id}`, description: e.nif ? `NIF ${e.nif}` : undefined, keywords: e.nif || undefined })),
-  [refs.entreprises]);
-  const autoriteOptions = useMemo(() => [...refs.autorites]
-    .sort((x, y) => (x.nom || "").localeCompare(y.nom || "", "fr"))
-    .map((a) => ({ value: String(a.id), label: a.nom || `#${a.id}`, description: a.sigle || undefined })),
-  [refs.autorites]);
-  const conventionOptions = useMemo(() => {
-    const scoped = refs.conventions.filter((c) => !effAutorite || String(c.autoriteContractanteId ?? "") === effAutorite);
-    // Aucune convention connue pour l'autorité : toute la liste reste proposée.
-    return (scoped.length ? scoped : refs.conventions)
-      .slice()
-      .sort((x, y) => (x.reference || "").localeCompare(y.reference || "", "fr"))
-      .map((c) => ({ value: String(c.id), label: c.reference || `#${c.id}`, description: c.intitule || undefined }));
-  }, [refs.conventions, effAutorite]);
-  const marcheOptions = useMemo(() => {
-    const scoped = refs.marches.filter((m) => !effConvention || String(m.conventionId ?? "") === effConvention || (m.conventionIds ?? []).map(String).includes(effConvention));
-    return (scoped.length ? scoped : refs.marches)
-      .slice()
-      .sort((x, y) => (x.numeroMarche || "").localeCompare(y.numeroMarche || "", "fr"))
-      .map((m) => ({ value: String(m.id), label: m.numeroMarche || `#${m.id}`, description: m.intitule || undefined }));
-  }, [refs.marches, effConvention]);
+  const entrepriseOptions = useMemo(() => buildEntrepriseOptions(refs.entreprises), [refs.entreprises]);
+  const autoriteOptions = useMemo(() => buildAutoriteOptions(refs.autorites), [refs.autorites]);
+  const conventionOptions = useMemo(() => buildConventionOptions(refs.conventions, effAutorite), [refs.conventions, effAutorite]);
+  const marcheOptions = useMemo(() => buildMarcheOptions(refs.marches, effConvention), [refs.marches, effConvention]);
 
   const working = busy !== null;
 

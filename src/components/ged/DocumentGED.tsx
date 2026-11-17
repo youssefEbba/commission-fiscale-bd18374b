@@ -49,6 +49,8 @@ interface DocumentGEDProps {
   onRefresh: (dossierId: number) => Promise<void>;
   onDeleteDocument?: (dossierId: number, docId: number) => Promise<void>;
   onReplaceDocument?: (dossierId: number, docId: number, file: File) => Promise<void>;
+  /** Contenu affiché sous le titre (ex. carte « Reçu de dépôt » d'un dossier sans fiche). */
+  header?: React.ReactNode;
 }
 
 const getFileIcon = (filename: string) => {
@@ -62,7 +64,7 @@ const getFileIcon = (filename: string) => {
 const DocumentGED = ({
   open, onOpenChange, title, dossierId, documentTypes,
   documents, loading, loadError, canUpload, canManageDocuments, onUpload, onRefresh,
-  onDeleteDocument, onReplaceDocument,
+  onDeleteDocument, onReplaceDocument, header,
 }: DocumentGEDProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -233,6 +235,7 @@ const DocumentGED = ({
             {title}
           </DialogTitle>
         </DialogHeader>
+        {header}
 
         {loading ? (
           <div className="flex justify-center py-8">

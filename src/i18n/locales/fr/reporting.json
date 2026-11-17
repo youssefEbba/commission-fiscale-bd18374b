@@ -44,10 +44,20 @@
     "transferts": "Transferts",
     "sous_traitances": "{{count}} sous-traitance(s)",
     "en_validation_president": "{{count}} en validation Président",
-    "taux_adoption": "Taux d'adoption",
-    "taux_rejet": "Taux de rejet",
+    "taux_adoption": "Taux d'adoption (corrections)",
+    "taux_rejet": "Taux de rejet (corrections)",
     "solde_cordon": "Solde Cordon",
-    "solde_tva": "Solde TVA"
+    "solde_tva": "Solde TVA",
+    "demandes_par_processus": "Demandes par processus",
+    "processus": {
+      "CORRECTION": "Correction",
+      "MISE_EN_PLACE": "Mise en place",
+      "UTILISATION_DOUANE": "Utilisation douane",
+      "UTILISATION_TVA_INTERIEURE": "Utilisation TVA intérieure",
+      "TRANSFERT": "Transfert",
+      "AVENANT": "Avenant",
+      "SOUS_TRAITANCE": "Sous-traitance"
+    }
   },
   "charts": {
     "empty": "Aucune donnée",
@@ -58,9 +68,9 @@
     "tab_utilisations": "Utilisations",
     "tab_referentiel": "Conv / Projets",
     "tab_audit": "Audit",
-    "demandes_by_statut": "Demandes par statut",
+    "demandes_by_statut": "Demandes de correction par statut",
     "demandes_evolution": "Évolution mensuelle des demandes",
-    "demandes_detail": "Détail par statut",
+    "demandes_detail": "Détail des corrections par statut",
     "demandes_legend": "Demandes",
     "certificats_by_statut": "Certificats par statut",
     "certificats_amounts": "Montants certificats",

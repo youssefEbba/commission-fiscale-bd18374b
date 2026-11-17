@@ -107,7 +107,12 @@
       "open": "Ouvrir",
       "download": "Télécharger le reçu",
       "not_stored": "Le reçu enregistré n'est pas disponible : il sera reconstitué à partir des informations du dossier.",
-      "error": "Impossible de télécharger le reçu"
+      "error": "Impossible de télécharger le reçu",
+      "versions": "Reçus déposés",
+      "version": "Version {{version}}",
+      "version_courante": "Version en vigueur",
+      "depose_le": "déposé le {{date}}",
+      "description_multi": "Un reçu est émis à chaque dépôt ; les versions précédentes restent consultables."
     },
     "pieces": {
       "title": "Pièces du dossier",
@@ -629,6 +634,38 @@
     "toast_fail_title": "Demande bien déposée — reçu non enregistré",
     "toast_fail_body": "Votre demande {{numero}} est bien partie. Seul l'enregistrement du reçu a échoué ; vous pouvez le régénérer.",
     "regenerate": "Régénérer le reçu",
-    "reference_appel_offre": "Référence de l'appel d'offres"
+    "reference_appel_offre": "Référence de l'appel d'offres",
+    "subtitle_processus": {
+      "CORRECTION": "Demande de correction de l'offre fiscale",
+      "MISE_EN_PLACE": "Demande de mise en place du crédit d'impôt",
+      "UTILISATION_DOUANE": "Demande d'utilisation du crédit d'impôt — douane",
+      "UTILISATION_TVA": "Demande d'utilisation du crédit d'impôt — TVA intérieure",
+      "TRANSFERT": "Demande de transfert de crédit",
+      "AVENANT": "Demande de modification du crédit d'impôt (avenant)",
+      "SOUS_TRAITANCE": "Demande d'autorisation de sous-traitance"
+    },
+    "certificat": "Crédit d'impôt",
+    "demande_correction": "Demande de correction",
+    "titulaire_credit": "Titulaire du crédit",
+    "sous_traitant": "Sous-traitant",
+    "numero_declaration": "N° de déclaration",
+    "numero_bulletin": "N° de bulletin de liquidation",
+    "date_declaration": "Date de la déclaration",
+    "numero_facture": "N° de facture",
+    "date_facture": "Date de la facture",
+    "numero_decompte": "N° de décompte",
+    "montant_droits": "Droits et taxes",
+    "montant_tva_douane": "TVA à l'importation",
+    "montant_demande": "Montant demandé",
+    "montant_cordon": "Crédit cordon douanier",
+    "montant_tva_interieure": "Crédit TVA intérieure",
+    "montant_transfert": "Montant à transférer",
+    "type_avenant": "Type d'avenant",
+    "date_signature": "Date de signature",
+    "motif": "Motif",
+    "credit_exterieur_propose": "Crédit extérieur proposé",
+    "credit_interieur_propose": "Crédit intérieur proposé",
+    "volumes": "Volumes",
+    "quantites": "Quantités"
   }
 }

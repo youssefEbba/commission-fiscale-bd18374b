@@ -63,14 +63,15 @@ export const canUploadAvenantDecision = (a: Pick<AvenantDto, "statut">, has: (p:
 
 /**
  * Pièces de la Commission = pièces actives du processus (sans `depot`) moins celles
- * que le déposant dépose (`depot=true`). Les pièces désactivées sont écartées.
+ * que le déposant dépose (`depot=true`) et le reçu de dépôt. Les pièces désactivées sont écartées.
  */
 export function avenantPiecesCommission<T extends { code: string; actif?: boolean }>(
   toutes: T[],
   depot: Array<{ code: string }>,
 ): T[] {
   const deposant = new Set(depot.map((o) => o.code));
-  return toutes.filter((o) => o.actif !== false && !deposant.has(o.code));
+  // Le reçu de dépôt n'est pas une pièce de la Commission : le déposant l'émet à la soumission.
+  return toutes.filter((o) => o.actif !== false && !deposant.has(o.code) && o.code !== "RECU_DEPOT");
 }
 
 /** `direct` : geste propre au rôle ; `admin` : substitution par l'administrateur (motif obligatoire). */

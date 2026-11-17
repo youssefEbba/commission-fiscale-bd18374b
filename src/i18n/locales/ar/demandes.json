@@ -107,7 +107,12 @@
       "open": "فتح",
       "download": "تحميل الإيصال",
       "not_stored": "الإيصال المحفوظ غير متاح: سيتم إعداده من معلومات الملف.",
-      "error": "تعذر تحميل الإيصال"
+      "error": "تعذر تحميل الإيصال",
+      "versions": "الإيصالات المودعة",
+      "version": "النسخة {{version}}",
+      "version_courante": "النسخة السارية",
+      "depose_le": "أودع في {{date}}",
+      "description_multi": "يصدر إيصال عند كل إيداع؛ وتبقى النسخ السابقة متاحة للاطلاع."
     },
     "pieces": {
       "title": "وثائق الملف",
@@ -629,6 +634,38 @@
     "toast_fail_title": "تم إيداع الطلب — لم يُحفظ الإيصال",
     "toast_fail_body": "تم إرسال طلبك {{numero}} بنجاح. فشل فقط حفظ الإيصال؛ يمكنك إعادة إنشائه.",
     "regenerate": "إعادة إنشاء الإيصال",
-    "reference_appel_offre": "مرجع طلب العروض"
+    "reference_appel_offre": "مرجع طلب العروض",
+    "subtitle_processus": {
+      "CORRECTION": "طلب تصحيح العرض الضريبي",
+      "MISE_EN_PLACE": "طلب وضع الاعتماد الضريبي",
+      "UTILISATION_DOUANE": "طلب استخدام الاعتماد الضريبي — الجمارك",
+      "UTILISATION_TVA": "طلب استخدام الاعتماد الضريبي — الضريبة على القيمة المضافة الداخلية",
+      "TRANSFERT": "طلب تحويل الاعتماد",
+      "AVENANT": "طلب تعديل الاعتماد الضريبي (ملحق)",
+      "SOUS_TRAITANCE": "طلب ترخيص المناولة"
+    },
+    "certificat": "الاعتماد الضريبي",
+    "demande_correction": "طلب التصحيح",
+    "titulaire_credit": "صاحب الاعتماد",
+    "sous_traitant": "المناول",
+    "numero_declaration": "رقم التصريح",
+    "numero_bulletin": "رقم بيان التصفية",
+    "date_declaration": "تاريخ التصريح",
+    "numero_facture": "رقم الفاتورة",
+    "date_facture": "تاريخ الفاتورة",
+    "numero_decompte": "رقم الكشف",
+    "montant_droits": "الرسوم والضرائب",
+    "montant_tva_douane": "الضريبة على القيمة المضافة عند الاستيراد",
+    "montant_demande": "المبلغ المطلوب",
+    "montant_cordon": "اعتماد الطوق الجمركي",
+    "montant_tva_interieure": "اعتماد الضريبة على القيمة المضافة الداخلية",
+    "montant_transfert": "المبلغ المراد تحويله",
+    "type_avenant": "نوع الملحق",
+    "date_signature": "تاريخ التوقيع",
+    "motif": "السبب",
+    "credit_exterieur_propose": "الاعتماد الخارجي المقترح",
+    "credit_interieur_propose": "الاعتماد الداخلي المقترح",
+    "volumes": "الأحجام",
+    "quantites": "الكميات"
   }
 }

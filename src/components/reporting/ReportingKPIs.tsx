@@ -6,8 +6,8 @@ import { showPresidentValidation } from "./ReportingRoleConfig";
 import { AppRole } from "@/contexts/AuthContext";
 import { formatAmount, formatNumber } from "@/i18n/format";
 
-function KPICard({ icon: Icon, label, value, color, subtext }: {
-  icon: React.ElementType; label: string; value: number; color: string; subtext?: string;
+function KPICard({ icon: Icon, label, value, color, subtext, children }: {
+  icon: React.ElementType; label: string; value: number; color: string; subtext?: string; children?: React.ReactNode;
 }) {
   return (
     <Card>
@@ -18,6 +18,7 @@ function KPICard({ icon: Icon, label, value, color, subtext }: {
         </div>
         <p className="mt-2 text-2xl font-bold text-foreground">{formatNumber(value)}</p>
         {subtext && <p className="text-xs text-muted-foreground mt-1">{subtext}</p>}
+        {children}
       </CardContent>
     </Card>
   );
@@ -31,12 +32,25 @@ interface ReportingKPIsProps {
 const ReportingKPIs = ({ summary, role }: ReportingKPIsProps) => {
   const { t } = useTranslation();
   const showValidation = showPresidentValidation(role);
+  // Détail du total par processus, dans l'ordre du serveur.
+  const parProcessus = summary.demandes.parProcessus ?? [];
 
   return (
     <>
       {/* Volume KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard icon={FileText} label={t("reporting:kpis.demandes")} value={summary.demandes.total} color="text-primary" />
+        <KPICard icon={FileText} label={t("reporting:kpis.demandes")} value={summary.demandes.total} color="text-primary">
+          {parProcessus.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground" aria-label={t("reporting:kpis.demandes_par_processus")}>
+              {parProcessus.map((kc) => (
+                <li key={kc.key} className="flex justify-between gap-2">
+                  <span>{t(`reporting:kpis.processus.${kc.key}`, { defaultValue: kc.key })}</span>
+                  <span className="tabular-nums font-medium text-foreground">{formatNumber(kc.count)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </KPICard>
         <KPICard
           icon={Award}
           label={t("reporting:kpis.certificats")}

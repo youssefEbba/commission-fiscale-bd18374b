@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { emettreRecuDepot, recuCibles } from "@/lib/recuDepot";
 
 interface Props {
   open: boolean;
@@ -95,6 +96,8 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, ma
     setBusy(true);
     try {
       const created = await avenantApi.create(buildCreateAvenantRequest(form));
+      // Reçu de dépôt ; les pièces du déposant se joignent ensuite sur la fiche (statut DEPOSE).
+      void emettreRecuDepot(recuCibles.avenant(created, { deposantNom: user?.nomComplet }));
       toast({ title: t("common:success", { defaultValue: "Succès" }), description: t("modifications:toast.depot_ok") });
       onOpenChange(false);
       onCreated(created);
