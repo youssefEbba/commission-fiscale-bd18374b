@@ -291,6 +291,8 @@ export interface UtilisationCreditDto {
   certificatNumero?: string;
   // Douane fields
   numeroDeclaration?: string;
+  /** Tous les n° de déclaration (toujours remplis ; `numeroDeclaration` = le premier). */
+  numerosDeclaration?: string[];
   numeroBulletin?: string;
   dateDeclaration?: string;
   /** @deprecated Conservé pour compat / lecture historique — utiliser `lignes` + totaux. */
@@ -315,6 +317,10 @@ export interface UtilisationCreditDto {
   // TVA intérieure fields
   typeAchat?: string;
   numeroFacture?: string;
+  /** Tous les n° de facture (toujours remplis ; `numeroFacture` = le premier). */
+  numerosFacture?: string[];
+  /** Libellé de l'opération dans le relevé de l'ancienne application (utilisations reprises de l'archive). */
+  origineArchiveLibelle?: string | null;
   dateFacture?: string;
   montantTVAInterieure?: number;
   numeroDecompte?: string;
@@ -373,6 +379,8 @@ export interface CreateUtilisationCreditRequest {
   description?: string;
   // Douane
   numeroDeclaration?: string;
+  /** Prime sur `numeroDeclaration` quand elle est fournie. */
+  numerosDeclaration?: string[];
   numeroBulletin?: string;
   dateDeclaration?: string;
   /** Bulletin de liquidation : lignes (code, libellé, type, valeur). Obligatoire pour DOUANIER. */
@@ -381,6 +389,8 @@ export interface CreateUtilisationCreditRequest {
   // TVA intérieure
   typeAchat?: string;
   numeroFacture?: string;
+  /** Prime sur `numeroFacture` quand elle est fournie. */
+  numerosFacture?: string[];
   dateFacture?: string;
   montantTVAInterieure?: number;
   numeroDecompte?: string;
@@ -410,6 +420,7 @@ export type TypeDocumentUtilisation =
   | "CERTIFICAT_CREDIT_IMPOTS_SYDONIA"
   | "DECLARATION_TVA"
   | "DECOMPTE"
+  | "RECU_DEPOT"
   | "AUTRE";
 
 export const UTILISATION_DOC_TYPES_DOUANE: readonly TypeDocumentUtilisation[] = [

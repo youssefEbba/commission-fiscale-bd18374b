@@ -12,6 +12,6 @@ describe("accès à la page Clôture", () => {
   });
 
   it("l'entrée du menu exige le même droit", () => {
-    expect(lire("components/dashboard/DashboardLayout.tsx")).toMatch(/href: "\/dashboard\/cloture"[^}]*permission: "cloture\.queue\.view"/);
+    expect(lire("components/dashboard/navEntries.ts")).toMatch(/href: "\/dashboard\/cloture"[^}]*permission: "cloture\.queue\.view"/);
   });
 });

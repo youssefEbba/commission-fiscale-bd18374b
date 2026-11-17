@@ -48,8 +48,9 @@ import AdminVisasCard from "@/components/admin/AdminVisasCard";
 import CorrectionVisaDialog from "@/components/demandes/CorrectionVisaDialog";
 import { CorrectionCreditsComparison, DecisionMontantsRetenus } from "@/components/demandes/CorrectionCreditsComparison";
 import { useCorrectionVisaState } from "@/hooks/useCorrectionVisaState";
-import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
-import { openDocument, downloadDocument, trackDocumentTask, presentBlob } from "@/lib/openDocument";
+import { recuCorrection } from "@/lib/recuDepotPdf";
+import { RecuDepotCard } from "@/components/documents/RecuDepotCard";
+import { trackDocumentTask } from "@/lib/openDocument";
 import { DocumentButton } from "@/components/documents/DocumentButton";
 
 
@@ -86,7 +87,6 @@ const DemandeDetail = () => {
   const [selected, setSelected] = useState<DemandeCorrectionDto | null>(null);
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
-  const [recuBusy, setRecuBusy] = useState<false | "open" | "download">(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
@@ -454,28 +454,6 @@ const DemandeDetail = () => {
     : isCommissionViewer
       ? CORRECTED_OFFER_TYPES.filter(tp => docs.some(d => d.type === tp || docCode(d) === tp))
       : [];
-  const recuDoc = [...docs.filter(d => docCode(d) === "RECU_DEPOT")]
-    .sort((a, b) => Number(b.actif !== false) - Number(a.actif !== false) || (b.version || b.id) - (a.version || a.id))[0];
-  const handleRecu = async (mode: "open" | "download") => {
-    setRecuBusy(mode);
-    try {
-      if (recuDoc) {
-        await (mode === "open" ? openDocument(recuDoc) : downloadDocument(recuDoc));
-        return;
-      }
-      // Reçu enregistré absent : reconstitution à partir du dossier (statut actuel omis), avec attente visible.
-      const name = recuDepotFileName(selected);
-      await trackDocumentTask(`recu-depot:${selected.id}:${mode}`, "generate", name, async () => {
-        await new Promise((r) => setTimeout(r, 0)); // laisse l'attente s'afficher avant la génération
-        presentBlob(await generateRecuDepotPdf({ demande: selected, documents: docs, regenerated: true }), name, mode);
-      });
-    } catch (e: unknown) {
-      toast({ title: t("demandes:detail.recu_card.error"), description: formatApiErrorMessage(e), variant: "destructive" });
-    } finally {
-      setRecuBusy(false);
-    }
-  };
-
   const decs = selected.decisions || [];
   const DECISION_ROLES_LIST = ["DGD", "DGTCP", "DGI", "DGB"];
 
@@ -575,28 +553,7 @@ const DemandeDetail = () => {
           </CardContent>
         </Card>
 
-        {canSeeRecu && (
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-4 flex flex-wrap items-center gap-3">
-              <FileText className="h-8 w-8 text-primary shrink-0" />
-              <div className="flex-1 min-w-[12rem]">
-                <p className="text-sm font-semibold">{t("demandes:detail.recu_card.title")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {recuDoc ? t("demandes:detail.recu_card.description") : t("demandes:detail.recu_card.not_stored")}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled={!!recuBusy} aria-busy={recuBusy === "open" || undefined} onClick={() => handleRecu("open")}>
-                  {recuBusy === "open" ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <ExternalLink className="h-4 w-4 me-1" />} {t("demandes:detail.recu_card.open")}
-                </Button>
-                <Button size="sm" disabled={!!recuBusy} aria-busy={recuBusy === "download" || undefined} onClick={() => handleRecu("download")}>
-                  {recuBusy === "download" ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
-                  {t("demandes:detail.recu_card.download")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {canSeeRecu && <RecuDepotCard documents={docs} modele={recuCorrection(selected, { regenerated: true })} />}
 
         {/* Crédits demandés */}
         {(() => {

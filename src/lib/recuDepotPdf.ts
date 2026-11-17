@@ -2,29 +2,263 @@ import jsPDF from "jspdf";
 import { drawOfficialHeader } from "@/lib/pdfOfficialHeader";
 import { PDF_FONT, applyOfficialFont, loadOfficialWebFonts, CANVAS_FONT_AR, CANVAS_FONT_FR } from "@/lib/pdfFonts";
 import i18n from "@/i18n";
-import { formatAmount, formatDateTime } from "@/i18n/format";
-import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
-import type { DemandeCorrectionDto, DocumentDto } from "@/lib/api";
+import { formatAmount, formatDate, formatDateTime } from "@/i18n/format";
+import {
+  tStatutAvenant, tStatutCertificat, tStatutDemande, tStatutSousTraitance, tStatutTransfert, tStatutUtilisation,
+  tTypeAvenant, tTypeDocument,
+} from "@/i18n/enums";
+import type {
+  AvenantDto, CertificatCreditDto, DemandeCorrectionDto, DocumentDto, SousTraitanceDto, TransfertCreditDto, UtilisationCreditDto,
+} from "@/lib/api";
+import { joinNumeros, numerosDeclaration, numerosFacture } from "@/lib/utilisationNumeros";
 
 /**
- * Reçu de dépôt d'une demande de correction (code document RECU_DEPOT).
+ * Reçu de dépôt (code document RECU_DEPOT), commun à tous les processus de demande.
+ * Un adaptateur par DTO produit un `RecuModele` ; `generateRecuPdf` le met en page.
  * Rédigé dans la langue courante, avec la police officielle Ouguiya (LouguiyaFR / Louguiya).
  * En français, le texte est écrit comme du vrai texte PDF (sélectionnable, police visible dans les propriétés).
  * En arabe, il reste dessiné via canvas : jsPDF ne sait ni lier les lettres arabes ni gérer le sens d'écriture.
  */
-export interface RecuDepotInput {
-  demande: DemandeCorrectionDto;
-  documents: DocumentDto[];
-  deposantNom?: string;
-  /** Libellés paramétrés par code document (sinon traduction de l'enum). */
-  libelles?: Record<string, string>;
-  /** Reçu reconstitué après coup (reçu enregistré indisponible) : le statut actuel n'est pas celui du dépôt, il est omis. */
+
+export type RecuProcessus =
+  | "CORRECTION"
+  | "MISE_EN_PLACE"
+  | "UTILISATION_DOUANE"
+  | "UTILISATION_TVA"
+  | "TRANSFERT"
+  | "AVENANT"
+  | "SOUS_TRAITANCE";
+
+export interface RecuLigne {
+  label: string;
+  value?: string | null;
+  /** Ligne omise si la valeur est vide (sinon « — »). */
+  optional?: boolean;
+}
+
+export interface RecuModele {
+  processus: RecuProcessus;
+  /** Référence affichée (et nom de fichier). */
+  reference: string;
+  /** Date de soumission renvoyée par le serveur. */
+  dateDepot?: string | null;
+  /** Libellé du statut à l'issue du dépôt (omis pour un reçu reconstitué). */
+  statut?: string | null;
+  deposant: RecuLigne[];
+  titulaire: RecuLigne[];
+  objet: RecuLigne[];
+  montants: RecuLigne[];
+}
+
+export interface RecuAdapterOptions {
+  deposantNom?: string | null;
+  /** Reçu reconstitué après coup : le statut actuel n'est pas celui du dépôt, il est omis. */
   regenerated?: boolean;
 }
 
-const t = (k: string, o?: Record<string, unknown>) => i18n.t(`demandes:recu.${k}`, o) as string;
+export interface RecuRenderOptions {
+  documents?: DocumentDto[];
+  /** Libellés paramétrés par code document (sinon traduction de l'enum). */
+  libelles?: Record<string, string>;
+  regenerated?: boolean;
+  /** Date d'édition (tests). */
+  now?: Date;
+}
 
-export async function generateRecuDepotPdf({ demande: d, documents, deposantNom, libelles = {}, regenerated = false }: RecuDepotInput): Promise<Blob> {
+const t = (k: string, o?: Record<string, unknown>) => i18n.t(`demandes:recu.${k}`, o) as string;
+const money = (n?: number | string | null) => (n == null || n === "" ? null : formatAmount(Number(n), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+const dateOnly = (d?: string | null) => (d ? formatDate(d) : null);
+const join = (...parts: (string | null | undefined)[]) => parts.filter((p) => p && String(p).trim()).join(" — ") || null;
+const deposantLigne = (o: RecuAdapterOptions): RecuLigne[] =>
+  o.deposantNom || !o.regenerated ? [{ label: t("deposant_nom"), value: o.deposantNom }] : [];
+
+// ---------------------------------------------------------------------------
+// Adaptateurs par DTO
+// ---------------------------------------------------------------------------
+
+export function recuCorrection(d: DemandeCorrectionDto, o: RecuAdapterOptions = {}): RecuModele {
+  const groupement = !!(d.groupementId || d.groupementRaisonSociale);
+  return {
+    processus: "CORRECTION",
+    reference: d.reference || d.numero || `#${d.id}`,
+    dateDepot: d.dateDepot,
+    statut: d.statut ? tStatutDemande(d.statut) : null,
+    deposant: [
+      { label: t("autorite"), value: d.autoriteContractanteNom },
+      { label: t("ministere_tutelle"), value: d.autoriteContractanteMinistereTutelleNom },
+      ...deposantLigne(o),
+    ],
+    titulaire: groupement
+      ? [{ label: t("groupement"), value: d.groupementRaisonSociale }, { label: t("nif_chef_file"), value: d.groupementNifAffiche }]
+      : [{ label: t("raison_sociale"), value: d.entrepriseRaisonSociale }, { label: t("nif"), value: d.entrepriseNif }],
+    objet: [
+      { label: t("convention"), value: d.conventionReference },
+      { label: t("convention_intitule"), value: d.conventionIntitule },
+      { label: t("intitule_marche"), value: d.intituleMarche },
+      { label: t("reference_appel_offre"), value: d.referenceAppelOffre, optional: true },
+      { label: t("marche"), value: join(d.marche?.numeroMarche, d.marche?.intitule), optional: true },
+    ],
+    montants: [
+      { label: t("credit_interieur"), value: money(d.creditInterieur ?? 0) },
+      { label: t("credit_exterieur"), value: money(d.creditExterieur ?? 0) },
+    ],
+  };
+}
+
+export function recuMiseEnPlace(c: CertificatCreditDto, o: RecuAdapterOptions = {}): RecuModele {
+  return {
+    processus: "MISE_EN_PLACE",
+    reference: c.reference || c.numero || `#${c.id}`,
+    dateDepot: c.dateEmission,
+    statut: c.statut ? tStatutCertificat(c.statut) : null,
+    deposant: [
+      { label: t("autorite"), value: c.autoriteContractanteNom },
+      { label: t("ministere_tutelle"), value: c.autoriteContractanteMinistereTutelleNom, optional: true },
+      ...deposantLigne(o),
+    ],
+    titulaire: [{ label: t("raison_sociale"), value: c.entrepriseRaisonSociale || c.entrepriseNom }],
+    objet: [
+      { label: t("demande_correction"), value: c.demandeCorrectionReference || c.demandeCorrectionNumero },
+      { label: t("marche"), value: join(c.marcheNumero || c.marcheReference, c.marcheIntitule), optional: true },
+    ],
+    montants: [
+      { label: t("montant_cordon"), value: money(c.montantCordon ?? c.montantDouane) },
+      { label: t("montant_tva_interieure"), value: money(c.montantTVAInterieure ?? c.montantInterieur) },
+    ],
+  };
+}
+
+export function recuUtilisation(u: UtilisationCreditDto, o: RecuAdapterOptions = {}): RecuModele {
+  const douane = u.type !== "TVA_INTERIEURE";
+  const titulaire = u.demandeurEstSousTraitant
+    ? [
+      { label: t("titulaire_credit"), value: u.certificatTitulaireRaisonSociale },
+      { label: t("sous_traitant"), value: u.entrepriseNom },
+    ]
+    : [{ label: t("raison_sociale"), value: u.entrepriseNom || u.certificatTitulaireRaisonSociale }];
+  return {
+    processus: douane ? "UTILISATION_DOUANE" : "UTILISATION_TVA",
+    reference: u.reference || `#${u.id}`,
+    dateDepot: u.dateDemande,
+    statut: u.statut ? tStatutUtilisation(u.statut) : null,
+    deposant: deposantLigne(o),
+    titulaire,
+    objet: douane
+      ? [
+        { label: t("certificat"), value: u.certificatReference || u.certificatNumero },
+        { label: t("numero_declaration"), value: joinNumeros(numerosDeclaration(u)), optional: true },
+        { label: t("numero_bulletin"), value: u.numeroBulletin, optional: true },
+        { label: t("date_declaration"), value: dateOnly(u.dateDeclaration), optional: true },
+      ]
+      : [
+        { label: t("certificat"), value: u.certificatReference || u.certificatNumero },
+        { label: t("numero_facture"), value: joinNumeros(numerosFacture(u)), optional: true },
+        { label: t("date_facture"), value: dateOnly(u.dateFacture), optional: true },
+        { label: t("numero_decompte"), value: u.numeroDecompte, optional: true },
+      ],
+    montants: douane
+      ? [
+        { label: t("montant_droits"), value: money(u.montantDroits), optional: true },
+        { label: t("montant_tva_douane"), value: money(u.montantTVADouane), optional: true },
+        { label: t("montant_demande"), value: money(u.montant) },
+      ]
+      : [{ label: t("montant_tva_interieure"), value: money(u.montantTVAInterieure ?? u.montant) }],
+  };
+}
+
+export function recuTransfert(tr: TransfertCreditDto, o: RecuAdapterOptions = {}): RecuModele {
+  return {
+    processus: "TRANSFERT",
+    reference: tr.reference || `#${tr.id}`,
+    dateDepot: tr.dateDemande,
+    statut: tr.statut ? tStatutTransfert(tr.statut) : null,
+    deposant: deposantLigne(o),
+    titulaire: [],
+    objet: [{ label: t("certificat"), value: tr.certificatReference || tr.certificatNumero }],
+    montants: [{ label: t("montant_transfert"), value: money(tr.montant) }],
+  };
+}
+
+export function recuAvenant(a: AvenantDto, o: RecuAdapterOptions = {}): RecuModele {
+  return {
+    processus: "AVENANT",
+    reference: a.numero || `#${a.id}`,
+    dateDepot: a.dateDepot,
+    statut: a.statut ? tStatutAvenant(a.statut) : null,
+    deposant: [
+      { label: t("autorite"), value: a.autoriteContractanteNom, optional: true },
+      ...deposantLigne(o),
+    ],
+    titulaire: [{ label: t("raison_sociale"), value: a.entrepriseNom }],
+    objet: [
+      { label: t("type_avenant"), value: a.type ? tTypeAvenant(a.type) : null },
+      { label: t("certificat"), value: a.certificatReference || a.certificatNumero },
+      { label: t("marche"), value: join(a.marcheNumero, a.marcheIntitule), optional: true },
+      { label: t("demande_correction"), value: a.demandeCorrectionReference, optional: true },
+      { label: t("date_signature"), value: dateOnly(a.dateSignature), optional: true },
+      { label: t("motif"), value: a.motif, optional: true },
+    ],
+    montants: [
+      { label: t("credit_exterieur_propose"), value: money(a.creditExterieurPropose), optional: true },
+      { label: t("credit_interieur_propose"), value: money(a.creditInterieurPropose), optional: true },
+    ],
+  };
+}
+
+export function recuSousTraitance(s: SousTraitanceDto, o: RecuAdapterOptions = {}): RecuModele {
+  return {
+    processus: "SOUS_TRAITANCE",
+    reference: `#${s.id}`,
+    dateDepot: s.dateDemande,
+    statut: s.statut ? tStatutSousTraitance(s.statut) : null,
+    deposant: deposantLigne(o),
+    titulaire: [
+      { label: t("sous_traitant"), value: s.sousTraitantEntrepriseRaisonSociale },
+      { label: t("nif"), value: s.sousTraitantEntrepriseNif, optional: true },
+    ],
+    objet: [
+      { label: t("certificat"), value: s.certificatReference || s.certificatNumero },
+      { label: t("volumes"), value: s.volumes != null ? String(s.volumes) : null, optional: true },
+      { label: t("quantites"), value: s.quantites != null ? String(s.quantites) : null, optional: true },
+    ],
+    montants: [],
+  };
+}
+
+/** Sections non vides, dans l'ordre du reçu (lignes facultatives vides retirées). */
+export function recuSections(m: RecuModele, regenerated = false, now: Date = new Date()) {
+  const keep = (rows: RecuLigne[]) => rows.filter((r) => !r.optional || (r.value != null && String(r.value).trim() !== ""));
+  // Sans date renvoyée par le serveur, la date du dépôt est celle de l'édition (reçu émis à la soumission).
+  const date = m.dateDepot ? formatDateTime(m.dateDepot) : regenerated ? null : formatDateTime(now);
+  const depot: RecuLigne[] = [
+    { label: t("reference"), value: m.reference },
+    { label: t("date_depot"), value: date },
+    ...(!regenerated ? [{ label: t("statut"), value: m.statut }] : []),
+  ];
+  return [
+    { key: "section_depot", rows: depot },
+    { key: "section_deposant", rows: keep(m.deposant) },
+    { key: "section_titulaire", rows: keep(m.titulaire) },
+    { key: "section_objet", rows: keep(m.objet) },
+    { key: "section_montants", rows: keep(m.montants) },
+  ].filter((s) => s.rows.length > 0);
+}
+
+/** Pièces listées sur le reçu : actives, hors reçu lui-même. */
+export const recuPieces = (documents: DocumentDto[]) =>
+  documents.filter((p) => (p.codeDocument || p.type) !== "RECU_DEPOT" && p.actif !== false);
+
+export function recuFileName(m: Pick<RecuModele, "processus" | "reference">): string {
+  const ref = m.reference.replace(/^#/, "").replace(/[^\w-]+/g, "_");
+  const prefix = m.processus === "CORRECTION" ? "" : `${m.processus.toLowerCase().replace(/_/g, "-")}-`;
+  return `recu-depot-${prefix}${ref}.pdf`;
+}
+
+// ---------------------------------------------------------------------------
+// Mise en page
+// ---------------------------------------------------------------------------
+
+export async function generateRecuPdf(m: RecuModele, { documents = [], libelles = {}, regenerated = false, now = new Date() }: RecuRenderOptions = {}): Promise<Blob> {
   await loadOfficialWebFonts();
   const rtl = i18n.language?.startsWith("ar");
   const doc = await applyOfficialFont(new jsPDF({ unit: "pt", format: "a4" }));
@@ -77,20 +311,16 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
     const h = Math.ceil(size * scale * 1.6);
     canvas.width = w; canvas.height = h;
     ctx.font = fontOf(size, bold);
-    ctx.direction = rtl ? "rtl" : "ltr";
-    ctx.textAlign = "left";
+    ctx.direction = "rtl";
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = color;
     ctx.clearRect(0, 0, w, h);
-    // Avec direction rtl, textAlign "left" reste un bord physique : on dessine depuis la gauche du canvas.
-    if (rtl) { ctx.textAlign = "right"; ctx.fillText(text, w - 3, size * scale * 1.15); }
-    else ctx.fillText(text, 3, size * scale * 1.15);
+    // Avec direction rtl, textAlign "left" reste un bord physique : on dessine depuis la droite du canvas.
+    ctx.textAlign = "right";
+    ctx.fillText(text, w - 3, size * scale * 1.15);
     const wPt = w / scale, hPt = h / scale;
-    let left: number;
-    const physical = align === "center" ? "center" : (align === "start") !== !!rtl ? "left" : "right";
-    if (physical === "center") left = x - wPt / 2;
-    else if (physical === "left") left = x;
-    else left = x - wPt;
+    const physical = align === "center" ? "center" : align === "start" ? "right" : "left";
+    const left = physical === "center" ? x - wPt / 2 : physical === "left" ? x : x - wPt;
     doc.addImage(canvas.toDataURL("image/png"), "PNG", left, y - size * 1.15, wPt, hPt);
   };
   const startX = rtl ? W - M : M;
@@ -104,7 +334,7 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
   y = drawOfficialHeader(doc, "pt");
   doc.setDrawColor(0).setLineWidth(0.8).line(M, y, W - M, y); y += 28;
   draw(t("title").toUpperCase(), W / 2, 16, true, "center"); y += 18;
-  draw(t("subtitle"), W / 2, 10, false, "center", "#444"); y += 24;
+  draw(t(`subtitle_processus.${m.processus}`), W / 2, 10, false, "center", "#444"); y += 24;
 
   const section = (title: string) => {
     ensure(40);
@@ -122,45 +352,14 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
     y += 16;
   };
 
-  section(t("section_depot"));
-  row(t("reference"), d.reference);
-  row(t("date_depot"), d.dateDepot ? formatDateTime(d.dateDepot) : null);
-  if (!regenerated) row(t("statut"), d.statut ? tStatutDemande(d.statut) : null);
-  y += 6;
-
-  section(t("section_deposant"));
-  row(t("autorite"), d.autoriteContractanteNom);
-  row(t("ministere_tutelle"), d.autoriteContractanteMinistereTutelleNom);
-  if (deposantNom || !regenerated) row(t("deposant_nom"), deposantNom);
-  y += 6;
-
-  section(t("section_titulaire"));
-  if (d.groupementId || d.groupementRaisonSociale) {
-    row(t("groupement"), d.groupementRaisonSociale);
-    row(t("nif_chef_file"), d.groupementNifAffiche);
-  } else {
-    row(t("raison_sociale"), d.entrepriseRaisonSociale);
-    row(t("nif"), d.entrepriseNif);
+  for (const s of recuSections(m, regenerated, now)) {
+    section(t(s.key));
+    s.rows.forEach((r) => row(r.label, r.value));
+    y += 6;
   }
-  y += 6;
-
-  section(t("section_objet"));
-  row(t("convention"), d.conventionReference);
-  row(t("convention_intitule"), d.conventionIntitule);
-  row(t("intitule_marche"), d.intituleMarche);
-  if (d.referenceAppelOffre?.trim()) row(t("reference_appel_offre"), d.referenceAppelOffre);
-  const marcheLabel = [d.marche?.numeroMarche, d.marche?.intitule].filter(Boolean).join(" — ");
-  if (marcheLabel) row(t("marche"), marcheLabel);
-  y += 6;
-
-  const money = (n?: number) => formatAmount(n ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  section(t("section_montants"));
-  row(t("credit_interieur"), money(d.creditInterieur));
-  row(t("credit_exterieur"), money(d.creditExterieur));
-  y += 6;
 
   section(t("section_pieces"));
-  const pieces = documents.filter((p) => (p.codeDocument || p.type) !== "RECU_DEPOT" && p.actif !== false);
+  const pieces = recuPieces(documents);
   if (pieces.length === 0) {
     draw(t("no_pieces"), startX, 10, false, "start", "#555"); y += 16;
   } else {
@@ -173,7 +372,7 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
 
   // ===== Pied de page (toutes les pages) =====
   const total = doc.getNumberOfPages();
-  const editedOn = t("generated_on", { date: formatDateTime(new Date()) });
+  const editedOn = t("generated_on", { date: formatDateTime(now) });
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
     y = H - 70;
@@ -187,7 +386,22 @@ export async function generateRecuDepotPdf({ demande: d, documents, deposantNom,
   return doc.output("blob");
 }
 
+// ---------------------------------------------------------------------------
+// Compatibilité : reçu de la demande de correction
+// ---------------------------------------------------------------------------
+
+export interface RecuDepotInput {
+  demande: DemandeCorrectionDto;
+  documents: DocumentDto[];
+  deposantNom?: string;
+  libelles?: Record<string, string>;
+  regenerated?: boolean;
+}
+
+export function generateRecuDepotPdf({ demande, documents, deposantNom, libelles, regenerated = false }: RecuDepotInput): Promise<Blob> {
+  return generateRecuPdf(recuCorrection(demande, { deposantNom, regenerated }), { documents, libelles, regenerated });
+}
+
 export function recuDepotFileName(d: DemandeCorrectionDto): string {
-  const ref = (d.reference || d.numero || String(d.id)).replace(/[^\w-]+/g, "_");
-  return `recu-depot-${ref}.pdf`;
+  return recuFileName(recuCorrection(d));
 }

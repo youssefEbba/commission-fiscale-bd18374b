@@ -52,6 +52,11 @@ export interface MainCouranteLigneDto {
   action: string;
   dateReference?: string | null;
   joursDAttente?: number | null;
+  /** Crédit concerné (utilisations, mises en place, transferts, avenants, sous-traitances, clôtures). */
+  certificatId?: number | null;
+  certificatReference?: string | null;
+  /** N° du marché (aussi pour les demandes de correction). */
+  marcheNumero?: string | null;
 }
 /** Forme exacte non figée : chaîne ou objet { processus, raison }. */
 export type MainCouranteNonCouvert = string | { processus?: string; raison?: string; message?: string };
@@ -65,7 +70,11 @@ export interface MainCouranteDto {
   tronquee: boolean;
 }
 export const mainCouranteApi = {
-  get: () => apiFetch<MainCouranteDto>("/main-courante"),
+  /** `q` : filtre serveur (référence du dossier, n° du crédit ou du marché, entreprise), appliqué avant la coupe à 300 lignes. */
+  get: (q?: string) => {
+    const term = q?.trim();
+    return apiFetch<MainCouranteDto>(term ? `/main-courante?q=${encodeURIComponent(term)}` : "/main-courante");
+  },
 };
 
 // ── Indicateurs d'impact (GET /reporting/impact) — valeurs nulles = « n/d », jamais 0 ──
@@ -625,6 +634,61 @@ export const archiveLotApi = {
   importer: (id: number, creditIds: number[]) =>
     apiFetch<ArchiveLotImportResultatDto>(`/archive/lots/${id}/importer`, { method: "POST", body: { creditIds } }),
   delete: (id: number) => apiFetch<void>(`/archive/lots/${id}`, { method: "DELETE" }),
+};
+
+/** Ce que la suppression définitive d'un crédit d'archive emporterait (comptes du serveur). */
+export interface ArchiveCreditSuppressionDto {
+  utilisationsArchive: number;
+  /** Utilisations faites dans l'application après la reprise : supprimées elles aussi. */
+  utilisationsApplication: number;
+  transferts: number;
+  avenants: number;
+  sousTraitances: number;
+  clotures: number;
+  pieces: number;
+  lignesStockTva: number;
+  echanges: number;
+  /** Crédits de lot liés : ils redeviennent importables. */
+  creditsDeLot: number;
+}
+
+/** Crédit repris de l'archive (référence « ARCHIVE- … ») : rattachement actuel et aperçu de suppression. */
+export interface ArchiveCreditDto {
+  certificatId: number;
+  reference: string;
+  demandeCorrectionId?: number | null;
+  entrepriseId?: number | null;
+  entrepriseRaisonSociale?: string | null;
+  entrepriseNif?: string | null;
+  autoriteContractanteId?: number | null;
+  autoriteContractanteNom?: string | null;
+  conventionId?: number | null;
+  conventionReference?: string | null;
+  conventionIntitule?: string | null;
+  marcheId?: number | null;
+  marcheNumero?: string | null;
+  /** Marché créé par l'import : supprimé avec le crédit. */
+  marcheCreeParImport: boolean;
+  suppression: ArchiveCreditSuppressionDto;
+}
+
+export interface ArchiveCreditRattachementRequest {
+  entrepriseId: number;
+  autoriteContractanteId: number;
+  conventionId: number;
+  marcheId: number | null;
+  motif: string;
+}
+
+/** Correction ou suppression d'un crédit repris (archive.import ; 409 hors référence « ARCHIVE- »). */
+export const archiveCreditGestionApi = {
+  get: (certificatId: number) => apiFetch<ArchiveCreditDto>(`/archive/credits/${certificatId}`),
+  /** 400 : convention non reliée à l'autorité ou motif vide ; 409 : marché déjà rattaché à un autre dossier. */
+  corrigerRattachement: (certificatId: number, body: ArchiveCreditRattachementRequest) =>
+    apiFetch<ArchiveCreditDto>(`/archive/credits/${certificatId}/rattachement`, { method: "PATCH", body }),
+  /** Supprime le crédit et tout ce qui en dépend ; les crédits de lot liés redeviennent importables. */
+  supprimer: (certificatId: number, motif: string) =>
+    apiFetch<void>(`/archive/credits/${certificatId}?motif=${encodeURIComponent(motif)}`, { method: "DELETE" }),
 };
 
 

@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { RowNumberHead } from "@/components/ui/row-number";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Info, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, Info, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 const PAGE_SIZE = 10;
+/** Délai de frappe avant d'interroger le serveur (`?q=`). */
+export const MAIN_COURANTE_DEBOUNCE_MS = 300;
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { tStatutAny, statutGroupForLigne } from "@/i18n/enums";
@@ -43,12 +46,26 @@ const MainCourante = () => {
   const [filtre, setFiltreState] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const setFiltre = (f: string | null) => { setFiltreState(f); setPage(0); };
+  const [saisie, setSaisie] = useState("");
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Recherche serveur après un délai de frappe : total et onglets suivent la liste filtrée.
+  useEffect(() => {
+    const id = setTimeout(() => setQ(saisie.trim()), MAIN_COURANTE_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [saisie]);
 
   useEffect(() => {
-    mainCouranteApi.get()
-      .then(setData)
-      .catch((err) => setError(formatApiErrorMessage(err, t("main_courante.load_error"))));
-  }, []);
+    let alive = true;
+    setLoading(true);
+    setError(null);
+    mainCouranteApi.get(q || undefined)
+      .then((d) => { if (alive) { setData(d); setPage(0); } })
+      .catch((err) => { if (alive) setError(formatApiErrorMessage(err, t("main_courante.load_error"))); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [q, t]);
 
   const tp = (p: string) => t(`main_courante.processus.${p}`, { defaultValue: p });
   const tabs = data ? Object.entries(data.parProcessus ?? {}).filter(([, n]) => n > 0) : [];
@@ -68,6 +85,18 @@ const MainCourante = () => {
         <p className="text-sm text-muted-foreground">{t("main_courante.subtitle")}</p>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="relative max-w-sm">
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            value={saisie}
+            onChange={(e) => setSaisie(e.target.value)}
+            placeholder={t("main_courante.search_placeholder")}
+            aria-label={t("main_courante.search_placeholder")}
+            className="ps-8"
+          />
+          {loading && data && <Loader2 className="absolute end-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" aria-hidden />}
+        </div>
         {!data && !error && <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}
         {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -85,8 +114,14 @@ const MainCourante = () => {
 
         {data && data.lignes.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
-            <p className="text-sm font-medium text-foreground">{t("main_courante.empty")}</p>
+            {q ? (
+              <p className="text-sm text-muted-foreground">{t("main_courante.search_empty", { q })}</p>
+            ) : (
+              <>
+                <CheckCircle2 className="h-8 w-8 text-primary" />
+                <p className="text-sm font-medium text-foreground">{t("main_courante.empty")}</p>
+              </>
+            )}
           </div>
         )}
 
@@ -115,6 +150,7 @@ const MainCourante = () => {
                   <RowNumberHead />
                   <TableHead>{t("main_courante.col_action")}</TableHead>
                   <TableHead>{t("main_courante.col_reference")}</TableHead>
+                  <TableHead>{t("main_courante.col_credit")}</TableHead>
                   <TableHead>{t("main_courante.col_entreprise")}</TableHead>
                   <TableHead>{t("main_courante.col_statut")}</TableHead>
                   <TableHead className="text-end whitespace-nowrap">
@@ -135,7 +171,15 @@ const MainCourante = () => {
                         <div>{l.action}</div>
                         <div className="text-xs text-muted-foreground">{tp(l.processus)}</div>
                       </TableCell>
-                      <TableCell><Link to={href} className="text-primary hover:underline">{l.reference || `#${l.id}`}</Link></TableCell>
+                      <TableCell>
+                        <Link to={href} className="text-primary hover:underline">{l.reference || `#${l.id}`}</Link>
+                        {l.marcheNumero && <div className="text-xs text-muted-foreground">{t("main_courante.marche", { numero: l.marcheNumero })}</div>}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {l.certificatId != null
+                          ? <Link to={`/dashboard/certificats/${l.certificatId}`} className="text-primary hover:underline">{l.certificatReference || `#${l.certificatId}`}</Link>
+                          : (l.certificatReference || "—")}
+                      </TableCell>
                       <TableCell className="text-sm">{l.entrepriseRaisonSociale || "—"}</TableCell>
                       <TableCell><Badge variant="outline" className="text-xs">{tStatutAny(l.statut, statutGroupForLigne(l.type, l.processus))}</Badge></TableCell>
                       <TableCell className="text-end tabular-nums">{l.joursDAttente ?? "—"}</TableCell>

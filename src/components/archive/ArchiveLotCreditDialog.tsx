@@ -12,6 +12,10 @@ import { archiveLotApi, formatApiErrorMessage, type ArchiveCreditPreviewDto, typ
 import { ArchiveSoldesTable, ArchiveUtilisationsTable } from "./ArchiveReleveTables";
 import { ArchiveLotStatutBadge, SourceBadge } from "./ArchiveLotStatut";
 import { soldesDetail } from "@/lib/archiveLots";
+import { canManageArchiveCredit } from "@/lib/archiveCreditGestion";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { ArchiveCreditActions } from "./ArchiveCreditActions";
 
 const money = (v: number | null | undefined) => (v == null ? "—" : formatAmount(v));
 
@@ -29,7 +33,7 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose, onSaved }: {
   lotId: number;
   creditId: number | null;
   onClose: () => void;
-  /** Après saisie du N° ou de la date : le lot est relu par l'appelant. */
+  /** Après saisie du N°/de la date, correction ou suppression du crédit importé : le lot est relu par l'appelant. */
   onSaved?: () => void;
 }) {
   const { t } = useTranslation(["archive", "common"]);
@@ -39,6 +43,8 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose, onSaved }: {
   const [date, setDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { hasPermission } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (creditId == null) return;
@@ -58,6 +64,17 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose, onSaved }: {
   const r = data?.releve;
   const manqueNumero = !!c && c.statut !== "IMPORTE" && c.manquants?.includes("NUMERO");
   const manqueDate = !!c && c.statut !== "IMPORTE" && c.manquants?.includes("DATE");
+
+  // Après correction ou suppression du crédit importé : le crédit du lot est relu (redevenu importable s'il a été supprimé).
+  const refreshCredit = async () => {
+    if (creditId == null) return;
+    try {
+      setData(await archiveLotApi.getCredit(lotId, creditId));
+    } catch (e) {
+      setError(formatApiErrorMessage(e, t("archive:lots.error_credit")));
+    }
+    onSaved?.();
+  };
 
   // N° et date se saisissent crédit par crédit (seuls les champs remplis sont envoyés).
   const saveIdentite = async () => {
@@ -111,10 +128,24 @@ export function ArchiveLotCreditDialog({ lotId, creditId, onClose, onSaved }: {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertTitle>{t("archive:lots.importe_le", { date: formatDateTime(c.dateImport) })}</AlertTitle>
-                <AlertDescription>
+                <AlertDescription className="space-y-3">
                   <Button asChild variant="link" className="h-auto p-0">
                     <Link to={`/dashboard/certificats/${c.certificatId}`}>{c.certificatReference || t("archive:open_certificat")}</Link>
                   </Button>
+                  {canManageArchiveCredit(hasPermission, c.certificatReference) && (
+                    <ArchiveCreditActions
+                      certificatId={c.certificatId}
+                      size="sm"
+                      onCorrected={() => {
+                        toast({ title: t("archive:gestion.corrige_ok") });
+                        void refreshCredit();
+                      }}
+                      onDeleted={() => {
+                        toast({ title: t("archive:gestion.supprime_ok", { reference: c.certificatReference ?? "" }), description: t("archive:gestion.supprime_ok_desc") });
+                        void refreshCredit();
+                      }}
+                    />
+                  )}
                 </AlertDescription>
               </Alert>
             )}

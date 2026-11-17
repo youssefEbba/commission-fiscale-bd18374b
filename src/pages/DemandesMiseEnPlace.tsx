@@ -45,6 +45,7 @@ import { formatDate, formatAmount } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { miseEnPlaceDepotRequirements } from "@/lib/certificatEditability";
 import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
+import { emettreRecuDepot, recuCibles, soumisDepuis } from "@/lib/recuDepot";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS = CERTIFICAT_STATUT_COLORS;
@@ -348,9 +349,10 @@ const DemandesMiseEnPlace = () => {
       await uploadDocsFor(created.id);
 
       // Soumettre seulement si le serveur a laissé la demande en BROUILLON (sinon 409).
-      const draftMessage = asBrouillon
-        ? null
-        : draftOutcomeMessage(await submitIfDraft(created, () => certificatCreditApi.soumettre(created.id)), t, tTypeDocument);
+      const outcome = asBrouillon ? null : await submitIfDraft(created, () => certificatCreditApi.soumettre(created.id));
+      const draftMessage = outcome ? draftOutcomeMessage(outcome, t, tTypeDocument) : null;
+      const soumise = outcome ? soumisDepuis(outcome) : null;
+      if (soumise) void emettreRecuDepot(recuCibles.miseEnPlace(soumise, { deposantNom: user?.nomComplet }));
 
       if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
       else okToast(asBrouillon ? t("mise_en_place:toast.draft_saved") : t("mise_en_place:toast.submitted_to_control"));
@@ -405,9 +407,10 @@ const DemandesMiseEnPlace = () => {
       });
       await uploadDocsFor(editingBrouillon.id);
       const target = editingBrouillon;
-      const draftMessage = alsoSubmit && wasBrouillon
-        ? draftOutcomeMessage(await submitIfDraft(target, () => certificatCreditApi.soumettre(target.id)), t, tTypeDocument)
-        : null;
+      const outcome = alsoSubmit && wasBrouillon ? await submitIfDraft(target, () => certificatCreditApi.soumettre(target.id)) : null;
+      const draftMessage = outcome ? draftOutcomeMessage(outcome, t, tTypeDocument) : null;
+      const soumise = outcome ? soumisDepuis(outcome) : null;
+      if (soumise) void emettreRecuDepot(recuCibles.miseEnPlace(soumise, { deposantNom: user?.nomComplet }));
       if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
       else okToast(alsoSubmit && wasBrouillon ? t("mise_en_place:toast.draft_submitted_short") : t("mise_en_place:toast.updated"));
       setEditingBrouillon(null);
@@ -433,10 +436,11 @@ const DemandesMiseEnPlace = () => {
   const handleSoumettreBrouillon = async (id: number) => {
     setSubmittingId(id);
     try {
-      const draftMessage = draftOutcomeMessage(
-        await submitIfDraft<{ statut?: string | null }>({ statut: "BROUILLON" }, () => certificatCreditApi.soumettre(id)),
-        t, tTypeDocument,
-      );
+      // Le DTO renvoyé par la soumission porte la date de dépôt (dateEmission) du reçu.
+      const outcome = await submitIfDraft({ id, statut: "BROUILLON" } as CertificatCreditDto, () => certificatCreditApi.soumettre(id));
+      const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+      const soumise = soumisDepuis(outcome);
+      if (soumise) void emettreRecuDepot(recuCibles.miseEnPlace(soumise, { deposantNom: user?.nomComplet }));
       if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
       else okToast(t("mise_en_place:toast.submitted_envoyee_to_encontrole"));
       fetchCertificats();

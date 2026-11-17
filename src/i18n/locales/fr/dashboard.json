@@ -97,6 +97,10 @@
       "AVENANT": "Avenant",
       "CONVENTION": "Convention",
       "SOUS_TRAITANCE": "Sous-traitance"
-    }
+    },
+    "search_placeholder": "N° de dossier, de crédit ou de marché",
+    "search_empty": "Aucune tâche ne correspond à « {{q}} »",
+    "col_credit": "N° du crédit",
+    "marche": "Marché {{numero}}"
   }
 }

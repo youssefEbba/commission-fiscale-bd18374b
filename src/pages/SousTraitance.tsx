@@ -28,6 +28,11 @@ import DocumentGED from "@/components/ged/DocumentGED";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutSousTraitance } from "@/i18n/enums";
 import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
+import { emettreRecuDepot, recuCibles } from "@/lib/recuDepot";
+import { RecuDepotCard } from "@/components/documents/RecuDepotCard";
+import { peutVoirRecu } from "@/lib/recuDepot";
+import type { DocumentDto } from "@/lib/api";
+import { recuSousTraitance } from "@/lib/recuDepotPdf";
 
 const STATUT_COLORS = SOUS_TRAITANCE_STATUT_COLORS;
 
@@ -217,6 +222,8 @@ const SousTraitance = () => {
           failures.push(`${piece.label} : ${formatApiErrorMessage(e)}`);
         }
       }
+      // Reçu de dépôt, une fois les pièces déposées.
+      void emettreRecuDepot(recuCibles.sousTraitance(createdSousTraitance, { deposantNom: user?.nomComplet }));
     }
 
     if (failures.length > 0) {
@@ -613,6 +620,9 @@ const SousTraitance = () => {
         canUpload={canUploadDocs}
         onUpload={handleGEDUpload}
         onRefresh={refreshDocs}
+        header={docDossier && peutVoirRecu(role, docDossier.statut) && !docsLoading
+          ? <RecuDepotCard documents={docs as DocumentDto[]} modele={recuSousTraitance(docDossier, { regenerated: true })} />
+          : null}
       />
       <Dialog open={!!aRefuser} onOpenChange={(o) => { if (!o) setARefuser(null); }}>
         <DialogContent className="sm:max-w-md">

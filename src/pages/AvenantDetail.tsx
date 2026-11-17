@@ -10,7 +10,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import {
   avenantApi, AvenantDto, certificatCreditApi, CertificatCreditDto,
-  demandeCorrectionApi, DemandeCorrectionDto, formatApiErrorMessage } from "@/lib/api";
+  demandeCorrectionApi, DemandeCorrectionDto, formatApiErrorMessage, type DocumentDto } from "@/lib/api";
 import {
   avenantActions, avenantPiecesObligatoires, avenantPiecesCommission,
   canUploadAvenantPieces, canUploadAvenantDecision,
@@ -28,6 +28,9 @@ import {
   ArrowLeft, CheckCircle2, Circle, FileText, FilePen, Loader2, RefreshCw,
   XCircle, PlayCircle, ClipboardCheck, ExternalLink, AlertTriangle, Gavel,
 } from "lucide-react";
+import { RecuDepotCard } from "@/components/documents/RecuDepotCard";
+import { peutVoirRecu } from "@/lib/recuDepot";
+import { recuAvenant } from "@/lib/recuDepotPdf";
 
 type Geste = "prise_en_charge" | "validation" | "rejet";
 
@@ -36,7 +39,7 @@ const AvenantDetail = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const smartBack = useSmartBack("/dashboard/modifications");
   const { t } = useTranslation(["modifications", "common"]);
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { toast } = useToast();
 
   const [avenant, setAvenant] = useState<AvenantDto | null>(null);
@@ -244,6 +247,10 @@ const AvenantDetail = () => {
             <RefreshCw className="h-4 w-4 me-2" /> {t("modifications:actions.refresh")}
           </Button>
         </div>
+
+        {peutVoirRecu(user?.role, a.statut) && (
+          <RecuDepotCard documents={docs as unknown as DocumentDto[]} modele={recuAvenant(a, { regenerated: true })} />
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-3">

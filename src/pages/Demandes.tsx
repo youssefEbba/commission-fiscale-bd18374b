@@ -40,6 +40,7 @@ import { tStatutDemande, tTypeDocument } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 import { apiFetch } from "@/lib/api";
 import { submitIfDraft, draftOutcomeMessage } from "@/lib/submission";
+import { emettreRecuDepot, recuCibles, soumisDepuis } from "@/lib/recuDepot";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCorrection, firstVisaRoleCorrection, resolveCredits } from "@/lib/visas";
 import { generateAdoptionLetterPdf, downloadBlob } from "@/lib/adoptionLetterPdf";
@@ -536,10 +537,11 @@ const Demandes = () => {
                                         onClick={async () => {
                                           setActionLoading(d.id);
                                           try {
-                                            const draftMessage = draftOutcomeMessage(
-                                              await submitIfDraft(d, () => demandeCorrectionApi.soumettre(d.id)),
-                                              t, tTypeDocument,
-                                            );
+                                            const outcome = await submitIfDraft(d, () => demandeCorrectionApi.soumettre(d.id));
+                                            const draftMessage = draftOutcomeMessage(outcome, t, tTypeDocument);
+                                            // Reçu de dépôt à partir du DTO renvoyé par la soumission (date de dépôt = soumission).
+                                            const soumise = soumisDepuis(outcome);
+                                            if (soumise) void emettreRecuDepot(recuCibles.correction(soumise, { deposantNom: user?.nomComplet }));
                                             if (draftMessage) toast({ ...draftMessage, variant: "destructive" });
                                             else toast({ title: t("demandes:toast.draft_submitted_title"), description: t("demandes:toast.draft_submitted_desc") });
                                             fetchDemandes();

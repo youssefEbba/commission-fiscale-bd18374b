@@ -10,7 +10,7 @@ import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
   transfertCreditApi, TransfertCreditDto, StatutTransfert,
   DocumentTransfertCreditDto,
-  DecisionCorrectionDto, formatApiErrorMessage } from "@/lib/api";
+  DecisionCorrectionDto, formatApiErrorMessage, type DocumentDto } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutTransfert, tRejetTempStatus } from "@/i18n/enums";
@@ -30,6 +30,10 @@ import {
 } from "lucide-react";
 import DocumentGED from "@/components/ged/DocumentGED";
 import TransfertVisasCircuit from "@/components/transferts/TransfertVisasCircuit";
+import { displayRef } from "@/lib/displayRef";
+import { RecuDepotCard } from "@/components/documents/RecuDepotCard";
+import { peutVoirRecu } from "@/lib/recuDepot";
+import { recuTransfert } from "@/lib/recuDepotPdf";
 
 // Permissions acceptées par le serveur pour POST /{id}/decisions (rejet temporaire) et PUT /decisions/{id}/resolve.
 const REJET_TEMP_PERMS = ["transfert.dgd.visa", "transfert.dgi.visa", "transfert.dgtcp.update", "transfert.president.validate", "transfert.president.reject"];
@@ -46,7 +50,6 @@ const TransfertDetail = () => {
   const navigate = useNavigate();
   const smartBack = useSmartBack("/dashboard/transferts");
   const { t } = useTranslation(["transferts", "common", "enums"]);
-  usePageTitle("transferts:detail.title", { id: id ?? "" });
   const { user, hasPermission } = useAuth();
   const role = user?.role as AppRole;
   const { toast } = useToast();
@@ -54,6 +57,7 @@ const TransfertDetail = () => {
   const gedDepot = useGedPieces("TRANSFERT_CREDIT", { depot: true });
 
   const [transfert, setTransfert] = useState<TransfertCreditDto | null>(null);
+  usePageTitle("transferts:detail.title", { id: transfert ? displayRef(transfert) : `#${id ?? ""}` });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -227,7 +231,7 @@ const TransfertDetail = () => {
               <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("transferts:detail.back")}
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{t("transferts:detail.title", { id: transfert.id })}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t("transferts:detail.title", { id: displayRef(transfert) })}</h1>
               <p className="text-muted-foreground text-sm">{t("transferts:detail.subtitle")}</p>
             </div>
           </div>
@@ -235,6 +239,8 @@ const TransfertDetail = () => {
             <RefreshCw className="h-4 w-4 me-2" /> {t("transferts:detail.refresh")}
           </Button>
         </div>
+
+        {peutVoirRecu(role, transfert.statut) && <RecuDepotCard documents={docs as DocumentDto[]} modele={recuTransfert(transfert, { regenerated: true })} />}
 
         <Card>
           <CardHeader><CardTitle className="text-base">{t("transferts:detail.info_title")}</CardTitle></CardHeader>
@@ -287,6 +293,7 @@ const TransfertDetail = () => {
 
         <TransfertVisasCircuit
           transfertId={transfert.id}
+          transfertRef={displayRef(transfert)}
           reloadKey={circuitKey}
           onChanged={() => { loadAll(); }}
           finalStatut={TERMINAL_STATUTS.includes(transfert.statut) ? transfert.statut : null}
@@ -483,7 +490,7 @@ const TransfertDetail = () => {
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={t("transferts:documents.dialog_title", { id: transfert.id })}
+        title={t("transferts:documents.dialog_title", { id: displayRef(transfert) })}
         dossierId={transfert.id}
         documentTypes={gedDepot.options.map(o => ({ value: o.code, label: o.label }))}
         documents={docs}
@@ -495,7 +502,7 @@ const TransfertDetail = () => {
 
       <Dialog open={rejetOpen} onOpenChange={setRejetOpen}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: transfert.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: displayRef(transfert) })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>{t("transferts:rejet_temp.motif_label")} <span className="text-destructive">*</span></Label>
@@ -577,7 +584,7 @@ const TransfertDetail = () => {
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>{t("transferts:cancel.dialog_title")}</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">{t("transferts:cancel.confirm_short", { id: transfert.id })}</p>
+          <p className="text-sm text-muted-foreground">{t("transferts:cancel.confirm_short", { id: displayRef(transfert) })}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("transferts:cancel.btn_back")}</Button>
             <Button variant="destructive" onClick={handleAnnuler} disabled={actionLoading}>

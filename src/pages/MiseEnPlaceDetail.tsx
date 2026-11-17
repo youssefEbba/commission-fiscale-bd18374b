@@ -50,6 +50,9 @@ import { formatDate, formatAmount, formatNumber } from "@/i18n/format";
 import { displayRef } from "@/lib/displayRef";
 import { requiredVisasCertificat, isRoleExcluded } from "@/lib/visas";
 import { certificatAmountRestriction, canCorrectCertificatField, canManuallySetCertificatStatus, type UtilisationPresence } from "@/lib/certificatEditability";
+import { RecuDepotCard } from "@/components/documents/RecuDepotCard";
+import { peutVoirRecu } from "@/lib/recuDepot";
+import { recuMiseEnPlace } from "@/lib/recuDepotPdf";
 
 // Couleurs de badge par statut — décoratives, conservées en dur (cohérence UI cross-module).
 const STATUT_COLORS = CERTIFICAT_STATUT_COLORS;
@@ -500,6 +503,13 @@ const MiseEnPlaceDetail = () => {
             {tStatutCertificat(c.statut)}
           </Badge>
         </div>
+
+        {peutVoirRecu(role, c.statut) && (
+          <RecuDepotCard
+            documents={docs.filter((d) => (d as DocumentDto & { _source?: string })._source === "certificat")}
+            modele={recuMiseEnPlace(c, { regenerated: true })}
+          />
+        )}
 
         {/* Info cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

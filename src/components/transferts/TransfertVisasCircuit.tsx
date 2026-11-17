@@ -13,6 +13,8 @@ import { CheckCircle2, Circle, Loader2, ShieldCheck, Stamp, AlertTriangle, Arrow
 
 interface Props {
   transfertId: number;
+  /** Référence affichée (TR-…), sinon « #id ». */
+  transfertRef?: string;
   /** Rafraîchir le transfert après une action (visa ou approbation). */
   onChanged: () => void;
   /** Incrémenter pour forcer un rechargement (ex. après résolution d'un rejet). */
@@ -32,7 +34,7 @@ const orderOf = (r: TransfertVisaEtatDto) => {
  * Circuit P7 : DGD → DGI → DGTCP → Président.
  * Le tour est calculé par le backend (`visablePourMoi`) — aucune règle recalculée ici.
  */
-const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey, finalStatut }: Props) => {
+const TransfertVisasCircuit = ({ transfertId, transfertRef, onChanged, reloadKey, finalStatut }: Props) => {
   const isFinal = !!finalStatut;
   const { t } = useTranslation(["transferts", "roles", "common"]);
   const { toast } = useToast();
@@ -172,7 +174,7 @@ const TransfertVisasCircuit = ({ transfertId, onChanged, reloadKey, finalStatut 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("transferts:circuit.visa_confirm_title")}</DialogTitle>
-            <DialogDescription>{t("transferts:circuit.visa_confirm_desc", { id: transfertId })}</DialogDescription>
+            <DialogDescription>{t("transferts:circuit.visa_confirm_desc", { id: transfertRef || `#${transfertId}` })}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" disabled={acting} onClick={() => setConfirmVisaOpen(false)}>{t("transferts:cancel.btn_back")}</Button>

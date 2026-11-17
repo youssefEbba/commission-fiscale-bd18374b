@@ -1,13 +1,10 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Users, LayoutDashboard, LogOut, FileText, Award, Settings, ChevronDown, Tag, Landmark, ArrowRightLeft, Archive, BarChart3, Menu, X, FolderOpen, ScrollText, FlaskConical, User, CircleUser, Gavel, UserPlus, Handshake, PieChart, ShieldCheck, AlertTriangle, Loader2, Search,
-  PenLine, Building2, UserCheck, FilePen, Briefcase, Smile, ClipboardList,
-
-} from "lucide-react";
+import { LogOut, ChevronDown, Menu, User, CircleUser, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
-import { useAuth, AppRole } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -19,111 +16,7 @@ import { tRole } from "@/i18n/enums";
 import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import { activeNavHref } from "@/lib/navActive";
 import { EnqueteBanner } from "@/components/feedback/EnqueteBanner";
-
-interface NavItem {
-  labelKey: string;
-  href: string;
-  icon: React.ElementType;
-  roles?: AppRole[];
-  /** Permission métier requise (en plus des rôles éventuels). */
-  permission?: string;
-}
-
-interface NavGroup {
-  labelKey: string;
-  icon: React.ElementType;
-  roles?: AppRole[];
-  children: NavItem[];
-}
-
-type NavEntry = NavItem | NavGroup;
-
-function isGroup(entry: NavEntry): entry is NavGroup {
-  return "children" in entry;
-}
-
-const NAV_ENTRIES: NavEntry[] = [
-  { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { labelKey: "conventions", href: "/dashboard/conventions", icon: ScrollText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-  {
-    // Attributions / Marchés : les marchés et leurs avenants (une entreprise ne voit que les avenants).
-    labelKey: "marches",
-    icon: Gavel,
-    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"],
-    children: [
-      { labelKey: "marches_liste", href: "/dashboard/marches", icon: Gavel, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "DGD", "DGTCP", "DGI", "DGB", "PRESIDENT", "ADMIN_SI"] },
-      { labelKey: "modifications", href: "/dashboard/modifications", icon: FilePen, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-    ],
-  },
-  { labelKey: "groupements", href: "/dashboard/groupements", icon: Users, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-  {
-    labelKey: "demandes",
-    icon: FileText,
-    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
-    children: [
-      { labelKey: "demandes_correction", href: "/dashboard/demandes", icon: FileText, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { labelKey: "demandes_mise_en_place", href: "/dashboard/mise-en-place", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-    ],
-  },
-  { labelKey: "representants", href: "/dashboard/delegues", icon: UserPlus, roles: ["AUTORITE_CONTRACTANTE"] },
-  { labelKey: "certificats", href: "/dashboard/certificats", icon: Award, roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-  { labelKey: "utilisations", href: "/dashboard/utilisations", icon: Landmark, roles: ["ENTREPRISE", "DGD", "DGTCP", "DGI", "PRESIDENT", "ADMIN_SI"] },
-  { labelKey: "simulation", href: "/dashboard/simulation", icon: FlaskConical, roles: ["ENTREPRISE", "ADMIN_SI"] },
-  { labelKey: "reporting", href: "/dashboard/reporting", icon: PieChart, permission: "reporting.view" },
-  {
-    labelKey: "operations",
-    icon: ArrowRightLeft,
-    roles: ["AUTORITE_CONTRACTANTE", "AUTORITE_UPM", "AUTORITE_UEP", "ENTREPRISE", "SOUS_TRAITANT", "DGD", "DGI", "DGB", "DGTCP", "PRESIDENT", "ADMIN_SI"],
-    children: [
-      { labelKey: "transferts", href: "/dashboard/transferts", icon: ArrowRightLeft, roles: ["ENTREPRISE", "DGD", "DGI", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { labelKey: "sous_traitance", href: "/dashboard/sous-traitance", icon: Handshake, roles: ["ENTREPRISE", "SOUS_TRAITANT", "DGTCP", "PRESIDENT", "ADMIN_SI"] },
-      { labelKey: "cloture", href: "/dashboard/cloture", icon: Archive, roles: ["DGTCP", "PRESIDENT", "ADMIN_SI"], permission: "cloture.queue.view" },
-    ],
-  },
-  {
-    labelKey: "referentiel_entites",
-    icon: Building2,
-    roles: ["PRESIDENT", "ADMIN_SI"],
-    children: [
-      { labelKey: "demandes_rattachement", href: "/dashboard/demandes-rattachement", icon: UserCheck, permission: "rattachement.validate" },
-      { labelKey: "entreprises", href: "/dashboard/entreprises", icon: Building2 },
-      { labelKey: "autorites", href: "/dashboard/autorites", icon: Landmark },
-    ],
-  },
-  {
-    labelKey: "ged",
-    icon: FolderOpen,
-    roles: ["ADMIN_SI", "PRESIDENT"],
-    children: [
-      { labelKey: "ged_configuration", href: "/dashboard/ged/configuration", icon: Settings, roles: ["ADMIN_SI"] },
-      { labelKey: "ged_dossiers", href: "/dashboard/ged/dossiers", icon: FolderOpen, roles: ["ADMIN_SI", "PRESIDENT"] },
-    ],
-  },
-  {
-    labelKey: "satisfaction",
-    icon: Smile,
-    roles: ["ADMIN_SI", "PRESIDENT"],
-    children: [
-      { labelKey: "satisfaction_dashboard", href: "/dashboard/satisfaction", icon: Smile, roles: ["ADMIN_SI", "PRESIDENT"], permission: "feedback.dashboard.view" },
-      { labelKey: "satisfaction_enquetes", href: "/dashboard/satisfaction/enquetes", icon: ClipboardList, roles: ["ADMIN_SI", "PRESIDENT"], permission: "feedback.enquete.manage" },
-    ],
-  },
-  {
-    labelKey: "parametrage",
-    icon: Settings,
-    roles: ["ADMIN_SI", "PRESIDENT"],
-    children: [
-      { labelKey: "utilisateurs", href: "/dashboard/utilisateurs", icon: Users, roles: ["ADMIN_SI"] },
-      { labelKey: "roles_permissions", href: "/dashboard/roles", icon: Tag, roles: ["ADMIN_SI"] },
-      { labelKey: "signatures", href: "/dashboard/signatures", icon: PenLine, roles: ["ADMIN_SI"] },
-      { labelKey: "parametres", href: "/dashboard/parametres", icon: Settings, permission: "parametre.manage" },
-      { labelKey: "referentiel_taxes", href: "/dashboard/referentiel-taxes", icon: Tag, roles: ["ADMIN_SI"] },
-      { labelKey: "referentiel_secteurs", href: "/dashboard/referentiel-secteurs", icon: Briefcase, roles: ["ADMIN_SI", "PRESIDENT"], permission: "referentiel.secteur.manage" },
-      { labelKey: "archive_credits", href: "/dashboard/archive/credits", icon: Archive, roles: ["ADMIN_SI"] },
-      { labelKey: "audit", href: "/dashboard/audit", icon: BarChart3, roles: ["ADMIN_SI"] },
-    ],
-  },
-];
+import { NAV_ENTRIES, isGroup, type NavGroup } from "@/components/dashboard/navEntries";
 
 const NAV_HREFS: string[] = NAV_ENTRIES.flatMap((e) => (isGroup(e) ? e.children.map((c) => c.href) : [e.href]));
 
@@ -207,7 +100,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                   return (
                     <Link key={child.href} to={child.href} className={linkClass(child.href)} onClick={closeMobile}>
                       <child.icon className="h-4 w-4" />
-                      {t(`nav:${child.labelKey}`)}
+                      <span className="flex-1">{t(`nav:${child.labelKey}`)}</span>
+                      {child.labelKey === "utilisations" && isPresident && aEmettreCount > 0 && (
+                        <span className="rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-bold px-1.5 min-w-5 text-center" title={t("utilisations:certificat_utilisation.queue_filter")}>{aEmettreCount}</span>
+                      )}
                     </Link>
                   );
                 })}
@@ -221,9 +117,6 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           <Link key={entry.href} to={entry.href} className={linkClass(entry.href)} onClick={closeMobile}>
             <entry.icon className="h-4 w-4" />
             <span className="flex-1">{t(`nav:${entry.labelKey}`)}</span>
-            {entry.labelKey === "utilisations" && isPresident && aEmettreCount > 0 && (
-              <span className="rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-bold px-1.5 min-w-5 text-center" title={t("utilisations:certificat_utilisation.queue_filter")}>{aEmettreCount}</span>
-            )}
           </Link>
         );
       })}

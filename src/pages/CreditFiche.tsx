@@ -34,6 +34,8 @@ export default function CreditFiche() {
   usePageTitle("nav:credits_consultation");
 
   const [fiche, setFiche] = useState<CertificatCreditFicheDto | null>(null);
+  // Colonne « Libellé importé » : seulement si une utilisation reprise de l'archive en porte un.
+  const avecLibelleImporte = (fiche?.utilisations ?? []).some((u) => !!u.origineArchiveLibelle);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -144,10 +146,10 @@ export default function CreditFiche() {
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[700px]">
-                    <TableHeader><TableRow><TableHead>Référence</TableHead><TableHead>Type</TableHead><TableHead>Statut</TableHead><TableHead className="text-end">Montant</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead>Référence</TableHead><TableHead>Type</TableHead><TableHead>Statut</TableHead><TableHead className="text-end">Montant</TableHead><TableHead>Date</TableHead>{avecLibelleImporte && <TableHead>{t("utilisations:detail.info.libelle_importe")}</TableHead>}</TableRow></TableHeader>
                     <TableBody>
                       {(fiche?.utilisations || []).length === 0 ? (
-                        <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={avecLibelleImporte ? 6 : 5} className="text-center py-6 text-muted-foreground">Aucune utilisation</TableCell></TableRow>
                       ) : fiche!.utilisations!.map(u => (
                         <TableRow key={u.id} className="cursor-pointer" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
                           <TableCell className="font-medium">{displayRef(u)}</TableCell>
@@ -155,6 +157,7 @@ export default function CreditFiche() {
                           <TableCell><Badge variant="outline" className="text-xs">{tStatutUtilisation(u.statut)}</Badge></TableCell>
                           <TableCell className="text-end">{formatAmount(u.montant ?? u.montantDroits)}</TableCell>
                           <TableCell>{(u.dateDemande || u.dateCreation) ? formatDate(u.dateDemande || u.dateCreation) : "—"}</TableCell>
+                          {avecLibelleImporte && <TableCell className="max-w-[260px] text-xs">{u.origineArchiveLibelle || "—"}</TableCell>}
                         </TableRow>
                       ))}
                     </TableBody>

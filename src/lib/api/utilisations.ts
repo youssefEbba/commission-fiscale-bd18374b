@@ -211,6 +211,8 @@ export interface AdminCorrectionCertificatPayload {
 export interface AdminCorrectionUtilisationPayload {
   montant?: number;
   numeroDeclaration?: string;
+  /** Remplace la liste des n° de déclaration. */
+  numerosDeclaration?: string[];
   numeroBulletin?: string;
   dateDeclaration?: string;
 }

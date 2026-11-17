@@ -13,7 +13,7 @@ const ROLE_PERMISSIONS_BASE: Record<AppRole, string[]> = {
   DGD: ["transfert.dgd.visa", "mise_en_place.visa", "mise_en_place.rejet_temp"],
   AUTORITE_CONTRACTANTE: ["modification.view", "modification.submit", "modification.document.upload", "convention.activate", "convention.update", "convention.annuler", "delegue.list", "delegue.update", "delegue.disable", "mise_en_place.annuler", "mise_en_place.creer", "mise_en_place.soumettre"],
   ENTREPRISE: ["modification.view", "modification.submit", "modification.document.upload", "transfert.submit", "transfert.annuler", "transfert.entreprise.rejet.repondre"],
-  ADMIN_SI: ["modification.view", "modification.admin_override", "parametre.manage", "autorite.create", "autorite.update", "autorite.delete", "convention.update", "bailleur.update"],
+  ADMIN_SI: ["modification.view", "modification.admin_override", "parametre.manage", "autorite.create", "autorite.update", "autorite.delete", "convention.update", "bailleur.update", "archive.import"],
   AUTORITE_UPM: ["convention.activate", "convention.update", "convention.annuler"],
   AUTORITE_UEP: ["convention.activate", "convention.update", "convention.annuler"],
   SOUS_TRAITANT: [],

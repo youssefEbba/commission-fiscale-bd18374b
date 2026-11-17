@@ -306,7 +306,8 @@
       "date_facture": "Date facture",
       "date_creation": "Date création",
       "date_liquidation": "Date liquidation",
-      "numero_credit": "N° du crédit"
+      "numero_credit": "N° du crédit",
+      "libelle_importe": "Libellé importé"
     },
     "actions_section": "Actions disponibles",
     "actions_hint_liquidation": "La liquidation va débiter le solde cordon de <strong>{{hors_tva}}</strong> (hors TVA), décrémenter le quota TVA importation de <strong>{{tva}}</strong> et alimenter le stock TVA déductible.",
@@ -658,5 +659,11 @@
     "solde_tva_label": "Solde TVA",
     "title": "Validation impossible",
     "transfert_executed": "Transfert exécuté : utilisations douanières interdites"
+  },
+  "numeros": {
+    "ajouter": "Ajouter un numéro",
+    "retirer": "Retirer le numéro {{n}}",
+    "ligne": "{{label}} n° {{n}}",
+    "admin_hint": "Plusieurs numéros : séparez-les par des virgules. La liste saisie remplace la précédente."
   }
 }

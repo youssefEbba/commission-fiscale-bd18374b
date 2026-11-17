@@ -54,6 +54,10 @@ import { generateUtilisationTvaPdf } from "@/lib/utilisationTvaPdf";
 import { certificatUtilisationVisible, isDeposantUtilisation, utilisationClotureMode } from "@/lib/utilisationCloture";
 import { isRouteUnavailable } from "@/lib/submission";
 import PresidentSignDialog from "@/components/signatures/PresidentSignDialog";
+import { RecuDepotCard } from "@/components/documents/RecuDepotCard";
+import { peutVoirRecu } from "@/lib/recuDepot";
+import { recuUtilisation } from "@/lib/recuDepotPdf";
+import { joinNumeros, numerosDeclaration, numerosFacture } from "@/lib/utilisationNumeros";
 
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
 const CU_CARD_STATUTS: string[] = ["TRANSMISE_AU_PRESIDENT", "VALIDEE", ...CU_POST_EMISSION, "CLOTUREE"];
@@ -645,6 +649,8 @@ const UtilisationDetail = () => {
 
 
 
+        {peutVoirRecu(role, u.statut) && <RecuDepotCard documents={docs} modele={recuUtilisation(u, { regenerated: true })} />}
+
         {/* KPIs — 4 cartes harmonisées */}
         {(() => {
           const beforeVisa = ["BROUILLON","DEMANDEE","INCOMPLETE","A_RECONTROLER","EN_VERIFICATION"].includes(u.statut);
@@ -704,7 +710,7 @@ const UtilisationDetail = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               {isDouane && (
                 <>
-                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_declaration")}</p><p className="font-medium">{u.numeroDeclaration || "—"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_declaration")}</p><p className="font-medium">{joinNumeros(numerosDeclaration(u)) || "—"}</p></div>
                   <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_bulletin")}</p><p className="font-medium">{u.numeroBulletin || "—"}</p></div>
                   <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_declaration")}</p><p className="font-medium">{formatDate(u.dateDeclaration)}</p></div>
                   <div><p className="text-muted-foreground">{t("utilisations:detail.info.sydonia")}</p><p className="font-medium">{u.enregistreeSYDONIA ? t("utilisations:detail.info.sydonia_yes") : t("utilisations:detail.info.sydonia_no")}</p></div>
@@ -716,10 +722,16 @@ const UtilisationDetail = () => {
                     <p className="text-muted-foreground">{t("utilisations:detail.info.type_achat")}</p>
                     <p className="font-medium">{u.typeAchat === "ACHAT_LOCAL" ? t("utilisations:detail.info.achat_local") : u.typeAchat === "DECOMPTE" ? t("utilisations:detail.info.decompte") : (u.typeAchat || "—")}</p>
                   </div>
-                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_facture")}</p><p className="font-medium">{u.numeroFacture || "—"}</p></div>
+                  <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_facture")}</p><p className="font-medium">{joinNumeros(numerosFacture(u)) || "—"}</p></div>
                   <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_decompte")}</p><p className="font-medium">{u.numeroDecompte || "—"}</p></div>
                   <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_facture")}</p><p className="font-medium">{formatDate(u.dateFacture)}</p></div>
                 </>
+              )}
+              {u.origineArchiveLibelle && (
+                <div className="col-span-2 md:col-span-4">
+                  <p className="text-muted-foreground">{t("utilisations:detail.info.libelle_importe")}</p>
+                  <p className="font-medium">{u.origineArchiveLibelle}</p>
+                </div>
               )}
               <div><p className="text-muted-foreground">{t("utilisations:detail.info.numero_credit")}</p><p><CreditLink id={u.certificatCreditId} reference={u.certificatReference || cert?.reference} numero={u.certificatNumero || cert?.numero} /></p></div>
               <div><p className="text-muted-foreground">{t("utilisations:detail.info.date_creation")}</p><p className="font-medium">{formatDate(u.dateDemande ?? u.dateCreation)}</p></div>
@@ -1329,7 +1341,10 @@ const UtilisationDetail = () => {
             { key: "montant", label: "Montant", type: "number", value: u.montant ?? "" },
             ...(u.type === "DOUANIER"
               ? [
-                  { key: "numeroDeclaration", label: "N° de déclaration", type: "text" as const, value: u.numeroDeclaration ?? "" },
+                  {
+                    key: "numerosDeclaration", label: "N° de déclaration", type: "list" as const, value: joinNumeros(numerosDeclaration(u)),
+                    hint: t("utilisations:numeros.admin_hint"),
+                  },
                   { key: "numeroBulletin", label: "N° de bulletin", type: "text" as const, value: u.numeroBulletin ?? "" },
                   { key: "dateDeclaration", label: "Date de déclaration", type: "date" as const, value: u.dateDeclaration ?? "" },
                 ]

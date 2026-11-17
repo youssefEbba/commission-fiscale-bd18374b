@@ -5,10 +5,7 @@ import { formatAmount, formatNumber } from "@/i18n/format";
 import { tTypeDocument, tTypeProjet, tDocRequirementLabel } from "@/i18n/enums";
 import { AI_SERVICE_BASE } from "@/lib/apiConfig";
 import { PDFDocument } from "pdf-lib";
-import { toast as sonnerToast } from "sonner";
-import i18nInstance from "@/i18n";
-import { generateRecuDepotPdf, recuDepotFileName } from "@/lib/recuDepotPdf";
-import { trackDocumentTask, presentBlob } from "@/lib/openDocument";
+import { emettreRecuDepot, recuCibles } from "@/lib/recuDepot";
 import { cachedList, invalidateList } from "@/lib/listCache";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -777,7 +774,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
         const libelles = Object.fromEntries(
           gedDocTypes.map(r => [r.codeDocument || r.typeDocument || "", r.libelle || ""]).filter(([k, v]) => k && v),
         );
-        void issueRecuDepot(demande, user?.nomComplet, libelles);
+        void emettreRecuDepot(recuCibles.correction(demande, { deposantNom: user?.nomComplet, libelles }));
       }
 
       toast({
@@ -1854,26 +1851,3 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
   );
 }
 
-/** Génère le reçu, le propose au téléchargement et le téléverse (RECU_DEPOT, nouvelle version à chaque dépôt). */
-async function issueRecuDepot(demande: DemandeCorrectionDto, deposantNom?: string, libelles: Record<string, string> = {}) {
-  const tr = (k: string, o?: Record<string, unknown>) => i18nInstance.t(`demandes:recu.${k}`, o) as string;
-  const numero = demande.reference || demande.numero || `#${demande.id}`;
-  try {
-    const name = recuDepotFileName(demande);
-    await trackDocumentTask(`recu-depot:${demande.id}:issue`, "generate", name, async () => {
-      const documents = await demandeCorrectionApi.getDocuments(demande.id).catch(() => demande.documents || []);
-      const blob = await generateRecuDepotPdf({ demande, documents, deposantNom, libelles });
-      presentBlob(blob, name, "download");
-      await demandeCorrectionApi.uploadDocument(demande.id, "RECU_DEPOT", new globalThis.File([blob], name, { type: "application/pdf" }));
-    });
-    sonnerToast.success(tr("toast_ok"));
-  } catch (e) {
-    console.warn("Reçu de dépôt non enregistré :", e);
-    sonnerToast.error(tr("toast_fail_title"), {
-      // Raison donnée par le serveur (ex. stockage des fichiers indisponible).
-      description: [tr("toast_fail_body", { numero }), formatApiErrorMessage(e, "")].filter(Boolean).join(" — "),
-      duration: 30000,
-      action: { label: tr("regenerate"), onClick: () => { void issueRecuDepot(demande, deposantNom, libelles); } },
-    });
-  }
-}

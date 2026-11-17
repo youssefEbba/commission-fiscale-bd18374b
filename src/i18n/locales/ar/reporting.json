@@ -44,10 +44,20 @@
     "transferts": "التحويلات",
     "sous_traitances": "{{count}} مقاولة من الباطن",
     "en_validation_president": "{{count}} في انتظار مصادقة الرئيس",
-    "taux_adoption": "نسبة الاعتماد",
-    "taux_rejet": "نسبة الرفض",
+    "taux_adoption": "نسبة الاعتماد (التصحيحات)",
+    "taux_rejet": "نسبة الرفض (التصحيحات)",
     "solde_cordon": "رصيد الشريط",
-    "solde_tva": "رصيد الضريبة على القيمة المضافة"
+    "solde_tva": "رصيد الضريبة على القيمة المضافة",
+    "demandes_par_processus": "الطلبات حسب المسار",
+    "processus": {
+      "CORRECTION": "التصحيح",
+      "MISE_EN_PLACE": "الوضع",
+      "UTILISATION_DOUANE": "الاستخدام الجمركي",
+      "UTILISATION_TVA_INTERIEURE": "استخدام الضريبة على القيمة المضافة الداخلية",
+      "TRANSFERT": "التحويل",
+      "AVENANT": "الملحق",
+      "SOUS_TRAITANCE": "المناولة"
+    }
   },
   "charts": {
     "empty": "لا توجد بيانات",
@@ -58,9 +68,9 @@
     "tab_utilisations": "الاستخدامات",
     "tab_referentiel": "اتفاقيات / مشاريع",
     "tab_audit": "التدقيق",
-    "demandes_by_statut": "الطلبات حسب الحالة",
+    "demandes_by_statut": "طلبات التصحيح حسب الحالة",
     "demandes_evolution": "التطور الشهري للطلبات",
-    "demandes_detail": "التفصيل حسب الحالة",
+    "demandes_detail": "تفصيل التصحيحات حسب الحالة",
     "demandes_legend": "الطلبات",
     "certificats_by_statut": "الشهادات حسب الحالة",
     "certificats_amounts": "مبالغ الشهادات",

@@ -7,6 +7,7 @@ import { getActiveSignatureDataUrl, resolveApposition, type PdfOutputOptions } f
 import autoTable from "jspdf-autotable";
 import { entrepriseApi, marcheApi, type UtilisationCreditDto, type CertificatCreditDto, type EntrepriseDto, type MarcheDto } from "@/lib/api";
 import { montantCiADeduire } from "@/lib/utilisationCloture";
+import { joinNumeros, numerosDeclaration } from "@/lib/utilisationNumeros";
 
 const fmt = (v: unknown) => pdfFmtNombre(v, 2) || "—";
 const dt = (v?: string) => (v ? new Date(v).toLocaleDateString("fr-FR") : "—");
@@ -100,7 +101,7 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.setFontSize(9);
   labelDottedValue(doc, M, y, "Bureau :", "", 280); y += 13;
   labelDottedValue(doc, M, y, "Bulletin de liquidation :", `N° ${u.numeroBulletin || ""}${u.dateLiquidation ? "  DU " + dt(u.dateLiquidation) : ""}`, 320); y += 13;
-  labelDottedValue(doc, M, y, "C", `${u.numeroDeclaration || ""}${u.dateDeclaration ? "  DU " + dt(u.dateDeclaration) : ""}`, 320); y += 13;
+  labelDottedValue(doc, M, y, "C", `${joinNumeros(numerosDeclaration(u))}${u.dateDeclaration ? "  DU " + dt(u.dateDeclaration) : ""}`, 320); y += 13;
   labelDottedValue(doc, M, y, "Crédit :", u.certificatReference || "", 280); y += 13;
   labelDottedValue(doc, M, y, "DAON° :", "", 280); y += 13;
   labelDottedValue(doc, M, y, "Marché N° :", numeroMarche, 320); y += 13;

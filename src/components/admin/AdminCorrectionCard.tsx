@@ -22,6 +22,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { cleanNumeros } from "@/lib/utilisationNumeros";
 
 export type AdminCorrectionEntity = "DEMANDE" | "CERTIFICAT" | "UTILISATION";
 
@@ -29,7 +30,8 @@ export interface AdminCorrectionField {
   /** Clé du champ attendue par l'API (ex. `creditInterieur`). */
   key: string;
   label: string;
-  type: "text" | "number" | "date";
+  /** `list` : saisie séparée par des virgules, envoyée en tableau (ex. `numerosDeclaration`). */
+  type: "text" | "number" | "date" | "list";
   /** Valeur actuelle utilisée comme pré-remplissage et référence de diff. */
   value?: string | number | null;
   /** Message d'avertissement affiché sous le champ (ex. verrou 409). */
@@ -123,7 +125,7 @@ const AdminCorrectionCard = ({
     changedFields.forEach((f) => {
       const raw = (values[f.key] ?? "").trim();
       if (raw === "") return;
-      payload[f.key] = f.type === "number" ? Number(raw) : raw;
+      payload[f.key] = f.type === "number" ? Number(raw) : f.type === "list" ? cleanNumeros(raw.split(",")) : raw;
     });
     return payload;
   };

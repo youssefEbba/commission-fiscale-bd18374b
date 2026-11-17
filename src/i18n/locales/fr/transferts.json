@@ -14,7 +14,7 @@
     "no": "Non"
   },
   "columns": {
-    "id": "#",
+    "id": "Référence",
     "certificat": "Certificat",
     "montant": "Montant transféré",
     "ops_cloturees": "Ops douane clôturées",
@@ -23,7 +23,7 @@
     "actions": "Actions"
   },
   "detail": {
-    "title": "Transfert #{{id}}",
+    "title": "Transfert {{id}}",
     "title_short": "Transferts — Détail",
     "subtitle": "Renonciation aux importations — transfert vers TVA déductible sur cordon douanier",
     "back": "Retour",
@@ -38,7 +38,7 @@
     "date_demande": "Date demande",
     "yes": "Oui",
     "no": "Non",
-    "dialog_title": "Transfert #{{id}} — Douane → Intérieur"
+    "dialog_title": "Transfert {{id}} — Douane → Intérieur"
   },
   "banners": {
     "en_cours": "Dossier en cours de constitution — au moins une pièce a été déposée. Déposez les 3 documents obligatoires pour permettre la validation.",
@@ -86,7 +86,7 @@
     "btn_cancel": "Annuler"
   },
   "rejet_temp": {
-    "dialog_title": "Rejet temporaire — Transfert #{{id}}",
+    "dialog_title": "Rejet temporaire — Transfert {{id}}",
     "motif_label": "Motif",
     "motif_label_long": "Motif du rejet temporaire",
     "motif_placeholder": "Précisez ce qu'il manque ou ce qui doit être corrigé",
@@ -121,8 +121,8 @@
   },
   "cancel": {
     "dialog_title": "Annuler la demande de transfert",
-    "confirm_long": "Confirmez l'annulation du transfert #{{id}} sur le certificat {{cert}}. Vous pourrez créer une nouvelle demande sur le même certificat après l'annulation.",
-    "confirm_short": "Confirmez l'annulation du transfert #{{id}}.",
+    "confirm_long": "Confirmez l'annulation du transfert {{id}} sur le certificat {{cert}}. Vous pourrez créer une nouvelle demande sur le même certificat après l'annulation.",
+    "confirm_short": "Confirmez l'annulation du transfert {{id}}.",
     "btn_back": "Retour",
     "btn_confirm": "Confirmer l'annulation",
     "btn_confirm_short": "Confirmer"
@@ -141,7 +141,7 @@
     "current": "v{{n}} actuelle",
     "history": "Historique ({{count}})",
     "hide": "Masquer",
-    "dialog_title": "Documents — Transfert #{{id}}"
+    "dialog_title": "Documents — Transfert {{id}}"
   },
   "toasts": {
     "load_error": "Impossible de charger les transferts",
@@ -191,6 +191,6 @@
     "history_subtitle": "Dossier clos — {{statut}}. Visas posés : qui et quand.",
     "non_intervenu": "N'est pas intervenu",
     "visa_confirm_title": "Apposer votre visa ?",
-    "visa_confirm_desc": "Votre visa sur le transfert n° {{id}} est irréversible ; le dossier passera à la direction suivante."
+    "visa_confirm_desc": "Votre visa sur le transfert {{id}} est irréversible ; le dossier passera à la direction suivante."
   }
 }
