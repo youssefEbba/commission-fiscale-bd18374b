@@ -157,13 +157,13 @@
       "restant": "Restant",
       "date": "Date",
       "etat": "État",
-      "util_short": "Util #{{id}}"
+      "util_short": "Utilisation douanière"
     },
     "utilisations": {
       "title": "Utilisations liées ({{count}})",
       "new": "Nouvelle utilisation",
       "empty": "Aucune utilisation pour ce crédit",
-      "id": "ID",
+      "id": "Référence",
       "type": "Type",
       "montant": "Montant",
       "droits": "Droits",

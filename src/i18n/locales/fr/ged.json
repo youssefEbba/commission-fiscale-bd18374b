@@ -16,7 +16,7 @@
     "loading": "Chargement des dossiers…",
     "empty": "Aucun dossier trouvé",
     "created_on": "Créé le {{date}}",
-    "certificat_short": "Certificat #{{id}}",
+    "certificat_short": "crédit d'impôt mis en place",
     "correction_short": "Correction {{ref}}",
     "documents_count": "{{count}} document(s)",
     "etapes_progress": "{{done}}/{{total}} étapes",

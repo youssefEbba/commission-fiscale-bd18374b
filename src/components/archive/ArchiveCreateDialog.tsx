@@ -87,7 +87,7 @@ export function ArchiveCreateDialog({ kind, initial, autoriteId, conventionId, o
   const bailleurOptions = useMemo(
     () => [...bailleurs]
       .sort((x, y) => (x.nom || "").localeCompare(y.nom || "", "fr"))
-      .map((b) => ({ value: String(b.id), label: b.nom || `#${b.id}` })),
+      .map((b) => ({ value: String(b.id), label: b.nom || "—" })),
     [bailleurs],
   );
 

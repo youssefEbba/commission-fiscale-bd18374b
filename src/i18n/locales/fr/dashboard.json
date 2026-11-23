@@ -17,8 +17,8 @@
     "no_pending_certificats": "Aucun certificat en cours"
   },
   "labels": {
-    "demande_default": "Demande #{{id}}",
-    "certificat_default": "Certificat #{{id}}"
+    "demande_default": "Demande {{ref}}",
+    "certificat_default": "Certificat {{ref}}"
   },
   "actions": {
     "demande_correction": {

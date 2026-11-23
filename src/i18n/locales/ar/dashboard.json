@@ -17,8 +17,8 @@
     "no_pending_certificats": "لا توجد شهادات قيد المعالجة"
   },
   "labels": {
-    "demande_default": "الطلب رقم {{id}}",
-    "certificat_default": "الشهادة رقم {{id}}"
+    "demande_default": "الطلب {{ref}}",
+    "certificat_default": "الشهادة {{ref}}"
   },
   "actions": {
     "demande_correction": {

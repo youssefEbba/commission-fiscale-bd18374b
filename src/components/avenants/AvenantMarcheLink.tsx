@@ -9,7 +9,7 @@ export default function AvenantMarcheLink({ avenant: a, withIntitule = false }: 
   const { t } = useTranslation("modifications");
   const { user } = useAuth();
   if (a.marcheId == null) return <span className="text-muted-foreground">{t("depot.sans_marche")}</span>;
-  const label = `${a.marcheNumero || `#${a.marcheId}`}${withIntitule && a.marcheIntitule ? ` — ${a.marcheIntitule}` : ""}`;
+  const label = `${a.marcheNumero || "—"}${withIntitule && a.marcheIntitule ? ` — ${a.marcheIntitule}` : ""}`;
   return canOpenMarche(user?.role) ? (
     <Link to={`/dashboard/marches/${a.marcheId}`} className="text-primary hover:underline" title={a.marcheIntitule || undefined}>{label}</Link>
   ) : (

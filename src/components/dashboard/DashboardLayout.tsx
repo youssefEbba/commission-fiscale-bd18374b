@@ -17,6 +17,7 @@ import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import { activeNavHref } from "@/lib/navActive";
 import { EnqueteBanner } from "@/components/feedback/EnqueteBanner";
 import { NAV_ENTRIES, isGroup, type NavGroup } from "@/components/dashboard/navEntries";
+import { isAEmettre } from "@/lib/utilisationCircuit";
 
 const NAV_HREFS: string[] = NAV_ENTRIES.flatMap((e) => (isGroup(e) ? e.children.map((c) => c.href) : [e.href]));
 
@@ -30,12 +31,12 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const [aEmettreCount, setAEmettreCount] = useState(0);
   const isPresident = user?.role === "PRESIDENT";
 
-  // File « Certificats à émettre » du Président : TRANSMISE_AU_PRESIDENT (douane) et VALIDEE (TVA).
+  // File « Certificats à émettre » du Président : TRANSMISE_AU_PRESIDENT (douane et TVA, crédit débité).
   useEffect(() => {
     if (!isPresident) return;
     let alive = true;
     utilisationCreditApi.getAll()
-      .then((list) => { if (alive) setAEmettreCount(list.filter((u) => (u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length); })
+      .then((list) => { if (alive) setAEmettreCount(list.filter(isAEmettre).length); })
       .catch(() => {});
     return () => { alive = false; };
   }, [isPresident, location.pathname]);

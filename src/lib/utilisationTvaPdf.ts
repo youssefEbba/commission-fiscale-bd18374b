@@ -7,12 +7,40 @@ import type { UtilisationCreditDto, CertificatCreditDto } from "@/lib/api";
 import { numberToFrenchWords } from "@/lib/pdfText";
 import { chargerContexte } from "@/lib/liquidationPdf";
 import { joinNumeros, numerosFacture } from "@/lib/utilisationNumeros";
+import { mentionModificationPresident } from "@/lib/utilisationCircuit";
 
 /**
  * Certificat d'utilisation du crédit d'impôt — Crédit intérieur (TVA déductible).
  * Généré par la DGTCP après apurement, sur le modèle du formulaire officiel
  * « MARCHES PUBLICS A FINANCEMENT EXTERIEUR — UTILISATION DU CREDIT D'IMPOTS ».
  */
+
+/** Hauteur d'une ligne de texte (police 9 pt) dans le récapitulatif. */
+export const RECAP_LINE_H = 12;
+const RECAP_GAP = 16;
+
+/**
+ * Grille de 2 colonnes (libellé / montant) qui garantit l'absence de chevauchement.
+ * Renvoie l'ordonnée sous la grille.
+ */
+export function drawRecapGrid(doc: jsPDF, cells: [string, string][], left: number, right: number, y: number): number {
+  const colW = (right - left - RECAP_GAP) / 2;
+  for (let row = 0; row * 2 < cells.length; row++) {
+    let rowLines = 1;
+    for (let col = 0; col < 2; col++) {
+      const cell = cells[row * 2 + col];
+      if (!cell) continue;
+      const [label, value] = cell;
+      const x = left + col * (colW + RECAP_GAP);
+      const fits = doc.getTextWidth(label) + 6 + doc.getTextWidth(value) <= colW;
+      doc.text(label, x, y);
+      doc.text(value, x + colW, fits ? y : y + RECAP_LINE_H, { align: "right" });
+      rowLines = Math.max(rowLines, fits ? 1 : 2);
+    }
+    y += rowLines * RECAP_LINE_H;
+  }
+  return y + 2;
+}
 
 const fmt = (v: any) =>
   v != null && !isNaN(Number(v))
@@ -59,7 +87,8 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   doc.text("UTILISATION DU CREDIT D'IMPOTS", W / 2, y, { align: "center" });
   y += 22;
   const annee = new Date(u.dateCertificatUtilisation || u.dateDemande || u.dateCreation || Date.now()).getFullYear();
-  const numero = u.numeroCertificatUtilisation || `${u.id}/${annee}`;
+  // Tant que le n° de certificat n'est pas attribué : la référence de la demande (DU-…), jamais l'id.
+  const numero = u.numeroCertificatUtilisation || u.reference || "—";
   doc.setFontSize(10);
   doc.text(`N° ${numero}`, R, y, { align: "right" });
   y += 14;
@@ -91,6 +120,15 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   field(doc, M + 6, y, "Financement du Crédit N° :", u.certificatReference || cert?.reference || u.certificatNumero || "", R - 6); y += 16;
   const montant = Number(u.creditInterieurUtilise ?? u.montantTVAInterieure ?? u.montant ?? 0);
   field(doc, M + 6, y, "Montant :", `${fmt(montant)} MRU`, R - 6); y += 16;
+  // Montant corrigé par le Président avant l'émission : mention avec le motif.
+  const mention = mentionModificationPresident(u, montant, (n) => String(fmt(n)));
+  if (mention) {
+    doc.setFont(PDF_FONT, "italic").setFontSize(8.5);
+    const mentionLines = doc.splitTextToSize(mention, R - M - 12);
+    doc.text(mentionLines, M + 6, y);
+    y += 11 * mentionLines.length + 4;
+    doc.setFont(PDF_FONT, "normal").setFontSize(9);
+  }
   field(doc, M + 6, y, "Veuillez déduire du crédit d'impôts N°", u.certificatReference || cert?.reference || "", M + 330);
   doc.setFontSize(9).text("ouvert à mon profit", R - 6, y, { align: "right" }); y += 16;
   field(doc, M + 6, y, "Dans le cadre du marché public N°", marche?.numeroMarche || cert?.marcheNumero || cert?.marcheIntitule || "", M + 330);
@@ -121,13 +159,10 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
     ["Paiement entreprise", fmt(u.paiementEntreprise)],
     ["Report à nouveau", fmt(u.reportANouveau)],
   ];
-  const colW = (R - M - 12) / 3;
-  recap.forEach(([l, v], i) => {
-    const cx = M + 6 + (i % 3) * colW;
-    const cy = y + Math.floor(i / 3) * 12;
-    doc.text(`${l} : ${v || "0,00"} MRU`, cx, cy);
-  });
-  y += 26;
+  // 2 colonnes × 3 lignes : libellé à gauche, montant aligné à droite de sa colonne.
+  // Si les deux ne tiennent pas côte à côte (montants très longs), le montant passe à la ligne :
+  // aucune cellule ne déborde sur sa voisine.
+  y = drawRecapGrid(doc, recap.map(([l, v]) => [`${l} :`, `${v || "0,00"} MRU`]), M + 6, R - 6, y);
   if (u.quittanceDgi) {
     doc.text(
       `Quittance DGI N° ${u.quittanceDgi.numeroQuittance} du ${dt(u.quittanceDgi.dateQuittance)} — ${fmt(u.quittanceDgi.montant)} MRU`,

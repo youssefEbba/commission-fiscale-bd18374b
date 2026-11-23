@@ -155,7 +155,7 @@ export default function SuiviRattachement() {
               <StatutIcon className="h-12 w-12 shrink-0" />
               <div>
                 <p className="text-xl font-bold leading-snug">{t(`statut.${result.statut}`)}</p>
-                <p dir="ltr" className="font-mono text-sm opacity-80">{result.reference || `#${result.id}`}</p>
+                <p dir="ltr" className="font-mono text-sm opacity-80">{result.reference || "—"}</p>
               </div>
             </div>
             <dl className="divide-y text-base">

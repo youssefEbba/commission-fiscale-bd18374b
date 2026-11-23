@@ -57,7 +57,7 @@ const TransfertDetail = () => {
   const gedDepot = useGedPieces("TRANSFERT_CREDIT", { depot: true });
 
   const [transfert, setTransfert] = useState<TransfertCreditDto | null>(null);
-  usePageTitle("transferts:detail.title", { id: transfert ? displayRef(transfert) : `#${id ?? ""}` });
+  usePageTitle("transferts:detail.title", { ref: transfert ? displayRef(transfert) : "—" });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -231,7 +231,7 @@ const TransfertDetail = () => {
               <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" /> {t("transferts:detail.back")}
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{t("transferts:detail.title", { id: displayRef(transfert) })}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t("transferts:detail.title", { ref: displayRef(transfert) })}</h1>
               <p className="text-muted-foreground text-sm">{t("transferts:detail.subtitle")}</p>
             </div>
           </div>
@@ -248,7 +248,7 @@ const TransfertDetail = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">{t("transferts:detail.certificat")}</span>
-                <p className="font-medium">{transfert.certificatReference || transfert.certificatNumero || `#${transfert.certificatCreditId}`}</p>
+                <p className="font-medium">{transfert.certificatReference || transfert.certificatNumero || "—"}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">{t("transferts:detail.montant")}</span>
@@ -490,7 +490,7 @@ const TransfertDetail = () => {
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={t("transferts:documents.dialog_title", { id: displayRef(transfert) })}
+        title={t("transferts:documents.dialog_title", { ref: displayRef(transfert) })}
         dossierId={transfert.id}
         documentTypes={gedDepot.options.map(o => ({ value: o.code, label: o.label }))}
         documents={docs}
@@ -502,7 +502,7 @@ const TransfertDetail = () => {
 
       <Dialog open={rejetOpen} onOpenChange={setRejetOpen}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: displayRef(transfert) })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { ref: displayRef(transfert) })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>{t("transferts:rejet_temp.motif_label")} <span className="text-destructive">*</span></Label>
@@ -584,7 +584,7 @@ const TransfertDetail = () => {
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>{t("transferts:cancel.dialog_title")}</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">{t("transferts:cancel.confirm_short", { id: displayRef(transfert) })}</p>
+          <p className="text-sm text-muted-foreground">{t("transferts:cancel.confirm_short", { ref: displayRef(transfert) })}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelOpen(false)}>{t("transferts:cancel.btn_back")}</Button>
             <Button variant="destructive" onClick={handleAnnuler} disabled={actionLoading}>

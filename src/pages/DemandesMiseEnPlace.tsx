@@ -631,7 +631,7 @@ const DemandesMiseEnPlace = () => {
                     <ClickableTableRow key={c.id} to={`/dashboard/mise-en-place/${c.id}`}>
                       <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
-                        <Link to={`/dashboard/mise-en-place/${c.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{c.reference || `#${c.id}`}</Link>
+                        <Link to={`/dashboard/mise-en-place/${c.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{c.reference || "—"}</Link>
                       </TableCell>
                       <TableCell>{getEntrepriseName(c)}</TableCell>
                       <TableCell>{getCorrectionName(c)}</TableCell>
@@ -707,7 +707,7 @@ const DemandesMiseEnPlace = () => {
       {/* Detail Dialog (résumé) */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("mise_en_place:dialogs.detail_dialog.title", { ref: selected?.reference || `#${selected?.id}` })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("mise_en_place:dialogs.detail_dialog.title", { ref: selected?.reference || "—" })}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
@@ -1079,8 +1079,8 @@ const DemandesMiseEnPlace = () => {
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
               {editingBrouillon?.statut === "BROUILLON"
-                ? t("mise_en_place:dialogs.edit.title_draft", { ref: editingBrouillon?.reference || `#${editingBrouillon?.id}` })
-                : t("mise_en_place:dialogs.edit.title_demande", { ref: editingBrouillon?.reference || `#${editingBrouillon?.id}` })}
+                ? t("mise_en_place:dialogs.edit.title_draft", { ref: editingBrouillon?.reference || "—" })
+                : t("mise_en_place:dialogs.edit.title_demande", { ref: editingBrouillon?.reference || "—" })}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -1131,7 +1131,7 @@ const DemandesMiseEnPlace = () => {
                       <FileText className="h-4 w-4 text-primary shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{tTypeDocument(doc.type)}</p>
-                        <p className="text-xs text-muted-foreground truncate">{doc.nomFichier || doc.chemin || `#${doc.id}`}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doc.nomFichier || doc.chemin || "—"}</p>
                       </div>
                       <DocumentButton doc={{ url: getDocFileUrl(doc) || undefined, id: doc.id, nomFichier: doc.nomFichier }} icon={Eye} iconClassName="h-3 w-3 me-1" variant="link" className="h-auto p-0 text-xs text-primary shrink-0">
                         {t("mise_en_place:detail.documents.open")}
@@ -1161,7 +1161,7 @@ const DemandesMiseEnPlace = () => {
                             {req.obligatoire && <span className="text-destructive ms-1">*</span>}
                           </p>
                           {existing && !hasFile && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{t("mise_en_place:dialogs.edit.already_loaded", { name: existing.nomFichier || `#${existing.id}` })}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{t("mise_en_place:dialogs.edit.already_loaded", { name: existing.nomFichier || "—" })}</p>
                           )}
                           {hasFile && (
                             <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
@@ -1216,7 +1216,7 @@ const DemandesMiseEnPlace = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("mise_en_place:dialogs.reject.subtitle", { ref: showReject?.reference || `#${showReject?.id}`, entreprise: showReject ? getEntrepriseName(showReject) : "" })}
+              {t("mise_en_place:dialogs.reject.subtitle", { ref: showReject?.reference || "—", entreprise: showReject ? getEntrepriseName(showReject) : "" })}
             </p>
             <div className="space-y-2">
               <Label>{t("mise_en_place:dialogs.reject.motif_label")}</Label>
@@ -1244,7 +1244,7 @@ const DemandesMiseEnPlace = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("mise_en_place:dialogs.rejet_temp.subtitle", { ref: showRejetTemp?.reference || `#${showRejetTemp?.id}`, entreprise: showRejetTemp ? getEntrepriseName(showRejetTemp) : "" })}
+              {t("mise_en_place:dialogs.rejet_temp.subtitle", { ref: showRejetTemp?.reference || "—", entreprise: showRejetTemp ? getEntrepriseName(showRejetTemp) : "" })}
             </p>
             <div className="space-y-2">
               <Label>{t("mise_en_place:dialogs.rejet_temp.motif_label")}</Label>
@@ -1317,7 +1317,7 @@ const DemandesMiseEnPlace = () => {
             return (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.marche_num")}</span><p className="font-medium">{m.numeroMarche || `#${m.id}`}</p></div>
+                  <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.marche_num")}</span><p className="font-medium">{m.numeroMarche || "—"}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.statut")}</span><p className="font-medium">{m.statut}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.date_signature")}</span><p>{formatDate(m.dateSignature)}</p></div>
                   <div><span className="text-muted-foreground">{t("mise_en_place:dialogs.info.montant_ht")}</span><p>{formatAmount(m.montantContratHt, { currency: cur })}</p></div>
@@ -1335,7 +1335,7 @@ const DemandesMiseEnPlace = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("mise_en_place:dialogs.delete_draft.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("mise_en_place:dialogs.delete_draft.description", { ref: deletingTarget?.reference || `#${deletingTarget?.id || ""}` })}
+              {t("mise_en_place:dialogs.delete_draft.description", { ref: deletingTarget?.reference || "—" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1356,7 +1356,7 @@ const DemandesMiseEnPlace = () => {
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              {t("mise_en_place:dialogs.annul_dialog.description", { ref: annulTarget?.reference || `#${annulTarget?.id || ""}` })}
+              {t("mise_en_place:dialogs.annul_dialog.description", { ref: annulTarget?.reference || "—" })}
             </p>
             <div className="space-y-1">
               <Label htmlFor="annul-motif">{t("mise_en_place:dialogs.annul_dialog.motif_label")} <span className="text-destructive">*</span></Label>

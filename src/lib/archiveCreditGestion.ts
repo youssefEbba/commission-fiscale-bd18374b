@@ -84,12 +84,12 @@ const byLabel = (a: SearchableSelectOption, b: SearchableSelectOption) => a.labe
 
 export const entrepriseOptions = (entreprises: EntrepriseDto[]): SearchableSelectOption[] =>
   entreprises
-    .map((e) => ({ value: String(e.id), label: e.raisonSociale || `#${e.id}`, description: e.nif ? `NIF ${e.nif}` : undefined, keywords: e.nif || undefined }))
+    .map((e) => ({ value: String(e.id), label: e.raisonSociale || "—", description: e.nif ? `NIF ${e.nif}` : undefined, keywords: e.nif || undefined }))
     .sort(byLabel);
 
 export const autoriteOptions = (autorites: AutoriteContractanteDto[]): SearchableSelectOption[] =>
   autorites
-    .map((a) => ({ value: String(a.id), label: a.nom || `#${a.id}`, description: a.sigle || undefined }))
+    .map((a) => ({ value: String(a.id), label: a.nom || "—", description: a.sigle || undefined }))
     .sort(byLabel);
 
 /** Conventions de l'autorité (toutes ses autorités, principale ou liée) ; aucune connue → toute la liste. */
@@ -98,7 +98,7 @@ export function conventionOptions(conventions: ConventionDto[], autoriteId: stri
     ? conventions.filter((c) => conventionAutorites(c).some((a) => String(a.id) === autoriteId))
     : conventions;
   return (scoped.length ? scoped : conventions)
-    .map((c) => ({ value: String(c.id), label: c.reference || `#${c.id}`, description: c.intitule || undefined }))
+    .map((c) => ({ value: String(c.id), label: c.reference || "—", description: c.intitule || undefined }))
     .sort(byLabel);
 }
 
@@ -108,6 +108,6 @@ export function marcheOptions(marches: MarcheDto[], conventionId: string): Searc
     ? marches.filter((m) => marcheConventionIds(m).map(String).includes(conventionId))
     : marches;
   return (scoped.length ? scoped : marches)
-    .map((m) => ({ value: String(m.id), label: m.numeroMarche || `#${m.id}`, description: m.intitule || undefined }))
+    .map((m) => ({ value: String(m.id), label: m.numeroMarche || "—", description: m.intitule || undefined }))
     .sort(byLabel);
 }

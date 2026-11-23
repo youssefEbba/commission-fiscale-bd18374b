@@ -85,7 +85,7 @@ const idOf = (v: number | null | undefined) => (v == null ? "" : String(v));
 /** Ajoute la valeur actuelle si la liste chargée ne la contient pas (référentiel incomplet). */
 function withCurrent(options: { value: string; label: string; description?: string }[], value: string, label: string | null | undefined) {
   if (!value || options.some((o) => o.value === value)) return options;
-  return [{ value, label: label || `#${value}` }, ...options];
+  return [{ value, label: label || "—" }, ...options];
 }
 
 export function ArchiveRattachementDialog({ certificatId, onClose, onDone }: {
@@ -209,7 +209,7 @@ export function ArchiveRattachementDialog({ certificatId, onClose, onDone }: {
                 disabled={saving || !form.conventionId}
               />
               {credit.marcheCreeParImport && credit.marcheId != null && form.marcheId !== String(credit.marcheId) && (
-                <p className="text-xs text-muted-foreground">{t("archive:gestion.marche_cree_par_import", { numero: credit.marcheNumero ?? `#${credit.marcheId}` })}</p>
+                <p className="text-xs text-muted-foreground">{t("archive:gestion.marche_cree_par_import", { numero: credit.marcheNumero ?? "—" })}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -286,7 +286,7 @@ export function ArchiveSuppressionDialog({ certificatId, onClose, onDone }: {
                     </li>
                   ))}
                   {credit.marcheCreeParImport && credit.marcheId != null && (
-                    <li>{t("archive:gestion.compte.marche", { numero: credit.marcheNumero ?? `#${credit.marcheId}` })}</li>
+                    <li>{t("archive:gestion.compte.marche", { numero: credit.marcheNumero ?? "—" })}</li>
                   )}
                 </ul>
               ) : (

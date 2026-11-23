@@ -346,7 +346,7 @@ const GroupementFormDialog = ({ open, onOpenChange, editing, onSaved }: Props) =
                 <SelectContent>
                   {form.membreIds.map(id => {
                     const e = entreprises.find(x => x.id === id);
-                    return <SelectItem key={id} value={String(id)}>{e?.raisonSociale || `#${id}`}</SelectItem>;
+                    return <SelectItem key={id} value={String(id)}>{e?.raisonSociale || "—"}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>

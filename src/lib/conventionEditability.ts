@@ -132,7 +132,7 @@ function withPrincipal(list: EntiteRefDto[] | undefined, principalId?: number | 
   const seen = new Set<number>();
   const push = (r: EntiteRefDto) => { if (r.id != null && !seen.has(r.id)) { seen.add(r.id); out.push(r); } };
   if (list && list.length) list.forEach(push);
-  else if (principalId != null) push({ id: principalId, nom: principalNom || `#${principalId}` });
+  else if (principalId != null) push({ id: principalId, nom: principalNom || "—" });
   return out;
 }
 

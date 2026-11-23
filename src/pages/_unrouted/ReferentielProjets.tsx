@@ -369,7 +369,7 @@ const ReferentielProjets = () => {
                     filtered.map((p, rowIdx) => (
                       <TableRow key={p.id}>
                         <RowNumberCell n={rowIdx + 1} />
-                        <TableCell className="font-medium">{p.reference || `#${p.id}`}</TableCell>
+                        <TableCell className="font-medium">{p.reference || "—"}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.nomProjet || p.intitule || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{p.autoriteContractanteNom || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">
@@ -521,7 +521,7 @@ const ReferentielProjets = () => {
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Projet {selected?.reference || `#${selected?.id}`}</DialogTitle>
+            <DialogTitle>Projet {selected?.reference || "—"}</DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="space-y-4">

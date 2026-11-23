@@ -63,8 +63,8 @@ const AvenantDetail = () => {
   const piecesCommission = avenantPiecesCommission(gedTout.options, ged.options);
   const labelOfPiece = (code: string) =>
     ged.options.find((o) => o.code === code)?.label ?? gedTout.labelOf(code);
-  const ref = avenant?.numero || (avenant ? `#${avenant.id}` : "");
-  usePageTitle("modifications:detail.title", { ref: ref || `#${id ?? ""}` });
+  const ref = avenant?.numero || "—";
+  usePageTitle("modifications:detail.title", { ref: ref || "—" });
 
   const loadDocs = async (avId: number) => {
     setDocsLoading(true);
@@ -267,7 +267,7 @@ const AvenantDetail = () => {
                 <span className="text-muted-foreground">{t("modifications:detail.fields.certificat")}</span>
                 <p className="font-medium">
                   <Link to={`/dashboard/certificats/${a.certificatCreditId}`} className="text-primary hover:underline">
-                    {a.certificatReference || a.certificatNumero || `#${a.certificatCreditId}`}
+                    {a.certificatReference || a.certificatNumero || "—"}
                   </Link>
                 </p>
               </div>
@@ -392,7 +392,7 @@ const AvenantDetail = () => {
             <CardHeader><CardTitle className="text-base">{t("modifications:detail.correction_title")}</CardTitle></CardHeader>
             <CardContent className="flex flex-wrap items-center gap-3 text-sm">
               <Link to={`/dashboard/demandes/${a.demandeCorrectionId}`} className="text-primary hover:underline font-medium inline-flex items-center gap-1">
-                {a.demandeCorrectionReference || `#${a.demandeCorrectionId}`} <ExternalLink className="h-3.5 w-3.5" />
+                {a.demandeCorrectionReference || "—"} <ExternalLink className="h-3.5 w-3.5" />
               </Link>
               {a.demandeCorrectionStatut && <Badge variant="outline">{tStatutDemande(a.demandeCorrectionStatut)}</Badge>}
               <p className="w-full text-xs text-muted-foreground">{t("modifications:detail.correction_hint")}</p>

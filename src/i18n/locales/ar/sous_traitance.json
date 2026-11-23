@@ -6,7 +6,7 @@
     "filter_all": "كل الحالات",
     "empty": "لا توجد مقاولة من الباطن",
     "columns": {
-      "id": "#",
+      "id": "المرجع",
       "certificat": "الشهادة",
       "sous_traitant": "المقاول من الباطن",
       "volumes": "الأحجام",
@@ -16,8 +16,8 @@
       "date_autorisation": "تاريخ الترخيص",
       "actions": "إجراءات"
     },
-    "cert_fallback": "شهادة #{{id}}",
-    "ent_fallback": "مؤسسة #{{id}}"
+    "cert_fallback": "شهادة {{ref}}",
+    "ent_fallback": "مؤسسة {{ref}}"
   },
   "actions": {
     "new": "مقاولة من الباطن جديدة",
@@ -34,7 +34,7 @@
     "no": "لا"
   },
   "detail": {
-    "title": "المقاولة من الباطن رقم {{id}}",
+    "title": "المقاولة من الباطن {{ref}}",
     "fields": {
       "certificat": "الشهادة",
       "sous_traitant": "المقاول من الباطن",
@@ -80,7 +80,7 @@
       "doc_lettre_label": "رسالة المقاولة من الباطن *"
     },
     "documents": {
-      "title": "وثائق المقاولة من الباطن رقم {{id}}"
+      "title": "وثائق المقاولة من الباطن {{ref}}"
     }
   },
   "toast": {

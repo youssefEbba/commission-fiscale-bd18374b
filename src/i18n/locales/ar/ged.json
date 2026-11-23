@@ -16,7 +16,7 @@
     "loading": "جارٍ تحميل الملفات…",
     "empty": "لا يوجد أي ملف",
     "created_on": "أُنشئ في {{date}}",
-    "certificat_short": "شهادة رقم {{id}}",
+    "certificat_short": "تم وضع الاعتماد الضريبي",
     "correction_short": "تصحيح {{ref}}",
     "documents_count": "{{count}} وثيقة",
     "etapes_progress": "{{done}}/{{total}} مراحل",

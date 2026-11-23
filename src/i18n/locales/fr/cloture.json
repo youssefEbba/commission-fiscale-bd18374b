@@ -25,7 +25,7 @@
       "title_default": "Propositions de clôture / annulation",
       "empty": "Aucune proposition",
       "columns": {
-        "id": "ID",
+        "id": "Référence",
         "certificat": "Certificat",
         "type": "Type",
         "motif": "Motif",
@@ -47,7 +47,7 @@
     "certificat_label": "Certificat",
     "certificat_placeholder": "Sélectionner un certificat",
     "certificat_search": "Rechercher un certificat…",
-    "certificat_item": "Certificat #{{id}}",
+    "certificat_item": "Certificat {{ref}}",
     "type_label": "Type d'opération",
     "type_placeholder": "Choisir",
     "motif_label": "Motif",
@@ -66,7 +66,7 @@
     "finalize": "Finaliser"
   },
   "detail": {
-    "title": "Détail proposition #{{id}}",
+    "title": "Détail proposition {{ref}}",
     "certificat": "Certificat :",
     "type": "Type :",
     "motif": "Motif :",

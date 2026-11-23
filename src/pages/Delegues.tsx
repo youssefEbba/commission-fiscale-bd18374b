@@ -99,7 +99,6 @@ const Delegues = () => {
               <Table>
                 <TableHeader>
                   <TableRow><RowNumberHead />
-                    <TableHead>ID</TableHead>
                     <TableHead>Nom complet</TableHead>
                     <TableHead>Identifiant</TableHead>
                     <TableHead>Email</TableHead>
@@ -111,13 +110,12 @@ const Delegues = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun représentant</TableCell>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun représentant</TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((d, rowIdx) => (
                       <TableRow key={d.id}>
                         <RowNumberCell n={rowIdx + 1} />
-                        <TableCell className="font-medium">#{d.id}</TableCell>
                         <TableCell>{d.nomComplet}</TableCell>
                         <TableCell className="text-muted-foreground">{d.username}</TableCell>
                         <TableCell className="text-muted-foreground">{d.email || "—"}</TableCell>

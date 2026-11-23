@@ -91,7 +91,7 @@ const DemandeDetail = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeOrg, setActiveOrg] = useState("DGD");
 
-  usePageTitle("demandes:detail.title", { numero: selected?.reference || selected?.numero || `#${selected?.id ?? id}` });
+  usePageTitle("demandes:detail.title", { numero: selected?.reference || selected?.numero || "—" });
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState("");
@@ -482,7 +482,7 @@ const DemandeDetail = () => {
             <h1 className="text-2xl font-bold text-foreground">
               {(selected.reference || selected.numero)
                 ? t("demandes:detail.title", { numero: (selected.reference || selected.numero) })
-                : t("demandes:detail.title_fallback", { id: selected.id })}
+                : t("demandes:detail.title_fallback")}
             </h1>
             <p className="text-sm text-muted-foreground">{t("demandes:detail.subtitle")}</p>
           </div>
@@ -520,7 +520,7 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">{t("demandes:detail.fields.convention")}</span>
                 {selected.conventionId ? (
                   <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openConventionDetail(selected.conventionId!)}>
-                    {selected.conventionIntitule || selected.conventionReference || t("demandes:detail.fields.convention_fallback", { id: selected.conventionId })}
+                    {selected.conventionIntitule || selected.conventionReference || "—"}
                   </button>
                 ) : (
                   <p className="font-medium text-muted-foreground">—</p>
@@ -530,7 +530,7 @@ const DemandeDetail = () => {
                 <span className="text-muted-foreground">{t("demandes:detail.fields.marche")}</span>
                 {selected.marcheId ? (
                   <button className="font-medium text-primary hover:underline cursor-pointer text-start block" onClick={() => openMarcheDetail(selected.marcheId!)}>
-                    {selected.marcheIntitule || (selected as any).intituleMarche || selected.marcheNumero || t("demandes:detail.fields.marche_fallback", { id: selected.marcheId })}
+                    {selected.marcheIntitule || (selected as any).intituleMarche || selected.marcheNumero || "—"}
                   </button>
                 ) : (selected as any).intituleMarche ? (
                   <p className="font-medium">{(selected as any).intituleMarche}</p>
@@ -538,7 +538,7 @@ const DemandeDetail = () => {
                   <p className="font-medium">{selected.marcheIntitule}</p>
                 ) : selected.marcheIdTrace ? (
                   <p className="font-medium text-muted-foreground italic">
-                    {t("demandes:detail.fields.marche_detached", { id: selected.marcheIdTrace })}
+                    {t("demandes:detail.fields.marche_detached")}
                   </p>
                 ) : (
                   <p className="font-medium text-muted-foreground">—</p>
@@ -1443,7 +1443,7 @@ const DemandeDetail = () => {
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Date signature</span><p className="font-medium">{marcheDetail.dateSignature ? formatDate(marcheDetail.dateSignature) : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">Montant HT</span><p className="font-medium">{marcheDetail.montantContratHt != null ? `${formatAmount(marcheDetail.montantContratHt)} MRU` : "—"}</p></div>
               <div className="rounded-lg border border-border p-3"><span className="text-muted-foreground text-xs">{t("marches:form.montant_ttc")}</span><p className="font-medium">{marcheDetail.montantContratTtc != null ? `${formatAmount(marcheDetail.montantContratTtc)} MRU` : "—"}</p></div>
-              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{marcheDetail.conventionId ? `#${marcheDetail.conventionId}` : "—"}</p></div>
+              <div className="rounded-lg border border-border p-3 col-span-2"><span className="text-muted-foreground text-xs">Convention liée</span><p className="font-medium">{(marcheDetail as { conventionReference?: string | null }).conventionReference || "—"}</p></div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">—</p>

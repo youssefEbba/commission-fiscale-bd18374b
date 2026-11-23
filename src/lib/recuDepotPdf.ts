@@ -80,7 +80,7 @@ export function recuCorrection(d: DemandeCorrectionDto, o: RecuAdapterOptions = 
   const groupement = !!(d.groupementId || d.groupementRaisonSociale);
   return {
     processus: "CORRECTION",
-    reference: d.reference || d.numero || `#${d.id}`,
+    reference: d.reference || d.numero || "—",
     dateDepot: d.dateDepot,
     statut: d.statut ? tStatutDemande(d.statut) : null,
     deposant: [
@@ -108,7 +108,7 @@ export function recuCorrection(d: DemandeCorrectionDto, o: RecuAdapterOptions = 
 export function recuMiseEnPlace(c: CertificatCreditDto, o: RecuAdapterOptions = {}): RecuModele {
   return {
     processus: "MISE_EN_PLACE",
-    reference: c.reference || c.numero || `#${c.id}`,
+    reference: c.reference || c.numero || "—",
     dateDepot: c.dateEmission,
     statut: c.statut ? tStatutCertificat(c.statut) : null,
     deposant: [
@@ -138,7 +138,7 @@ export function recuUtilisation(u: UtilisationCreditDto, o: RecuAdapterOptions =
     : [{ label: t("raison_sociale"), value: u.entrepriseNom || u.certificatTitulaireRaisonSociale }];
   return {
     processus: douane ? "UTILISATION_DOUANE" : "UTILISATION_TVA",
-    reference: u.reference || `#${u.id}`,
+    reference: u.reference || "—",
     dateDepot: u.dateDemande,
     statut: u.statut ? tStatutUtilisation(u.statut) : null,
     deposant: deposantLigne(o),
@@ -169,7 +169,7 @@ export function recuUtilisation(u: UtilisationCreditDto, o: RecuAdapterOptions =
 export function recuTransfert(tr: TransfertCreditDto, o: RecuAdapterOptions = {}): RecuModele {
   return {
     processus: "TRANSFERT",
-    reference: tr.reference || `#${tr.id}`,
+    reference: tr.reference || "—",
     dateDepot: tr.dateDemande,
     statut: tr.statut ? tStatutTransfert(tr.statut) : null,
     deposant: deposantLigne(o),
@@ -182,7 +182,7 @@ export function recuTransfert(tr: TransfertCreditDto, o: RecuAdapterOptions = {}
 export function recuAvenant(a: AvenantDto, o: RecuAdapterOptions = {}): RecuModele {
   return {
     processus: "AVENANT",
-    reference: a.numero || `#${a.id}`,
+    reference: a.numero || "—",
     dateDepot: a.dateDepot,
     statut: a.statut ? tStatutAvenant(a.statut) : null,
     deposant: [
@@ -208,7 +208,7 @@ export function recuAvenant(a: AvenantDto, o: RecuAdapterOptions = {}): RecuMode
 export function recuSousTraitance(s: SousTraitanceDto, o: RecuAdapterOptions = {}): RecuModele {
   return {
     processus: "SOUS_TRAITANCE",
-    reference: `#${s.id}`,
+    reference: s.reference || "—",
     dateDepot: s.dateDemande,
     statut: s.statut ? tStatutSousTraitance(s.statut) : null,
     deposant: deposantLigne(o),
@@ -249,9 +249,9 @@ export const recuPieces = (documents: DocumentDto[]) =>
   documents.filter((p) => (p.codeDocument || p.type) !== "RECU_DEPOT" && p.actif !== false);
 
 export function recuFileName(m: Pick<RecuModele, "processus" | "reference">): string {
-  const ref = m.reference.replace(/^#/, "").replace(/[^\w-]+/g, "_");
-  const prefix = m.processus === "CORRECTION" ? "" : `${m.processus.toLowerCase().replace(/_/g, "-")}-`;
-  return `recu-depot-${prefix}${ref}.pdf`;
+  const ref = m.reference === "—" ? "" : m.reference.replace(/[^\w-]+/g, "_");
+  const processus = m.processus === "CORRECTION" ? "" : m.processus.toLowerCase().replace(/_/g, "-");
+  return `recu-depot-${[processus, ref].filter(Boolean).join("-") || "demande"}.pdf`;
 }
 
 // ---------------------------------------------------------------------------

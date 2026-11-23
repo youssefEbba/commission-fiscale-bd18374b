@@ -238,7 +238,7 @@ const MiseEnPlaceDetail = () => {
       .catch(() => { /* fallback déjà en place */ });
   }, []);
 
-  usePageTitle("mise_en_place:detail.title", { ref: certificat?.reference || (id ? `#${id}` : "") });
+  usePageTitle("mise_en_place:detail.title", { ref: certificat?.reference || "—" });
 
   if (loading) {
     return (
@@ -490,8 +490,8 @@ const MiseEnPlaceDetail = () => {
                 <Award className="h-6 w-6 text-primary shrink-0" />
                 <span className="truncate">
                   {role === "AUTORITE_CONTRACTANTE"
-                    ? t("mise_en_place:detail.header_view", { ref: c.reference || `#${c.id}` })
-                    : t("mise_en_place:detail.header_process", { ref: c.reference || `#${c.id}` })}
+                    ? t("mise_en_place:detail.header_view", { ref: c.reference || "—" })
+                    : t("mise_en_place:detail.header_process", { ref: c.reference || "—" })}
                 </span>
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
@@ -988,7 +988,7 @@ const MiseEnPlaceDetail = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("mise_en_place:dialogs.rejet_temp.subtitle", { ref: c.reference || `#${c.id}`, entreprise: entrepriseName })}
+              {t("mise_en_place:dialogs.rejet_temp.subtitle", { ref: c.reference || "—", entreprise: entrepriseName })}
             </p>
             <div className="space-y-2">
               <Label>{t("mise_en_place:dialogs.rejet_temp.motif_label")}</Label>
@@ -1302,7 +1302,7 @@ const MiseEnPlaceDetail = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">{t("mise_en_place:dialogs.reject.subtitle", { ref: c.reference || `#${c.id}`, entreprise: entrepriseName })}</p>
+            <p className="text-sm text-muted-foreground">{t("mise_en_place:dialogs.reject.subtitle", { ref: c.reference || "—", entreprise: entrepriseName })}</p>
             <div className="space-y-2">
               <Label>{t("mise_en_place:dialogs.reject.motif_label")}</Label>
               <Textarea placeholder={t("mise_en_place:dialogs.reject.motif_placeholder")} value={motifRejet} onChange={(e) => setMotifRejet(e.target.value)} className="min-h-[100px]" />
@@ -1329,7 +1329,7 @@ const MiseEnPlaceDetail = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("mise_en_place:dialogs.annul_confirm.description", { ref: c.reference || `#${c.id}` })}
+              {t("mise_en_place:dialogs.annul_confirm.description", { ref: c.reference || "—" })}
             </p>
             <p className="text-sm text-muted-foreground">
               {t("mise_en_place:dialogs.annul_confirm.warning")}
@@ -1375,7 +1375,7 @@ const MiseEnPlaceDetail = () => {
       <ConfirmAmountDialog
         open={confirmOuverture}
         onOpenChange={setConfirmOuverture}
-        title={t("mise_en_place:detail.president.confirm_title", { ref: c.reference || `#${c.id}` })}
+        title={t("mise_en_place:detail.president.confirm_title", { ref: c.reference || "—" })}
         description={t("mise_en_place:detail.president.confirm_text")}
         amountLabel={t("mise_en_place:detail.president.confirm_amount")}
         amount={fmtAmt(c.montantTotal ?? ((Number(c.montantCordon) || 0) + (Number(c.montantTVAInterieure) || 0)))}

@@ -172,12 +172,12 @@ const MainCourante = () => {
                         <div className="text-xs text-muted-foreground">{tp(l.processus)}</div>
                       </TableCell>
                       <TableCell>
-                        <Link to={href} className="text-primary hover:underline">{l.reference || `#${l.id}`}</Link>
+                        <Link to={href} className="text-primary hover:underline">{l.reference || "—"}</Link>
                         {l.marcheNumero && <div className="text-xs text-muted-foreground">{t("main_courante.marche", { numero: l.marcheNumero })}</div>}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {l.certificatId != null
-                          ? <Link to={`/dashboard/certificats/${l.certificatId}`} className="text-primary hover:underline">{l.certificatReference || `#${l.certificatId}`}</Link>
+                          ? <Link to={`/dashboard/certificats/${l.certificatId}`} className="text-primary hover:underline">{l.certificatReference || "—"}</Link>
                           : (l.certificatReference || "—")}
                       </TableCell>
                       <TableCell className="text-sm">{l.entrepriseRaisonSociale || "—"}</TableCell>

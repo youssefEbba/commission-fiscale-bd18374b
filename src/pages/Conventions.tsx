@@ -354,7 +354,7 @@ const Conventions = () => {
                               onClick={(e) => e.stopPropagation()}
                               className="text-primary underline-offset-2 hover:underline"
                             >
-                              {c.reference || `#${c.id}`}
+                              {c.reference || "—"}
                             </Link>
                           </TableCell>
                           <TableCell className="max-w-[320px] truncate" title={c.intitule || ""}>{c.intitule || "—"}</TableCell>

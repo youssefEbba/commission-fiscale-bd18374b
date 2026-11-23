@@ -45,7 +45,7 @@
   },
   "detail": {
     "title": "Demande {{numero}}",
-    "title_fallback": "Demande #{{id}}",
+    "title_fallback": "Demande",
     "subtitle": "Détail de la demande de correction",
     "back": "Retour",
     "not_found": "Demande introuvable",
@@ -56,9 +56,9 @@
       "date_depot": "Date de dépôt",
       "convention": "Convention",
       "marche": "Intitulé du projet de marché",
-      "convention_fallback": "Convention #{{id}}",
-      "marche_fallback": "Marché #{{id}}",
-      "marche_detached": "Marché #{{id}} (détaché)",
+      "convention_fallback": "Convention",
+      "marche_fallback": "Marché",
+      "marche_detached": "Marché détaché",
       "reference_appel_offre": "Référence de l'appel d'offres"
     },
     "generate_adoption_letter": "Télécharger la lettre d'adoption",
@@ -368,7 +368,7 @@
   "wizard": {
     "title_new": "Nouvelle demande de correction",
     "title_edit": "Modifier la demande {{numero}}",
-    "title_edit_fallback": "Modifier la demande #{{id}}",
+    "title_edit_fallback": "Modifier la demande {{ref}}",
     "mobile_tip_title": "Astuce mobile :",
     "mobile_tip_body": "votre saisie et vos fichiers sont sauvegardés automatiquement. Vous pouvez quitter l'application (WhatsApp, appel, etc.) et revenir : tout sera restauré.",
     "steps": {

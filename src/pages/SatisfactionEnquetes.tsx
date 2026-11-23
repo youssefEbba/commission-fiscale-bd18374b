@@ -163,7 +163,7 @@ const SatisfactionEnquetes = () => {
                     <RowNumberCell n={i + 1} />
                     <TableCell>
                       <div className="font-medium">{e.titre}</div>
-                      <div className="text-xs text-muted-foreground">{t("feedback:enquetes.nb_questions", { count: e.questions?.length ?? 0 })}{e.enqueteOrigineId ? ` · ${t("feedback:enquetes.relance_de", { id: e.enqueteOrigineId })}` : ""}</div>
+                      <div className="text-xs text-muted-foreground">{t("feedback:enquetes.nb_questions", { count: e.questions?.length ?? 0 })}{e.enqueteOrigineId ? ` · ${(() => { const o = items.find((x) => x.id === e.enqueteOrigineId); return o ? t("feedback:enquetes.relance_de", { titre: o.titre }) : t("feedback:enquetes.relance_de_inconnue"); })()}` : ""}</div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm">{formatDate(e.dateDebut)} → {formatDate(e.dateFin)}</TableCell>
                     <TableCell className="text-xs">{e.profilsCibles.map((p) => t(`feedback:profils.${p}`)).join(", ")}</TableCell>

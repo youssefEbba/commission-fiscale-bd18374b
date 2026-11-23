@@ -223,7 +223,7 @@ export async function generateAdoptionLetterPdf(
   doc.setFontSize(10);
   yy = y + SEC_TOP;
 
-  const marcheRef = d.marcheNumero || marche?.numeroMarche || (d.marcheId ? `#${d.marcheId}` : "");
+  const marcheRef = d.marcheNumero || marche?.numeroMarche || "";
   const marcheIntitule =
     d.marcheIntitule ||
     (d as any).intituleMarche ||

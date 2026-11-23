@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { displayRef } from "@/lib/displayRef";
 
 interface Props {
   open: boolean;
@@ -166,7 +167,7 @@ export default function AvenantApplyDialog({ open, onOpenChange, avenant, certif
             </p>
             <ul className="ps-5 list-disc text-muted-foreground">
               {enCours!.slice(0, 5).map((u) => (
-                <li key={u.id}>#{u.id} — {tStatutUtilisation(u.statut)}</li>
+                <li key={u.id}>{displayRef(u)} — {tStatutUtilisation(u.statut)}</li>
               ))}
             </ul>
           </div>

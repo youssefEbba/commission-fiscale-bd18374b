@@ -38,7 +38,7 @@ describe("reçu de dépôt générique : adaptateurs", () => {
       recuSousTraitance({ id: 7, statut: "DEMANDE", certificatCreditId: 9 } as SousTraitanceDto),
     ];
     expect(cases.map((m) => m.processus)).toEqual(["CORRECTION", "MISE_EN_PLACE", "UTILISATION_DOUANE", "UTILISATION_TVA", "TRANSFERT", "AVENANT", "SOUS_TRAITANCE"]);
-    expect(cases.map((m) => m.reference)).toEqual(["DC-0001-11-2026", "MP-0002-11-2026", "DU-0003", "#4", "TR-0005-11-2026", "AV-6", "#7"]);
+    expect(cases.map((m) => m.reference)).toEqual(["DC-0001-11-2026", "MP-0002-11-2026", "DU-0003", "—", "TR-0005-11-2026", "AV-6", "—"]);
     for (const m of cases) expect(i18n.t(`demandes:recu.subtitle_processus.${m.processus}`)).not.toContain("subtitle_processus");
   });
 
@@ -71,7 +71,7 @@ describe("reçu de dépôt générique : adaptateurs", () => {
 
   it("nom de fichier par processus (correction inchangée)", () => {
     expect(recuFileName({ processus: "CORRECTION", reference: "DC-0001-11-2026" })).toBe("recu-depot-DC-0001-11-2026.pdf");
-    expect(recuFileName({ processus: "UTILISATION_TVA", reference: "#4" })).toBe("recu-depot-utilisation-tva-4.pdf");
+    expect(recuFileName({ processus: "UTILISATION_TVA", reference: "DU-0004-11-2026" })).toBe("recu-depot-utilisation-tva-DU-0004-11-2026.pdf");
   });
 });
 
@@ -98,6 +98,32 @@ describe("reçu de dépôt : émission et affichage", () => {
     expect(await emettreRecuDepot(cible(upload))).toBe(false);
     expect(presentBlob).toHaveBeenCalled();
     expect(sonner.warning).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ description: expect.stringContaining("Stockage indisponible") }));
+  });
+
+  it("la référence imprimée est celle du dossier relu, pas celle de la réponse de soumission", async () => {
+    const generate = vi.mocked((await import("@/lib/recuDepotPdf")).generateRecuPdf);
+    generate.mockClear();
+    const upload = vi.fn(async () => ({}));
+    const soumise = { id: 828, reference: "DU-0825-11-2026", type: "DOUANIER", statut: "DEMANDEE", certificatCreditId: 9 } as UtilisationCreditDto;
+    const c: RecuCible = {
+      id: 828,
+      modele: recuUtilisation(soumise),
+      relire: async () => recuUtilisation({ ...soumise, reference: "DU-0828-11-2026" }),
+      getDocuments: async () => [],
+      upload,
+    };
+    expect(await emettreRecuDepot(c)).toBe(true);
+    expect(generate.mock.calls[0][0].reference).toBe("DU-0828-11-2026");
+    expect((upload.mock.calls[0] as unknown as [File])[0].name).toBe("recu-depot-utilisation-douane-DU-0828-11-2026.pdf");
+  });
+
+  it("relecture impossible : repli sur la réponse de soumission", async () => {
+    const generate = vi.mocked((await import("@/lib/recuDepotPdf")).generateRecuPdf);
+    generate.mockClear();
+    const soumise = { id: 5, reference: "DU-0005", type: "DOUANIER", statut: "DEMANDEE", certificatCreditId: 9 } as UtilisationCreditDto;
+    const c: RecuCible = { id: 5, modele: recuUtilisation(soumise), relire: async () => { throw new Error("réseau"); }, getDocuments: async () => [], upload: async () => ({}) };
+    expect(await emettreRecuDepot(c)).toBe(true);
+    expect(generate.mock.calls[0][0].reference).toBe("DU-0005");
   });
 
   it("reçu émis seulement pour un dossier réellement soumis", () => {

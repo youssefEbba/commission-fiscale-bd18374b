@@ -180,7 +180,7 @@ const DossiersList = () => {
                         <p className="font-semibold text-foreground">{dossier.reference}</p>
                         <p className="text-xs text-muted-foreground">
                           {t("ged:dossiers.created_on", { date: formatDate(dossier.dateCreation) })}
-                          {dossier.certificatId && ` • ${t("ged:dossiers.certificat_short", { id: dossier.certificatId })}`}
+                          {dossier.certificatId && ` • ${t("ged:dossiers.certificat_short")}`}
                         </p>
                       </div>
                     </div>
@@ -298,8 +298,8 @@ const DossierDetail = ({ dossier, enrichment, isLoading, onBack }: DossierDetail
               <CardTitle className="text-xl">{dossier.reference}</CardTitle>
               <p className="text-sm text-muted-foreground">
                 {t("ged:dossiers.created_on", { date: formatDate(dossier.dateCreation) })}
-                {dossier.certificatId && ` • ${t("ged:dossiers.certificat_short", { id: dossier.certificatId })}`}
-                {` • ${t("ged:dossiers.correction_short", { ref: dossier.demandeCorrectionNumero || `#${dossier.demandeCorrectionId}` })}`}
+                {dossier.certificatId && ` • ${t("ged:dossiers.certificat_short")}`}
+                {` • ${t("ged:dossiers.correction_short", { ref: dossier.demandeCorrectionNumero || "—" })}`}
               </p>
             </div>
           </div>

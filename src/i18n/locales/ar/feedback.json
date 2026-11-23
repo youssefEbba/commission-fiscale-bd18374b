@@ -94,7 +94,7 @@
     "empty": "لا يوجد استبيان",
     "nb_questions": "{{count}} سؤال",
     "nb_questions_other": "{{count}} أسئلة",
-    "relance_de": "إعادة إطلاق الاستبيان رقم {{id}}",
+    "relance_de": "إعادة إطلاق « {{titre}} »",
     "hors_periode": "خارج الفترة",
     "questions": "الأسئلة",
     "add_question": "إضافة سؤال",
@@ -123,7 +123,8 @@
       "questions": "أضف سؤالًا واحدًا على الأقل.",
       "question_libelle": "السؤال {{n}}: النص إلزامي.",
       "question_options": "السؤال {{n}}: يتطلب الاختيار خيارين على الأقل."
-    }
+    },
+    "relance_de_inconnue": "إعادة إطلاق استبيان سابق"
   },
   "dashboard": {
     "title": "رضا المستخدمين",

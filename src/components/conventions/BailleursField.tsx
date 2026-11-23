@@ -31,7 +31,7 @@ const BailleursField = ({ label, bailleurs, setBailleurs, loading, value, onChan
 
   const labelOf = (v: string) => {
     const id = Number(v);
-    return bailleurs.find((b) => b.id === id)?.nom || knownNames?.[id] || `#${id}`;
+    return bailleurs.find((b) => b.id === id)?.nom || knownNames?.[id] || "—";
   };
 
   return (
