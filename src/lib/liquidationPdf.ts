@@ -8,6 +8,7 @@ import autoTable from "jspdf-autotable";
 import { entrepriseApi, marcheApi, type UtilisationCreditDto, type CertificatCreditDto, type EntrepriseDto, type MarcheDto } from "@/lib/api";
 import { montantCiADeduire } from "@/lib/utilisationCloture";
 import { joinNumeros, numerosDeclaration } from "@/lib/utilisationNumeros";
+import { mentionModificationPresident } from "@/lib/utilisationCircuit";
 
 const fmt = (v: unknown) => pdfFmtNombre(v, 2) || "—";
 const dt = (v?: string) => (v ? new Date(v).toLocaleDateString("fr-FR") : "—");
@@ -151,6 +152,15 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   const lettresLines = doc.splitTextToSize(`${fmt(montantCi)} MRU — ` + lettres + (centimes > 0 ? " (MRU)" : " Ouguiya (MRU)"), lettresW);
   doc.text(lettresLines, M + doc.getTextWidth("LA SOMME DE :") + 6, y);
   y += 12 * lettresLines.length + 2;
+  // Montant corrigé par le Président avant l'émission : mention avec le motif.
+  const mention = mentionModificationPresident(u, montantCi, fmt);
+  if (mention) {
+    doc.setFont(PDF_FONT, "italic").setFontSize(8.5);
+    const mentionLines = doc.splitTextToSize(mention, W - 2 * M);
+    doc.text(mentionLines, M, y);
+    y += 11 * mentionLines.length + 2;
+    doc.setFontSize(9);
+  }
   doc.setFont(PDF_FONT, "normal");
 
   labelDottedValue(doc, M, y, "Déclarant :", "", 280); y += 13;
@@ -176,8 +186,9 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.text(paraLines, M, y);
   y += 11 * paraLines.length + 8;
 
-  const soldeDouanier = cert?.soldeCordon ?? 0;
-  const soldeInterieur = cert?.soldeTVA ?? 0;
+  // Soldes APRÈS le débit de cette utilisation (instantané), repli sur le solde courant du crédit.
+  const soldeDouanier = Number(u.soldeCordonApres ?? cert?.soldeCordon ?? 0);
+  const soldeInterieur = Number(u.soldeTVAApres ?? cert?.soldeTVA ?? 0);
   const totalRestant = soldeDouanier + soldeInterieur;
 
   doc.setFont(PDF_FONT, "bold");

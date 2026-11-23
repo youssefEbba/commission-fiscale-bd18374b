@@ -321,6 +321,13 @@ export interface UtilisationCreditDto {
   numerosFacture?: string[];
   /** Libellé de l'opération dans le relevé de l'ancienne application (utilisations reprises de l'archive). */
   origineArchiveLibelle?: string | null;
+  /** Vrai une fois le crédit débité (liquidation douane / apurement TVA). Faux : dossier de l'ancien ordre pas encore débité.
+   */
+  creditDebite?: boolean;
+  /** Montant imputé avant la correction du Président (null sans correction). */
+  montantImputeAvantModification?: number | null;
+  motifModificationPresident?: string | null;
+  dateModificationPresident?: string | null;
   dateFacture?: string;
   montantTVAInterieure?: number;
   numeroDecompte?: string;

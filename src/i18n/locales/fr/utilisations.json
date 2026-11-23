@@ -591,7 +591,13 @@
     "attente_certificat_president": "La main est au Président pour émettre et signer le certificat d'utilisation, titre présenté ensuite pour obtenir la quittance.",
     "attente_reception_emis": "Certificat d'utilisation émis par le Président. La DGTCP clôture l'utilisation une fois le crédit débité.",
     "attente_quittance_dgi": "Certificat d'utilisation émis par le Président. L'entreprise le présente à la DGI, qui dépose la quittance.",
-    "attente_controle_dgtcp": "La DGTCP doit contrôler le bulletin visé et le chèque certifié, puis transmettre le dossier au Président."
+    "attente_controle_dgtcp": "La DGTCP doit contrôler le bulletin visé et le chèque certifié, puis transmettre le dossier au Président.",
+    "attente_envoi_tresor_cheque": "Chèque certifié saisi. La DGTCP envoie le dossier au Trésor.",
+    "attente_transmission_president": "Crédit débité. La DGTCP transmet le dossier au Président pour le certificat d'utilisation.",
+    "attente_certificat_president_debite": "Crédit débité. Le Président peut corriger les montants, puis émet et signe le certificat d'utilisation.",
+    "attente_cloture": "Certificat d'utilisation émis, crédit débité. La DGTCP clôture l'utilisation.",
+    "attente_quittance_dgi_validee": "Demande validée par la DGTCP. L'entreprise obtient la quittance auprès de la DGI, qui la dépose.",
+    "attente_apurement": "Quittance DGI déposée. La DGTCP procède à l'apurement."
   },
   "certificat_utilisation": {
     "title": "Certificat d'utilisation",
@@ -623,7 +629,7 @@
   "transmission_president": {
     "queue_filter": "Dossiers à contrôler",
     "button": "Transmettre au Président",
-    "done": "Dossier contrôlé et transmis au Président."
+    "done": "Dossier transmis au Président pour le certificat d'utilisation."
   },
   "correction_rejet": {
     "button": "Corriger le dossier",
@@ -665,5 +671,23 @@
     "retirer": "Retirer le numéro {{n}}",
     "ligne": "{{label}} n° {{n}}",
     "admin_hint": "Plusieurs numéros : séparez-les par des virgules. La liste saisie remplace la précédente."
+  },
+  "montants_president": {
+    "button": "Modifier les montants",
+    "title": "Modifier les montants avant l'émission",
+    "desc_douane": "Le crédit est déjà débité. Les droits et la TVA imputés ne peuvent que baisser ; les soldes du crédit sont réajustés.",
+    "desc_tva": "Le crédit est déjà débité. Le montant de TVA et la TVA déductible utilisée peuvent être corrigés ; les soldes du crédit sont réajustés.",
+    "douane_a": "Droits imputés (hors TVA)",
+    "douane_b": "TVA imputée",
+    "tva_a": "Montant de TVA",
+    "tva_b": "TVA déductible utilisée",
+    "actuel": "Valeur actuelle : {{montant}}",
+    "motif": "Motif",
+    "valider": "Enregistrer les montants",
+    "done": "Montants corrigés ; les soldes du crédit sont réajustés.",
+    "error": "Impossible de corriger les montants",
+    "erreur_invalide": "Montant invalide.",
+    "erreur_hausse_douane": "En douane, les montants imputés ne peuvent que baisser.",
+    "mention": "Montant corrigé par le Président le {{date}} (montant imputé avant correction : {{avant}})"
   }
 }

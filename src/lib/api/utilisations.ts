@@ -61,10 +61,17 @@ export const utilisationCreditApi = {
       rawBody: fd,
     });
   },
-  /** DGTCP — contrôle (bulletin visé + chèque saisi) puis transmission au Président. Idempotent. Statut → TRANSMISE_AU_PRESIDENT. */
+  /** DGTCP — transmission au Président une fois le crédit débité (LIQUIDEE en douane, APUREE en TVA). Statut → TRANSMISE_AU_PRESIDENT. */
   transmettrePresident: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/transmission-president`, { method: "POST" }),
-  /** DGTCP — envoi du dossier au Trésor. Statut → ENVOYEE_AU_TRESOR. Aucun body. */
+  /**
+   * Président (ou ADMIN_SI) — correction des montants avant l'émission (TRANSMISE_AU_PRESIDENT, crédit débité).
+   * Douane : `{droitsImputes?, tvaImputee?, motif}` à la baisse ; TVA : `{montantTVA?, tvaDeductibleUtilisee?, motif}`.
+   * Le serveur réajuste les soldes ; 400 (hausse, stock…), 403, 409 affichés tels quels.
+   */
+  modifierMontantsPresident: (id: number, body: MontantsPresidentRequest) =>
+    apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/montants-president`, { method: "PATCH", body }),
+  /** DGTCP — envoi du dossier au Trésor (depuis CHEQUE_SAISI ; ancien ordre : CERTIFICAT_EMIS). Statut → ENVOYEE_AU_TRESOR. */
   envoyerAuTresor: (id: number) =>
     apiFetch<UtilisationCreditDto>(`/utilisations-credit/${id}/envoyer-au-tresor`, {
       method: "POST",
@@ -87,7 +94,7 @@ export const utilisationCreditApi = {
   /** Lecture seule des quittances Trésor d'une utilisation douanière. */
   getQuittances: (id: number) => apiFetch<QuittanceTresorDto[]>(`/utilisations-credit/${id}/quittances`),
   /**
-   * DGTCP — clôture de l'utilisation une fois le crédit débité (LIQUIDEE / APUREE).
+   * DGTCP — clôture une fois le certificat émis sur un dossier débité (ancien ordre : LIQUIDEE / APUREE).
    * ADMIN_SI peut s'y substituer avec un motif obligatoire. Statut → CLOTUREE.
    */
   cloturer: (id: number, motif?: string) =>
@@ -217,4 +224,11 @@ export interface AdminCorrectionUtilisationPayload {
   dateDeclaration?: string;
 }
 
-
+/** Corps de PATCH /utilisations-credit/{id}/montants-president (un champ absent garde sa valeur). */
+export interface MontantsPresidentRequest {
+  droitsImputes?: number;
+  tvaImputee?: number;
+  montantTVA?: number;
+  tvaDeductibleUtilisee?: number;
+  motif: string;
+}

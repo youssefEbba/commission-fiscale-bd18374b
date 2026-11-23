@@ -1,4 +1,7 @@
 import type { UtilisationCreditDto } from "@/lib/api";
+import { isUtilisationCloturable, type CircuitUtilisation } from "@/lib/utilisationCircuit";
+
+export { isUtilisationCloturable };
 
 /**
  * Règles d'affichage du certificat d'utilisation et de la clôture d'une utilisation.
@@ -20,10 +23,6 @@ export const certificatUtilisationVisible = (
   u: Pick<UtilisationCreditDto, "certificatUtilisationCommunicable">,
 ) => !isDeposantUtilisation(role) || u.certificatUtilisationCommunicable === true;
 
-/** La clôture n'est permise qu'une fois le crédit débité. */
-export const isUtilisationCloturable = (u: Pick<UtilisationCreditDto, "type" | "statut">) =>
-  (u.type === "DOUANIER" && u.statut === "LIQUIDEE") || (u.type === "TVA_INTERIEURE" && u.statut === "APUREE");
-
 export const UTILISATION_CLOTURE_PERMISSION = "utilisation.dgtcp.cloturer";
 
 /**
@@ -33,7 +32,7 @@ export const UTILISATION_CLOTURE_PERMISSION = "utilisation.dgtcp.cloturer";
 export const utilisationClotureMode = (
   role: string | null | undefined,
   hasPermission: (p: string) => boolean,
-  u: Pick<UtilisationCreditDto, "type" | "statut">,
+  u: CircuitUtilisation,
 ): "DGTCP" | "ADMIN" | null => {
   if (!isUtilisationCloturable(u)) return null;
   if (role === "DGTCP" && hasPermission(UTILISATION_CLOTURE_PERMISSION)) return "DGTCP";

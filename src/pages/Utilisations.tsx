@@ -51,6 +51,7 @@ import { emettreRecuDepot, recuCibles, soumisDepuis } from "@/lib/recuDepot";
 import { joinNumeros, numerosDeclaration, numerosFacture, withNumerosListes } from "@/lib/utilisationNumeros";
 import { NumerosRepetables } from "@/components/common/NumerosRepetables";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { isAEmettre } from "@/lib/utilisationCircuit";
 
 
 const STATUT_COLORS = UTILISATION_STATUT_COLORS;
@@ -631,7 +632,7 @@ const Utilisations = () => {
       [...numerosDeclaration(u), ...numerosFacture(u)].some((n) => n.toLowerCase().includes(search.toLowerCase())) ||
       String(u.id).includes(search);
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
-      (filterStatut === "A_EMETTRE" && ((u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE"))) ||
+      (filterStatut === "A_EMETTRE" && isAEmettre(u)) ||
       (filterStatut === "A_CONTROLER" && isUtilisationAControler(u));
     const matchTab = tab === "all" ||
       (tab === "DOUANIER" && u.type === "DOUANIER") ||
@@ -705,7 +706,7 @@ const Utilisations = () => {
           </div>
           {(role === "PRESIDENT" || role === "ADMIN_SI") && (
             <Button variant={filterStatut === "A_EMETTRE" ? "default" : "outline"} onClick={() => setFilterStatut(filterStatut === "A_EMETTRE" ? "ALL" : "A_EMETTRE")}>
-              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter((u) => (u.type === "DOUANIER" && u.statut === "TRANSMISE_AU_PRESIDENT") || (u.type === "TVA_INTERIEURE" && u.statut === "VALIDEE")).length})
+              {t("utilisations:certificat_utilisation.queue_filter")} ({data.filter(isAEmettre).length})
             </Button>
           )}
           {(role === "DGTCP" || role === "ADMIN_SI") && (
