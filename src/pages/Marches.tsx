@@ -371,7 +371,7 @@ const Marches = () => {
 
   const conventionLabel = (id: number) => {
     const c = conventions.find(x => x.id === id);
-    return c ? (c.reference || `#${c.id}`) : `#${id}`;
+    return c?.reference || "—";
   };
 
   return (
@@ -554,7 +554,7 @@ const Marches = () => {
                 <OrderedMultiSelect
                   options={visibleConventions.map(c => ({
                     value: String(c.id),
-                    label: `${c.reference || `#${c.id}`} — ${c.intitule || ""}`,
+                    label: `${c.reference || "—"} — ${c.intitule || ""}`,
                     keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
                   }))}
                   values={convIds.map(String)}
@@ -569,7 +569,7 @@ const Marches = () => {
                   }}
                   labelOf={(v) => {
                     const c = conventions.find(x => x.id === Number(v));
-                    return c ? `${c.reference || `#${c.id}`} — ${c.intitule || ""}` : `#${v}`;
+                    return c ? `${c.reference || "—"} — ${c.intitule || ""}` : "—";
                   }}
                   placeholder={visibleConventions.length === 0 ? t("marches:form.convention_empty_scope") : t("marches:form.conventions_add_placeholder")}
                   searchPlaceholder={t("marches:form.convention_search")}
@@ -604,7 +604,7 @@ const Marches = () => {
                     searchPlaceholder={t("marches:form.demande_correction_search")}
                     options={eligibles.map(d => ({
                       value: String(d.id),
-                      label: `${d.reference || d.numero || `#${d.id}`} — ${d.intituleMarche || d.marcheIntitule || ""}`,
+                      label: `${d.reference || d.numero || "—"} — ${d.intituleMarche || d.marcheIntitule || ""}`,
                       keywords: `${d.reference || ""} ${d.numero || ""} ${d.intituleMarche || ""} ${d.entrepriseRaisonSociale || ""}`,
                     }))}
                   />
@@ -689,7 +689,7 @@ const Marches = () => {
           <DialogHeader>
             <DialogTitle>{t("marches:assign.title")}</DialogTitle>
             <DialogDescription>
-              {t("marches:assign.description", { id: assignMarche?.id })}
+              {t("marches:assign.description", { ref: assignMarche?.numeroMarche || assignMarche?.reference || "—" })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -701,7 +701,7 @@ const Marches = () => {
                     const d = delegues.find(x => x.id === dId);
                     return (
                       <Badge key={dId} variant="secondary" className="flex items-center gap-1 px-3 py-1">
-                        {d ? `${d.nomComplet} (${d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})` : `#${dId}`}
+                        {d ? `${d.nomComplet} (${d.role === "AUTORITE_UPM" ? "UPM" : "UEP"})` : "—"}
                         <button onClick={() => handleRemoveDelegue(dId)} className="ms-1 rounded-full hover:bg-muted p-0.5">
                           <X className="h-3 w-3" />
                         </button>
@@ -791,7 +791,7 @@ const Marches = () => {
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={t("marches:ged.title", { ref: gedMarche?.numeroMarche || `#${gedMarche?.id}` })}
+        title={t("marches:ged.title", { ref: gedMarche?.numeroMarche || "—" })}
         dossierId={gedMarche?.id || null}
         documentTypes={MARCHE_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={gedDocs}

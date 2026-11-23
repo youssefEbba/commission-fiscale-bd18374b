@@ -20,7 +20,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { tStatutAvenant, tTypeAvenant } from "@/i18n/enums";
 import { formatDate } from "@/i18n/format";
 
-const avenantRef = (a: AvenantDto) => a.numero || `#${a.id}`;
+const avenantRef = (a: AvenantDto) => a.numero || "—";
 
 const Modifications = () => {
   const { t } = useTranslation(["modifications", "common"]);
@@ -148,7 +148,7 @@ const Modifications = () => {
                         <Link to={`/dashboard/modifications/${a.id}`} className="text-primary hover:underline">{avenantRef(a)}</Link>
                       </TableCell>
                       <TableCell className="text-sm"><AvenantMarcheLink avenant={a} /></TableCell>
-                      <TableCell className="text-xs">{a.certificatReference || a.certificatNumero || `#${a.certificatCreditId}`}</TableCell>
+                      <TableCell className="text-xs">{a.certificatReference || a.certificatNumero || "—"}</TableCell>
                       <TableCell className="text-sm">{a.entrepriseNom || "—"}</TableCell>
                       <TableCell className="text-sm">{tTypeAvenant(a.type)}</TableCell>
                       <TableCell><AvenantStatutBadge statut={a.statut} /></TableCell>

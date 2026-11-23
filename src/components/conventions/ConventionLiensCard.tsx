@@ -165,7 +165,7 @@ const ConventionLiensCard = ({ convention, onChanged }: Props) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Link2 className="h-5 w-5" /> {t("conventions:liens.link_title")}</DialogTitle>
-            <DialogDescription>{t("conventions:liens.link_desc", { ref: convention.reference || `#${convention.id}` })}</DialogDescription>
+            <DialogDescription>{t("conventions:liens.link_desc", { ref: convention.reference || "—" })}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label>{t("conventions:fields.autorite_contractante")}</Label>

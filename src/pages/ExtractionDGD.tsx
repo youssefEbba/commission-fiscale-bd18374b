@@ -161,7 +161,7 @@ const ExtractionDGD = () => {
           <div className="flex-1">
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              Extraction des documents — Demande #{id}
+              Extraction des documents
             </h1>
             <p className="text-muted-foreground text-xs">
               Étape 1 : Extraire les documents avant d'accéder aux chatbots IA

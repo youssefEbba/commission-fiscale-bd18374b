@@ -57,7 +57,7 @@ const DelegueEditDialog = ({ delegue, open, onOpenChange, onUpdated }: Props) =>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Modifier le représentant</DialogTitle>
-          <DialogDescription>Mettez à jour les informations du représentant #{delegue?.id}</DialogDescription>
+          <DialogDescription>Mettez à jour les informations du représentant {delegue?.nomComplet}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">

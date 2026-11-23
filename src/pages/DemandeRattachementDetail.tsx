@@ -76,7 +76,7 @@ export default function DemandeRattachementDetail() {
       <div className="space-y-6 max-w-4xl mx-auto">
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" size="sm" onClick={smartBack}><ArrowLeft className="h-4 w-4 me-1 rtl:rotate-180" />{t("detail.back")}</Button>
-          <h1 className="text-xl font-bold text-foreground">{t("detail.title")} <span dir="ltr">{d.reference || `#${d.id}`}</span></h1>
+          <h1 className="text-xl font-bold text-foreground">{t("detail.title")} <span dir="ltr">{d.reference || "—"}</span></h1>
           <Badge variant={statutVariant(d.statut)}>{t(`statut.${d.statut}`)}</Badge>
         </div>
 

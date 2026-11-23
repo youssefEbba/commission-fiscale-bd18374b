@@ -57,7 +57,7 @@ export default function Entreprises() {
       titleKey="entites.entreprises_title" subtitleKey="entites.entreprises_subtitle"
       newKey="entites.new_entreprise" editKey="entites.edit_entreprise"
       fields={fields} columns={["raisonSociale", "nif", "categorie", "secteurId", "telephone"]}
-      detailHref={(e) => `/dashboard/entreprises/${e.id}`} nameOf={(e) => e.raisonSociale || `#${e.id}`}
+      detailHref={(e) => `/dashboard/entreprises/${e.id}`} nameOf={(e) => e.raisonSociale || "—"}
       api={entrepriseApi} canCreate canUpdate canDelete
     />
   );

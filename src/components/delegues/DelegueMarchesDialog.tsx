@@ -45,7 +45,6 @@ const DelegueMarchesDialog = ({ delegue, open, onOpenChange }: Props) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Référence</TableHead>
                 <TableHead>Objet</TableHead>
                 <TableHead>Statut</TableHead>
@@ -54,8 +53,7 @@ const DelegueMarchesDialog = ({ delegue, open, onOpenChange }: Props) => {
             <TableBody>
               {marches.map(m => (
                 <TableRow key={m.id}>
-                  <TableCell className="font-medium">#{m.id}</TableCell>
-                  <TableCell>{m.reference || "—"}</TableCell>
+                  <TableCell className="font-medium">{m.reference || "—"}</TableCell>
                   <TableCell className="max-w-[200px] truncate">{m.objet || "—"}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{m.statut || "—"}</Badge></TableCell>
                 </TableRow>

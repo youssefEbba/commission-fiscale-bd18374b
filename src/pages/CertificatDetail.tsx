@@ -198,7 +198,7 @@ const CertificatDetail = () => {
   // Colonne « Libellé importé » : seulement si une utilisation reprise de l'archive en porte un.
   const avecLibelleImporte = utilisations.some((u) => !!u.origineArchiveLibelle);
   // Numéro saisi par l'autorité, sinon référence DM-…, sinon intitulé.
-  const marcheLabel = c.marcheNumero || c.marcheReference || c.marcheIntitule || `#${c.marcheId}`;
+  const marcheLabel = c.marcheNumero || c.marcheReference || c.marcheIntitule || "—";
   // La fiche marché n'est pas ouverte aux entreprises (routes App.tsx).
   const canOpenMarche = user?.role !== "ENTREPRISE" && user?.role !== "SOUS_TRAITANT";
 
@@ -384,7 +384,7 @@ const CertificatDetail = () => {
                 {c.demandeCorrectionId && (
                   <div>
                     <p className="text-muted-foreground">{t("certificats:detail.info.demande_correction")}</p>
-                    <Link to={`/dashboard/demandes/${c.demandeCorrectionId}`} className="font-medium text-primary hover:underline">{c.demandeCorrectionReference || c.demandeCorrectionNumero || `#${c.demandeCorrectionId}`}</Link>
+                    <Link to={`/dashboard/demandes/${c.demandeCorrectionId}`} className="font-medium text-primary hover:underline">{c.demandeCorrectionReference || c.demandeCorrectionNumero || "—"}</Link>
                   </div>
                 )}
                 {c.marcheId && (
@@ -452,7 +452,7 @@ const CertificatDetail = () => {
                       {tTvaStockSource(source)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{stk.numeroDeclaration || (stk.utilisationDouaneId ? t("certificats:detail.stock.util_short", { id: stk.utilisationDouaneId }) : "—")}</TableCell>
+                  <TableCell className="font-medium">{stk.numeroDeclaration || (stk.utilisationDouaneId ? t("certificats:detail.stock.util_short") : "—")}</TableCell>
                   <TableCell>{formatAmount(stk.montantInitial)}</TableCell>
                   <TableCell>{formatAmount(stk.montantConsomme)}</TableCell>
                   <TableCell className="font-bold">{formatAmount(stk.montantRestant)}</TableCell>
@@ -504,7 +504,7 @@ const CertificatDetail = () => {
                 ) : (
                   utilisations.map((u) => (
                     <TableRow key={u.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/dashboard/utilisations/${u.id}`)}>
-                      <TableCell className="font-medium">#{u.id}</TableCell>
+                      <TableCell className="font-medium">{displayRef(u)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {u.type === "DOUANIER" ? t("certificats:detail.utilisations.type_douane") : t("certificats:detail.utilisations.type_tva")}

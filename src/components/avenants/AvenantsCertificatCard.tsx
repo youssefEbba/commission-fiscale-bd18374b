@@ -82,7 +82,7 @@ export default function AvenantsCertificatCard({ certificat }: { certificat: Cer
               <ClickableTableRow key={a.id} to={`/dashboard/modifications/${a.id}`}>
                 <RowNumberCell n={idx + 1} />
                 <TableCell className="font-medium">
-                  <Link to={`/dashboard/modifications/${a.id}`} className="text-primary hover:underline">{a.numero || `#${a.id}`}</Link>
+                  <Link to={`/dashboard/modifications/${a.id}`} className="text-primary hover:underline">{a.numero || "—"}</Link>
                 </TableCell>
                 <TableCell className="text-sm">{tTypeAvenant(a.type)}</TableCell>
                 <TableCell><AvenantStatutBadge statut={a.statut} /></TableCell>

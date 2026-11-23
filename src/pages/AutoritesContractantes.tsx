@@ -22,7 +22,7 @@ export default function AutoritesContractantes() {
       titleKey="entites.autorites_title" subtitleKey="entites.autorites_subtitle"
       newKey="entites.new_autorite" editKey="entites.edit_autorite"
       fields={AUTORITE_FIELDS} columns={["nom", "sigle", "ministereTutelleNom", "telephone"]}
-      detailHref={(a) => `/dashboard/autorites/${a.id}`} nameOf={(a) => a.nom || `#${a.id}`}
+      detailHref={(a) => `/dashboard/autorites/${a.id}`} nameOf={(a) => a.nom || "—"}
       api={autoriteContractanteApi}
       canCreate={hasPermission("autorite.create")} canUpdate={hasPermission("autorite.update")} canDelete={hasPermission("autorite.delete")}
     />

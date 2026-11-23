@@ -10,7 +10,7 @@ interface CreditLinkProps {
 
 /** Libellé lisible d'un crédit : référence (CR-0001-01-2026) sinon numéro, sinon #id. */
 export function creditLabel(p: { id?: number | null; reference?: string | null; numero?: string | null }) {
-  return p.reference || p.numero || (p.id != null ? `#${p.id}` : "—");
+  return p.reference || p.numero || "—";
 }
 
 /** Numéro de crédit cliquable, ouvre le détail du crédit via son identifiant. */

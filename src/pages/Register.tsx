@@ -155,7 +155,7 @@ const Register = () => {
             <h1 className="text-2xl font-bold text-foreground">{t("register.done.title")}</h1>
             <div className="rounded-lg border-2 border-accent bg-accent/10 p-5 space-y-3">
               <p className="text-sm text-muted-foreground">{t("register.done.reference_label")}</p>
-              <p className="text-3xl font-bold tracking-wider text-foreground font-mono break-all" dir="ltr">{done.reference || `#${done.id}`}</p>
+              <p className="text-3xl font-bold tracking-wider text-foreground font-mono break-all" dir="ltr">{done.reference || "—"}</p>
               <Button type="button" variant="outline" size="sm" onClick={copyRef}>
                 {copied ? <Check className="h-4 w-4 me-1" /> : <Copy className="h-4 w-4 me-1" />}{t("register.done.copy")}
               </Button>

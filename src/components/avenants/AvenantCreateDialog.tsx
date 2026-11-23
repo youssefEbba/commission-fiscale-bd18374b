@@ -73,7 +73,7 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, ma
     value: o.key,
     label: o.marcheId == null
       ? t("modifications:depot.sans_marche")
-      : `${o.numero || `#${o.marcheId}`}${o.intitule ? ` — ${o.intitule}` : ""}`,
+      : `${o.numero || "—"}${o.intitule ? ` — ${o.intitule}` : ""}`,
     description: t("modifications:depot.nb_credits", { count: o.nbCredits }),
   })), [certs, t]);
   const creditsMarche = useMemo(() => creditsDuMarche(certs, form.marche), [certs, form.marche]);
@@ -124,7 +124,7 @@ export default function AvenantCreateDialog({ open, onOpenChange, certificat, ma
             {certificat ? (
               <p className="text-sm font-medium rounded-md border border-border bg-muted/30 px-3 py-2">
                 {certificat.marcheId != null
-                  ? `${certificat.marcheNumero || certificat.marcheReference || `#${certificat.marcheId}`}${certificat.marcheIntitule ? ` — ${certificat.marcheIntitule}` : ""}`
+                  ? `${certificat.marcheNumero || certificat.marcheReference || "—"}${certificat.marcheIntitule ? ` — ${certificat.marcheIntitule}` : ""}`
                   : t("modifications:depot.sans_marche")}
               </p>
             ) : (

@@ -85,9 +85,9 @@ export default function AvenantsMarcheCard({ marcheId }: { marcheId: number }) {
               <ClickableTableRow key={a.id} to={`/dashboard/modifications/${a.id}`}>
                 <RowNumberCell n={idx + 1} />
                 <TableCell className="font-medium">
-                  <Link to={`/dashboard/modifications/${a.id}`} className="text-primary hover:underline">{a.numero || `#${a.id}`}</Link>
+                  <Link to={`/dashboard/modifications/${a.id}`} className="text-primary hover:underline">{a.numero || "—"}</Link>
                 </TableCell>
-                <TableCell className="text-xs">{a.certificatReference || a.certificatNumero || `#${a.certificatCreditId}`}</TableCell>
+                <TableCell className="text-xs">{a.certificatReference || a.certificatNumero || "—"}</TableCell>
                 <TableCell className="text-sm">{tTypeAvenant(a.type)}</TableCell>
                 <TableCell><AvenantStatutBadge statut={a.statut} /></TableCell>
                 <TableCell className="text-xs text-muted-foreground">{a.dateDepot ? formatDate(a.dateDepot) : "—"}</TableCell>

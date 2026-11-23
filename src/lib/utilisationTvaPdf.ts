@@ -87,7 +87,8 @@ export async function generateUtilisationTvaPdf(u: UtilisationCreditDto, cert: C
   doc.text("UTILISATION DU CREDIT D'IMPOTS", W / 2, y, { align: "center" });
   y += 22;
   const annee = new Date(u.dateCertificatUtilisation || u.dateDemande || u.dateCreation || Date.now()).getFullYear();
-  const numero = u.numeroCertificatUtilisation || `${u.id}/${annee}`;
+  // Tant que le n° de certificat n'est pas attribué : la référence de la demande (DU-…), jamais l'id.
+  const numero = u.numeroCertificatUtilisation || u.reference || "—";
   doc.setFontSize(10);
   doc.text(`N° ${numero}`, R, y, { align: "right" });
   y += 14;

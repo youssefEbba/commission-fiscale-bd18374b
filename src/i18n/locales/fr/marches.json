@@ -17,7 +17,7 @@
   },
   "detail": {
     "title": "Marché {{ref}}",
-    "title_fallback": "Marché #{{id}}",
+    "title_fallback": "Marché {{ref}}",
     "back": "Retour",
     "not_found": "Marché introuvable",
     "load_error": "Impossible de charger le marché",
@@ -102,7 +102,7 @@
   },
   "assign": {
     "title": "Gérer les représentants",
-    "description": "Ajoutez ou retirez des représentants du marché #{{id}}.",
+    "description": "Ajoutez ou retirez des représentants du marché {{ref}}.",
     "current": "Représentants affectés",
     "add": "Ajouter un représentant",
     "add_placeholder": "Sélectionner un représentant",

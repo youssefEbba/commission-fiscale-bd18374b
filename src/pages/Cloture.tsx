@@ -115,7 +115,7 @@ const Cloture = () => {
     if (isDGTCP) fetchEligible();
   }, []);
 
-  const queueLabel = (q: ClotureQueueItemDto) => q.reference || q.numero || t("cloture:step1.certificat_item", { id: q.certificatCreditId });
+  const queueLabel = (q: ClotureQueueItemDto) => q.reference || q.numero || "—";
   /** Motif proposable : solde à zéro seulement si soldes épuisés, expiration seulement si validité dépassée. */
   const motifAllowed = (k: MotifCloture, q?: ClotureQueueItemDto) =>
     !q || (k === "SOLDE_ZERO" ? q.soldesEpuises : k === "EXPIRATION_VALIDITE" ? q.validiteDepassee : true);
@@ -272,8 +272,8 @@ const Cloture = () => {
                   {propositions.map((p, rowIdx) => (
                     <TableRow key={p.id}>
                       <RowNumberCell n={rowIdx + 1} />
-                      <TableCell>{p.id}</TableCell>
-                      <TableCell className="font-medium">{p.certificatReference || p.certificatNumero || `#${p.certificatCreditId}`}{equipBadge(p.equipementsPresents)}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">{p.reference || "—"}</TableCell>
+                      <TableCell className="font-medium">{p.certificatReference || p.certificatNumero || "—"}{equipBadge(p.equipementsPresents)}</TableCell>
                       <TableCell>
                         <Badge variant={p.typeOperation === "ANNULATION" ? "destructive" : "secondary"}>
                           {tTypeOperationCloture(p.typeOperation)}
@@ -387,12 +387,12 @@ const Cloture = () => {
         <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t("cloture:detail.title", { id: selected?.id })}</DialogTitle>
+              <DialogTitle>{t("cloture:detail.title", { ref: selected?.reference || "—" })}</DialogTitle>
             </DialogHeader>
             {selected && (
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-muted-foreground">{t("cloture:detail.certificat")}</span> <span className="font-medium">{selected.certificatReference || selected.certificatNumero || `#${selected.certificatCreditId}`}</span></div>
+                  <div><span className="text-muted-foreground">{t("cloture:detail.certificat")}</span> <span className="font-medium">{selected.certificatReference || selected.certificatNumero || "—"}</span></div>
                   <div><span className="text-muted-foreground">{t("cloture:detail.type")}</span> <Badge variant={selected.typeOperation === "ANNULATION" ? "destructive" : "secondary"}>{tTypeOperationCloture(selected.typeOperation)}</Badge></div>
                   <div><span className="text-muted-foreground">{t("cloture:detail.motif")}</span> <span className="font-medium">{tMotifCloture(selected.motif)}</span></div>
                   <div><span className="text-muted-foreground">{t("cloture:detail.solde_restant")}</span> <span className="font-medium">{formatAmount(selected.soldeRestant)}</span></div>
@@ -432,7 +432,7 @@ const Cloture = () => {
             <DialogTitle>{aConfirmer ? t(`cloture:confirm_dialog.${aConfirmer.action}.title`) : ""}</DialogTitle>
             <DialogDescription>
               {aConfirmer ? t(`cloture:confirm_dialog.${aConfirmer.action}.desc`, {
-                credit: aConfirmer.p.certificatReference || aConfirmer.p.certificatNumero || `#${aConfirmer.p.certificatCreditId}`,
+                credit: aConfirmer.p.certificatReference || aConfirmer.p.certificatNumero || "—",
                 solde: formatAmount(aConfirmer.p.soldeRestant),
               }) : ""}
             </DialogDescription>

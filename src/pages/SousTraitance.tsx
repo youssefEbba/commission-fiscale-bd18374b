@@ -366,9 +366,9 @@ const SousTraitance = () => {
                   ) : filtered.map((row, rowIdx) => (
                     <TableRow key={row.id}>
                       <RowNumberCell n={rowIdx + 1} />
-                      <TableCell className="font-medium">#{row.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{row.certificatReference || row.certificatNumero || t("sous_traitance:list.cert_fallback", { id: row.certificatCreditId })}</TableCell>
-                      <TableCell>{row.sousTraitantEntrepriseRaisonSociale || t("sous_traitance:list.ent_fallback", { id: row.sousTraitantEntrepriseId })}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">{row.reference || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{row.certificatReference || row.certificatNumero || "—"}</TableCell>
+                      <TableCell>{row.sousTraitantEntrepriseRaisonSociale || "—"}</TableCell>
                       <TableCell>{fmtNum(row.volumes)}</TableCell>
                       <TableCell>{fmtNum(row.quantites)}</TableCell>
                       <TableCell>
@@ -408,12 +408,12 @@ const SousTraitance = () => {
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("sous_traitance:detail.title", { id: selected?.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("sous_traitance:detail.title", { ref: selected?.reference || "—" })}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.certificat")}</span><p className="font-medium">{selected.certificatReference || selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
-                <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.sous_traitant")}</span><p className="font-medium">{selected.sousTraitantEntrepriseRaisonSociale || `#${selected.sousTraitantEntrepriseId}`}</p></div>
+                <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.certificat")}</span><p className="font-medium">{selected.certificatReference || selected.certificatNumero || "—"}</p></div>
+                <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.sous_traitant")}</span><p className="font-medium">{selected.sousTraitantEntrepriseRaisonSociale || "—"}</p></div>
                 <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.volumes")}</span><p className="font-medium">{fmtNum(selected.volumes)}</p></div>
                 <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.quantites")}</span><p className="font-medium">{fmtNum(selected.quantites)}</p></div>
                 <div><span className="text-muted-foreground">{t("sous_traitance:detail.fields.contrat_enregistre")}</span><p className="font-medium">{selected.contratEnregistre ? t("sous_traitance:common.yes") : t("sous_traitance:common.no")}</p></div>
@@ -446,7 +446,7 @@ const SousTraitance = () => {
                   value: String(c.id),
                   label: t("sous_traitance:dialogs.create.certificat_option_label", {
                     // c.reference / c.numero are referential values from API — not translated.
-                    ref: c.reference || c.numero || t("sous_traitance:list.cert_fallback", { id: c.id }),
+                    ref: c.reference || c.numero || "—",
                     // No currency field on CertificatDto — defaults to MRU.
                     solde: formatAmount(c.soldeCordon, { currency: "MRU" }),
                   }),
@@ -611,7 +611,7 @@ const SousTraitance = () => {
       <DocumentGED
         open={docDialog !== null}
         onOpenChange={() => setDocDialog(null)}
-        title={t("sous_traitance:dialogs.documents.title", { id: docDialog })}
+        title={t("sous_traitance:dialogs.documents.title", { ref: docDossier?.reference || "—" })}
         dossierId={docDialog}
         documentTypes={gedDocTypes}
         documents={docs}

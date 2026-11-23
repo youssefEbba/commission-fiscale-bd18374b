@@ -76,8 +76,8 @@ export async function generateLiquidationPdf(u: UtilisationCreditDto, cert: Cert
   doc.setFont(PDF_FONT, "italic").setFontSize(10);
   doc.text("EFI2", W - M, y - 14, { align: "right" });
   doc.setFont(PDF_FONT, "bold").setFontSize(10);
-  const annee = u.dateLiquidation ? new Date(u.dateLiquidation).getFullYear() : new Date().getFullYear();
-  doc.text(u.numeroCertificatUtilisation ? `N° ${u.numeroCertificatUtilisation}` : `N° ${u.id}/${annee}`, W - M, y + 4, { align: "right" });
+  // Tant que le n° de certificat n'est pas attribué : la référence de la demande (DU-…), jamais l'id.
+  doc.text(`N° ${u.numeroCertificatUtilisation || u.reference || "—"}`, W - M, y + 4, { align: "right" });
   const cadreTop = y + 8;
   y += 24;
 

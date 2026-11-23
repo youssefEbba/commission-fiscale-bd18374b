@@ -25,7 +25,7 @@
       "title_default": "مقترحات الإقفال / الإلغاء",
       "empty": "لا توجد مقترحات",
       "columns": {
-        "id": "المعرّف",
+        "id": "المرجع",
         "certificat": "الشهادة",
         "type": "النوع",
         "motif": "السبب",
@@ -47,7 +47,7 @@
     "certificat_label": "الشهادة",
     "certificat_placeholder": "اختيار شهادة",
     "certificat_search": "ابحث عن شهادة…",
-    "certificat_item": "الشهادة رقم {{id}}",
+    "certificat_item": "الشهادة {{ref}}",
     "type_label": "نوع العملية",
     "type_placeholder": "اختيار",
     "motif_label": "السبب",
@@ -66,7 +66,7 @@
     "finalize": "إنهاء"
   },
   "detail": {
-    "title": "تفاصيل المقترح رقم {{id}}",
+    "title": "تفاصيل المقترح {{ref}}",
     "certificat": "الشهادة:",
     "type": "النوع:",
     "motif": "السبب:",

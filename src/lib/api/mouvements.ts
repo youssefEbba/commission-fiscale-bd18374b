@@ -82,6 +82,8 @@ export type StatutSousTraitance = "DEMANDE" | "EN_COURS" | "AUTORISEE" | "REFUSE
 
 export interface SousTraitanceDto {
   id: number;
+  /** ST-NNNN-MM-AAAA, attribuée à la création. */
+  reference?: string | null;
   certificatCreditId: number;
   certificatNumero?: string;
   /** Référence lisible du crédit (CR-…). */
@@ -173,6 +175,8 @@ export interface ClotureCreditDto {
   /** Dérivé de la demande de correction d'origine. null = non. */
   equipementsPresents?: boolean | null;
   id: number;
+  /** CL-NNNN-MM-AAAA. */
+  reference?: string | null;
   dateProposition?: string;
   dateCloture?: string;
   motif: MotifCloture;

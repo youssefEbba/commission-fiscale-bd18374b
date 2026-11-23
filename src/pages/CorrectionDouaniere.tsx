@@ -327,7 +327,7 @@ const CorrectionDouaniere = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="h-6 w-6 text-primary" />
-              {t("correction_douaniere:page.title_with_number", { numero: demande ? displayRef(demande) : `#${id}` })}
+              {t("correction_douaniere:page.title_with_number", { numero: demande ? displayRef(demande) : "—" })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">{t("correction_douaniere:page.subtitle")}</p>
           </div>

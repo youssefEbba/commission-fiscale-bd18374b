@@ -51,6 +51,7 @@ import GroupementFormDialog from "@/components/groupements/GroupementFormDialog"
 
 // ── helpers ──
 import { EQUIP_DOC } from "@/lib/equipements";
+import { displayRef } from "@/lib/displayRef";
 
 const emptyImportation = (): ImportationLigne => ({
   designation: "", unite: "", quantite: 0, prixUnitaire: 0,
@@ -780,10 +781,10 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
       toast({
         title: t("demandes:toast.success"),
         description: asBrouillon
-          ? t("demandes:wizard.toast.draft_saved", { numero: demande.numero || `#${demande.id}` })
+          ? t("demandes:wizard.toast.draft_saved", { numero: displayRef(demande) })
           : isEditing
-          ? t("demandes:wizard.toast.demande_submitted", { numero: demande.numero || `#${demande.id}` })
-          : t("demandes:wizard.toast.demande_created", { numero: demande.numero || `#${demande.id}` }),
+          ? t("demandes:wizard.toast.demande_submitted", { numero: displayRef(demande) })
+          : t("demandes:wizard.toast.demande_created", { numero: displayRef(demande) }),
       });
       // Nettoyer toutes les valeurs persistées du wizard après succès
       try {
@@ -823,7 +824,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? t("demandes:wizard.title_edit", { numero: editingDemande?.numero || `#${editingId}` }) : t("demandes:wizard.title_new")}</DialogTitle>
+          <DialogTitle>{isEditing ? t("demandes:wizard.title_edit", { numero: displayRef(editingDemande) }) : t("demandes:wizard.title_new")}</DialogTitle>
         </DialogHeader>
         <div className="md:hidden flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
@@ -903,7 +904,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
                           .map(g => ({
                             value: String(g.id),
-                            label: g.raisonSociale || `#${g.id}`,
+                            label: g.raisonSociale || "—",
                             description: g.nifAffiche
                               ? `NIF (chef de file) : ${g.nifAffiche}${g.chefDeFileRaisonSociale ? ` — ${g.chefDeFileRaisonSociale}` : ""}`
                               : g.chefDeFileRaisonSociale || undefined,
@@ -941,7 +942,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                           .sort((a, b) => (a.raisonSociale || "").localeCompare(b.raisonSociale || "", "fr", { sensitivity: "base" }))
                           .map(e => ({
                             value: String(e.id),
-                            label: e.raisonSociale || `#${e.id}`,
+                            label: e.raisonSociale || "—",
                             description: (e.nifAffiche || e.nif) ? `NIF : ${e.nifAffiche || e.nif}` : (e.registreCommerceEtranger ? `RC étranger : ${e.registreCommerceEtranger}` : undefined),
                             keywords: `${e.raisonSociale || ""} ${e.nifAffiche || ""} ${e.nif || ""} ${e.registreCommerceEtranger || ""}`,
                           }))}
@@ -1068,7 +1069,7 @@ export default function CreateDemandeWizard({ open, onOpenChange, onCreated, edi
                         searchPlaceholder={t("demandes:wizard.fields.search_convention")}
                         options={conventions.filter(c => conventionRattachable(c) || String(c.id) === conventionId).map(c => ({
                           value: String(c.id),
-                          label: `${c.reference || `#${c.id}`} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
+                          label: `${c.reference || "—"} — ${c.intitule || c.bailleurNom || c.bailleur || ""}`,
                           keywords: `${c.reference || ""} ${c.intitule || ""} ${c.bailleurNom || ""}`,
                         }))}
                       />

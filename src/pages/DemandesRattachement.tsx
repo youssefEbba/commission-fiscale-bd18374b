@@ -69,7 +69,7 @@ export default function DemandesRattachement() {
                     return (
                       <ClickableTableRow key={d.id} to={href}>
                         <RowNumberCell n={rowIdx + 1} />
-                        <TableCell className="font-medium"><Link to={href} className="text-primary underline-offset-2 hover:underline" dir="ltr">{d.reference || `#${d.id}`}</Link></TableCell>
+                        <TableCell className="font-medium"><Link to={href} className="text-primary underline-offset-2 hover:underline" dir="ltr">{d.reference || "—"}</Link></TableCell>
                         <TableCell>{d.nomComplet || d.username}<div className="text-xs text-muted-foreground">{d.email}</div></TableCell>
                         <TableCell>{d.roleDemande ? t(`roles.${d.roleDemande}`) : "—"}</TableCell>
                         <TableCell>

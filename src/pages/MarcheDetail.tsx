@@ -197,7 +197,7 @@ const MarcheDetail = () => {
                   <li key={cid} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.5fr)] gap-2 px-3 py-2 text-sm items-center">
                     <div className="flex items-center gap-2 min-w-0">
                       <button className="text-primary hover:underline truncate" onClick={() => navigate(`/dashboard/conventions/${cid}`)}>
-                        {conv?.reference || `#${cid}`}
+                        {conv?.reference || "—"}
                       </button>
                       {i === 0 && <Badge variant="secondary" className="text-[10px] shrink-0">{t("marches:detail.convention_principale")}</Badge>}
                     </div>

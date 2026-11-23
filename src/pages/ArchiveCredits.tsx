@@ -57,14 +57,14 @@ const ArchiveCreditUnique = () => {
     () =>
       [...entreprises]
         .sort((x, y) => (x.raisonSociale || "").localeCompare(y.raisonSociale || "", "fr"))
-        .map((e) => ({ value: String(e.id), label: e.raisonSociale || `#${e.id}`, description: e.nif ? `NIF ${e.nif}` : undefined })),
+        .map((e) => ({ value: String(e.id), label: e.raisonSociale || "—", description: e.nif ? `NIF ${e.nif}` : undefined })),
     [entreprises],
   );
   const autoriteOptions = useMemo(
     () =>
       [...autorites]
         .sort((x, y) => (x.nom || "").localeCompare(y.nom || "", "fr"))
-        .map((a) => ({ value: String(a.id), label: a.nom || `#${a.id}`, description: a.sigle || undefined })),
+        .map((a) => ({ value: String(a.id), label: a.nom || "—", description: a.sigle || undefined })),
     [autorites],
   );
   const conventionOptions = useMemo(
@@ -72,7 +72,7 @@ const ArchiveCreditUnique = () => {
       [...conventions]
         .filter((c) => !autoriteId || String(c.autoriteContractanteId ?? "") === autoriteId)
         .sort((x, y) => (x.reference || "").localeCompare(y.reference || "", "fr"))
-        .map((c) => ({ value: String(c.id), label: c.actif === false ? `${c.reference || `#${c.id}`} — ${t("conventions:activation.disabled_badge")}` : (c.reference || `#${c.id}`), description: c.intitule || undefined })),
+        .map((c) => ({ value: String(c.id), label: c.actif === false ? `${c.reference || "—"} — ${t("conventions:activation.disabled_badge")}` : (c.reference || "—"), description: c.intitule || undefined })),
     [conventions, autoriteId, t],
   );
   const marcheOptions = useMemo(
@@ -82,7 +82,7 @@ const ArchiveCreditUnique = () => {
         .sort((x, y) => (x.numeroMarche || "").localeCompare(y.numeroMarche || "", "fr"))
         .map((m) => ({
           value: String(m.id),
-          label: m.numeroMarche || `#${m.id}`,
+          label: m.numeroMarche || "—",
           description: m.intitule || undefined,
         })),
     [marches, conventionId],
@@ -488,7 +488,7 @@ const ArchiveCreditUnique = () => {
                 <Info label={t("archive:result_certificat")} value={`${result.certificatNumero} (${result.certificatStatut})`} />
                 <Info label={t("archive:entreprise")} value={result.entrepriseRaisonSociale} />
                 {result.demandeCorrectionId != null && (
-                  <Info label={t("archive:result_dossier")} value={result.demandeCorrectionNumero ?? `#${result.demandeCorrectionId}`} />
+                  <Info label={t("archive:result_dossier")} value={result.demandeCorrectionNumero ?? "—"} />
                 )}
                 {result.transfertCreditId != null && (
                   <Info label={t("archive:result_transfert")} value={money(result.transfertCreditMontant)} />

@@ -6,7 +6,7 @@
     "filter_all": "Tous les statuts",
     "empty": "Aucune sous-traitance",
     "columns": {
-      "id": "#",
+      "id": "Référence",
       "certificat": "Certificat",
       "sous_traitant": "Sous-traitant",
       "volumes": "Volumes",
@@ -16,8 +16,8 @@
       "date_autorisation": "Date autorisation",
       "actions": "Actions"
     },
-    "cert_fallback": "Cert #{{id}}",
-    "ent_fallback": "Ent. #{{id}}"
+    "cert_fallback": "Cert {{ref}}",
+    "ent_fallback": "Ent. {{ref}}"
   },
   "actions": {
     "new": "Nouvelle sous-traitance",
@@ -34,7 +34,7 @@
     "no": "Non"
   },
   "detail": {
-    "title": "Sous-traitance #{{id}}",
+    "title": "Sous-traitance {{ref}}",
     "fields": {
       "certificat": "Certificat",
       "sous_traitant": "Sous-traitant",
@@ -80,7 +80,7 @@
       "doc_lettre_label": "Lettre de sous-traitance *"
     },
     "documents": {
-      "title": "Documents — Sous-traitance #{{id}}"
+      "title": "Documents — Sous-traitance {{ref}}"
     }
   },
   "toast": {

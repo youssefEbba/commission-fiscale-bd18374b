@@ -52,6 +52,7 @@ import { joinNumeros, numerosDeclaration, numerosFacture, withNumerosListes } fr
 import { NumerosRepetables } from "@/components/common/NumerosRepetables";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { isAEmettre } from "@/lib/utilisationCircuit";
+import { displayRef } from "@/lib/displayRef";
 
 
 const STATUT_COLORS = UTILISATION_STATUT_COLORS;
@@ -630,7 +631,7 @@ const Utilisations = () => {
       (u.entrepriseNom || "").toLowerCase().includes(search.toLowerCase()) ||
       (u.certificatTitulaireRaisonSociale || "").toLowerCase().includes(search.toLowerCase()) ||
       [...numerosDeclaration(u), ...numerosFacture(u)].some((n) => n.toLowerCase().includes(search.toLowerCase())) ||
-      String(u.id).includes(search);
+      (u.reference || "").toLowerCase().includes(search.toLowerCase());
     const matchStatut = filterStatut === "ALL" || u.statut === filterStatut ||
       (filterStatut === "A_EMETTRE" && isAEmettre(u)) ||
       (filterStatut === "A_CONTROLER" && isUtilisationAControler(u));
@@ -758,7 +759,7 @@ const Utilisations = () => {
                     <ClickableTableRow key={u.id} to={`/dashboard/utilisations/${u.id}`}>
                       <RowNumberCell n={rowIdx + 1} />
                       <TableCell className="font-medium">
-                        <Link to={`/dashboard/utilisations/${u.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">#{u.id}</Link>
+                        <Link to={`/dashboard/utilisations/${u.id}`} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline whitespace-nowrap">{displayRef(u)}</Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         <div><CreditLink id={u.certificatCreditId} reference={u.certificatReference} numero={u.certificatNumero} /></div>
@@ -882,7 +883,7 @@ const Utilisations = () => {
         <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingId != null ? t("utilisations:create.title_edit", { id: editingId }) : t("utilisations:create.title_new")}
+              {editingId != null ? t("utilisations:create.title_edit", { ref: displayRef(data.find((x) => x.id === editingId)) }) : t("utilisations:create.title_new")}
             </DialogTitle>
             {editingId != null && (
               <p className="text-xs text-muted-foreground">
@@ -910,7 +911,7 @@ const Utilisations = () => {
                     const blockedDouane = createType === "DOUANIER" && transferredCertIds.has(c.id);
                     return {
                       value: String(c.id),
-                      label: `${c.reference || c.numero || `#${c.id}`} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? ` ${t("utilisations:create.certificat_blocked_suffix")}` : ""}`,
+                      label: `${c.reference || c.numero || "—"} — ${c.entrepriseRaisonSociale || c.entrepriseNom || ""}${blockedDouane ? ` ${t("utilisations:create.certificat_blocked_suffix")}` : ""}`,
                       keywords: `${c.reference || ""} ${c.numero || ""} ${c.entrepriseRaisonSociale || ""} ${c.entrepriseNom || ""}`,
                       disabled: blockedDouane,
                     };
@@ -1218,7 +1219,7 @@ const Utilisations = () => {
       {/* Documents dialog */}
       <Dialog open={docDialog !== null} onOpenChange={() => { setDocDialog(null); setDocs([]); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("utilisations:docs_dialog.title", { id: docDialog ?? "" })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:docs_dialog.title", { ref: displayRef(data.find((x) => x.id === docDialog)) })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             {docsLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
@@ -1280,7 +1281,7 @@ const Utilisations = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("utilisations:rejet_temp.subline", { id: showRejetTemp?.id ?? "", demandeur: showRejetTemp?.entrepriseNom || "" })}
+              {t("utilisations:rejet_temp.subline", { ref: displayRef(showRejetTemp), demandeur: showRejetTemp?.entrepriseNom || "" })}
             </p>
             <div className="space-y-2">
               <Label>{t("utilisations:rejet_temp.motif_label")} *</Label>
@@ -1317,7 +1318,7 @@ const Utilisations = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("utilisations:delete_draft.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("utilisations:delete_draft.description", { id: deletingTarget ? ` #${deletingTarget.id}` : "" })}
+              {t("utilisations:delete_draft.description", { ref: displayRef(deletingTarget) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

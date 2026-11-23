@@ -94,7 +94,7 @@
     "empty": "Aucune enquête",
     "nb_questions": "{{count}} question",
     "nb_questions_other": "{{count}} questions",
-    "relance_de": "relance de l'enquête n° {{id}}",
+    "relance_de": "relance de « {{titre}} »",
     "hors_periode": "hors période",
     "questions": "Questions",
     "add_question": "Ajouter une question",
@@ -123,7 +123,8 @@
       "questions": "Ajoutez au moins une question.",
       "question_libelle": "Question {{n}} : l'intitulé est obligatoire.",
       "question_options": "Question {{n}} : un choix demande au moins deux options."
-    }
+    },
+    "relance_de_inconnue": "relance d'une enquête précédente"
   },
   "dashboard": {
     "title": "Satisfaction des usagers",

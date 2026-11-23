@@ -45,7 +45,7 @@
   },
   "detail": {
     "title": "الطلب {{numero}}",
-    "title_fallback": "الطلب #{{id}}",
+    "title_fallback": "الطلب",
     "subtitle": "تفاصيل طلب التصحيح",
     "back": "رجوع",
     "not_found": "الطلب غير موجود",
@@ -56,9 +56,9 @@
       "date_depot": "تاريخ الإيداع",
       "convention": "الاتفاقية",
       "marche": "عنوان مشروع الصفقة",
-      "convention_fallback": "اتفاقية #{{id}}",
-      "marche_fallback": "صفقة #{{id}}",
-      "marche_detached": "صفقة #{{id}} (منفصلة)",
+      "convention_fallback": "اتفاقية",
+      "marche_fallback": "صفقة",
+      "marche_detached": "صفقة منفصلة",
       "reference_appel_offre": "مرجع طلب العروض"
     },
     "generate_adoption_letter": "تحميل رسالة الاعتماد",
@@ -368,7 +368,7 @@
   "wizard": {
     "title_new": "طلب تصحيح جديد",
     "title_edit": "تعديل الطلب {{numero}}",
-    "title_edit_fallback": "تعديل الطلب #{{id}}",
+    "title_edit_fallback": "تعديل الطلب {{ref}}",
     "mobile_tip_title": "نصيحة للهاتف:",
     "mobile_tip_body": "يتم حفظ بياناتك وملفاتك تلقائياً. يمكنك مغادرة التطبيق (واتساب، مكالمة، إلخ) والعودة: سيتم استعادة كل شيء.",
     "steps": {

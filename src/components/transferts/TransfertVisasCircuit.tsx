@@ -13,7 +13,7 @@ import { CheckCircle2, Circle, Loader2, ShieldCheck, Stamp, AlertTriangle, Arrow
 
 interface Props {
   transfertId: number;
-  /** Référence affichée (TR-…), sinon « #id ». */
+  /** Référence affichée (TR-…), sinon « — » (l'id n'est jamais affiché). */
   transfertRef?: string;
   /** Rafraîchir le transfert après une action (visa ou approbation). */
   onChanged: () => void;
@@ -174,7 +174,7 @@ const TransfertVisasCircuit = ({ transfertId, transfertRef, onChanged, reloadKey
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("transferts:circuit.visa_confirm_title")}</DialogTitle>
-            <DialogDescription>{t("transferts:circuit.visa_confirm_desc", { id: transfertRef || `#${transfertId}` })}</DialogDescription>
+            <DialogDescription>{t("transferts:circuit.visa_confirm_desc", { ref: transfertRef || "—" })}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" disabled={acting} onClick={() => setConfirmVisaOpen(false)}>{t("transferts:cancel.btn_back")}</Button>

@@ -299,7 +299,7 @@ const Transferts = () => {
 
   const filtered = data.filter((tr) => {
     if (onlyAViser && !aViserIds.has(tr.id)) return false;
-    const ms = [tr.reference, tr.certificatReference, tr.certificatNumero].some(v => (v || "").toLowerCase().includes(search.toLowerCase())) || String(tr.id).includes(search);
+    const ms = [tr.reference, tr.certificatReference, tr.certificatNumero].some(v => (v || "").toLowerCase().includes(search.toLowerCase()));
     const matchStatut = filterStatut === "ALL" || tr.statut === filterStatut;
     return ms && matchStatut;
   });
@@ -438,11 +438,11 @@ const Transferts = () => {
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setSelectedDecisions([]); } }}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("transferts:detail.dialog_title", { id: selected?.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:detail.dialog_title", { ref: selected ? displayRef(selected) : "—" })}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">{t("transferts:detail.certificat")}</span><p className="font-medium">{selected.certificatReference || selected.certificatNumero || `#${selected.certificatCreditId}`}</p></div>
+                <div><span className="text-muted-foreground">{t("transferts:detail.certificat")}</span><p className="font-medium">{selected.certificatReference || selected.certificatNumero || "—"}</p></div>
                 <div><span className="text-muted-foreground">{t("transferts:detail.montant")}</span><p className="font-medium">{formatAmount(selected.montant)}</p></div>
                 <div><span className="text-muted-foreground">{t("transferts:detail.statut")}</span><p><Badge className={`text-xs ${STATUT_COLORS[selected.statut]}`}>{tStatutTransfert(selected.statut)}</Badge></p></div>
                 <div><span className="text-muted-foreground">{t("transferts:detail.ops_cloturees")}</span><p className="font-medium">{selected.operationsDouaneCloturees ? t("transferts:detail.yes") : t("transferts:detail.no")}</p></div>
@@ -557,8 +557,8 @@ const Transferts = () => {
           <DialogHeader><DialogTitle>{t("transferts:cancel.dialog_title")}</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
             {t("transferts:cancel.confirm_long", {
-              id: cancelTarget ? displayRef(cancelTarget) : "",
-              cert: cancelTarget?.certificatReference || cancelTarget?.certificatNumero || `#${cancelTarget?.certificatCreditId}`,
+              ref: cancelTarget ? displayRef(cancelTarget) : "—",
+              cert: cancelTarget?.certificatReference || cancelTarget?.certificatNumero || "—",
             })}
           </p>
           <DialogFooter>
@@ -574,7 +574,7 @@ const Transferts = () => {
       {/* Rejet temporaire dialog */}
       <Dialog open={!!rejetTarget} onOpenChange={(o) => { if (!o) setRejetTarget(null); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { id: rejetTarget ? displayRef(rejetTarget) : "" })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("transferts:rejet_temp.dialog_title", { ref: rejetTarget ? displayRef(rejetTarget) : "—" })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>{t("transferts:rejet_temp.motif_label_long")} <span className="text-destructive">*</span></Label>
@@ -628,7 +628,7 @@ const Transferts = () => {
             <DialogTitle>{resubmitTarget ? t("transferts:create.title_resubmit") : t("transferts:create.title_create")}</DialogTitle>
             <p className="text-sm text-muted-foreground mt-1">
               {resubmitTarget
-                ? t("transferts:create.intro_resubmit", { cert: resubmitTarget.certificatReference || resubmitTarget.certificatNumero || `#${resubmitTarget.certificatCreditId}` })
+                ? t("transferts:create.intro_resubmit", { cert: resubmitTarget.certificatReference || resubmitTarget.certificatNumero || "—" })
                 : t("transferts:create.intro_create")}
             </p>
           </DialogHeader>
@@ -740,7 +740,7 @@ const Transferts = () => {
       <DocumentGED
         open={docDialog !== null}
         onOpenChange={() => setDocDialog(null)}
-        title={t("transferts:documents.dialog_title", { id: docDialog ? displayRef(docDialog) : "" })}
+        title={t("transferts:documents.dialog_title", { ref: docDialog ? displayRef(docDialog) : "—" })}
         dossierId={docDialog?.id ?? null}
         documentTypes={gedDepot.options.map(o => ({ value: o.code, label: o.label }))}
         documents={docs}

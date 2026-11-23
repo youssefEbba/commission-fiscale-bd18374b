@@ -64,7 +64,7 @@ const ConventionDetail = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [validating, setValidating] = useState(false);
 
-  usePageTitle("conventions:detail.title", { ref: conv?.reference || `#${id}` });
+  usePageTitle("conventions:detail.title", { ref: conv?.reference || "—" });
 
   const load = async () => {
     if (!id) return;
@@ -337,7 +337,7 @@ const ConventionDetail = () => {
       <DocumentGED
         open={gedOpen}
         onOpenChange={setGedOpen}
-        title={t("conventions:docs.modal_title", { ref: conv.reference || `#${conv.id}` })}
+        title={t("conventions:docs.modal_title", { ref: conv.reference || "—" })}
         dossierId={conv.id}
         documentTypes={CONVENTION_DOCUMENT_TYPES.map(v => ({ value: v, label: tTypeDocument(v) }))}
         documents={docs}

@@ -63,6 +63,7 @@ import {
   carteCertificatVisible, etapeSuivante, peutDeposerQuittanceDgi, peutEnvoyerTresor, peutEtreRejete,
   peutModifierMontantsPresident, peutTransmettrePresident, resultatDebitVisible,
 } from "@/lib/utilisationCircuit";
+import { displayRef } from "@/lib/displayRef";
 
 // Statuts où le certificat d'utilisation peut déjà être émis (CERTIFICAT_EMIS, ou ancien ordre : émis avant le débit).
 const CU_POST_EMISSION: string[] = ["CERTIFICAT_EMIS", "ENVOYEE_AU_TRESOR", "QUITTANCES_ENREGISTREES", "QUITTANCE_DGI_ENREGISTREE", "LIQUIDEE", "APUREE"];
@@ -179,7 +180,7 @@ const UtilisationDetail = () => {
   const utilId = Number(id);
 
   usePageTitle("utilisations:detail.title", {
-    reference: util ? (util.numeroDeclaration || util.numeroFacture || `#${util.id}`) : `#${id}`,
+    reference: util ? displayRef(util) : "—",
   });
 
   const fetchAll = async () => {
@@ -608,8 +609,8 @@ const UtilisationDetail = () => {
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               {isDouane ? <Ship className="h-6 w-6 text-primary" /> : <Building2 className="h-6 w-6 text-primary" />}
               {isDouane
-                ? t("utilisations:detail.header.title_douane", { id: u.id })
-                : t("utilisations:detail.header.title_tva", { id: u.id })}
+                ? t("utilisations:detail.header.title_douane", { ref: displayRef(u) })
+                : t("utilisations:detail.header.title_tva", { ref: displayRef(u) })}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {t("utilisations:detail.header.credit_label")}{" "}<CreditLink id={u.certificatCreditId} reference={u.certificatReference || cert?.reference} numero={u.certificatNumero || cert?.numero} />
@@ -1091,7 +1092,7 @@ const UtilisationDetail = () => {
             }
             row={(x) => (
               <TableRow key={x.id} className={isStockTvaEpuise(x) ? "opacity-50" : ""}>
-                <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })}</TableCell>
+                <TableCell className="font-medium">{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback")}</TableCell>
                 <TableCell>{fmtAmt(x.montantInitial)}</TableCell>
                 <TableCell>{fmtAmt(x.montantConsomme)}</TableCell>
                 <TableCell className="font-bold">{fmtAmt(x.montantRestant)}</TableCell>
@@ -1385,7 +1386,7 @@ const UtilisationDetail = () => {
       {/* Liquidation Dialog — visa DGD */}
       <Dialog open={showLiq} onOpenChange={setShowLiq}>
         <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("utilisations:visa_dgd.title", { id: u.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:visa_dgd.title", { ref: displayRef(u) })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {t("utilisations:visa_dgd.intro_prefix")}<strong>{t("utilisations:visa_dgd.intro_affectation")}</strong>{t("utilisations:visa_dgd.intro_middle")}
@@ -1553,7 +1554,7 @@ const UtilisationDetail = () => {
       {/* Chèque Dialog */}
       <Dialog open={showCheque} onOpenChange={setShowCheque}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> {t("utilisations:cheque_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-indigo-500" /> {t("utilisations:cheque_dialog.title", { ref: displayRef(u) })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {u.totalAPayer != null
@@ -1586,8 +1587,8 @@ const UtilisationDetail = () => {
         open={confirmGeste !== null}
         onOpenChange={(o) => { if (!o) setConfirmGeste(null); }}
         title={confirmGeste === "LIQUIDER_DOUANE"
-          ? t("utilisations:confirm_geste.liquider_title", { id: u.id })
-          : t("utilisations:confirm_geste.valider_title", { id: u.id })}
+          ? t("utilisations:confirm_geste.liquider_title", { ref: displayRef(u) })
+          : t("utilisations:confirm_geste.valider_title", { ref: displayRef(u) })}
         description={confirmGeste === "LIQUIDER_DOUANE"
           ? t("utilisations:confirm_geste.liquider_text")
           : t("utilisations:confirm_geste.valider_text")}
@@ -1604,7 +1605,7 @@ const UtilisationDetail = () => {
       {/* Clôture de l'utilisation — DGTCP (confirmation) ou ADMIN_SI (motif obligatoire) */}
       <Dialog open={showCloture} onOpenChange={o => { if (!clotureLoading) setShowCloture(o); }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>{t("utilisations:cloture_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:cloture_dialog.title", { ref: displayRef(u) })}</DialogTitle></DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">{t("utilisations:cloture_dialog.confirm_text")}</p>
             {clotureMode === "ADMIN" && (
@@ -1631,7 +1632,7 @@ const UtilisationDetail = () => {
       {/* Quittances Dialog */}
       <Dialog open={showQuittances} onOpenChange={setShowQuittances}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittances_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittances_dialog.title", { ref: displayRef(u) })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               {t("utilisations:quittances_dialog.intro")}
@@ -1701,7 +1702,7 @@ const UtilisationDetail = () => {
       {/* Apurement Dialog */}
       <Dialog open={showQDgi} onOpenChange={setShowQDgi}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittance_dgi.dialog_title", { id: u.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-teal-500" /> {t("utilisations:quittance_dgi.dialog_title", { ref: displayRef(u) })}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">{t("utilisations:quittance_dgi.intro")}</p>
             <div><Label>{t("utilisations:quittance_dgi.numero")} *</Label><Input value={qDgiForm.numeroQuittance} onChange={e => setQDgiForm(f => ({ ...f, numeroQuittance: e.target.value }))} /></div>
@@ -1729,7 +1730,7 @@ const UtilisationDetail = () => {
 
       <Dialog open={showApur} onOpenChange={setShowApur}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>{t("utilisations:apurement_dialog.title", { id: u.id })}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("utilisations:apurement_dialog.title", { ref: displayRef(u) })}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">{t("utilisations:apurement_dialog.intro")}</p>
             {tvaStock.length > 0 && (
@@ -1737,7 +1738,7 @@ const UtilisationDetail = () => {
                 <p className="font-semibold text-blue-800 mb-1">{t("utilisations:apurement_dialog.stock_title", { total: fmtAmt(totalStockDisponible) })}</p>
                 <div className="text-xs text-blue-600 space-y-0.5">
                   {tvaStock.filter(x => !isStockTvaEpuise(x)).map(x => (
-                    <div key={x.id}>{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback", { id: x.utilisationDouaneId })} : {fmtAmt(x.montantRestant)}</div>
+                    <div key={x.id}>{x.numeroDeclaration || t("utilisations:stock_tva.util_fallback")} : {fmtAmt(x.montantRestant)}</div>
                   ))}
                 </div>
               </div>

@@ -25,7 +25,7 @@
       "sous_traitant": "Sous-traitants"
     },
     "columns": {
-      "id": "#",
+      "id": "Référence",
       "certificat": "Crédit",
       "demandeur": "Demandeur",
       "type": "Type",
@@ -39,7 +39,7 @@
       "tva": "TVA Int."
     },
     "titulaire_prefix": "Titulaire : {{name}}",
-    "cert_fallback": "Crédit #{{id}}",
+    "cert_fallback": "Crédit {{ref}}",
     "sous_traite_badge": "Sous-traité",
     "actions": {
       "new": "Nouvelle utilisation",
@@ -53,7 +53,7 @@
       "delete_draft": "Supprimer le brouillon"
     },
     "detail_dialog": {
-      "title": "Utilisation #{{id}}",
+      "title": "Utilisation {{ref}}",
       "type_label": "Type",
       "type_value_douane": "Crédit Douanier (SYDONIA)",
       "type_value_tva": "TVA Intérieure",
@@ -92,7 +92,7 @@
   },
   "create": {
     "title_new": "Nouvelle utilisation de crédit",
-    "title_edit": "Modifier l'utilisation #{{id}}",
+    "title_edit": "Modifier l'utilisation {{ref}}",
     "type_immutable_hint": "Le type d'utilisation ne peut pas être modifié.",
     "certificat_label": "Crédit d'impôt",
     "certificat_placeholder": "Sélectionner un crédit",
@@ -171,7 +171,7 @@
     }
   },
   "docs_dialog": {
-    "title": "Documents — Utilisation #{{id}}",
+    "title": "Documents — Utilisation {{ref}}",
     "loading": "Chargement…",
     "empty": "Aucun document",
     "add_title": "Ajouter un document",
@@ -179,7 +179,7 @@
     "upload_btn": "Téléverser"
   },
   "apurement_tva": {
-    "title": "Apurement TVA — Utilisation #{{id}}",
+    "title": "Apurement TVA — Utilisation {{ref}}",
     "intro": "Saisissez le montant de TVA déductible (issue des importations) à imputer sur cette utilisation. Le système calculera la TVA nette et appliquera les 3 cas métier automatiquement.",
     "tva_collectee": "TVA collectée (montant TVA) :",
     "tva_ded_label": "TVA déductible à utiliser",
@@ -194,7 +194,7 @@
   },
   "rejet_temp": {
     "title": "Rejet temporaire — Demander des compléments",
-    "subline": "Utilisation #{{id}} — {{demandeur}}",
+    "subline": "Utilisation {{ref}} — {{demandeur}}",
     "motif_label": "Motif",
     "motif_placeholder": "Précisez les corrections ou compléments attendus…",
     "docs_label": "Documents à corriger / compléter",
@@ -203,7 +203,7 @@
   },
   "delete_draft": {
     "title": "Supprimer le brouillon ?",
-    "description": "Cette action supprime définitivement le brouillon{{id}} et ses données. Elle ne peut pas être annulée.",
+    "description": "Cette action supprime définitivement le brouillon {{ref}} et ses données. Elle ne peut pas être annulée.",
     "confirm": "Supprimer définitivement"
   },
   "statut": {
@@ -266,13 +266,13 @@
     "create_affectation_missing_desc": "{{count}} ligne(s) avec un montant > 0 sans affectation (AU CI ou À PAYER)."
   },
   "detail": {
-    "title": "Utilisation #{{reference}}",
+    "title": "Utilisation {{reference}}",
     "back": "Retour",
     "not_found": "Utilisation introuvable",
     "load_error": "Impossible de charger l'utilisation",
     "header": {
-      "title_douane": "Utilisation #{{id}} — Importation Douanière",
-      "title_tva": "Utilisation #{{id}} — TVA Intérieure",
+      "title_douane": "Utilisation {{ref}} — Importation Douanière",
+      "title_tva": "Utilisation {{ref}} — TVA Intérieure",
       "subtitle_cert": "Crédit {{ref}}",
       "subtitle_company": "{{name}}",
       "sous_traite_badge": "Sous-traité",
@@ -394,7 +394,7 @@
     "col_restant": "Restant",
     "col_date": "Date",
     "col_epuise": "Épuisé",
-    "util_fallback": "Util #{{id}}"
+    "util_fallback": "Utilisation douanière"
   },
   "documents": {
     "title_one": "Documents ({{count}})",
@@ -445,7 +445,7 @@
     "rejeter_definitivement": "Rejeter définitivement"
   },
   "visa_dgd": {
-    "title": "Annotation du bulletin & visa DGD — #{{id}}",
+    "title": "Annotation du bulletin & visa DGD — {{ref}}",
     "intro_prefix": "Pour chaque ligne du bulletin, choisissez son ",
     "intro_affectation": "affectation",
     "intro_middle": " : ",
@@ -485,7 +485,7 @@
     "proposition_none": "Aucune"
   },
   "cheque_dialog": {
-    "title": "Saisir le chèque certifié — #{{id}}",
+    "title": "Saisir le chèque certifié — {{ref}}",
     "intro_no_amount": "Renseignez les informations du chèque certifié couvrant la part À PAYER du bulletin.",
     "intro_with_amount": "Renseignez les informations du chèque certifié couvrant la part À PAYER du bulletin ({{montant}}).",
     "banque_label": "Banque émettrice",
@@ -503,7 +503,7 @@
     "confirm": "Confirmer"
   },
   "quittances_dialog": {
-    "title": "Quittances Trésor — #{{id}}",
+    "title": "Quittances Trésor — {{ref}}",
     "intro": "Saisie des quittances émises par le Trésor. La liste remplace toujours les précédentes (idempotent).",
     "intro_expected": "Montant CI attendu : {{montant}}.",
     "col_numero": "N° quittance",
@@ -520,7 +520,7 @@
     "save": "Enregistrer"
   },
   "apurement_dialog": {
-    "title": "Apurement TVA — Utilisation #{{id}}",
+    "title": "Apurement TVA — Utilisation {{ref}}",
     "intro": "Saisissez la TVA déductible à utiliser. Le système consommera le stock TVA déductible et calculera la TVA nette.",
     "stock_title": "Stock TVA déductible disponible : {{total}}",
     "tva_collectee_label": "TVA collectée :",
@@ -569,7 +569,7 @@
     "title": "Quittance DGI",
     "deposer": "Déposer la quittance DGI",
     "modifier": "Modifier la quittance DGI",
-    "dialog_title": "Quittance DGI — #{{id}}",
+    "dialog_title": "Quittance DGI — {{ref}}",
     "intro": "La DGTCP pourra ensuite procéder à l'apurement.",
     "numero": "N° de quittance",
     "date": "Date de la quittance",
@@ -639,7 +639,7 @@
     "a_recalculer": "À recalculer après nouveau visa DGD"
   },
   "cloture_dialog": {
-    "title": "Clôturer l'utilisation — #{{id}}",
+    "title": "Clôturer l'utilisation — {{ref}}",
     "confirm_text": "Le crédit a été débité. La clôture est définitive : le dossier passera en Clôturée.",
     "admin_desc": "Substitution administrative à la DGTCP : le motif est obligatoire et tracé.",
     "motif_label": "Motif de la substitution",
@@ -647,10 +647,10 @@
     "confirm": "Clôturer"
   },
   "confirm_geste": {
-    "valider_title": "Valider l'utilisation — #{{id}}",
+    "valider_title": "Valider l'utilisation — {{ref}}",
     "valider_text": "La validation de la DGTCP est définitive : l'utilisation passera en Validée.",
     "valider_amount": "Montant de TVA concerné",
-    "liquider_title": "Générer le crédit & liquider — #{{id}}",
+    "liquider_title": "Générer le crédit & liquider — {{ref}}",
     "liquider_text": "La liquidation débite le crédit et ne peut pas être annulée.",
     "liquider_amount": "Montant imputé sur le crédit"
   },

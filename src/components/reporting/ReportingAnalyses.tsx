@@ -278,7 +278,7 @@ export function BlocagesSection({ params }: { params: ReportingParams }) {
                 {immobiles.length === 0 && <Empty cols={6} />}
                 {immobiles.map((b, i) => (
                   <TableRow key={`${b.type}-${b.id ?? i}`}>
-                    <TableCell>{b.reference || (b.id != null ? `#${b.id}` : f.na)}</TableCell>
+                    <TableCell>{b.reference || f.na}</TableCell>
                     <TableCell>{b.type || f.na}</TableCell>
                     <TableCell>{b.statut ? tStatutAny(b.statut, statutGroupForLigne(b.type)) : f.na}</TableCell>
                     <TableCell>{b.entrepriseRaisonSociale || f.na}</TableCell>
@@ -312,7 +312,7 @@ export function BlocagesSection({ params }: { params: ReportingParams }) {
                 {rejets.length === 0 && <Empty cols={7} />}
                 {rejets.map((r, i) => (
                   <TableRow key={`${r.type}-${r.dossierId ?? i}-${i}`}>
-                    <TableCell>{r.reference || (r.dossierId != null ? `#${r.dossierId}` : f.na)}</TableCell>
+                    <TableCell>{r.reference || f.na}</TableCell>
                     <TableCell>{r.type || f.na}</TableCell>
                     <TableCell>{r.role || f.na}</TableCell>
                     <TableCell>{r.agentUsername || f.na}</TableCell>
@@ -401,7 +401,7 @@ function LigneList({ title, rows, total, truncated, defect, defectText, cols }: 
             {rows.length === 0 && <Empty cols={3 + cols.length} />}
             {rows.map((r, i) => (
               <TableRow key={`${r.type}-${r.id ?? i}`}>
-                <TableCell>{r.reference || (r.id != null ? `#${r.id}` : f.na)}</TableCell>
+                <TableCell>{r.reference || f.na}</TableCell>
                 <TableCell>{r.entrepriseRaisonSociale || f.na}</TableCell>
                 <TableCell>{r.statut ? tStatutAny(r.statut, statutGroupForLigne(r.type)) : f.na}</TableCell>
                 {cols.map((c) => <TableCell key={c.head} className={c.end ? "text-end tabular-nums" : undefined}>{c.cell(r)}</TableCell>)}

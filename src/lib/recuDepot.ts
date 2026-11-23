@@ -38,7 +38,14 @@ export const RECU_DEPOT = "RECU_DEPOT";
 
 export interface RecuCible {
   id: number;
+  /** Modèle tiré du DTO renvoyé par la soumission (repli si la relecture échoue). */
   modele: RecuModele;
+  /**
+   * Relit le dossier sur le serveur juste avant la génération : la référence (DU-…, MP-…, TR-…)
+   * et la date de dépôt imprimées sont celles que le serveur a enregistrées, pas celles d'une
+   * réponse antérieure à une renumérotation.
+   */
+  relire?: () => Promise<RecuModele>;
   getDocuments: () => Promise<DocumentDto[]>;
   upload: (file: File) => Promise<unknown>;
   libelles?: Record<string, string>;
@@ -50,31 +57,37 @@ type Opts = RecuAdapterOptions & { libelles?: Record<string, string> };
 export const recuCibles = {
   correction: (d: DemandeCorrectionDto, o: Opts = {}): RecuCible => ({
     id: d.id, modele: recuCorrection(d, o), libelles: o.libelles,
+    relire: () => demandeCorrectionApi.getById(d.id).then((x) => recuCorrection(x, o)),
     getDocuments: () => demandeCorrectionApi.getDocuments(d.id).catch(() => d.documents || []),
     upload: (f) => demandeCorrectionApi.uploadDocument(d.id, RECU_DEPOT, f),
   }),
   miseEnPlace: (c: CertificatCreditDto, o: Opts = {}): RecuCible => ({
     id: c.id, modele: recuMiseEnPlace(c, o), libelles: o.libelles,
+    relire: () => certificatCreditApi.getById(c.id).then((x) => recuMiseEnPlace(x, o)),
     getDocuments: () => certificatCreditApi.getDocuments(c.id),
     upload: (f) => certificatCreditApi.uploadDocument(c.id, RECU_DEPOT, f),
   }),
   utilisation: (u: UtilisationCreditDto, o: Opts = {}): RecuCible => ({
     id: u.id, modele: recuUtilisation(u, o), libelles: o.libelles,
+    relire: () => utilisationCreditApi.getById(u.id).then((x) => recuUtilisation(x, o)),
     getDocuments: () => utilisationCreditApi.getDocuments(u.id),
     upload: (f) => utilisationCreditApi.uploadDocument(u.id, RECU_DEPOT, f),
   }),
   transfert: (tr: TransfertCreditDto, o: Opts = {}): RecuCible => ({
     id: tr.id, modele: recuTransfert(tr, o), libelles: o.libelles,
+    relire: () => transfertCreditApi.getById(tr.id).then((x) => recuTransfert(x, o)),
     getDocuments: () => transfertCreditApi.getDocuments(tr.id) as Promise<DocumentDto[]>,
     upload: (f) => transfertCreditApi.uploadDocument(tr.id, RECU_DEPOT, f),
   }),
   avenant: (a: AvenantDto, o: Opts = {}): RecuCible => ({
     id: a.id, modele: recuAvenant(a, o), libelles: o.libelles,
+    relire: () => avenantApi.getById(a.id).then((x) => recuAvenant(x, o)),
     getDocuments: () => avenantApi.getDocuments(a.id).then((l) => l.map((d) => ({ ...d, type: d.codeDocument } as DocumentDto))),
     upload: (f) => avenantApi.uploadDocument(a.id, RECU_DEPOT, f),
   }),
   sousTraitance: (s: SousTraitanceDto, o: Opts = {}): RecuCible => ({
     id: s.id, modele: recuSousTraitance(s, o), libelles: o.libelles,
+    relire: () => sousTraitanceApi.getById(s.id).then((x) => recuSousTraitance(x, o)),
     getDocuments: () => sousTraitanceApi.getDocuments(s.id) as Promise<DocumentDto[]>,
     upload: (f) => sousTraitanceApi.uploadDocument(s.id, RECU_DEPOT, f),
   }),
@@ -93,10 +106,12 @@ const tr = (k: string, o?: Record<string, unknown>) => i18n.t(`demandes:recu.${k
  * renvoie `false` (avertissement affiché, bouton « Régénérer ») si une étape échoue.
  */
 export async function emettreRecuDepot(cible: RecuCible): Promise<boolean> {
-  const { modele } = cible;
-  const name = recuFileName(modele);
+  let modele = cible.modele;
   try {
-    await trackDocumentTask(`recu-depot:${modele.processus}:${cible.id}:issue`, "generate", name, async () => {
+    await trackDocumentTask(`recu-depot:${modele.processus}:${cible.id}:issue`, "generate", recuFileName(modele), async () => {
+      // Dossier relu : référence et date telles qu'enregistrées (repli sur la réponse de la soumission).
+      if (cible.relire) modele = await cible.relire().catch(() => cible.modele);
+      const name = recuFileName(modele);
       const documents = await cible.getDocuments().catch(() => [] as DocumentDto[]);
       const blob = await generateRecuPdf(modele, { documents, libelles: cible.libelles });
       // Téléchargé d'abord : le déposant garde son reçu même si l'enregistrement échoue.
